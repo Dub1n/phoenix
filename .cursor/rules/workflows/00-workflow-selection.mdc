@@ -1,0 +1,111 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+---
+tags: [Workflow, Selection, Decision Tree, Process Management]
+provides: [Workflow Selection Logic, Decision Tree, Workflow Comparison Matrix]
+requires: [DSS Core Structure and Concepts, Riley Personality Definition]
+---
+# Workflow Selection & Decision Tree
+
+## All Available Workflows
+
+1. **[Quick Tasks](mdc:.cursor/rules/workflows/01-quick-tasks.mdc)** - Simple, atomic tasks (1-2 files, single interaction)
+2. **[Code Modification](mdc:.cursor/rules/workflows/02-code-modification.mdc)** - Development-focused source code changes
+3. **[Documentation-Driven Development](mdc:.cursor/rules/workflows/03-documentation-driven.mdc)** - Documentation-first planning tasks
+4. **[Task Decomposition](mdc:.cursor/rules/workflows/04-task-decomposition.mdc)** - Complex, multi-step coordination tasks
+5. **[Documentation Refactoring](mdc:.cursor/rules/workflows/05-documentation-refactoring.mdc)** - Systematic updates across multiple docs
+6. **[GitHub Issues Integration](mdc:.cursor/rules/workflows/06-github-issues-integration.mdc)** - Processing community feedback into development tasks
+
+## Enhanced Selection Decision Tree
+
+```
+1. Is this primarily about processing GitHub Issues/feedback?
+   YES → [GitHub Issues Integration](mdc:.cursor/rules/workflows/06-github-issues-integration.mdc)
+   NO → Continue
+
+2. Is this systematic documentation updates across multiple files?
+   YES → [Documentation Refactoring](mdc:.cursor/rules/workflows/05-documentation-refactoring.mdc)
+   NO → Continue
+
+3. Task affects > 2 files OR requires multiple steps?
+   YES → Consider [Task Decomposition](mdc:.cursor/rules/workflows/04-task-decomposition.mdc)
+   NO → Continue
+
+4. Task primarily involves source code changes?
+   YES → [Code Modification](mdc:.cursor/rules/workflows/02-code-modification.mdc)
+   NO → Continue
+
+5. Task focuses on creating documentation/planning?
+   YES → [Documentation-Driven Development](mdc:.cursor/rules/workflows/03-documentation-driven.mdc)
+   NO → Continue
+
+6. Task meets ALL Quick Tasks criteria?
+   YES → [Quick Tasks](mdc:.cursor/rules/workflows/01-quick-tasks.mdc)
+   NO → Re-evaluate with [Task Decomposition](mdc:.cursor/rules/workflows/04-task-decomposition.mdc)
+```
+
+## Workflow Comparison Matrix
+
+| Workflow | Scope | Files Affected | Primary Focus | Duration |
+|----------|-------|----------------|---------------|----------|
+| [Quick Tasks](mdc:.cursor/rules/workflows/01-quick-tasks.mdc) | 1-2 files | Minimal | Single fix/addition | <30 min |
+| [Code Modification](mdc:.cursor/rules/workflows/02-code-modification.mdc) | 2-5 files | Moderate | Source code changes | 1-3 hours |
+| [Documentation-Driven](mdc:.cursor/rules/workflows/03-documentation-driven.mdc) | Variable | Moderate | Planning/specification | 1-2 hours |
+| [Documentation Refactoring](mdc:.cursor/rules/workflows/05-documentation-refactoring.mdc) | 3+ files | Multiple docs | Systematic doc updates | 2-4 hours |
+| [Task Decomposition](mdc:.cursor/rules/workflows/04-task-decomposition.mdc) | Many files | Extensive | Complex coordination | Multiple sessions |
+| [GitHub Issues Integration](mdc:.cursor/rules/workflows/06-github-issues-integration.mdc) | Variable | Variable | Community feedback processing | Ongoing |
+
+## Workflow Transitions
+
+### When to Escalate
+- **[Quick Tasks](mdc:.cursor/rules/workflows/01-quick-tasks.mdc) → [Code Modification](mdc:.cursor/rules/workflows/02-code-modification.mdc)**: Task affects more files than assessed
+- **[Quick Tasks](mdc:.cursor/rules/workflows/01-quick-tasks.mdc) → [Documentation-Driven](mdc:.cursor/rules/workflows/03-documentation-driven.mdc)**: Significant documentation needed
+- **[Code Modification](mdc:.cursor/rules/workflows/02-code-modification.mdc) → [Task Decomposition](mdc:.cursor/rules/workflows/04-task-decomposition.mdc)**: Task affects >5 files or requires complex coordination
+- **[Documentation-Driven](mdc:.cursor/rules/workflows/03-documentation-driven.mdc) → [Code Modification](mdc:.cursor/rules/workflows/02-code-modification.mdc)**: Moving from docs to implementation
+- **Any workflow → [GitHub Issues Integration](mdc:.cursor/rules/workflows/06-github-issues-integration.mdc)**: Pattern emerges from multiple user reports
+
+### When to De-escalate  
+- **Any workflow → [Quick Tasks](mdc:.cursor/rules/workflows/01-quick-tasks.mdc)**: Task simpler than initially assessed
+- **[Task Decomposition](mdc:.cursor/rules/workflows/04-task-decomposition.mdc) → Other workflows**: Individual subtasks fit simpler patterns
+- **[Documentation Refactoring](mdc:.cursor/rules/workflows/05-documentation-refactoring.mdc) → [Quick Tasks](mdc:.cursor/rules/workflows/01-quick-tasks.mdc)**: Changes affect fewer files than expected
+
+### Transition Protocol
+When transitioning workflows:
+1. Preserve completed work from current workflow
+2. Assess what criteria triggered the transition
+3. Resume appropriate workflow from relevant step
+4. Update task documentation to reflect transition
+
+## Integration with DSS Maintenance
+
+### Automatic Maintenance Triggers
+All workflows integrate these maintenance behaviors:
+
+- **New file created** → Add appropriate frontmatter with tags/provides/requires
+- **File moved/renamed** → Update cross-references in documentation  
+- **Structure changed** → Update [INDEX.md](mdc:INDEX.md) to reflect changes
+- **Dependencies changed** → Update provides/requires metadata
+- **Documentation outdated** → Suggest updates or corrections
+
+### Template-First Approach
+Before creating any new file:
+1. Check [.cursor/rules/config/templates/](mdc:.cursor/rules/config/templates) for existing template
+2. Use template if available, customize for specific use case
+3. Follow template frontmatter patterns
+4. Maintain template structure and conventions
+
+### Cross-Reference Management
+- Use MDC links (`mdc:path/to/file`) for internal references
+- Update links when files are moved or renamed
+- Validate link integrity after structural changes
+- Maintain provides/requires relationships
+
+
+
+
+
+
+

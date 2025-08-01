@@ -1,0 +1,43 @@
+<rule>
+  <meta>
+    <title>{Title}</title>
+    <description>{What this rule enforces}</description>
+    <created-at utc-timestamp="{timestamp}">{Human date}</created-at>
+    <last-updated-at utc-timestamp="{timestamp}">{Human date}</last-updated-at>
+    <applies-to>
+      <file-matcher glob="{glob}">{Optional description}</file-matcher>
+      <action-matcher action="{optional-trigger}">{Optional description}</action-matcher>
+    </applies-to>
+  </meta>
+  <requirements>
+    <requirement priority="{critical|high|medium|low}">
+      <description>{Clear requirement}</description>
+      <examples>
+        <example title="{Example title}">
+          <correct-example title="{Context}" conditions="{Preconditions}" expected-result="{Expected output}" correctness-criteria="{Why it's right}"><![CDATA[
+            // Valid example code
+          ]]></correct-example>
+          <incorrect-example title="{Context}" conditions="{Preconditions}" expected-result="{Expected output}" incorrectness-criteria="{Why it's wrong}"><![CDATA[
+            // Invalid example code
+          ]]></incorrect-example>
+        </example>
+      </examples>
+    </requirement>
+    <non-negotiable priority="{critical|high}">
+      <description>{This MUST be followed}</description>
+      <examples>...</examples>
+    </non-negotiable>
+  </requirements>
+  <grammar>
+    <grammar-entry title="{Pattern name}">
+      <pattern description="{What this enforces}">{Regex}</pattern>
+      <example description="{Valid usage}">{Pattern example}</example>
+    </grammar-entry>
+    <schema title="{Schema title}" description="{Schema description}"><![CDATA[
+      <rule>...</rule>
+    ]]></schema>
+  </grammar>
+  <references>
+    <reference as="dependency" href=".cursor/rules/rules.mdc" reason="Follows standard rule format">rules.mdc</reference>
+  </references>
+</rule>

@@ -1,0 +1,56 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+---
+tags: [Workflow, Code Modification, Development, Source Code]
+provides: [Code Modification Process, Development Guidelines]
+requires: [Workflow Selection Logic, Template Patterns]
+---
+# Code Modification Workflow
+
+**For**: Development-focused tasks affecting source code
+
+## Criteria
+MOST must be met:
+- **Primary Focus**: Creating, editing, or refactoring source code
+- **API Impact**: May affect public APIs or interfaces
+- **Architecture Integration**: Needs architecture documentation updates
+- **Testing Requirements**: Requires test updates or validation
+- **Documentation Coupling**: Code changes need doc updates
+
+## Process
+Analyze → Check templates → Implement → Update docs → Update deps
+
+## Examples
+- New functions/classes
+- Refactoring
+- API extensions
+- Bug fixes
+- Dependency integration
+
+## Execution Guidelines (5 steps)
+1. **Locate Documentation Context**: Find existing docs and specs
+2. **Update Documentation and Metadata**: [YAML frontmatter](mdc:.cursor/rules/guidelines/04-validation-rules.mdc), [tags](mdc:.cursor/rules/guidelines/05-tag-conventions.mdc), summaries
+3. **Handle Public API Changes**: Update API reference and architecture
+4. **Add Code Documentation**: Follow [documentation standards](mdc:.cursor/rules/guidelines/11-documentation-standards.mdc) for modules and functions
+5. **Update Project Tracking**: Move [roadmap](mdc:ROADMAP.md) items, document progress
+6. **Validate and Link Check**: [Frontmatter validation](mdc:.cursor/rules/guidelines/04-validation-rules.mdc), [fix dead links](mdc:.cursor/rules/guidelines/01-dss-maintenance.mdc)
+
+## When to Escalate
+- **→ [Task Decomposition](mdc:.cursor/rules/workflows/04-task-decomposition.mdc)**: Task affects >5 files or requires complex coordination
+
+## When to De-escalate
+- **→ [Quick Tasks](mdc:.cursor/rules/workflows/01-quick-tasks.mdc)**: Task simpler than initially assessed
+
+## Related Guidelines
+- [Documentation Standards](mdc:.cursor/rules/guidelines/11-documentation-standards.mdc)
+- [Validation Rules](mdc:.cursor/rules/guidelines/04-validation-rules.mdc)
+- [Tag Conventions](mdc:.cursor/rules/guidelines/05-tag-conventions.mdc)
+
+
+
+
+
+
