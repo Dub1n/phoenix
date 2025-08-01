@@ -1,0 +1,44 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Replace Emojis in Current File",
+            "type": "shell",
+            "command": "python",
+            "args": [
+                ".vscode/scripts/emoji_substitute.py",
+                "--verbose",
+                "${file}"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": [],
+            "detail": "Replace emojis with monospace-friendly Unicode characters in the currently active file"
+        },
+        {
+            "label": "Preview Emoji Replacements (Dry Run)",
+            "type": "shell",
+            "command": "python",
+            "args": [
+                ".vscode/scripts/emoji_substitute.py",
+                "--dry-run",
+                "--verbose",
+                "${file}"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": [],
+            "detail": "Preview what emoji replacements would be made in the currently active file"
+        }
+    ]
+} 

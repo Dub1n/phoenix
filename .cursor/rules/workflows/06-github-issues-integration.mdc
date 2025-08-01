@@ -1,0 +1,79 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+---
+tags: [Workflow, GitHub Issues, Community Feedback, Pattern Detection, Development Queue]
+provides: [Issue Processing, Community Integration, Pattern Analysis, Development Task Generation]
+requires: [Workflow Selection Logic, Issue Label Conventions, Development Queue]
+---
+# GitHub Issues Integration Workflow
+
+**For**: Processing GitHub Issues as part of continuous self-improvement cycle, turning community feedback into actionable development tasks
+
+## Criteria
+MOST must be met:
+- **Feedback Processing**: Task involves analyzing GitHub Issues for patterns and insights
+- **Development Priority**: Need to generate actionable development tasks from user feedback
+- **Pattern Detection**: Multiple related issues need to be analyzed for systemic problems
+- **Community Integration**: Connecting user reports to system improvements
+- **Self-Development**: Focus on improving DSS capabilities based on real usage
+
+## Process
+Issue intake → Classify and analyze → Detect patterns → Generate tasks → Track implementation
+
+## Examples
+- Processing installation reports for bootstrap improvements
+- Analyzing bug reports to identify common failure patterns
+- Converting feature requests into development tasks
+- Detecting platform-specific issues across multiple reports
+- Generating documentation tasks from user confusion patterns
+
+## Issue Classification System
+
+### Primary Types
+- **`installation-report`**: Automated reports from [dss_bootstrap.py](mdc:dss_bootstrap.py)
+- **`bug`**: Problems with existing functionality
+- **`enhancement`**: Requests for new features or improvements
+- **`documentation`**: Documentation gaps or improvements
+- **`user-experience`**: UX/workflow improvement suggestions
+
+### Secondary Dimensions
+- **Platform**: `platform-windows`, `platform-linux`, `platform-darwin`
+- **Project Type**: `project-android`, `project-python`, `project-data-science`
+- **Severity**: `critical`, `high-priority`, `medium-priority`, `low-priority`
+- **Component**: `bootstrap`, `cursor-integration`, `file-organization`
+
+## Execution Guidelines
+1. **Issue Intake and Classification**: Apply [classification system](mdc:.cursor/rules/guidelines/08-github-issue-labels.mdc), identify reporter type and context
+2. **Root Cause Analysis**: Determine primary cause, contributing factors, and pattern connections
+3. **Impact Assessment**: Evaluate user impact, frequency, and scope of issues
+4. **Pattern Detection**: Aggregate similar issues, identify systemic problems
+5. **Development Task Generation**: Create specific, actionable development tasks with priorities
+6. **Implementation Tracking**: Monitor progress and validate solutions
+
+## Task Generation Rules
+
+| Issue Pattern | Generated Task Type | Priority Factors |
+|---------------|-------------------|------------------|
+| Bootstrap failures | Bug fix + fallback improvement | frequency × severity × user_impact |
+| Platform-specific issues | Platform compatibility enhancement | affected_users × platform_diversity |
+| Project type detection | Detection algorithm improvement | false_positive_rate × confusion_factor |
+| Documentation gaps | Documentation enhancement | user_questions × clarity_impact |
+| Performance issues | Performance optimization | slowdown_factor × user_frequency |
+
+## Integration with Other Workflows
+- **→ [Code Modification](mdc:.cursor/rules/workflows/02-code-modification.mdc)**: For bug fixes and feature implementations
+- **→ [Documentation Refactoring](mdc:.cursor/rules/workflows/05-documentation-refactoring.mdc)**: For documentation gaps identified in issues
+- **→ [Task Decomposition](mdc:.cursor/rules/workflows/04-task-decomposition.mdc)**: For complex multi-component improvements
+
+## Success Metrics
+- **Pattern Detection Rate**: Percentage of related issues correctly grouped
+- **Solution Effectiveness**: Reduction in similar issue reports after fixes
+- **Response Time**: Time from issue report to development task creation
+- **User Satisfaction**: Feedback on implemented solutions
+
+
+
+

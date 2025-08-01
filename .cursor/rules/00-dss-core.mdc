@@ -1,0 +1,145 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+---
+description: Core DSS concepts, folder structure, and metadata system
+globs: 
+alwaysApply: true
+---
+---
+tags: [DSS, Core, Structure, Concepts]
+provides: [DSS Core Structure and Concepts]
+requires: [DSS Core Structure and Concepts]
+---
+# DSS Core Structure and Concepts
+
+This file defines the fundamental DSS concepts that the AI should understand when working with Data SuperStructure projects.
+
+## Core Purpose
+
+**Goal:** Make any dataset/codebase feel *native* to an LLM—minimal prompt tokens, zero duplicated effort, and crystal‑clear navigation for humans.
+
+**How:** Store everything as plaintext (Markdown, code, JSON) plus light metadata so GitHub, Obsidian, Cursor **and** GPT all see the same structure.
+
+## Folder Structure
+
+### Primary Directories
+- **`src/`** → Source code and implementation modules
+  - Contains all executable code, libraries, and implementation logic
+  - Organized by functionality and domain
+
+- **`docs/`** → Human-readable documentation 
+  - Project documentation, guides, and explanations
+  - Includes module docs, API references, and user guides
+  - Self-organizing with clear cross-references
+
+- **`data/`** → Data files and datasets
+  - Raw data, processed datasets, configuration data
+  - Supports various formats: CSV, JSON, Parquet, etc.
+
+- **`meta/`** → Project metadata, configuration, and development tools
+  - DSS configuration files (`dss_config.yml`)
+  - Development scripts and automation tools
+  - Project management and development queue
+
+- **`tests/`** → Test files and validation scripts
+  - Unit tests, integration tests, test data
+  - Validation datasets and test harnesses
+
+- **`canvas/`** → Optional visual diagrams and flowcharts
+  - Obsidian-style canvas JSONs for visual project mapping
+  - Architectural diagrams and workflow visualizations
+
+## Metadata System
+
+Every file should have YAML frontmatter with these core fields:
+
+### Required Fields
+- **`tags: []`** - Classification tags for organization and discovery
+  - Use specific, descriptive tags
+  - Include domain, functionality, and type tags
+  
+- **`provides: []`** - What this file/module provides to other parts of the system
+  - Functions, classes, APIs, data, documentation
+  - Clear, specific identifiers for dependencies
+  
+- **`requires: []`** - What this file/module depends on
+  - External dependencies, internal modules, data sources
+  - Enables dependency tracking and impact analysis
+
+### File Type Patterns
+
+#### Code Files
+- **Python**: `**/*.py`, `**/*.ipynb`
+- **JavaScript/TypeScript**: `**/*.js`, `**/*.ts`
+
+#### Data Files  
+- **Structured Data**: `**/*.csv`, `**/*.parquet`, `**/*.jsonl`
+- **Configuration**: `**/*.json`, `**/*.yml`
+
+#### Documentation
+- **Markdown**: `**/*.md`, `**/*.rst`
+- **Text**: `**/*.txt`
+
+#### Binary Assets
+- **Images**: `**/*.png`, `**/*.jpg`, `**/*.jpeg`
+- **Documents**: `**/*.pdf`
+
+## Archive Convention
+
+### Archive Location
+- **`docs/🔒archive/`** contains deprecated, outdated, or historical content
+- Archive directory uses lock emoji (🔒) to clearly mark excluded content
+
+### Archive Rules
+- **Never edit** archived content - it represents historical state
+- **Never reference** archived content in new documentation
+- **Never summarize** archived content for current project context
+- **Exclude from AI context** - archived material should not influence current decisions
+
+### Archival Process
+When moving content to archive:
+1. Move entire directory structure to maintain context
+2. Update any references in active documentation
+3. Add archive note explaining why content was deprecated
+
+## Frontmatter Injection Rules
+
+### Markdown Files
+```markdown
+---
+tags: [tag1, tag2]
+provides: [export1, export2]
+requires: [dependency1, dependency2]
+---
+
+# File Content
+```
+
+### Python Files
+```python
+"""---
+tags: [tag1, tag2]
+provides: [export1, export2]  
+requires: [dependency1, dependency2]
+---"""
+
+# Python code here
+```
+
+## Core Principles
+
+1. **Modular files, minimal duplication** - Each concept lives in its own file
+2. **YAML front-matter for quick indexing** - Consistent metadata across all files  
+3. **Markdown links everywhere** - GitHub & Obsidian friendly cross-references
+4. **Self-healing documentation** - LLMs can update docs/links in automated passes
+
+## File Organization Guidelines
+
+- Use descriptive, specific file names
+- Group related functionality in appropriate directories
+- Maintain clear separation between source, docs, data, and meta
+- Keep directory structures shallow when possible
+- Use consistent naming conventions within each domain 

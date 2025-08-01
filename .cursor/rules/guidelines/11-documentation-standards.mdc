@@ -1,0 +1,259 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+---
+tags: [Documentation, Standards, Code, Maintainability, Guidelines]
+provides: [Documentation Standards, Code Clarity Guidelines, Implementation Documentation]
+requires: [DSS Core Structure and Concepts]
+---
+# Documentation Standards
+
+This file defines documentation requirements to ensure code is created with sufficient context from the start, preventing future maintenance challenges.
+
+## Core Documentation Principles
+
+### 1. Practical Minimalism
+
+- Document **why** code exists, not just what it does
+- Focus on context that isn't obvious from reading the code
+- Include only information that assists maintenance or understanding
+- Avoid redundancy and obvious implementation details
+
+### 2. Documentation Before Implementation
+
+- Write module and function docstrings before implementation
+- Document expected behavior and constraints before coding
+- Think through and document data flows before writing complex functions
+- Consider documentation as design, not an afterthought
+
+### 3. Context Over Code
+
+- Prioritize explaining business/domain context
+- Document architectural decisions and their rationale
+- Explain integration points between systems
+- Make non-obvious constraints explicit
+
+## Required Documentation Levels
+
+### Module-Level Documentation
+
+Every file should begin with a module docstring explaining:
+
+```python
+"""
+[Module Name/Purpose]
+
+Brief explanation of WHY this module exists and what problem it solves.
+Key responsibilities and important context for understanding.
+"""
+```
+
+Example:
+```python
+"""
+Model Tracking for DSS Benchmarks
+
+Tracks which LLM model performed each benchmark task, enabling
+correlation between model capabilities and performance results.
+"""
+```
+
+### Function-Level Contracts
+
+Every public function requires documentation that includes:
+
+```python
+def function_name(param1, param2):
+    """
+    Brief statement of function purpose (1-2 lines).
+    
+    Data flow: [Input → Processing → Output] (when non-obvious)
+    
+    Args:
+        param1: What this parameter represents
+        param2: What this parameter represents
+        
+    Returns:
+        What the function returns (if non-void)
+        
+    Raises: (if applicable)
+        ExceptionType: When/why this occurs
+    """
+```
+
+Example:
+```python
+def log_model_execution(self, task_id: str, model_info: Dict, ruleset: str) -> None:
+    """
+    Records which model executed a benchmark task.
+    
+    Flow: CLI args → model log file → results template → comparison table
+    
+    Args:
+        task_id: Task identifier (e.g., "task-01")
+        model_info: Dict with model name, version, capabilities
+        ruleset: Ruleset variant being tested
+    """
+```
+
+### Complex Logic Annotations
+
+For complex algorithms or business rules:
+
+```python
+# WHY: Brief explanation of non-obvious logic
+complex_expression = calculation_with_context
+
+# Business rule: Explanation of domain-specific requirement
+if special_condition:
+    business_rule_implementation()
+```
+
+## Documentation Integration in DSS Workflows
+
+### For [Quick Tasks](mdc:.cursor/rules/workflows/01-quick-tasks.mdc)
+
+- Add module docstring with brief purpose
+- Document function parameters and return values
+- Focus on intent and context, not implementation details
+
+### For [Code Modification](mdc:.cursor/rules/workflows/02-code-modification.mdc)
+
+- Document module purpose and responsibility first
+- Define function contracts before implementation
+- Update existing documentation to maintain accuracy
+- Document data flows for non-trivial operations
+
+### For [Documentation-Driven](mdc:.cursor/rules/workflows/03-documentation-driven.mdc)
+
+- Start with comprehensive module documentation 
+- Document component interactions and dependencies
+- Identify and document integration points
+- Create usage examples for key functionality
+
+### For [Task Decomposition](mdc:.cursor/rules/workflows/04-task-decomposition.mdc)
+
+- Document system architecture at module level
+- Define component contracts and interfaces
+- Identify and document cross-module dependencies
+- Create data flow documentation for complex interactions
+
+## Common Documentation Pitfalls
+
+### Over-Documentation
+
+Avoid:
+- Explaining what's obvious from the code
+- Repeating parameter names without adding context
+- Documenting trivial getter/setter methods
+- Creating excessive ASCII art or diagrams for simple flows
+
+### Under-Documentation
+
+Avoid:
+- Missing module-level purpose statements
+- Undocumented assumptions or constraints
+- Missing context for complex business rules
+- No explanation of "why" for non-obvious design choices
+
+### Outdated Documentation
+
+Prevent by:
+- Treating documentation as part of the code, not separate
+- Updating docstrings when behavior changes
+- Including documentation changes in code reviews
+- Validating docstring accuracy during testing
+
+## Documentation Examples
+
+### Good Module Documentation
+
+```python
+"""
+Authentication Token Management
+
+Handles secure creation, validation and refreshing of auth tokens
+using JWT with configurable expiry. Supports token revocation for
+logout and security breach responses.
+
+Integration points:
+- User API for authentication requests
+- Middleware for request validation
+- Security monitoring for breach detection
+"""
+```
+
+### Good Function Documentation
+
+```python
+def create_auth_token(user_id: str, permissions: List[str], expires_in: int = 3600) -> str:
+    """
+    Creates a signed JWT token for user authentication.
+    
+    Flow: User credentials → Validation → Token generation → Database record
+    
+    Args:
+        user_id: Unique identifier for the authenticated user
+        permissions: List of permission strings granted to this token
+        expires_in: Token lifetime in seconds (default: 1 hour)
+        
+    Returns:
+        Encoded JWT token string
+        
+    Raises:
+        SecurityException: If token generation fails due to crypto issues
+    """
+```
+
+### Good Complex Logic Documentation
+
+```python
+# WHY: Prevent timing attacks by using constant-time comparison
+is_valid = hmac.compare_digest(received_signature, expected_signature)
+
+# Business rule: Tokens older than 7 days require MFA even if still valid
+if token_age > datetime.timedelta(days=7):
+    require_additional_authentication()
+```
+
+## Implementation Guidelines
+
+When implementing documentation:
+
+1. **Start with why** - Explain purpose before details
+2. **Focus on non-obvious** - Document what can't be inferred from code
+3. **Be concise** - Use simple language, avoid redundancy
+4. **Keep updated** - Treat documentation changes as code changes
+5. **Document exceptions** - Explain error cases and recovery
+6. **Context over implementation** - Prioritize explaining reasoning
+
+## Success Indicators
+
+### Effective Documentation
+
+- New team members can understand component purpose quickly
+- Documentation answers "why" questions before they're asked
+- Maintenance can be performed without extensive archeology
+- Module responsibilities and boundaries are clear
+
+### Poor Documentation
+
+- Documentation merely repeats what code already shows
+- Missing context for business rules or domain constraints
+- No explanation for non-obvious design decisions
+- Outdated information that contradicts implementation
+
+## Related Files and Backlinks
+
+These workflows and guidelines reference the documentation standards:
+
+- [Quick Tasks Workflow](mdc:.cursor/rules/workflows/01-quick-tasks.mdc)
+- [Code Modification Workflow](mdc:.cursor/rules/workflows/02-code-modification.mdc)
+- [Documentation-Driven Workflow](mdc:.cursor/rules/workflows/03-documentation-driven.mdc)
+- [Task Decomposition Workflow](mdc:.cursor/rules/workflows/04-task-decomposition.mdc)
+- [Documentation Refactoring Workflow](mdc:.cursor/rules/workflows/05-documentation-refactoring.mdc)
+- [DSS Maintenance Guidelines](mdc:.cursor/rules/guidelines/01-dss-maintenance.mdc)
+
+

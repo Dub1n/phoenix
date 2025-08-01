@@ -1,0 +1,197 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+---
+tags: [Maintenance, Automation, File Management, Cross References, Validation]
+provides: [Maintenance Triggers, Validation Rules, Reference Management, Dependency Tracking, Error Recovery]
+requires: [DSS Core Structure and Concepts, Template Patterns]
+---
+# DSS Maintenance Guidelines
+
+## Automatic Maintenance Behaviors
+
+These maintenance actions are automatically triggered during all workflows:
+
+### File Creation Triggers
+- **New file created** → Add appropriate frontmatter with tags/provides/requires
+- **Template used** → Ensure template structure and conventions followed
+- **Code file added** → Include proper imports, docstrings, and structure following [documentation standards](mdc:.cursor/rules/guidelines/11-documentation-standards.mdc)
+- **Documentation created** → Add cross-references and navigation links
+
+### File Modification Triggers
+- **File moved/renamed** → Update cross-references in documentation
+- **Dependencies changed** → Update provides/requires metadata
+- **API modified** → Update related documentation and examples
+- **Structure changed** → Update [INDEX.md](mdc:INDEX.md) to reflect changes
+
+### Documentation Maintenance
+- **Links added** → Validate link targets exist and are accessible
+- **Cross-references updated** → Ensure bidirectional linking where appropriate
+- **Tables modified** → Run [meta/scripts/prettify_md.ps1](mdc:meta/scripts/prettify_md.ps1) for consistent formatting
+- **Documentation outdated** → Suggest updates or corrections
+- **Code documentation updated** → Ensure compliance with [documentation standards](mdc:.cursor/rules/guidelines/11-documentation-standards.mdc)
+
+## Frontmatter Validation Rules
+
+### Required Fields Validation
+```yaml
+# Every file must have:
+tags: [at_least_one_tag]           # Categorization
+provides: [what_this_provides]     # What this file offers
+requires: [what_this_needs]        # Dependencies
+```
+
+### Optional Fields Standards
+```yaml
+# Recommended for important files:
+status: [draft|active|deprecated]  # Current state
+priority: [low|medium|high]        # Importance level
+version: "x.y.z"                   # Version if applicable
+```
+
+### Validation Triggers
+- **File saved** → Check frontmatter syntax and required fields
+- **Provides/requires changed** → Validate dependency relationships
+- **Tags modified** → Ensure tags follow project conventions
+- **Status updated** → Check for consistency with file content
+
+## Cross-Reference Management
+
+### Link Validation
+- **MDC links** → Verify `mdc:path/to/file` targets exist
+- **Internal references** → Check section headers and anchors
+- **External links** → Validate accessibility (when possible)
+- **Broken links** → Report and suggest corrections
+
+### Reference Updates
+- **File renamed** → Update all references to old filename
+- **Section moved** → Update anchor links and references
+- **File deleted** → Identify and fix orphaned references
+- **Structure changed** → Update navigation and index files
+
+## Dependency Tracking
+
+### Provides/Requires Relationships
+- **New provides** → Check for potential consumers
+- **Requires added** → Validate provider exists
+- **Circular dependencies** → Detect and report cycles
+- **Unused provides** → Identify potential cleanup opportunities
+
+### Dependency Validation
+```yaml
+# Valid dependency patterns:
+requires: [module_name, interface_name, file_path]
+provides: [capability_name, api_interface, data_structure]
+
+# Invalid patterns to catch:
+requires: []                    # Empty requires (should be omitted)
+provides: [undefined_capability] # Provides something not implemented
+```
+
+## INDEX.md Maintenance
+
+### Update Triggers
+- **New major section added** → Add to main navigation
+- **File structure changed** → Reflect new organization
+- **Important files created** → Add to relevant sections
+- **Documentation reorganized** → Update section descriptions
+
+### INDEX.md Structure Standards
+```markdown
+# Project Index
+
+## Quick Navigation
+- [Core Documentation](mdc:#core-documentation)
+- [Source Code](mdc:#source-code)
+- [Development](mdc:#development)
+
+## Core Documentation
+- [Main Guide](mdc:docs/main_guide.md) - Primary project documentation
+- [API Reference](mdc:docs/api_reference.md) - Complete API documentation
+
+## Source Code
+- [Main Module](mdc:src/main_module.py) - Core functionality
+- [Utilities](mdc:src/utils) - Helper functions and utilities
+
+## Development
+- [Contributing](mdc:docs/contributing.md) - How to contribute
+- [Development Setup](mdc:docs/development_setup.md) - Local development
+```
+
+## Error Handling and Recovery
+
+### Common Issues and Fixes
+- **Missing frontmatter** → Add template frontmatter with placeholders
+- **Broken links** → Update to correct paths or mark as TODO
+- **Circular dependencies** → Suggest refactoring to break cycles
+- **Inconsistent formatting** → Apply project formatting standards
+
+### Recovery Procedures
+1. **Backup before changes** → Preserve original content
+2. **Incremental fixes** → Apply one fix at a time
+3. **Validation after changes** → Verify fixes don't break other things
+4. **Documentation of changes** → Record what was fixed and why
+
+## Maintenance Scheduling
+
+### Immediate (During Workflow)
+- Frontmatter validation
+- Link checking for modified files
+- Cross-reference updates
+- Template compliance
+
+### Periodic (Weekly/Monthly)
+- Full link validation across project
+- Dependency graph analysis
+- Unused file identification
+- Documentation freshness review
+
+### On-Demand (When Requested)
+- Complete project restructuring
+- Mass frontmatter updates
+- Link cleanup and optimization
+- Template migration
+
+## Integration with Workflows
+
+### [Quick Tasks](mdc:.cursor/rules/workflows/01-quick-tasks.mdc)
+- Essential maintenance only
+- Frontmatter updates
+- Basic link validation
+
+### [Code Modification](mdc:.cursor/rules/workflows/02-code-modification.mdc)
+- Full dependency tracking
+- API documentation updates
+- Test file maintenance
+- Architecture documentation sync
+
+### [Documentation-Driven](mdc:.cursor/rules/workflows/03-documentation-driven.mdc)
+- Comprehensive cross-linking
+- Template compliance
+- Navigation updates
+- Content organization
+
+### [Documentation Refactoring](mdc:.cursor/rules/workflows/05-documentation-refactoring.mdc)
+- Mass link updates
+- Consistency enforcement
+- Structure validation
+- Cross-reference optimization
+
+### [Task Decomposition](mdc:.cursor/rules/workflows/04-task-decomposition.mdc)
+- Maintenance task breakdown
+- Progress tracking integration
+- Dependency validation
+- Cleanup scheduling
+
+### [GitHub Issues Integration](mdc:.cursor/rules/workflows/06-github-issues-integration.mdc)
+- Issue-driven maintenance
+- Community feedback integration
+- Pattern-based improvements
+- Automated reporting
+
+
+
+
+

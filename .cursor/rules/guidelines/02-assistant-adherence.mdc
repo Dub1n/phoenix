@@ -1,0 +1,94 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+---
+tags: [Assistant, Guidelines, Process, Adherence, Internal, Workflow]
+provides: [Adherence Process, Guideline Activation, Maintenance Priority, Documentation Standards]
+requires: [DSS Core Structure and Concepts, Riley Personality Definition, Workflow Selection Logic]
+---
+# Assistant Guideline Adherence Commitment
+
+## Structured Internal Process
+
+To ensure consistent adherence to DSS operating instructions and guidelines, I commit to the following structured internal checklist for each user prompt:
+
+### Core Process Steps
+
+1. **Understand Prompt**: Fully comprehend the user's request or instruction
+2. **Gather Context**: Access and process relevant information from:
+   - Current file and attached files
+   - Project structure ([INDEX.md](mdc:INDEX.md))
+   - Conversation history
+   - DSS rules and guidelines
+
+3. **Identify Applicable Guidelines**: Determine which instructions are pertinent:
+   - Core DSS rules ([00-dss-core.mdc](mdc:.cursor/rules/00-dss-core.mdc), [01-dss-behavior.mdc](mdc:.cursor/rules/01-dss-behavior.mdc))
+   - Relevant workflows from workflows/ directory
+   - Specific guidelines from guidelines/ directory
+   - Configuration from config/ directory
+
+4. **Plan & Cross-Reference**: Develop a plan that explicitly references:
+   - Necessary workflow steps (quick tasks, code modification, etc.)
+   - Maintenance tasks (updating TODOs, roadmap, frontmatter, links)
+   - Template usage from available templates
+   - Validation requirements
+
+5. **Execute & Integrate**: Perform planned actions ensuring:
+   - Documentation updates are integrated into execution flow
+   - Maintenance tasks are completed as part of the work
+   - DSS conventions are followed throughout
+
+6. **Review & Verify**: Check outcomes against:
+   - Prompt requirements
+   - Applicable guidelines  
+   - DSS standards and conventions
+
+7. **Respond**: Formulate clear and comprehensive response to user
+
+### Contextual Guideline Activation
+
+I will actively recognize conversational triggers that indicate relevance of specific guidelines:
+
+- **Assistant capabilities/improvements** → Consult [development queue](mdc:.cursor/rules/workflows/07-development-queue.mdc) and guidelines
+- **Documentation structure/indexing** → Apply [folder README policy](mdc:.cursor/rules/guidelines/07-folder-readme-policy.mdc) and [backlink conventions](mdc:.cursor/rules/guidelines/06-backlink-conventions.mdc)  
+- **Task tracking/project status** → Use [task decomposition](mdc:.cursor/rules/workflows/04-task-decomposition.mdc) and project management guidelines
+- **File naming/organization** → Apply [naming conventions](mdc:.cursor/rules/guidelines/03-naming-conventions.mdc) and [validation rules](mdc:.cursor/rules/guidelines/04-validation-rules.mdc)
+- **GitHub Issues** → Use [issue label conventions](mdc:.cursor/rules/guidelines/08-github-issue-labels.mdc) and [development queue workflows](mdc:.cursor/rules/workflows/07-development-queue.mdc)
+
+### Proactive Guideline Check
+
+Before generating responses or executing tool calls, I will:
+- Perform explicit internal check for all relevant DSS instructions
+- Identify applicable guidelines from the full rules structure
+- Ensure integrated documentation maintenance is planned
+
+### Documentation Maintenance Priority
+
+I will treat updates to relevant documentation as integral parts of fulfilling requests:
+- Update [INDEX.md](mdc:INDEX.md) for structural changes
+- Maintain frontmatter following [validation rules](mdc:.cursor/rules/guidelines/04-validation-rules.mdc)
+- Apply naming conventions consistently
+- Update cross-references and backlinks
+- Follow tag conventions
+
+### Handling Ambiguity
+
+In cases of uncertainty:
+- Seek clarification from user or consult other DSS documentation
+- Propose updates to rules if conflicts are identified
+- Prioritize core DSS documentation integrity
+
+### Core Documentation Priority
+
+Internal prioritization for maintaining accuracy and integrity of:
+- [INDEX.md](mdc:INDEX.md) - Project navigation and structure
+- Workflow files - Process consistency
+- Guidelines - Convention adherence  
+- Core rules - Fundamental DSS principles
+
+
+
+
+

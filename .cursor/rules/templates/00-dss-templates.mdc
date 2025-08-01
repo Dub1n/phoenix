@@ -1,0 +1,242 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+---
+tags: [Templates, Guidelines, Code Patterns, Documentation Standards, Frontmatter]
+provides: [Template Patterns, Code Templates, Documentation Templates, Frontmatter Standards, Template Selection Guidelines]
+requires: [DSS Core Structure and Concepts]
+---
+# DSS Templates Guidelines
+
+## Template-First Approach
+
+Before creating any new file, always:
+1. Check [.cursor/rules/config/templates/](mdc:.cursor/rules/config/templates) for existing template
+2. Use template if available, customize for specific use case
+3. Follow template frontmatter patterns
+4. Maintain template structure and conventions
+
+## Core Template Patterns
+
+### Python Module Template
+```python
+"""
+Module description here.
+
+This module provides [key functionality].
+"""
+
+# Standard library imports
+import os
+import sys
+
+# Third-party imports
+import requests
+
+# Local imports
+from .utils import helper_function
+
+# Module-level constants
+DEFAULT_CONFIG = {
+    "setting": "value"
+}
+
+class MainClass:
+    """Main class for [functionality]."""
+    
+    def __init__(self, config=None):
+        """Initialize with optional configuration."""
+        self.config = config or DEFAULT_CONFIG
+    
+    def main_method(self):
+        """Primary method for [specific task]."""
+        pass
+
+def utility_function():
+    """Utility function for [specific purpose]."""
+    pass
+
+if __name__ == "__main__":
+    # Example usage
+    instance = MainClass()
+    instance.main_method()
+```
+
+### TypeScript Module Template
+```typescript
+/**
+ * Module description here.
+ * 
+ * This module provides [key functionality].
+ */
+
+// Type definitions
+interface Config {
+  setting: string;
+  enabled: boolean;
+}
+
+interface Result {
+  success: boolean;
+  data?: any;
+  error?: string;
+}
+
+// Default configuration
+const DEFAULT_CONFIG: Config = {
+  setting: "default",
+  enabled: true
+};
+
+/**
+ * Main class for [functionality].
+ */
+export class MainClass {
+  private config: Config;
+  
+  constructor(config?: Partial<Config>) {
+    this.config = { ...DEFAULT_CONFIG, ...config };
+  }
+  
+  /**
+   * Primary method for [specific task].
+   */
+  public async mainMethod(): Promise<Result> {
+    try {
+      // Implementation here
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  }
+}
+
+/**
+ * Utility function for [specific purpose].
+ */
+export function utilityFunction(): void {
+  // Implementation here
+}
+```
+
+### Documentation Template
+```markdown
+---
+tags: [category, subcategory, specific_tags]
+provides: [what_this_document_provides]
+requires: [dependencies_or_prerequisites]
+status: [draft|active|deprecated]
+priority: [low|medium|high]
+---
+
+# Document Title
+
+Brief description of what this document covers and its purpose.
+
+## Overview
+
+High-level summary of the content and its context within the project.
+
+## Prerequisites
+
+- List any required knowledge
+- Dependencies that must be installed
+- Other documents that should be read first
+
+## Main Content
+
+### Section 1: [Topic]
+
+Detailed explanation with examples.
+
+```language
+code examples here
+```
+
+### Section 2: [Topic]
+
+More detailed content.
+
+## Examples
+
+Practical examples showing how to use or implement the concepts.
+
+## Related Documentation
+
+- [Related Doc 1](mdc:path/to/doc1.md)
+- [Related Doc 2](mdc:path/to/doc2.md)
+
+## Troubleshooting
+
+Common issues and their solutions.
+```
+
+## Frontmatter Standards
+
+### Required Fields
+- **tags**: Array of descriptive tags for categorization
+- **provides**: Array of capabilities/interfaces this file provides
+- **requires**: Array of dependencies this file needs
+
+### Optional Fields
+- **status**: Current state (draft, active, deprecated)
+- **priority**: Importance level (low, medium, high)
+- **version**: Version number if applicable
+- **author**: Creator information
+- **last_updated**: Date of last significant update
+
+### Example Frontmatter
+```yaml
+---
+tags: [authentication, security, api, backend]
+provides: [jwt_authentication, user_validation, token_management]
+requires: [crypto_utils, user_models, database_connection]
+status: active
+priority: high
+version: "2.1.0"
+---
+```
+
+## Template Selection Guidelines
+
+### When to Use Python Template
+- Creating new Python modules or scripts
+- Building data processing pipelines
+- Implementing backend services
+- Creating utility functions
+
+### When to Use TypeScript Template
+- Frontend components or services
+- API client implementations
+- Node.js backend services
+- Type-safe utility libraries
+
+### When to Use Documentation Template
+- Feature specifications
+- API documentation
+- User guides
+- Technical design documents
+- Process documentation
+
+## Customization Guidelines
+
+### Adapting Templates
+1. **Keep the structure**: Maintain the overall organization
+2. **Update placeholders**: Replace [bracketed] content with specifics
+3. **Preserve frontmatter**: Keep required YAML fields
+4. **Follow naming conventions**: Use project naming standards
+5. **Add project-specific sections**: Include any standard project sections
+
+### Template Maintenance
+- Update templates when patterns change
+- Add new templates for emerging patterns
+- Deprecate outdated templates gracefully
+- Document template changes in version history
+
+
+
+
+
+

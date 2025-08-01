@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(dir:*)",
+      "Bash(ls:*)",
+      "Bash(find:*)",
+      "Bash(cp:*)",
+      "Bash(rm:*)",
+      "Bash(mkdir:*)",
+      "Bash(cat:*)",
+      "Bash(mv:*)",
+      "Bash(echo:*)",
+      "Bash(pwd)",
+      "Bash(whoami)",
+      "Bash(date)",
+      "Bash(which:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(wc:*)",
+      "Bash(sort:*)",
+      "Bash(uniq:*)",
+      "Bash(grep:*)",
+      "Bash(sed:*)",
+      "Bash(awk:*)",
+      "Bash(ps:*)",
+      "Bash(tar:*)",
+      "Bash(zip:*)",
+      "Bash(unzip:*)",
+      "Bash(npm:*)",
+      "Bash(yarn:*)",
+      "Bash(node:*)",
+      "Bash(npx:*)",
+      "Bash(tsc:*)",
+      "Bash(jest:*)",
+      "Bash(eslint:*)",
+      "Bash(prettier:*)",
+      "Bash(git:*)",
+      "Bash(curl:*)",
+      "Bash(wget:*)",
+      "Bash(python:*)",
+      "Bash(python3:*)",
+      "Bash(pip:*)",
+      "Bash(pip3:*)",
+      "Bash(code:*)",
+      "Bash(nano:*)",
+      "Bash(vim:*)",
+      "Bash(touch:*)",
+      "Bash(chmod:*)",
+      "Bash(tree:*)",
+      "Bash(diff:*)",
+      "Bash(patch:*)",
+      "Bash(jq:*)",
+      "Bash(timeout:*)",
+      "Bash(sleep:*)",
+      "WebFetch(domain:docs.anthropic.com)",
+      "WebFetch(domain:nodejs.org)",
+      "WebFetch(domain:npmjs.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:typescript-lang.org)",
+      "WebFetch(domain:jestjs.io)",
+      "WebFetch(domain:eslint.org)",
+      "WebFetch(domain:prettier.io)",
+      "WebFetch(domain:zod.dev)",
+      "WebFetch(domain:stackoverflow.com)",
+      "WebFetch(domain:developer.mozilla.org)",
+      "Bash(npm run build:*)",
+      "Bash(npm test)",
+      "Bash(npm run lint)",
+      "Bash(npm install:*)",
+      "Bash(npm test:*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "CLAUDE_HOOK_TYPE=PreToolUse python ~/.claude/hooks/memory_sync.py"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|MultiEdit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python ~/.claude/hooks/type_check.py"
+          },
+          {
+            "type": "command",
+            "command": "CLAUDE_HOOK_TYPE=PostToolUse python ~/.claude/hooks/memory_sync.py"
+          }
+        ]
+      }
+    ]
+  }
+}

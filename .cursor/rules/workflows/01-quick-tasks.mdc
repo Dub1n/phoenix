@@ -1,0 +1,51 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+---
+tags: [Workflow, Quick Tasks, Simple Changes, Atomic Operations]
+provides: [Quick Task Process, Simple Change Guidelines]
+requires: [Workflow Selection Logic]
+---
+# Quick Tasks Workflow
+
+**For**: Simple, atomic tasks requiring minimal complexity
+
+## Criteria
+ALL must be met:
+- **Scope**: Changes to at most 1-2 files
+- **Complexity**: Single interaction completion
+- **Risk**: Low potential for errors or breakage
+- **Dependencies**: Minimal or no dependencies
+- **Documentation Impact**: Minimal updates required
+
+## Process
+Make change → Update metadata → Done
+
+## Examples
+- Text corrections
+- Simple tags
+- Minor fixes  
+- TODO additions
+- Template-based file creation
+
+## Execution Guidelines (1-2 steps)
+1. **Quick Assessment**: Verify all criteria met
+2. **Minimal Context**: Read only directly relevant files
+3. **Focused Execution**: Avoid scope creep
+4. **Essential Maintenance**: Only critical updates
+5. **Add Basic Documentation**: Apply [minimal documentation standards](mdc:.cursor/rules/guidelines/11-documentation-standards.mdc) for any new code
+6. **Quick Verification**: Check specific change only
+
+## When to Escalate
+- **→ [Code Modification](mdc:.cursor/rules/workflows/02-code-modification.mdc)**: Task affects more files than assessed
+- **→ [Documentation-Driven](mdc:.cursor/rules/workflows/03-documentation-driven.mdc)**: Significant documentation needed
+- **→ [Task Decomposition](mdc:.cursor/rules/workflows/04-task-decomposition.mdc)**: Task more complex than initially assessed
+
+## Related Guidelines
+- [Documentation Standards](mdc:.cursor/rules/guidelines/11-documentation-standards.mdc)
+
+
+
+

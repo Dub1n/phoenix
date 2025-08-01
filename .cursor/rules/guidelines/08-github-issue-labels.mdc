@@ -1,0 +1,91 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+---
+tags: [GitHub, Issues, Labels, Project Management, Automation]
+provides: [Issue Label Conventions, Label Categories, Automated Labeling]
+requires: [DSS Core Structure and Concepts]
+---
+# GitHub Issue Label Conventions
+
+## Overview
+Standardized GitHub issue labels for categorizing, prioritizing, and tracking issues efficiently.
+
+## Label Categories
+
+### 1. Installation Report Labels
+For DSS installation reports:
+
+| Label | Description | Color |
+|-------|-------------|-------|
+| `installation-report` | Reports from DSS installations | #0E8A16 |
+| `platform-windows` | Issues specific to Windows platforms | #0052CC |
+| `platform-linux` | Issues specific to Linux platforms | #22863a |
+| `platform-macos` | Issues specific to macOS platforms | #d93f0b |
+| `project-android_wearos` | WearOS project related issues | #c5def5 |
+| `project-android_kotlin` | Android Kotlin project related issues | #6f42c1 |
+| `project-android_java` | Android Java project related issues | #1d76db |
+| `project-data_science` | Data science project related issues | #fbca04 |
+| `project-web_application` | Web application project related issues | #0366d6 |
+| `project-python_package` | Python package project related issues | #5319e7 |
+| `project-documentation` | Documentation project related issues | #0075ca |
+| `project-general` | General project related issues | #bfdadc |
+
+### 2. Priority Labels
+Indicate urgency of addressing an issue:
+
+| Label | Description | Color |
+|-------|-------------|-------|
+| `priority-critical` | Must be fixed as soon as possible | #b60205 |
+| `priority-high` | Should be fixed in the next release | #d93f0b |
+| `priority-medium` | Should be fixed in a future release | #fbca04 |
+| `priority-low` | Fix when convenient | #c2e0c6 |
+
+### 3. Status Labels
+Indicate current state of an issue:
+
+| Label | Description | Color |
+|-------|-------------|-------|
+| `status-blocked` | Blocked by another issue or external factor | #b60205 |
+| `status-in-progress` | Work in progress | #0e8a16 |
+| `status-needs-review` | Ready for review | #fbca04 |
+| `status-needs-testing` | Needs testing before merge | #d4c5f9 |
+
+### 4. Type Labels
+Indicate nature of the issue:
+
+| Label | Description | Color |
+|-------|-------------|-------|
+| `bug` | Something isn't working | #d73a4a |
+| `enhancement` | New feature or request | #a2eeef |
+| `documentation` | Improvements or additions to documentation | #0075ca |
+| `question` | Further information is requested | #d876e3 |
+| `type-feature` | New feature implementation | #0075ca |
+| `type-bugfix` | Fix for a bug | #d73a4a |
+| `type-refactor` | Code refactoring without functional changes | #6f42c1 |
+| `type-performance` | Performance improvements | #5319e7 |
+| `type-security` | Security-related issues | #b60205 |
+| `type-maintenance` | Repository maintenance and housekeeping | #bfdadc |
+| `type-tests` | Test-related changes | #c5def5 |
+
+### 5. Component Labels
+Indicate which part of the system is affected:
+
+| Label | Description | Color |
+|-------|-------------|-------|
+| `component-ui` | User interface related issues | #c2e0c6 |
+| `component-api` | API related issues | #0366d6 |
+| `component-docs` | Documentation component issues | #0075ca |
+| `component-infrastructure` | Infrastructure and CI/CD issues | #5319e7 |
+
+## Label Usage Guidelines
+
+1. **Use Multiple Categories**: Most issues should have at least one Type label and can include others as appropriate
+
+2. **Installation Reports**: The [dss_bootstrap.py](mdc:dss_bootstrap.py) script automatically applies:
+   - `installation-report`
+
+
+   - Platform-specific label (e.g., `

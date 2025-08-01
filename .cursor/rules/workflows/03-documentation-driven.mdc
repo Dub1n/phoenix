@@ -1,0 +1,54 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+---
+tags: [Workflow, Documentation Driven, Planning, Specification, Templates]
+provides: [Documentation First Process, Planning Guidelines, Template Usage]
+requires: [Workflow Selection Logic, Template Patterns]
+---
+# Documentation-Driven Development Workflow
+
+**For**: Documentation-first or planning-heavy tasks
+
+## Criteria
+MOST must be met:
+- **Documentation Focus**: Primary deliverable is documentation
+- **Planning Requirement**: Benefits from specification before implementation
+- **Communication Need**: Clarifies requirements with stakeholders
+- **Implementation Uncertainty**: Code details unclear, docs help define
+- **Template Availability**: Appropriate templates exist
+
+## Process
+Analyze structure → Generate following patterns → Cross-link
+
+## Examples
+- Feature specifications
+- Integration guides
+- API documentation
+- Workflow documentation
+- Design documents
+
+## Execution Guidelines (5 steps)
+1. **Create New Documentation File**: Check [templates](mdc:.cursor/rules/guidelines/00-dss-templates.mdc) first
+2. **Add Initial Structure & Frontmatter**: Use [template](mdc:.cursor/rules/guidelines/00-dss-templates.mdc), proper [YAML](mdc:.cursor/rules/guidelines/04-validation-rules.mdc)
+3. **Develop Comprehensive Content**: Detailed content with examples
+4. **Define Code Documentation Standards**: Establish [documentation requirements](mdc:.cursor/rules/guidelines/11-documentation-standards.mdc) for implementation
+5. **Generate Code Stubs (Optional)**: Based on documentation if applicable
+6. **Refine and Integrate**: Review and potentially transition to [Code Modification](mdc:.cursor/rules/workflows/02-code-modification.mdc)
+
+## When to Transition
+- **→ [Code Modification](mdc:.cursor/rules/workflows/02-code-modification.mdc)**: Moving from docs to implementation
+
+## When to De-escalate
+- **→ [Quick Tasks](mdc:.cursor/rules/workflows/01-quick-tasks.mdc)**: Task simpler than initially assessed
+
+## Related Guidelines
+- [Documentation Standards](mdc:.cursor/rules/guidelines/11-documentation-standards.mdc)
+- [Templates](mdc:.cursor/rules/guidelines/00-dss-templates.mdc)
+- [Validation Rules](mdc:.cursor/rules/guidelines/04-validation-rules.mdc)
+
+
+
+
