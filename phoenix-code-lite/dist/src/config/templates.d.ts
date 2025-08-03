@@ -12,6 +12,7 @@ export interface TemplateMetadata {
 export declare class ConfigurationTemplates {
     static getStarterTemplate(): Partial<PhoenixCodeLiteConfigData>;
     static getEnterpriseTemplate(): Partial<PhoenixCodeLiteConfigData>;
+    static getStackSpecificTemplate(framework: string, language: string): Partial<PhoenixCodeLiteConfigData>;
     static getPerformanceTemplate(): Partial<PhoenixCodeLiteConfigData>;
     static getTemplateList(): TemplateMetadata[];
     static getTemplateByName(name: string): Partial<PhoenixCodeLiteConfigData> | null;

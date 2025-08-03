@@ -92,6 +92,135 @@ class ConfigurationTemplates {
             },
         };
     }
+    static getStackSpecificTemplate(framework, language) {
+        // Start with a complete base template to avoid undefined issues
+        let baseTemplate;
+        // React-specific optimizations
+        if (framework === 'React') {
+            baseTemplate = this.getStarterTemplate();
+            return {
+                ...baseTemplate,
+                claude: {
+                    maxTurns: 4,
+                    timeout: 240000,
+                    retryAttempts: 3,
+                    model: 'claude-3-5-sonnet-20241022',
+                },
+                tdd: {
+                    maxImplementationAttempts: 4,
+                    testQualityThreshold: 0.85,
+                    enableRefactoring: true,
+                    skipDocumentation: false,
+                    qualityGates: {
+                        enabled: true,
+                        strictMode: false,
+                        thresholds: {
+                            syntaxValidation: 1.0,
+                            testCoverage: 0.8,
+                            codeQuality: 0.8,
+                            documentation: 0.7,
+                        },
+                        weights: {
+                            syntaxValidation: 1.0,
+                            testCoverage: 0.8,
+                            codeQuality: 0.6,
+                            documentation: 0.4,
+                        },
+                    },
+                },
+                quality: {
+                    minTestCoverage: 0.8,
+                    maxComplexity: 8,
+                    requireDocumentation: true,
+                    enforceStrictMode: false,
+                },
+            };
+        }
+        // Express.js-specific optimizations
+        if (framework === 'Express.js') {
+            baseTemplate = this.getEnterpriseTemplate();
+            return {
+                ...baseTemplate,
+                claude: {
+                    maxTurns: 5,
+                    timeout: 360000,
+                    retryAttempts: 3,
+                    model: 'claude-3-5-sonnet-20241022',
+                },
+                tdd: {
+                    maxImplementationAttempts: 5,
+                    testQualityThreshold: 0.9,
+                    enableRefactoring: true,
+                    skipDocumentation: false,
+                    qualityGates: {
+                        enabled: true,
+                        strictMode: true,
+                        thresholds: {
+                            syntaxValidation: 1.0,
+                            testCoverage: 0.85,
+                            codeQuality: 0.85,
+                            documentation: 0.8,
+                        },
+                        weights: {
+                            syntaxValidation: 1.0,
+                            testCoverage: 0.9,
+                            codeQuality: 0.8,
+                            documentation: 0.6,
+                        },
+                    },
+                },
+                quality: {
+                    minTestCoverage: 0.85,
+                    maxComplexity: 10,
+                    requireDocumentation: true,
+                    enforceStrictMode: true,
+                },
+            };
+        }
+        // TypeScript-specific adjustments - enhance existing template
+        if (language === 'typescript') {
+            baseTemplate = this.getStarterTemplate();
+            return {
+                ...baseTemplate,
+                claude: {
+                    maxTurns: 3,
+                    timeout: 200000,
+                    retryAttempts: 3,
+                    model: 'claude-3-5-sonnet-20241022',
+                },
+                tdd: {
+                    maxImplementationAttempts: 3,
+                    testQualityThreshold: 0.8,
+                    enableRefactoring: true,
+                    skipDocumentation: false,
+                    qualityGates: {
+                        enabled: true,
+                        strictMode: false,
+                        thresholds: {
+                            syntaxValidation: 1.0,
+                            testCoverage: 0.75,
+                            codeQuality: 0.75,
+                            documentation: 0.6,
+                        },
+                        weights: {
+                            syntaxValidation: 1.0,
+                            testCoverage: 0.8,
+                            codeQuality: 0.7,
+                            documentation: 0.5,
+                        },
+                    },
+                },
+                quality: {
+                    minTestCoverage: 0.75,
+                    maxComplexity: 8,
+                    requireDocumentation: true,
+                    enforceStrictMode: false,
+                },
+            };
+        }
+        // Default to starter template
+        return this.getStarterTemplate();
+    }
     static getPerformanceTemplate() {
         return {
             claude: {

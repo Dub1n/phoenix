@@ -8,7 +8,7 @@ export interface ConfigurationWizardAnswers {
   projectType: 'web' | 'api' | 'library' | 'cli';
   language: 'javascript' | 'typescript' | 'python';
   framework?: string;
-  qualityLevel: 'starter' | 'professional' | 'enterprise';
+  qualityLevel: 'starter' | 'professional' | 'enterprise' | 'performance';
   enableAdvancedFeatures: boolean;
 }
 

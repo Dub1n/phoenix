@@ -8,7 +8,7 @@ const zod_1 = require("zod");
 exports.AgentConfigSchema = zod_1.z.object({
     enabled: zod_1.z.boolean().default(true),
     priority: zod_1.z.number().min(0).max(1).default(0.8),
-    timeout: zod_1.z.number().min(1000).max(600000).default(30000), // 30 seconds
+    timeout: zod_1.z.number().min(1000).max(1800000).default(30000), // 30 seconds
     retryAttempts: zod_1.z.number().min(1).max(5).default(2),
     customPrompts: zod_1.z.record(zod_1.z.string(), zod_1.z.string()).optional(),
 });

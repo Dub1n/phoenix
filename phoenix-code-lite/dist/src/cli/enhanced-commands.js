@@ -117,17 +117,41 @@ async function wizardCommand() {
         console.log(gradient.default.pastel.multiline(figlet.default.textSync('Setup', { font: 'Small' })));
     }
     catch (error) {
-        console.log(chalk_1.default.blue('Phoenix Code-Lite Setup Wizard'));
+        console.log(chalk_1.default.blue('Phoenix Code-Lite Enhanced Setup Wizard'));
     }
-    const prompts = new interactive_1.InteractivePrompts();
-    const answers = await prompts.runConfigurationWizard();
-    // Generate configuration based on wizard answers
-    const configTemplate = generateConfigFromWizard(answers);
-    // Apply configuration
-    const fs = await Promise.resolve().then(() => __importStar(require('fs/promises')));
-    await fs.writeFile('.phoenix-code-lite.json', JSON.stringify(configTemplate, null, 2));
-    console.log(chalk_1.default.green('\n✓ Configuration created successfully!'));
-    console.log(chalk_1.default.gray('Run "phoenix-code-lite generate --task \'your task\'" to get started.'));
+    const { EnhancedWizard } = await Promise.resolve().then(() => __importStar(require('./enhanced-wizard')));
+    const wizard = new EnhancedWizard();
+    try {
+        const answers = await wizard.runEnhancedWizard({
+            projectPath: process.cwd(),
+            verbose: false
+        });
+        // Generate configuration based on enhanced wizard answers
+        const configTemplate = wizard.generateConfiguration(answers);
+        // Apply configuration
+        const fs = await Promise.resolve().then(() => __importStar(require('fs/promises')));
+        await fs.writeFile('.phoenix-code-lite.json', JSON.stringify(configTemplate, null, 2));
+        console.log(chalk_1.default.green('\n✅ Enhanced configuration created successfully!'));
+        // Show discovery summary if available
+        if (answers.discoveredContext && answers.useDiscoveredSettings) {
+            console.log(chalk_1.default.cyan('\n📊 Applied smart defaults based on project analysis:'));
+            console.log(chalk_1.default.gray(`  • Detected: ${answers.discoveredContext.language} ${answers.discoveredContext.framework ? `with ${answers.discoveredContext.framework}` : ''}`));
+            console.log(chalk_1.default.gray(`  • Template: ${answers.qualityLevel}`));
+            console.log(chalk_1.default.gray(`  • Confidence: ${Math.round(answers.discoveredContext.confidence * 100)}%`));
+        }
+        console.log(chalk_1.default.gray('\nRun "phoenix-code-lite generate --task \'your task\'" to get started.'));
+        console.log(chalk_1.default.dim('Use "phoenix-code-lite config" to modify settings anytime.'));
+    }
+    catch (error) {
+        if (error instanceof Error && error.message.includes('cancelled')) {
+            console.log(chalk_1.default.yellow('\n⚠️ Setup wizard cancelled by user.'));
+            console.log(chalk_1.default.gray('You can run "phoenix-code-lite wizard" again anytime.'));
+        }
+        else {
+            console.error(chalk_1.default.red('\n❌ Setup wizard failed:'), error);
+            console.log(chalk_1.default.gray('Please try again or check the error message above.'));
+        }
+    }
 }
 async function historyCommand(options) {
     const cli = new advanced_cli_1.AdvancedCLI();
@@ -164,52 +188,6 @@ async function executeWorkflowWithTracking(orchestrator, taskDescription, contex
     // Complete final phase
     tracker.completePhase(result.success);
     return result;
-}
-function generateConfigFromWizard(answers) {
-    const qualitySettings = {
-        starter: { testCoverage: 0.7, maxComplexity: 15, strictMode: false },
-        professional: { testCoverage: 0.8, maxComplexity: 10, strictMode: false },
-        enterprise: { testCoverage: 0.9, maxComplexity: 8, strictMode: true },
-    };
-    const settings = qualitySettings[answers.qualityLevel];
-    return {
-        version: '1.0.0',
-        projectType: answers.projectType,
-        language: answers.language,
-        framework: answers.framework,
-        claude: {
-            maxTurns: answers.qualityLevel === 'enterprise' ? 5 : 3,
-            timeout: 300000,
-            retryAttempts: 3,
-        },
-        tdd: {
-            maxImplementationAttempts: answers.qualityLevel === 'enterprise' ? 5 : 3,
-            testQualityThreshold: settings.testCoverage,
-            enableRefactoring: true,
-            skipDocumentation: false,
-            qualityGates: {
-                enabled: true,
-                strictMode: settings.strictMode,
-                thresholds: {
-                    syntaxValidation: 1.0,
-                    testCoverage: settings.testCoverage,
-                    codeQuality: settings.testCoverage - 0.1,
-                    documentation: answers.qualityLevel === 'enterprise' ? 0.8 : 0.6,
-                },
-            },
-        },
-        output: {
-            verbose: false,
-            showMetrics: answers.enableAdvancedFeatures,
-            saveArtifacts: true,
-        },
-        quality: {
-            minTestCoverage: settings.testCoverage,
-            maxComplexity: settings.maxComplexity,
-            requireDocumentation: answers.qualityLevel === 'enterprise',
-            enforceStrictMode: settings.strictMode,
-        },
-    };
 }
 // Session-based action executor
 async function executeSessionAction(action, data, context) {
