@@ -6,7 +6,7 @@ import { z } from 'zod';
 export const AgentConfigSchema = z.object({
   enabled: z.boolean().default(true),
   priority: z.number().min(0).max(1).default(0.8),
-  timeout: z.number().min(1000).max(600000).default(30000), // 30 seconds
+  timeout: z.number().min(1000).max(1800000).default(30000), // 30 seconds
   retryAttempts: z.number().min(1).max(5).default(2),
   customPrompts: z.record(z.string(), z.string()).optional(),
 });

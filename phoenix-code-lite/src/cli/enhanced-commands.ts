@@ -94,21 +94,47 @@ export async function wizardCommand(): Promise<void> {
     const gradient = await import('gradient-string');
     console.log(gradient.default.pastel.multiline(figlet.default.textSync('Setup', { font: 'Small' })));
   } catch (error) {
-    console.log(chalk.blue('Phoenix Code-Lite Setup Wizard'));
+    console.log(chalk.blue('Phoenix Code-Lite Enhanced Setup Wizard'));
   }
   
-  const prompts = new InteractivePrompts();
-  const answers = await prompts.runConfigurationWizard();
+  const { EnhancedWizard } = await import('./enhanced-wizard');
+  const wizard = new EnhancedWizard();
   
-  // Generate configuration based on wizard answers
-  const configTemplate = generateConfigFromWizard(answers);
-  
-  // Apply configuration
-  const fs = await import('fs/promises');
-  await fs.writeFile('.phoenix-code-lite.json', JSON.stringify(configTemplate, null, 2));
-  
-  console.log(chalk.green('\n✓ Configuration created successfully!'));
-  console.log(chalk.gray('Run "phoenix-code-lite generate --task \'your task\'" to get started.'));
+  try {
+    const answers = await wizard.runEnhancedWizard({
+      projectPath: process.cwd(),
+      verbose: false
+    });
+    
+    // Generate configuration based on enhanced wizard answers
+    const configTemplate = wizard.generateConfiguration(answers);
+    
+    // Apply configuration
+    const fs = await import('fs/promises');
+    await fs.writeFile('.phoenix-code-lite.json', JSON.stringify(configTemplate, null, 2));
+    
+    console.log(chalk.green('\n✅ Enhanced configuration created successfully!'));
+    
+    // Show discovery summary if available
+    if (answers.discoveredContext && answers.useDiscoveredSettings) {
+      console.log(chalk.cyan('\n📊 Applied smart defaults based on project analysis:'));
+      console.log(chalk.gray(`  • Detected: ${answers.discoveredContext.language} ${answers.discoveredContext.framework ? `with ${answers.discoveredContext.framework}` : ''}`));
+      console.log(chalk.gray(`  • Template: ${answers.qualityLevel}`));
+      console.log(chalk.gray(`  • Confidence: ${Math.round(answers.discoveredContext.confidence * 100)}%`));
+    }
+    
+    console.log(chalk.gray('\nRun "phoenix-code-lite generate --task \'your task\'" to get started.'));
+    console.log(chalk.dim('Use "phoenix-code-lite config" to modify settings anytime.'));
+    
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('cancelled')) {
+      console.log(chalk.yellow('\n⚠️ Setup wizard cancelled by user.'));
+      console.log(chalk.gray('You can run "phoenix-code-lite wizard" again anytime.'));
+    } else {
+      console.error(chalk.red('\n❌ Setup wizard failed:'), error);
+      console.log(chalk.gray('Please try again or check the error message above.'));
+    }
+  }
 }
 
 export async function historyCommand(options: any): Promise<void> {
@@ -161,54 +187,6 @@ async function executeWorkflowWithTracking(
   return result;
 }
 
-function generateConfigFromWizard(answers: any): any {
-  const qualitySettings = {
-    starter: { testCoverage: 0.7, maxComplexity: 15, strictMode: false },
-    professional: { testCoverage: 0.8, maxComplexity: 10, strictMode: false },
-    enterprise: { testCoverage: 0.9, maxComplexity: 8, strictMode: true },
-  };
-
-  const settings = qualitySettings[answers.qualityLevel as keyof typeof qualitySettings];
-
-  return {
-    version: '1.0.0',
-    projectType: answers.projectType,
-    language: answers.language,
-    framework: answers.framework,
-    claude: {
-      maxTurns: answers.qualityLevel === 'enterprise' ? 5 : 3,
-      timeout: 300000,
-      retryAttempts: 3,
-    },
-    tdd: {
-      maxImplementationAttempts: answers.qualityLevel === 'enterprise' ? 5 : 3,
-      testQualityThreshold: settings.testCoverage,
-      enableRefactoring: true,
-      skipDocumentation: false,
-      qualityGates: {
-        enabled: true,
-        strictMode: settings.strictMode,
-        thresholds: {
-          syntaxValidation: 1.0,
-          testCoverage: settings.testCoverage,
-          codeQuality: settings.testCoverage - 0.1,
-          documentation: answers.qualityLevel === 'enterprise' ? 0.8 : 0.6,
-        },
-      },
-    },
-    output: {
-      verbose: false,
-      showMetrics: answers.enableAdvancedFeatures,
-      saveArtifacts: true,
-    },
-    quality: {
-      minTestCoverage: settings.testCoverage,
-      maxComplexity: settings.maxComplexity,
-      requireDocumentation: answers.qualityLevel === 'enterprise',
-      enforceStrictMode: settings.strictMode,
-    },
-  };
-}
 
 // Session-based action executor
 export async function executeSessionAction(action: string, data: any, context: SessionContext): Promise<void> {
