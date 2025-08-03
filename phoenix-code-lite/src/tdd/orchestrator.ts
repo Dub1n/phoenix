@@ -5,6 +5,8 @@ import { RefactorDocumentPhase } from './phases/refactor-document';
 import { QualityGateManager, QualityGateReport } from './quality-gates';
 import { CodebaseScanner, CodebaseScanResult } from './codebase-scanner';
 import { TaskContext, WorkflowResult, PhaseResult } from '../types/workflow';
+import { AuditLogger } from '../utils/audit-logger';
+import { MetricsCollector } from '../utils/metrics';
 
 export class TDDOrchestrator {
   private claudeClient: ClaudeCodeClient;
@@ -13,6 +15,8 @@ export class TDDOrchestrator {
   private refactorDocumentPhase: RefactorDocumentPhase;
   private qualityGateManager: QualityGateManager;
   private codebaseScanner: CodebaseScanner;
+  private auditLogger: AuditLogger;
+  private metricsCollector: MetricsCollector;
   
   constructor(claudeClient: ClaudeCodeClient) {
     this.claudeClient = claudeClient;
@@ -21,9 +25,17 @@ export class TDDOrchestrator {
     this.refactorDocumentPhase = new RefactorDocumentPhase(claudeClient);
     this.qualityGateManager = new QualityGateManager();
     this.codebaseScanner = new CodebaseScanner(claudeClient);
+    
+    // Initialize audit logging and metrics
+    const sessionId = `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    this.auditLogger = new AuditLogger(sessionId);
+    this.metricsCollector = new MetricsCollector();
   }
   
   async executeWorkflow(taskDescription: string, context: TaskContext): Promise<WorkflowResult> {
+    // Log workflow start
+    await this.auditLogger.logWorkflowStart(taskDescription, context);
+    
     const workflow: WorkflowResult = {
       taskDescription,
       startTime: new Date(),
@@ -53,11 +65,14 @@ export class TDDOrchestrator {
       
       // Phase 1: Plan & Test with Quality Gates (Enhanced with Scan Results)
       console.log('📋 PHASE 1: Planning and generating tests...');
+      await this.auditLogger.logPhaseStart('plan-test', context);
+      
       const enhancedContext = { 
         ...context, 
         codebaseScan: codebaseScanResult 
       };
       const planResult = await this.planTestPhase.execute(taskDescription, enhancedContext);
+      await this.auditLogger.logPhaseEnd(planResult);
       
       // Run quality gates on planning phase
       const planQualityReport = await this.qualityGateManager.runQualityGates(
@@ -80,7 +95,9 @@ export class TDDOrchestrator {
       
       // Phase 2: Implement & Fix with Quality Gates (Enhanced with Scan Results)
       console.log('⚡ PHASE 2: Implementing code to pass tests...');
+      await this.auditLogger.logPhaseStart('implement-fix', context);
       const implementResult = await this.implementFixPhase.execute(planResult, enhancedContext);
+      await this.auditLogger.logPhaseEnd(implementResult);
       
       // Run quality gates on implementation
       const implementationArtifact = await this.gatherImplementationArtifacts(context);
@@ -106,7 +123,9 @@ export class TDDOrchestrator {
       
       // Phase 3: Refactor & Document with Final Quality Gates (Enhanced with Scan Results)
       console.log('✨ PHASE 3: Refactoring and documenting code...');
+      await this.auditLogger.logPhaseStart('refactor-document', context);
       const refactorResult = await this.refactorDocumentPhase.execute(implementResult, enhancedContext);
+      await this.auditLogger.logPhaseEnd(refactorResult);
       
       // Final quality assessment
       const finalArtifact = await this.gatherFinalArtifacts(context);
@@ -136,14 +155,28 @@ export class TDDOrchestrator {
       // Display quality summary
       this.displayQualitySummary(qualityReports);
       
+      // Log workflow completion and record metrics
+      await this.auditLogger.logWorkflowEnd(workflow);
+      await this.metricsCollector.recordWorkflow(workflow);
+      
       return workflow;
       
     } catch (error) {
+      await this.auditLogger.logError('TDDOrchestrator', error as Error, context);
       workflow.success = false;
       workflow.error = error instanceof Error ? error.message : 'Unknown error';
       workflow.endTime = new Date();
+      workflow.duration = workflow.endTime.getTime() - workflow.startTime.getTime();
       workflow.metadata = { qualityReports, ...workflow.metadata };
+      
+      // Log failed workflow and record metrics
+      await this.auditLogger.logWorkflowEnd(workflow);
+      await this.metricsCollector.recordWorkflow(workflow);
+      
       return workflow;
+    } finally {
+      // Clean up audit logger
+      await this.auditLogger.destroy();
     }
   }
   
