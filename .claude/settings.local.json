@@ -68,7 +68,10 @@
       "Bash(npm test)",
       "Bash(npm run lint)",
       "Bash(npm install:*)",
-      "Bash(npm test:*)"
+      "Bash(npm test:*)",
+      "Bash(phoenix-code-lite:*)",
+      "Bash(\"C:\\Users\\gabri\\Documents\\Infotopology\\Phoenix\\phoenix-code-lite\\update-phoenix.bat\")",
+      "Bash(where tsc)"
     ]
   },
   "hooks": {

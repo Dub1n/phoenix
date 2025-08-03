@@ -96,17 +96,22 @@ EMOJI_REPLACEMENTS = {
     '🆔': 'ID',     # ID button → ID
     '🆗': 'OK',     # OK button → OK
     '🔗': '∞',      # Link → Infinity (represents connection)
+    '🛡️': '⊜',      # Shield → Circled equals
+    '🔒': '⑄',      # Lock and key → OCR belt buckle
+    '🔐': '⑄',      # Lock → OCR belt buckle
+    '📦': '⌺',      # Package → APL functional symbol quad diamond
 
     # Misc in general
     '🏛️': '⌂',      # Palace → White circle with two dots
-    '📦': '⌺',      # Package → APL functional symbol quad diamond
     '🧪': '⊎',      # Test tube → Right half black circle
-    '🔒': '⑄',      # Lock → OCR belt buckle
-    '🧠': '⑇',      # Brain → OCR amount of check
+    '🧠': '⏼',      # Brain → On/Off switch
+    '✨': '⑇',      # Sparkles → OCR amount of check
+    '🖥️': '⌨',      # Computer → Keyboard
+    '📈': '⋰',      # Upwards trend → Up and right ellipsis
 }
 
 # other characters for potential future use
-# |⌨|⍥|⚇|⏼|⊛|⊜|⊍|⋮|⋰|⋯|⋱|±|🜏|
+# |⍥|⚇|⊛|⊍|⋮|⋯|⋱|±|🜏|
 
 def replace_emojis_in_text(text):
     """Replace emojis in text with Unicode equivalents."""

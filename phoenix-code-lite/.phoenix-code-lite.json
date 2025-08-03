@@ -1,0 +1,65 @@
+{
+  "version": "1.0.0",
+  "claude": {
+    "maxTurns": 3,
+    "timeout": 300000,
+    "retryAttempts": 3,
+    "model": "claude-3-5-sonnet-20241022"
+  },
+  "tdd": {
+    "maxImplementationAttempts": 5,
+    "testQualityThreshold": 0.8,
+    "enableRefactoring": true,
+    "skipDocumentation": false,
+    "qualityGates": {
+      "enabled": true,
+      "strictMode": false,
+      "thresholds": {
+        "syntaxValidation": 1,
+        "testCoverage": 0.8,
+        "codeQuality": 0.7,
+        "documentation": 0.6
+      },
+      "weights": {
+        "syntaxValidation": 1,
+        "testCoverage": 0.8,
+        "codeQuality": 0.6,
+        "documentation": 0.4
+      }
+    }
+  },
+  "agents": {
+    "planningAnalyst": {
+      "enabled": true,
+      "priority": 0.8,
+      "timeout": 30000,
+      "retryAttempts": 2
+    },
+    "implementationEngineer": {
+      "enabled": true,
+      "priority": 0.8,
+      "timeout": 30000,
+      "retryAttempts": 2
+    },
+    "qualityReviewer": {
+      "enabled": true,
+      "priority": 0.8,
+      "timeout": 30000,
+      "retryAttempts": 2
+    },
+    "enableSpecialization": true,
+    "fallbackToGeneric": true
+  },
+  "output": {
+    "verbose": false,
+    "showMetrics": true,
+    "saveArtifacts": true,
+    "logLevel": "info"
+  },
+  "quality": {
+    "minTestCoverage": 0.8,
+    "maxComplexity": 10,
+    "requireDocumentation": true,
+    "enforceStrictMode": false
+  }
+}

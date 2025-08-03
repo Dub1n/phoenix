@@ -1,4 +1,6 @@
 import { Command } from 'commander';
+import { promises as fs } from 'fs';
+import { join } from 'path';
 
 export interface PhoenixCodeLiteOptions {
   task: string;
@@ -8,6 +10,19 @@ export interface PhoenixCodeLiteOptions {
   verbose?: boolean;
   skipDocs?: boolean;
   maxAttempts?: number;
+  withTests?: boolean;
+  type?: 'component' | 'api' | 'service' | 'feature';
+}
+
+function getVersion(): string {
+  try {
+    // Try to read from package.json in the built distribution
+    const packageJsonPath = join(__dirname, '..', '..', 'package.json');
+    const packageData = require(packageJsonPath);
+    return packageData.version || '1.0.0';
+  } catch (error) {
+    return '1.0.0';
+  }
 }
 
 export function setupCLI(): Command {
@@ -16,7 +31,7 @@ export function setupCLI(): Command {
   program
     .name('phoenix-code-lite')
     .description('TDD workflow orchestrator for Claude Code')
-    .version('1.0.0');
+    .version(getVersion(), '-v, --version', 'display version number');
   
   program
     .command('generate')
@@ -25,9 +40,11 @@ export function setupCLI(): Command {
     .option('-p, --project-path <path>', 'Project path', process.cwd())
     .option('-l, --language <lang>', 'Programming language')
     .option('-f, --framework <framework>', 'Framework to use')
+    .option('-m, --max-attempts <number>', 'Maximum implementation attempts', '3')
     .option('-v, --verbose', 'Verbose output', false)
     .option('--skip-docs', 'Skip documentation generation', false)
-    .option('--max-attempts <number>', 'Maximum implementation attempts', '3')
+    .option('--with-tests', 'Include comprehensive test generation', false)
+    .option('--type <type>', 'Generation type (component|api|service|feature)', 'feature')
     .action(async (options: PhoenixCodeLiteOptions) => {
       const { generateCommand } = await import('./commands');
       await generateCommand(options);
@@ -42,16 +59,35 @@ export function setupCLI(): Command {
       const { initCommand } = await import('./commands');
       await initCommand(options);
     });
+
+  program
+    .command('wizard')
+    .description('Interactive setup wizard for first-time configuration')
+    .action(async () => {
+      const { wizardCommand } = await import('./enhanced-commands');
+      await wizardCommand();
+    });
   
   program
     .command('config')
     .description('Manage Phoenix-Code-Lite configuration')
     .option('--show', 'Show current configuration')
-    .option('--reset', 'Reset to default configuration')
+    .option('--edit', 'Interactive configuration editor')
     .option('--template <name>', 'Apply configuration template (starter|enterprise|performance)')
+    .option('--use <name>', 'Switch to configuration template')
+    .option('--adjust <name>', 'Adjust template settings')
+    .option('--add <name>', 'Create new template')
     .action(async (options) => {
       const { configCommand } = await import('./commands');
       await configCommand(options);
+    });
+
+  program
+    .command('template')
+    .description('Interactive template management (replaces config template subcommands)')
+    .action(async (options) => {
+      const { templateCommand } = await import('./commands');
+      await templateCommand(options);
     });
   
   return program;
