@@ -2,6 +2,7 @@ import chalk from 'chalk';
 import readline from 'readline';
 import { PhoenixCodeLiteConfig, PhoenixCodeLiteConfigData } from '../config/settings';
 import { ConfigurationTemplates } from '../config/templates';
+import { safeExit } from '../utils/test-utils';
 import { ConfigFormatter } from './config-formatter';
 
 export interface ConfigurationWizardAnswers {
@@ -164,7 +165,8 @@ export class InteractivePrompts {
         this.handleEscapeKey().then((shouldExit) => {
           if (shouldExit) {
             console.log(chalk.gray('\n✓ Operation cancelled by user'));
-            process.exit(0);
+            
+            safeExit(0);
           }
         });
       }

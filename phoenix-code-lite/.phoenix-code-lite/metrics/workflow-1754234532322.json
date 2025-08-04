@@ -1,0 +1,11 @@
+{
+  "timestamp": "2025-08-03T15:22:12.322Z",
+  "taskDescription": "Test task",
+  "success": false,
+  "duration": 34,
+  "phases": 1,
+  "tokenUsage": {
+    "total": 0
+  },
+  "error": "Planning phase failed: Query failed: Claude Code SDK integration pending - Phase 2 implementation in progress"
+}

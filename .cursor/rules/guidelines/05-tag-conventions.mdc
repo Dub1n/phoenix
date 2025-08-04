@@ -1,18 +1,20 @@
 ---
-description: 
-globs: 
 alwaysApply: true
 ---
+``` yaml
 ---
 tags: [Tags, Conventions, Metadata, Classification, Organization]
 provides: [Tag Standards, Classification System, Tagging Guidelines]
 requires: [DSS Core Structure and Concepts, Validation Rules]
 ---
+```
+
 # Tag Conventions
 
 ## Tag Structure and Format
 
 ### Basic Tag Format
+
 Tags in DSS follow these format rules:
 
 1. **Format in YAML frontmatter**: `tags: [tag1, tag2, tag3]`
@@ -24,6 +26,7 @@ Tags in DSS follow these format rules:
 ## Tag Categories
 
 ### 1. File Type Tags
+
 - `docs` - Documentation files
 - `code` - Source code files
 - `meta` - Project metadata files
@@ -31,6 +34,7 @@ Tags in DSS follow these format rules:
 - `template` - Template files
 
 ### 2. Purpose Tags
+
 - `guide` - How-to guides and tutorials
 - `reference` - Reference documentation
 - `project_management` - Planning and management documents
@@ -39,12 +43,14 @@ Tags in DSS follow these format rules:
 - `assistant_guidelines` - Guidelines for assistant behavior
 
 ### 3. Status Tags
+
 - `draft` - Initial or incomplete content
 - `review` - Ready for review
 - `approved` - Approved content
 - `archived` - Historical content no longer actively maintained
 
 ### 4. Topic Tags
+
 - `ai_interaction` - AI-related topics
 - `development` - Development processes
 - `task_management` - Task management and organization
@@ -52,12 +58,15 @@ Tags in DSS follow these format rules:
 ## Task Decomposition Tagging
 
 ### Required Tags
+
 Every task decomposition document should include:
+
 ```yaml
 tags: [task_breakdown, project_management]
 ```
 
 ### Additional Recommended Tags
+
 - `frontend` - For frontend development tasks
 - `backend` - For backend development tasks
 - `data_processing` - For data-related tasks
@@ -66,7 +75,9 @@ tags: [task_breakdown, project_management]
 - `research` - For research-oriented tasks
 
 ### In-Text Task Tagging
+
 Within task decomposition documents, use inline tags for subtasks:
+
 ```markdown
 #### 1.1. Research Component Implementation `[NOT STARTED]` #research #frontend
 ```
@@ -91,6 +102,7 @@ Within task decomposition documents, use inline tags for subtasks:
 | `automation` | For tasks related to workflow automation |
 
 ## Tag Usage Guidelines
+
 1. **Be Consistent**: Use the same tags for similar content across the repository
 2. **Be Specific**: Choose specific tags that accurately reflect the content
 3. **Be Concise**: Limit to 3-5 tags per document to maintain focus
@@ -98,8 +110,6 @@ Within task decomposition documents, use inline tags for subtasks:
 5. **Tag for Discoverability**: Consider how users might search for or filter content
 
 ## Task Status vs. Tags
+
 - **Status markers** use format `[STATUS]` (e.g., `[NOT STARTED]`, `[IN PROGRESS]`) for current state
 - **Tags** use format `#tag` when inline or in YAML frontmatter for categories/classification
-
-
-

@@ -16,6 +16,7 @@ export interface QualityResult {
 export interface QualityGateReport {
     phase: string;
     overallScore: number;
+    overallQualityScore: number;
     overallPassed: boolean;
     gateResults: Record<string, QualityResult>;
     recommendations: string[];

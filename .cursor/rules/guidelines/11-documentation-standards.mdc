@@ -1,13 +1,14 @@
 ---
-description: 
-globs: 
 alwaysApply: true
 ---
+``` yaml
 ---
 tags: [Documentation, Standards, Code, Maintainability, Guidelines]
 provides: [Documentation Standards, Code Clarity Guidelines, Implementation Documentation]
 requires: [DSS Core Structure and Concepts]
 ---
+```
+
 # Documentation Standards
 
 This file defines documentation requirements to ensure code is created with sufficient context from the start, preventing future maintenance challenges.
@@ -51,6 +52,7 @@ Key responsibilities and important context for understanding.
 ```
 
 Example:
+
 ```python
 """
 Model Tracking for DSS Benchmarks
@@ -84,6 +86,7 @@ def function_name(param1, param2):
 ```
 
 Example:
+
 ```python
 def log_model_execution(self, task_id: str, model_info: Dict, ruleset: str) -> None:
     """
@@ -128,7 +131,7 @@ if special_condition:
 
 ### For [Documentation-Driven](mdc:.cursor/rules/workflows/03-documentation-driven.mdc)
 
-- Start with comprehensive module documentation 
+- Start with comprehensive module documentation
 - Document component interactions and dependencies
 - Identify and document integration points
 - Create usage examples for key functionality
@@ -145,6 +148,7 @@ if special_condition:
 ### Over-Documentation
 
 Avoid:
+
 - Explaining what's obvious from the code
 - Repeating parameter names without adding context
 - Documenting trivial getter/setter methods
@@ -153,6 +157,7 @@ Avoid:
 ### Under-Documentation
 
 Avoid:
+
 - Missing module-level purpose statements
 - Undocumented assumptions or constraints
 - Missing context for complex business rules
@@ -161,6 +166,7 @@ Avoid:
 ### Outdated Documentation
 
 Prevent by:
+
 - Treating documentation as part of the code, not separate
 - Updating docstrings when behavior changes
 - Including documentation changes in code reviews
@@ -255,5 +261,3 @@ These workflows and guidelines reference the documentation standards:
 - [Task Decomposition Workflow](mdc:.cursor/rules/workflows/04-task-decomposition.mdc)
 - [Documentation Refactoring Workflow](mdc:.cursor/rules/workflows/05-documentation-refactoring.mdc)
 - [DSS Maintenance Guidelines](mdc:.cursor/rules/guidelines/01-dss-maintenance.mdc)
-
-

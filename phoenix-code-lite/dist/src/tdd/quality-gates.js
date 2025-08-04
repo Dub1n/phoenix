@@ -61,9 +61,11 @@ class QualityGateManager {
                 }
             }
         }
+        const finalScore = totalWeight > 0 ? overallScore / totalWeight : 0;
         return {
             phase,
-            overallScore: totalWeight > 0 ? overallScore / totalWeight : 0,
+            overallScore: finalScore,
+            overallQualityScore: finalScore, // Added for compatibility
             overallPassed: allRequiredPassed,
             gateResults: results,
             recommendations: this.generateRecommendations(results),

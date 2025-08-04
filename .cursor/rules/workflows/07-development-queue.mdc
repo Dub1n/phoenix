@@ -1,19 +1,22 @@
 ---
-description: 
-globs: 
 alwaysApply: true
 ---
+``` yaml
 ---
 tags: [Workflow, Development Queue, Continuous Improvement, Issue Processing, Task Generation]
 provides: [Development Queue Process, Issue Classification, Task Generation Rules, Success Metrics]
 requires: [Workflow Selection Logic, Issue Label Conventions, Pattern Detection]
 ---
+```
+
 # Development Queue Workflow
 
 **For**: Processing GitHub Issues to drive continuous improvement through automated task generation
 
 ## Criteria
+
 MOST must be met:
+
 - **GitHub Issues Processing**: Analyzing issues for patterns and insights  
 - **Task Generation**: Converting community feedback into actionable development tasks
 - **Pattern Detection**: Multiple related issues needing systemic analysis
@@ -21,9 +24,11 @@ MOST must be met:
 - **Community Integration**: Connecting user reports to system improvements
 
 ## Process
+
 Issue intake → Classify and analyze → Detect patterns → Generate tasks → Track implementation
 
 ## Examples
+
 - Processing installation reports for bootstrap improvements
 - Analyzing bug reports to identify common failure patterns  
 - Converting feature requests into development tasks
@@ -33,6 +38,7 @@ Issue intake → Classify and analyze → Detect patterns → Generate tasks →
 ## Issue Classification System
 
 ### Primary Types
+
 - **`installation-report`**: Automated reports from [dss_bootstrap.py](mdc:dss_bootstrap.py)
 - **`bug`**: Problems with existing functionality
 - **`enhancement`**: Requests for new features or improvements
@@ -40,12 +46,14 @@ Issue intake → Classify and analyze → Detect patterns → Generate tasks →
 - **`user-experience`**: UX/workflow improvement suggestions
 
 ### Secondary Dimensions  
+
 - **Platform**: `platform-windows`, `platform-linux`, `platform-darwin`
 - **Project Type**: `project-android`, `project-python`, `project-data-science`
 - **Severity**: `critical`, `high-priority`, `medium-priority`, `low-priority`
 - **Component**: `bootstrap`, `cursor-integration`, `file-organization`
 
 ## Execution Guidelines (6 steps)
+
 1. **Issue Intake and Classification**: Apply [classification system](mdc:.cursor/rules/guidelines/08-github-issue-labels.mdc), identify reporter context
 2. **Root Cause Analysis**: Determine primary cause, contributing factors, pattern connections
 3. **Impact Assessment**: Evaluate user impact, frequency, and scope of issues
@@ -64,21 +72,21 @@ Issue intake → Classify and analyze → Detect patterns → Generate tasks →
 | Performance issues | Performance optimization | slowdown_factor × user_frequency |
 
 ## Integration with Other Workflows
+
 - **→ [Code Modification](mdc:.cursor/rules/workflows/02-code-modification.mdc)**: For bug fixes and feature implementations
 - **→ [Documentation Refactoring](mdc:.cursor/rules/workflows/05-documentation-refactoring.mdc)**: For documentation gaps identified in issues
 - **→ [Task Decomposition](mdc:.cursor/rules/workflows/04-task-decomposition.mdc)**: For complex multi-component improvements
 
 ## Success Metrics
+
 - **Pattern Detection Rate**: Percentage of related issues correctly grouped
 - **Solution Effectiveness**: Reduction in similar issue reports after fixes
 - **Response Time**: Time from issue report to development task creation
 - **User Satisfaction**: Feedback on implemented solutions
 
 ## When to Use This Workflow
+
 - Weekly review cycles for processing new issues
 - When users report systematic problems
 - After major releases to gather feedback
 - When community patterns emerge requiring coordinated response
-
-
-

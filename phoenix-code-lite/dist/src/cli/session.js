@@ -38,49 +38,167 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CLISession = void 0;
 const chalk_1 = __importDefault(require("chalk"));
-const readline_1 = require("readline");
+const interaction_manager_1 = require("./interaction-manager");
+const settings_1 = require("../config/settings");
+const test_utils_1 = require("../utils/test-utils");
 class CLISession {
     constructor() {
         this.currentContext = {
             level: 'main',
             history: [],
             breadcrumb: ['Phoenix Code Lite'],
-            data: {}
+            data: {},
+            mode: 'menu',
+            navigationStack: []
         };
         this.running = false;
         this.readline = null;
+        this.interactionManager = null;
         this.inputValidator = new InputValidationService();
         this.errorHandler = new ErrorHandler();
     }
     async start() {
-        this.running = true;
-        this.readline = (0, readline_1.createInterface)({
-            input: process.stdin,
-            output: process.stdout,
-            prompt: ''
-        });
-        // Import menu system dynamically
-        const { MenuSystem } = await Promise.resolve().then(() => __importStar(require('./menu-system')));
-        this.menuSystem = new MenuSystem();
-        console.clear();
+        try {
+            this.running = true;
+            // Fix Issue #3: Clear input buffer and set up clean input handling
+            this.clearInputBuffer();
+            // Load user's preferred interaction mode (Issue #4)
+            const config = await settings_1.PhoenixCodeLiteConfig.load();
+            const configData = config.export();
+            const interactionMode = configData.ui?.interactionMode || 'menu';
+            this.currentContext.mode = interactionMode;
+            // Initialize interaction manager with dual mode support
+            this.interactionManager = new interaction_manager_1.InteractionManager({
+                currentMode: interactionMode,
+                menuConfig: {
+                    showNumbers: true,
+                    allowArrowNavigation: true,
+                    showDescriptions: true,
+                    compactMode: false
+                },
+                commandConfig: {
+                    promptSymbol: 'Phoenix> ',
+                    showCommandList: true,
+                    autoComplete: true,
+                    historyEnabled: true
+                },
+                allowModeSwitch: true
+            });
+            // Import menu system dynamically
+            const { MenuSystem } = await Promise.resolve().then(() => __importStar(require('./menu-system')));
+            this.menuSystem = new MenuSystem();
+            console.clear();
+            this.displayWelcome();
+            // Issue #12: Automatically display main menu
+            await this.displayMainMenu();
+            while (this.running) {
+                try {
+                    const input = await this.promptForInput();
+                    await this.processCommand(input.trim());
+                }
+                catch (error) {
+                    await this.errorHandler.handleError(error, this.currentContext);
+                    await this.waitForEnter();
+                }
+            }
+        }
+        catch (error) {
+            console.error(chalk_1.default.red('Failed to start Phoenix CLI:'), error);
+            (0, test_utils_1.safeExit)(1);
+        }
+        finally {
+            this.cleanup();
+        }
+    }
+    // Fix Issue #3: Clear input buffer to prevent pre-filled characters
+    clearInputBuffer() {
+        if (process.stdin.readable) {
+            let data;
+            while ((data = process.stdin.read()) !== null) {
+                // Clear any buffered input
+            }
+        }
+        process.stdin.setRawMode(false); // Start in cooked mode
+        process.stdin.setEncoding('utf8');
+        process.stdin.resume();
+    }
+    displayWelcome() {
+        // Fix Issue #5: Simplified header without redundant breadcrumbs
         console.log(chalk_1.default.red.bold('🔥 Phoenix Code Lite Interactive CLI'));
         console.log(chalk_1.default.blue.bold('TDD Workflow Orchestrator for Claude Code'));
         console.log(chalk_1.default.gray('═'.repeat(70)));
         console.log(chalk_1.default.yellow('🎆 Welcome! ') + chalk_1.default.gray('Transform ideas into tested, production-ready code'));
-        console.log(chalk_1.default.gray('Type ') + chalk_1.default.cyan('"help"') + chalk_1.default.gray(' for commands, ') + chalk_1.default.cyan('"quit"') + chalk_1.default.gray(' to exit'));
+        console.log(chalk_1.default.gray(`Mode: ${this.currentContext.mode?.toUpperCase() || 'MENU'} • Type "help" for commands • "quit" to exit`));
         console.log(chalk_1.default.gray('═'.repeat(70)));
         console.log();
-        while (this.running) {
-            try {
-                const input = await this.promptForInput();
-                await this.processCommand(input.trim());
+    }
+    // Issue #12: Auto-display main menu on CLI entry
+    async displayMainMenu() {
+        const mainMenuOptions = [
+            { label: 'Generate Code', value: 'generate', description: 'Start TDD workflow for new code' },
+            { label: 'Configuration', value: 'config', description: 'Manage settings and templates' },
+            { label: 'Templates', value: 'templates', description: 'Manage project templates' },
+            { label: 'Advanced Settings', value: 'advanced', description: 'Advanced configuration options' },
+            { label: 'Help', value: 'help', description: 'Show available commands' },
+            { label: 'Quit', value: 'quit', description: 'Exit Phoenix Code Lite' }
+        ];
+        const commands = mainMenuOptions.map(opt => ({
+            name: opt.value,
+            description: opt.description,
+            aliases: opt.value === 'quit' ? ['exit'] : undefined
+        }));
+        if (this.interactionManager) {
+            let result;
+            if (this.currentContext.mode === 'menu') {
+                result = await this.interactionManager.displayMenuMode(mainMenuOptions, '🏠 Main Menu');
             }
-            catch (error) {
-                await this.errorHandler.handleError(error, this.currentContext);
-                await this.waitForEnter();
+            else {
+                result = await this.interactionManager.displayCommandMode(commands, '🏠 Phoenix Code Lite Commands');
             }
+            await this.handleInteractionResult(result);
         }
-        this.readline?.close();
+    }
+    async handleInteractionResult(result) {
+        if (!result.success) {
+            if (result.message) {
+                console.log(chalk_1.default.red(result.message));
+            }
+            return;
+        }
+        switch (result.action) {
+            case 'navigate':
+                await this.navigateToContext(result.target, result.data);
+                break;
+            case 'execute':
+                await this.executeAction(result.target, result.data);
+                break;
+            case 'switch_mode':
+                this.switchMode(result.newMode);
+                await this.displayMainMenu(); // Refresh display in new mode
+                break;
+            case 'back':
+                await this.navigateBack();
+                break;
+            case 'quit':
+                await this.confirmExit();
+                break;
+        }
+    }
+    switchMode(newMode) {
+        this.currentContext.mode = newMode;
+        if (this.interactionManager) {
+            this.interactionManager.switchMode();
+        }
+    }
+    cleanup() {
+        if (this.interactionManager) {
+            this.interactionManager.dispose();
+            this.interactionManager = null;
+        }
+        if (this.readline) {
+            this.readline.close();
+            this.readline = null;
+        }
     }
     async promptForInput() {
         const prompt = this.generatePrompt();

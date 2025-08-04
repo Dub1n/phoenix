@@ -6,6 +6,7 @@ import { ConfigurationTemplates } from '../config/templates';
 import { PhoenixCodeLiteOptions } from './args';
 import { ConfigFormatter } from './config-formatter';
 import { InteractivePrompts } from './interactive';
+import { safeExit } from '../utils/test-utils';
 import chalk from 'chalk';
 
 export async function generateCommand(options: PhoenixCodeLiteOptions): Promise<void> {
@@ -60,13 +61,15 @@ export async function generateCommand(options: PhoenixCodeLiteOptions): Promise<
     } else {
       console.log(chalk.red('✗ Phoenix-Code-Lite workflow failed'));
       console.log(chalk.red(`Error: ${result.error}`));
-      process.exit(1);
+      
+      safeExit(1);
     }
     
   } catch (error) {
     spinner.stop();
     console.error(chalk.red('Fatal error:'), error instanceof Error ? error.message : 'Unknown error');
-    process.exit(1);
+    
+    safeExit(1);
   }
 }
 
@@ -108,14 +111,13 @@ export async function initCommand(options: any): Promise<void> {
     
   } catch (error) {
     console.error(chalk.red('Initialization failed:'), error instanceof Error ? error.message : 'Unknown error');
-    process.exit(1);
+    
+    safeExit(1);
   }
 }
 
 export async function configCommand(options: any): Promise<void> {
   try {
-    const interactive = new InteractivePrompts();
-    
     if (options.show) {
       // Show current configuration using new formatted display
       try {
@@ -132,6 +134,7 @@ export async function configCommand(options: any): Promise<void> {
         } else {
           console.log(chalk.green('\n✓ Configuration is valid'));
         }
+        
       } catch (error) {
         // Handle configuration loading errors gracefully
         if (error instanceof Error && error.message.includes('Configuration validation failed')) {
@@ -148,27 +151,32 @@ export async function configCommand(options: any): Promise<void> {
         }
       }
       
-    } else if (options.edit) {
-      // Launch interactive configuration editor
-      const result = await interactive.runInteractiveConfigEditor();
+    } else if (options.edit || options.adjust || options.add) {
+      // Only create InteractivePrompts when actually needed for interactive operations
+      const interactive = new InteractivePrompts();
       
-      if (result.saved) {
-        if (result.templateUpdated) {
-          await applyTemplate(result.templateUpdated);
+      if (options.edit) {
+        // Launch interactive configuration editor
+        const result = await interactive.runInteractiveConfigEditor();
+        
+        if (result.saved) {
+          if (result.templateUpdated) {
+            await applyTemplate(result.templateUpdated);
+          }
         }
+        
+      } else if (options.adjust) {
+        // Adjust template functionality
+        await adjustTemplate(options.adjust, interactive);
+        
+      } else if (options.add) {
+        // Add new template functionality
+        await addTemplate(options.add, interactive);
       }
       
     } else if (options.use) {
       // Switch to template using new --use command
       await applyTemplate(options.use);
-      
-    } else if (options.adjust) {
-      // Adjust template functionality
-      await adjustTemplate(options.adjust, interactive);
-      
-    } else if (options.add) {
-      // Add new template functionality
-      await addTemplate(options.add, interactive);
       
     } else if (options.reset) {
       // Reset using new configuration system
@@ -190,9 +198,15 @@ export async function configCommand(options: any): Promise<void> {
       console.log('  --reset             Reset to default configuration');
       console.log('  --template <name>   Apply template (legacy - use --use instead)');
     }
+    
+    // Let main program handle process exit - don't call safeExit() here
+    // This matches the behavior of help/version commands
+    
   } catch (error) {
     console.error(chalk.red('Configuration error:'), error instanceof Error ? error.message : 'Unknown error');
-    process.exit(1);
+    
+    // Re-throw error to let main program handle exit
+    throw error;
   }
 }
 
@@ -404,7 +418,8 @@ export async function templateCommand(options: any): Promise<void> {
     
   } catch (error) {
     console.error(chalk.red('Template management error:'), error instanceof Error ? error.message : 'Unknown error');
-    process.exit(1);
+    
+    safeExit(1);
   }
 }
 

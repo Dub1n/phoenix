@@ -21,6 +21,7 @@ This directory contains standardized templates for different types of documentat
 ## Template Structure
 
 Each template includes:
+
 - Standardized YAML front-matter with required fields
 - Consistent section headings and organization
 - Placeholder content to guide your writing
@@ -30,8 +31,9 @@ Each template includes:
 ## Customization
 
 When creating new templates or modifying existing ones:
+
 1. Follow the DSS metadata conventions
 2. Include clear instructions for template users
 3. Use consistent Markdown formatting
 4. Provide examples wherever possible
-5. Update this README when adding new templates 
+5. Update this README when adding new templates

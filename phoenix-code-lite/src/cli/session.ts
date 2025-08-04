@@ -1,5 +1,9 @@
 import chalk from 'chalk';
 import { createInterface, Interface } from 'readline';
+import { InteractionManager } from './interaction-manager';
+import { InteractionModeConfig, NavigationItem } from '../types/interaction-modes';
+import { PhoenixCodeLiteConfig } from '../config/settings';
+import { safeExit } from '../utils/test-utils';
 
 export interface SessionContext {
   level: 'main' | 'config' | 'templates' | 'advanced' | 'generate';
@@ -7,6 +11,8 @@ export interface SessionContext {
   currentItem?: string;
   breadcrumb: string[];
   data?: Record<string, any>;
+  mode?: 'menu' | 'command';
+  navigationStack?: NavigationItem[];
 }
 
 export interface MenuAction {
@@ -31,11 +37,14 @@ export class CLISession {
     level: 'main', 
     history: [], 
     breadcrumb: ['Phoenix Code Lite'],
-    data: {}
+    data: {},
+    mode: 'menu',
+    navigationStack: []
   };
   private running: boolean = false;
   private readline: Interface | null = null;
   private menuSystem: any; // Will be imported dynamically
+  private interactionManager: InteractionManager | null = null;
   private inputValidator: InputValidator;
   private errorHandler: ErrorHandler;
 
@@ -45,37 +54,164 @@ export class CLISession {
   }
 
   public async start(): Promise<void> {
-    this.running = true;
-    this.readline = createInterface({
-      input: process.stdin,
-      output: process.stdout,
-      prompt: ''
-    });
+    try {
+      this.running = true;
+      
+      // Fix Issue #3: Clear input buffer and set up clean input handling
+      this.clearInputBuffer();
+      
+      // Load user's preferred interaction mode (Issue #4)
+      const config = await PhoenixCodeLiteConfig.load();
+      const configData = config.export();
+      const interactionMode = configData.ui?.interactionMode || 'menu';
+      
+      this.currentContext.mode = interactionMode;
+      
+      // Initialize interaction manager with dual mode support
+      this.interactionManager = new InteractionManager({
+        currentMode: interactionMode,
+        menuConfig: {
+          showNumbers: true,
+          allowArrowNavigation: true,
+          showDescriptions: true,
+          compactMode: false
+        },
+        commandConfig: {
+          promptSymbol: 'Phoenix> ',
+          showCommandList: true,
+          autoComplete: true,
+          historyEnabled: true
+        },
+        allowModeSwitch: true
+      });
+      
+      // Import menu system dynamically
+      const { MenuSystem } = await import('./menu-system');
+      this.menuSystem = new MenuSystem();
 
-    // Import menu system dynamically
-    const { MenuSystem } = await import('./menu-system');
-    this.menuSystem = new MenuSystem();
+      console.clear();
+      this.displayWelcome();
+      
+      // Issue #12: Automatically display main menu
+      await this.displayMainMenu();
+      
+      while (this.running) {
+        try {
+          const input = await this.promptForInput();
+          await this.processCommand(input.trim());
+        } catch (error) {
+          await this.errorHandler.handleError(error, this.currentContext);
+          await this.waitForEnter();
+        }
+      }
 
-    console.clear();
+    } catch (error) {
+      console.error(chalk.red('Failed to start Phoenix CLI:'), error);
+      
+      safeExit(1);
+    } finally {
+      this.cleanup();
+    }
+  }
+  
+  // Fix Issue #3: Clear input buffer to prevent pre-filled characters
+  private clearInputBuffer(): void {
+    if (process.stdin.readable) {
+      let data;
+      while ((data = process.stdin.read()) !== null) {
+        // Clear any buffered input
+      }
+    }
+    
+    process.stdin.setRawMode(false); // Start in cooked mode
+    process.stdin.setEncoding('utf8');
+    process.stdin.resume();
+  }
+  
+  private displayWelcome(): void {
+    // Fix Issue #5: Simplified header without redundant breadcrumbs
     console.log(chalk.red.bold('🔥 Phoenix Code Lite Interactive CLI'));
     console.log(chalk.blue.bold('TDD Workflow Orchestrator for Claude Code'));
     console.log(chalk.gray('═'.repeat(70)));
     console.log(chalk.yellow('🎆 Welcome! ') + chalk.gray('Transform ideas into tested, production-ready code'));
-    console.log(chalk.gray('Type ') + chalk.cyan('"help"') + chalk.gray(' for commands, ') + chalk.cyan('"quit"') + chalk.gray(' to exit'));
+    console.log(chalk.gray(`Mode: ${this.currentContext.mode?.toUpperCase() || 'MENU'} • Type "help" for commands • "quit" to exit`));
     console.log(chalk.gray('═'.repeat(70)));
     console.log();
-
-    while (this.running) {
-      try {
-        const input = await this.promptForInput();
-        await this.processCommand(input.trim());
-      } catch (error) {
-        await this.errorHandler.handleError(error, this.currentContext);
-        await this.waitForEnter();
+  }
+  
+  // Issue #12: Auto-display main menu on CLI entry
+  private async displayMainMenu(): Promise<void> {
+    const mainMenuOptions = [
+      { label: 'Generate Code', value: 'generate', description: 'Start TDD workflow for new code' },
+      { label: 'Configuration', value: 'config', description: 'Manage settings and templates' },
+      { label: 'Templates', value: 'templates', description: 'Manage project templates' },
+      { label: 'Advanced Settings', value: 'advanced', description: 'Advanced configuration options' },
+      { label: 'Help', value: 'help', description: 'Show available commands' },
+      { label: 'Quit', value: 'quit', description: 'Exit Phoenix Code Lite' }
+    ];
+    
+    const commands = mainMenuOptions.map(opt => ({
+      name: opt.value,
+      description: opt.description,
+      aliases: opt.value === 'quit' ? ['exit'] : undefined
+    }));
+    
+    if (this.interactionManager) {
+      let result;
+      if (this.currentContext.mode === 'menu') {
+        result = await this.interactionManager.displayMenuMode(mainMenuOptions, '🏠 Main Menu');
+      } else {
+        result = await this.interactionManager.displayCommandMode(commands, '🏠 Phoenix Code Lite Commands');
       }
+      
+      await this.handleInteractionResult(result);
     }
-
-    this.readline?.close();
+  }
+  
+  private async handleInteractionResult(result: any): Promise<void> {
+    if (!result.success) {
+      if (result.message) {
+        console.log(chalk.red(result.message));
+      }
+      return;
+    }
+    
+    switch (result.action) {
+      case 'navigate':
+        await this.navigateToContext(result.target, result.data);
+        break;
+      case 'execute':
+        await this.executeAction(result.target, result.data);
+        break;
+      case 'switch_mode':
+        this.switchMode(result.newMode);
+        await this.displayMainMenu(); // Refresh display in new mode
+        break;
+      case 'back':
+        await this.navigateBack();
+        break;
+      case 'quit':
+        await this.confirmExit();
+        break;
+    }
+  }
+  
+  private switchMode(newMode: 'menu' | 'command'): void {
+    this.currentContext.mode = newMode;
+    if (this.interactionManager) {
+      this.interactionManager.switchMode();
+    }
+  }
+  
+  private cleanup(): void {
+    if (this.interactionManager) {
+      this.interactionManager.dispose();
+      this.interactionManager = null;
+    }
+    if (this.readline) {
+      this.readline.close();
+      this.readline = null;
+    }
   }
 
   private async promptForInput(): Promise<string> {

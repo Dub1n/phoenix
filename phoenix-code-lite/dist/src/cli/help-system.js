@@ -213,7 +213,7 @@ class HelpSystem {
             chalk_1.default.cyan('  phoenix-code-lite generate --task "your description"') + ' - Direct generation\n\n';
     }
     getConfigFoundHelp() {
-        return chalk_1.default.green('✓ Configuration Active!\n') +
+        return chalk_1.default.green('✓ Configuration found\n') +
             chalk_1.default.gray('Your project is configured and ready for TDD workflow generation.\n') +
             chalk_1.default.blue('Quick actions:\n') +
             chalk_1.default.gray('  • ') + chalk_1.default.cyan('config --show') + chalk_1.default.gray(' - View current configuration\n') +

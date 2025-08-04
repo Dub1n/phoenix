@@ -1,19 +1,22 @@
 ---
-description: 
-globs: 
 alwaysApply: true
 ---
+``` yaml
 ---
 tags: [Workflow, Task Decomposition, Complex Tasks, Project Management, Planning]
 provides: [Task Breakdown Process, Complex Task Management, Status Tracking]
 requires: [Workflow Selection Logic, Project Management Guidelines]
 ---
+```
+
 # Task Decomposition Workflow
 
 **For**: Complex, multi-step tasks requiring coordination
 
 ## Criteria
+
 MOST must be met:
+
 - **Complexity**: Multi-step, cannot complete in single cycle
 - **Coordination**: Spans multiple files, systems, or workflows
 - **Planning Benefit**: Explicit dependency tracking needed
@@ -21,9 +24,11 @@ MOST must be met:
 - **Uncertainty**: Scope unclear, needs structured exploration
 
 ## Process
+
 Break into phases → Document plan → Execute incrementally → Update
 
 ## Examples
+
 - Complex features
 - Large refactoring
 - Multi-phase rollouts
@@ -31,6 +36,7 @@ Break into phases → Document plan → Execute incrementally → Update
 - Research tasks
 
 ## Execution Guidelines (8 steps)
+
 1. **Identify Top-Level Task**: Clear goal and success criteria
 2. **Break Down into Major Phases**: 3-5 logical phases
 3. **Decompose to Atomic Subtasks**: 1-5 minute atomic actions
@@ -42,6 +48,7 @@ Break into phases → Document plan → Execute incrementally → Update
 9. **Execute and Track Progress**: Follow hierarchy, update status
 
 ## Status Indicators
+
 - `[NOT STARTED]` - Work has not yet begun
 - `[IN PROGRESS]` - Work has started but is not complete  
 - `[BLOCKED]` - Cannot proceed due to dependencies
@@ -49,13 +56,11 @@ Break into phases → Document plan → Execute incrementally → Update
 - `[DEFERRED]` - Intentionally postponed
 
 ## When to De-escalate
+
 - **→ Other workflows**: Individual subtasks fit simpler patterns
 
 ## Related Guidelines
+
 - [Documentation Standards](mdc:.cursor/rules/guidelines/11-documentation-standards.mdc)
 - [Tag Conventions](mdc:.cursor/rules/guidelines/05-tag-conventions.mdc)
 - [Backlink Conventions](mdc:.cursor/rules/guidelines/06-backlink-conventions.mdc)
-
-
-
-

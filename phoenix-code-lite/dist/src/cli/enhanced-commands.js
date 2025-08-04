@@ -50,6 +50,8 @@ const workflow_1 = require("../types/workflow");
 const settings_1 = require("../config/settings");
 const templates_1 = require("../config/templates");
 const config_formatter_1 = require("./config-formatter");
+const document_manager_1 = require("../config/document-manager");
+const test_utils_1 = require("../utils/test-utils");
 const chalk_1 = __importDefault(require("chalk"));
 const path_1 = require("path");
 async function enhancedGenerateCommand(options) {
@@ -100,14 +102,14 @@ async function enhancedGenerateCommand(options) {
         // Export report if requested (feature for future implementation)
         // This would require adding exportFormat and exportPath options to PhoenixCodeLiteOptions
         if (!result.success) {
-            process.exit(1);
+            (0, test_utils_1.safeExit)(1);
         }
     }
     catch (error) {
         const duration = Date.now() - startTime;
         await cli.recordCommand('generate', options, false, duration);
         console.error(chalk_1.default.red('✗ Fatal error:'), error instanceof Error ? error.message : 'Unknown error');
-        process.exit(1);
+        (0, test_utils_1.safeExit)(1);
     }
 }
 async function wizardCommand() {
@@ -243,6 +245,10 @@ async function executeConfigAction(command, data, context) {
         case 'templates':
             context.currentItem = 'Templates';
             await showConfigTemplateOptions();
+            break;
+        case 'documents':
+            context.currentItem = 'Document Management';
+            await executeDocumentManagementAction(data, context);
             break;
         default:
             console.log(chalk_1.default.red(`Unknown config command: ${command}`));
@@ -479,9 +485,43 @@ async function showLanguageSettings() {
 async function showAgentSettings() {
     console.log(chalk_1.default.cyan.bold('\n🤖 Agent Settings'));
     console.log(chalk_1.default.gray('═'.repeat(50)));
-    console.log('Planning Analyst: Active');
-    console.log('Implementation Engineer: Active');
-    console.log('Quality Reviewer: Active');
+    try {
+        const config = await settings_1.PhoenixCodeLiteConfig.load();
+        const configData = config.export();
+        const agentSettings = configData.agents || {};
+        // Display each agent's configuration
+        const agents = [
+            { key: 'planningAnalyst', name: 'Planning Analyst', icon: '🧠' },
+            { key: 'implementationEngineer', name: 'Implementation Engineer', icon: '⚡' },
+            { key: 'qualityReviewer', name: 'Quality Reviewer', icon: '🔍' }
+        ];
+        agents.forEach(agent => {
+            const settings = agentSettings[agent.key] || {};
+            const enabled = settings.enabled !== false;
+            const status = enabled ? chalk_1.default.green('Active') : chalk_1.default.red('Inactive');
+            console.log(`${agent.icon} ${agent.name}: ${status}`);
+            if (enabled) {
+                console.log(chalk_1.default.gray(`   Priority: ${settings.priority || 0.8}`));
+                console.log(chalk_1.default.gray(`   Timeout: ${settings.timeout || 30000}ms`));
+                console.log(chalk_1.default.gray(`   Retry Attempts: ${settings.retryAttempts || 2}`));
+                if (settings.customPrompts && Object.keys(settings.customPrompts).length > 0) {
+                    console.log(chalk_1.default.gray(`   Custom Prompts: ${Object.keys(settings.customPrompts).length} defined`));
+                }
+            }
+            console.log();
+        });
+        // Global agent settings
+        console.log(chalk_1.default.yellow('Global Agent Settings:'));
+        console.log(chalk_1.default.gray(`  Specialization Enabled: ${agentSettings.enableSpecialization !== false ? 'Yes' : 'No'}`));
+        console.log(chalk_1.default.gray(`  Fallback to Generic: ${agentSettings.fallbackToGeneric !== false ? 'Yes' : 'No'}`));
+    }
+    catch (error) {
+        console.log(chalk_1.default.red('Error loading agent configuration'));
+        console.log(chalk_1.default.gray('Using default agent settings'));
+        console.log('Planning Analyst: Active (Default)');
+        console.log('Implementation Engineer: Active (Default)');
+        console.log('Quality Reviewer: Active (Default)');
+    }
 }
 async function showLoggingSettings() {
     console.log(chalk_1.default.cyan.bold('\n📝 Logging Settings'));
@@ -500,6 +540,48 @@ async function showDebugSettings() {
     console.log(chalk_1.default.gray('═'.repeat(50)));
     console.log('Debug mode: Disabled');
     console.log('Verbose logging: Disabled');
+}
+async function executeDocumentManagementAction(data, context) {
+    try {
+        console.log(chalk_1.default.cyan.bold('\n📋 Document Management'));
+        console.log(chalk_1.default.gray('═'.repeat(50)));
+        // Initialize document manager
+        const documentManager = new document_manager_1.DocumentManager();
+        await documentManager.initializeDocumentSystem();
+        // Get current template for context
+        const config = await settings_1.PhoenixCodeLiteConfig.load();
+        const currentTemplate = config.get('template') || 'starter';
+        console.log(chalk_1.default.gray(`Current Template: ${chalk_1.default.cyan(currentTemplate)}`));
+        // Get available documents
+        const inventory = await documentManager.getAvailableDocuments();
+        const totalDocs = inventory.global.length +
+            Object.values(inventory.agents).reduce((sum, docs) => sum + docs.length, 0);
+        console.log(chalk_1.default.gray(`Total Documents: ${chalk_1.default.cyan(totalDocs)} (${inventory.global.length} global, ${Object.values(inventory.agents).reduce((sum, docs) => sum + docs.length, 0)} agent-specific)`));
+        // Display document categories
+        console.log(chalk_1.default.yellow('\nDocument Categories:'));
+        console.log(`1. Global Documents (${inventory.global.length})`);
+        console.log(`2. Planning Agent Documents (${inventory.agents['planning-analyst'].length})`);
+        console.log(`3. Implementation Documents (${inventory.agents['implementation-engineer'].length})`);
+        console.log(`4. Quality Review Documents (${inventory.agents['quality-reviewer'].length})`);
+        console.log(`5. Template Document Settings`);
+        console.log(`6. Back to Configuration Menu`);
+        console.log(chalk_1.default.gray('\n📖 Document Management Integration:'));
+        console.log(chalk_1.default.gray('• Each template maintains separate document activation settings'));
+        console.log(chalk_1.default.gray('• Documents can be enabled/disabled per agent and per template'));
+        console.log(chalk_1.default.gray('• Global documents are available to all agents when activated'));
+        console.log(chalk_1.default.gray('• Agent-specific documents provide specialized context'));
+        console.log(chalk_1.default.cyan('\n🔗 Access Full Document Management:'));
+        console.log(chalk_1.default.gray('  → Configuration > Edit > Document Management'));
+        console.log(chalk_1.default.gray('  → Interactive configuration editor with full document controls'));
+    }
+    catch (error) {
+        console.log(chalk_1.default.red('Error loading document management:'));
+        console.log(chalk_1.default.gray(`Details: ${error instanceof Error ? error.message : 'Unknown error'}`));
+        console.log(chalk_1.default.gray('\n💡 Troubleshooting:'));
+        console.log(chalk_1.default.gray('• Ensure .phoenix-documents directory exists'));
+        console.log(chalk_1.default.gray('• Run: phoenix-code-lite init to initialize document system'));
+        console.log(chalk_1.default.gray('• Check file permissions for document directory'));
+    }
 }
 async function executeTaskGeneration(description, context) {
     console.log(chalk_1.default.magenta.bold('\n⚡ Generating Code from Task'));
@@ -546,11 +628,18 @@ async function executeTestGeneration(description, context) {
     await enhancedGenerateCommand(options);
 }
 async function waitForEnter() {
-    const inquirer = await Promise.resolve().then(() => __importStar(require('inquirer')));
-    await inquirer.default.prompt([{
-            type: 'input',
-            name: 'continue',
-            message: chalk_1.default.gray('Press Enter to continue...')
-        }]);
+    // Fix Issue #2: Proper session continuation instead of process exit
+    return new Promise((resolve) => {
+        console.log(chalk_1.default.gray('\nPress Enter to continue...'));
+        const stdin = process.stdin;
+        stdin.resume();
+        stdin.setEncoding('utf8');
+        const handleInput = () => {
+            stdin.removeListener('data', handleInput);
+            stdin.pause();
+            resolve();
+        };
+        stdin.once('data', handleInput);
+    });
 }
 //# sourceMappingURL=enhanced-commands.js.map

@@ -1,20 +1,21 @@
 ---
-description: 
-globs: 
 alwaysApply: true
 ---
+```yaml
 ---
 tags: [Configuration, Structure, Setup, Rules Organization, Documentation]
 provides: [Rules Structure, Setup Instructions, Organization Guide]
 requires: [DSS Core Structure and Concepts]
 ---
+```
+
 # DSS Cursor Rules Structure Guide
 
 ## Complete Modular Organization
 
 The DSS rules are organized into clear categories for better maintainability:
 
-```
+``` text
 .cursor/rules/
 ├── 00-dss-core.mdc              # Core DSS concepts and structure
 ├── 01-dss-behavior.mdc          # Riley personality and behavior
@@ -49,12 +50,14 @@ The DSS rules are organized into clear categories for better maintainability:
 ## ⚠️ Critical Requirements for Cursor Rules
 
 ### File Naming Requirements
+
 - **Must use kebab-case**: `00-dss-core.mdc`, `01-dss-behavior.mdc`
 - **Must have .mdc extension**: Cursor only loads .mdc files as rules
 - **Sequential numbering**: Use 00-, 01-, 02- prefixes for loading order
 - **Not .md**: Markdown files (.md) are NOT loaded as rules by Cursor
 
 ### Manual Cursor Configuration Required
+
 - User must manually set each rule file to "Always included in prompts" in Cursor
 - Cannot be automated - requires manual UI interaction in Cursor settings
 - Each new rule file needs individual configuration
@@ -62,10 +65,12 @@ The DSS rules are organized into clear categories for better maintainability:
 ## File Descriptions
 
 ### Core Files
+
 - **00-dss-core.mdc**: DSS folder structure, metadata system, file patterns
 - **01-dss-behavior.mdc**: Riley personality, response style, team collaboration
 
 ### Workflow Files (8 workflows)
+
 - **00-workflow-selection.mdc**: Decision tree and workflow comparison matrix
 - **01-quick-tasks.mdc**: Simple, atomic tasks (1-2 files)
 - **02-code-modification.mdc**: Development-focused source code changes
@@ -76,6 +81,7 @@ The DSS rules are organized into clear categories for better maintainability:
 - **07-development-queue.mdc**: Continuous improvement via GitHub Issues
 
 ### Guidelines Files (11 comprehensive guidelines)
+
 - **00-dss-templates.mdc**: Template patterns and selection guidance
 - **01-dss-maintenance.mdc**: Automatic maintenance behaviors and triggers
 - **02-assistant-adherence.mdc**: Structured internal process for guideline adherence
@@ -89,6 +95,7 @@ The DSS rules are organized into clear categories for better maintainability:
 - **10-feedback-loop.mdc**: Continuous improvement based on user feedback and installation reports
 
 ### Configuration Files
+
 - **structure-guide.mdc**: Setup instructions and rule organization (this file)
 - **templates/**: Reference templates available for file creation (not loaded as rules)
 
@@ -101,10 +108,12 @@ The DSS rules are organized into clear categories for better maintainability:
 3. **For each .mdc file**, click the "+ Always include in prompts" button:
 
 #### Core Rules (Required)
+
 - ✅ `00-dss-core.mdc`
 - ✅ `01-dss-behavior.mdc`
 
 #### Workflow Rules (Recommended - all 8 files)
+
 - ✅ `workflows/00-workflow-selection.mdc`
 - ✅ `workflows/01-quick-tasks.mdc`
 - ✅ `workflows/02-code-modification.mdc`
@@ -115,6 +124,7 @@ The DSS rules are organized into clear categories for better maintainability:
 - ✅ `workflows/07-development-queue.mdc`
 
 #### Guideline Rules (Recommended - all 11 files)
+
 - ✅ `guidelines/00-dss-templates.mdc`
 - ✅ `guidelines/01-dss-maintenance.mdc`
 - ✅ `guidelines/02-assistant-adherence.mdc`
@@ -128,11 +138,13 @@ The DSS rules are organized into clear categories for better maintainability:
 - ✅ `guidelines/10-feedback-loop.mdc`
 
 #### Configuration (Optional)
+
 - ✅ `config/structure-guide.mdc`
 
 ## Benefits of This Structure
 
 ### **Complete Coverage**
+
 - All 8 DSS workflows properly documented
 - All 11 important guidelines and conventions included
 - Assistant adherence process ensures consistent behavior
@@ -140,18 +152,21 @@ The DSS rules are organized into clear categories for better maintainability:
 - Error recovery and feedback loop ensure continuous improvement
 
 ### **Focused Rules**
+
 - Each workflow is self-contained and focused
 - Guidelines are separate from execution workflows
 - Templates are reference-only, not loaded as rules
 - Easy to understand individual components
 
 ### **Maintainable Organization**
+
 - Clear separation between workflows, guidelines, and configuration
 - Easy to add new components without affecting existing ones
 - Modular structure supports selective loading
 - Version control friendly
 
 ### **Better Performance**
+
 - Cursor loads smaller, focused rule files
 - Reduced token usage vs. large consolidated files
 - More efficient rule processing
@@ -160,6 +175,7 @@ The DSS rules are organized into clear categories for better maintainability:
 ## Validation
 
 To test the new rules are working:
+
 1. Ask Riley to create a new file - should add proper DSS frontmatter
 2. Ask about workflow selection - should reference the decision tree
 3. Request code modification - should follow the structured process
@@ -172,6 +188,7 @@ To test the new rules are working:
 ## Customization
 
 You can customize by:
+
 - **Adding new workflows**: Create new files in `workflows/`
 - **Modifying guidelines**: Edit files in `guidelines/`
 - **Adding templates**: Add reference files to `config/templates/`
@@ -182,14 +199,8 @@ Keep `00-dss-core.mdc` stable as it defines essential DSS structure.
 ## Migration Notes
 
 If migrating from old rule structure:
+
 - Old files backed up with `.backup` extension
 - Can be safely deleted once new structure is verified
 - All functionality preserved and enhanced in new modular structure
 - Manual Cursor configuration required for all new rule files
-
-
-
-
-
-
-

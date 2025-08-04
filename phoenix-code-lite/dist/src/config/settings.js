@@ -8,7 +8,7 @@ const zod_1 = require("zod");
 exports.AgentConfigSchema = zod_1.z.object({
     enabled: zod_1.z.boolean().default(true),
     priority: zod_1.z.number().min(0).max(1).default(0.8),
-    timeout: zod_1.z.number().min(1000).max(1800000).default(30000), // 30 seconds
+    timeout: zod_1.z.number().min(30000).max(1800000).default(30000), // 30 seconds minimum
     retryAttempts: zod_1.z.number().min(1).max(5).default(2),
     customPrompts: zod_1.z.record(zod_1.z.string(), zod_1.z.string()).optional(),
 });
@@ -99,6 +99,21 @@ exports.PhoenixCodeLiteConfigSchema = zod_1.z.object({
         requireDocumentation: true,
         enforceStrictMode: false,
     }),
+    ui: zod_1.z.object({
+        interactionMode: zod_1.z.enum(['menu', 'command']).default('menu'),
+        showNumbers: zod_1.z.boolean().default(true),
+        showDescriptions: zod_1.z.boolean().default(true),
+        compactMode: zod_1.z.boolean().default(false),
+        promptSymbol: zod_1.z.string().default('Phoenix> '),
+        allowModeSwitch: zod_1.z.boolean().default(true),
+    }).optional().default({
+        interactionMode: 'menu',
+        showNumbers: true,
+        showDescriptions: true,
+        compactMode: false,
+        promptSymbol: 'Phoenix> ',
+        allowModeSwitch: true,
+    }),
 });
 class PhoenixCodeLiteConfig {
     constructor(data, configPath) {
@@ -157,10 +172,12 @@ class PhoenixCodeLiteConfig {
         return this.getNestedValue(this.data, key);
     }
     set(key, value) {
-        this.setNestedValue(this.data, key, value);
-        // Re-validate after setting
+        // Create a copy of the data to test the change
+        const testData = JSON.parse(JSON.stringify(this.data));
+        this.setNestedValue(testData, key, value);
+        // Validate the modified data before applying the change
         try {
-            this.data = exports.PhoenixCodeLiteConfigSchema.parse(this.data);
+            exports.PhoenixCodeLiteConfigSchema.parse(testData);
         }
         catch (error) {
             if (error instanceof zod_1.z.ZodError) {
@@ -168,6 +185,8 @@ class PhoenixCodeLiteConfig {
             }
             throw error;
         }
+        // If validation passes, apply the change
+        this.setNestedValue(this.data, key, value);
     }
     getAgentConfig(agentType) {
         return this.data.agents[agentType];

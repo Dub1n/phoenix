@@ -38,6 +38,7 @@ const zod_1 = require("zod");
 const session_manager_1 = require("./session-manager");
 const mode_manager_1 = require("./mode-manager");
 const audit_logger_1 = require("../utils/audit-logger");
+const test_utils_1 = require("../utils/test-utils");
 /**
  * Core Foundation - Phase 1 Infrastructure
  *
@@ -83,6 +84,7 @@ class CoreFoundation {
             totalRequests: 0,
             errors: 0
         };
+        this.monitoringIntervals = [];
         // Parse and validate configuration
         this.config = exports.CoreConfigSchema.parse(config || {});
         // Initialize core components
@@ -248,15 +250,17 @@ class CoreFoundation {
             return;
         }
         // Update system state every 30 seconds
-        setInterval(() => {
+        const stateInterval = setInterval(() => {
             this.updateSystemState();
         }, 30000);
+        this.monitoringIntervals.push(stateInterval);
         // Garbage collection monitoring
-        setInterval(() => {
+        const gcInterval = setInterval(() => {
             if (global.gc) {
                 global.gc();
             }
         }, this.config.performance.gcInterval);
+        this.monitoringIntervals.push(gcInterval);
     }
     /**
      * Update system state
@@ -367,6 +371,9 @@ class CoreFoundation {
     async gracefulShutdown() {
         console.log('🔄 Initiating graceful shutdown...');
         try {
+            // Clear monitoring intervals
+            this.monitoringIntervals.forEach(interval => clearInterval(interval));
+            this.monitoringIntervals = [];
             // Shutdown components
             await this.sessionManager.shutdown();
             await this.modeManager.shutdown();
@@ -376,12 +383,14 @@ class CoreFoundation {
                 finalState: this.systemState,
                 timestamp: new Date().toISOString()
             });
+            // Destroy audit logger to clear intervals and flush buffer
+            await this.auditLogger.destroy();
             console.log('✅ Phoenix Code Lite shutdown completed');
-            process.exit(0);
+            (0, test_utils_1.safeExit)(0);
         }
         catch (error) {
             console.error('❌ Error during shutdown:', error);
-            process.exit(1);
+            (0, test_utils_1.safeExit)(1);
         }
     }
     /**

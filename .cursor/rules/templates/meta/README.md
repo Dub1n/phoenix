@@ -11,6 +11,7 @@ This directory contains templates for meta-level documentation files within the 
 ## Available Templates
 
 ### integration_template.md
+
 Template for documenting tool integrations and compatibility solutions. Use this when proposing or documenting:
 
 - Editor plugins (Obsidian, VS Code, Cursor)
@@ -21,6 +22,7 @@ Template for documenting tool integrations and compatibility solutions. Use this
 The template follows the standardized structure used in `meta/integrations/` and includes all required sections for comprehensive integration documentation.
 
 ### assistant_workflow_template.md
+
 Standardized template for creating assistant workflow documents with optimized structure for clarity, consistency, and DSS integration. Use this when creating new assistant workflows that define:
 
 - Step-by-step processes for specific task types
@@ -44,4 +46,4 @@ When creating new meta-level documentation:
 
 - [Integration Guidelines](../../integrations/README.md) - How to use the integration template
 - [Template Overview](../README.md) - General template usage guidelines
-- [DSS Configuration](../../dss_config.yml) - Default metadata and tagging rules 
+- [DSS Configuration](../../dss_config.yml) - Default metadata and tagging rules
