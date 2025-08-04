@@ -61,5 +61,13 @@
     "maxComplexity": 10,
     "requireDocumentation": true,
     "enforceStrictMode": false
+  },
+  "ui": {
+    "interactionMode": "menu",
+    "showNumbers": true,
+    "showDescriptions": true,
+    "compactMode": false,
+    "promptSymbol": "Phoenix> ",
+    "allowModeSwitch": true
   }
 }

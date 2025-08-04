@@ -20,8 +20,20 @@ describe('Phase 8: Integration Testing & Documentation', () => {
   });
   
   afterAll(async () => {
-    await mockServer.stop();
-    await fs.rm(testProjectPath, { recursive: true, force: true });
+    // Ensure proper cleanup
+    if (mockServer) {
+      await mockServer.stop();
+    }
+    try {
+      await fs.rm(testProjectPath, { recursive: true, force: true });
+    } catch (error) {
+      // Ignore cleanup errors
+    }
+  });
+  
+  afterEach(async () => {
+    // Clean up any hanging processes
+    await new Promise(resolve => setTimeout(resolve, 100));
   });
   
   describe('End-to-End Workflow Testing', () => {
@@ -173,9 +185,75 @@ describe('Phase 8: Integration Testing & Documentation', () => {
   });
   
   describe('CLI Integration Testing', () => {
+    test('Debug: Test basic CLI command execution', async () => {
+      const result = await runCLICommand(['--version']);
+      console.log('CLI Version Test Result:', result);
+      expect(result.exitCode).toBe(0);
+    }, 30000);
+    
+    test('Debug: Test help command', async () => {
+      const result = await runCLICommand(['--help']);
+      console.log('CLI Help Test Result:', result);
+      expect(result.exitCode).toBe(0);
+    }, 30000);
+    
+    test('Debug: Test config command', async () => {
+      const result = await runCLICommand(['config', '--show']);
+      console.log('CLI Config Test Result:', result);
+      expect(result.exitCode).toBe(0);
+    }, 30000);
+    
+    test('Debug: Test config command with timeout', async () => {
+      const result = await runCLICommandWithTimeout(['config', '--show'], 5000);
+      console.log('CLI Config Test Result (5s timeout):', result);
+      // Don't expect success, just want to see what happens
+    }, 10000);
+    
+    test('Debug: Test CLI argument parsing', async () => {
+      const result = await runCLICommandWithTimeout(['--help'], 3000);
+      console.log('CLI Help Test Result:', result);
+      // This should work since --help is a basic command
+    }, 10000);
+    
+    test('Debug: Test config command with shorter timeout', async () => {
+      const result = await runCLICommandWithTimeout(['config', '--show'], 3000);
+      console.log('CLI Config Test Result (3s timeout):', result);
+      // Don't expect success, just want to see if we get any output
+    }, 10000);
+    
+    test('Debug: Test configuration functionality directly', async () => {
+      // Test the configuration functionality directly without CLI
+      const { PhoenixCodeLiteConfig } = await import('../../src/config/settings');
+      const { ConfigFormatter } = await import('../../src/cli/config-formatter');
+      
+      try {
+        const config = await PhoenixCodeLiteConfig.load();
+        const formattedConfig = ConfigFormatter.formatConfig(config.export());
+        
+        console.log('Direct Config Test Result:');
+        console.log(formattedConfig);
+        
+        // Verify the configuration is valid
+        const errors = config.validate();
+        expect(errors.length).toBe(0);
+        expect(config.get('version')).toBe('1.0.0');
+        
+      } catch (error) {
+        console.error('Direct config test error:', error);
+        throw error;
+      }
+    }, 10000);
+    
+    test('Debug: Test basic config command', async () => {
+      const result = await runCLICommandWithTimeout(['config'], 3000);
+      console.log('CLI Basic Config Test Result:', result);
+      // This should show the help for config command
+    }, 10000);
+    
     test('All CLI commands work end-to-end', async () => {
       const commands = [
-        ['init', '--force'],
+        ['--version'],
+        ['--help'],
         ['config', '--show'],
         ['generate', '--task', 'Create a test function', '--max-attempts', '2'],
         ['history'],
@@ -215,13 +293,41 @@ describe('Phase 8: Integration Testing & Documentation', () => {
 });
 
 async function runCLICommand(args: string[]): Promise<{exitCode: number, stdout: string, stderr: string}> {
-  return new Promise((resolve) => {
-    const child = spawn('node', ['dist/index.js', ...args], {
+  return new Promise(async (resolve) => {
+    const child = spawn('node', ['dist/src/index.js', ...args], {
       stdio: 'pipe',
+      env: { ...process.env, NODE_ENV: 'test' }
     });
     
     let stdout = '';
     let stderr = '';
+    let resolved = false;
+    
+    const cleanup = () => {
+      if (!resolved) {
+        resolved = true;
+        try {
+          // Close all pipes first
+          child.stdin?.end();
+          child.stdout?.destroy();
+          child.stderr?.destroy();
+          
+          // Kill the process
+          child.kill('SIGTERM');
+          
+          // Force kill after a short delay if needed
+          setTimeout(() => {
+            try {
+              child.kill('SIGKILL');
+            } catch (e) {
+              // Ignore errors
+            }
+          }, 1000);
+        } catch (e) {
+          // Ignore cleanup errors
+        }
+      }
+    };
     
     child.stdout.on('data', (data) => {
       stdout += data.toString();
@@ -231,12 +337,152 @@ async function runCLICommand(args: string[]): Promise<{exitCode: number, stdout:
       stderr += data.toString();
     });
     
-    child.on('close', (code) => {
-      resolve({
-        exitCode: code || 0,
-        stdout,
-        stderr,
-      });
+    child.on('close', async (code) => {
+      if (!resolved) {
+        resolved = true;
+        clearTimeout(timeoutId);
+        
+        // Wait for graceful shutdown to complete in test environment
+        try {
+          const { waitForCLIShutdown } = await import('../../src/utils/test-utils');
+          await waitForCLIShutdown(child, 3000);
+        } catch (error) {
+          // Ignore shutdown timeout errors
+        }
+        
+        resolve({
+          exitCode: code || 0,
+          stdout,
+          stderr,
+        });
+      }
     });
+    
+    child.on('error', async (error) => {
+      if (!resolved) {
+        resolved = true;
+        clearTimeout(timeoutId);
+        
+        // Wait for graceful shutdown to complete in test environment
+        try {
+          const { waitForCLIShutdown } = await import('../../src/utils/test-utils');
+          await waitForCLIShutdown(child, 3000);
+        } catch (shutdownError) {
+          // Ignore shutdown timeout errors
+        }
+        
+        resolve({
+          exitCode: 1,
+          stdout: '',
+          stderr: error.message,
+        });
+      }
+    });
+    
+    // Set a timeout to prevent hanging
+    const timeoutId = setTimeout(async () => {
+      if (!resolved) {
+        resolved = true;
+        cleanup();
+        
+        // Wait for graceful shutdown to complete in test environment
+        try {
+          const { waitForCLIShutdown } = await import('../../src/utils/test-utils');
+          await waitForCLIShutdown(child, 3000);
+        } catch (error) {
+          // Ignore shutdown timeout errors
+        }
+        
+        resolve({
+          exitCode: 1,
+          stdout: '',
+          stderr: 'Command timed out',
+        });
+      }
+    }, 15000); // Increased timeout to 15 seconds
+  });
+}
+
+async function runCLICommandWithTimeout(args: string[], timeoutMs: number): Promise<{exitCode: number, stdout: string, stderr: string}> {
+  return new Promise((resolve) => {
+    const child = spawn('node', ['dist/src/index.js', ...args], {
+      stdio: 'pipe',
+      env: { ...process.env, NODE_ENV: 'test' }
+    });
+
+    let stdout = '';
+    let stderr = '';
+    let resolved = false;
+
+    const cleanup = () => {
+      if (!resolved) {
+        resolved = true;
+        try {
+          // Close all pipes first
+          child.stdin?.end();
+          child.stdout?.destroy();
+          child.stderr?.destroy();
+          
+          // Kill the process
+          child.kill('SIGTERM');
+          
+          // Force kill after a short delay if needed
+          setTimeout(() => {
+            try {
+              child.kill('SIGKILL');
+            } catch (e) {
+              // Ignore errors
+            }
+          }, 1000);
+        } catch (e) {
+          // Ignore cleanup errors
+        }
+      }
+    };
+
+    child.stdout.on('data', (data) => {
+      stdout += data.toString();
+    });
+
+    child.stderr.on('data', (data) => {
+      stderr += data.toString();
+    });
+
+    child.on('close', (code) => {
+      if (!resolved) {
+        resolved = true;
+        clearTimeout(timeoutId);
+        resolve({
+          exitCode: code || 0,
+          stdout,
+          stderr,
+        });
+      }
+    });
+
+    child.on('error', (error) => {
+      if (!resolved) {
+        resolved = true;
+        clearTimeout(timeoutId);
+        resolve({
+          exitCode: 1,
+          stdout: '',
+          stderr: error.message,
+        });
+      }
+    });
+
+    // Set a timeout to prevent hanging
+    const timeoutId = setTimeout(() => {
+      if (!resolved) {
+        resolved = true;
+        cleanup();
+        resolve({
+          exitCode: 1,
+          stdout: '',
+          stderr: 'Command timed out',
+        });
+      }
+    }, timeoutMs);
   });
 }

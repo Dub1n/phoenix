@@ -7,15 +7,18 @@ Every change to Phoenix Code Lite **must be documented** with a structured chang
 ## 📝 Change Documentation Requirements
 
 ### Mandatory Documentation
+
 All changes require a new file in `Phoenix-Reorg/08-Maintenance/Changes/` following the naming convention:
-```
+
+``` text
 YYYY-MM-DD-HHMMSS-{brief-description}.md
 ```
 
 ### Automatic Timestamping
+
 **Never use memory for timestamps**. Always use a command or script:
 
-```bash
+``` bash
 # Get current timestamp
 date "+%Y-%m-%d-%H%M%S"
 
@@ -139,14 +142,17 @@ Use this exact template for all change documentation:
 ## 🔄 Change Types and Guidelines
 
 ### Bug Fix Changes
+
 **Focus**: Correcting incorrect behavior  
 **Key Documentation**:
+
 - Clear description of the bug
 - Steps to reproduce the issue
 - Root cause analysis
 - Fix verification steps
 
 **Example Structure**:
+
 ```markdown
 ## Bug Description
 The `phoenix-code-lite -v` command was not working due to missing version handling in the CLI parser.
@@ -159,24 +165,30 @@ Added version option to CLI configuration with proper version retrieval from pac
 ```
 
 ### Feature Changes
+
 **Focus**: Adding new functionality  
 **Key Documentation**:
+
 - Feature requirements and user stories
 - Implementation approach and alternatives considered
 - User experience design decisions
 - Integration with existing features
 
 ### Enhancement Changes
+
 **Focus**: Improving existing functionality  
 **Key Documentation**:
+
 - Current limitations being addressed
 - Improvement objectives and success criteria
 - Impact on existing users
 - Migration path if needed
 
 ### Security Changes
+
 **Focus**: Addressing security concerns  
 **Key Documentation**:
+
 - Security vulnerability or improvement
 - Risk assessment and mitigation
 - Security testing performed
@@ -185,6 +197,7 @@ Added version option to CLI configuration with proper version retrieval from pac
 ## 🛠️ Implementation Context Documentation
 
 ### User Workflow Context
+
 Always document **where in the user's workflow** this change has impact:
 
 ```markdown
@@ -201,6 +214,7 @@ Always document **where in the user's workflow** this change has impact:
 ```
 
 ### System Architecture Context
+
 Document how the change fits into the overall system:
 
 ```markdown
@@ -218,18 +232,21 @@ Document how the change fits into the overall system:
 ## 📊 Quality Standards for Documentation
 
 ### Completeness Requirements
+
 - [ ] **All sections filled out** - No template sections left empty
 - [ ] **Specific details** - Avoid vague descriptions
 - [ ] **Actionable information** - Include enough detail for future debugging
 - [ ] **Context awareness** - Explain the "why" not just the "what"
 
 ### Accuracy Requirements
+
 - [ ] **Accurate timestamps** - Generated with commands, not memory
 - [ ] **Precise file paths** - Exact paths to modified files
 - [ ] **Specific test results** - Actual test outcomes, not assumptions
 - [ ] **Verified impact** - Confirmed impact on users and system
 
 ### Clarity Requirements
+
 - [ ] **Clear language** - Avoid jargon and ambiguous terms
 - [ ] **Logical structure** - Information flows logically
 - [ ] **Complete sentences** - Professional writing standards
@@ -238,6 +255,7 @@ Document how the change fits into the overall system:
 ## 🔍 Review and Validation Process
 
 ### Self-Review Checklist
+
 Before finalizing change documentation:
 
 - [ ] **Template compliance** - All required sections completed
@@ -247,6 +265,7 @@ Before finalizing change documentation:
 - [ ] **Impact assessment** - User and system impact thoroughly considered
 
 ### Documentation Quality Gates
+
 - [ ] **Completeness**: All template sections filled with relevant information
 - [ ] **Accuracy**: Technical details are correct and verifiable
 - [ ] **Clarity**: Documentation is understandable to future developers
@@ -255,7 +274,8 @@ Before finalizing change documentation:
 ## 📁 File Organization
 
 ### Directory Structure
-```
+
+``` text
 Phoenix-Reorg/08-Maintenance/Changes/
 ├── 2024-08-01-091500-initial-setup.md
 ├── 2024-08-01-143000-fix-cli-version.md
@@ -264,12 +284,14 @@ Phoenix-Reorg/08-Maintenance/Changes/
 ```
 
 ### Naming Conventions
+
 - **Date Format**: YYYY-MM-DD-HHMMSS (24-hour format)
 - **Description**: Brief, hyphenated description (max 50 characters)
 - **No Spaces**: Use hyphens instead of spaces
 - **Descriptive**: Name should indicate the type of change
 
 ### File Lifecycle
+
 1. **Creation**: Created at the start of implementing a change
 2. **Development**: Updated throughout development process
 3. **Completion**: Finalized when change is complete
@@ -278,11 +300,13 @@ Phoenix-Reorg/08-Maintenance/Changes/
 ## 🚨 Critical Documentation Rules
 
 ### Never Skip Documentation
+
 - **No exceptions** - Every change, no matter how small, requires documentation
 - **Real-time updates** - Update documentation as you work, not after
 - **Complete information** - Don't leave sections incomplete for "later"
 
 ### Always Use Commands for Timestamps
+
 ```bash
 # Good - generates actual current time
 date "+%Y-%m-%d-%H%M%S"
@@ -292,11 +316,13 @@ date "+%Y-%m-%d-%H%M%S"
 ```
 
 ### Include Context, Not Just Changes
+
 - **Why not just what** - Explain the reasoning behind changes
 - **User impact** - Always consider how this affects users
 - **System implications** - Document broader system effects
 
 ### Link to Related Documentation
+
 - **API docs** - Reference relevant API documentation
 - **User guides** - Link to affected user documentation
 - **Architecture docs** - Reference architectural implications

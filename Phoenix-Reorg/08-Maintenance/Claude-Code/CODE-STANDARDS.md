@@ -7,6 +7,7 @@ Phoenix Code Lite follows strict TypeScript coding standards to ensure maintaina
 ## 📝 TypeScript Configuration
 
 ### Compiler Settings (tsconfig.json)
+
 ```json
 {
   "compilerOptions": {
@@ -27,6 +28,7 @@ Phoenix Code Lite follows strict TypeScript coding standards to ensure maintaina
 ```
 
 ### ESLint Configuration (eslint.config.js)
+
 ```javascript
 module.exports = {
   parser: '@typescript-eslint/parser',
@@ -48,6 +50,7 @@ module.exports = {
 ## 🏗️ Code Structure Standards
 
 ### File Organization
+
 ```typescript
 // File header structure
 import { ... } from 'node:...';      // Node.js built-in modules first
@@ -71,6 +74,7 @@ export function utilityFunction(): returnType {
 ```
 
 ### Import/Export Standards
+
 ```typescript
 // Prefer named exports over default exports
 export class TDDOrchestrator { }
@@ -88,6 +92,7 @@ export default {
 ## 🔧 Type Safety Standards
 
 ### Interface Design
+
 ```typescript
 // Use strict interface definitions
 export interface TaskContext {
@@ -106,6 +111,7 @@ export type WorkflowPhase =
 ```
 
 ### Function Signatures
+
 ```typescript
 // Explicit return types for all functions
 export async function executeWorkflow(
@@ -132,6 +138,7 @@ export function isValidTaskContext(obj: unknown): obj is TaskContext {
 ```
 
 ### Error Handling with Types
+
 ```typescript
 // Use custom error types with proper inheritance
 export class ValidationError extends Error {
@@ -167,6 +174,7 @@ export async function validateInput(input: unknown): Promise<Result<TaskContext,
 ## 🎨 Naming Conventions
 
 ### Variables and Functions
+
 ```typescript
 // Use camelCase for variables and functions
 const taskDescription = 'Create email validation';
@@ -186,6 +194,7 @@ const valid = validateEmail(email);
 ```
 
 ### Classes and Interfaces
+
 ```typescript
 // Use PascalCase for classes and interfaces
 export interface TaskContext { }
@@ -201,6 +210,7 @@ export class QualityGateManager { }        // Clear: manages quality gates
 ```
 
 ### Constants and Enums
+
 ```typescript
 // Use UPPER_SNAKE_CASE for constants
 export const DEFAULT_MAX_TURNS = 3;
@@ -217,7 +227,8 @@ export enum WorkflowStatus {
 ```
 
 ### File and Directory Names
-```
+
+``` text
 // Use kebab-case for file names
 tdd-orchestrator.ts
 quality-gates.ts
@@ -234,6 +245,7 @@ src/
 ## 🔒 Security-Conscious Coding
 
 ### Input Validation
+
 ```typescript
 // Always validate inputs with Zod schemas
 import { z } from 'zod';
@@ -253,6 +265,7 @@ export function validateTaskContext(input: unknown): TaskContext {
 ```
 
 ### Secure File Operations
+
 ```typescript
 // Use security guardrails for all file operations
 export async function readProjectFile(
@@ -271,6 +284,7 @@ export async function readProjectFile(
 ```
 
 ### Sensitive Data Handling
+
 ```typescript
 // Never log sensitive information
 export class AuditLogger {
@@ -304,6 +318,7 @@ export class AuditLogger {
 ## 📊 Performance Standards
 
 ### Efficient Data Structures
+
 ```typescript
 // Use readonly for immutable data
 export interface WorkflowResult {
@@ -329,6 +344,7 @@ export class ComponentRegistry {
 ```
 
 ### Async/Await Best Practices
+
 ```typescript
 // Use async/await consistently
 export async function executePhases(
@@ -357,6 +373,7 @@ export async function validateMultipleFiles(
 ## 🧪 Testing-Friendly Code
 
 ### Dependency Injection
+
 ```typescript
 // Use dependency injection for testability
 export class TDDOrchestrator {
@@ -380,6 +397,7 @@ export function createTDDOrchestrator(): TDDOrchestrator {
 ```
 
 ### Pure Functions Where Possible
+
 ```typescript
 // Pure functions are easier to test
 export function calculateQualityScore(
@@ -416,6 +434,7 @@ export class MetricsCollector {
 ## 📚 Documentation Standards
 
 ### JSDoc Comments
+
 ```typescript
 /**
  * Executes a complete TDD workflow for the given task description.
@@ -445,6 +464,7 @@ export async function executeWorkflow(
 ```
 
 ### Type Documentation
+
 ```typescript
 /**
  * Configuration context for TDD workflow execution.
@@ -472,6 +492,7 @@ export interface TaskContext {
 ## ✅ Code Quality Checklist
 
 ### Before Committing Code
+
 - [ ] **TypeScript compilation** - Code compiles without errors or warnings
 - [ ] **ESLint validation** - All linting rules pass (target: >95% score)
 - [ ] **Type safety** - No `any` types, proper type annotations
@@ -481,6 +502,7 @@ export interface TaskContext {
 - [ ] **Performance consideration** - No obvious performance issues
 
 ### Code Review Standards
+
 - [ ] **Naming clarity** - Variable and function names are descriptive
 - [ ] **Function size** - Functions are focused and not too long (typically <50 lines)
 - [ ] **Complexity** - Cyclomatic complexity is reasonable

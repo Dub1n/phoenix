@@ -1,30 +1,30 @@
-# Phoenix-Code-Lite Phase Conversion Guide
+# Phase Conversion Guide
 
-This document provides the complete methodology for converting the existing Phoenix-Code-Lite Development Roadmap into the structured, QRMaker-inspired phase format. Use this guide if context is lost or another developer needs to continue the conversion work.
+This document provides the complete methodology for converting the existing <Project> Development Roadmap into the structured, phase-based format. Use this guide if context is lost or another developer needs to continue the conversion work.
 
 ## Conversion Philosophy
 
 ### Why Convert?
 
-The current roadmap is comprehensive but lacks the structured approach needed for systematic development. By applying QRMaker's proven prompt engineering patterns and Phoenix Architecture principles, we create:
+Roadmaps are comprehensive but often lack the structured approach needed for systematic development. By applying structured development principles, we create:
 
 1. **Focused Development Sessions**: Each phase becomes a complete, actionable guide
 2. **Reliable Progression**: Each phase builds systematically on the previous
 3. **Quality-First Approach**: TDD integrated into every phase
 4. **Professional Standards**: Follows proven enterprise development patterns
 
-### QRMaker Patterns Applied
+### Structured Development Patterns Applied
 
 - **Sequential Dependency Management**: Each phase references exact deliverables from previous phases
 - **Test-Driven Development**: Every phase starts with writing tests
 - **Structured Format**: Consistent 7-section structure for predictable workflow
 - **Definition of Done**: Measurable completion criteria that enable next phase
 
-### Phoenix Architecture Integration
+### Architecture Integration
 
-- **StateFlow Principles**: Each phase maps to formal states with success criteria
-- **Quality Gates**: 4-tier validation integrated into each phase
-- **"Code as Data" Validation**: Structured deliverable verification
+- **Project Principles**: Each phase maps to formal states with success criteria
+- **Quality Gates**: Multi-tier validation integrated into each phase
+- **Structured Validation**: Systematic deliverable verification
 - **Modular Design**: Clear separation of concerns between phases
 
 ## Standard Phase Template
@@ -40,14 +40,14 @@ Use this exact structure for every phase conversion:
 ## Detailed Context and Rationale
 
 ### Why This Phase Exists
-[Connection to overall Phoenix-Code-Lite architecture and goals]
+[Connection to overall <Project> architecture and goals]
 
 ### Technical Justification
-[Quote specific sections from Phoenix-Code-Lite Technical Specification]
-[Reference Phoenix Architecture Summary principles]
+[Quote specific sections from the <Project> technical specification]
+[Reference <Project> architecture documents]
 
 ### Architecture Integration
-[How this phase implements Phoenix StateFlow or quality gates]
+[How this phase implements <Project> principles or quality gates]
 
 ## Prerequisites & Verification
 
@@ -85,21 +85,7 @@ Use this exact structure for every phase conversion:
 
 [Final verification steps]
 
-## Definition of Done
-
-• [Specific deliverable 1] - [measurable criteria]
-• [Specific deliverable 2] - [measurable criteria]
-• [Integration requirement] - [verification method]
-• [Quality requirement] - [measurement method]
-• [Foundation for next phase] - [enabling criteria]
-
-## Success Criteria
-
-[High-level description of what success looks like from project perspective]
-[Connection to business/user value]
-[Architectural win achieved]
-
-### N. Implementation Documentation & Phase Transition (2 parts - both required for completion)
+## Implementation Documentation & Phase Transition (2 parts - both required for completion)
 
 - [ ] **Part A**: Document implementation lessons learned in current phase
   - Create comprehensive "Implementation Notes & Lessons Learned" section with:
@@ -117,6 +103,12 @@ Use this exact structure for every phase conversion:
   - **Location**: After Prerequisites section  
   - **Acceptance Criteria**: Next phase document must contain all recommendation categories from current phase
   - **Validation Method**: Read next phase file to confirm recommendations are present
+
+## Success Criteria
+
+[High-level description of what success looks like from project perspective]
+[Connection to business/user value]
+[Architectural win achieved]
 
 ## Definition of Done
 
@@ -138,7 +130,7 @@ Use this exact structure for every phase conversion:
 
 1. **Read Original Phase Content**: Extract all tasks and sub-tasks
 2. **Identify Core Deliverable**: What is the main outcome?
-3. **Map to Phoenix Architecture**: Which principles does this implement?
+3. **Map to <Project> Architecture**: Which principles does this implement?
 4. **Extract Prerequisites**: What must exist from previous phases?
 
 ### Step 2: Structure Application
@@ -158,7 +150,7 @@ Use this exact structure for every phase conversion:
 
 1. **Sequential Logic**: Verify this phase can only succeed if previous phases completed
 2. **Enabling Next Phase**: Ensure deliverables enable subsequent work
-3. **Architecture Alignment**: Confirm alignment with Phoenix principles
+3. **Architecture Alignment**: Confirm alignment with <Project> principles
 
 ## Critical Conversion Rules
 
@@ -176,9 +168,9 @@ Use this exact structure for every phase conversion:
 
 ### 3. Architecture Quote Integration
 
-- Include direct quotes from Phoenix-Code-Lite Technical Specification
-- Reference Phoenix Architecture Summary principles
-- Connect each phase to StateFlow or quality gate concepts
+- Include direct quotes from the <Project> Technical Specification
+- Reference <Project> Architecture Summary principles
+- Connect each phase to project-specific concepts or quality gate principles
 
 ### 4. Measurable Definition of Done
 
@@ -189,38 +181,8 @@ Use this exact structure for every phase conversion:
 ### 5. Professional Development Standards
 
 - Include linting, testing, and code quality verification
-- Add proper TypeScript interfaces and error handling
+- Add proper interfaces and error handling
 - Follow established naming conventions
-
-## Phase Mapping Strategy
-
-### Original Roadmap → New Structure Mapping
-
-> **Phase 1: Environment Setup**
-
-- Core Deliverable: Complete TypeScript development environment
-- Architecture Connection: Technology integration foundation
-- TDD Focus: Environment validation tests
-
-> **Phase 2: Claude Code Integration**
-
-- Core Deliverable: Working Claude Code SDK client wrapper
-- Architecture Connection: LLM integration layer
-- TDD Focus: SDK integration and communication tests
-
-> **Phase 3: TDD Workflow Engine**
-
-- Core Deliverable: Three-phase TDD orchestrator
-- Architecture Connection: StateFlow implementation
-- TDD Focus: Workflow orchestration and state management tests
-
-> **Phase 4: Quality Gates**
-
-- Core Deliverable: Comprehensive quality validation system
-- Architecture Connection: Quality gates architecture
-- TDD Focus: Quality validation and gate enforcement tests
-
-[Continue mapping for all phases...]
 
 ## Quality Assurance Checklist
 
@@ -228,7 +190,7 @@ For each converted phase, verify:
 
 - [ ] **Sequential Logic**: Phase builds directly on previous phase deliverables
 - [ ] **TDD Integration**: Starts with test writing, includes test validation
-- [ ] **Architecture Alignment**: References Phoenix principles and Claude Code integration
+- [ ] **Architecture Alignment**: References <Project> principles and integration
 - [ ] **Measurable Outcomes**: Definition of Done has specific, verifiable criteria
 - [ ] **Professional Standards**: Includes code quality, linting, testing requirements
 - [ ] **Next Phase Enablement**: Deliverables clearly enable subsequent work
@@ -243,7 +205,7 @@ For each converted phase, verify:
 
 1. **Vague Prerequisites**: Always reference specific previous phase deliverables
 2. **Missing TDD**: Every phase must have test-first approach
-3. **Architecture Disconnect**: Always connect to Phoenix principles
+3. **Architecture Disconnect**: Always connect to <Project> principles
 4. **Unmeasurable Criteria**: Definition of Done must be verifiable
 5. **Sequential Gaps**: Each phase must logically depend on the previous
 6. **Quality Shortcuts**: Include full development tooling and validation
@@ -260,22 +222,22 @@ The master roadmap should:
 2. **Dependency Chain**: Visual representation of how phases connect
 3. **Progress Tracking**: Checkbox system for phase completion
 4. **Quick Reference**: Links to individual phase documents
-5. **Architecture Map**: How phases implement Phoenix principles
+5. **Architecture Map**: How phases implement <Project> principles
 
 ### Master Roadmap Structure
 
 ```markdown
-# Phoenix-Code-Lite Master Development Roadmap
+# <Project> Master Development Roadmap
 
 ## Architecture Overview
-[Connection to Phoenix principles]
+[Connection to <Project> principles]
 
 ## Phase Dependencies
 [Visual or textual representation of how phases connect]
 
 ## Development Progress
-- [ ] Phase 1: Environment Setup ([Link](Phase-01-Environment-Setup.md))
-- [ ] Phase 2: Claude Code Integration ([Link](Phase-02-Core-Architecture.md))
+- [ ] Phase 1: <Phase 1 Name> ([Link](Phase-01-<Phase-01-Name>.md))
+- [ ] Phase 2: <Phase 2 Name> ([Link](Phase-02-<Phase-02-Name>.md))
 [... continue for all phases]
 
 ## Quick Start Guide
@@ -284,15 +246,10 @@ The master roadmap should:
 
 ## Conversion Priority Order
 
-1. **Phase 1**: Environment Setup (COMPLETED - see example)
-2. **Phase 2**: Core Architecture & Claude Code Integration  
-3. **Phase 3**: TDD Workflow Engine Implementation
-4. **Phase 4**: Quality Gates & Validation Framework
-5. **Phase 5**: Configuration Management System
-6. **Phase 6**: Audit Logging & Metrics
-7. **Phase 7**: CLI Interface & User Experience
-8. **Phase 8**: Integration Testing & Documentation
-9. **Master Roadmap**: Final overview document
+1. **Phase 1**
+2. **Phase 2**
+[... continue for all phases]
+N. **Master Roadmap**: Final overview document
 
 ## Success Metrics
 
@@ -302,6 +259,55 @@ A successful conversion will result in:
 - **Quality Integration**: TDD and quality gates built into every phase
 - **Reliable Progression**: Each phase builds logically on the previous
 - **Professional Standards**: Enterprise-ready development practices
-- **Architecture Alignment**: Clear connection to Phoenix principles throughout
+- **Architecture Alignment**: Clear connection to <Project> principles throughout
 
-This conversion approach transforms the existing roadmap from a task list into a professional development framework that ensures systematic, quality-first implementation of Phoenix-Code-Lite.
+This conversion approach transforms the existing roadmap from a task list into a professional development framework that ensures systematic, quality-first implementation of the <Project>.
+
+## Quality Gates Integration
+
+Quality Gates are systematic checkpoints that ensure code meets defined standards before proceeding to the next development phase. This concept is applicable to any software project and includes:
+
+### Generic Quality Gate Categories
+
+1. **Code Quality Gates**
+   - Linting compliance (ESLint, Pylint, etc.)
+   - Code formatting standards
+   - Complexity metrics
+   - Documentation completeness
+
+2. **Testing Quality Gates**
+   - Unit test coverage thresholds
+   - Integration test passing rates
+   - Performance test benchmarks
+   - Security test validation
+
+3. **Security Quality Gates**
+   - Vulnerability scanning
+   - Dependency security audits
+   - Code security review
+   - Access control validation
+
+4. **Performance Quality Gates**
+   - Load testing results
+   - Memory usage benchmarks
+   - Response time requirements
+   - Resource utilization limits
+
+### Implementation in Phases
+
+Each phase should include relevant quality gates based on the project's requirements:
+
+- **Early Phases**: Focus on code quality and basic testing
+- **Middle Phases**: Add security scanning and performance testing
+- **Later Phases**: Include comprehensive integration and user acceptance testing
+
+### Quality Gate Configuration
+
+Projects should define their quality gate criteria based on:
+
+- Industry standards for the technology stack
+- Organizational requirements
+- Regulatory compliance needs
+- Performance and security requirements
+
+This ensures that quality gates are tailored to the specific project while maintaining the systematic approach to quality validation.

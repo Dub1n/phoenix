@@ -1,5 +1,28 @@
 # Phase 2: Core Architecture & Claude Code Integration
 
+## ⚠️ CRITICAL IMPLEMENTATION ISSUES
+
+**Status**: Implemented with significant issues requiring fixes
+
+### Known Issues
+
+1. **Claude Code SDK Integration**: Placeholder implementation - actual SDK integration not working
+2. **Test Failures**: Multiple test failures in core architecture integration tests
+3. **Schema Validation Issues**: Some Zod schema validations failing in tests
+4. **Agent System**: Agent specialization system implemented but not fully tested
+5. **Security Guardrails**: Implemented but may have integration issues with actual Claude Code SDK
+6. **A1: Claude Code SDK Integration Issues**: Placeholder implementations instead of actual SDK calls
+7. **A2: Test Failure Analysis**: Multiple test failures in core architecture integration tests
+
+### Further Investigation Needed
+
+- Complete Claude Code SDK integration audit
+- Test failure root cause analysis
+- Schema validation error investigation
+- Security guardrails integration verification
+
+---
+
 ## High-Level Goal
 
 Implement the core Claude Code SDK integration layer with structured data validation (Zod schemas) and agent specialization system, establishing the foundation for TDD workflow orchestration.
@@ -1183,3 +1206,37 @@ console.log('Valid context:', TaskContextSchema.parse({
 ## Phase Transition Task Completed
 
 ✓ **Phase 3 Recommendations**: The recommendations above should be incorporated into Phase 3 planning after the Prerequisites section.
+
+### A1: Claude Code SDK Integration Issues
+
+**Issue**: The Claude Code SDK integration is implemented as placeholder interfaces rather than actual SDK calls.
+
+**Impact**:
+
+- All Claude Code operations throw "not yet implemented" errors
+- TDD workflow cannot actually interact with Claude Code
+- Tests fail when trying to use actual SDK functionality
+
+**Required Fix**:
+
+- Replace placeholder implementations with actual Claude Code SDK calls
+- Implement proper error handling for SDK operations
+- Add retry mechanisms for transient failures
+
+### A2: Test Failure Analysis
+
+**Issue**: Multiple test failures in core architecture integration tests, particularly around schema validation and agent system.
+
+**Impact**:
+
+- Core functionality not properly validated
+- Integration tests failing
+- Quality assurance compromised
+
+**Required Fix**:
+
+- Investigate and fix schema validation errors
+- Resolve agent system integration issues
+- Ensure all integration tests pass
+
+**Phase 2 Status**: ⚠️ **IMPLEMENTED WITH ISSUES** - Core architecture established but Claude Code SDK integration and test failures need resolution before Phase 3 development.

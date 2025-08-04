@@ -3,12 +3,13 @@
 # Replace the placeholder content with your actual concept explanation
 # Delete this instructional header when you're done
 ---
-
+``` yaml
 ---
 tags: [concept, explanation, theory] # Add relevant tags
 provides: [concept_name] # What concept this document explains
 requires: [prerequisite_concept] # Any prerequisites to understand this concept
 ---
+```
 
 # Concept: [Name of the Concept]
 
@@ -51,25 +52,19 @@ Historical context and the evolution of this concept. When, how, and why did it 
 
 Detailed explanation of the first principle underlying this concept.
 
-```
-Example or illustration if applicable
-```
+> Example or illustration if applicable
 
 ### Principle 2: [Name]
 
 Detailed explanation of the second principle underlying this concept.
 
-```
-Example or illustration if applicable
-```
+> Example or illustration if applicable
 
 ### Principle 3: [Name]
 
 Detailed explanation of the third principle underlying this concept.
 
-```
-Example or illustration if applicable
-```
+> Example or illustration if applicable
 
 ## Examples
 
@@ -77,9 +72,7 @@ Example or illustration if applicable
 
 A straightforward example that illustrates the basic concept:
 
-```
-Code, diagram, or detailed description
-```
+> Code, diagram, or detailed description
 
 Explanation of how this example demonstrates the concept.
 
@@ -87,9 +80,7 @@ Explanation of how this example demonstrates the concept.
 
 A more complex example that shows the concept in a realistic context:
 
-```
-Code, diagram, or detailed description
-```
+> Code, diagram, or detailed description
 
 Explanation of how this example demonstrates the concept.
 
@@ -155,4 +146,4 @@ The misconception and the correct understanding.
 
 **Term 1**: Definition
 **Term 2**: Definition
-**Term 3**: Definition 
+**Term 3**: Definition

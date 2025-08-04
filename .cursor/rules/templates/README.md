@@ -10,22 +10,26 @@ This directory contains template files for reference. These templates are availa
 ## Available Templates
 
 ### Documentation Templates
+
 - `markdown-document-template.md` - Standard document structure with frontmatter
 - `readme-template.md` - README file template for directories  
 - `workflow-template.md` - Process workflow documentation template
 
 ### Code Templates
+
 - `python-module-template.py` - Python module with frontmatter and structure
 - `typescript-component-template.tsx` - TypeScript React component template
 - `configuration-template.yml` - YAML configuration file template
 
 ### Meta Templates
+
 - `assistant-guideline-template.md` - Template for assistant guidelines
 - `task-breakdown-template.md` - Task decomposition document template
 
 ## Usage
 
 When creating new files, the AI should:
+
 1. Check this templates/ directory first
 2. Select appropriate template for the file type
 3. Customize template content for specific use case
@@ -35,8 +39,9 @@ When creating new files, the AI should:
 ## Template Standards
 
 All templates include:
+
 - Proper DSS frontmatter with tags, provides, requires
 - Clear structure and sections
 - Example content and placeholders
 - Comments explaining customization points
-- Cross-reference patterns using mdc: links 
+- Cross-reference patterns using mdc: links

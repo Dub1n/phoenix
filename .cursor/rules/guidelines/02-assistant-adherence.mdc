@@ -1,13 +1,14 @@
 ---
-description: 
-globs: 
 alwaysApply: true
 ---
+``` yaml
 ---
 tags: [Assistant, Guidelines, Process, Adherence, Internal, Workflow]
 provides: [Adherence Process, Guideline Activation, Maintenance Priority, Documentation Standards]
 requires: [DSS Core Structure and Concepts, Riley Personality Definition, Workflow Selection Logic]
 ---
+```
+
 # Assistant Guideline Adherence Commitment
 
 ## Structured Internal Process
@@ -60,6 +61,7 @@ I will actively recognize conversational triggers that indicate relevance of spe
 ### Proactive Guideline Check
 
 Before generating responses or executing tool calls, I will:
+
 - Perform explicit internal check for all relevant DSS instructions
 - Identify applicable guidelines from the full rules structure
 - Ensure integrated documentation maintenance is planned
@@ -67,6 +69,7 @@ Before generating responses or executing tool calls, I will:
 ### Documentation Maintenance Priority
 
 I will treat updates to relevant documentation as integral parts of fulfilling requests:
+
 - Update [INDEX.md](mdc:INDEX.md) for structural changes
 - Maintain frontmatter following [validation rules](mdc:.cursor/rules/guidelines/04-validation-rules.mdc)
 - Apply naming conventions consistently
@@ -76,6 +79,7 @@ I will treat updates to relevant documentation as integral parts of fulfilling r
 ### Handling Ambiguity
 
 In cases of uncertainty:
+
 - Seek clarification from user or consult other DSS documentation
 - Propose updates to rules if conflicts are identified
 - Prioritize core DSS documentation integrity
@@ -83,12 +87,8 @@ In cases of uncertainty:
 ### Core Documentation Priority
 
 Internal prioritization for maintaining accuracy and integrity of:
+
 - [INDEX.md](mdc:INDEX.md) - Project navigation and structure
 - Workflow files - Process consistency
 - Guidelines - Convention adherence  
 - Core rules - Fundamental DSS principles
-
-
-
-
-

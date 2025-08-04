@@ -1,19 +1,22 @@
 ---
-description: 
-globs: 
 alwaysApply: true
 ---
+``` yaml
 ---
 tags: [Guidelines, Backlinks, Cross References, Navigation, Documentation]
 provides: [Backlink Implementation, Reference Tracking, Navigation Standards]
 requires: [DSS Core Structure and Concepts, Maintenance Triggers]
 ---
+```
+
 # Backlink Conventions
 
 ## Overview
+
 Backlinks connect files that reference each other, making navigation and dependency tracking easier across the project.
 
 ## Purpose of Backlinks
+
 1. **Discoverability**: Find all files that reference a particular document
 2. **Dependency Tracking**: Clarify which files depend on or reference other files
 3. **Impact Analysis**: Assess the impact of changes by seeing what depends on it
@@ -22,6 +25,7 @@ Backlinks connect files that reference each other, making navigation and depende
 ## Backlink Implementation
 
 ### 1. YAML Frontmatter References
+
 Primary method using existing `provides` and `requires` metadata fields:
 
 ```yaml
@@ -33,6 +37,7 @@ requires: [meta/dss_config.yml, docs/automated_formatting]
 ```
 
 ### 2. Explicit Backlinks Section
+
 Each file should include a "Referenced By" section at the end:
 
 ```markdown
@@ -46,6 +51,7 @@ Each file should include a "Referenced By" section at the end:
 ## Backlink Maintenance Guidelines
 
 ### For the Assistant
+
 1. **Update During Renaming**: When renaming a file, update all backlinks that reference it
 2. **Add When Creating References**: When adding a reference to a file, also add a backlink in the referenced file
 3. **Verify Bidirectionality**: Ensure that if file A references file B, file B includes a backlink to file A
@@ -53,6 +59,7 @@ Each file should include a "Referenced By" section at the end:
 5. **Format Consistently**: Use the Markdown link format `[filename](mdc:path/to/file)` for all backlinks
 
 ## Best Practices
+
 1. **Prioritize Important References**: Focus on substantive dependencies
 2. **Group Related Backlinks**: When a file has many backlinks, group them by category
 3. **Update Backlinks Proactively**: Add backlinks immediately when creating new references
@@ -60,12 +67,10 @@ Each file should include a "Referenced By" section at the end:
 5. **Consider Automation**: Implement automated backlink generation where possible
 
 ## Integration with DSS Workflows
+
 Backlink maintenance should be integrated into:
+
 1. **File Creation**: Add backlink placeholders when creating new files
 2. **Documentation Updates**: Verify and update backlinks when updating documentation
 3. **Refactoring**: Ensure backlinks are updated when moving or renaming files
 4. **Code Review**: Include backlink verification in code review checklists
-
-
-
-

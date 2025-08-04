@@ -10,7 +10,7 @@ This template provides DSS-compliant organization for Android WearOS projects ba
 
 ## Recommended Directory Structure
 
-```
+``` text
 project-name-dss/
 ├── src/
 │   ├── wear/                    # WearOS app module
@@ -63,11 +63,13 @@ project-name-dss/
 ## Key WearOS Development Considerations
 
 ### 1. Module Organization
+
 - **Separate modules** for wear and mobile apps to maintain clear boundaries
 - **Shared module** for common code and data synchronization logic
 - **Independent builds** allowing development of wear-only or mobile-only features
 
 ### 2. Data Synchronization
+
 - Implement data layer API in `src/shared/communication/`
 - Use MessageClient for simple data exchange
 - Use DataClient for synchronized data storage
@@ -76,21 +78,25 @@ project-name-dss/
 ### 3. WearOS-Specific Features
 
 #### Watch Faces
+
 - Store in `src/wear/watchfaces/`
 - Template available in `docs/templates/watchface-template.kt`
 - Consider battery optimization and ambient mode
 
 #### Complications
+
 - Organize by type in `src/wear/complications/`
 - Implement data providers for different complication types
 - Test with various watch face combinations
 
 #### Tiles
+
 - Store in `src/wear/tiles/`
 - Keep interactions simple and touch-friendly
 - Optimize for quick glance interactions
 
 ### 4. Testing Strategy
+
 - **Unit tests**: Focus on business logic and data transformations
 - **Integration tests**: Test watch-phone communication
 - **Emulator tests**: Use WearOS emulator configurations in `tests/wearos/emulator/`
@@ -100,6 +106,7 @@ project-name-dss/
 Based on installation report feedback for Windows users:
 
 ### Prerequisites
+
 1. **Android Studio** with WearOS support
 2. **WearOS emulator** or physical device
 3. **Gradle** configured for multi-module builds
@@ -108,6 +115,7 @@ Based on installation report feedback for Windows users:
 ### Common Windows Issues & Solutions
 
 #### Path Length Limitations
+
 ```yaml
 # In meta/wearos-config.yml
 build:
@@ -116,10 +124,12 @@ build:
 ```
 
 #### Console Output Issues
+
 - Use Android Studio terminal instead of Windows Command Prompt
 - Set `JAVA_OPTS=-Dfile.encoding=UTF-8` for proper Unicode handling
 
 #### Emulator Performance
+
 - Enable Hyper-V if available
 - Allocate sufficient RAM for WearOS emulator
 - Use hardware acceleration when possible
@@ -127,6 +137,7 @@ build:
 ## Sample Configuration Files
 
 ### meta/wearos-config.yml
+
 ```yaml
 # WearOS Project Configuration
 project:
@@ -154,6 +165,7 @@ dependencies:
 ```
 
 ### Sample Gradle Module Structure
+
 ```gradle
 // src/wear/build.gradle
 android {
@@ -197,4 +209,4 @@ dependencies {
 
 ---
 
-*This template addresses common issues found in installation reports for WearOS projects on Windows platforms.* 
+*This template addresses common issues found in installation reports for WearOS projects on Windows platforms.*
