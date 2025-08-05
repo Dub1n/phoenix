@@ -12,7 +12,7 @@ param(
 $projectRoot = Split-Path -Parent $PSScriptRoot
 
 # Function to check if command should use safe execution
-function Should-UseSafeExecution {
+function Test-ShouldUseSafeExecution {
     param([string]$Command)
     
     $safeCommands = @(
@@ -86,7 +86,7 @@ function Invoke-NormalExecution {
 
 # Main execution logic
 if ($Command) {
-    if (Should-UseSafeExecution -Command $Command) {
+    if (Test-ShouldUseSafeExecution -Command $Command) {
         Invoke-SafeExecution -Command $Command -Arguments $Arguments -Background $Background -Debug $Debug
     } else {
         Invoke-NormalExecution -Command $Command -Arguments $Arguments -Background $Background

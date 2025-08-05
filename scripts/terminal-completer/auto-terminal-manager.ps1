@@ -144,10 +144,10 @@ function Invoke-SafeCommand {
                 # Wait for completion with timeout
                 if ($process.WaitForExit($TimeoutMs)) {
                     $output = $process.StandardOutput.ReadToEnd()
-                    $error = $process.StandardError.ReadToEnd()
+                    $errOutput = $process.StandardError.ReadToEnd()
                     
                     if ($process.ExitCode -eq 0) {
-                        return @{ Success = $true; Output = $output; Error = $error }
+                        return @{ Success = $true; Output = $output; Error = $errOutput }
                     }
                     else {
                         if ($Debug) { Write-Host "Command failed with exit code: $($process.ExitCode)" }
