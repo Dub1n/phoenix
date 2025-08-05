@@ -3,6 +3,14 @@ description:
 globs: 
 alwaysApply: true
 ---
+```yaml
+---
+tags:  [DSS, Core, Structure, Concepts]
+provides: [DSS Core Structure and Concepts]
+requires: [DSS Core Structure and Concepts]
+---
+```
+
 # DSS Rule Configuration Optimization Guide
 
 ## Overview
@@ -12,6 +20,7 @@ This guide documents the optimal configuration strategy for DSS Cursor rules, ba
 ## Current vs. Recommended Configuration
 
 ### Current Setup Analysis
+
 - **Total Rules**: 22 files (2 core + 8 workflows + 11 guidelines + 1 config)
 - **Current Configuration**: All rules set to "Always" (alwaysApply: true)
 - **Context Impact**: ~22 rules loaded in every conversation
@@ -20,20 +29,23 @@ This guide documents the optimal configuration strategy for DSS Cursor rules, ba
 ### Recommended Hybrid Approach
 
 #### Always (Essential Foundation - 4 files)
+
 Keep these core rules always loaded for consistent DSS operation:
 
 - `00-dss-core.mdc` - Core DSS concepts needed for all decisions
-- `01-dss-behavior.mdc` - Riley personality and consistent behavior 
+- `01-dss-behavior.mdc` - Riley personality and consistent behavior
 - `workflows/00-workflow-selection.mdc` - Decision tree essential for all tasks
 - `guidelines/01-dss-maintenance.mdc` - Maintenance integration for all workflows
 
 #### Agent Requested (Context-Specific - 17 files)
+
 Convert these rules to agent-requested with optimized descriptions:
 
 - 7 individual workflow files
 - 10 specific guideline files
 
 #### Why Not Auto-Attached?
+
 DSS is methodology-agnostic and works with any project type. DSS workflows are driven by task type and complexity, not file extensions, making file-pattern-based triggers ineffective.
 
 ## Optimal Agent Requested Descriptions
@@ -41,36 +53,43 @@ DSS is methodology-agnostic and works with any project type. DSS workflows are d
 ### Workflow Files
 
 #### `workflows/01-quick-tasks.mdc`
+
 ```mdc
 description: "USE WHEN handling simple, atomic tasks affecting 1-2 files that can be completed in a single interaction. Provides streamlined execution guidelines for minimal-scope changes, text corrections, and simple modifications."
 ```
 
 #### `workflows/02-code-modification.mdc`
+
 ```mdc
 description: "USE WHEN creating, editing, or refactoring source code, implementing new functions/classes, or making API changes. Provides development-focused workflow with architecture integration and testing requirements."
 ```
 
 #### `workflows/03-documentation-driven.mdc`
+
 ```mdc
 description: "USE WHEN creating specifications, planning features, writing API documentation, or taking a documentation-first approach to development. Provides template-based documentation workflow and planning guidelines."
 ```
 
 #### `workflows/04-task-decomposition.mdc`
+
 ```mdc
 description: "USE WHEN handling complex, multi-step tasks that span multiple files or require coordination across systems. Provides structured breakdown methodology, status tracking, and phase management for large initiatives."
 ```
 
 #### `workflows/05-documentation-refactoring.mdc`
+
 ```mdc
 description: "USE WHEN systematically updating, restructuring, or improving existing documentation across multiple files. Provides coordinated change management, cross-reference updates, and consistency enforcement for doc reorganization."
 ```
 
 #### `workflows/06-github-issues-integration.mdc`
+
 ```mdc
 description: "USE WHEN processing GitHub Issues, analyzing user feedback patterns, or converting community reports into development tasks. Provides issue classification, pattern detection, and community feedback integration workflows."
 ```
 
 #### `workflows/07-development-queue.mdc`
+
 ```mdc
 description: "USE WHEN managing continuous improvement cycles, processing installation reports, or generating development tasks from user feedback patterns. Provides automated task generation and community-driven enhancement workflows."
 ```
@@ -78,51 +97,61 @@ description: "USE WHEN managing continuous improvement cycles, processing instal
 ### Guidelines Files
 
 #### `guidelines/00-dss-templates.mdc`
+
 ```mdc
 description: "USE WHEN creating new files or working with code/documentation templates. Provides template selection guidance, frontmatter standards, and file creation patterns for consistent project structure."
 ```
 
 #### `guidelines/02-assistant-adherence.mdc`
+
 ```mdc
 description: "USE WHEN ensuring systematic adherence to DSS guidelines or implementing structured internal processes. Provides adherence framework, guideline activation triggers, and maintenance priority guidance."
 ```
 
 #### `guidelines/03-naming-conventions.mdc`
+
 ```mdc
 description: "USE WHEN naming files, functions, variables, or organizing project structure. Provides LLM-optimized naming standards, semantic discoverability patterns, and file organization conventions."
 ```
 
 #### `guidelines/04-validation-rules.mdc`
+
 ```mdc
 description: "USE WHEN working with YAML frontmatter, file metadata, validation errors, or auto-correction. Provides frontmatter standards, format consistency rules, and validation integration protocols."
 ```
 
 #### `guidelines/05-tag-conventions.mdc`
+
 ```mdc
 description: "USE WHEN adding tags to files, categorizing content, or organizing metadata classification systems. Provides comprehensive tagging standards, classification guidelines, and tag consistency frameworks."
 ```
 
 #### `guidelines/06-backlink-conventions.mdc`
+
 ```mdc
 description: "USE WHEN managing cross-references, updating documentation links, handling file renames, or maintaining bidirectional navigation. Provides backlink implementation and reference tracking standards."
 ```
 
 #### `guidelines/07-folder-readme-policy.mdc`
+
 ```mdc
 description: "USE WHEN creating or updating folder README files, managing directory documentation, or establishing navigation standards. Provides README structure templates and folder documentation policies."
 ```
 
 #### `guidelines/08-github-issue-labels.mdc`
+
 ```mdc
 description: "USE WHEN working with GitHub Issues, applying labels, or managing project issue classification systems. Provides standardized label conventions, categorization systems, and automated labeling guidance."
 ```
 
 #### `guidelines/09-error-recovery.mdc`
+
 ```mdc
 description: "USE WHEN encountering errors, implementing self-correction, debugging workflows, or establishing quality assurance processes. Provides systematic error detection, recovery procedures, and prevention protocols."
 ```
 
 #### `guidelines/10-feedback-loop.mdc`
+
 ```mdc
 description: "USE WHEN collecting user feedback, implementing continuous improvement, analyzing performance patterns, or enhancing development processes. Provides feedback collection, integration protocols, and improvement implementation frameworks."
 ```
@@ -130,12 +159,14 @@ description: "USE WHEN collecting user feedback, implementing continuous improve
 ## Description Design Principles
 
 ### Effective Trigger Patterns
+
 - **Clear Activation**: Start with "USE WHEN" followed by specific scenarios
 - **Multiple Contexts**: Include various related situations that might trigger the rule
 - **Action-Oriented**: Focus on what the user is trying to accomplish
 - **Semantic Richness**: Use terms the agent might encounter in user requests
 
 ### Capability Communication
+
 - **Specific Provides**: Clearly state what the rule delivers
 - **Differentiation**: Distinguish between similar rules (e.g., workflow types)
 - **Scope Clarity**: Define boundaries and applicability
@@ -143,16 +174,19 @@ description: "USE WHEN collecting user feedback, implementing continuous improve
 ## Implementation Strategy
 
 ### Phase 1: Workflow Conversion
+
 1. Convert individual workflow files to Agent Requested
 2. Test workflow selection and transitions
 3. Verify agent requests appropriate workflows when following MDC links
 
 ### Phase 2: Guidelines Conversion
+
 1. Start with less frequently used guidelines
 2. Convert high-impact guidelines (templates, validation, naming)
 3. Monitor effectiveness and adjust descriptions
 
 ### Phase 3: Validation and Optimization
+
 1. Track rule request patterns
 2. Refine descriptions based on usage
 3. Optimize for common scenarios
@@ -160,17 +194,20 @@ description: "USE WHEN collecting user feedback, implementing continuous improve
 ## Benefits of Hybrid Approach
 
 ### Performance Improvements
+
 - **Token Efficiency**: Reduces base context by ~75%
 - **Faster Response**: Less context processing overhead
 - **Targeted Loading**: Only relevant rules loaded per conversation
 
 ### Maintains DSS Integrity
+
 - **Core Always Available**: Essential DSS concepts never missing
 - **Smart Context**: Agent intelligently requests specific guidance
 - **Self-Healing**: Proper descriptions enable automatic rule discovery
 - **Cross-Reference Support**: MDC links provide navigation paths
 
 ### Operational Benefits
+
 - **Intentional Context**: Agent becomes more deliberate about rule usage
 - **Reduced Noise**: Less irrelevant context in conversations
 - **Scalable**: System can grow without linear context increase
@@ -178,12 +215,14 @@ description: "USE WHEN collecting user feedback, implementing continuous improve
 ## Monitoring and Maintenance
 
 ### Key Metrics
+
 - Rule request frequency by type
 - Workflow transition accuracy
 - Agent decision quality with reduced context
 - User satisfaction with response relevance
 
 ### Adjustment Triggers
+
 - Rules never being requested (description too narrow)
 - Rules over-requested (description too broad)
 - Missing context in specific scenarios
@@ -192,6 +231,7 @@ description: "USE WHEN collecting user feedback, implementing continuous improve
 ## Rollback Strategy
 
 If the hybrid approach proves problematic:
+
 1. **Immediate**: Revert critical rules to Always
 2. **Selective**: Keep high-value rules as Agent Requested
 3. **Analysis**: Determine optimal always/requested balance
@@ -200,12 +240,14 @@ If the hybrid approach proves problematic:
 ## Best Practices
 
 ### Rule Description Maintenance
+
 - Regular review of trigger scenarios
 - Update based on actual usage patterns
 - Incorporate user feedback on missing context
 - Test descriptions with real scenarios
 
 ### System Evolution
+
 - Monitor Cursor rule system updates
 - Adapt to new rule types and capabilities
 - Maintain compatibility with DSS principles

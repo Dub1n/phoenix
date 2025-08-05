@@ -1,33 +1,38 @@
 ---
-description: 
-globs: 
 alwaysApply: true
 ---
+``` yaml
 ---
 tags: [Naming, Conventions, LLM Optimization, Semantic Search, File Organization]
 provides: [Naming Standards, Semantic Optimization, File Patterns]
 requires: [DSS Core Structure and Concepts]
 ---
+```
+
 # LLM-Optimized Naming Conventions
 
 ## Core Principles for Semantic Discoverability
 
 ### 1. Descriptive Clarity
+
 - **Be explicit over implicit**: Use names that directly describe content/purpose
 - **Avoid abbreviations**: Spell out terms fully unless extremely common (API, HTTP)
 - **Include purpose in name**: Indicate what the file does or contains
 
 ### 2. Contextual Consistency  
+
 - **Use consistent terminology**: Same terms for same concepts throughout repository
 - **Follow domain-specific conventions**: Align with project's domain terminology
 - **Maintain consistent patterns**: Similar naming for files serving similar purposes
 
 ### 3. Hierarchical Organization
+
 - **Folder names as contexts**: Provide clear context for contained files
 - **Progressive specificity**: General to specific as you navigate deeper
 - **Group related items**: Related functionality in same directory with showing relationship
 
 ### 4. Semantic Richness
+
 - **Use distinctive keywords**: Include terms for natural query matching
 - **Avoid generic names**: Specific over generic (`user_authentication.py` vs `auth.py`)
 - **Consider searchability**: Include terms for file/functionality searches
@@ -35,6 +40,7 @@ requires: [DSS Core Structure and Concepts]
 ## File Naming Conventions
 
 ### Format Rules
+
 - **Python files**: `snake_case.py`
 - **JavaScript/TypeScript**: `camelCase.js` or `PascalCase.tsx` for React components  
 - **Documentation**: `kebab-case.md` or `snake_case.md` (consistent throughout project)
@@ -45,6 +51,7 @@ requires: [DSS Core Structure and Concepts]
 ### Naming Patterns by File Type
 
 #### Documentation Files
+
 - **Guides**: `how-to-{action}.md` or `{topic}-guide.md`
 - **References**: `{topic}-reference.md`  
 - **Explanations**: `understanding-{concept}.md` or `{concept}-explained.md`
@@ -52,6 +59,7 @@ requires: [DSS Core Structure and Concepts]
 - **Templates**: `{type}_template.md`
 
 #### Source Code Files
+
 - **Modules**: `{functionality}_{type}.py`
 - **Utilities**: `{purpose}_utils.py`
 - **Classes**: Match primary class name within file
@@ -59,16 +67,19 @@ requires: [DSS Core Structure and Concepts]
 - **Tests**: `test_{module_being_tested}.py`
 
 #### Configuration Files
+
 - **Main config**: `{scope}_config.{ext}`
 - **Environment**: `.env.{environment}`  
 - **Settings**: `{component}_settings.{ext}`
 
 #### Scripts
+
 - **Command-line tools**: `{action}_{target}.py`
 - **Automation scripts**: `{purpose}_{automation}.py`
 - **Conversions**: `{source}_to_{destination}.py`
 
 ## Directory Naming Conventions
+
 - **Top-level**: Simple, clear nouns (`docs`, `src`, `tests`)
 - **Functional groups**: Name by domain/functionality (`authentication`, `data_processing`)
 - **Feature modules**: Name after implemented feature (`user_management`, `reporting`)
@@ -77,16 +88,15 @@ requires: [DSS Core Structure and Concepts]
 ## Semantic Search Optimization
 
 To optimize for LLM semantic search:
+
 1. **Include key terms**: Incorporate terms users/AI might use when searching
 2. **Consider variations**: Think about different ways to describe file purpose/content
 3. **Balance specificity**: Specific enough to distinguish, general enough for discovery
 4. **Align with content**: Filename should directly relate to primary content/functionality
 
 ## Implementation Guidelines
+
 1. **Apply consistently**: Use conventions across entire repository  
 2. **Document exceptions**: Note necessary exceptions in relevant README files
 3. **Migrate gradually**: Focus on most important/frequently accessed files first
 4. **Update references**: Ensure all file references are updated when renaming
-
-
-

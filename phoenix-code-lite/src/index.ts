@@ -83,9 +83,14 @@ async function shutdown(): Promise<void> {
       await coreFoundation.gracefulShutdown();
     }
     
+    console.log(chalk.green('✅ Graceful shutdown completed'));
+    
   } catch (error) {
     console.error(chalk.red('❌ Shutdown error:'), error);
-    process.exit(1);
+    
+    // Use safeExit to handle test environments properly
+    const { safeExit } = await import('./utils/test-utils');
+    safeExit(1);
   }
 }
 
@@ -136,6 +141,15 @@ async function main() {
       // Use traditional command-line mode
       const program = setupCLI();
       await program.parseAsync(process.argv);
+      
+      // Clean up resources before exit in non-interactive mode
+      // This ensures timers and event listeners are properly disposed
+      await shutdown();
+      
+      // Exit after command completion and cleanup
+      // Use safeExit to handle test environments properly
+      const { safeExit } = await import('./utils/test-utils');
+      safeExit(0);
     }
     
   } catch (error) {

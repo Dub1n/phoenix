@@ -1,18 +1,20 @@
 ---
-description: 
-globs: 
 alwaysApply: true
 ---
+``` yaml
 ---
 tags: [Templates, Guidelines, Code Patterns, Documentation Standards, Frontmatter]
 provides: [Template Patterns, Code Templates, Documentation Templates, Frontmatter Standards, Template Selection Guidelines]
 requires: [DSS Core Structure and Concepts]
 ---
+```
+
 # DSS Templates Guidelines
 
 ## Template-First Approach
 
 Before creating any new file, always:
+
 1. Check [.cursor/rules/config/templates/](mdc:.cursor/rules/config/templates) for existing template
 2. Use template if available, customize for specific use case
 3. Follow template frontmatter patterns
@@ -21,6 +23,7 @@ Before creating any new file, always:
 ## Core Template Patterns
 
 ### Python Module Template
+
 ```python
 """
 Module description here.
@@ -65,6 +68,7 @@ if __name__ == "__main__":
 ```
 
 ### TypeScript Module Template
+
 ```typescript
 /**
  * Module description here.
@@ -122,6 +126,7 @@ export function utilityFunction(): void {
 ```
 
 ### Documentation Template
+
 ```markdown
 ---
 tags: [category, subcategory, specific_tags]
@@ -151,9 +156,9 @@ High-level summary of the content and its context within the project.
 
 Detailed explanation with examples.
 
-```language
-code examples here
-```
+> ``` language
+    code examples here
+> ```
 
 ### Section 2: [Topic]
 
@@ -171,16 +176,19 @@ Practical examples showing how to use or implement the concepts.
 ## Troubleshooting
 
 Common issues and their solutions.
+
 ```
 
 ## Frontmatter Standards
 
 ### Required Fields
+
 - **tags**: Array of descriptive tags for categorization
 - **provides**: Array of capabilities/interfaces this file provides
 - **requires**: Array of dependencies this file needs
 
 ### Optional Fields
+
 - **status**: Current state (draft, active, deprecated)
 - **priority**: Importance level (low, medium, high)
 - **version**: Version number if applicable
@@ -188,6 +196,7 @@ Common issues and their solutions.
 - **last_updated**: Date of last significant update
 
 ### Example Frontmatter
+
 ```yaml
 ---
 tags: [authentication, security, api, backend]
@@ -202,18 +211,21 @@ version: "2.1.0"
 ## Template Selection Guidelines
 
 ### When to Use Python Template
+
 - Creating new Python modules or scripts
 - Building data processing pipelines
 - Implementing backend services
 - Creating utility functions
 
 ### When to Use TypeScript Template
+
 - Frontend components or services
 - API client implementations
 - Node.js backend services
 - Type-safe utility libraries
 
 ### When to Use Documentation Template
+
 - Feature specifications
 - API documentation
 - User guides
@@ -223,6 +235,7 @@ version: "2.1.0"
 ## Customization Guidelines
 
 ### Adapting Templates
+
 1. **Keep the structure**: Maintain the overall organization
 2. **Update placeholders**: Replace [bracketed] content with specifics
 3. **Preserve frontmatter**: Keep required YAML fields
@@ -230,13 +243,8 @@ version: "2.1.0"
 5. **Add project-specific sections**: Include any standard project sections
 
 ### Template Maintenance
+
 - Update templates when patterns change
 - Add new templates for emerging patterns
 - Deprecate outdated templates gracefully
 - Document template changes in version history
-
-
-
-
-
-

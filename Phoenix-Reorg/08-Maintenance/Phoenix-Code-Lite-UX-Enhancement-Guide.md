@@ -7,7 +7,9 @@ This comprehensive guide documents the implementation of 17 UX improvements for 
 ## <� Change Summary
 
 ### Core Transformation
+
 Convert Phoenix Code Lite from a confusing mixed interface to a professional CLI with:
+
 - **Dual Interaction Modes**: Menu Mode (arrow navigation) vs Command Mode (text commands)
 - **Consistent Navigation**: Numbered options, ESC/back support, breadcrumb elimination
 - **Enhanced User Experience**: Improved wizards, template management, and help system
@@ -16,26 +18,31 @@ Convert Phoenix Code Lite from a confusing mixed interface to a professional CLI
 ## =� Implementation Roadmap
 
 ### Phase 1: Core Infrastructure (Issues 1-6)
+
 **Priority**: Critical - Foundation for all other improvements
 **Estimated Time**: 8-12 hours
 **Components**: Session management, dual mode architecture, navigation system
 
 ### Phase 2: Navigation & User Experience (Issues 7-10)
+
 **Priority**: High - Direct user interaction improvements
 **Estimated Time**: 6-8 hours
 **Components**: Menu numbering, ESC handling, template management
 
 ### Phase 3: Help System & Command Interface (Issues 11-13)
+
 **Priority**: Medium - Interface consistency and accessibility
 **Estimated Time**: 4-6 hours
 **Components**: Help command fixes, main menu presentation, mode selection
 
 ### Phase 4: Enhanced Wizard System (Issues 14-16)
+
 **Priority**: Medium - First-time user experience
 **Estimated Time**: 6-10 hours
 **Components**: Improved setup wizard, project templates, menu reorganization
 
 ### Phase 5: Advanced Features (Issue 17)
+
 **Priority**: Low - Future enhancement
 **Estimated Time**: 8-12 hours
 **Components**: Per-agent document management system
@@ -45,10 +52,12 @@ Convert Phoenix Code Lite from a confusing mixed interface to a professional CLI
 ### Phase 1: Core Infrastructure
 
 #### Issue 1: Agent Information Display
+
 **Problem**: Agent info needs separate page in Config show menu
 **Solution**: Create dedicated agent information display page
 
 **Implementation**:
+
 ```typescript
 // src/cli/enhanced-commands.ts - Add agent info action
 async function executeAgentInfoAction(context: SessionContext): Promise<void> {
@@ -72,10 +81,12 @@ async function executeAgentInfoAction(context: SessionContext): Promise<void> {
 ```
 
 #### Issue 2: Menu Exit Prevention
+
 **Problem**: "Press Enter to continue..." exits Phoenix CLI session
 **Solution**: Implement proper session continuation instead of process exit
 
 **Implementation**:
+
 ```typescript
 // src/cli/session.ts - Modify pause handling
 async function pauseForUser(message: string = 'Press Enter to continue...'): Promise<void> {
@@ -105,10 +116,12 @@ async function returnToMainMenu(): Promise<void> {
 ```
 
 #### Issue 3: Pre-filled "e" Character
+
 **Problem**: Letter "e" appears when entering Phoenix CLI
 **Solution**: Clear stdin buffer on CLI initialization
 
 **Implementation**:
+
 ```typescript
 // src/cli/session.ts - Clear input buffer on start
 constructor() {
@@ -125,10 +138,12 @@ constructor() {
 ```
 
 #### Issue 4: Dual Mode Architecture
+
 **Problem**: Current interface mixes menu and command modes confusingly
 **Solution**: Implement distinct Menu Mode and Command Mode with user choice
 
 **Implementation**:
+
 ```typescript
 // src/types/interaction.ts - New interface types
 export interface InteractionModeConfig {
@@ -182,10 +197,12 @@ export class InteractionManager {
 ```
 
 #### Issue 5: Breadcrumb Navigation Removal
+
 **Problem**: Redundant breadcrumb "Phoenix Code Lite > Advanced" display
 **Solution**: Remove intermediate breadcrumbs, keep only main title and current section
 
 **Implementation**:
+
 ```typescript
 // src/cli/menu-system.ts - Simplified header display
 displayHeader(sectionTitle: string, showBreadcrumb: boolean = false): void {
@@ -202,10 +219,12 @@ displayHeader(sectionTitle: string, showBreadcrumb: boolean = false): void {
 ```
 
 #### Issue 6: Consistent Help Command
+
 **Problem**: Repeated help command shows unnecessary navigation text
 **Solution**: Clean help display focusing on available commands
 
 **Implementation**:
+
 ```typescript
 // src/cli/help-system.ts - Streamlined help display
 displayHelp(commands: CommandInfo[], context?: string): void {
@@ -229,10 +248,12 @@ displayHelp(commands: CommandInfo[], context?: string): void {
 ### Phase 2: Navigation & User Experience
 
 #### Issue 7: ESC Key Handling
+
 **Problem**: ESC key doesn't work for going back
 **Solution**: Implement proper ESC key detection and handling
 
 **Implementation**:
+
 ```typescript
 // src/cli/input-handler.ts - ESC key handling
 export class InputHandler {
@@ -279,10 +300,12 @@ export class InputHandler {
 ```
 
 #### Issue 8: Numbered Menu Options
+
 **Problem**: Menu options lack numbers for quick selection
 **Solution**: Add numbered options (1-9, then 10+) with number key support
 
 **Implementation**:
+
 ```typescript
 // src/cli/menu-renderer.ts - Numbered menu rendering
 export class MenuRenderer {
@@ -335,10 +358,12 @@ export class MenuRenderer {
 ```
 
 #### Issue 9: Template Management Fix
+
 **Problem**: Template reset/edit doesn't provide template selection
 **Solution**: Implement proper template selection flow
 
 **Implementation**:
+
 ```typescript
 // src/cli/template-manager.ts - Enhanced template management
 export class TemplateManager {
@@ -389,10 +414,12 @@ export class TemplateManager {
 ```
 
 #### Issue 10: Debug Settings Editability
+
 **Problem**: Debug options in Advanced Settings aren't editable
 **Solution**: Make debug settings interactive with proper editing interface
 
 **Implementation**:
+
 ```typescript
 // src/cli/debug-settings.ts - Editable debug settings
 export class DebugSettingsManager {
@@ -474,10 +501,12 @@ export class DebugSettingsManager {
 ### Phase 3: Help System & Command Interface
 
 #### Issue 11: Help Command Fix
+
 **Problem**: -h/--help subcommand doesn't work
 **Solution**: Restore proper help command handling in argument parser
 
 **Implementation**:
+
 ```typescript
 // src/cli/args.ts - Fix help command handling
 export function parseArguments(): PhoenixCodeLiteOptions {
@@ -512,10 +541,12 @@ export function parseArguments(): PhoenixCodeLiteOptions {
 ```
 
 #### Issue 12: Main Menu Display on Entry
+
 **Problem**: User should see main menu immediately on CLI entry
 **Solution**: Show main menu automatically based on selected interaction mode
 
 **Implementation**:
+
 ```typescript
 // src/cli/session.ts - Auto-display main menu
 async start(): Promise<void> {
@@ -566,10 +597,12 @@ private async displayMainMenu(): Promise<void> {
 ```
 
 #### Issue 13: Interaction Mode Selection in Setup
+
 **Problem**: User should choose interaction mode during initial setup
 **Solution**: Add mode selection to setup wizard and init command
 
 **Implementation**:
+
 ```typescript
 // src/cli/interactive.ts - Add mode selection to wizard
 async runSetupWizard(): Promise<SetupResult> {
@@ -615,10 +648,12 @@ private async askInteractionMode(): Promise<'menu' | 'command'> {
 ### Phase 4: Enhanced Wizard System
 
 #### Issue 14: Stack Knowledge Question
+
 **Problem**: Wizard assumes user knows their technology stack
 **Solution**: Add preliminary question about stack knowledge with different paths
 
 **Implementation**:
+
 ```typescript
 // src/cli/enhanced-wizard.ts - Stack knowledge question
 export class EnhancedSetupWizard {
@@ -694,10 +729,12 @@ export class EnhancedSetupWizard {
 ```
 
 #### Issue 15: Project Discovery Wizard
+
 **Problem**: No path for users who don't know their stack
 **Solution**: Create discovery wizard with project-focused questions
 
 **Implementation**:
+
 ```typescript
 // src/cli/project-discovery-wizard.ts - Project-focused wizard
 export class ProjectDiscoveryWizard {
@@ -802,10 +839,12 @@ export class ProjectDiscoveryWizard {
 ```
 
 #### Issue 16: Menu Structure Reorganization
+
 **Problem**: Template editing opens wrong configuration manager, duplicated/missing options
 **Solution**: Reorganize menu structure with clear hierarchy mapping
 
 **Implementation**:
+
 ```typescript
 // src/cli/menu-hierarchy.ts - Menu structure definition
 export class MenuHierarchy {
@@ -915,10 +954,12 @@ export class TemplateContextManager {
 ### Phase 5: Advanced Features
 
 #### Issue 17: Per-Agent Document Management
+
 **Problem**: Document management system needs per-agent and global document controls
 **Solution**: Implement comprehensive document management with template-level activation
 
 **Implementation**:
+
 ```typescript
 // src/config/document-manager.ts - Document management system
 export class DocumentManager {
@@ -1034,6 +1075,7 @@ export class DocumentConfigurationEditor {
 ### Architecture Changes
 
 #### Session Management Enhancement
+
 ```typescript
 // src/cli/session.ts - Core session management
 export class CLISession {
@@ -1084,6 +1126,7 @@ export class CLISession {
 ```
 
 #### Dual Mode Architecture
+
 ```typescript
 // src/types/interaction-modes.ts - Mode definitions
 export interface MenuModeConfig {
@@ -1111,6 +1154,7 @@ export interface InteractionModeConfig {
 ### Quality Assurance Integration
 
 #### TDD Implementation
+
 Following the TDD standards from the guidance documents:
 
 ```typescript
@@ -1151,6 +1195,7 @@ describe('Dual Mode Interface', () => {
 ```
 
 #### Security Validation
+
 ```typescript
 // tests/security/input-validation.test.ts
 describe('Input Validation Security', () => {
@@ -1176,7 +1221,8 @@ describe('Input Validation Security', () => {
 
 ## =� Implementation Checklist
 
-### Phase 1: Core Infrastructure
+### Checklist: Phase 1: Core Infrastructure
+
 - [ ] **Issue 1**: Create agent information display page in config menu
 - [ ] **Issue 2**: Replace process.exit() with session continuation
 - [ ] **Issue 3**: Fix pre-filled "e" character with input buffer clearing
@@ -1184,31 +1230,36 @@ describe('Input Validation Security', () => {
 - [ ] **Issue 5**: Remove redundant breadcrumb navigation
 - [ ] **Issue 6**: Streamline help command display
 
-### Phase 2: Navigation & UX
+### Checklist: Phase 2: Navigation & UX
+
 - [ ] **Issue 7**: Implement ESC key handling for back navigation
 - [ ] **Issue 8**: Add numbered options to all menus
 - [ ] **Issue 9**: Fix template reset/edit with proper selection flow
 - [ ] **Issue 10**: Make debug settings editable in Advanced Settings
 
-### Phase 3: Command Interface
+### Checklist: Phase 3: Command Interface
+
 - [ ] **Issue 11**: Restore -h/--help command functionality
 - [ ] **Issue 12**: Auto-display main menu on CLI entry
 - [ ] **Issue 13**: Add interaction mode selection to setup wizard
 - [ ] **Documentation**: Complete documentation for this phase as per the documentation section below
 
-### Phase 4: Enhanced Wizard
+### Checklist: Phase 4: Enhanced Wizard
+
 - [ ] **Issue 14**: Add stack knowledge question with enhanced wizard
 - [ ] **Issue 15**: Create project discovery wizard for unknown stacks
 - [ ] **Issue 16**: Reorganize menu structure with clear hierarchy
 - [ ] **Documentation**: Complete documentation for this phase as per the documentation section below
 
-### Phase 5: Advanced Features
+### Checklist: Phase 5: Advanced Features
+
 - [ ] **Issue 17**: Implement per-agent document management system
 - [ ] **Documentation**: Complete documentation for this phase as per the documentation section below
 
 ## >� Testing Strategy
 
 ### Test Categories
+
 1. **Unit Tests**: Individual component behavior
 2. **Integration Tests**: Workflow and interaction testing
 3. **User Experience Tests**: End-to-end user journey validation
@@ -1216,6 +1267,7 @@ describe('Input Validation Security', () => {
 5. **Performance Tests**: Response time and resource usage
 
 ### Specific Test Requirements
+
 - **Mode Switching**: Test both menu � command transitions
 - **Navigation**: Test ESC, back, home, and numbered selections
 - **Session Persistence**: Ensure session state maintained across interactions
@@ -1226,12 +1278,14 @@ describe('Input Validation Security', () => {
 ## =� Success Metrics
 
 ### User Experience Metrics
+
 - **Navigation Efficiency**: Reduce clicks/keystrokes to complete tasks by 40%
 - **User Confusion**: Eliminate exit-from-CLI issues (0 unexpected exits)
 - **Task Completion**: Increase successful template management by 60%
 - **First-Time User Success**: 90% completion rate for setup wizard
 
 ### Technical Metrics
+
 - **Test Coverage**: Maintain >90% coverage across all new components
 - **Performance**: Menu navigation <100ms response time
 - **Error Rate**: <1% error rate for all user interactions
@@ -1240,12 +1294,14 @@ describe('Input Validation Security', () => {
 ## = Rollback Plan
 
 ### If Implementation Issues Arise
+
 1. **Incremental Rollback**: Revert by phase, maintaining working functionality
 2. **Feature Flags**: Disable new features while keeping core functionality
 3. **Configuration Backup**: Restore previous configuration schemas
 4. **Session Fallback**: Fall back to traditional command-line mode
 
 ### Recovery Procedures
+
 - **Database/Config Corruption**: Restore from template backups
 - **Navigation Issues**: Provide escape hatch to traditional CLI
 - **Performance Problems**: Disable complex features, use simplified UI
@@ -1254,11 +1310,13 @@ describe('Input Validation Security', () => {
 ## =� Documentation Updates Required
 
 ### User Documentation
+
 - **User Guide**: Update with new interaction modes and navigation
 - **Quick Start**: Include mode selection in initial setup guide
 - **FAQ**: Add troubleshooting for new navigation features
 
 ### Developer Documentation
+
 - **API Reference**: Document new interfaces and configuration options
 - **Architecture Guide**: Update with session management and dual-mode architecture
 - **Testing Guide**: Include test patterns for interactive components
@@ -1267,25 +1325,30 @@ describe('Input Validation Security', () => {
 
 Before planning any changes, take notes of the lessons learned from the previous phases and consider if there is anything to change in the current phase's plan.
 
-#### Phase 1: Core Infrastructure Implementation
+#### Lessons Learned: Phase 1: Core Infrastructure Implementation
+
 - **Start Simple**: Begin with basic functionality tests before comprehensive integration tests
 - **Schema First**: Define complete Zod schemas with defaults before implementation
 - **Environment Awareness**: Design validation logic to be environment-aware from the start
 - **Incremental Testing**: Build and test incrementally to catch issues early`
 
-#### Phase 2: Navigation & UX Enhancement
+#### Lessons Learned: Phase 2: Navigation & UX Enhancement
+
 - Complex CLI interactions require careful state management and validation
 - User experience improvements should include both visual and functional enhancements
 - Security considerations must be built into input validation from the start
 - Error handling should provide actionable guidance, not just error messages
 
-#### Phase 3: Command Interface
+#### Lessons Learned: Phase 3: Command Interface
+
 - Add lessons learned here
 
-#### Phase 4: Enhanced Wizard
+#### Lessons Learned: Phase 4: Enhanced Wizard
+
 - Add lessons learned here
 
-#### Phase 5: Advanced Features
+#### Lessons Learned: Phase 5: Advanced Features
+
 - Add lessons learned here
 
 ---
@@ -1295,7 +1358,8 @@ Before planning any changes, take notes of the lessons learned from the previous
 **Total Estimated Time**: 32-46 hours across 5 phases
 **Recommended Approach**: Implement phases 1-3 first (18-28 hours) for core functionality, then phases 4-5 (14-18 hours) for enhanced features.
 
-**Phase Priority**: 
+**Phase Priority**:
+
 1. **Critical** (Phase 1): Foundation and architecture
 2. **High** (Phase 2-3): User experience and core interface
 3. **Medium-Low** (Phase 4-5): Enhanced features and future improvements

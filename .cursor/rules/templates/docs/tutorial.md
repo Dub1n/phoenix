@@ -3,12 +3,13 @@
 # Replace the placeholder content with your actual tutorial content
 # Delete this instructional header when you're done
 ---
-
+``` yaml
 ---
 tags: [tutorial, guide, learning] # Add relevant tags
 provides: [tutorial_name] # What skill/knowledge this tutorial provides
 requires: [prerequisite_concept] # Prerequisites for this tutorial
 ---
+```
 
 # Tutorial: [Title of the Tutorial]
 
@@ -43,9 +44,9 @@ By the end of this tutorial, you will be able to:
 ## 📚 Table of Contents
 
 - [Introduction](#introduction)
-- [Step 1: First Step](#step-1-first-step)
-- [Step 2: Second Step](#step-2-second-step)
-- [Step 3: Third Step](#step-3-third-step)
+- [1 First Step](#1-first-step)
+- [2 Second Step](#2-second-step)
+- [3 Third Step](#3-third-step)
 - [Common Problems](#common-problems)
 - [Next Steps](#next-steps)
 
@@ -53,74 +54,71 @@ By the end of this tutorial, you will be able to:
 
 _Provide a more detailed introduction to the subject matter. Explain why this topic is important and how it fits into the larger picture._
 
-## Step 1: First Step
+## 1 First Step
 
-### Background
+### 1.1 Background
 
 _Explain any necessary background information for this step._
 
-### Instructions
+### 1.2 Instructions
 
 1. Do this first
-   ```
-   code example if applicable
-   ```
+
+   > code example if applicable
 
 2. Then do this
-   ```
-   another code example
-   ```
+
+   > another code example
 
 3. Verify your work:
-   ```
-   verification steps
-   ```
 
-### Expected Result
+   > verification steps
+
+### 1.3 Expected Result
 
 _Describe what the user should see or experience after completing this step._
 
-### Exercise
+### 1.4 Exercise
 
 > **Try it yourself:** Modify the example to [specific task] and observe the results.
 
-## Step 2: Second Step
+## 2 Second Step
 
-### Background
+### 2.1 Background
 
 _Explain any necessary background information for this step._
 
-### Instructions
+### 2.2 Instructions
 
 1. Do this first
 2. Then do this
 3. Verify your work
 
-### Expected Result
+### 2.3 Expected Result
 
 _Describe what the user should see or experience after completing this step._
 
-### Exercise
+### 2.4 Exercise
 
 > **Try it yourself:** Modify the example to [specific task] and observe the results.
 
-## Step 3: Third Step
+## 3 Third Step
 
-### Background
+### 3.1 Background
 
 _Explain any necessary background information for this step._
 
-### Instructions
+### 3.2 Instructions
 
 1. Do this first
 2. Then do this
 3. Verify your work
 
-### Expected Result
+### 3.3 Expected Result
 
 _Describe what the user should see or experience after completing this step._
 
-### Exercise
+### 3.4 Exercise
 
 > **Try it yourself:** Modify the example to [specific task] and observe the results.
 
@@ -156,4 +154,4 @@ Now that you've completed this tutorial, you might want to:
 
 ## Feedback
 
-Did you find this tutorial helpful? Do you have suggestions for improvement? Please provide feedback by [creating an issue](https://github.com/yourusername/repo/issues) or contributing directly. 
+Did you find this tutorial helpful? Do you have suggestions for improvement? Please provide feedback by [creating an issue](https://github.com/yourusername/repo/issues) or contributing directly.

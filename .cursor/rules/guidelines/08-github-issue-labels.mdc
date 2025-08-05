@@ -1,21 +1,24 @@
 ---
-description: 
-globs: 
 alwaysApply: true
 ---
+``` yaml
 ---
 tags: [GitHub, Issues, Labels, Project Management, Automation]
 provides: [Issue Label Conventions, Label Categories, Automated Labeling]
 requires: [DSS Core Structure and Concepts]
 ---
+```
+
 # GitHub Issue Label Conventions
 
 ## Overview
+
 Standardized GitHub issue labels for categorizing, prioritizing, and tracking issues efficiently.
 
 ## Label Categories
 
 ### 1. Installation Report Labels
+
 For DSS installation reports:
 
 | Label | Description | Color |
@@ -34,6 +37,7 @@ For DSS installation reports:
 | `project-general` | General project related issues | #bfdadc |
 
 ### 2. Priority Labels
+
 Indicate urgency of addressing an issue:
 
 | Label | Description | Color |
@@ -44,6 +48,7 @@ Indicate urgency of addressing an issue:
 | `priority-low` | Fix when convenient | #c2e0c6 |
 
 ### 3. Status Labels
+
 Indicate current state of an issue:
 
 | Label | Description | Color |
@@ -54,6 +59,7 @@ Indicate current state of an issue:
 | `status-needs-testing` | Needs testing before merge | #d4c5f9 |
 
 ### 4. Type Labels
+
 Indicate nature of the issue:
 
 | Label | Description | Color |
@@ -71,6 +77,7 @@ Indicate nature of the issue:
 | `type-tests` | Test-related changes | #c5def5 |
 
 ### 5. Component Labels
+
 Indicate which part of the system is affected:
 
 | Label | Description | Color |
@@ -86,6 +93,5 @@ Indicate which part of the system is affected:
 
 2. **Installation Reports**: The [dss_bootstrap.py](mdc:dss_bootstrap.py) script automatically applies:
    - `installation-report`
-
 
    - Platform-specific label (e.g., `

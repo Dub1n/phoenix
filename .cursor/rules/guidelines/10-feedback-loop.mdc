@@ -1,18 +1,20 @@
 ---
-description: 
-globs: 
 alwaysApply: true
 ---
+``` yaml
 ---
 tags: [Feedback, Continuous Improvement, Quality, Process Enhancement]
 provides: [Feedback Collection, Integration Protocol, Improvement Implementation]
 requires: [DSS Core Structure and Concepts, Error Recovery]
 ---
+```
+
 # Feedback Loop Mechanism
 
 ## Feedback Collection Process
 
 ### Sources of Feedback
+
 The assistant should actively collect feedback from multiple sources:
 
 1. **Direct User Feedback**
@@ -102,6 +104,7 @@ The assistant should actively collect feedback from multiple sources:
    - Validation process effectiveness
 
 ### Secondary Dimensions
+
 - **Severity**: Critical / Major / Minor
 - **Frequency**: Recurring / Occasional / One-time
 - **Scope**: System-wide / Workflow-specific / Task-specific
@@ -148,19 +151,19 @@ For each collected feedback item:
 ## Continuous Improvement Implementation
 
 ### Documentation Updates
+
 - Update workflow files with lessons learned
 - Enhance guidelines based on recurring feedback patterns
 - Create new reference materials for knowledge gaps
 
 ### Process Refinement
+
 - Adjust workflow steps based on efficiency feedback
 - Improve tool selection criteria
 - Enhance quality control measures
 
 ### Prevention Measures
+
 - Add proactive checks for common error patterns
 - Create [templates](mdc:.cursor/rules/guidelines/00-dss-templates.mdc) for frequently needed content
 - Establish [validation steps](mdc:.cursor/rules/guidelines/04-validation-rules.mdc) for critical processes
-
-
-

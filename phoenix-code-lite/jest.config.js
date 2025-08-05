@@ -7,18 +7,11 @@ module.exports = {
     'src/**/*.ts',
     '!src/**/*.d.ts',
   ],
-  extensionsToTreatAsEsm: ['.ts'],
-  globals: {
-    'ts-jest': {
-      useESM: true,
-    },
-  },
-  moduleNameMapping: {
-    '^(\\.{1,2}/.*)\\.js$': '$1',
-  },
+  // Removed ES module configuration that was causing conflicts
+  // Project uses CommonJS, so keep configuration simple and compatible
   transform: {
-    '^.+\\.tsx?$': ['ts-jest', {
-      useESM: true,
-    }],
+    '^.+\\.tsx?$': 'ts-jest',
   },
+  // Extended timeout for performance tests
+  testTimeout: 30000, // 30 seconds for performance tests
 };

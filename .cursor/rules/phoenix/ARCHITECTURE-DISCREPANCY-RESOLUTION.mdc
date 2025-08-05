@@ -1,0 +1,221 @@
+---
+alwaysApply: true
+---
+```yaml
+---
+tags: [Phoenix-Code-Lite, Architecture, Discrepancy, Resolution, Documentation, Updates]
+provides: []
+requires: []
+```
+
+# Architecture Discrepancy Resolution - Documentation Updates
+
+## 📋 Overview
+
+This document summarizes the comprehensive updates made to the Phoenix Code Lite maintenance documentation to align with the actual implemented architecture, which underwent significant transformation from traditional CLI to interactive session-based architecture.
+
+## 🎯 Key Architectural Changes Discovered
+
+### 1. CLI Architecture Transformation
+
+**Documentation Assumed**: Traditional command-line interface with individual commands
+**Actual Implementation**: Interactive session-based CLI with persistent state management
+
+**Impact**:
+
+- Traditional CLI commands like `phoenix-code-lite config --documents` don't exist
+- Instead, users enter persistent interactive sessions with menu navigation
+- Document management integrates through Configuration > Document Management menu path
+
+### 2. User Interaction Model Shift
+
+**Documentation Assumed**: Command-line arguments, flags, and traditional help system
+**Actual Implementation**: Menu-driven interface with session context preservation
+
+**Impact**:
+
+- No command-line flags for document management operations
+- Interactive prompts and numbered menu selections instead
+- Context-aware navigation with breadcrumbs and back commands
+
+### 3. Template Management Evolution
+
+**Documentation Assumed**: Command-line template operations
+**Actual Implementation**: Interactive template selection with visual comparison
+
+**Impact**:
+
+- Template switching through interactive menus, not CLI flags
+- Visual template comparison with detailed feature information
+- Per-template document activation settings maintained in session context
+
+## 📝 Documentation Files Updated
+
+### 1. CLI-UX-PATTERNS.md (Complete Rewrite)
+
+**Previous Focus**: Traditional CLI command patterns and argument structures
+**Updated Focus**: Interactive session architecture with dual-mode support
+
+**Key Changes**:
+
+- Replaced command-line patterns with interactive menu examples
+- Added session persistence and context awareness patterns
+- Included document management integration examples
+- Updated help system to reflect context-aware interactive help
+
+### 2. CONTEXT-AWARENESS.md (Major Updates)
+
+**Previous Focus**: Traditional command-line user workflows
+**Updated Focus**: Interactive session-based user journeys
+
+**Key Changes**:
+
+- Updated user workflow stages to reflect session-based interactions
+- Enhanced configuration & customization workflow with menu-driven discovery
+- Updated daily development workflow to include session continuity
+- Added interactive session context and document management context sections
+
+### 3. DEVELOPMENT-WORKFLOW.md (Component Testing Updates)
+
+**Previous Focus**: Traditional CLI component testing
+**Updated Focus**: Interactive component testing with dependency injection
+
+**Key Changes**:
+
+- Added interactive CLI session component testing patterns
+- Included document management integration testing guidelines
+- Emphasized proper dependency injection for SecurityGuardrailsManager
+- Added session-based testing examples with mock components
+
+### 4. Phase 5 Change Documentation (Architectural Corrections)
+
+**Added Section**: Post-implementation architectural corrections noting discrepancies
+**Purpose**: Document lessons learned and provide guidance for future development
+
+## 🔧 Corrected Implementation Approaches
+
+### Document Management Integration
+
+**Incorrect Approach** (based on outdated docs):
+
+```bash
+phoenix-code-lite config --documents
+phoenix-code-lite documents --init
+phoenix-code-lite documents --list
+```
+
+**Correct Approach** (based on actual architecture):
+
+```text
+Phoenix Code Lite Interactive Session
+→ Configuration Menu
+  → Document Management
+    → Global Documents
+    → Agent-Specific Documents
+    → Template Settings
+```
+
+### Testing Integration
+
+**Incorrect Approach** (based on outdated docs):
+
+```typescript
+// Direct CLI command testing
+execSync('phoenix-code-lite config --documents');
+```
+
+**Correct Approach** (based on actual architecture):
+
+```typescript
+// Interactive session testing with dependency injection
+const mockSecurityManager = createMockSecurityManager();
+const documentManager = new DocumentManager(testPath, mockSecurityManager);
+```
+
+### Template Integration
+
+**Incorrect Approach** (based on outdated docs):
+
+```bash
+phoenix-code-lite template --use enterprise
+```
+
+**Correct Approach** (based on actual architecture):
+
+```text
+Interactive Session → Template Management → Visual Template Selection
+```
+
+## 🎯 Impact on Future Development
+
+### 1. Feature Integration Guidelines
+
+- **New features must integrate through interactive menu system**
+- **Leverage session context for state management**
+- **Use dependency injection for proper testing**
+- **Follow established navigation and breadcrumb patterns**
+
+### 2. Testing Requirements
+
+- **Mock interactive components** using established patterns
+- **Test session persistence** and context preservation
+- **Use SecurityGuardrailsManager injection** for security testing
+- **Validate menu navigation flows** and user interactions
+
+### 3. User Experience Considerations
+
+- **Design for session continuity** rather than one-off commands
+- **Integrate with existing menu hierarchy** for consistency
+- **Preserve template context** across feature interactions
+- **Provide context-aware help** and navigation support
+
+## 🔄 Development Process Improvements
+
+### 1. Documentation Synchronization
+
+- **Regular architecture reviews** to identify documentation drift
+- **Update documentation concurrent with major architectural changes**
+- **Validate implementation approaches** against current architecture before development
+
+### 2. Implementation Validation
+
+- **Review existing interactive patterns** before implementing new features
+- **Consult updated CLI-UX-PATTERNS.md** for current interaction models
+- **Test integration approaches** with current session architecture
+
+### 3. Quality Assurance
+
+- **Architectural consistency checks** as part of code review process
+- **Documentation validation** against actual implementation
+- **User experience testing** with current interactive flows
+
+## ✅ Validation Checklist
+
+For future feature implementations:
+
+### Pre-Development
+
+- [ ] Review current CLI-UX-PATTERNS.md for interaction models
+- [ ] Understand session-based architecture requirements
+- [ ] Plan integration with existing menu hierarchy
+- [ ] Design for template-aware functionality
+
+### Development
+
+- [ ] Use dependency injection for testable components
+- [ ] Integrate with existing SecurityGuardrailsManager
+- [ ] Preserve session context and navigation patterns
+- [ ] Test interactive flows with proper mocking
+
+### Post-Development
+
+- [ ] Validate integration with session architecture
+- [ ] Test menu navigation and context preservation
+- [ ] Update documentation if new patterns are introduced
+- [ ] Verify user experience consistency
+
+---
+
+**Generated**: 2025-08-03 using `date` command  
+**Author**: Claude Code Agent  
+**Purpose**: Document architectural discrepancy resolution and provide guidance for future development

@@ -20,4 +20,4 @@ Copy this content to a suitable location (e.g., `.cursor/rules/user_rules.mdc` o
 
 ## Notes to the AI Assistant
 
-[Provide any direct instructions or context for the AI assistant regarding your work style or specific tasks.] 
+[Provide any direct instructions or context for the AI assistant regarding your work style or specific tasks.]

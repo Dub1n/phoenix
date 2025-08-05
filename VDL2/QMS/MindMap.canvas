@@ -1,0 +1,15 @@
+{
+	"nodes":[
+		{"id":"47a2373f72a863b5","x":-197,"y":-185,"width":250,"height":60,"type":"text","text":"Compliant AGILE QMS"},
+		{"id":"d3bbc484d0fb7666","x":-500,"y":-185,"width":250,"height":60,"type":"text","text":"tooling"},
+		{"id":"2866cf3cf4a052ae","x":100,"y":-185,"width":250,"height":60,"type":"text","text":"Strategy"},
+		{"id":"9d27f361ef878d98","x":-197,"y":-420,"width":250,"height":60,"type":"text","text":"Analysis"},
+		{"id":"beb44da78f6c50e3","x":-197,"y":60,"width":250,"height":60,"type":"text","text":"New Regulations"}
+	],
+	"edges":[
+		{"id":"a84e6e7ea73b6b52","fromNode":"47a2373f72a863b5","fromSide":"top","toNode":"9d27f361ef878d98","toSide":"bottom","toEnd":"none"},
+		{"id":"e224e74b691137d3","fromNode":"47a2373f72a863b5","fromSide":"right","toNode":"2866cf3cf4a052ae","toSide":"left","toEnd":"none"},
+		{"id":"538f9d7fb6d14736","fromNode":"47a2373f72a863b5","fromSide":"bottom","toNode":"beb44da78f6c50e3","toSide":"top","toEnd":"none"},
+		{"id":"71e30178ce9ba06e","fromNode":"d3bbc484d0fb7666","fromSide":"right","toNode":"47a2373f72a863b5","toSide":"left","toEnd":"none"}
+	]
+}

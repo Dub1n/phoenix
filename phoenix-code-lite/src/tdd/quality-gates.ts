@@ -20,6 +20,7 @@ export interface QualityResult {
 export interface QualityGateReport {
   phase: string;
   overallScore: number;
+  overallQualityScore: number; // Added for compatibility
   overallPassed: boolean;
   gateResults: Record<string, QualityResult>;
   recommendations: string[];
@@ -93,9 +94,11 @@ export class QualityGateManager {
       }
     }
     
+    const finalScore = totalWeight > 0 ? overallScore / totalWeight : 0;
     return {
       phase,
-      overallScore: totalWeight > 0 ? overallScore / totalWeight : 0,
+      overallScore: finalScore,
+      overallQualityScore: finalScore, // Added for compatibility
       overallPassed: allRequiredPassed,
       gateResults: results,
       recommendations: this.generateRecommendations(results),

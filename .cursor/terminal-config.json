@@ -1,0 +1,57 @@
+{
+  "terminal": {
+    "timeout": {
+      "default": 30000,
+      "short": 10000,
+      "long": 120000
+    },
+    "processManagement": {
+      "autoKillHanging": true,
+      "killTimeout": 5000,
+      "backgroundJobs": {
+        "enabled": true,
+        "maxConcurrent": 3
+      }
+    },
+    "commands": {
+      "npm": {
+        "test": {
+          "timeout": 60000,
+          "background": false,
+          "retry": 2
+        },
+        "start": {
+          "timeout": 30000,
+          "background": true,
+          "retry": 1
+        },
+        "build": {
+          "timeout": 120000,
+          "background": false,
+          "retry": 1
+        }
+      },
+      "node": {
+        "timeout": 30000,
+        "background": false
+      },
+      "git": {
+        "timeout": 15000,
+        "background": false
+      }
+    },
+    "patterns": {
+      "hanging": [
+        "node.exe",
+        "npm.cmd",
+        "tsc.exe"
+      ],
+      "safe": [
+        "git",
+        "echo",
+        "dir",
+        "ls"
+      ]
+    }
+  }
+} 

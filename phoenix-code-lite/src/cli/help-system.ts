@@ -196,7 +196,7 @@ export class HelpSystem {
   }
 
   private getConfigFoundHelp(): string {
-    return chalk.green('✓ Configuration Active!\n') +
+    return chalk.green('✓ Configuration found\n') +
            chalk.gray('Your project is configured and ready for TDD workflow generation.\n') +
            chalk.blue('Quick actions:\n') +
            chalk.gray('  • ') + chalk.cyan('config --show') + chalk.gray(' - View current configuration\n') +

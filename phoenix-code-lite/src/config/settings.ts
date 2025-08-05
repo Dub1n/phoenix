@@ -6,7 +6,7 @@ import { z } from 'zod';
 export const AgentConfigSchema = z.object({
   enabled: z.boolean().default(true),
   priority: z.number().min(0).max(1).default(0.8),
-  timeout: z.number().min(1000).max(1800000).default(30000), // 30 seconds
+  timeout: z.number().min(30000).max(1800000).default(30000), // 30 seconds minimum
   retryAttempts: z.number().min(1).max(5).default(2),
   customPrompts: z.record(z.string(), z.string()).optional(),
 });
@@ -99,6 +99,21 @@ export const PhoenixCodeLiteConfigSchema = z.object({
     requireDocumentation: true,
     enforceStrictMode: false,
   }),
+  ui: z.object({
+    interactionMode: z.enum(['menu', 'command']).default('menu'),
+    showNumbers: z.boolean().default(true), 
+    showDescriptions: z.boolean().default(true),
+    compactMode: z.boolean().default(false),
+    promptSymbol: z.string().default('Phoenix> '),
+    allowModeSwitch: z.boolean().default(true),
+  }).optional().default({
+    interactionMode: 'menu' as const,
+    showNumbers: true,
+    showDescriptions: true,
+    compactMode: false,
+    promptSymbol: 'Phoenix> ',
+    allowModeSwitch: true,
+  }),
 });
 
 export type PhoenixCodeLiteConfigData = z.infer<typeof PhoenixCodeLiteConfigSchema>;
@@ -175,17 +190,22 @@ export class PhoenixCodeLiteConfig {
   }
   
   set(key: string, value: any): void {
-    this.setNestedValue(this.data, key, value);
+    // Create a copy of the data to test the change
+    const testData = JSON.parse(JSON.stringify(this.data));
+    this.setNestedValue(testData, key, value);
     
-    // Re-validate after setting
+    // Validate the modified data before applying the change
     try {
-      this.data = PhoenixCodeLiteConfigSchema.parse(this.data);
+      PhoenixCodeLiteConfigSchema.parse(testData);
     } catch (error) {
       if (error instanceof z.ZodError) {
         throw new Error(`Invalid configuration value: ${error.issues.map(e => e.message).join(', ')}`);
       }
       throw error;
     }
+    
+    // If validation passes, apply the change
+    this.setNestedValue(this.data, key, value);
   }
   
   getAgentConfig(agentType: 'planningAnalyst' | 'implementationEngineer' | 'qualityReviewer'): AgentConfig {

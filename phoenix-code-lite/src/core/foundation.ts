@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { SessionManager } from './session-manager';
 import { ModeManager } from './mode-manager';
 import { AuditLogger } from '../utils/audit-logger';
+import { safeExit } from '../utils/test-utils';
 
 /**
  * Core Foundation - Phase 1 Infrastructure
@@ -82,6 +83,7 @@ export class CoreFoundation {
     totalRequests: 0,
     errors: 0
   };
+  private monitoringIntervals: NodeJS.Timeout[] = [];
 
   constructor(config?: Partial<CoreConfig>) {
     // Parse and validate configuration
@@ -277,16 +279,18 @@ export class CoreFoundation {
     }
 
     // Update system state every 30 seconds
-    setInterval(() => {
+    const stateInterval = setInterval(() => {
       this.updateSystemState();
     }, 30000);
+    this.monitoringIntervals.push(stateInterval);
 
     // Garbage collection monitoring
-    setInterval(() => {
+    const gcInterval = setInterval(() => {
       if (global.gc) {
         global.gc();
       }
     }, this.config.performance.gcInterval);
+    this.monitoringIntervals.push(gcInterval);
   }
 
   /**
@@ -424,6 +428,10 @@ export class CoreFoundation {
     console.log('🔄 Initiating graceful shutdown...');
 
     try {
+      // Clear monitoring intervals
+      this.monitoringIntervals.forEach(interval => clearInterval(interval));
+      this.monitoringIntervals = [];
+
       // Shutdown components
       await this.sessionManager.shutdown();
       await this.modeManager.shutdown();
@@ -435,12 +443,17 @@ export class CoreFoundation {
         timestamp: new Date().toISOString()
       });
 
+      // Destroy audit logger to clear intervals and flush buffer
+      await this.auditLogger.destroy();
+
       console.log('✅ Phoenix Code Lite shutdown completed');
-      process.exit(0);
+      
+      safeExit(0);
 
     } catch (error) {
       console.error('❌ Error during shutdown:', error);
-      process.exit(1);
+      
+      safeExit(1);
     }
   }
 

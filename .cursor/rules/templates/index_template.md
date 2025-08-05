@@ -7,6 +7,7 @@ requires: [project_structure]
 # INDEX.md Template
 
 ## Usage Instructions
+
 This template provides a standardized structure for creating or updating the `INDEX.md` file at the project root or in subdirectories. Follow these steps:
 
 1. Copy this template to the desired location (typically project root)
@@ -17,6 +18,7 @@ This template provides a standardized structure for creating or updating the `IN
 
 ## Template Structure
 
+``` markdown
 ---
 tags: [project_index]
 provides: [file_index, project_structure_overview]
@@ -30,13 +32,13 @@ This document provides an index and overview of the [PROJECT_NAME] project's fil
 ## File Tree Overview
 
 - [/](#root-files)
-    - [README.md](#root-readme)
-    - [Other key files...](#corresponding-anchor-links)
+  - [README.md](#root-readme)
+  - [Other key files...](#corresponding-anchor-links)
 - [/directory1/](#directory1-description)
-    - [key_file1.ext](#directory1-key-file1)
+  - [key_file1.ext](#directory1-key-file1)
 - [/directory2/](#directory2-description)
-    - [subdirectory/](#directory2-subdirectory)
-        - [key_file2.ext](#directory2-subdirectory-key-file2)
+  - [subdirectory/](#directory2-subdirectory)
+    - [key_file2.ext](#directory2-subdirectory-key-file2)
 
 ## Detailed Component Descriptions
 
@@ -71,4 +73,5 @@ The main README file for the project, providing a general introduction and overv
 ## Related Documentation
 
 - [Link to related doc 1](relative/path/to/doc1.md) - Brief description
-- [Link to related doc 2](relative/path/to/doc2.md) - Brief description 
+- [Link to related doc 2](relative/path/to/doc2.md) - Brief description
+```

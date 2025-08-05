@@ -1,5 +1,7 @@
 import { PhoenixCodeLiteConfigData } from './settings';
 
+import { DocumentConfiguration } from '../types/document-management';
+
 export interface TemplateMetadata {
   name: string;
   displayName: string;
@@ -9,6 +11,7 @@ export interface TemplateMetadata {
   testCoverage: number;
   qualityLevel: 'basic' | 'standard' | 'strict';
   recommended: boolean;
+  documents?: DocumentConfiguration;
 }
 
 export class ConfigurationTemplates {
@@ -290,39 +293,43 @@ export class ConfigurationTemplates {
     };
   }
 
+  // Static template metadata objects that persist across calls
+  private static templateMetadataList: TemplateMetadata[] = [
+    {
+      name: 'starter',
+      displayName: 'Starter Template',
+      description: 'Perfect for learning and experimentation',
+      category: 'starter',
+      features: ['Basic validation', 'Essential quality gates', 'Balanced performance'],
+      testCoverage: 0.7,
+      qualityLevel: 'basic',
+      recommended: true,
+    },
+    {
+      name: 'enterprise',
+      displayName: 'Enterprise Template',
+      description: 'Production-ready with comprehensive validation',
+      category: 'production',
+      features: ['Strict quality gates', 'Full documentation', 'Maximum reliability'],
+      testCoverage: 0.9,
+      qualityLevel: 'strict',
+      recommended: false,
+    },
+    {
+      name: 'performance',
+      displayName: 'Performance Template',
+      description: 'Speed-optimized for rapid iteration',
+      category: 'performance',
+      features: ['Minimal overhead', 'Fast execution', 'Essential validation only'],
+      testCoverage: 0.6,
+      qualityLevel: 'basic',
+      recommended: false,
+    },
+  ];
+
   static getTemplateList(): TemplateMetadata[] {
-    return [
-      {
-        name: 'starter',
-        displayName: 'Starter Template',
-        description: 'Perfect for learning and experimentation',
-        category: 'starter',
-        features: ['Basic validation', 'Essential quality gates', 'Balanced performance'],
-        testCoverage: 0.7,
-        qualityLevel: 'basic',
-        recommended: true,
-      },
-      {
-        name: 'enterprise',
-        displayName: 'Enterprise Template',
-        description: 'Production-ready with comprehensive validation',
-        category: 'production',
-        features: ['Strict quality gates', 'Full documentation', 'Maximum reliability'],
-        testCoverage: 0.9,
-        qualityLevel: 'strict',
-        recommended: false,
-      },
-      {
-        name: 'performance',
-        displayName: 'Performance Template',
-        description: 'Speed-optimized for rapid iteration',
-        category: 'performance',
-        features: ['Minimal overhead', 'Fast execution', 'Essential validation only'],
-        testCoverage: 0.6,
-        qualityLevel: 'basic',
-        recommended: false,
-      },
-    ];
+    // Return references to the persistent objects, not copies
+    return this.templateMetadataList;
   }
 
   static getTemplateByName(name: string): Partial<PhoenixCodeLiteConfigData> | null {
@@ -454,5 +461,70 @@ export class ConfigurationTemplates {
     } catch (error) {
       throw new Error(`Failed to import template: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
+  }
+
+
+
+  /**
+   * Update document configuration for a template
+   */
+  static updateTemplateDocuments(templateName: string, documentConfig: DocumentConfiguration): boolean {
+    try {
+      const metadata = this.getTemplateMetadata(templateName);
+      if (!metadata) {
+        return false;
+      }
+      
+      // Update the persistent metadata object directly
+      metadata.documents = documentConfig;
+      
+      console.log(`Document configuration updated for template: ${templateName}`);
+      return true;
+    } catch (error) {
+      console.error(`Failed to update template documents:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * Get template with document configuration support
+   */
+  static getTemplateWithDocuments(name: string): { template: Partial<PhoenixCodeLiteConfigData>; metadata: TemplateMetadata } | null {
+    const template = this.getTemplateByName(name);
+    const metadata = this.getTemplateMetadata(name);
+    
+    if (!template || !metadata) {
+      return null;
+    }
+    
+    return { template, metadata };
+  }
+
+  /**
+   * Initialize default document configurations for built-in templates
+   */
+  static initializeDefaultDocumentConfigurations(): void {
+    const templates = this.getTemplateList();
+    
+    templates.forEach(template => {
+      if (!template.documents) {
+        template.documents = {
+          global: {
+            'project-context.md': true // Enable project context by default
+          },
+          agents: {
+            'planning-analyst': {
+              'planning-guidelines.md': true
+            },
+            'implementation-engineer': {
+              'implementation-standards.md': true
+            },
+            'quality-reviewer': {
+              'review-checklist.md': true
+            }
+          }
+        };
+      }
+    });
   }
 }

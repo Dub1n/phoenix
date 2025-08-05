@@ -19,6 +19,7 @@ A task should use this workflow if it meets {ALL/MOST} of the following criteria
 5. **{Criterion Category}**: {Specific, testable criterion}
 
 Examples of {workflow type} tasks:
+
 - {Specific, realistic example 1}
 - {Specific, realistic example 2}
 - {Specific, realistic example 3}
@@ -29,36 +30,42 @@ Examples of {workflow type} tasks:
 For tasks meeting the above criteria, follow this workflow:
 
 1️⃣ **{Action-Oriented Step Name}:**
-   - {Specific action with clear outcome}
-   - {Another specific action}
-   - {Include links to relevant DSS resources: [Resource Name](mdc:path/to/resource)}
+
+- {Specific action with clear outcome}
+- {Another specific action}
+- {Include links to relevant DSS resources: [Resource Name](mdc:path/to/resource)}
 
 2️⃣ **{Action-Oriented Step Name}:**
-   - {Specific action with clear outcome}
-   - {Reference to DSS conventions: Follow [Convention Name](mdc:path/to/convention)}
+
+- {Specific action with clear outcome}
+- {Reference to DSS conventions: Follow [Convention Name](mdc:path/to/convention)}
 
 3️⃣ **{Action-Oriented Step Name}:**
-   - {Specific action}
-   - {Include frontmatter handling if applicable}
+
+- {Specific action}
+- {Include frontmatter handling if applicable}
 
 {Continue numbering as needed...}
 
 🔧 **DSS Maintenance Integration:**
-   - **Update INDEX.md:** If new files were created or project structure changed, update [INDEX.md](mdc:INDEX.md). See [How to Update Index](mdc:docs/how_to_update_index.md).
-   - **Validate Frontmatter:** Ensure proper YAML frontmatter follows [DSS Config](mdc:meta/dss_config.yml) standards.
-   - **Check Links:** Verify all MDC links remain valid.
-   - **Consult Checklist:** Reference [Maintenance Checklist](mdc:meta/assistant_guidelines/maintenance_checklist.md) for comprehensive guidance.
+
+- **Update INDEX.md:** If new files were created or project structure changed, update [INDEX.md](mdc:INDEX.md). See [How to Update Index](mdc:docs/how_to_update_index.md).
+- **Validate Frontmatter:** Ensure proper YAML frontmatter follows [DSS Config](mdc:meta/dss_config.yml) standards.
+- **Check Links:** Verify all MDC links remain valid.
+- **Consult Checklist:** Reference [Maintenance Checklist](mdc:meta/assistant_guidelines/maintenance_checklist.md) for comprehensive guidance.
 
 ## Reference Materials
 
 {Include this section only if the workflow needs quick-reference tables, templates, or checklists}
 
 ### {Reference Name}
+
 {Table, template, or other reference material}
 
 ## Decision Points
 
 If during execution you discover that:
+
 - **{Specific condition}** → Transition to [{Target Workflow}](mdc:meta/assistant_workflows/{target_workflow}.md)
 - **{Specific condition}** → Transition to [{Target Workflow}](mdc:meta/assistant_workflows/{target_workflow}.md)
 - **{Specific condition}** → Continue with this workflow but {adjustment}
@@ -73,10 +80,12 @@ This workflow integrates with the [Core Process Checklist](mdc:.cursor/rules/ass
 ## Integration with Other Workflows
 
 ### Related Workflows
+
 - **[{Related Workflow}](mdc:meta/assistant_workflows/{related}.md)**: {Relationship and when to use each}
 - **[{Related Workflow}](mdc:meta/assistant_workflows/{related}.md)**: {Relationship and when to use each}
 
 ### Transition Protocol
+
 When transitioning from this workflow to others, refer to [Workflow Transitions](mdc:meta/assistant_workflows/workflow_transitions.md) for guidance on preserving context and maintaining continuity.
 
 ## Practical Examples
@@ -87,11 +96,13 @@ When transitioning from this workflow to others, refer to [Workflow Transitions]
 
 **Initial Task**: {Description of a realistic task}
 
-**Criteria Assessment**: 
+**Criteria Assessment**:
+
 - ✅ {Criterion}: {How this task meets it}
 - ✅ {Criterion}: {How this task meets it}
 
 **Workflow Application**:
+
 1. **{Step}**: {What was done and outcome}
 2. **{Step}**: {What was done and outcome}
 3. **{Step}**: {What was done and outcome}
@@ -103,6 +114,7 @@ When transitioning from this workflow to others, refer to [Workflow Transitions]
 {Delete this section when using the template}
 
 **Instructions for using this template:**
+
 1. Replace all `{placeholder}` text with specific content
 2. Choose "ALL" or "MOST" for criteria based on workflow exclusivity
 3. Delete optional sections (Reference Materials, Examples) if not needed
@@ -110,4 +122,4 @@ When transitioning from this workflow to others, refer to [Workflow Transitions]
 5. Include the DSS Maintenance Integration section in every workflow
 6. Link to actual DSS resources using `mdc:` prefix
 7. Test criteria with realistic scenarios to ensure clarity
-8. Update INDEX.md after creating the new workflow file 
+8. Update INDEX.md after creating the new workflow file
