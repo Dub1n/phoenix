@@ -56,7 +56,7 @@ class TDDOrchestrator {
             const planResult = await this.planTestPhase.execute(taskDescription, enhancedContext);
             await this.auditLogger.logPhaseEnd(planResult);
             // Run quality gates on planning phase
-            const planQualityReport = await this.qualityGateManager.runQualityGates({ files: [], testFiles: planResult.artifacts }, context, 'plan-test');
+            const planQualityReport = await this.qualityGateManager.runQualityGates({ files: [], testFiles: planResult.artifacts.map(path => ({ path, content: '// Test file content' })) }, context, 'plan-test');
             qualityReports.push(planQualityReport);
             if (!planQualityReport.overallPassed) {
                 console.log('⚠  Quality gates failed for planning phase');
@@ -120,7 +120,14 @@ class TDDOrchestrator {
             workflow.error = error instanceof Error ? error.message : 'Unknown error';
             workflow.endTime = new Date();
             workflow.duration = workflow.endTime.getTime() - workflow.startTime.getTime();
-            workflow.metadata = { qualityReports, ...workflow.metadata };
+            // Ensure quality metadata is always available, even on failure
+            workflow.metadata = {
+                qualityReports,
+                overallQualityScore: this.calculateOverallQualityScore(qualityReports),
+                qualitySummary: this.generateQualitySummary(qualityReports),
+                ...(codebaseScanResult && { codebaseScan: codebaseScanResult }),
+                ...workflow.metadata
+            };
             // Log failed workflow and record metrics
             await this.auditLogger.logWorkflowEnd(workflow);
             await this.metricsCollector.recordWorkflow(workflow);

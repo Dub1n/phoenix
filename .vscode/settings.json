@@ -2,5 +2,35 @@
     "python.defaultInterpreterPath": "C:/Users/gabri/Documents/Infotopology/DSS/dss_template_repo/.venv/Scripts/python.exe",
     "python.analysis.extraPaths": [
         "C:/Users/gabri/Documents/Infotopology/DSS/dss_template_repo/.venv/Lib/site-packages"
-    ]
+    ],
+    "terminal.integrated.defaultProfile.windows": "PowerShell",
+    "terminal.integrated.profiles.windows": {
+        "PowerShell": {
+            "source": "PowerShell",
+            "args": [
+                "-ExecutionPolicy", "Bypass",
+                "-NoExit",
+                "-Command",
+                ". '${workspaceFolder}/scripts/cursor-terminal-init.ps1'"
+            ],
+            "env": {
+                "SAFE_TERMINAL_ENABLED": "true",
+                "SAFE_TERMINAL_PROJECT_ROOT": "${workspaceFolder}"
+            }
+        }
+    },
+    "terminal.integrated.env.windows": {
+        "SAFE_TERMINAL_ENABLED": "true",
+        "SAFE_TERMINAL_PROJECT_ROOT": "${workspaceFolder}"
+    },
+
+    "terminal.integrated.automationProfile.windows": {
+        "source": "PowerShell",
+        "args": [
+            "-ExecutionPolicy", "Bypass",
+            "-NoExit",
+            "-Command",
+            ". '${workspaceFolder}/scripts/cursor-terminal-init.ps1'"
+        ]
+    }
 } 

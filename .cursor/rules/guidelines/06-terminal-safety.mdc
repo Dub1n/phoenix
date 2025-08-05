@@ -1,0 +1,188 @@
+---
+alwaysApply: true
+---
+``` yaml
+---
+tags: [Tags, Conventions, Metadata, Classification, Organization]
+provides: [Tag Standards, Classification System, Tagging Guidelines]
+requires: [DSS Core Structure and Concepts, Validation Rules]
+---
+```
+
+# Terminal Safety Guidelines
+
+## Automatic Terminal Call Management
+
+### Problem
+
+Terminal tool calls from Cursor agents frequently hang, requiring manual intervention and disrupting workflow.
+
+### Solution
+
+Use the automatic terminal manager for all terminal operations to prevent hanging calls without manual oversight.
+
+### CRITICAL: Always Add Timeouts to Testing Commands
+
+**NEVER** test scripts without timeouts. **ALWAYS** use the automatic terminal manager for testing:
+
+```powershell
+# ❌ WRONG - Testing without timeout
+run_terminal_cmd("npm test")
+
+# ✅ CORRECT - Testing with automatic timeout
+run_terminal_cmd("powershell -ExecutionPolicy Bypass -File scripts/auto-terminal-manager.ps1 -Command 'npm test'")
+```
+
+## Required Behavior
+
+### Always Use Safe Terminal Execution
+
+**NEVER** use direct terminal calls. The agent terminal automatically uses safe execution:
+
+```powershell
+# ✅ CORRECT - Direct calls are automatically safe
+run_terminal_cmd("npm test")
+run_terminal_cmd("git status")
+run_terminal_cmd("node script.js")
+```
+
+**The agent terminal automatically:**
+- Applies appropriate timeouts per command type
+- Kills hanging processes before execution
+- Handles background jobs safely
+- Provides detailed logging
+
+### Command Patterns
+
+#### NPM Commands
+
+```powershell
+# Tests (60s timeout, 2 retries)
+run_terminal_cmd("npm test")
+
+# Start (30s timeout, background)
+run_terminal_cmd("npm start")
+
+# Build (120s timeout)
+run_terminal_cmd("npm run build")
+```
+
+#### Node Commands
+
+```powershell
+# Node scripts (30s timeout)
+run_terminal_cmd("node script.js")
+```
+
+#### Git Commands
+
+```powershell
+# Git operations (15s timeout)
+run_terminal_cmd("git status")
+```
+
+#### System Commands
+
+```powershell
+# Safe commands (10s timeout)
+run_terminal_cmd("dir")
+run_terminal_cmd("echo 'test'")
+```
+
+### Debug Mode
+
+For troubleshooting, the agent terminal automatically provides detailed logging:
+
+```powershell
+run_terminal_cmd("npm test")
+# Automatically shows: "Executing: npm test (Timeout: 60000ms, Background: false)"
+```
+
+## Automatic Features
+
+### 1. Command Detection
+
+- Automatically detects command type (npm, node, git, etc.)
+- Applies appropriate timeouts and settings
+- Uses configuration from `.cursor/terminal-config.json`
+
+### 2. Hanging Prevention
+
+- Kills hanging processes before new commands
+- Automatic timeout enforcement
+- Retry logic for failed commands
+- Background job management
+
+### 3. Error Handling
+
+- Detailed error reporting
+- Automatic cleanup on failure
+- Graceful degradation
+
+## Configuration
+
+The system uses `.cursor/terminal-config.json` for:
+
+- Timeout values per command type
+- Retry settings
+- Background job limits
+- Process patterns to monitor
+
+## Fallback Procedures
+
+If the automatic manager fails:
+
+1. **Immediate**: Use the quick kill script
+
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File scripts/kill-hanging.ps1
+   ```
+
+2. **Manual**: Use Task Manager for stubborn processes
+   - `Ctrl+Shift+Esc` → Find hanging processes → End task
+
+3. **Reset**: Restart Cursor if needed
+
+## Implementation Notes
+
+### For Agents
+
+- Always wrap terminal calls in the automatic manager
+- Use appropriate timeouts for command types
+- Enable debug mode for troubleshooting
+- Report persistent issues
+
+### For Users
+
+- No manual intervention required
+- Monitor logs for unusual behavior
+- Report configuration issues
+
+## Integration with DSS Workflow
+
+This automatic terminal management integrates with DSS workflows by:
+
+1. **Supporting TDD**: Reliable test execution without hanging
+2. **Enabling CI/CD**: Stable build and deployment processes
+3. **Facilitating Development**: Uninterrupted development cycles
+4. **Ensuring Quality**: Reliable validation and testing
+
+## Monitoring and Maintenance
+
+### Regular Checks
+
+- Monitor script performance
+- Update configuration as needed
+- Test with new command types
+- Validate timeout settings
+
+### Updates
+
+- Keep scripts in sync with project needs
+- Update configuration based on feedback
+- Maintain compatibility with Cursor updates
+description:
+globs:
+alwaysApply: false
+
+---

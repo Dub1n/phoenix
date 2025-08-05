@@ -80,6 +80,7 @@ export declare class CoreFoundation {
     private systemState;
     private initialized;
     private performanceMetrics;
+    private monitoringIntervals;
     constructor(config?: Partial<CoreConfig>);
     /**
      * Initialize system state

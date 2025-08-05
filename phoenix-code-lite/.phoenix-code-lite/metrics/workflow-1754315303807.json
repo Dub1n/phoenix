@@ -1,0 +1,11 @@
+{
+  "timestamp": "2025-08-04T13:48:23.807Z",
+  "taskDescription": "Test task",
+  "success": true,
+  "duration": 30,
+  "phases": 3,
+  "qualityScore": 0.8238095238095239,
+  "tokenUsage": {
+    "total": 0
+  }
+}

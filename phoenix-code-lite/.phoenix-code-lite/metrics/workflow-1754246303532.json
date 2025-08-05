@@ -1,0 +1,11 @@
+{
+  "timestamp": "2025-08-03T18:38:23.532Z",
+  "taskDescription": "Test scan",
+  "success": true,
+  "duration": 34,
+  "phases": 3,
+  "qualityScore": 0.8238095238095239,
+  "tokenUsage": {
+    "total": 0
+  }
+}

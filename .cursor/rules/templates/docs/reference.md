@@ -3,12 +3,13 @@
 # Replace the placeholder content with your actual reference content
 # Delete this instructional header when you're done
 ---
-
+``` yaml
 ---
 tags: [reference, technical, documentation] # Add relevant tags
 provides: [reference_name] # What this reference documents
 requires: [] # Usually empty for reference docs
 ---
+```
 
 # Reference: [Title of the Reference]
 
@@ -81,17 +82,21 @@ function_name(param1, param2, optional_param=default_value)
 ```
 
 **Parameters:**
+
 - `param1` (type): Description of param1
 - `param2` (type): Description of param2
 - `optional_param` (type, optional): Description of optional_param. Default: `default_value`
 
 **Returns:**
+
 - (return_type): Description of the return value
 
 **Exceptions:**
+
 - `ExceptionType`: When this exception is raised
 
 **Example:**
+
 ```python
 result = function_name("value1", 42, optional_param=True)
 ```
@@ -103,16 +108,20 @@ function_name2(param1, param2)
 ```
 
 **Parameters:**
+
 - `param1` (type): Description of param1
 - `param2` (type): Description of param2
 
 **Returns:**
+
 - (return_type): Description of the return value
 
 **Exceptions:**
+
 - `ExceptionType`: When this exception is raised
 
 **Example:**
+
 ```python
 result = function_name2("value1", 42)
 ```
@@ -176,4 +185,4 @@ Answer to question 3.
 |---------|------|---------|
 | 1.0.0 | YYYY-MM-DD | Initial release |
 | 1.1.0 | YYYY-MM-DD | Added feature X |
-| 1.2.0 | YYYY-MM-DD | Fixed bug Y | 
+| 1.2.0 | YYYY-MM-DD | Fixed bug Y |

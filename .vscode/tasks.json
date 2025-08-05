@@ -2,6 +2,29 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "Activate Terminal Safety",
+            "type": "shell",
+            "command": "powershell",
+            "args": [
+                "-ExecutionPolicy", "Bypass",
+                "-File", "${workspaceFolder}/scripts/cursor-terminal-init.ps1"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": false,
+                "reveal": "silent",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": false,
+                "clear": false
+            },
+            "runOptions": {
+                "runOn": "folderOpen"
+            },
+            "problemMatcher": [],
+            "detail": "Automatically activate terminal safety when workspace opens"
+        },
+        {
             "label": "Replace Emojis in Current File",
             "type": "shell",
             "command": "python",

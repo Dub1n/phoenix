@@ -15,9 +15,10 @@ class PhoenixCodeLiteE2E {
         let qualityScore = 0;
         let retryCount = 0;
         try {
-            // Build CLI command
+            // Build CLI command - use the correct entry point
             const args = [
-                'dist/index.js',
+                'node',
+                'dist/src/index.js',
                 'generate',
                 '--task', options.task,
             ];
@@ -77,7 +78,8 @@ class PhoenixCodeLiteE2E {
         try {
             // Apply template
             await this.executeCommand([
-                'dist/index.js',
+                'node',
+                'dist/src/index.js',
                 'config',
                 '--template', template,
             ]);

@@ -71,7 +71,9 @@
       "Bash(npm test:*)",
       "Bash(phoenix-code-lite:*)",
       "Bash(\"C:\\Users\\gabri\\Documents\\Infotopology\\Phoenix\\phoenix-code-lite\\update-phoenix.bat\")",
-      "Bash(where tsc)"
+      "Bash(where tsc)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:api.github.com)"
     ]
   },
   "hooks": {

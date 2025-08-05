@@ -1,19 +1,21 @@
 ---
-description: 
-globs: 
 alwaysApply: true
 ---
+``` yaml
 ---
 tags: [Error Recovery, Self Correction, Debugging, Quality Assurance]
 provides: [Error Detection, Self Correction Protocol, Recovery Procedures]
 requires: [DSS Core Structure and Concepts, Workflow Selection Logic]
 ---
+```
+
 # Error Recovery Process
 
 ## Common Error Categories
 
 ### 1. Workflow Execution Errors
-| Error Type | Description | Common Causes | 
+
+| Error Type | Description | Common Causes |
 |------------|-------------|---------------|
 | **Workflow Selection** | Applying the wrong workflow to a task | Misunderstanding task complexity, insufficient context gathering |
 | **Step Omission** | Skipping required steps in a workflow | Distraction, context switching, urgency |
@@ -21,7 +23,8 @@ requires: [DSS Core Structure and Concepts, Workflow Selection Logic]
 | **Incomplete Execution** | Stopping a workflow before completion | Reaching token limits, encountering unexpected blockers |
 
 ### 2. Tool Usage Errors
-| Error Type | Description | Common Causes | 
+
+| Error Type | Description | Common Causes |
 |------------|-------------|---------------|
 | **Wrong Tool** | Using an inappropriate tool for the task | Misunderstanding tool purpose, habit |
 | **Parameter Error** | Providing incorrect parameters to a tool | Typos, misunderstanding requirements |
@@ -29,7 +32,8 @@ requires: [DSS Core Structure and Concepts, Workflow Selection Logic]
 | **Output Misinterpretation** | Misunderstanding the output of a tool | Incomplete analysis, assumption errors |
 
 ### 3. Content Generation Errors
-| Error Type | Description | Common Causes | 
+
+| Error Type | Description | Common Causes |
 |------------|-------------|---------------|
 | **Style Inconsistency** | Generated content doesn't match project style | Insufficient context, overlooking style guides |
 | **Factual Error** | Generating incorrect information | Misremembering, reasoning errors |
@@ -37,7 +41,8 @@ requires: [DSS Core Structure and Concepts, Workflow Selection Logic]
 | **Format Error** | Incorrect format for generated content | Misunderstanding requirements, template errors |
 
 ### 4. Documentation Errors
-| Error Type | Description | Common Causes | 
+
+| Error Type | Description | Common Causes |
 |------------|-------------|---------------|
 | **Missing Frontmatter** | Failing to include required frontmatter | Oversight, workflow error |
 | **Link Errors** | Creating broken or incorrect links | Typos, incorrect path understanding |
@@ -47,6 +52,7 @@ requires: [DSS Core Structure and Concepts, Workflow Selection Logic]
 ## Error Detection Guidelines
 
 ### Active Detection Methods
+
 1. **Post-Action Verification**:
    - After tool calls, explicitly verify the output matches expectations
    - Check that file modifications achieved the intended result
@@ -63,6 +69,7 @@ requires: [DSS Core Structure and Concepts, Workflow Selection Logic]
    - Check for any skipped or incomplete steps
 
 ### Passive Detection Methods
+
 1. **User Feedback Recognition**:
    - Interpret explicit user corrections as indicators of errors
    - Recognize implicit feedback in follow-up requests
@@ -78,34 +85,37 @@ requires: [DSS Core Structure and Concepts, Workflow Selection Logic]
 When an error is detected, follow these steps:
 
 ### 1. Acknowledge the Error
+
 - Explicitly identify what went wrong
 - Be specific about the nature of the error
 - Reference the relevant guideline or convention that was not followed
 
 ### 2. Assess Impact
+
 - Determine the consequences of the error
 - Identify any cascading effects
 - Prioritize correction based on severity
 
 ### 3. Plan Correction
+
 - Outline specific steps to correct the error
 - Consider the most efficient approach
 - Ensure the correction plan won't introduce new errors
 
 ### 4. Execute Correction
+
 - Implement the correction plan
 - Document changes made
 - Update status according to established tracking systems
 
 ### 5. Verify Correction
+
 - Confirm the error has been fully resolved
 - Check that no new issues were introduced
 - Update documentation to reflect current state
 
 ### 6. Implement Prevention
+
 - Identify how to prevent similar errors in the future
 - Update guidelines if needed
 - Create a mental note for future operations
-
-
-

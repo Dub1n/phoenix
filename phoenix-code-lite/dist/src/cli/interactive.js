@@ -40,6 +40,7 @@ exports.InteractivePrompts = void 0;
 const chalk_1 = __importDefault(require("chalk"));
 const settings_1 = require("../config/settings");
 const templates_1 = require("../config/templates");
+const test_utils_1 = require("../utils/test-utils");
 const config_formatter_1 = require("./config-formatter");
 class InteractivePrompts {
     async runConfigurationWizard() {
@@ -172,7 +173,7 @@ class InteractivePrompts {
                 this.handleEscapeKey().then((shouldExit) => {
                     if (shouldExit) {
                         console.log(chalk_1.default.gray('\n✓ Operation cancelled by user'));
-                        process.exit(0);
+                        (0, test_utils_1.safeExit)(0);
                     }
                 });
             }

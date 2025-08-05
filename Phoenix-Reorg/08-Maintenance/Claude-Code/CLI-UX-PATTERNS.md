@@ -1,181 +1,217 @@
-# CLI User Experience Patterns for Phoenix Code Lite
+# Interactive CLI User Experience Patterns for Phoenix Code Lite
 
 ## 🎯 UX Philosophy
 
-Phoenix Code Lite's CLI is designed around the principle of **progressive disclosure**: simple tasks should be simple, complex tasks should be possible, and users should never feel lost or overwhelmed.
+Phoenix Code Lite's CLI is designed around **persistent interactive sessions** with dual interaction modes: users can choose between intuitive menu navigation or traditional command-line workflows, with seamless switching between modes.
 
 ## 🎨 Core UX Principles
 
-### 1. Predictability
-- **Consistent Commands**: Similar actions use similar syntax across the CLI
-- **Reliable Behavior**: Commands behave the same way every time
-- **Clear Outcomes**: Users always know what happened and what to do next
+### 1. Session Persistence
 
-### 2. Discoverability
-- **Contextual Help**: Help is available where and when users need it
-- **Progressive Learning**: Users can start simple and gradually discover advanced features
-- **Clear Navigation**: Users can always find their way to what they need
+- **Continuous Context**: Users enter a persistent session that maintains state
+- **No Repeated Commands**: Eliminate the need to repeatedly type `phoenix-code-lite`
+- **Context Awareness**: System remembers user location and preferences
 
-### 3. Forgiveness
-- **Confirmation for Destructive Actions**: Prevent accidental data loss
-- **Undo/Rollback Options**: Allow users to recover from mistakes
-- **Clear Error Recovery**: When things go wrong, provide clear paths to resolution
+### 2. Dual Interaction Modes
 
-### 4. Efficiency
-- **Smart Defaults**: Most common use cases work without extra configuration
-- **Shortcuts for Power Users**: Advanced users can work efficiently
-- **Minimal Cognitive Load**: Users don't need to remember complex syntax
+- **Menu Mode**: Arrow-key navigation with numbered options for intuitive use
+- **Command Mode**: Traditional command-line interface for power users
+- **Mode Switching**: Seamless transition between modes with hotkeys
 
-## 📋 Command Design Patterns
+### 3. Progressive Disclosure
 
-### Primary Command Structure
+- **Contextual Menus**: Options relevant to current context and user capabilities
+- **Breadcrumb Navigation**: Clear visual indication of current location
+- **Guided Workflows**: Step-by-step processes for complex operations
+
+### 4. Forgiveness & Recovery
+
+- **Back Navigation**: ESC key and "back" command work consistently
+- **Session Recovery**: Graceful error handling maintains session state
+- **Clear Exit Paths**: Users can always return to main menu or exit cleanly
+
+## 🎛️ Interactive Session Architecture
+
+### Session Entry Points
+
 ```bash
-phoenix-code-lite <command> [options] [arguments]
+# Interactive Session (Primary Mode)
+phoenix-code-lite                    # Enters persistent interactive session
+
+# Traditional Command Mode (Backward Compatibility)
+phoenix-code-lite generate --task "description"  # Direct command execution
+phoenix-code-lite config --show      # Direct configuration display
 ```
 
-### Command Categories
+### Session Management
 
-#### 1. Workflow Commands (Primary Use Cases)
-```bash
-# Core workflow execution
-phoenix-code-lite generate --task "task description"
-phoenix-code-lite generate --task "task description" --framework react --verbose
+- **Automatic Mode Detection**: Detects when to use interactive vs traditional mode
+- **Context Preservation**: Navigation state maintained throughout session
+- **Resource Management**: Proper cleanup on session termination
 
-# Workflow management
-phoenix-code-lite status          # Show current workflow status
-phoenix-code-lite history        # Show workflow history
+### Interactive Menu Categories
+
+#### 1. Main Menu (Session Entry Point)
+
+```text
+📋 Phoenix Code Lite Interactive CLI
+════════════════════════════════════════════════
+
+1. Generate Code           - Start TDD workflow for new code
+2. Configuration           - Manage settings and templates  
+3. Templates              - Manage project templates
+4. Advanced Settings      - Advanced configuration options
+5. Help                   - Show available commands
+6. Quit                   - Exit Phoenix Code Lite
+
+Navigation: Type number, command name, "back", "home", or "quit"
+Mode: Press "c" for command mode, "m" for menu mode
 ```
 
-#### 2. Configuration Commands
-```bash
-# Configuration viewing and management
-phoenix-code-lite config --show
-phoenix-code-lite config --edit
-phoenix-code-lite config --use starter
-phoenix-code-lite config --adjust enterprise
-phoenix-code-lite config --add custom-template
+#### 2. Document Management (Integrated into Configuration)
+
+```text
+📋 Configuration > Document Management
+════════════════════════════════════════════════
+
+Current Template: Enterprise
+Document Status: 12 global, 8 agent-specific documents active
+
+1. Global Documents        - Manage project-wide documentation
+2. Planning Agent Docs     - Documentation for planning phase
+3. Implementation Docs     - Documentation for implementation phase  
+4. Quality Review Docs     - Documentation for review phase
+5. Template Settings       - Configure document activation per template
+6. Back to Configuration   - Return to main configuration menu
+
+Navigation: Type number or use arrow keys, ESC to go back
 ```
 
-#### 3. Utility Commands
-```bash
-# System utilities
-phoenix-code-lite init           # Initialize in current project
-phoenix-code-lite help           # Global help
-phoenix-code-lite version        # Show version
-phoenix-code-lite doctor         # System health check
+#### 3. Template Management (Menu-Driven)
+
+```text
+📄 Template Management
+════════════════════════════════════════════════
+
+Current: Enterprise Template
+Available: Starter, Enterprise, Performance, Custom
+
+1. Switch Template         - Change to different template
+2. Adjust Current          - Modify current template settings
+3. Create New Template     - Create custom template
+4. Reset Template          - Reset to default settings
+5. Preview Templates       - Compare template configurations
+6. Back to Main Menu       - Return to main menu
+
+Navigation: Type number, template name, or navigation command
 ```
 
-### Option Design Patterns
+### Interactive Navigation Patterns
 
-#### Short and Long Options
-```bash
-# Always provide both short and long options for common parameters
-phoenix-code-lite generate -t "task" -f react -v
-phoenix-code-lite generate --task "task" --framework react --verbose
+#### Breadcrumb Navigation
 
-# Use intuitive short options
--t, --task          # 't' for task
--f, --framework     # 'f' for framework  
--v, --verbose       # 'v' for verbose
--h, --help          # 'h' for help
+```text
+Phoenix Code Lite > Configuration > Advanced Settings > Document Management
 ```
 
-#### Progressive Option Complexity
-```bash
-# Simple (most common use case)
-phoenix-code-lite generate --task "create login form"
+#### Context-Aware Prompts
 
-# Intermediate (common customization)
-phoenix-code-lite generate --task "create API endpoint" --framework express
-
-# Advanced (full customization)
-phoenix-code-lite generate --task "complex task" --framework react --language typescript --max-attempts 5 --template enterprise --verbose
+```text
+Phoenix [Enterprise/Documents]> help
+Phoenix [Command Mode]> config
+Phoenix [Menu: 3/6]> 2
 ```
+
+#### Universal Navigation Commands
+
+- **back** - Go to previous menu
+- **home** - Return to main menu  
+- **quit/exit** - Exit application
+- **help** - Context-sensitive help
+- **c** - Switch to command mode
+- **m** - Switch to menu mode
 
 ## 🎛️ Interactive UI Patterns
 
-### Configuration Editor Pattern
-Design for the interactive configuration editor following these principles:
+### Session-Based Configuration Pattern
 
-#### Menu Navigation Structure
+Design for persistent session-based configuration following these principles:
+
+#### Configuration Menu Hierarchy
+
 ```text
-📋 Phoenix Code Lite Configuration
-  
-  → Framework Settings
-    Language Preferences  
-    Quality Thresholds
-    Security Policies
-    
-  → Templates
-    Current: Enterprise
-    Available: Starter, Enterprise, Performance, Custom
-    
-  → Advanced Settings
-    Agent Configuration
-    Audit Logging
-    Performance Tuning
-    
-  ⚙️  Actions
-    Save Configuration
-    Reset to Defaults  
-    Cancel Changes
-    
-Navigation: ↑↓ arrows, Enter to select, Esc to go back
+📋 Phoenix Code Lite Configuration [Session Active]
+════════════════════════════════════════════════
+
+Current Template: Enterprise
+Session ID: abc123-def456 | Mode: Interactive
+
+1. Framework Settings      - Language, testing, and build preferences
+2. Template Management     - Switch, create, or modify templates  
+3. Document Management     - Configure per-agent documentation
+4. Advanced Settings       - Security, logging, and performance
+5. Agent Configuration     - Customize AI agent behavior
+6. Back to Main Menu       - Return to Phoenix Code Lite main menu
+
+Navigation: Number selection, "back", "home", or "quit"
+Session Commands: "save", "reset", "status"
 ```
 
-#### Template Selection Pattern
-```text
-📋 Select Configuration Template
+#### Interactive Template Selection
 
-  ○ Starter Template
-    Perfect for learning and experimentation
-    • Test Coverage: 70%
-    • Quality Gates: Basic validation
-    • Performance: Balanced
-    
-  ● Enterprise Template  
-    Production-ready with strict validation
-    • Test Coverage: 90%
-    • Quality Gates: Comprehensive
-    • Performance: Quality-focused
-    
-  ○ Performance Template
-    Speed-optimized for rapid iteration
-    • Test Coverage: 60%
-    • Quality Gates: Minimal overhead
-    • Performance: Speed-optimized
-    
-  ○ Custom Template
-    Create your own configuration
-    
-Navigation: ↑↓ to browse, Space to select, Enter to confirm
+```text
+📄 Template Selection [Enterprise → ?]
+════════════════════════════════════════════════
+
+Preview: Comparing templates for your workflow
+
+┌─ Starter Template ──────────────────────────┐
+│ • Test Coverage: 70%                        │
+│ • Quality Gates: Basic validation           │
+│ • Performance: Balanced                     │
+│ • Best for: Learning and experimentation    │
+└─────────────────────────────────────────────┘
+
+┌─ Enterprise Template [CURRENT] ─────────────┐
+│ • Test Coverage: 90%                        │
+│ • Quality Gates: Comprehensive              │  
+│ • Performance: Quality-focused              │
+│ • Best for: Production development          │
+└─────────────────────────────────────────────┘
+
+1. Switch to Starter    2. Keep Enterprise    3. View Performance
+4. Create Custom       5. Cancel              6. Back
+
+Navigation: Number selection or template name
 ```
 
-#### Interactive Setting Editor Pattern
+#### Document Management Integration Pattern
+
 ```text
-📋 Framework Settings > Language Preferences
+📋 Document Management > Global Documents
+════════════════════════════════════════════════
 
-Current Value: typescript
+Template: Enterprise | 4 documents active
 
-Available Options:
-  ○ javascript    - JavaScript with JSDoc types
-  ● typescript    - TypeScript with strict typing
-  ○ python        - Python with type hints
-  ○ auto          - Auto-detect from project
-
-Description:
-Primary programming language for code generation. TypeScript 
-provides the best type safety and integration with Phoenix Code Lite.
+Available Documents:
+ ✓ project-context.md      - Project overview and requirements
+ ✓ api-guidelines.md       - API development standards  
+ ✗ legacy-notes.md         - Historical project notes
+ ✓ testing-strategy.md     - Testing approach and patterns
 
 Actions:
-  [S] Save    [R] Reset to Default    [C] Cancel    [B] Back
+1. Toggle Selection        4. Add New Document
+2. Preview Document        5. Remove Document  
+3. Edit Document          6. Back to Document Menu
 
-Navigation: ↑↓ to change, S/R/C/B for actions, Esc to go back
+Current Selection: [✓] = Active, [✗] = Inactive
+Navigation: Number, document name, or "toggle [name]"
 ```
 
 ### Progress Feedback Patterns
 
 #### Workflow Progress Display
+
 ```text
 🔄 Phoenix Code Lite Workflow In Progress
 
@@ -191,6 +227,7 @@ Press Ctrl+C to cancel
 ```
 
 #### Error State Display
+
 ```text
 ❌ Phoenix Code Lite Workflow Failed
 
@@ -214,9 +251,11 @@ Type 'phoenix-code-lite help troubleshooting' for more help.
 ## 🎯 User Journey Optimization
 
 ### First-Time User Experience
+
 Goal: Get users to their first successful workflow quickly
 
 #### Onboarding Flow
+
 ```bash
 # Step 1: Installation (handled by npm)
 npm install -g phoenix-code-lite
@@ -235,9 +274,11 @@ phoenix-code-lite generate --task "create hello world function"
 ```
 
 ### Returning User Experience
+
 Goal: Make daily workflow efficient and predictable
 
 #### Streamlined Daily Usage
+
 ```bash
 # Quick workflow execution
 phoenix-code-lite generate -t "user authentication API"
@@ -250,9 +291,11 @@ phoenix-code-lite history --limit 5
 ```
 
 ### Power User Experience
+
 Goal: Provide advanced capabilities without overwhelming beginners
 
 #### Advanced Features
+
 ```bash
 # Complex workflow with full customization
 phoenix-code-lite generate \
@@ -271,23 +314,32 @@ phoenix-code-lite config --import my-config.json
 
 ## 📝 Help and Documentation Patterns
 
-### Contextual Help System
-```bash
-# Global help
-phoenix-code-lite help
-phoenix-code-lite --help
+### Context-Aware Interactive Help
 
-# Command-specific help
-phoenix-code-lite generate --help
-phoenix-code-lite config --help
+```text
+📋 Phoenix Code Lite Help [Interactive Session]
+════════════════════════════════════════════════
 
-# Contextual help based on current state
-phoenix-code-lite help                    # General help
-phoenix-code-lite help troubleshooting    # When errors occurred
-phoenix-code-lite help configuration      # When in config mode
+Session Commands:
+  help                    - Show this help
+  home, main             - Return to main menu
+  back                   - Go to previous menu
+  quit, exit             - Exit Phoenix Code Lite
+  save                   - Save current configuration
+  status                 - Show session status
+
+Navigation:
+  1-9                    - Select menu option by number
+  [option name]          - Select option by name
+  c                      - Switch to command mode
+  m                      - Switch to menu mode
+
+Current Location: Configuration > Document Management
+Session: abc123-def456 | Mode: Interactive | Template: Enterprise
 ```
 
 ### Help Content Structure
+
 ```text
 📋 Phoenix Code Lite Help: generate
 
@@ -318,13 +370,46 @@ EXAMPLES:
   # Backend API
   phoenix-code-lite generate --task "REST API for users" --framework express --verbose
 
-For more examples: phoenix-code-lite help examples
-For troubleshooting: phoenix-code-lite help troubleshooting
+For context help: Type "help" in any menu for location-specific guidance
+```
+
+### Document Management Interactive Integration
+
+```text
+📋 Document Management Integration Pattern
+════════════════════════════════════════════════
+
+Access Path: Main Menu > Configuration > Document Management
+
+Menu Structure:
+1. Global Documents        - Project-wide documentation
+2. Planning Agent Docs     - Planning phase documentation  
+3. Implementation Docs     - Implementation phase documentation
+4. Quality Review Docs     - Review phase documentation
+5. Template Settings       - Per-template document activation
+6. Back to Configuration   - Return to main configuration
+
+Document Operations:
+  toggle [filename]      - Enable/disable document for current template
+  preview [filename]     - View document content
+  add                    - Create new document from template
+  edit [filename]        - Modify document content
+  remove [filename]      - Delete document (with confirmation)
+
+Template Integration:
+  Each configuration template maintains separate document activation
+  settings. Changes apply only to the currently selected template.
+
+Session Commands:
+  save                   - Apply document configuration changes
+  reset                  - Revert to template defaults
+  status                 - Show active documents summary
 ```
 
 ## 🔧 Error Handling UX Patterns
 
 ### Error Message Structure
+
 ```text
 ❌ {Error Type}: {Brief Description}
 
@@ -341,6 +426,7 @@ For more help: phoenix-code-lite help {relevant-topic}
 ### Error Examples
 
 #### Validation Error
+
 ```text
 ❌ Validation Error: Task description too short
 
@@ -356,6 +442,7 @@ For more help: phoenix-code-lite help examples
 ```
 
 #### Configuration Error
+
 ```text
 ❌ Configuration Error: Invalid template
 
@@ -377,6 +464,7 @@ For more help: phoenix-code-lite help configuration
 ## 🎨 Visual Design Patterns
 
 ### Color and Symbol Usage
+
 ```bash
 # Status indicators
 ✅ Success / Completed
@@ -397,6 +485,7 @@ Cyan: Progress indicators, active items
 ```
 
 ### Text Formatting
+
 ```bash
 # Use consistent formatting for different content types
 COMMANDS in uppercase
@@ -409,16 +498,19 @@ COMMANDS in uppercase
 ## 📊 Accessibility Considerations
 
 ### Screen Reader Support
+
 - Use clear, descriptive text for all interface elements
 - Provide text alternatives for visual progress indicators
 - Structure information logically with clear headings
 
 ### Keyboard Navigation
+
 - Support standard terminal navigation (arrows, tab, enter, escape)
 - Provide keyboard shortcuts for common actions
 - Allow navigation without mouse/pointer
 
 ### Terminal Compatibility
+
 - Work correctly in various terminal emulators
 - Graceful degradation when colors/symbols aren't supported
 - Respect terminal width and height constraints
@@ -426,18 +518,21 @@ COMMANDS in uppercase
 ## ✅ UX Quality Checklist
 
 ### Command Design Review
+
 - [ ] **Intuitive naming** - Command names reflect their purpose
 - [ ] **Consistent patterns** - Similar commands follow similar patterns
 - [ ] **Progressive disclosure** - Simple cases are simple, complex cases are possible
 - [ ] **Clear feedback** - Users always know what's happening
 
 ### Interactive Features Review
+
 - [ ] **Navigation clarity** - Users know how to navigate interface
 - [ ] **Escape routes** - Users can always get back to previous state
 - [ ] **Confirmation patterns** - Destructive actions require confirmation
 - [ ] **Error recovery** - Clear path from error states back to success
 
 ### Help System Review
+
 - [ ] **Contextual help** - Help is relevant to user's current situation
 - [ ] **Example quality** - Examples are practical and helpful
 - [ ] **Progressive detail** - Overview first, details available when needed

@@ -4,27 +4,27 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-### Phoenix Code Lite - TDD Workflow Orchestrator
+### QMS Infrastructure for Medical Device Software Development
 
-This repository contains the active development of **Phoenix-Code-Lite**, a TypeScript-based TDD workflow orchestrator designed to integrate seamlessly with Claude Code SDK. Phoenix-Code-Lite operates as an intelligent extension within the Claude Code ecosystem, focusing on systematic Test-Driven Development workflow orchestration.
+This repository is being transformed from Phoenix-Code-Lite (aka PCL) into a specialized **QMS (Quality Management System) Infrastructure** designed for medical device software development compliance and documentation workflows. The system integrates regulatory requirements into modern AGILE development practices while maintaining the existing TypeScript foundation.
 
-**Core Purpose**: Transform natural language task descriptions into tested, working code through a structured 3-phase TDD workflow powered by specialized AI agents.
+**Core Purpose**: Transform medical device QMS documents and regulatory requirements into a structured, searchable, and compliant development infrastructure that supports EN 62304, AAMI TIR45, and ISO standards integration.
 
 ### Architecture Overview
 
-Phoenix-Code-Lite implements a systematic approach to AI-driven development:
+The QMS Infrastructure builds upon the existing Phoenix-Code-Lite foundation with specialized QMS capabilities:
 
 ``` text
 ┌────────────────────────────────────────────────────────────────┐
-│                    Phoenix-Code-Lite Architecture              │
+│                    QMS Infrastructure Architecture             │
 ├────────────────────────────────────────────────────────────────┤
-│  CLI Interface & User Experience                               │
+│  CLI Interface & Interactive QMS Workflows                     │
 ├────────────────────────────────────────────────────────────────┤
-│  Configuration Management     │ Audit Logging & Metrics        │
+│  Document Processing Engine │ Compliance Validation System    │
 ├────────────────────────────────────────────────────────────────┤
-│  TDD Workflow Engine & Quality Gates                           │
+│  Requirement Traceability Matrix & Audit Trail                │
 ├────────────────────────────────────────────────────────────────┤
-│  Core Architecture & Claude Code Integration                   │
+│  Preserved Phoenix-Code-Lite Core & Claude Code Integration    │
 ├────────────────────────────────────────────────────────────────┤
 │  TypeScript Environment & Foundation                           │
 └────────────────────────────────────────────────────────────────┘
@@ -32,80 +32,53 @@ Phoenix-Code-Lite implements a systematic approach to AI-driven development:
 
 **Technology Stack**:
 
-- **Language**: TypeScript/Node.js
-- **LLM Integration**: Claude Code SDK
-- **Validation**: Zod schemas for runtime type safety
-- **Testing**: Jest with comprehensive coverage
-- **Development**: ESLint, Prettier, ts-node
-- **Architecture**: Plugin-like extension within Claude Code ecosystem
+- **Language**: TypeScript/Node.js (preserved from Phoenix-Code-Lite)
+- **LLM Integration**: Claude Code SDK (preserved integration)
+- **Document Processing**: PDF-to-Markdown conversion, structure analysis
+- **Validation**: Zod schemas for regulatory data validation
+- **Testing**: Jest with specialized QMS workflow coverage
+- **QMS Standards**: EN 62304, AAMI TIR45, ISO 13485, ISO 14971
+- **Security**: Cryptographic audit trails and digital signatures
 
-### Agent Specialization System
+## QMS Development Roadmap
 
-Phoenix-Code-Lite uses three specialized agents optimized for TDD workflow phases:
+### 16-Week Implementation Plan
 
-1. **Planning Analyst**: Requirements analysis, test strategy, comprehensive test planning
-2. **Implementation Engineer**: Clean code generation, minimal implementation to pass tests
-3. **Quality Reviewer**: Code refactoring, documentation, performance optimization
+Based on the QMS Roadmap, development follows a systematic approach:
 
-## Development Roadmap
+#### **Phase 1: Foundation (Weeks 1-2)**
+- Establish comprehensive test coverage for existing Phoenix-Code-Lite system
+- Create performance baselines and continuous validation pipeline
+- Document preservation strategy for reusable components
 
-### 8-Phase Development Approach
+#### **Phase 2: Architecture (Weeks 3-4)**
+- Analyze existing system architecture for QMS integration points
+- Design document processing engine and compliance validation system
+- Plan component preservation and enhancement approach
 
-Phoenix-Code-Lite follows a systematic 8-phase development plan with strict TDD methodology:
+#### **Phase 3: Core Implementation (Weeks 5-7)**
+- Build PDF-to-Markdown document processing engine for VDL2/QMS/Docs
+- Implement EN 62304 and AAMI TIR45 compliance validation system
+- Create requirement traceability infrastructure
 
-#### **Phase 1: Environment Setup & Foundation**
+#### **Phase 4: Security & Audit (Weeks 8-10)**
+- Implement cryptographic audit trails with digital signature support
+- Build role-based access controls for QMS content
+- Create evidence collection and audit package generation
 
-- Complete TypeScript development environment
-- Package.json with Claude Code SDK dependencies  
-- Jest testing framework and code quality tools
-- Basic project structure and build system
+#### **Phase 5: User Experience (Weeks 11-13)**
+- Enhance CLI with QMS-specific commands and workflows
+- Build interactive document analysis and compliance reporting
+- Create regulatory compliance dashboard
 
-#### **Phase 2: Core Architecture & Claude Code Integration**
-
-- Zod-validated type system for all workflow interfaces
-- Claude Code client integration with retry mechanisms
-- Agent specialization system implementation
-- Comprehensive security guardrails system
-
-#### **Phase 3: TDD Workflow Engine Implementation**
-
-- Three-phase TDD orchestrator (Plan & Test → Implement & Fix → Refactor & Document)
-- StateFlow finite state machine for workflow management
-- Agent coordination with specialized system prompts
-
-#### **Phase 4: Quality Gates & Validation Framework**
-
-- 4-tier quality validation system (syntax, tests, quality, documentation)
-- Quality gate manager with configurable thresholds  
-- Weighted quality scoring algorithm
-
-#### **Phase 5: Configuration Management System**
-
-- Zod-validated configuration schema with runtime type safety
-- Configuration templates (Starter, Enterprise, Performance)
-- Agent-specific settings and customization
-
-#### **Phase 6: Audit Logging & Metrics Collection**
-
-- Structured audit logging with session correlation
-- Performance metrics collection (token usage, execution time, quality scores)
-- Workflow analytics with success rates and failure patterns
-
-#### **Phase 7: CLI Interface & User Experience**
-
-- Advanced CLI with Commander.js integration
-- Progress tracking with multi-phase indicators
-- Context-aware help system
-
-#### **Phase 8: Integration Testing & Documentation**
-
-- Comprehensive end-to-end testing suite
-- Performance benchmarking and regression detection
-- Professional documentation and production readiness validation
+#### **Phase 6: Validation & Deployment (Weeks 14-16)**
+- Comprehensive QMS workflow testing and validation
+- Regulatory compliance verification against standards
+- Production deployment preparation and documentation
 
 ## Development Commands
 
-### Core Development
+### Core Development (Preserved from Phoenix-Code-Lite)
 
 ```bash
 # Build TypeScript to JavaScript
@@ -124,208 +97,193 @@ npm run lint
 npm start
 ```
 
-### TDD Workflow Development
+### QMS-Specific Commands (New)
 
 ```bash
-# Continuous testing during development
-npm run test:watch
+# Document Processing
+npm run dev process-document --input "VDL2/QMS/Docs/SSI-SOP-20.pdf" --output "processed/"
+npm run dev batch-process --source "VDL2/QMS/Docs/" --output "structured/"
 
-# Generate coverage reports
-npm run test:coverage  
+# Compliance Analysis
+npm run dev validate-compliance --standard EN62304 --safety-class B
+npm run dev analyze-requirements --standards "EN62304,AAMI-TIR45"
+npm run dev generate-traceability --output "traceability-matrix.xlsx"
 
-# Validate TypeScript compilation
-npm run build:check
+# Audit and Reporting
+npm run dev generate-audit-package --output "audit-evidence/"
+npm run dev compliance-report --format pdf --standards "EN62304"
+npm run dev gap-analysis --project-path "." --standard EN62304
+```
 
-# Run specific test suites
-npm test -- --testNamePattern="Phase 2"
+### Development Testing
+
+```bash
+# QMS workflow testing
+npm run test -- --testNamePattern="QMS"
+npm run test:qms-integration
+npm run test:document-processing
+npm run test:compliance-validation
+
+# Performance testing for document processing
+npm run test:performance -- --testNamePattern="Document Processing"
 ```
 
 ## Project Structure
 
+### Current Structure (Preserved)
 ``` text
 phoenix-code-lite/
 ├── src/
-│   ├── cli/           # CLI interface and commands
-│   ├── tdd/           # TDD workflow orchestration
-│   ├── claude/        # Claude Code SDK integration
-│   │   ├── client.ts  # Validated Claude Code client wrapper
-│   │   └── prompts.ts # Agent-aware prompt templates
-│   ├── config/        # Configuration management
-│   ├── security/      # Security guardrails system
-│   ├── types/         # Zod schemas and TypeScript interfaces
-│   │   ├── workflow.ts # Core workflow data structures
-│   │   └── agents.ts   # Agent specialization definitions
-│   └── utils/         # Utility functions
-├── tests/
-│   ├── integration/   # Integration tests
-│   └── unit/         # Unit tests
-├── docs/             # Project documentation
-└── scripts/          # Development and build scripts
+│   ├── cli/           # CLI interface (enhanced for QMS)
+│   ├── core/          # Core foundation (preserved)
+│   ├── config/        # Configuration management (enhanced)
+│   ├── types/         # Type definitions (enhanced with QMS schemas)
+│   └── utils/         # Utility functions (preserved + QMS utilities)
 ```
 
-## TDD Development Methodology
+### New QMS Components
+``` text
+src/
+├── qms/
+│   ├── document-processor/     # PDF-to-Markdown conversion engine
+│   ├── compliance-validator/   # EN 62304, AAMI TIR45 validation
+│   ├── traceability/          # Requirement traceability matrix
+│   ├── audit-logger/          # Cryptographic audit trails
+│   └── standards/             # Regulatory standards integration
+├── preparation/               # QMS preparation utilities
+└── types/
+    ├── qms-types.ts          # QMS-specific type definitions
+    ├── regulatory-standards.ts # Standards compliance schemas
+    └── document-processing.ts  # Document processing interfaces
+```
 
-### Phase-Based TDD Implementation
+### VDL2 Content Structure
+``` text
+VDL2/
+├── QMS/
+│   ├── Docs/
+│   │   ├── SSI-SOP-10*/      # Design and Development Control documents
+│   │   ├── SSI-SOP-20*/      # Software Development documents
+│   │   ├── EN 62304*/        # Medical device software standard
+│   │   └── AAMI*/            # AGILE practices guidance
+│   └── processed/            # Generated structured documents
+```
 
-Each development phase follows strict TDD methodology:
+## QMS Development Methodology
 
-1. **Write Comprehensive Tests First**: Create failing tests that define expected behavior
-2. **Minimal Implementation**: Write only the code needed to pass tests
-3. **Refactor with Safety**: Improve code quality while maintaining test coverage
-4. **Validate Against Success Criteria**: Ensure phase completion meets all requirements
+### Document-Driven Development
 
-### Agent-Driven TDD Workflow
+QMS development follows a document-centric approach:
 
-The core TDD workflow orchestrates three specialized agents:
+1. **Document Analysis**: Process VDL2/QMS/Docs content to extract requirements
+2. **Standards Mapping**: Map documents to EN 62304, AAMI TIR45, ISO standards
+3. **Workflow Integration**: Embed compliance into development processes
+4. **Evidence Collection**: Automated audit trail and evidence generation
+
+### Regulatory Compliance Integration
 
 ```typescript
-// Example workflow structure
-interface TDDWorkflowPhases {
-  planAndTest: {
-    agent: "Planning Analyst",
-    input: TaskDescription,
-    output: ComprehensiveTestSuite
+// Example QMS workflow structure
+interface QMSWorkflowPhases {
+  documentProcessing: {
+    input: PDFDocument,
+    process: "PDF-to-Markdown conversion with structure preservation",
+    output: StructuredDocument
   },
-  implementAndFix: {
-    agent: "Implementation Engineer", 
-    input: TestResults,
-    output: MinimalImplementation
+  complianceValidation: {
+    input: StructuredDocument,
+    process: "EN 62304 and AAMI TIR45 requirement validation",
+    output: ComplianceReport
   },
-  refactorAndDocument: {
-    agent: "Quality Reviewer",
-    input: WorkingImplementation,
-    output: ProductionReadyCode
+  traceabilityGeneration: {
+    input: [Requirements, Implementation, Tests],
+    process: "Automated traceability matrix generation",
+    output: TraceabilityMatrix
   }
 }
 ```
 
-## Security Considerations
+## Security and Audit Framework
 
-### Security Guardrails System
+### QMS Security Requirements
 
-Phoenix-Code-Lite implements comprehensive security controls:
+- **Document Security**: Secure handling of regulatory documents and sensitive QMS content
+- **Audit Trail**: Cryptographic audit trails with digital signature support for all QMS operations
+- **Access Control**: Role-based access for QMS documents and compliance data
+- **Evidence Integrity**: Tamper-proof evidence collection and audit package generation
 
-- **File System Access Control**: Whitelist/blacklist path validation
-- **Command Execution Security**: Approved command list with dangerous pattern detection  
-- **Size and Time Limits**: File size and execution time constraints
-- **Audit Logging**: Complete security event tracking
-- **Approval Workflows**: Manual approval for sensitive operations
+### Compliance Data Protection
 
-### Security Policies
+- **Regulatory Documents**: Encrypted storage for sensitive compliance documentation
+- **Audit Logging**: Complete logging of all QMS-related operations with cryptographic verification
+- **Role-Based Access**: Developer, Quality Engineer, Regulatory Affairs, Administrator roles
+- **Data Retention**: GDPR/HIPAA compliant handling of patient data and regulatory information
 
-Default security policy includes:
+## Integration with Existing Phoenix-Code-Lite
 
-- **Allowed Paths**: `./src/**`, `./tests/**`, `./docs/**`, configuration files
-- **Blocked Paths**: System directories, secrets, node_modules, .git
-- **Allowed Commands**: npm, node, tsc, jest, eslint, git, basic shell utilities
-- **Blocked Commands**: rm, sudo, curl, network tools, system modification commands
+### Preserved Components
 
-## Claude Code Integration Patterns
+- **Core Foundation**: All core Phoenix-Code-Lite infrastructure preserved
+- **Claude Code SDK**: Existing Claude Code integration maintained
+- **TypeScript Environment**: Build system, testing, and development tools preserved
+- **Configuration System**: Enhanced with QMS-specific settings and templates
 
-### Agent-Specialized Prompting
+### Enhanced Components
 
-Each agent uses specialized system prompts and expertise areas:
+- **CLI Interface**: Enhanced with QMS commands while preserving existing functionality
+- **Configuration Management**: Extended with regulatory standards and QMS templates
+- **Type System**: Enhanced with QMS-specific schemas and regulatory data validation
+- **Testing Framework**: Extended with QMS workflow and compliance testing
 
-```typescript
-// Planning Analyst specialization
-const planningAnalyst = {
-  role: "Senior Technical Analyst & Test Designer",
-  expertise: ["requirements analysis", "test strategy", "edge case identification"],
-  approach: "methodical, comprehensive, risk-aware, systematic",
-  output_format: "structured plan with comprehensive test specifications"
-}
+## QMS Standards Integration
 
-// Implementation Engineer specialization  
-const implementationEngineer = {
-  role: "Senior Software Engineer",
-  expertise: ["clean code", "design patterns", "performance optimization"],
-  approach: "pragmatic, test-driven, maintainable, efficient", 
-  output_format: "production-ready code with clear structure and comments"
-}
-```
+### Supported Standards
 
-### Context-Aware Development
+- **EN 62304:2006+A1:2015**: Medical Device Software lifecycle processes
+- **AAMI TIR45:2023**: AGILE practices in medical device software development
+- **ISO 13485:2016**: Quality Management Systems for medical devices
+- **ISO 14971:2019**: Risk Management for medical devices
 
-- **Project Context**: Maintain awareness of current development phase
-- **Task Context**: Include language, framework, and project path information
-- **Quality Context**: Apply appropriate quality standards for each phase
-- **Security Context**: Ensure all operations comply with security policies
-
-## Data Validation and Type Safety
-
-### Zod Schema Validation
-
-All data structures use Zod schemas for runtime validation:
+### Compliance Templates
 
 ```typescript
-// Example: Task context validation
-export const TaskContextSchema = z.object({
-  taskDescription: z.string()
-    .min(10, 'Task description must be at least 10 characters')
-    .max(1000, 'Task description too long'),
-  projectPath: z.string().min(1, 'Project path is required'),
-  language: z.string().optional(),
-  framework: z.string().optional(),
-  maxTurns: z.number().min(1).max(10).default(3)
-});
-
-export type TaskContext = z.infer<typeof TaskContextSchema>;
+// QMS Configuration Schema
+interface QMSConfiguration {
+  regulatory: {
+    primaryStandards: ['EN62304', 'AAMI-TIR45', 'ISO13485'];
+    safetyClassification: 'A' | 'B' | 'C';
+    complianceLevel: 'basic' | 'comprehensive';
+  };
+  documents: {
+    sourceDirectory: 'VDL2/QMS/Docs';
+    outputDirectory: 'processed-qms';
+    processingOptions: DocumentProcessingOptions;
+  };
+  audit: {
+    enableCryptographicTrail: true;
+    digitalSignatureRequired: boolean;
+    retentionPeriod: string;
+  };
+}
 ```
-
-### Structured Data Flow
-
-- **Input Validation**: All user inputs validated against schemas
-- **Agent Communication**: Structured data exchange between agents
-- **Output Validation**: All LLM responses validated before processing
-- **Error Handling**: Comprehensive validation error reporting
-
-## Quality Standards
-
-### Code Quality Requirements
-
-- **Test Coverage**: >90% for all new code
-- **Type Safety**: 100% TypeScript strict mode compliance
-- **Code Quality**: ESLint score >95%, Prettier formatting enforced
-- **Documentation**: All public APIs documented with examples
-
-### Performance Benchmarks
-
-- **Workflow Execution**: <30 seconds for typical tasks
-- **CLI Responsiveness**: <100ms for interactive commands
-- **Memory Usage**: <200MB peak during normal operations
-- **Token Efficiency**: Optimized prompts reducing API costs by 30%
 
 ## Development Guidelines
 
-### Working with Phoenix Code Lite
+### Working with QMS Infrastructure
 
-When implementing features for Phoenix-Code-Lite:
+When implementing QMS features:
 
-1. **Follow the Phase Structure**: Implement features according to the 8-phase roadmap
-2. **TDD First**: Always write tests before implementation
-3. **Security Awareness**: All file operations and commands must go through security guardrails
-4. **Agent Specialization**: Use appropriate agent personas for different tasks
-5. **Validation Everything**: All data must be validated with Zod schemas
-6. **Documentation**: Maintain comprehensive documentation for all components
+1. **Preserve Phoenix-Code-Lite**: Maintain all existing functionality while adding QMS capabilities
+2. **Standards Compliance**: Ensure all QMS features align with EN 62304 and AAMI TIR45 requirements
+3. **Document Processing**: Use secure, validated PDF processing with structure preservation
+4. **Audit Trail**: All QMS operations must generate cryptographic audit entries
+5. **Type Safety**: All regulatory data must be validated with Zod schemas
+6. **Evidence Collection**: Automatic collection of development artifacts for compliance evidence
 
-### Current Development Status
+### Current Development Priority
 
-**Active Phase**: Core Architecture & Claude Code Integration (Phase 2)
-**Next Milestone**: TDD Workflow Engine Implementation (Phase 3)
-**Development Timeline**: 4-6 weeks total development time
+**Primary Focus**: QMS Infrastructure development according to 16-week roadmap
+**Secondary**: Maintain Phoenix-Code-Lite compatibility and existing functionality
+**Target**: Complete medical device software QMS infrastructure ready for regulatory compliance
 
-This repository represents an active TypeScript development project implementing a sophisticated TDD workflow orchestrator. Focus on the systematic approach, agent specialization, security considerations, and comprehensive validation that distinguish Phoenix-Code-Lite as a professional-grade development tool.
-
-## User Memory
-
-``` text
-# SuperClaude Entry Point
-
-@COMMANDS.md
-@FLAGS.md
-@PRINCIPLES.md
-@RULES.md
-@MCP.md
-@PERSONAS.md
-@ORCHESTRATOR.md
-@MODES.md
+This repository represents the transformation of Phoenix-Code-Lite into a specialized QMS infrastructure while preserving the sophisticated TypeScript foundation and Claude Code integration. Focus on regulatory compliance, document processing, audit trails, and systematic approach to medical device software development standards.

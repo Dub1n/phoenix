@@ -71,11 +71,21 @@ describe('Phase 5: Configuration Management', () => {
     });
     
     test('Validates configuration when setting values', () => {
-      // Create a fresh config instance for this test
-      const config = PhoenixCodeLiteConfig.getDefault();
+      // Test that setting invalid values throws
+      expect(() => {
+        const config = PhoenixCodeLiteConfig.getDefault();
+        config.set('claude.maxTurns', 15);
+      }).toThrow(); // Max is 10
       
-      expect(() => config.set('claude.maxTurns', 15)).toThrow(); // Max is 10
-      expect(() => config.set('claude.timeout', -1)).toThrow(); // Must be positive
+      expect(() => {
+        const config = PhoenixCodeLiteConfig.getDefault();
+        config.set('claude.timeout', -1);
+      }).toThrow(); // Must be positive
+      
+      // Verify that valid values can be set
+      const config = PhoenixCodeLiteConfig.getDefault();
+      expect(() => config.set('claude.maxTurns', 5)).not.toThrow();
+      expect(config.get('claude.maxTurns')).toBe(5);
     });
   });
   
@@ -122,12 +132,11 @@ describe('Phase 5: Configuration Management', () => {
       // First verify it starts enabled
       expect(config.isAgentEnabled('planningAnalyst')).toBe(true);
       
-      // Disable specialization - create a fresh config to avoid state issues
-      const freshConfig = PhoenixCodeLiteConfig.getDefault();
-      freshConfig.set('agents.enableSpecialization', false);
+      // Disable specialization
+      config.set('agents.enableSpecialization', false);
       
       // Should now be disabled
-      expect(freshConfig.isAgentEnabled('planningAnalyst')).toBe(false);
+      expect(config.isAgentEnabled('planningAnalyst')).toBe(false);
     });
   });
 });

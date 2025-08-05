@@ -3,12 +3,13 @@
 # Replace the placeholder content with your actual quickstart content
 # Delete this instructional header when you're done
 ---
-
+``` yaml
 ---
 tags: [quickstart, guide, beginner] # Add relevant tags
 provides: [quickstart_guide] # What this guide provides
 requires: [] # Any prerequisites
 ---
+```
 
 # Quickstart: [Name of Component or Process]
 
@@ -94,4 +95,4 @@ Once you've completed this quickstart, you can:
 
 ## Need Help?
 
-If you encounter issues or have questions, check the [troubleshooting guide](mdc:docs/troubleshooting.md) or [join our community](URL). 
+If you encounter issues or have questions, check the [troubleshooting guide](mdc:docs/troubleshooting.md) or [join our community](URL).

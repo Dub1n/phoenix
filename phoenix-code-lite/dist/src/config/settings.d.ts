@@ -94,6 +94,17 @@ export declare const PhoenixCodeLiteConfigSchema: z.ZodObject<{
         requireDocumentation: z.ZodDefault<z.ZodBoolean>;
         enforceStrictMode: z.ZodDefault<z.ZodBoolean>;
     }, z.core.$strip>>>;
+    ui: z.ZodDefault<z.ZodOptional<z.ZodObject<{
+        interactionMode: z.ZodDefault<z.ZodEnum<{
+            menu: "menu";
+            command: "command";
+        }>>;
+        showNumbers: z.ZodDefault<z.ZodBoolean>;
+        showDescriptions: z.ZodDefault<z.ZodBoolean>;
+        compactMode: z.ZodDefault<z.ZodBoolean>;
+        promptSymbol: z.ZodDefault<z.ZodString>;
+        allowModeSwitch: z.ZodDefault<z.ZodBoolean>;
+    }, z.core.$strip>>>;
 }, z.core.$strip>;
 export type PhoenixCodeLiteConfigData = z.infer<typeof PhoenixCodeLiteConfigSchema>;
 export type AgentConfig = z.infer<typeof AgentConfigSchema>;

@@ -1,9 +1,12 @@
+import { NavigationItem } from '../types/interaction-modes';
 export interface SessionContext {
     level: 'main' | 'config' | 'templates' | 'advanced' | 'generate';
     history: string[];
     currentItem?: string;
     breadcrumb: string[];
     data?: Record<string, any>;
+    mode?: 'menu' | 'command';
+    navigationStack?: NavigationItem[];
 }
 export interface MenuAction {
     type: 'navigate' | 'execute' | 'exit' | 'back';
@@ -24,10 +27,17 @@ export declare class CLISession {
     private running;
     private readline;
     private menuSystem;
+    private interactionManager;
     private inputValidator;
     private errorHandler;
     constructor();
     start(): Promise<void>;
+    private clearInputBuffer;
+    private displayWelcome;
+    private displayMainMenu;
+    private handleInteractionResult;
+    private switchMode;
+    private cleanup;
     private promptForInput;
     private generatePrompt;
     private getContextColor;

@@ -1,13 +1,14 @@
 ---
-description: 
-globs: 
 alwaysApply: true
 ---
+``` yaml
 ---
 tags: [Validation, Frontmatter, Quality Assurance, Automation, Standards]
 provides: [Validation Rules, Auto Correction, Format Standards]
 requires: [DSS Core Structure and Concepts, Tag Standards]
 ---
+```
+
 # Frontmatter Validation Rules
 
 ## Required Fields
@@ -23,6 +24,7 @@ All DSS files with frontmatter must include:
 ## Field Format Rules
 
 ### Tags
+
 - Must be an array/list, even for a single tag
 - Each tag must be a string
 - Tags should be lowercase with underscores for spaces
@@ -30,6 +32,7 @@ All DSS files with frontmatter must include:
 - Example: `tags: [documentation, automation, phase1]`
 
 ### Provides
+
 - Must be an array/list, even for a single item
 - Each item must be a string
 - Items should represent resources, concepts, or artifacts the file contributes
@@ -37,6 +40,7 @@ All DSS files with frontmatter must include:
 - Example: `provides: [frontmatter_validation_rules, validation_schema]`
 
 ### Requires
+
 - Must be an array/list, even for a single item
 - Each item must be a string
 - Items should reference existing files or resources in the project
@@ -47,13 +51,16 @@ All DSS files with frontmatter must include:
 ## Format Consistency
 
 ### Markdown Files
+
 Frontmatter in Markdown files must:
+
 - Begin at the very start of the file
 - Start with a line containing only `---`
 - End with a line containing only `---`
 - Contain valid YAML between the delimiters
 
 Example:
+
 ```markdown
 ---
 tags: [documentation, template]
@@ -65,13 +72,16 @@ requires: []
 ```
 
 ### Python Files
+
 Frontmatter in Python files must:
+
 - Be contained within a docstring at the beginning of the file
 - Start with `"""---`
 - End with `---"""`
 - Contain valid YAML between the delimiters
 
 Example:
+
 ```python
 """---
 tags: [utility, automation]
@@ -97,9 +107,7 @@ The frontmatter validation script can automatically correct:
 ## Validation Integration
 
 These rules are implemented in:
+
 - Frontmatter validation scripts
 - Pre-commit hooks for automated validation
 - Documentation generators enforcing frontmatter rules
-
-
-

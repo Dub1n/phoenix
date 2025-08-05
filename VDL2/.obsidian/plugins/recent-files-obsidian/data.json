@@ -1,0 +1,52 @@
+{
+  "recentFiles": [
+    {
+      "basename": "Info",
+      "path": "QMS/Info.md"
+    },
+    {
+      "basename": "QMS",
+      "path": "QMS/QMS.md"
+    },
+    {
+      "basename": "AAMI_marker",
+      "path": "QMS/Docs/AAMI/AAMI_marker.md"
+    },
+    {
+      "basename": "EN 62304-2006+A1-2015 Medical device software",
+      "path": "QMS/Docs/EN 62304-2006+A1-2015 Medical device software.pdf"
+    },
+    {
+      "basename": "Development Process-1",
+      "path": "QMS/Docs/Development Process-1.pdf"
+    },
+    {
+      "basename": "MindMap",
+      "path": "QMS/MindMap.canvas"
+    },
+    {
+      "basename": "SSI-SOP-20 Software Development",
+      "path": "QMS/Docs/SSI-SOP-20 Software Development/SSI-SOP-20 Software Development.md"
+    },
+    {
+      "basename": "SSI-SOP-10 Design and Development Control",
+      "path": "QMS/Docs/SSI-SOP-10 Design and Development Control/SSI-SOP-10 Design and Development Control.md"
+    },
+    {
+      "basename": "Terms",
+      "path": "QMS/Terms.md"
+    },
+    {
+      "basename": "AAMI TIR45-2023 Guidance on the use of AGILE practices in the development of medical device software",
+      "path": "QMS/Docs/AAMI/AAMI TIR45-2023 Guidance on the use of AGILE practices in the development of medical device software.pdf"
+    },
+    {
+      "basename": "PDFs",
+      "path": "attachments/PDFs/PDFs.md"
+    }
+  ],
+  "omittedPaths": [],
+  "omittedTags": [],
+  "updateOn": "file-open",
+  "omitBookmarks": false
+}

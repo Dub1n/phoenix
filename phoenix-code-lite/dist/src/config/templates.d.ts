@@ -1,4 +1,5 @@
 import { PhoenixCodeLiteConfigData } from './settings';
+import { DocumentConfiguration } from '../types/document-management';
 export interface TemplateMetadata {
     name: string;
     displayName: string;
@@ -8,12 +9,14 @@ export interface TemplateMetadata {
     testCoverage: number;
     qualityLevel: 'basic' | 'standard' | 'strict';
     recommended: boolean;
+    documents?: DocumentConfiguration;
 }
 export declare class ConfigurationTemplates {
     static getStarterTemplate(): Partial<PhoenixCodeLiteConfigData>;
     static getEnterpriseTemplate(): Partial<PhoenixCodeLiteConfigData>;
     static getStackSpecificTemplate(framework: string, language: string): Partial<PhoenixCodeLiteConfigData>;
     static getPerformanceTemplate(): Partial<PhoenixCodeLiteConfigData>;
+    private static templateMetadataList;
     static getTemplateList(): TemplateMetadata[];
     static getTemplateByName(name: string): Partial<PhoenixCodeLiteConfigData> | null;
     static getTemplateMetadata(name: string): TemplateMetadata | null;
@@ -31,5 +34,20 @@ export declare class ConfigurationTemplates {
         template: Partial<PhoenixCodeLiteConfigData>;
         metadata: TemplateMetadata;
     };
+    /**
+     * Update document configuration for a template
+     */
+    static updateTemplateDocuments(templateName: string, documentConfig: DocumentConfiguration): boolean;
+    /**
+     * Get template with document configuration support
+     */
+    static getTemplateWithDocuments(name: string): {
+        template: Partial<PhoenixCodeLiteConfigData>;
+        metadata: TemplateMetadata;
+    } | null;
+    /**
+     * Initialize default document configurations for built-in templates
+     */
+    static initializeDefaultDocumentConfigurations(): void;
 }
 //# sourceMappingURL=templates.d.ts.map

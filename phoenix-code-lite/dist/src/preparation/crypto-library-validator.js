@@ -1,0 +1,158 @@
+"use strict";
+/**
+ * Cryptographic Library Validator
+ *
+ * Validates cryptographic libraries availability and functionality
+ * for QMS digital signatures and audit trails
+ */
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.CryptoLibraryValidator = void 0;
+const crypto = __importStar(require("crypto"));
+const forge = __importStar(require("node-forge"));
+class CryptoLibraryValidator {
+    /**
+     * Check if cryptographic libraries are available
+     */
+    async checkCryptoLibraries() {
+        try {
+            // Test Node.js crypto module
+            const testData = 'QMS Crypto Test';
+            const hash = crypto.createHash('sha256').update(testData).digest('hex');
+            if (!hash || hash.length !== 64) {
+                throw new Error('Hash generation failed');
+            }
+            // Test node-forge library
+            const md = forge.md.sha256.create();
+            md.update(testData, 'utf8');
+            const forgeHash = md.digest().toHex();
+            if (!forgeHash || forgeHash.length !== 64) {
+                throw new Error('Forge hash generation failed');
+            }
+            return true;
+        }
+        catch (error) {
+            console.error('Cryptographic libraries check failed:', error);
+            return false;
+        }
+    }
+    /**
+     * Test digital signature capability
+     */
+    async testDigitalSignature() {
+        try {
+            const testData = 'QMS Digital Signature Test';
+            // Generate key pair
+            const keypair = forge.pki.rsa.generateKeyPair({ bits: 2048 });
+            // Create signature
+            const md = forge.md.sha256.create();
+            md.update(testData, 'utf8');
+            const signature = keypair.privateKey.sign(md);
+            // Verify signature
+            const verification = keypair.publicKey.verify(md.digest().bytes(), signature);
+            return {
+                success: true,
+                signature: forge.util.encode64(signature),
+                verification
+            };
+        }
+        catch (error) {
+            return {
+                success: false,
+                error: `Digital signature test failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+            };
+        }
+    }
+    /**
+     * Test hash generation for audit trails
+     */
+    async testHashGeneration() {
+        try {
+            const testData = 'QMS Audit Trail Test Data';
+            // Generate SHA-256 hash
+            const hash = crypto.createHash('sha256').update(testData).digest('hex');
+            // Verify hash format
+            if (!hash || hash.length !== 64) {
+                throw new Error('Invalid hash format');
+            }
+            return {
+                success: true,
+                hash
+            };
+        }
+        catch (error) {
+            return {
+                success: false,
+                error: `Hash generation test failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+            };
+        }
+    }
+    /**
+     * Test encryption/decryption for secure audit trails
+     */
+    async testEncryption() {
+        try {
+            const testData = 'QMS Secure Audit Trail Data';
+            // Generate AES key
+            const key = crypto.randomBytes(32);
+            const iv = crypto.randomBytes(16);
+            // Encrypt
+            const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
+            let encrypted = cipher.update(testData, 'utf8', 'hex');
+            encrypted += cipher.final('hex');
+            // Decrypt
+            const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
+            let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+            decrypted += decipher.final('utf8');
+            // Verify
+            if (decrypted !== testData) {
+                throw new Error('Encryption/decryption verification failed');
+            }
+            return {
+                success: true,
+                encrypted,
+                decrypted
+            };
+        }
+        catch (error) {
+            return {
+                success: false,
+                error: `Encryption test failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+            };
+        }
+    }
+}
+exports.CryptoLibraryValidator = CryptoLibraryValidator;
+//# sourceMappingURL=crypto-library-validator.js.map

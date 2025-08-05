@@ -1,0 +1,27 @@
+{
+  "terminal.integrated.profiles.windows": {
+    "AgentPowerShell": {
+      "source": "PowerShell",
+      "args": [
+        "-ExecutionPolicy", "Bypass",
+        "-NoExit",
+        "-Command",
+        ". '${workspaceFolder}/scripts/agent-terminal-init.ps1'"
+      ],
+      "env": {
+        "AGENT_TERMINAL_ENABLED": "true",
+        "SAFE_TERMINAL_PROJECT_ROOT": "${workspaceFolder}"
+      }
+    }
+  },
+  "terminal.integrated.defaultProfile.windows": "AgentPowerShell",
+  "terminal.integrated.automationProfile.windows": {
+    "source": "PowerShell",
+    "args": [
+      "-ExecutionPolicy", "Bypass",
+      "-NoExit",
+      "-Command",
+      ". '${workspaceFolder}/scripts/agent-terminal-init.ps1'"
+    ]
+  }
+} 
