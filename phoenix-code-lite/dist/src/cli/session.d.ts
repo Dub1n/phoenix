@@ -38,6 +38,7 @@ export declare class CLISession {
     private handleInteractionResult;
     private switchMode;
     private cleanup;
+    private reinitializeInputHandling;
     private promptForInput;
     private generatePrompt;
     private getContextColor;
@@ -54,6 +55,7 @@ export declare class CLISession {
     private showHeader;
     private showHelp;
     private confirmExit;
+    private handleInterruption;
     private waitForEnter;
     getCurrentContext(): SessionContext;
     updateContext(updates: Partial<SessionContext>): void;

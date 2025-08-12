@@ -1,0 +1,1 @@
+{"id":"event-1754518373678-pmo2cad03","timestamp":"2025-08-06T22:12:53.678Z","sessionId":"system","eventType":"user_action","source":"main-process","severity":"medium","message":"user_action: main-process","data":{"level":"info","message":"Version command executed","metadata":{"args":[]}}}

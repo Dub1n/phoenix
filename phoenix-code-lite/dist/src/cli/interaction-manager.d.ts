@@ -17,10 +17,12 @@ export declare class InteractionManager {
     /**
      * Display Menu Mode interface with numbered options
      * Implements Issue #8: Numbered menu options
+     * Now uses unified layout engine for consistent rendering
      */
     displayMenuMode(options: MenuOption[], title: string): Promise<InputResult>;
     /**
      * Display Command Mode interface with text input
+     * Now uses unified layout engine for consistent rendering
      */
     displayCommandMode(commands: CommandInfo[], title: string): Promise<InputResult>;
     /**

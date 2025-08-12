@@ -1,0 +1,1 @@
+{"id":"event-1754518222098-3pnbxmipn","timestamp":"2025-08-06T22:10:22.098Z","sessionId":"system","eventType":"user_action","source":"main-process","severity":"medium","message":"user_action: main-process","data":{"level":"info","message":"Config command executed","metadata":{"args":["--show"]}}}

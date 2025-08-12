@@ -1,0 +1,4 @@
+=== ARCHITECTURE GENERATOR CONVENTIONS CHECK ===
+✅ PASS: Legend subgraph found
+❌ Invalid NodeID format: PREP_AAMI_TIR45 (expected TYPE_Name)
+✅ PASS: Legend defines UI component shape

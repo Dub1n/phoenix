@@ -1,0 +1,69 @@
+{
+    "name": "phoenix-code-lite",
+    "version": "1.0.0",
+    "description": "TDD workflow orchestrator for Claude Code SDK",
+    "main": "dist/src/index.js",
+    "bin": {
+        "phoenix-code-lite": "./dist/src/index-unified.js"
+    },
+    "scripts": {
+        "build": "tsc",
+        "dev": "ts-node src/index.ts",
+        "test": "jest",
+        "test:performance": "jest tests/integration/end-to-end.test.ts --testNamePattern=\"Performance Testing\"",
+        "test:e2e": "jest tests/integration/end-to-end.test.ts",
+        "test:coverage": "jest --coverage",
+        "test:watch": "jest --watch",
+        "lint": "eslint src/**/*.ts",
+        "start": "node dist/index.js",
+        "prepublishOnly": "npm run build"
+    },
+    "keywords": [
+        "claude-code",
+        "tdd",
+        "ai-development",
+        "workflow-orchestrator"
+    ],
+    "author": "Your Name",
+    "license": "MIT",
+    "directories": {
+        "test": "tests"
+    },
+    "dependencies": {
+        "@anthropic-ai/claude-code": "^1.0.65",
+        "@types/uuid": "^10.0.0",
+        "boxen": "^8.0.1",
+        "chalk": "^4.1.2",
+        "cli-table3": "^0.6.5",
+        "commander": "^13.1.0",
+        "crypto-js": "^4.2.0",
+        "figlet": "^1.8.2",
+        "gradient-string": "^3.0.0",
+        "inquirer": "^12.9.0",
+        "node-forge": "^1.3.1",
+        "ora": "^5.4.1",
+        "pdf-lib": "^1.17.1",
+        "pdf-parse": "^1.1.1",
+        "pdf2pic": "^3.2.0",
+        "uuid": "^11.1.0",
+        "zod": "^4.0.14"
+    },
+    "devDependencies": {
+        "@types/figlet": "^1.7.0",
+        "@types/inquirer": "^9.0.8",
+        "@types/jest": "^30.0.0",
+        "@types/node": "^24.1.0",
+        "@types/node-forge": "^1.3.13",
+        "@typescript-eslint/eslint-plugin": "^8.38.0",
+        "@typescript-eslint/parser": "^8.38.0",
+        "axios": "^1.11.0",
+        "eslint": "^9.32.0",
+        "jest": "^30.0.5",
+        "logue": "^0.1.0",
+        "prettier": "^3.6.2",
+        "supertest": "^7.1.4",
+        "ts-jest": "^29.4.0",
+        "ts-node": "^10.9.2",
+        "typescript": "^5.8.3"
+    }
+}

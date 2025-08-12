@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.InteractionManager = void 0;
 const chalk_1 = __importDefault(require("chalk"));
 const readline_1 = require("readline");
+const skin_menu_renderer_1 = require("./skin-menu-renderer");
 /**
  * Dual Mode Interaction Manager
  * Handles both Menu Mode (arrow navigation) and Command Mode (text commands)
@@ -47,39 +48,75 @@ class InteractionManager {
     /**
      * Display Menu Mode interface with numbered options
      * Implements Issue #8: Numbered menu options
+     * Now uses unified layout engine for consistent rendering
      */
     async displayMenuMode(options, title) {
-        console.log(chalk_1.default.cyan(`\n${title}`));
-        console.log(chalk_1.default.gray('═'.repeat(50)));
-        // Display numbered options
-        options.forEach((option, index) => {
-            const number = (index + 1).toString();
-            const padding = number.length === 1 ? ' ' : '';
-            const status = option.enabled === false ? chalk_1.default.gray(' (disabled)') : '';
-            console.log(`${chalk_1.default.yellow(padding + number)}. ${option.label}${status}`);
-            if (option.description && this.config.menuConfig.showDescriptions) {
-                console.log(`   ${chalk_1.default.gray(option.description)}`);
+        // Convert to MenuContent structure for unified rendering
+        const content = {
+            title,
+            sections: [{
+                    heading: 'Options',
+                    theme: { headingColor: 'cyan', bold: true },
+                    items: options.map((option, index) => ({
+                        label: option.label, // Remove numbering here - unified engine will add it
+                        description: option.description || '',
+                        commands: [option.value, (index + 1).toString()],
+                        type: option.enabled === false ? 'action' : 'command'
+                    }))
+                }],
+            footerHints: [
+                'Type number, command name, or:',
+                '"c" for command mode, "ESC"/"back" to go back, "home" for main menu'
+            ],
+            metadata: {
+                menuType: 'main',
+                complexityLevel: 'simple',
+                priority: 'normal',
+                autoSize: true
             }
-        });
-        console.log(chalk_1.default.gray('\n═'.repeat(50)));
-        console.log(chalk_1.default.gray('Type number, command name, or:'));
-        console.log(chalk_1.default.gray('  "c" for command mode, "ESC"/"back" to go back, "home" for main menu'));
+        };
+        const context = {
+            level: 'main',
+            breadcrumb: ['Phoenix Code Lite']
+        };
+        // Use unified layout engine for rendering
+        (0, skin_menu_renderer_1.renderLegacyWithUnified)(content, context);
         return await this.handleMenuInput(options);
     }
     /**
      * Display Command Mode interface with text input
+     * Now uses unified layout engine for consistent rendering
      */
     async displayCommandMode(commands, title) {
-        console.log(chalk_1.default.cyan(`\n${title}`));
-        console.log(chalk_1.default.gray('═'.repeat(50)));
-        if (this.config.commandConfig.showCommandList) {
-            commands.forEach((cmd, index) => {
-                const number = (index + 1).toString().padStart(2);
-                console.log(`${chalk_1.default.yellow(number)}. ${chalk_1.default.cyan(cmd.name.padEnd(12))} - ${cmd.description}`);
-            });
-            console.log(chalk_1.default.gray('\n═'.repeat(50)));
-        }
-        console.log(chalk_1.default.gray('Type command name or number, "m" for menu mode, "back" to go back'));
+        // Convert to MenuContent structure for unified rendering
+        const content = {
+            title,
+            sections: [{
+                    heading: 'Commands',
+                    theme: { headingColor: 'cyan', bold: true },
+                    items: commands.map((cmd, index) => ({
+                        label: `${(index + 1).toString().padStart(2)}. ${cmd.name.padEnd(12)}`,
+                        description: cmd.description || '',
+                        commands: [cmd.name, (index + 1).toString()],
+                        type: 'command'
+                    }))
+                }],
+            footerHints: [
+                'Type command name or number, "m" for menu mode, "back" to go back'
+            ],
+            metadata: {
+                menuType: 'main',
+                complexityLevel: 'simple',
+                priority: 'normal',
+                autoSize: true
+            }
+        };
+        const context = {
+            level: 'main',
+            breadcrumb: ['Phoenix Code Lite']
+        };
+        // Use unified layout engine for rendering
+        (0, skin_menu_renderer_1.renderLegacyWithUnified)(content, context);
         return await this.handleCommandInput(commands);
     }
     /**

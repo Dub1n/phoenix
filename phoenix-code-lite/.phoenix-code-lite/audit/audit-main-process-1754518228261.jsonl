@@ -1,0 +1,1 @@
+{"id":"event-1754518228261-9asf9qzg8","timestamp":"2025-08-06T22:10:28.261Z","sessionId":"system","eventType":"user_action","source":"main-process","severity":"medium","message":"user_action: main-process","data":{"level":"info","message":"Version command executed","metadata":{"args":[]}}}

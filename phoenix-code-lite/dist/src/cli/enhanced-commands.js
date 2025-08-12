@@ -631,12 +631,12 @@ async function waitForEnter() {
     // Fix Issue #2: Proper session continuation instead of process exit
     return new Promise((resolve) => {
         console.log(chalk_1.default.gray('\nPress Enter to continue...'));
+        // Simple approach: just wait for any keypress
         const stdin = process.stdin;
         stdin.resume();
         stdin.setEncoding('utf8');
         const handleInput = () => {
             stdin.removeListener('data', handleInput);
-            stdin.pause();
             resolve();
         };
         stdin.once('data', handleInput);

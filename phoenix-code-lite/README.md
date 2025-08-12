@@ -4,13 +4,9 @@ TDD workflow orchestrator for Claude Code SDK
 
 ## Quick Start
 
-```bash
-npm install
-npm run build
-npm run dev init
-```
-
 ## Development Status
+
+### Initial Build
 
 - [x] Phase 1: Environment Setup & Project Foundation
 - [x] Phase 2: Core Architecture & Claude Code Integration
@@ -20,6 +16,18 @@ npm run dev init
 - [x] Phase 6: Audit Logging & Metrics Collection
 - [x] Phase 7: Integration Testing
 - [x] Phase 8: Production Readiness
+
+### QMS Rework
+
+Mostly Complete
+
+### Skins Refactor
+
+Planned
+
+### CRUD Skin
+
+Planned
 
 ## Architecture
 

@@ -1,0 +1,1 @@
+{"id":"event-1754518216872-gmmes0080","timestamp":"2025-08-06T22:10:16.872Z","sessionId":"system","eventType":"user_action","source":"main-process","severity":"medium","message":"user_action: main-process","data":{"level":"info","message":"Help command executed","metadata":{"args":[]}}}

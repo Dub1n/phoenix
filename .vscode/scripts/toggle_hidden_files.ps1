@@ -30,32 +30,26 @@ try {
         exit 1
     }
     
-    # Get current state (use first available pattern to determine state)
-    $patterns = @("**/.envrc", "**/.gitignore", "**/.cursorignore", "**/.venv/", "**/.vscode")
-    $currentState = $null
+    # Get all patterns in files.exclude
+    $allPatterns = $settings.'files.exclude'.PSObject.Properties.Name
     
-    foreach ($pattern in $patterns) {
-        if ($settings.'files.exclude'.PSObject.Properties.Name -contains $pattern) {
-            $currentState = $settings.'files.exclude'.$pattern
-            break
-        }
-    }
-    
-    if ($null -eq $currentState) {
-        # Write-Host "No recognized patterns found in files.exclude" -ForegroundColor Yellow
+    if ($allPatterns.Count -eq 0) {
+        # Write-Host "No patterns found in files.exclude" -ForegroundColor Yellow
         exit 1
     }
+    
+    # Determine current state by checking the first pattern
+    $firstPattern = $allPatterns[0]
+    $currentState = $settings.'files.exclude'.$firstPattern
     
     $newState = -not $currentState
     # Write-Host "Current state: $(if ($currentState) {'HIDDEN'} else {'VISIBLE'})" -ForegroundColor Yellow
     # Write-Host "Switching to: $(if ($newState) {'HIDDEN'} else {'VISIBLE'})" -ForegroundColor Yellow
     
-    # Toggle all available patterns
-    foreach ($pattern in $patterns) {
-        if ($settings.'files.exclude'.PSObject.Properties.Name -contains $pattern) {
-            $settings.'files.exclude'.$pattern = $newState
-            # Write-Host "  Toggled: $pattern = $newState" -ForegroundColor Gray
-        }
+    # Toggle ALL patterns in files.exclude
+    foreach ($pattern in $allPatterns) {
+        $settings.'files.exclude'.$pattern = $newState
+        # Write-Host "  Toggled: $pattern = $newState" -ForegroundColor Gray
     }
     
     # Convert back to JSON with proper formatting (4-space indentation to match original)

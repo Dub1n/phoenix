@@ -11,7 +11,7 @@
                 "-ExecutionPolicy", "Bypass",
                 "-NoExit",
                 "-Command",
-                ". '${workspaceFolder}/scripts/cursor-terminal-init.ps1'"
+                ". \"${workspaceFolder}/scripts/terminal-completer/cursor-terminal-init.ps1\""
             ],
             "env": {
                 "SAFE_TERMINAL_ENABLED": "true",
@@ -25,12 +25,12 @@
     },
 
     "terminal.integrated.automationProfile.windows": {
-        "source": "PowerShell",
+        "path": "powershell.exe",
         "args": [
             "-ExecutionPolicy", "Bypass",
             "-NoExit",
             "-Command",
-            ". '${workspaceFolder}/scripts/cursor-terminal-init.ps1'"
+            ". \"${workspaceFolder}/scripts/terminal-completer/cursor-terminal-init.ps1\""
         ]
     }
 } 

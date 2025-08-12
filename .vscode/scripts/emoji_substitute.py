@@ -100,6 +100,7 @@ EMOJI_REPLACEMENTS = {
     '🔒': '⑄',      # Lock and key → OCR belt buckle
     '🔐': '⑄',      # Lock → OCR belt buckle
     '📦': '⌺',      # Package → APL functional symbol quad diamond
+    '🏗️': '⊛',      # Building → APL functional symbol quad diamond
 
     # Misc in general
     '🏛️': '⌂',      # Palace → White circle with two dots
@@ -111,7 +112,7 @@ EMOJI_REPLACEMENTS = {
 }
 
 # other characters for potential future use
-# |⍥|⚇|⊛|⊍|⋮|⋯|⋱|±|🜏|
+# |⍥|⚇|⊍|⋮|⋯|⋱|±|🜏|
 
 def replace_emojis_in_text(text):
     """Replace emojis in text with Unicode equivalents."""

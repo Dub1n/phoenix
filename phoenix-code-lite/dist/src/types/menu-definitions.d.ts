@@ -1,0 +1,84 @@
+/**
+ * Menu Definition Types
+ * Created: 2025-01-06-175700
+ *
+ * Core TypeScript interfaces for the CLI Interaction Decoupling Architecture.
+ * Defines menu structure and commands once, consumed by all interaction modes.
+ */
+export interface MenuDefinition {
+    id: string;
+    title: string;
+    description?: string;
+    sections: MenuSection[];
+    context?: MenuContext;
+    metadata?: MenuMetadata;
+}
+export interface MenuSection {
+    id: string;
+    heading: string;
+    items: MenuItem[];
+    theme?: SectionTheme;
+}
+export interface MenuItem {
+    id: string;
+    label: string;
+    description?: string;
+    action: MenuAction;
+    enabled?: boolean | ((context: MenuContext) => boolean);
+    visible?: boolean | ((context: MenuContext) => boolean);
+    shortcuts?: string[];
+    validation?: ValidationSchema;
+}
+export interface MenuAction {
+    type: 'navigate' | 'execute' | 'exit' | 'back';
+    target?: string;
+    handler?: string;
+    data?: any;
+    confirmation?: ConfirmationConfig;
+}
+export interface MenuContext {
+    level: string;
+    sessionContext: SessionContext;
+    parameters?: any;
+}
+export interface MenuMetadata {
+    contextLevel: string;
+    allowBack: boolean;
+    defaultAction?: string;
+    skinName?: string;
+}
+export interface SectionTheme {
+    headingColor?: string;
+    bold?: boolean;
+    backgroundColor?: string;
+}
+export interface ValidationSchema {
+    type: string;
+    required?: boolean;
+    pattern?: RegExp;
+    minLength?: number;
+    maxLength?: number;
+    options?: string[];
+}
+export interface ConfirmationConfig {
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+}
+export interface SessionContext {
+    level: string;
+    projectInitialized?: boolean;
+    currentTemplate?: string;
+    debugMode?: boolean;
+    [key: string]: any;
+}
+export interface LoadedSkin {
+    metadata: {
+        name: string;
+        displayName: string;
+        version?: string;
+    };
+    menus: Record<string, MenuDefinition>;
+    commands?: Record<string, any>;
+}
+//# sourceMappingURL=menu-definitions.d.ts.map

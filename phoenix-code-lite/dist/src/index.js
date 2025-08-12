@@ -59,11 +59,17 @@ let configManager;
 let errorHandler;
 async function initializeCore() {
     try {
-        console.log(chalk_1.default.blue.bold('🔥 Phoenix Code Lite - Phase 1 Initialization'));
-        console.log(chalk_1.default.gray('═'.repeat(60)));
+        // Only show initialization in command mode, not interactive mode
+        const args = process.argv.slice(2);
+        if (args.length > 0) {
+            console.log(chalk_1.default.blue.bold('🔥 Phoenix Code Lite - Phase 1 Initialization'));
+            console.log(chalk_1.default.gray('═'.repeat(60)));
+        }
         // Initialize error handler first
         errorHandler = new error_handler_1.ErrorHandler();
-        console.log(chalk_1.default.green('✅ Error Handler initialized'));
+        if (args.length > 0) {
+            console.log(chalk_1.default.green('✅ Error Handler initialized'));
+        }
         // Initialize configuration manager
         configManager = new config_manager_1.ConfigManager();
         const configInitialized = await configManager.initialize();

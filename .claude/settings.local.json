@@ -53,6 +53,7 @@
       "Bash(jq:*)",
       "Bash(timeout:*)",
       "Bash(sleep:*)",
+      "Bash(read:*)",
       "WebFetch(domain:docs.anthropic.com)",
       "WebFetch(domain:nodejs.org)",
       "WebFetch(domain:npmjs.com)",
@@ -64,6 +65,7 @@
       "WebFetch(domain:zod.dev)",
       "WebFetch(domain:stackoverflow.com)",
       "WebFetch(domain:developer.mozilla.org)",
+      "WebFetch(domain:*)",
       "Bash(npm run build:*)",
       "Bash(npm test)",
       "Bash(npm run lint)",
@@ -73,7 +75,9 @@
       "Bash(\"C:\\Users\\gabri\\Documents\\Infotopology\\Phoenix\\phoenix-code-lite\\update-phoenix.bat\")",
       "Bash(where tsc)",
       "WebFetch(domain:raw.githubusercontent.com)",
-      "WebFetch(domain:api.github.com)"
+      "WebFetch(domain:api.github.com)",
+      "WebFetch(domain:json.schemastore.org)",
+      "WebFetch(domain:www.schemastore.org)"
     ]
   },
   "hooks": {
@@ -83,7 +87,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "CLAUDE_HOOK_TYPE=PreToolUse python ~/.claude/hooks/memory_sync.py"
+            "command": "python \"C:\\Users\\gabri\\.claude\\hooks\\memory_sync.py\"",
+            "timeout": 10
           }
         ]
       }
@@ -94,11 +99,13 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python ~/.claude/hooks/type_check.py"
+            "command": "python \"C:\\Users\\gabri\\.claude\\hooks\\memory_sync.py\"",
+            "timeout": 10
           },
           {
             "type": "command",
-            "command": "CLAUDE_HOOK_TYPE=PostToolUse python ~/.claude/hooks/memory_sync.py"
+            "command": "python \"C:\\Users\\gabri\\.claude\\hooks\\type_check.py\"",
+            "timeout": 30
           }
         ]
       }

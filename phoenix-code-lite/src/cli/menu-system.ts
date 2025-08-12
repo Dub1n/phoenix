@@ -1,5 +1,7 @@
 import chalk from 'chalk';
 import { SessionContext, MenuAction } from './session';
+import { renderLegacyWithUnified } from './skin-menu-renderer';
+import type { MenuContent, MenuDisplayContext } from './menu-types';
 
 export interface MenuContext {
   level: 'main' | 'config' | 'templates' | 'advanced' | 'generate';
@@ -72,33 +74,58 @@ export class MenuSystem {
   }
 
   private showMainMenu(): void {
-    console.log(chalk.red.bold('🔥 Phoenix Code Lite') + chalk.gray(' • ') + chalk.blue('TDD Workflow Orchestrator'));
-    console.log(chalk.gray('═'.repeat(70)));
-    console.log(chalk.dim('Transform natural language into production-ready code through TDD'));
-    console.log();
-    
-    console.log(chalk.green.bold('📋 1. Configuration') + chalk.gray('     • Manage project settings and preferences'));
-    console.log(chalk.gray('   Commands: ') + chalk.cyan('config, show, edit, reset'));
-    console.log();
-    
-    console.log(chalk.yellow.bold('📄 2. Templates') + chalk.gray('          • Starter, Enterprise, Performance configurations'));
-    console.log(chalk.gray('   Commands: ') + chalk.cyan('templates, use, preview, create'));
-    console.log();
-    
-    console.log(chalk.magenta.bold('⚡ 3. Generate') + chalk.gray('           • AI-powered TDD code generation'));
-    console.log(chalk.gray('   Commands: ') + chalk.cyan('generate, task, component, api'));
-    console.log();
-    
-    console.log(chalk.cyan.bold('🔧 4. Advanced') + chalk.gray('          • Expert settings, metrics, logging'));
-    console.log(chalk.gray('   Commands: ') + chalk.cyan('advanced, debug, metrics'));
-    console.log();
-    
-    console.log(chalk.gray('─'.repeat(70)));
-    console.log(chalk.blue('💡 Quick Tips:'));
-    console.log(chalk.gray('  • Type a ') + chalk.yellow('number') + chalk.gray(' or ') + chalk.yellow('command name') + chalk.gray(' to navigate'));
-    console.log(chalk.gray('  • Use ') + chalk.yellow('"help"') + chalk.gray(' for detailed command reference'));
-    console.log(chalk.gray('  • Use ') + chalk.yellow('"quit"') + chalk.gray(' to exit or ') + chalk.yellow('"back"') + chalk.gray(' to return'));
-    console.log();
+    const content: MenuContent = {
+      title: '🔥 Phoenix Code Lite • TDD Workflow Orchestrator',
+      subtitle: 'Transform natural language into production-ready code through TDD',
+      sections: [{
+        heading: 'Main Navigation',
+        theme: { headingColor: 'red', bold: true },
+        items: [
+          {
+            label: 'Configuration',
+            description: 'Manage project settings and preferences',
+            commands: ['config'],
+            type: 'navigation'
+          },
+          {
+            label: 'Templates',
+            description: 'Starter, Enterprise, Performance configurations',
+            commands: ['templates'],
+            type: 'navigation'
+          },
+          {
+            label: 'Generate',
+            description: 'AI-powered TDD code generation',
+            commands: ['generate'],
+            type: 'navigation'
+          },
+          {
+            label: 'Advanced',
+            description: 'Expert settings, metrics, logging',
+            commands: ['advanced'],
+            type: 'navigation'
+          }
+        ]
+      }],
+      footerHints: [
+        'Type a number or command name to navigate',
+        'Use "help" for detailed command reference',
+        'Use "quit" to exit or "back" to return'
+      ],
+      metadata: {
+        menuType: 'main',
+        complexityLevel: 'simple',
+        priority: 'normal',
+        autoSize: true
+      }
+    };
+
+    const context: MenuDisplayContext = {
+      level: 'main',
+      breadcrumb: ['Phoenix Code Lite']
+    };
+
+    renderLegacyWithUnified(content, context);
   }
 
   private showConfigMenu(context: SessionContext): void {
@@ -106,21 +133,70 @@ export class MenuSystem {
       `📋 Configuration › ${context.currentItem}` : 
       '📋 Configuration Management Hub';
       
-    console.log(chalk.green.bold(title));
-    console.log(chalk.gray('═'.repeat(60)));
-    console.log(chalk.dim('Manage Phoenix Code Lite settings and preferences'));
-    console.log();
-    
-    console.log(chalk.yellow.bold('🔧 Configuration Commands:'));
-    console.log(chalk.green('  1. show      ') + chalk.gray('- Display current configuration with validation status'));
-    console.log(chalk.green('  2. edit      ') + chalk.gray('- Interactive configuration editor with guided setup'));
-    console.log(chalk.green('  3. templates ') + chalk.gray('- Browse and apply configuration templates'));
-    console.log(chalk.green('  4. framework ') + chalk.gray('- Framework-specific optimization settings'));
-    console.log(chalk.green('  5. quality   ') + chalk.gray('- Quality gates and testing thresholds'));
-    console.log(chalk.green('  6. security  ') + chalk.gray('- Security policies and guardrails'));
-    console.log();
-    console.log(chalk.blue('💡 Navigation: ') + chalk.cyan('command name') + chalk.gray(', ') + chalk.cyan('number') + chalk.gray(', ') + chalk.cyan('"back"') + chalk.gray(' to return, ') + chalk.cyan('"quit"') + chalk.gray(' to exit'));
-    console.log();
+    const content: MenuContent = {
+      title,
+      subtitle: 'Manage Phoenix Code Lite settings and preferences',
+      sections: [{
+        heading: '🔧 Configuration Commands:',
+        theme: { headingColor: 'yellow', bold: true },
+        items: [
+          {
+            label: 'show',
+            description: 'Display current configuration with validation status',
+            commands: ['show'],
+            type: 'command'
+          },
+          {
+            label: 'edit',
+            description: 'Interactive configuration editor with guided setup',
+            commands: ['edit'],
+            type: 'command'
+          },
+          {
+            label: 'templates',
+            description: 'Browse and apply configuration templates',
+            commands: ['templates'],
+            type: 'navigation'
+          },
+          {
+            label: 'framework',
+            description: 'Framework-specific optimization settings',
+            commands: ['framework'],
+            type: 'setting'
+          },
+          {
+            label: 'quality',
+            description: 'Quality gates and testing thresholds',
+            commands: ['quality'],
+            type: 'setting'
+          },
+          {
+            label: 'security',
+            description: 'Security policies and guardrails',
+            commands: ['security'],
+            type: 'setting'
+          }
+        ]
+      }],
+      footerHints: [
+        'Navigation: command name, number, "back" to return, "quit" to exit'
+      ],
+      metadata: {
+        menuType: 'sub',
+        complexityLevel: 'moderate',
+        priority: 'normal',
+        autoSize: true
+      }
+    };
+
+    const menuContext: MenuDisplayContext = {
+      level: 'config',
+      parentMenu: 'main',
+      currentItem: context.currentItem,
+      breadcrumb: context.breadcrumb || ['Phoenix Code Lite', 'Configuration']
+    };
+
+    renderLegacyWithUnified(content, menuContext);
   }
 
   private showTemplatesMenu(context: SessionContext): void {
@@ -128,62 +204,190 @@ export class MenuSystem {
       `📄 Templates › ${context.currentItem}` : 
       '📄 Template Management Center';
       
-    console.log(chalk.yellow.bold(title));
-    console.log(chalk.gray('═'.repeat(60)));
-    console.log(chalk.dim('Choose from Starter, Enterprise, Performance, or create custom templates'));
-    console.log();
-    
-    console.log(chalk.yellow.bold('📦 Template Commands:'));
-    console.log(chalk.yellow('  1. list      ') + chalk.gray('- Show all available configuration templates'));
-    console.log(chalk.yellow('  2. use       ') + chalk.gray('- Apply template to current project'));
-    console.log(chalk.yellow('  3. preview   ') + chalk.gray('- Preview template settings before applying them'));
-    console.log(chalk.yellow('  4. create    ') + chalk.gray('- Build custom template from current configuration'));
-    console.log(chalk.yellow('  5. edit      ') + chalk.gray('- Modify existing template settings'));
-    console.log(chalk.yellow('  6. reset     ') + chalk.gray('- Restore template to original defaults'));
-    console.log();
-    console.log(chalk.magenta('🎆 Popular Templates: ') + chalk.cyan('starter') + chalk.gray(', ') + chalk.cyan('enterprise') + chalk.gray(', ') + chalk.cyan('performance'));
-    console.log(chalk.blue('💡 Navigation: ') + chalk.cyan('command name') + chalk.gray(', ') + chalk.cyan('number') + chalk.gray(', ') + chalk.cyan('"back"') + chalk.gray(' to return'));
-    console.log();
+    const content: MenuContent = {
+      title,
+      subtitle: 'Choose from Starter, Enterprise, Performance, or create custom templates',
+      sections: [{
+        heading: '📦 Template Commands:',
+        theme: { headingColor: 'yellow', bold: true },
+        items: [
+          {
+            label: 'list',
+            description: 'Show all available configuration templates',
+            commands: ['list'],
+            type: 'command'
+          },
+          {
+            label: 'use',
+            description: 'Apply template to current project',
+            commands: ['use'],
+            type: 'command'
+          },
+          {
+            label: 'preview',
+            description: 'Preview template settings before applying them',
+            commands: ['preview'],
+            type: 'command'
+          },
+          {
+            label: 'create',
+            description: 'Build custom template from current configuration',
+            commands: ['create'],
+            type: 'command'
+          },
+          {
+            label: 'edit',
+            description: 'Modify existing template settings',
+            commands: ['edit'],
+            type: 'command'
+          },
+          {
+            label: 'reset',
+            description: 'Restore template to original defaults',
+            commands: ['reset'],
+            type: 'command'
+          }
+        ]
+      }],
+      footerHints: [
+        'Popular Templates: starter, enterprise, performance',
+        'Navigation: command name, number, "back" to return'
+      ],
+      metadata: {
+        menuType: 'sub',
+        complexityLevel: 'moderate',
+        priority: 'normal',
+        autoSize: true
+      }
+    };
+
+    const menuContext: MenuDisplayContext = {
+      level: 'templates',
+      parentMenu: 'main',
+      currentItem: context.currentItem,
+      breadcrumb: context.breadcrumb || ['Phoenix Code Lite', 'Templates']
+    };
+
+    renderLegacyWithUnified(content, menuContext);
   }
 
   private showGenerateMenu(context: SessionContext): void {
-    console.log(chalk.magenta.bold('⚡ AI-Powered Code Generation'));
-    console.log(chalk.gray('═'.repeat(60)));
-    console.log(chalk.dim('Transform natural language into tested, production-ready code'));
-    console.log();
-    
-    console.log(chalk.magenta.bold('🤖 Generation Commands:'));
-    console.log(chalk.magenta('  task      ') + chalk.gray('- General code generation from any description'));
-    console.log(chalk.magenta('  component ') + chalk.gray('- UI/React components with tests and styling'));
-    console.log(chalk.magenta('  api       ') + chalk.gray('- REST API endpoints with validation and docs'));
-    console.log(chalk.magenta('  test      ') + chalk.gray('- Comprehensive test suites for existing code'));
-    console.log();
-    console.log(chalk.blue.bold('💬 Natural Language Input:'));
-    console.log(chalk.gray('  Simply describe what you want to build:'));
-    console.log(chalk.cyan('  "create a user authentication system with JWT"'));
-    console.log(chalk.cyan('  "add a responsive dashboard component"'));
-    console.log(chalk.cyan('  "build API for product catalog management"'));
-    console.log();
-    console.log(chalk.yellow('🔄 TDD Workflow: ') + chalk.gray('Plan & Test → Implement & Fix → Refactor & Document'));
-    console.log();
+    const content: MenuContent = {
+      title: '⚡ AI-Powered Code Generation',
+      subtitle: 'Transform natural language into tested, production-ready code',
+      sections: [{
+        heading: '🤖 Generation Commands:',
+        theme: { headingColor: 'magenta', bold: true },
+        items: [
+          {
+            label: 'task',
+            description: 'General code generation from any description',
+            commands: ['task'],
+            type: 'command'
+          },
+          {
+            label: 'component',
+            description: 'UI/React components with tests and styling',
+            commands: ['component'],
+            type: 'command'
+          },
+          {
+            label: 'api',
+            description: 'REST API endpoints with validation and docs',
+            commands: ['api'],
+            type: 'command'
+          },
+          {
+            label: 'test',
+            description: 'Comprehensive test suites for existing code',
+            commands: ['test'],
+            type: 'command'
+          }
+        ]
+      }],
+      footerHints: [
+        'Natural Language Input: Simply describe what you want to build',
+        'Examples: "create a user authentication system with JWT"',
+        'TDD Workflow: Plan & Test → Implement & Fix → Refactor & Document'
+      ],
+      metadata: {
+        menuType: 'sub',
+        complexityLevel: 'moderate',
+        priority: 'normal',
+        autoSize: true
+      }
+    };
+
+    const menuContext: MenuDisplayContext = {
+      level: 'generate',
+      parentMenu: 'main',
+      currentItem: context.currentItem,
+      breadcrumb: context.breadcrumb || ['Phoenix Code Lite', 'Generate']
+    };
+
+    renderLegacyWithUnified(content, menuContext);
   }
 
   private showAdvancedMenu(context: SessionContext): void {
-    console.log(chalk.cyan.bold('🔧 Advanced Configuration Center'));
-    console.log(chalk.gray('═'.repeat(60)));
-    console.log(chalk.dim('Expert settings, debugging tools, and performance monitoring'));
-    console.log();
-    
-    console.log(chalk.cyan.bold('⚙️ Advanced Commands:'));
-    console.log(chalk.cyan('  language  ') + chalk.gray('- Programming language preferences and optimization'));
-    console.log(chalk.cyan('  agents    ') + chalk.gray('- AI agent configuration and specialization settings'));
-    console.log(chalk.cyan('  logging   ') + chalk.gray('- Comprehensive audit logging and session tracking'));
-    console.log(chalk.cyan('  metrics   ') + chalk.gray('- Performance metrics, success rates, and analytics'));
-    console.log(chalk.cyan('  debug     ') + chalk.gray('- Debug mode, verbose output, and troubleshooting'));
-    console.log();
-    console.log(chalk.yellow('📊 Analytics: ') + chalk.gray('Track TDD workflow performance and code quality trends'));
-    console.log(chalk.blue('💡 Navigation: ') + chalk.cyan('command name') + chalk.gray(', ') + chalk.cyan('"back"') + chalk.gray(' to return'));
-    console.log();
+    const content: MenuContent = {
+      title: '🔧 Advanced Configuration Center',
+      subtitle: 'Expert settings, debugging tools, and performance monitoring',
+      sections: [{
+        heading: '⚙️ Advanced Commands:',
+        theme: { headingColor: 'cyan', bold: true },
+        items: [
+          {
+            label: 'language',
+            description: 'Programming language preferences and optimization',
+            commands: ['language'],
+            type: 'setting'
+          },
+          {
+            label: 'agents',
+            description: 'AI agent configuration and specialization settings',
+            commands: ['agents'],
+            type: 'setting'
+          },
+          {
+            label: 'logging',
+            description: 'Comprehensive audit logging and session tracking',
+            commands: ['logging'],
+            type: 'setting'
+          },
+          {
+            label: 'metrics',
+            description: 'Performance metrics, success rates, and analytics',
+            commands: ['metrics'],
+            type: 'setting'
+          },
+          {
+            label: 'debug',
+            description: 'Debug mode, verbose output, and troubleshooting',
+            commands: ['debug'],
+            type: 'setting'
+          }
+        ]
+      }],
+      footerHints: [
+        'Analytics: Track TDD workflow performance and code quality trends',
+        'Navigation: command name, "back" to return'
+      ],
+      metadata: {
+        menuType: 'sub',
+        complexityLevel: 'complex',
+        priority: 'normal',
+        autoSize: true
+      }
+    };
+
+    const menuContext: MenuDisplayContext = {
+      level: 'advanced',
+      parentMenu: 'main',
+      currentItem: context.currentItem,
+      breadcrumb: context.breadcrumb || ['Phoenix Code Lite', 'Advanced']
+    };
+
+    renderLegacyWithUnified(content, menuContext);
   }
 
   private processMainCommands(cmd: string): MenuAction | null {

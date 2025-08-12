@@ -4,7 +4,7 @@
   "description": "TDD workflow orchestrator for Claude Code SDK",
   "main": "dist/src/index.js",
   "bin": {
-    "phoenix-code-lite": "./dist/src/index.js"
+    "phoenix-code-lite": "./dist/src/index-unified.js"
   },
   "scripts": {
     "build": "tsc",
@@ -59,7 +59,6 @@
     "axios": "^1.11.0",
     "eslint": "^9.32.0",
     "jest": "^30.0.5",
-    "logue": "^0.1.0",
     "logue": "^0.1.0",
     "prettier": "^3.6.2",
     "supertest": "^7.1.4",
