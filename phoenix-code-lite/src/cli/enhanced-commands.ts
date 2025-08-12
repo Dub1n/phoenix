@@ -721,13 +721,13 @@ async function waitForEnter(): Promise<void> {
   return new Promise((resolve) => {
     console.log(chalk.gray('\nPress Enter to continue...'));
     
+    // Simple approach: just wait for any keypress
     const stdin = process.stdin;
     stdin.resume();
     stdin.setEncoding('utf8');
     
     const handleInput = () => {
       stdin.removeListener('data', handleInput);
-      stdin.pause();
       resolve();
     };
     

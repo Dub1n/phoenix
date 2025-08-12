@@ -20,12 +20,18 @@ let errorHandler: ErrorHandler;
 
 async function initializeCore(): Promise<boolean> {
   try {
-    console.log(chalk.blue.bold('🔥 Phoenix Code Lite - Phase 1 Initialization'));
-    console.log(chalk.gray('═'.repeat(60)));
+    // Only show initialization in command mode, not interactive mode
+    const args = process.argv.slice(2);
+    if (args.length > 0) {
+      console.log(chalk.blue.bold('🔥 Phoenix Code Lite - Phase 1 Initialization'));
+      console.log(chalk.gray('═'.repeat(60)));
+    }
     
     // Initialize error handler first
     errorHandler = new ErrorHandler();
-    console.log(chalk.green('✅ Error Handler initialized'));
+    if (args.length > 0) {
+      console.log(chalk.green('✅ Error Handler initialized'));
+    }
     
     // Initialize configuration manager
     configManager = new ConfigManager();

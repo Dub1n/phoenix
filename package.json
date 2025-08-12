@@ -1,4 +1,13 @@
 {
+  "name": "vdl-vault",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "noderr:audit": "node scripts/noderr-audit/index.cjs",
+    "noderr:audit:apply": "node scripts/noderr-audit/index.cjs --apply",
+    "noderr:audit:scan": "node scripts/noderr-audit/index.cjs --scan",
+    "noderr:audit:all": "node scripts/noderr-audit/index.cjs --apply --scan"
+  },
   "dependencies": {
     "typescript": "^5.9.2"
   }

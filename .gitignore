@@ -1,1 +1,35 @@
-node_modules
+# Dependencies
+node_modules/
+node_modules/**
+package-lock.json
+
+# Environment files
+.env/
+.env/**
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Obsidian/Markdown workspace files
+.makemd/
+.makemd/**
+.obsidian/
+.obsidian/**
+.space/
+.space/**
+Tags/
+Tags/**
+Obsidian/
+Obsidian/**
+
+# Temporary and trash files
+.tmp.driveupload/
+.tmp.driveupload/**
+.trash/
+.trash/**
+attachments/
+attachments/**
+
+desktop.ini

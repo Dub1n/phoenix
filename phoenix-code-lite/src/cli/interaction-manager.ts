@@ -7,6 +7,8 @@ import {
   InputResult,
   SessionContext 
 } from '../types/interaction-modes';
+import { renderLegacyWithUnified } from './skin-menu-renderer';
+import type { MenuContent, MenuDisplayContext } from './menu-types';
 
 /**
  * Dual Mode Interaction Manager
@@ -56,48 +58,81 @@ export class InteractionManager {
   /**
    * Display Menu Mode interface with numbered options
    * Implements Issue #8: Numbered menu options
+   * Now uses unified layout engine for consistent rendering
    */
   async displayMenuMode(options: MenuOption[], title: string): Promise<InputResult> {
-    console.log(chalk.cyan(`\n${title}`));
-    console.log(chalk.gray('═'.repeat(50)));
-    
-    // Display numbered options
-    options.forEach((option, index) => {
-      const number = (index + 1).toString();
-      const padding = number.length === 1 ? ' ' : '';
-      const status = option.enabled === false ? chalk.gray(' (disabled)') : '';
-      
-      console.log(`${chalk.yellow(padding + number)}. ${option.label}${status}`);
-      
-      if (option.description && this.config.menuConfig.showDescriptions) {
-        console.log(`   ${chalk.gray(option.description)}`);
+    // Convert to MenuContent structure for unified rendering
+    const content: MenuContent = {
+      title,
+      sections: [{
+        heading: 'Options',
+        theme: { headingColor: 'cyan', bold: true },
+        items: options.map((option, index) => ({
+          label: option.label,  // Remove numbering here - unified engine will add it
+          description: option.description || '',
+          commands: [option.value, (index + 1).toString()],
+          type: option.enabled === false ? 'action' : 'command'
+        }))
+      }],
+      footerHints: [
+        'Type number, command name, or:',
+        '"c" for command mode, "ESC"/"back" to go back, "home" for main menu'
+      ],
+      metadata: {
+        menuType: 'main',
+        complexityLevel: 'simple',
+        priority: 'normal',
+        autoSize: true
       }
-    });
-    
-    console.log(chalk.gray('\n═'.repeat(50)));
-    console.log(chalk.gray('Type number, command name, or:'));
-    console.log(chalk.gray('  "c" for command mode, "ESC"/"back" to go back, "home" for main menu'));
+    };
+
+    const context: MenuDisplayContext = {
+      level: 'main',
+      breadcrumb: ['Phoenix Code Lite']
+    };
+
+    // Use unified layout engine for rendering
+    renderLegacyWithUnified(content, context);
     
     return await this.handleMenuInput(options);
   }
 
   /**
    * Display Command Mode interface with text input
+   * Now uses unified layout engine for consistent rendering
    */
   async displayCommandMode(commands: CommandInfo[], title: string): Promise<InputResult> {
-    console.log(chalk.cyan(`\n${title}`));
-    console.log(chalk.gray('═'.repeat(50)));
-    
-    if (this.config.commandConfig.showCommandList) {
-      commands.forEach((cmd, index) => {
-        const number = (index + 1).toString().padStart(2);
-        console.log(`${chalk.yellow(number)}. ${chalk.cyan(cmd.name.padEnd(12))} - ${cmd.description}`);
-      });
-      
-      console.log(chalk.gray('\n═'.repeat(50)));
-    }
-    
-    console.log(chalk.gray('Type command name or number, "m" for menu mode, "back" to go back'));
+    // Convert to MenuContent structure for unified rendering
+    const content: MenuContent = {
+      title,
+      sections: [{
+        heading: 'Commands',
+        theme: { headingColor: 'cyan', bold: true },
+        items: commands.map((cmd, index) => ({
+          label: `${(index + 1).toString().padStart(2)}. ${cmd.name.padEnd(12)}`,
+          description: cmd.description || '',
+          commands: [cmd.name, (index + 1).toString()],
+          type: 'command'
+        }))
+      }],
+      footerHints: [
+        'Type command name or number, "m" for menu mode, "back" to go back'
+      ],
+      metadata: {
+        menuType: 'main',
+        complexityLevel: 'simple',
+        priority: 'normal',
+        autoSize: true
+      }
+    };
+
+    const context: MenuDisplayContext = {
+      level: 'main',
+      breadcrumb: ['Phoenix Code Lite']
+    };
+
+    // Use unified layout engine for rendering
+    renderLegacyWithUnified(content, context);
     
     return await this.handleCommandInput(commands);
   }

@@ -1,0 +1,12 @@
+{
+  "version": "1.0.0",
+  "interactionMode": "interactive",
+  "debugMode": true,
+  "lastModified": "2025-08-06T23:20:20.754Z",
+  "preferences": {
+    "showWelcome": true,
+    "autoSave": true,
+    "colorScheme": "default",
+    "promptTimeout": 30000
+  }
+}

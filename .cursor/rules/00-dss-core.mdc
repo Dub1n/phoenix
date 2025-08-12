@@ -6,6 +6,7 @@ alwaysApply: true
 tags:  [DSS, Core, Structure, Concepts]
 provides: [DSS Core Structure and Concepts]
 requires: [DSS Core Structure and Concepts]
+info: [Risk Control]
 ---
 ```
 

@@ -4,6 +4,8 @@ import { InteractionManager } from './interaction-manager';
 import { InteractionModeConfig, NavigationItem } from '../types/interaction-modes';
 import { PhoenixCodeLiteConfig } from '../config/settings';
 import { safeExit } from '../utils/test-utils';
+import { renderLegacyWithUnified } from './skin-menu-renderer';
+import type { MenuContent, MenuDisplayContext } from './menu-types';
 
 export interface SessionContext {
   level: 'main' | 'config' | 'templates' | 'advanced' | 'generate';
@@ -60,6 +62,14 @@ export class CLISession {
       // Fix Issue #3: Clear input buffer and set up clean input handling
       this.clearInputBuffer();
       
+      // Initialize readline interface for session input handling
+      // Adaptive interface creation for both TTY and non-TTY environments
+      this.readline = createInterface({
+        input: process.stdin,
+        output: process.stdout,
+        terminal: process.stdin.isTTY || false  // Explicit terminal setting
+      });
+      
       // Load user's preferred interaction mode (Issue #4)
       const config = await PhoenixCodeLiteConfig.load();
       const configData = config.export();
@@ -89,8 +99,11 @@ export class CLISession {
       const { MenuSystem } = await import('./menu-system');
       this.menuSystem = new MenuSystem();
 
+      // Wait a moment for any pending foundation logs to complete
+      await new Promise(resolve => setTimeout(resolve, 100));
       console.clear();
-      this.displayWelcome();
+      console.log("🚀🚀🚀 RILEY TEST: If you see this, our code changes ARE working! 🚀🚀🚀");
+      // this.displayWelcome();
       
       // Issue #12: Automatically display main menu
       await this.displayMainMenu();
@@ -99,7 +112,13 @@ export class CLISession {
         try {
           const input = await this.promptForInput();
           await this.processCommand(input.trim());
-        } catch (error) {
+        } catch (error: any) {
+          // Handle readline closed error - user likely pressed Ctrl+C
+          if (error.code === 'ERR_USE_AFTER_CLOSE') {
+            await this.handleInterruption();
+            break;
+          }
+          
           await this.errorHandler.handleError(error, this.currentContext);
           await this.waitForEnter();
         }
@@ -115,6 +134,7 @@ export class CLISession {
   }
   
   // Fix Issue #3: Clear input buffer to prevent pre-filled characters
+  // Adaptive input handling that works in both TTY and non-TTY environments
   private clearInputBuffer(): void {
     if (process.stdin.readable) {
       let data;
@@ -123,20 +143,45 @@ export class CLISession {
       }
     }
     
-    process.stdin.setRawMode(false); // Start in cooked mode
+    // Adaptive TTY handling - only use setRawMode if available
+    if (typeof process.stdin.setRawMode === 'function') {
+      process.stdin.setRawMode(false); // Start in cooked mode for TTY
+    }
+    // Non-TTY environments work fine without setRawMode
+    
     process.stdin.setEncoding('utf8');
     process.stdin.resume();
   }
   
   private displayWelcome(): void {
-    // Fix Issue #5: Simplified header without redundant breadcrumbs
-    console.log(chalk.red.bold('🔥 Phoenix Code Lite Interactive CLI'));
-    console.log(chalk.blue.bold('TDD Workflow Orchestrator for Claude Code'));
-    console.log(chalk.gray('═'.repeat(70)));
-    console.log(chalk.yellow('🎆 Welcome! ') + chalk.gray('Transform ideas into tested, production-ready code'));
-    console.log(chalk.gray(`Mode: ${this.currentContext.mode?.toUpperCase() || 'MENU'} • Type "help" for commands • "quit" to exit`));
-    console.log(chalk.gray('═'.repeat(70)));
-    console.log();
+    // Use unified layout engine for welcome screen
+    const content: MenuContent = {
+      title: '🔥 Phoenix Code Lite Interactive CLI',
+      subtitle: 'TDD Workflow Orchestrator for Claude Code',
+      sections: [{
+        heading: 'Welcome',
+        theme: { headingColor: 'yellow', bold: true },
+        items: [{
+          label: '🎆 Welcome! Transform ideas into tested, production-ready code',
+          description: `Mode: ${this.currentContext.mode?.toUpperCase() || 'MENU'} • Type "help" for commands • "quit" to exit`,
+          commands: ['help'],
+          type: 'action'
+        }]
+      }],
+      metadata: {
+        menuType: 'main',
+        complexityLevel: 'simple',
+        priority: 'normal',
+        autoSize: true
+      }
+    };
+
+    const context: MenuDisplayContext = {
+      level: 'main',
+      breadcrumb: ['Phoenix Code Lite']
+    };
+
+    renderLegacyWithUnified(content, context);
   }
   
   // Issue #12: Auto-display main menu on CLI entry
@@ -214,12 +259,60 @@ export class CLISession {
     }
   }
 
+  private async reinitializeInputHandling(): Promise<void> {
+    // Clean up existing interfaces to prevent event listener conflicts
+    this.cleanup();
+    
+    // Clear input buffer and set up clean input handling (same as start())
+    this.clearInputBuffer();
+    
+    // Initialize readline interface for session input handling  
+    // Adaptive interface creation for both TTY and non-TTY environments
+    this.readline = createInterface({
+      input: process.stdin,
+      output: process.stdout,
+      terminal: process.stdin.isTTY || false  // Explicit terminal setting
+    });
+    
+    // Reinitialize interaction manager with current context mode
+    this.interactionManager = new InteractionManager({
+      currentMode: this.currentContext.mode || 'menu',
+      menuConfig: {
+        showNumbers: true,
+        allowArrowNavigation: true,
+        showDescriptions: true,
+        compactMode: false
+      },
+      commandConfig: {
+        promptSymbol: 'Phoenix> ',
+        showCommandList: true,
+        autoComplete: true,
+        historyEnabled: true
+      },
+      allowModeSwitch: true
+    });
+  }
+
   private async promptForInput(): Promise<string> {
+    // Guard against closed or null readline interface
+    if (!this.readline) {
+      throw new Error('ERR_USE_AFTER_CLOSE');
+    }
+    
     const prompt = this.generatePrompt();
-    return new Promise((resolve) => {
-      this.readline!.question(prompt, (answer) => {
-        resolve(answer);
-      });
+    return new Promise((resolve, reject) => {
+      try {
+        this.readline!.question(prompt, (answer) => {
+          resolve(answer);
+        });
+      } catch (error: any) {
+        // Re-throw readline closed error to be handled by interruption handler
+        if (error.code === 'ERR_USE_AFTER_CLOSE') {
+          reject(error);
+        } else {
+          throw error;
+        }
+      }
     });
   }
 
@@ -401,6 +494,14 @@ export class CLISession {
     try {
       const { executeSessionAction } = await import('./enhanced-commands');
       await executeSessionAction(action, data, this.currentContext);
+      
+      // Refresh menu display after action completes
+      console.clear();
+      this.showHeader();
+      await this.menuSystem.showContextualMenu(this.currentContext);
+      
+      // Properly cleanup and reinitialize readline interface to prevent input doubling
+      await this.reinitializeInputHandling();
     } catch (error) {
       await this.errorHandler.handleError(error, this.currentContext, `executing action: ${action}`);
       await this.waitForEnter();
@@ -485,11 +586,41 @@ export class CLISession {
     }
   }
 
+  private async handleInterruption(): Promise<void> {
+    console.log(chalk.yellow('\n🔄 Session interrupted, navigating back...'));
+    
+    // If we're not at main menu, go back one level
+    if (this.currentContext.level !== 'main') {
+      await this.navigateBack();
+    } else {
+      // If already at main, just refresh the display
+      console.clear();
+      this.showHeader();
+      await this.menuSystem.showContextualMenu(this.currentContext);
+    }
+  }
+
   private async waitForEnter(): Promise<void> {
+    // Guard against closed or null readline interface
+    if (!this.readline) {
+      console.log(chalk.gray('(Press Enter to continue...)'));
+      return Promise.resolve();
+    }
+    
     return new Promise((resolve) => {
-      this.readline!.question(chalk.gray('Press Enter to continue...'), () => {
-        resolve();
-      });
+      try {
+        this.readline!.question(chalk.gray('Press Enter to continue...'), () => {
+          resolve();
+        });
+      } catch (error: any) {
+        // Handle readline closed error gracefully
+        if (error.code === 'ERR_USE_AFTER_CLOSE') {
+          console.log(chalk.gray('(Press Enter to continue...)'));
+          resolve();
+        } else {
+          throw error;
+        }
+      }
     });
   }
 

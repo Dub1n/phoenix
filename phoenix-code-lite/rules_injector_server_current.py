@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 from pathlib import Path
 from typing import Annotated, Optional, Union, List, Any
 
@@ -136,11 +137,72 @@ def parse_string_input(input_str: str) -> tuple[bool, Optional[List[str]], List[
         warnings.append("String '[]' interpreted as empty array, using null (bootstrap trilogy)")
         return True, None, warnings, None
     
-    # Handle comma-separated lists
+    # Comprehensive cleanup: remove all malformed bracket syntax before processing
+    if "[" in trimmed or "]" in trimmed:
+        # Check if this looks like it should be a file path
+        if "/" in trimmed or ".mdc" in trimmed:
+            # Clean up all bracket characters and try to extract valid file paths
+            cleaned_input = trimmed.replace("[", "").replace("]", "")
+            cleaned_input = cleaned_input.strip()
+            
+            # If it's comma-separated, parse as list
+            if "," in cleaned_input:
+                items = [item.strip() for item in cleaned_input.split(",") if item.strip()]
+                if items:
+                    warnings.append(f"Comprehensive cleanup: removed all malformed brackets and parsed as: [{', '.join(items)}]")
+                    return True, items, warnings, None
+            
+            # If it's a single file path, return as array
+            if cleaned_input:
+                warnings.append(f"Comprehensive cleanup: removed all malformed brackets, extracted: '{cleaned_input}'")
+                return True, [cleaned_input], warnings, None
+    
+    # Handle comma-separated lists with potential malformed syntax FIRST
     if "," in trimmed:
-        items = [item.strip() for item in trimmed.split(",") if item.strip()]
-        warnings.append(f"Parsed comma-separated string into array: [{', '.join(items)}]")
-        return True, items, warnings, None
+        # Clean up malformed array syntax before splitting
+        cleaned_input = trimmed.replace("[]", "").replace("[", "").replace("]", "")
+        items = [item.strip() for item in cleaned_input.split(",") if item.strip()]
+        if items:
+            warnings.append(f"Cleaned malformed array syntax and parsed comma-separated string into array: [{', '.join(items)}]")
+            return True, items, warnings, None
+    
+    # Handle malformed array syntax with file paths (e.g., "[]workflows/04-task-decomposition.mdc")
+    if trimmed.startswith("[]") and ("/" in trimmed or ".mdc" in trimmed):
+        # Check if this is actually a comma-separated list with malformed syntax
+        if "," in trimmed:
+            # Clean up and parse as comma-separated
+            cleaned_input = trimmed.replace("[]", "").replace("[", "").replace("]", "")
+            items = [item.strip() for item in cleaned_input.split(",") if item.strip()]
+            if items:
+                warnings.append(f"Detected comma-separated list with malformed array syntax, cleaned and parsed: [{', '.join(items)}]")
+                return True, items, warnings, None
+        
+        # Extract the actual file path by removing the malformed array syntax
+        file_path = trimmed[2:].strip()  # Remove "[]" and any whitespace
+        # Additional cleanup: remove any remaining bracket characters
+        file_path = file_path.replace("[", "").replace("]", "")
+        if file_path:
+            warnings.append(f"Fixed malformed array syntax '[]', extracted file path: '{file_path}'")
+            return True, [file_path], warnings, None
+    
+    # Handle malformed array syntax with file paths (e.g., "workflows/04-task-decomposition.mdc[]")
+    if trimmed.endswith("[]") and ("/" in trimmed or ".mdc" in trimmed):
+        # Extract the actual file path by removing the malformed array syntax
+        file_path = trimmed[:-2].strip()  # Remove "[]" and any whitespace
+        if file_path:
+            warnings.append(f"Fixed malformed array syntax '[]', extracted file path: '{file_path}'")
+            return True, [file_path], warnings, None
+    
+    # Handle other malformed array syntax patterns
+    # Pattern: missing quotes or brackets around file paths
+    if ("/" in trimmed or ".mdc" in trimmed) and ("[" in trimmed or "]" in trimmed):
+        # Try to extract just the file path part
+        # Look for file path patterns (anything with / or .mdc)
+        file_path_match = re.search(r'([^\[\],\s]+/[^\[\],\s]+\.mdc|[^\[\],\s]+\.mdc)', trimmed)
+        if file_path_match:
+            file_path = file_path_match.group(1).strip()
+            warnings.append(f"Extracted file path from malformed array syntax: '{file_path}'")
+            return True, [file_path], warnings, None
     
     # Handle single file paths
     if "/" in trimmed or ".mdc" in trimmed:
