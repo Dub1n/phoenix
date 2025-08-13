@@ -1,6 +1,6 @@
 # Interactive CLI User Experience Patterns for Phoenix Code Lite
 
-## 🎯 UX Philosophy
+## ⊕ UX Philosophy
 
 Phoenix Code Lite's CLI is designed around **persistent interactive sessions** with dual interaction modes: users can choose between intuitive menu navigation or traditional command-line workflows, with seamless switching between modes.
 
@@ -54,7 +54,7 @@ phoenix-code-lite config --show      # Direct configuration display
 #### 1. Main Menu (Session Entry Point)
 
 ```text
-📋 Phoenix Code Lite Interactive CLI
+⋇ Phoenix Code Lite Interactive CLI
 ════════════════════════════════════════════════
 
 1. Generate Code           - Start TDD workflow for new code
@@ -71,7 +71,7 @@ Mode: Press "c" for command mode, "m" for menu mode
 #### 2. Document Management (Integrated into Configuration)
 
 ```text
-📋 Configuration > Document Management
+⋇ Configuration > Document Management
 ════════════════════════════════════════════════
 
 Current Template: Enterprise
@@ -90,7 +90,7 @@ Navigation: Type number or use arrow keys, ESC to go back
 #### 3. Template Management (Menu-Driven)
 
 ```text
-📄 Template Management
+□ Template Management
 ════════════════════════════════════════════════
 
 Current: Enterprise Template
@@ -140,7 +140,7 @@ Design for persistent session-based configuration following these principles:
 #### Configuration Menu Hierarchy
 
 ```text
-📋 Phoenix Code Lite Configuration [Session Active]
+⋇ Phoenix Code Lite Configuration [Session Active]
 ════════════════════════════════════════════════
 
 Current Template: Enterprise
@@ -160,7 +160,7 @@ Session Commands: "save", "reset", "status"
 #### Interactive Template Selection
 
 ```text
-📄 Template Selection [Enterprise → ?]
+□ Template Selection [Enterprise → ?]
 ════════════════════════════════════════════════
 
 Preview: Comparing templates for your workflow
@@ -188,7 +188,7 @@ Navigation: Number selection or template name
 #### Document Management Integration Pattern
 
 ```text
-📋 Document Management > Global Documents
+⋇ Document Management > Global Documents
 ════════════════════════════════════════════════
 
 Template: Enterprise | 4 documents active
@@ -213,15 +213,15 @@ Navigation: Number, document name, or "toggle [name]"
 #### Workflow Progress Display
 
 ```text
-🔄 Phoenix Code Lite Workflow In Progress
+⇔ Phoenix Code Lite Workflow In Progress
 
-📋 Phase 1: Plan & Test                    ✅ Completed (2.3s)
-⚡ Phase 2: Implement & Fix                🔄 In Progress...
+⋇ Phase 1: Plan & Test                    ✓ Completed (2.3s)
+⚡ Phase 2: Implement & Fix                ⇔ In Progress...
    └─ Running tests...                     ⏳ 15s elapsed
-✨ Phase 3: Refactor & Document            ⏸️  Pending
+⑇ Phase 3: Refactor & Document            ‖  Pending
 
-📊 Overall Progress: 45% complete
-⏱️  Estimated time remaining: 32 seconds
+◊ Overall Progress: 45% complete
+⋯  Estimated time remaining: 32 seconds
 
 Press Ctrl+C to cancel
 ```
@@ -229,18 +229,18 @@ Press Ctrl+C to cancel
 #### Error State Display
 
 ```text
-❌ Phoenix Code Lite Workflow Failed
+✗ Phoenix Code Lite Workflow Failed
 
-📋 Phase 1: Plan & Test                    ✅ Completed
-⚡ Phase 2: Implement & Fix                ❌ Failed
-   └─ Test execution failed                💥 Error details below
-✨ Phase 3: Refactor & Document            ⏸️  Not started
+⋇ Phase 1: Plan & Test                    ✓ Completed
+⚡ Phase 2: Implement & Fix                ✗ Failed
+   └─ Test execution failed                * Error details below
+⑇ Phase 3: Refactor & Document            ‖  Not started
 
-🔍 Error Details:
+⌕ Error Details:
 Test "should validate email format" failed
 Expected: true, Received: false
 
-💡 Suggested Actions:
+* Suggested Actions:
 • Run 'phoenix-code-lite doctor' to check system health
 • Check the generated test file at: tests/email-validator.test.ts
 • Try again with '--verbose' for more details
@@ -248,7 +248,7 @@ Expected: true, Received: false
 Type 'phoenix-code-lite help troubleshooting' for more help.
 ```
 
-## 🎯 User Journey Optimization
+## ⊕ User Journey Optimization
 
 ### First-Time User Experience
 
@@ -312,12 +312,12 @@ phoenix-code-lite config --export --format json > my-config.json
 phoenix-code-lite config --import my-config.json
 ```
 
-## 📝 Help and Documentation Patterns
+## ⋇ Help and Documentation Patterns
 
 ### Context-Aware Interactive Help
 
 ```text
-📋 Phoenix Code Lite Help [Interactive Session]
+⋇ Phoenix Code Lite Help [Interactive Session]
 ════════════════════════════════════════════════
 
 Session Commands:
@@ -341,7 +341,7 @@ Session: abc123-def456 | Mode: Interactive | Template: Enterprise
 ### Help Content Structure
 
 ```text
-📋 Phoenix Code Lite Help: generate
+⋇ Phoenix Code Lite Help: generate
 
 USAGE:
   phoenix-code-lite generate --task "description" [options]
@@ -376,7 +376,7 @@ For context help: Type "help" in any menu for location-specific guidance
 ### Document Management Interactive Integration
 
 ```text
-📋 Document Management Integration Pattern
+⋇ Document Management Integration Pattern
 ════════════════════════════════════════════════
 
 Access Path: Main Menu > Configuration > Document Management
@@ -406,16 +406,16 @@ Session Commands:
   status                 - Show active documents summary
 ```
 
-## 🔧 Error Handling UX Patterns
+## ◦ Error Handling UX Patterns
 
 ### Error Message Structure
 
 ```text
-❌ {Error Type}: {Brief Description}
+✗ {Error Type}: {Brief Description}
 
 {Detailed explanation of what went wrong}
 
-💡 Suggested Actions:
+* Suggested Actions:
 • {Specific action 1}
 • {Specific action 2}  
 • {Specific action 3}
@@ -428,12 +428,12 @@ For more help: phoenix-code-lite help {relevant-topic}
 #### Validation Error
 
 ```text
-❌ Validation Error: Task description too short
+✗ Validation Error: Task description too short
 
 The task description "hi" is only 2 characters long. 
 Task descriptions must be between 10 and 1000 characters.
 
-💡 Suggested Actions:
+* Suggested Actions:
 • Provide a more detailed description of what you want to implement
 • Try: "Create a function that validates email addresses"
 • Use --help for examples of good task descriptions
@@ -444,7 +444,7 @@ For more help: phoenix-code-lite help examples
 #### Configuration Error
 
 ```text
-❌ Configuration Error: Invalid template
+✗ Configuration Error: Invalid template
 
 The template "enterrpise" was not found. Did you mean "enterprise"?
 
@@ -453,7 +453,7 @@ Available templates:
 • enterprise   - Production-ready with strict validation  
 • performance  - Speed-optimized configuration
 
-💡 Suggested Actions:
+* Suggested Actions:
 • Use 'phoenix-code-lite config --show' to see current templates
 • Use 'phoenix-code-lite config --use enterprise' to switch templates
 • Use 'phoenix-code-lite config --add custom' to create a custom template
@@ -467,14 +467,14 @@ For more help: phoenix-code-lite help configuration
 
 ```bash
 # Status indicators
-✅ Success / Completed
-❌ Error / Failed  
-⚠️  Warning / Attention needed
-🔄 In progress / Working
-⏸️  Pending / Waiting
-📋 Information / Details
-💡 Suggestion / Tip
-🔍 Details / Debugging
+✓ Success / Completed
+✗ Error / Failed  
+⚠  Warning / Attention needed
+⇔ In progress / Working
+‖  Pending / Waiting
+⋇ Information / Details
+* Suggestion / Tip
+⌕ Details / Debugging
 
 # Colors (when terminal supports them)
 Green: Success states, completed items
@@ -495,7 +495,7 @@ COMMANDS in uppercase
 [optional] in square brackets
 ```
 
-## 📊 Accessibility Considerations
+## ◊ Accessibility Considerations
 
 ### Screen Reader Support
 
@@ -515,7 +515,7 @@ COMMANDS in uppercase
 - Graceful degradation when colors/symbols aren't supported
 - Respect terminal width and height constraints
 
-## ✅ UX Quality Checklist
+## ✓ UX Quality Checklist
 
 ### Command Design Review
 

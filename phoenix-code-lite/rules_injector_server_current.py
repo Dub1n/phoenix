@@ -336,10 +336,10 @@ def get_dss_rules(
                 logger.info(f"📖 Loaded rule file: {rule_file}")
             else:
                 missing_files.append(rule_file)
-                logger.warning(f"⚠️ Rule file not found: {rule_file}")
+                logger.warning(f"⚠ Rule file not found: {rule_file}")
         except Exception as e:
             missing_files.append(f"{rule_file} (error: {e})")
-            logger.error(f"❌ Error reading {rule_file}: {e}")
+            logger.error(f"✗ Error reading {rule_file}: {e}")
 
     # Build main response content
     response_parts.append("# DSS Rules Retrieved\n\n")
@@ -382,7 +382,7 @@ def list_available_rules(
     """
     
     if not RULES_BASE_PATH.exists():
-        return "❌ DSS rules directory (.cursor/rules) not found."
+        return "✗ DSS rules directory (.cursor/rules) not found."
     
     def get_file_description(file_path: Path) -> str:
         """Extract description from file frontmatter."""
@@ -460,14 +460,14 @@ def list_available_rules(
 async def _run() -> None:
     """Main async entry – launches reminder and MCP stdio server concurrently."""
 
-    logger.info("🚀 Starting DSS Rules Injector (FastMCP / stdio)")
+    logger.info("^ Starting DSS Rules Injector (FastMCP / stdio)")
 
     async def _reminder() -> None:
         """Warn if bootstrap rules haven't been requested shortly after start."""
         await anyio.sleep(5)
         if not RULES_SENT:
             logger.warning(
-                "⚠️  No get_dss_rules call detected within 5 seconds of server start. "
+                "⚠  No get_dss_rules call detected within 5 seconds of server start. "
                 "Agents should invoke get_dss_rules() to load bootstrap rules."
             )
 

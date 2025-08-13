@@ -831,7 +831,7 @@
   ```rust
   impl RefactorDocumentPhase {
       pub async fn execute(&self, implementation: &ImplementationResult) -> Result<RefactorResult> {
-          println!("✨ PHASE 3: Refactoring and documenting code...");
+          println!("⑇ PHASE 3: Refactoring and documenting code...");
           
           // 1. Analyze current code quality
           let quality_analysis = self.analyze_code_quality(&implementation.code)?;
@@ -1911,7 +1911,7 @@
                Session ID: {}\n\
                Uptime: {:?}\n\
                \n\
-               📈 Task Summary:\n\
+               ⋰ Task Summary:\n\
                ├─ Completed: {}\n\
                ├─ Failed: {}\n\
                └─ Success Rate: {:.1}%\n\
@@ -2416,7 +2416,7 @@
   ## Features
   
   - ^ **Rapid Development**: Generate working code in minutes
-  - 🧪 **Test-Driven**: Built-in TDD cycle ensures quality
+  - ⊎ **Test-Driven**: Built-in TDD cycle ensures quality
   - ⇔ **Self-Correcting**: Automatic retry and error fixing
   - ◊ **Quality Metrics**: Comprehensive quality tracking
   - 💰 **Cost Optimization**: Smart model selection and caching

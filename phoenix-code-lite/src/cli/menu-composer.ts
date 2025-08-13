@@ -1,3 +1,11 @@
+/**---
+ * title: [Menu Composer - Content-Driven Menu Assembly]
+ * tags: [CLI, Menu, Composition, Formatting]
+ * provides: [MenuComposer Class, Separator Sizing, Content Formatting]
+ * requires: [display Utils, MenuLayoutManager, Menu Types]
+ * description: [Constructs formatted menus from content with procedural sizing and layout preparation for consistent CLI rendering.]
+ * ---*/
+
 import chalk from 'chalk';
 import { display } from '../utils/display';
 import { MenuLayoutManager, type CalculatedMenuLayout } from './menu-layout-manager';
@@ -267,7 +275,7 @@ export class MenuComposer {
       display.printDivider(layout.footerSeparatorLength);
       
       for (const hint of content.footerHints) {
-        console.log(chalk.blue('💡 ') + hint);
+        console.log(chalk.blue('* ') + hint);
       }
       console.log();
     }

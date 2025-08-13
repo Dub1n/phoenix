@@ -85,7 +85,7 @@
 ### Legend for Status:
 
 *   ⚪️ **`[TODO]`**: Task is defined and ready to be picked up if dependencies are met. This status also applies to `REFACTOR_` tasks created from technical debt.
-*   📝 **`[NEEDS_SPEC]`**: Node has been identified in the architecture but requires a detailed specification to be drafted.
+*   ⋇ **`[NEEDS_SPEC]`**: Node has been identified in the architecture but requires a detailed specification to be drafted.
 *   🟡 **`[WIP]`**: Work In Progress. The AI Agent is currently working on this node as part of the specified `WorkGroupID`.
 *   🟢 **`[VERIFIED]`**: The primary completion state. The node has been implemented, all ARC Verification Criteria are met, the spec is finalized to "as-built", and all outcomes are logged.
 

@@ -1,9 +1,10 @@
-/**
- * PDF Tool Validator
- * 
- * Validates PDF processing tools availability and functionality
- * for QMS regulatory document processing
- */
+/**---
+ * title: [PDF Tool Validator - QMS]
+ * tags: [Preparation, QMS, Validation]
+ * provides: [PDFToolValidator]
+ * requires: []
+ * description: [Validates PDF tooling availability and capability for regulatory document processing.]
+ * ---*/
 
 import { exec } from 'child_process';
 import { promisify } from 'util';

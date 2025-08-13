@@ -6,7 +6,7 @@ console.log('JEST_WORKER_ID:', process.env.JEST_WORKER_ID);
 
 // Show what's keeping process alive
 process.on('beforeExit', (code) => {
-  console.log('⚠️ Process wants to exit but something is keeping it alive');
+  console.log('⚠ Process wants to exit but something is keeping it alive');
   console.log('Exit code:', code);
   
   // Log active handles and requests

@@ -18,7 +18,7 @@ _A brief introduction to this troubleshooting guide and what issues it covers._
 **Version:** X.Y.Z (if applicable)
 **Last updated:** YYYY-MM-DD
 
-## 📋 Quick Reference
+## ⋇ Quick Reference
 
 | Issue | Symptoms | Quick Solution |
 |-------|----------|----------------|

@@ -1,3 +1,11 @@
+/**---
+ * title: [Interactive CLI Session - Dual Mode Navigation]
+ * tags: [CLI, Interface, Session-Management, Navigation]
+ * provides: [SessionContext Types, Menu Navigation, Command Mode Handling, Back/Home Controls]
+ * requires: [InteractionManager, PhoenixCodeLiteConfig, SkinMenuRenderer, Menu Types]
+ * description: [Coordinates menu and command modes, maintains navigation stack and breadcrumbs, and orchestrates overall CLI session behavior.]
+ * ---*/
+
 import chalk from 'chalk';
 import { createInterface, Interface } from 'readline';
 import { InteractionManager } from './interaction-manager';
@@ -102,7 +110,7 @@ export class CLISession {
       // Wait a moment for any pending foundation logs to complete
       await new Promise(resolve => setTimeout(resolve, 100));
       console.clear();
-      console.log("🚀🚀🚀 RILEY TEST: If you see this, our code changes ARE working! 🚀🚀🚀");
+      console.log("^^^ RILEY TEST: If you see this, our code changes ARE working! ^^^");
       // this.displayWelcome();
       
       // Issue #12: Automatically display main menu
@@ -156,7 +164,7 @@ export class CLISession {
   private displayWelcome(): void {
     // Use unified layout engine for welcome screen
     const content: MenuContent = {
-      title: '🔥 Phoenix Code Lite Interactive CLI',
+      title: '* Phoenix Code Lite Interactive CLI',
       subtitle: 'TDD Workflow Orchestrator for Claude Code',
       sections: [{
         heading: 'Welcome',
@@ -343,13 +351,13 @@ export class CLISession {
     // Validate input first
     const validation = this.inputValidator.validate(input, this.currentContext);
     if (!validation.valid) {
-      console.log(chalk.red('❌ Invalid input:'));
+      console.log(chalk.red('✗ Invalid input:'));
       validation.errors.forEach(error => console.log(chalk.red(`  • ${error}`)));
       
       // Show suggestions if available
       const suggestions = this.inputValidator.suggest?.(input, this.currentContext);
       if (suggestions && suggestions.length > 0) {
-        console.log(chalk.yellow('\n💡 Did you mean:'));
+        console.log(chalk.yellow('\n* Did you mean:'));
         suggestions.forEach(suggestion => console.log(chalk.yellow(`  • ${suggestion}`)));
       }
       return;
@@ -357,7 +365,7 @@ export class CLISession {
 
     // Show warnings if any
     if (validation.warnings && validation.warnings.length > 0) {
-      validation.warnings.forEach(warning => console.log(chalk.yellow(`⚠️ ${warning}`)));
+      validation.warnings.forEach(warning => console.log(chalk.yellow(`⚠ ${warning}`)));
     }
 
     // Add to history
@@ -429,10 +437,10 @@ export class CLISession {
     } else {
       // Enhanced error message with suggestions
       const suggestions = this.inputValidator.suggest?.(input, this.currentContext) || [];
-      console.log(chalk.red(`❌ Unknown command: ${chalk.bold(input)}`));
+      console.log(chalk.red(`✗ Unknown command: ${chalk.bold(input)}`));
       
       if (suggestions.length > 0) {
-        console.log(chalk.yellow('\n💡 Did you mean:'));
+        console.log(chalk.yellow('\n* Did you mean:'));
         suggestions.slice(0, 3).forEach(suggestion => {
           console.log(chalk.yellow(`  • ${suggestion}`));
         });
@@ -529,7 +537,7 @@ export class CLISession {
   }
 
   private showHeader(): void {
-    const title = this.menuSystem?.generateTitle(this.currentContext) || '🔥 Phoenix Code Lite';
+    const title = this.menuSystem?.generateTitle(this.currentContext) || '* Phoenix Code Lite';
     console.log(chalk.red.bold(title));
     console.log(chalk.gray('═'.repeat(70)));
     
@@ -562,12 +570,12 @@ export class CLISession {
     console.log();
     
     if (this.currentContext.level !== 'main') {
-      console.log(chalk.yellow.bold(`🎯 Context Commands (${this.getContextDisplayName(this.currentContext.level)}):`));
+      console.log(chalk.yellow.bold(`⊕ Context Commands (${this.getContextDisplayName(this.currentContext.level)}):`));
       this.menuSystem?.showContextHelp(this.currentContext);
       console.log();
     }
     
-    console.log(chalk.blue.bold('💡 Pro Tips:'));
+    console.log(chalk.blue.bold('* Pro Tips:'));
     console.log(chalk.gray('  • Commands are case-insensitive and support partial matching'));
     console.log(chalk.gray('  • Use numbers (1, 2, 3, 4) as shortcuts for menu navigation'));
     console.log(chalk.gray('  • Context-aware help adapts to your current location'));
@@ -587,7 +595,7 @@ export class CLISession {
   }
 
   private async handleInterruption(): Promise<void> {
-    console.log(chalk.yellow('\n🔄 Session interrupted, navigating back...'));
+    console.log(chalk.yellow('\n⇔ Session interrupted, navigating back...'));
     
     // If we're not at main menu, go back one level
     if (this.currentContext.level !== 'main') {
@@ -798,7 +806,7 @@ class ErrorHandler {
     const errorType = this.categorizeError(error);
     
     console.log();
-    console.log(chalk.red('❌ Error occurred'));
+    console.log(chalk.red('✗ Error occurred'));
     
     if (operation) {
       console.log(chalk.gray(`   Operation: ${operation}`));
@@ -810,25 +818,25 @@ class ErrorHandler {
     // Provide contextual help based on error type
     switch (errorType) {
       case 'validation':
-        console.log(chalk.yellow('\n💡 This looks like a validation error. Check your input format.'));
+        console.log(chalk.yellow('\n* This looks like a validation error. Check your input format.'));
         break;
       case 'file':
-        console.log(chalk.yellow('\n💡 This appears to be a file system error. Check file permissions and paths.'));
+        console.log(chalk.yellow('\n* This appears to be a file system error. Check file permissions and paths.'));
         break;
       case 'network':
-        console.log(chalk.yellow('\n💡 This seems to be a network-related error. Check your connection.'));
+        console.log(chalk.yellow('\n* This seems to be a network-related error. Check your connection.'));
         break;
       case 'config':
-        console.log(chalk.yellow('\n💡 Configuration error detected. Try resetting to default template.'));
+        console.log(chalk.yellow('\n* Configuration error detected. Try resetting to default template.'));
         break;
       default:
-        console.log(chalk.yellow('\n💡 For help, type "help" or visit the documentation.'));
+        console.log(chalk.yellow('\n* For help, type "help" or visit the documentation.'));
     }
     
     // Suggest recovery actions
     const recoveryActions = this.getRecoveryActions(errorType, context);
     if (recoveryActions.length > 0) {
-      console.log(chalk.blue('\n🔧 Suggested actions:'));
+      console.log(chalk.blue('\n◦ Suggested actions:'));
       recoveryActions.forEach(action => console.log(chalk.blue(`   • ${action}`)));
     }
     

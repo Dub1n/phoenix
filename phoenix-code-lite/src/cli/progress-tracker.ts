@@ -1,3 +1,11 @@
+/**---
+ * title: [Progress Tracker - Workflow Phase Tracking]
+ * tags: [CLI, Utility, Progress, UX]
+ * provides: [ProgressTracker Class, Phase State, Time Metrics, Spinner Integration]
+ * requires: [chalk]
+ * description: [Tracks workflow phases, substeps, and timing; provides user-friendly progress output suitable for CLI UX.]
+ * ---*/
+
 import chalk from 'chalk';
 
 export interface PhaseInfo {

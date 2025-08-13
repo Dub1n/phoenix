@@ -1,13 +1,10 @@
-/**
- * Skin Menu Renderer - PCL-Skins Architecture Integration
- * 
- * Provides the UI Abstraction Layer for the PCL-Skins plugin architecture.
- * Integrates with the unified layout engine to render JSON-driven menu definitions
- * with theme support, consistent positioning, and extensible skin loading.
- * 
- * This class represents the future architecture where menus are defined in JSON
- * skin files and rendered through a unified, theme-aware system.
- */
+/**---
+ * title: [Skin Menu Renderer - PCL-Skins Integration]
+ * tags: [CLI, Menu, Rendering, Skins]
+ * provides: [renderLegacyWithUnified, renderSkinMenu, Skin Context Management]
+ * requires: [Unified Layout Engine, Menu Content Converter, Menu Types]
+ * description: [Bridges content conversion and layout engine to render JSON-driven, theme-aware menus following the PCL-Skins architecture.]
+ * ---*/
 
 import { 
   calculateMenuLayout, 
@@ -335,7 +332,7 @@ export class SkinMenuRenderer {
 
       'phoenix-code-lite': {
         main: {
-          title: '🔥 Phoenix Code Lite',
+          title: '* Phoenix Code Lite',
           subtitle: 'Advanced development workflow automation',
           items: [
             {

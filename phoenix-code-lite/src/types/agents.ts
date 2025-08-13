@@ -1,3 +1,11 @@
+/**---
+ * title: [Agent Personas & Specialized Contexts - Type Definitions]
+ * tags: [Types, Definitions, Agents, Zod]
+ * provides: [AgentPersonaSchema, AgentPersona Type, SpecializedAgentContexts]
+ * requires: [zod]
+ * description: [Defines agent persona schema and specialized contexts used by TDD phases and CLI orchestration.]
+ * ---*/
+
 import { z } from 'zod';
 
 export const AgentPersonaSchema = z.object({

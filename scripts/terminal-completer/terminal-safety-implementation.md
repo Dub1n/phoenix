@@ -63,7 +63,7 @@ Successfully implemented automatic terminal safety for both **user terminals** (
 **Agent Usage:**
 
 ```powershell
-# ✅ Automatically safe - no wrapping needed
+# ✓ Automatically safe - no wrapping needed
 run_terminal_cmd("npm test")
 run_terminal_cmd("git status")
 run_terminal_cmd("node script.js")
@@ -102,11 +102,11 @@ run_terminal_cmd("node script.js")
 
 ## Testing Results
 
-✅ **User Terminal**: Automatically loads safety script on startup
-✅ **Agent Terminal**: Direct commands work without manual wrapping
-✅ **Timeout Enforcement**: Commands complete within configured limits
-✅ **Hanging Prevention**: Processes killed before new execution
-✅ **Configuration Loading**: Settings applied from `.cursor/terminal-config.json`
+✓ **User Terminal**: Automatically loads safety script on startup
+✓ **Agent Terminal**: Direct commands work without manual wrapping
+✓ **Timeout Enforcement**: Commands complete within configured limits
+✓ **Hanging Prevention**: Processes killed before new execution
+✓ **Configuration Loading**: Settings applied from `.cursor/terminal-config.json`
 
 ## Usage Examples
 
@@ -117,18 +117,18 @@ run_terminal_cmd("node script.js")
 # "Cursor Terminal Safety Activated"
 # "Safe command overrides loaded: npm, node, git, tsc, jest, yarn, pnpm"
 
-npm test          # ✅ Automatic 60s timeout
-git status        # ✅ Automatic 15s timeout
-node script.js    # ✅ Automatic 30s timeout
+npm test          # ✓ Automatic 60s timeout
+git status        # ✓ Automatic 15s timeout
+node script.js    # ✓ Automatic 30s timeout
 ```
 
 ### Agent Terminal (Cursor AI)
 
 ```powershell
 # Agent can use direct commands:
-run_terminal_cmd("npm test")      # ✅ Automatic safety
-run_terminal_cmd("git status")    # ✅ Automatic safety
-run_terminal_cmd("node script.js") # ✅ Automatic safety
+run_terminal_cmd("npm test")      # ✓ Automatic safety
+run_terminal_cmd("git status")    # ✓ Automatic safety
+run_terminal_cmd("node script.js") # ✓ Automatic safety
 ```
 
 ## Maintenance
@@ -154,6 +154,6 @@ run_terminal_cmd("node script.js") # ✅ Automatic safety
 
 ---
 
-**Status**: ✅ **FULLY IMPLEMENTED AND TESTED**
+**Status**: ✓ **FULLY IMPLEMENTED AND TESTED**
 **Coverage**: User terminals + Agent terminals
 **Reliability**: Automatic hanging prevention with detailed logging

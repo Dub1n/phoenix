@@ -1,3 +1,11 @@
+<!--
+title: [Phoenix Code Lite - System Explanation]
+tags: [Documentation, Guide, Overview, TDD]
+provides: [System Overview, Workflow Explanation, Getting Started]
+requires: [docs/index/API-REFERENCE.md, docs/index/CODEBASE-INDEX.md]
+description: [Explains Phoenix Code Lite’s purpose, agent roles, TDD phases, and user experience]
+-->
+
 # Phoenix Code Lite - System Explanation
 
 ## ⊕ What Phoenix Code Lite Is

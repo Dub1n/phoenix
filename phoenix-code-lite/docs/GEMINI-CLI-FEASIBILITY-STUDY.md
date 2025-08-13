@@ -1,8 +1,10 @@
----
-tags: [Documentation, Feasibility Study, Gemini CLI, Claude Code, Integration Analysis]
-provides: [Gemini CLI Feasibility Analysis, Claude Code Integration Documentation, Migration Requirements]
-requires: [Phoenix Code Lite Architecture, Claude Code Integration]
----
+<!--
+title: [Gemini CLI Feasibility Study - Documentation]
+tags: [Documentation, Feasibility, Integration, CLI, Gemini CLI, Claude Code]
+provides: [Feature Mapping, Integration Requirements, Migration Plan]
+requires: [docs/CLI-INTERACTION-DECOUPLING-ARCHITECTURE.md, src/claude/client.ts]
+description: [Evaluates feasibility of migrating from Claude Code to Gemini CLI with enterprise integration considerations]
+-->
 
 # Gemini CLI Feasibility Study for Phoenix Code Lite
 

@@ -6,10 +6,10 @@ import type { SkinMenuDefinition, LayoutConstraints } from '../../../src/cli/uni
 describe('Procedural Numbering', () => {
   
   const createTestMenuContent = (): MenuContent => ({
-    title: '📄 Template Management Center',
+    title: '□ Template Management Center',
     subtitle: 'Choose from Starter, Enterprise, Performance, or create custom templates',
     sections: [{
-      heading: '📦 Template Commands:',
+      heading: '⌺ Template Commands:',
       theme: { headingColor: 'yellow', bold: true },
       items: [
         {

@@ -1,3 +1,11 @@
+/**---
+ * title: [CLI Test Utilities - Integration Helpers]
+ * tags: [Testing, Utils]
+ * provides: [CLI test helpers]
+ * requires: []
+ * description: [Helper functions for running and validating CLI integration tests.]
+ * ---*/
+
 import { MockConfigManager } from '../mocks/mock-config-manager';
 import { MockAuditLogger } from '../mocks/mock-audit-logger';
 import { MockClaudeClient } from '../mocks/mock-claude-client';

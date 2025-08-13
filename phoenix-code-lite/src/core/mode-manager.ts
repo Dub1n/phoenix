@@ -1,3 +1,11 @@
+/**---
+ * title: [Mode Manager - Core Service Module]
+ * tags: [Core, Service, Mode-Management, Integration]
+ * provides: [ModeManager Class, Dual-Mode Capabilities, Mode Switching, Audit Events]
+ * requires: [Zod, AuditLogger, Workflow Types]
+ * description: [Controls standalone vs integrated operation modes, exposing capabilities, validating transitions, and logging mode lifecycle events.]
+ * ---*/
+
 import { z } from 'zod';
 import { ModeConfig, ModeConfigSchema } from '../types/workflow';
 import { AuditLogger } from '../utils/audit-logger';
@@ -106,7 +114,7 @@ export class ModeManager {
         config: this.config
       });
 
-      console.log(`🔄 Switched from ${previousMode} to ${newMode} mode`);
+      console.log(`⇔ Switched from ${previousMode} to ${newMode} mode`);
       return true;
 
     } catch (error) {
@@ -117,7 +125,7 @@ export class ModeManager {
         timestamp: new Date().toISOString()
       });
 
-      console.error(`❌ Failed to switch to ${newMode} mode:`, error);
+      console.error(`✗ Failed to switch to ${newMode} mode:`, error);
       return false;
     }
   }
@@ -232,7 +240,7 @@ export class ModeManager {
     if (toMode === 'integrated') {
       // Skip validation in test environment
       if (process.env.NODE_ENV === 'test' || process.env.JEST_WORKER_ID) {
-        console.log('🧪 Test environment detected, skipping Claude Code SDK validation');
+        console.log('⊎ Test environment detected, skipping Claude Code SDK validation');
         return;
       }
       
@@ -243,13 +251,13 @@ export class ModeManager {
           throw new Error('Claude Code SDK not available');
         }
       } catch (error) {
-        console.warn('⚠️ Claude Code SDK not available, continuing anyway for development');
+        console.warn('⚠ Claude Code SDK not available, continuing anyway for development');
         // Don't throw error, just warn
       }
 
       // Check for required environment variables or configuration
       if (!process.env.ANTHROPIC_API_KEY && !this.hasApiKeyConfigured()) {
-        console.warn('⚠️  API key not configured - some integrated features may be limited');
+        console.warn('⚠  API key not configured - some integrated features may be limited');
       }
     }
 

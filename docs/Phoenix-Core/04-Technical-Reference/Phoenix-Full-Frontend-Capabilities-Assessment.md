@@ -396,10 +396,10 @@ class SecurityAnalystAgent(BaseAgent):
    │   ◦ OAuth integration (third-party providers)
    └─ ✓ Requirements specification generated
 ⚡ Parallel Generation Phase:
-   ├─ 🧪 Implementation Pool: 3 agents working on auth logic
+   ├─ ⊎ Implementation Pool: 3 agents working on auth logic
    ├─ ✓ Verification Pool: 2 agents creating comprehensive tests
-   └─ 🔒 Security Audit: 1 agent scanning for vulnerabilities
-📈 Quality Metrics: 94% test coverage, 0 security issues
+   └─ ⑄ Security Audit: 1 agent scanning for vulnerabilities
+⋰ Quality Metrics: 94% test coverage, 0 security issues
 * Deployment artifacts generated successfully!
 ```
 
@@ -418,7 +418,7 @@ phoenix-code generate --task "Create user authentication system"
    ├─ ✗ 3 tests failed - retrying with feedback...
    ├─ ⇔ Implementation attempt 2/3  
    └─ ✓ All tests passed!
-✨ PHASE 3: Refactoring and documenting code...
+⑇ PHASE 3: Refactoring and documenting code...
    ├─ ◦ Code refactored for maintainability
    ├─ 📚 Documentation generated
    └─ ✓ Quality validation passed

@@ -1,3 +1,11 @@
+/**---
+ * title: [Architecture Integration Validator - QMS]
+ * tags: [Preparation, QMS, Validation]
+ * provides: [ArchitectureIntegrationValidator]
+ * requires: []
+ * description: [Validates architectural integration against QMS criteria and documented patterns.]
+ * ---*/
+
 /**
  * Architecture Integration Validator
  * 

@@ -1,8 +1,10 @@
----
-tags: [SuperClaude, Implementation, CLI, Architecture, Decoupling]
-provides: [SuperClaude Implementation Prompt, CLI Architecture Migration Guide]
-requires: [CLI-INTERACTION-DECOUPLING-ARCHITECTURE.md]
----
+<!--
+title: [SuperClaude Implementation Prompt - Documentation]
+tags: [Documentation, Prompt, Implementation, Architecture, CLI, Decoupling]
+provides: [Step-by-Step Implementation Guide, Architecture Layers]
+requires: [docs/CLI-INTERACTION-DECOUPLING-ARCHITECTURE.md]
+description: [Execution prompt guiding implementation of the decoupled CLI architecture]
+-->
 
 # SuperClaude Implementation Prompt: CLI Interaction Decoupling Architecture
 
@@ -515,7 +517,7 @@ Create `src/menus/core-menus.ts`:
 ```typescript
 export const MainMenuDefinition: MenuDefinition = {
   id: 'main',
-  title: '🔥 Phoenix Code Lite • TDD Workflow Orchestrator',
+  title: '* Phoenix Code Lite • TDD Workflow Orchestrator',
   sections: [{
     id: 'navigation',
     heading: 'Main Navigation',

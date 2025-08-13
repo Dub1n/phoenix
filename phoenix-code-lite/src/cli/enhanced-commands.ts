@@ -1,3 +1,11 @@
+/**---
+ * title: [Enhanced CLI Commands - Guided Workflow Orchestrations]
+ * tags: [CLI, Commands, Workflow, UX]
+ * provides: [enhancedGenerateCommand, wizardCommand, Template Utilities, Progress Integration]
+ * requires: [AdvancedCLI, ProgressTracker, InteractivePrompts, TDDOrchestrator, ClaudeCodeClient, PhoenixCodeLiteConfig, ConfigurationTemplates, ConfigFormatter, DocumentManager]
+ * description: [Implements enhanced CLI commands with progressive UX, banners, template-aware configuration, and orchestration of TDD workflows.]
+ * ---*/
+
 import { PhoenixCodeLiteOptions } from './args';
 import { AdvancedCLI } from './advanced-cli';
 import { ProgressTracker } from './progress-tracker';
@@ -116,11 +124,11 @@ export async function wizardCommand(): Promise<void> {
     const fs = await import('fs/promises');
     await fs.writeFile('.phoenix-code-lite.json', JSON.stringify(configTemplate, null, 2));
     
-    console.log(chalk.green('\n✅ Enhanced configuration created successfully!'));
+    console.log(chalk.green('\n✓ Enhanced configuration created successfully!'));
     
     // Show discovery summary if available
     if (answers.discoveredContext && answers.useDiscoveredSettings) {
-      console.log(chalk.cyan('\n📊 Applied smart defaults based on project analysis:'));
+      console.log(chalk.cyan('\n◊ Applied smart defaults based on project analysis:'));
       console.log(chalk.gray(`  • Detected: ${answers.discoveredContext.language} ${answers.discoveredContext.framework ? `with ${answers.discoveredContext.framework}` : ''}`));
       console.log(chalk.gray(`  • Template: ${answers.qualityLevel}`));
       console.log(chalk.gray(`  • Confidence: ${Math.round(answers.discoveredContext.confidence * 100)}%`));
@@ -131,10 +139,10 @@ export async function wizardCommand(): Promise<void> {
     
   } catch (error) {
     if (error instanceof Error && error.message.includes('cancelled')) {
-      console.log(chalk.yellow('\n⚠️ Setup wizard cancelled by user.'));
+      console.log(chalk.yellow('\n⚠ Setup wizard cancelled by user.'));
       console.log(chalk.gray('You can run "phoenix-code-lite wizard" again anytime.'));
     } else {
-      console.error(chalk.red('\n❌ Setup wizard failed:'), error);
+      console.error(chalk.red('\n✗ Setup wizard failed:'), error);
       console.log(chalk.gray('Please try again or check the error message above.'));
     }
   }
@@ -225,7 +233,7 @@ async function executeConfigAction(command: string, data: any, context: SessionC
   
   switch (command) {
     case 'show':
-      console.log(chalk.green.bold('\n📋 Current Configuration'));
+      console.log(chalk.green.bold('\n⋇ Current Configuration'));
       console.log(chalk.gray('═'.repeat(50)));
       console.log(ConfigFormatter.formatConfig(config.export()));
       break;
@@ -357,7 +365,7 @@ async function executeAdvancedAction(command: string, data: any, context: Sessio
 
 // Helper functions for template management with enhanced UX
 async function showTemplateList(): Promise<void> {
-  console.log(chalk.yellow.bold('\n📄 Available Templates'));
+  console.log(chalk.yellow.bold('\n□ Available Templates'));
   console.log(chalk.gray('═'.repeat(50)));
   
   const templates = [
@@ -432,7 +440,7 @@ async function showSingleTemplatePreview(templateName: string): Promise<void> {
     return;
   }
   
-  console.log(chalk.yellow.bold(`📊 ${templateName.toUpperCase()} TEMPLATE`));
+  console.log(chalk.yellow.bold(`◊ ${templateName.toUpperCase()} TEMPLATE`));
   console.log(chalk.gray('─'.repeat(30)));
   console.log(ConfigFormatter.formatConfigSummary(template));
   console.log();
@@ -483,7 +491,7 @@ async function editTemplate(templateName?: string, context?: SessionContext): Pr
     return;
   }
   
-  console.log(chalk.yellow.bold(`\n📝 Editing Template: ${templateName}`));
+  console.log(chalk.yellow.bold(`\n⋇ Editing Template: ${templateName}`));
   console.log(chalk.gray('═'.repeat(50)));
   
   // For now, redirect to the configuration editor
@@ -502,7 +510,7 @@ async function editTemplate(templateName?: string, context?: SessionContext): Pr
 
 // Helper functions for other actions
 async function showFrameworkSettings(config: PhoenixCodeLiteConfig): Promise<void> {
-  console.log(chalk.green.bold('\n⚙️ Framework Settings'));
+  console.log(chalk.green.bold('\n⌘ Framework Settings'));
   console.log(chalk.gray('═'.repeat(50)));
   console.log(`Claude Max Turns: ${config.get('claude.maxTurns')}`);
   console.log(`Claude Timeout: ${config.get('claude.timeout')}ms`);
@@ -511,7 +519,7 @@ async function showFrameworkSettings(config: PhoenixCodeLiteConfig): Promise<voi
 }
 
 async function showQualitySettings(config: PhoenixCodeLiteConfig): Promise<void> {
-  console.log(chalk.green.bold('\n📊 Quality Settings'));
+  console.log(chalk.green.bold('\n◊ Quality Settings'));
   console.log(chalk.gray('═'.repeat(50)));
   console.log(`Test Quality Threshold: ${config.get('tdd.testQualityThreshold')}`);
   console.log(`Min Test Coverage: ${config.get('quality.minTestCoverage')}`);
@@ -519,14 +527,14 @@ async function showQualitySettings(config: PhoenixCodeLiteConfig): Promise<void>
 }
 
 async function showSecuritySettings(): Promise<void> {
-  console.log(chalk.green.bold('\n🛡️ Security Settings'));
+  console.log(chalk.green.bold('\n⊜ Security Settings'));
   console.log(chalk.gray('═'.repeat(50)));
-  console.log(chalk.green('✅ Security Status: Active'));
+  console.log(chalk.green('✓ Security Status: Active'));
   console.log(chalk.gray('All security guardrails are operational'));
 }
 
 async function showConfigTemplateOptions(): Promise<void> {
-  console.log(chalk.green.bold('\n📄 Configuration Templates'));
+  console.log(chalk.green.bold('\n□ Configuration Templates'));
   console.log(chalk.gray('═'.repeat(50)));
   console.log('Use the "templates" section to manage configuration templates');
   console.log(chalk.gray('Navigate to templates from the main menu'));
@@ -550,9 +558,9 @@ async function showAgentSettings(): Promise<void> {
     
     // Display each agent's configuration
     const agents = [
-      { key: 'planningAnalyst', name: 'Planning Analyst', icon: '🧠' },
+      { key: 'planningAnalyst', name: 'Planning Analyst', icon: '⏼' },
       { key: 'implementationEngineer', name: 'Implementation Engineer', icon: '⚡' },
-      { key: 'qualityReviewer', name: 'Quality Reviewer', icon: '🔍' }
+      { key: 'qualityReviewer', name: 'Quality Reviewer', icon: '⌕' }
     ];
     
     agents.forEach(agent => {
@@ -589,14 +597,14 @@ async function showAgentSettings(): Promise<void> {
 }
 
 async function showLoggingSettings(): Promise<void> {
-  console.log(chalk.cyan.bold('\n📝 Logging Settings'));
+  console.log(chalk.cyan.bold('\n⋇ Logging Settings'));
   console.log(chalk.gray('═'.repeat(50)));
   console.log('Audit logging is enabled by default');
   console.log('All workflow operations are tracked');
 }
 
 async function showMetricsSettings(): Promise<void> {
-  console.log(chalk.cyan.bold('\n📊 Metrics Settings'));
+  console.log(chalk.cyan.bold('\n◊ Metrics Settings'));
   console.log(chalk.gray('═'.repeat(50)));
   console.log('Performance metrics collection is active');
   console.log('Token usage and execution time are tracked');
@@ -611,7 +619,7 @@ async function showDebugSettings(): Promise<void> {
 
 async function executeDocumentManagementAction(data: any, context: SessionContext): Promise<void> {
   try {
-    console.log(chalk.cyan.bold('\n📋 Document Management'));
+    console.log(chalk.cyan.bold('\n⋇ Document Management'));
     console.log(chalk.gray('═'.repeat(50)));
     
     // Initialize document manager
@@ -646,14 +654,14 @@ async function executeDocumentManagementAction(data: any, context: SessionContex
     console.log(chalk.gray('• Global documents are available to all agents when activated'));
     console.log(chalk.gray('• Agent-specific documents provide specialized context'));
     
-    console.log(chalk.cyan('\n🔗 Access Full Document Management:'));
+    console.log(chalk.cyan('\n∞ Access Full Document Management:'));
     console.log(chalk.gray('  → Configuration > Edit > Document Management'));
     console.log(chalk.gray('  → Interactive configuration editor with full document controls'));
     
   } catch (error) {
     console.log(chalk.red('Error loading document management:'));
     console.log(chalk.gray(`Details: ${error instanceof Error ? error.message : 'Unknown error'}`));
-    console.log(chalk.gray('\n💡 Troubleshooting:'));
+    console.log(chalk.gray('\n* Troubleshooting:'));
     console.log(chalk.gray('• Ensure .phoenix-documents directory exists'));
     console.log(chalk.gray('• Run: phoenix-code-lite init to initialize document system'));
     console.log(chalk.gray('• Check file permissions for document directory'));
@@ -703,7 +711,7 @@ async function executeApiGeneration(description: string, context: SessionContext
 }
 
 async function executeTestGeneration(description: string, context: SessionContext): Promise<void> {
-  console.log(chalk.magenta.bold('\n🧪 Generating Tests'));
+  console.log(chalk.magenta.bold('\n⊎ Generating Tests'));
   console.log(chalk.gray('═'.repeat(50)));
   console.log(chalk.white(`Tests: ${description}`));
   

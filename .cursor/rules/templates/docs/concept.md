@@ -19,11 +19,11 @@ _A brief introduction to what this concept is and why it's important._
 **Domain:** [e.g., Architecture, Data Processing, etc.]
 **Last updated:** YYYY-MM-DD
 
-## 📋 Overview
+## ⋇ Overview
 
 A concise overview of the concept, suitable for quick understanding.
 
-## 🧠 Key Points
+## ⏼ Key Points
 
 - Key point 1
 - Key point 2

@@ -1139,8 +1139,8 @@ generateValidationReport();
 "
 
 echo "=== Complete System Integration Validation Successful ==="
-echo "📊 Validation report available at: ./validation-report.html"
-echo "✅ System ready for Phase 8 - Documentation and Deployment"
+echo "◊ Validation report available at: ./validation-report.html"
+echo "✓ System ready for Phase 8 - Documentation and Deployment"
 EOF
 
 chmod +x scripts/validate-complete-system.sh

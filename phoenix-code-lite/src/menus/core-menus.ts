@@ -1,16 +1,16 @@
-/**
- * Core Menu Definitions
- * Created: 2025-01-06-175700
- * 
- * Centralized menu structure definitions that replace scattered menu code.
- * Single source of truth for all menu content, consumed by all interaction modes.
- */
+/**---
+ * title: [Core Menus - Unified Architecture]
+ * tags: [Unified, Menus]
+ * provides: [Core Menu Definitions]
+ * requires: []
+ * description: [Core menu definitions used by the unified CLI system.]
+ * ---*/
 
 import { MenuDefinition } from '../types/menu-definitions';
 
 export const MainMenuDefinition: MenuDefinition = {
   id: 'main',
-  title: '🔥 Phoenix Code Lite • TDD Workflow Orchestrator',
+  title: '* Phoenix Code Lite • TDD Workflow Orchestrator',
   description: 'Transform natural language into production-ready code through TDD',
   sections: [{
     id: 'navigation',
@@ -64,11 +64,11 @@ export const MainMenuDefinition: MenuDefinition = {
 
 export const ConfigMenuDefinition: MenuDefinition = {
   id: 'config',
-  title: '📋 Configuration Management Hub',
+  title: '⋇ Configuration Management Hub',
   description: 'Manage Phoenix Code Lite settings and preferences',
   sections: [{
     id: 'settings',
-    heading: '🔧 Configuration Commands',
+    heading: '◦ Configuration Commands',
     theme: { headingColor: 'yellow', bold: true },
     items: [
       {
@@ -123,11 +123,11 @@ export const ConfigMenuDefinition: MenuDefinition = {
 
 export const TemplatesMenuDefinition: MenuDefinition = {
   id: 'templates',
-  title: '📄 Template Management Center',
+  title: '□ Template Management Center',
   description: 'Choose from Starter, Enterprise, Performance, or create custom templates',
   sections: [{
     id: 'template-commands',
-    heading: '📦 Template Commands',
+    heading: '⌺ Template Commands',
     theme: { headingColor: 'yellow', bold: true },
     items: [
       {
@@ -227,11 +227,11 @@ export const GenerateMenuDefinition: MenuDefinition = {
 
 export const AdvancedMenuDefinition: MenuDefinition = {
   id: 'advanced',
-  title: '🔧 Advanced Configuration Center',
+  title: '◦ Advanced Configuration Center',
   description: 'Expert settings, debugging tools, and performance monitoring',
   sections: [{
     id: 'advanced-settings',
-    heading: '⚙️ Advanced Commands',
+    heading: '⌘ Advanced Commands',
     theme: { headingColor: 'cyan', bold: true },
     items: [
       {
@@ -279,7 +279,7 @@ export const AdvancedMenuDefinition: MenuDefinition = {
 
 export const SettingsMenuDefinition: MenuDefinition = {
   id: 'settings',
-  title: '⚙️ User Settings & Preferences',
+  title: '⌘ User Settings & Preferences',
   description: 'Manage interaction modes, user preferences, and application settings',
   sections: [{
     id: 'user-settings',

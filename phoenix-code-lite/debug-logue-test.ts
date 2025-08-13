@@ -12,12 +12,12 @@ async function testMinimal() {
   const app = logue('node', [scriptPath]);
   
   await app.waitFor('About to exit...');
-  console.log('✅ Found exit message');
+  console.log('✓ Found exit message');
   
   console.log('Calling app.end()...');
   const result = await app.end();
   
-  console.log('✅ app.end() completed!');
+  console.log('✓ app.end() completed!');
   console.log('Result:', {
     stdout: result.stdout
   });

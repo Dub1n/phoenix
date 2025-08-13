@@ -630,13 +630,13 @@ export class EnhancedCLI extends CLI {
   }
   
   private displayAnalysisResults(result: any, options: any): void {
-    console.log(chalk.green('\n✅ Analysis Results'));
+    console.log(chalk.green('\n✓ Analysis Results'));
     console.log(chalk.blue('Document:'), result.documentInfo.name);
     console.log(chalk.blue('Standard:'), result.standard);
     console.log(chalk.blue('Compliance Score:'), `${result.complianceScore}%`);
     
     if (result.requirements && result.requirements.length > 0) {
-      console.log(chalk.blue('\n📋 Requirements Analysis:'));
+      console.log(chalk.blue('\n⋇ Requirements Analysis:'));
       const table = new Table({
         head: ['Requirement ID', 'Status', 'Evidence'],
         colWidths: [20, 15, 40]
@@ -654,12 +654,12 @@ export class EnhancedCLI extends CLI {
     }
     
     if (options.output !== 'json') {
-      console.log(chalk.blue('\n💾 Report saved to:'), result.outputPath);
+      console.log(chalk.blue('\n□ Report saved to:'), result.outputPath);
     }
   }
   
   private displayComplianceResults(result: any, options: any): void {
-    console.log(chalk.green('\n✅ Compliance Validation Results'));
+    console.log(chalk.green('\n✓ Compliance Validation Results'));
     console.log(chalk.blue('Standard:'), result.standard);
     console.log(chalk.blue('Overall Compliance:'), `${result.overallCompliance}%`);
     console.log(chalk.blue('Total Requirements:'), result.totalRequirements);
@@ -667,7 +667,7 @@ export class EnhancedCLI extends CLI {
     console.log(chalk.blue('Gaps:'), chalk.yellow(result.gaps.length));
     
     if (result.gaps.length > 0) {
-      console.log(chalk.yellow('\n⚠️  Compliance Gaps:'));
+      console.log(chalk.yellow('\n⚠  Compliance Gaps:'));
       result.gaps.forEach((gap: any, index: number) => {
         console.log(`${index + 1}. ${gap.requirementId}: ${gap.description}`);
       });
@@ -769,7 +769,7 @@ export class EnhancedCLI extends CLI {
   }
   
   private suggestAnalysisRecovery(error: any): void {
-    console.log(chalk.yellow('\n💡 Suggestions:'));
+    console.log(chalk.yellow('\n* Suggestions:'));
     const suggestions = this.generateErrorSuggestions(error);
     suggestions.forEach((suggestion, index) => {
       console.log(`${index + 1}. ${suggestion}`);
@@ -777,7 +777,7 @@ export class EnhancedCLI extends CLI {
   }
   
   private suggestComplianceRecovery(error: any): void {
-    console.log(chalk.yellow('\n💡 Recovery Options:'));
+    console.log(chalk.yellow('\n* Recovery Options:'));
     console.log('1. Check that regulatory templates are properly loaded');
     console.log('2. Verify document format is supported (PDF, DOCX, MD)');
     console.log('3. Run "qms:config show" to verify QMS configuration');
@@ -840,7 +840,7 @@ export class InteractiveWorkflowManager {
   }
   
   async startDocumentAnalysisWorkflow(): Promise<void> {
-    console.log(chalk.blue('📄 Document Analysis Workflow'));
+    console.log(chalk.blue('□ Document Analysis Workflow'));
     console.log('This workflow will guide you through regulatory document analysis.\n');
     
     // Step 1: Document Selection
@@ -934,7 +934,7 @@ export class InteractiveWorkflowManager {
   }
   
   async startComplianceValidationWorkflow(): Promise<void> {
-    console.log(chalk.blue('✅ Compliance Validation Workflow'));
+    console.log(chalk.blue('✓ Compliance Validation Workflow'));
     console.log('This workflow will validate your system against regulatory standards.\n');
     
     // Step 1: Validation Scope
@@ -986,7 +986,7 @@ export class InteractiveWorkflowManager {
   }
   
   async startReportGenerationWorkflow(): Promise<void> {
-    console.log(chalk.blue('📊 Report Generation Workflow'));
+    console.log(chalk.blue('◊ Report Generation Workflow'));
     console.log('This workflow will generate comprehensive compliance reports.\n');
     
     const reportConfig = await inquirer.prompt([
@@ -1031,7 +1031,7 @@ export class InteractiveWorkflowManager {
       
       spinner.succeed(`Report generated successfully: ${report.outputPath}`);
       
-      console.log(chalk.green('\n📄 Report Summary:'));
+      console.log(chalk.green('\n□ Report Summary:'));
       console.log(`• Report Type: ${reportConfig.reportType}`);
       console.log(`• Standards Covered: ${reportConfig.standards.join(', ')}`);
       console.log(`• Format: ${reportConfig.format}`);
@@ -1116,7 +1116,7 @@ export class InteractiveWorkflowManager {
   private async presentAnalysisResults(): Promise<void> {
     if (!this.currentSession) return;
     
-    console.log(chalk.green('\n✅ Analysis Results Summary'));
+    console.log(chalk.green('\n✓ Analysis Results Summary'));
     
     this.currentSession.results.forEach((result, index) => {
       console.log(chalk.blue(`\n${index + 1}. ${result.type}:`));
@@ -1145,12 +1145,12 @@ export class InteractiveWorkflowManager {
   }
   
   private async presentValidationResults(result: any): Promise<void> {
-    console.log(chalk.green('\n✅ Validation Results'));
+    console.log(chalk.green('\n✓ Validation Results'));
     console.log(`Overall Compliance: ${result.overallCompliance}%`);
     console.log(`Requirements Validated: ${result.validatedRequirements}/${result.totalRequirements}`);
     
     if (result.gaps && result.gaps.length > 0) {
-      console.log(chalk.yellow(`\n⚠️  Found ${result.gaps.length} compliance gaps:`));
+      console.log(chalk.yellow(`\n⚠  Found ${result.gaps.length} compliance gaps:`));
       result.gaps.slice(0, 5).forEach((gap: any, index: number) => {
         console.log(`${index + 1}. ${gap.requirementId}: ${gap.description}`);
       });
@@ -1192,7 +1192,7 @@ export class InteractiveWorkflowManager {
   }
   
   private async handleWorkflowError(error: any): Promise<void> {
-    console.log(chalk.red('\n❌ Workflow Error Occurred'));
+    console.log(chalk.red('\n✗ Workflow Error Occurred'));
     console.log('Error details have been logged for investigation.');
     
     const recovery = await inquirer.prompt([
@@ -1343,7 +1343,7 @@ For interactive guidance, use: qms:workflow --interactive
   }
   
   private displayAllCommands(): void {
-    console.log(chalk.blue('📋 All Available Commands\n'));
+    console.log(chalk.blue('⋇ All Available Commands\n'));
     
     console.log(chalk.green('Phoenix-Code-Lite Commands:'));
     const existingCommands = this.existingCLI.getAllCommands ? this.existingCLI.getAllCommands() : [];

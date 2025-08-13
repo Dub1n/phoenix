@@ -1,9 +1,11 @@
 # Claude Code Hooks Documentation
 
 ## Overview
+
 This document catalogs Claude Code hooks research, recommendations, and implementation strategies based on our successful TypeScript hook implementation.
 
-## Current Hook Status ✅
+## Current Hook Status ✓
+
 - **TypeScript + ESLint Hook**: Working successfully with comprehensive detection strategies
 - **Dual Validation**: TypeScript type checking + ESLint linting for JS/TS files
 - **Markdown Formatting Hook**: Auto-formats markdown files using markdownlint-cli2
@@ -14,9 +16,11 @@ This document catalogs Claude Code hooks research, recommendations, and implemen
 ## Hook Categories
 
 ### 1. Code Quality Hooks
+
 **Purpose**: Validate code style, catch bugs, ensure consistency
 
 **Existing Examples**:
+
 - **ESLint** - JavaScript/TypeScript linting
 - **Prettier** - Code formatting validation  
 - **Python linting** - flake8, pylint, black
@@ -27,9 +31,11 @@ This document catalogs Claude Code hooks research, recommendations, and implemen
 **Template**: Use our TypeScript hook as base
 
 ### 2. Security Hooks
+
 **Purpose**: Prevent vulnerabilities, detect secrets, audit dependencies
 
 **Existing Examples**:
+
 - **npm audit** - Dependency vulnerability scanning
 - **snyk** - Security analysis
 - **truffleHog** - Secret detection
@@ -39,9 +45,11 @@ This document catalogs Claude Code hooks research, recommendations, and implemen
 **Blocking**: TRUE (should block on security issues)
 
 ### 3. Documentation Hooks
+
 **Purpose**: Ensure documentation completeness and consistency
 
 **Existing Examples**:
+
 - **JSDoc validation** - Documentation completeness
 - **README checks** - Documentation structure
 - **API doc generation** - OpenAPI/Swagger validation
@@ -50,9 +58,11 @@ This document catalogs Claude Code hooks research, recommendations, and implemen
 **Template**: Frontmatter validation for DSS
 
 ### 4. Testing Hooks
+
 **Purpose**: Validate test coverage and test file completeness
 
 **Existing Examples**:
+
 - **Test coverage** - Coverage percentage checks
 - **Unit test validation** - Test file completeness
 - **Integration test triggers** - End-to-end test validation
@@ -63,26 +73,30 @@ This document catalogs Claude Code hooks research, recommendations, and implemen
 ## Recommended Implementation Order
 
 ### Phase 1: High Impact (Immediate)
-1. **✅ TypeScript + ESLint Hook** - Combined validation working
-2. **✅ Markdown Formatting Hook** - Auto-formats markdown documents
-3. **Frontmatter Validation** - DSS-specific, critical for structure
-4. **Security Audit** - Safety critical, should block on issues
+
+1.1. **✓ TypeScript + ESLint Hook** - Combined validation working
+1.2. **✓ Markdown Formatting Hook** - Auto-formats markdown documents
+1.3. **Frontmatter Validation** - DSS-specific, critical for structure
+1.4. **Security Audit** - Safety critical, should block on issues
 
 ### Phase 2: Project-Specific (Short-term)
-5. **Template Validation** - Phoenix CLI template validation
-6. **Cross-Reference Validation** - DSS link checking
-7. **Package.json Validation** - npm configuration validation
+
+2.1. **Template Validation** - Phoenix CLI template validation
+2.2. **Cross-Reference Validation** - DSS link checking
+2.3. **Package.json Validation** - npm configuration validation
 
 ### Phase 3: Workflow Enhancement (Medium-term)
-8. **Commit Message Hook** - Conventional commit validation
-9. **Branch Naming Hook** - Git workflow validation
-10. **Documentation Sync Hook** - Code-docs alignment
+
+3.1. **Commit Message Hook** - Conventional commit validation
+3.2. **Branch Naming Hook** - Git workflow validation
+3.3. **Documentation Sync Hook** - Code-docs alignment
 
 ## Custom Hook Concepts
 
 ### DSS-Specific Hooks
 
 #### DSS Structure Validation Hook
+
 ```python
 # .claude/hooks/dss_structure.py
 # Validates DSS folder structure compliance
@@ -91,6 +105,7 @@ This document catalogs Claude Code hooks research, recommendations, and implemen
 ```
 
 #### DSS Metadata Hook
+
 ```python
 # .claude/hooks/dss_metadata.py
 # Validates frontmatter in all DSS files
@@ -99,6 +114,7 @@ This document catalogs Claude Code hooks research, recommendations, and implemen
 ```
 
 #### DSS Archive Hook
+
 ```python
 # .claude/hooks/dss_archive.py
 # Prevents editing of archived content
@@ -109,6 +125,7 @@ This document catalogs Claude Code hooks research, recommendations, and implemen
 ### Phoenix-Specific Hooks
 
 #### Phoenix CLI Validation Hook
+
 ```python
 # .claude/hooks/phoenix_cli.py
 # Validates CLI command structure
@@ -117,6 +134,7 @@ This document catalogs Claude Code hooks research, recommendations, and implemen
 ```
 
 #### Phoenix Template Hook
+
 ```python
 # .claude/hooks/phoenix_template.py
 # Validates configuration templates
@@ -125,6 +143,7 @@ This document catalogs Claude Code hooks research, recommendations, and implemen
 ```
 
 #### Phoenix Workflow Hook
+
 ```python
 # .claude/hooks/phoenix_workflow.py
 # Validates TDD workflow implementation
@@ -134,11 +153,13 @@ This document catalogs Claude Code hooks research, recommendations, and implemen
 
 ## Implemented Hooks Details
 
-### Markdown Formatting Hook ✅
+### Markdown Formatting Hook ✓
+
 **File**: `.claude/hooks/markdown_format.py`
 **Purpose**: Automatically format markdown files after creation or editing
 
 **Features**:
+
 - **Auto-fix capability**: Uses `markdownlint-cli2 --fix` to automatically fix formatting issues
 - **Multi-tool support**: Falls back to Prettier if markdownlint not available  
 - **File type coverage**: Handles `.md`, `.mdx`, `.markdown` files
@@ -146,11 +167,13 @@ This document catalogs Claude Code hooks research, recommendations, and implemen
 - **Detection strategies**: Uses same robust detection pattern as TypeScript hook
 
 **Tools Used**:
+
 1. **Primary**: `markdownlint-cli2` with `--fix` flag
 2. **Fallback**: Prettier with markdown parser
 3. **Detection**: npx, direct command, local node_modules, Windows paths
 
 **What it fixes**:
+
 - Heading spacing (e.g., `##Title` → `## Title`)
 - Trailing whitespace
 - Multiple blank lines
@@ -160,11 +183,13 @@ This document catalogs Claude Code hooks research, recommendations, and implemen
 
 **Installation**: `npm install -g markdownlint-cli2`
 
-### TypeScript + ESLint Hook ✅
+### TypeScript + ESLint Hook ✓
+
 **File**: `.claude/hooks/type_check.py`
 **Purpose**: Combined TypeScript type checking and ESLint linting
 
 **Features**:
+
 - **Dual validation**: Runs both TypeScript and ESLint checks
 - **File type coverage**: `.ts`, `.tsx`, `.js`, `.jsx` files
 - **Independent execution**: Both tools run separately, either can fail gracefully
@@ -173,6 +198,7 @@ This document catalogs Claude Code hooks research, recommendations, and implemen
 ## Implementation Template
 
 ### Base Hook Structure (from successful TypeScript hook)
+
 ```python
 import json
 import sys
@@ -196,11 +222,13 @@ def run_validation():
 ```
 
 ### Exit Code Strategy
+
 - **Exit 0**: Warnings only, operation continues
 - **Exit 1**: Non-blocking errors (deprecated, use 0)
 - **Exit 2**: Blocking errors, operation stops
 
 ### Error Handling Best Practices
+
 1. **Graceful degradation** - Continue if tool unavailable
 2. **Clear messaging** - Explain what's happening
 3. **Context awareness** - Adapt to project type
@@ -209,6 +237,7 @@ def run_validation():
 ## Hook Configuration Strategy
 
 ### Recommended Configuration File
+
 ```yaml
 # .claude/hooks/config.yml
 hooks:
@@ -227,6 +256,7 @@ hooks:
 ```
 
 ### Environment-Specific Settings
+
 - **Development**: All hooks enabled, warnings only
 - **Production**: Critical hooks blocking, security strict
 - **CI/CD**: All hooks blocking, strict validation
@@ -234,6 +264,7 @@ hooks:
 ## Advanced Hook Concepts
 
 ### Multi-Tool Orchestration Hook
+
 ```python
 # .claude/hooks/workflow_orchestrator.py
 # Coordinates multiple validation tools
@@ -242,6 +273,7 @@ hooks:
 ```
 
 ### Context-Aware Hook
+
 ```python
 # .claude/hooks/context_validation.py
 # Adapts validation based on file type and project context
@@ -249,6 +281,7 @@ hooks:
 ```
 
 ### Learning Hook
+
 ```python
 # .claude/hooks/pattern_learning.py
 # Learns from your coding patterns
@@ -258,12 +291,14 @@ hooks:
 ## Troubleshooting Guide
 
 ### Common Issues
+
 1. **Tool not found**: Use multi-strategy detection
 2. **Permission errors**: Check PATH and file permissions
 3. **Timeout issues**: Add timeout parameters
 4. **Environment differences**: Test in multiple contexts
 
 ### Debug Strategies
+
 1. **Add debug output**: Print tool detection steps
 2. **Test manually**: Run hook commands directly
 3. **Check environment**: Verify PATH and dependencies
@@ -272,12 +307,14 @@ hooks:
 ## Success Metrics
 
 ### Hook Effectiveness
+
 - **Reduced errors**: Fewer issues caught in CI/CD
 - **Improved quality**: Better code consistency
 - **Faster feedback**: Issues caught during development
 - **Developer satisfaction**: Less manual validation needed
 
 ### Implementation Success
+
 - **Non-blocking operation**: Workflow continues smoothly
 - **Clear messaging**: Developers understand what's happening
 - **Reliable detection**: Tools found consistently
@@ -286,12 +323,14 @@ hooks:
 ## Future Enhancements
 
 ### Planned Improvements
+
 1. **Hook chaining**: Coordinate multiple hooks
 2. **Performance optimization**: Parallel execution
 3. **Custom rules**: Project-specific validation
 4. **Integration**: Connect with CI/CD pipelines
 
 ### Research Areas
+
 1. **Community hooks**: Learn from other developers
 2. **Tool ecosystem**: Explore new validation tools
 3. **Best practices**: Stay current with hook patterns
@@ -300,6 +339,7 @@ hooks:
 ---
 
 ## Notes
+
 - Last updated: Added markdown formatting hook with auto-fix capability
 - Status: Two powerful hooks working (TypeScript+ESLint, Markdown formatting)
 - Next priority: Frontmatter validation hook for DSS structure validation

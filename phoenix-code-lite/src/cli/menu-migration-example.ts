@@ -1,29 +1,28 @@
-/**
- * Example migration from hardcoded separators to content-driven composition
- * Shows before/after comparison for the config menu
- */
+/**---
+ * title: [Menu Migration Example - Legacy to Unified]
+ * tags: [CLI, Menu, Example, Migration]
+ * provides: [Demonstration Code, Conversion Examples]
+ * requires: [Menu Content Converter, Unified Layout Engine]
+ * description: [Example demonstrating conversion from legacy menu content to unified skin definitions for migration reference.]
+ * ---*/
 
 import chalk from 'chalk';
 import { display } from '../utils/display';
 import { menuComposer } from './menu-composer';
 import type { MenuContent, MenuDisplayContext } from './menu-types';
 
-/**
- * BEFORE: Original hardcoded approach
- * Manual separator calls scattered throughout the function
- */
 export class OldMenuSystem {
   private showConfigMenuOld(context: MenuDisplayContext): void {
     const title = context.currentItem ? 
-      `📋 Configuration › ${context.currentItem}` : 
-      '📋 Configuration Management Hub';
+      `⋇ Configuration › ${context.currentItem}` : 
+      '⋇ Configuration Management Hub';
       
     console.log(chalk.green.bold(title));
     display.printSeparator(display.LENGTHS.SUB_MENU); // HARDCODED LENGTH
     console.log(chalk.dim('Manage Phoenix Code Lite settings and preferences'));
     console.log();
     
-    console.log(chalk.yellow.bold('🔧 Configuration Commands:'));
+    console.log(chalk.yellow.bold('◦ Configuration Commands:'));
     console.log(chalk.green('  1. show      ') + chalk.gray('- Display current configuration with validation status'));
     console.log(chalk.green('  2. edit      ') + chalk.gray('- Interactive configuration editor with guided setup'));
     console.log(chalk.green('  3. templates ') + chalk.gray('- Browse and apply configuration templates'));
@@ -31,7 +30,7 @@ export class OldMenuSystem {
     console.log(chalk.green('  5. quality   ') + chalk.gray('- Quality gates and testing thresholds'));
     console.log(chalk.green('  6. security  ') + chalk.gray('- Security policies and guardrails'));
     console.log();
-    console.log(chalk.blue('💡 Navigation: ') + chalk.cyan('command name') + chalk.gray(', ') + chalk.cyan('number') + chalk.gray(', ') + chalk.cyan('"back"') + chalk.gray(' to return, ') + chalk.cyan('"quit"') + chalk.gray(' to exit'));
+    console.log(chalk.blue('* Navigation: ') + chalk.cyan('command name') + chalk.gray(', ') + chalk.cyan('number') + chalk.gray(', ') + chalk.cyan('"back"') + chalk.gray(' to return, ') + chalk.cyan('"quit"') + chalk.gray(' to exit'));
     console.log();
   }
 }
@@ -45,13 +44,13 @@ export class NewMenuSystem {
     // Define menu content as structured data
     const content: MenuContent = {
       title: context.currentItem ? 
-        `📋 Configuration › ${context.currentItem}` : 
-        '📋 Configuration Management Hub',
+        `⋇ Configuration › ${context.currentItem}` : 
+        '⋇ Configuration Management Hub',
       
       subtitle: 'Manage Phoenix Code Lite settings and preferences',
       
       sections: [{
-        heading: '🔧 Configuration Commands:',
+        heading: '◦ Configuration Commands:',
         theme: {
           headingColor: 'yellow',
           bold: true
@@ -153,7 +152,7 @@ export const separatorLengthExamples = {
   
   complexMenu: {
     content: { 
-      title: '🔧 Advanced Configuration Management System', 
+      title: '◦ Advanced Configuration Management System', 
       sections: [
         { heading: 'Primary Configuration Options', items: [/* 6 items */] },
         { heading: 'Advanced Settings and Preferences', items: [/* 8 items */] }

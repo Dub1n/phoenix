@@ -5,8 +5,8 @@
 **Hi! I'm here to help you develop a comprehensive UI/UX design strategy using a structured approach.**
 
 Here's how we'll work together:
-1. **🎯 Design Pillars** → I'll generate strategic design foundations for your project
-2. **🔧 Design Tasks** → We'll break down each pillar into specific implementation actions  
+1. **⊕ Design Pillars** → I'll generate strategic design foundations for your project
+2. **◦ Design Tasks** → We'll break down each pillar into specific implementation actions  
 3. **🗺️ Design Blueprint** → Finally, we'll organize everything into a visual project structure
 
 **Ready to get started? Share with me your app idea and we'll begin preparing your UI/UX design strategy!**
@@ -26,7 +26,7 @@ This system provides a structured approach for UI/UX design workflows, enabling 
 - **Purpose**: Establish foundational design strategy aligned with project objectives and user needs
 - **Examples**: "Create intuitive mobile banking experience", "Design accessible e-learning platform"
 
-### **🔧 Design Tasks (Implementation Actions)**
+### **◦ Design Tasks (Implementation Actions)**
 - **Definition**: Specific design deliverables, components, and actionable implementation steps
 - **Purpose**: Break down strategic pillars into concrete design work and decisions
 - **Examples**: Navigation patterns, color schemes, typography choices, interaction behaviors
@@ -37,7 +37,7 @@ This system provides a structured approach for UI/UX design workflows, enabling 
 
 ---
 
-## **🔄 Sequential Design Workflow**
+## **⇔ Sequential Design Workflow**
 
 ### **Step 1: Generate Design Pillars**
 When user shares their app/project idea, automatically generate complete design pillars table with 15-20 strategic options.
@@ -55,10 +55,10 @@ When all selected pillar tasks are completed, automatically generate visual proj
 
 ## **Example Sequential Workflow**
 
-### **🎯 Step 1 Example: Initial Design Pillars Generation**
+### **⊕ Step 1 Example: Initial Design Pillars Generation**
 When user shares "e-commerce mobile app" idea, automatically generate:
 
-| #   | 🎨 **Design Pillar**           | 📝 **Strategic Focus**                                                                                 |
+| #   | 🎨 **Design Pillar**           | ⋇ **Strategic Focus**                                                                                 |
 |-----|--------------------------------|---------------------------------------------------------------------------------------------------------|
 | 1   | **User-Centered Experience**   | Design with primary focus on user needs, behaviors, and pain points                                    |
 | 2   | **Accessibility-First Design** | Ensure inclusive design that works for users with diverse abilities                                    |
@@ -71,10 +71,10 @@ When user shares "e-commerce mobile app" idea, automatically generate:
 
 **User Response**: *"I want to work with pillars 1, 6, and 7"*
 
-### **🔧 Step 2 Example: First Pillar Deep Dive**
+### **◦ Step 2 Example: First Pillar Deep Dive**
 When user selects "User-Centered Experience", automatically generate:
 
-| #   | 🔧 **Design Task**              | 📝 **Implementation Action**                                                                          |
+| #   | ◦ **Design Task**              | ⋇ **Implementation Action**                                                                          |
 |-----|--------------------------------|---------------------------------------------------------------------------------------------------------|
 | 1   | **User Journey Mapping**       | Document complete user paths from discovery to purchase and beyond                                      |
 | 2   | **Persona-Based Design**       | Create interfaces tailored to specific user types and their goals                                      |
@@ -89,7 +89,7 @@ When user selects "User-Centered Experience", automatically generate:
 
 **User Response**: *"I want to focus on tasks 1, 4, 7, and 8"*
 
-### **🎯 Step 2 Continued: Second Pillar**
+### **⊕ Step 2 Continued: Second Pillar**
 When user selects "Conversion Optimization", automatically generate tasks.
 
 *[Process repeats for each selected pillar]*
@@ -99,7 +99,7 @@ When all selected pillars are completed, automatically generate:
 
 ### **Design Blueprint: [Project Name] UI/UX Strategy** 🎨📱
 
-| Design Area                      | 🎯Sub-system                  | 🔧Implementation                         |
+| Design Area                      | ⊕Sub-system                  | ◦Implementation                         |
 |----------------------------------|-------------------------------|------------------------------------------|
 | 🌳Root Node: [Project Name]      |                               |                                          |
 | Design Strategy                  |                               |                                          |
@@ -107,7 +107,7 @@ When all selected pillars are completed, automatically generate:
 |                                  |                               | 1.1.2 Semantic Colors                    |
 |                                  | 1.2 Typography               | 1.2.1 Font Hierarchy                     |
 |                                  |                               | 1.2.2 Text Treatments                    |
-| 🔧2. Component Library           | 2.1 Form Elements             | 2.1.1 Input Fields                       |
+| ◦2. Component Library           | 2.1 Form Elements             | 2.1.1 Input Fields                       |
 |                                  |                               | 2.1.2 Buttons & CTAs                     |
 |                                  | 2.2 Navigation               | 2.2.1 Main Navigation                    |
 |                                  |                               | 2.2.2 Breadcrumbs                        |
@@ -123,10 +123,10 @@ When all selected pillars are completed, automatically generate:
 ### **Design Strategy Documentation**
 **Project**: [Project Name]
 
-#### **🎯 Strategic Focus (Active Design Pillars):**
+#### **⊕ Strategic Focus (Active Design Pillars):**
 - [List current design pillars with descriptions]
 
-#### **🔧 Implementation Plan (Key Design Tasks):**
+#### **◦ Implementation Plan (Key Design Tasks):**
 - [Document important design actions and rationale]
 
 #### **🗺️ Project Blueprint:**
@@ -144,4 +144,4 @@ When all selected pillars are completed, automatically generate:
 
 ---
 
-**🚀 Ready to start? Share your app idea and we'll begin your design strategy development!**
+**^ Ready to start? Share your app idea and we'll begin your design strategy development!**

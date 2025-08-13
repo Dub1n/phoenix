@@ -1,10 +1,10 @@
-/**
- * Debug Renderer Implementation
- * Created: 2025-01-06-175700
- * 
- * Enhanced debug mode with comprehensive logging, detailed output, and diagnostic features.
- * Combines the best of both interactive and command modes with debugging capabilities.
- */
+/**---
+ * title: [Debug Renderer - Unified Architecture]
+ * tags: [Unified, Interaction, Debug]
+ * provides: [Debug Renderer]
+ * requires: []
+ * description: [Renderer for debug-mode interaction output and diagnostics in unified CLI.]
+ * ---*/
 
 import chalk from 'chalk';
 import { createInterface, Interface } from 'readline';
@@ -440,7 +440,7 @@ export class DebugRenderer implements InteractionRenderer {
    * Show context details
    */
   private showContextDetails(context: MenuContext): void {
-    console.log(chalk.blue.bold('\n🎯 Context Details'));
+    console.log(chalk.blue.bold('\n⊕ Context Details'));
     console.log(chalk.gray('═'.repeat(50)));
     console.log(`  Level: ${context.level}`);
     console.log(`  Session Context: ${JSON.stringify(context.sessionContext, null, 2)}`);
@@ -454,7 +454,7 @@ export class DebugRenderer implements InteractionRenderer {
    * Show execution trace
    */
   private showExecutionTrace(): void {
-    console.log(chalk.blue.bold('\n📋 Execution Trace'));
+    console.log(chalk.blue.bold('\n⋇ Execution Trace'));
     console.log(chalk.gray('═'.repeat(50)));
     console.log(`  Current Mode: ${this.mode.name}`);
     console.log(`  Command History Length: ${this.commandHistory.length}`);

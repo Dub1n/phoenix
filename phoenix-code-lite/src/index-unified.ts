@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 
-/**
- * Phoenix Code Lite - Unified Architecture Entry Point
- * Created: 2025-01-06-175700
- * 
- * New main entry point that integrates the CLI Interaction Decoupling Architecture
- * with the existing foundation infrastructure.
- */
+/**---
+ * title: [Phoenix Code Lite - Unified Architecture Entry Point]
+ * tags: [Core, Infrastructure, Entry-Point, Unified-Architecture]
+ * provides: [Unified CLI Bootstrap, Legacy Mode Bridge, Core Initialization, Unified CLI Launcher]
+ * requires: [CoreFoundation, ConfigManager, ErrorHandler, unified-cli, CLI Args]
+ * description: [Entry point for running Phoenix Code Lite with the unified architecture, including fallback to legacy initialization; coordinates core setup and unified CLI execution.]
+ * ---*/
 
 import { setupCLI } from './cli/args';
 import { CoreFoundation } from './core/foundation';
@@ -27,7 +27,7 @@ async function initializeCore(): Promise<boolean> {
     if (!useUnified) {
       // Only show initialization messages for legacy mode
       if (args.length > 0) {
-        console.log(chalk.blue.bold('🔥 Phoenix Code Lite - Core Infrastructure'));
+        console.log(chalk.blue.bold('* Phoenix Code Lite - Core Infrastructure'));
         console.log(chalk.gray('Legacy Mode with Core Foundation'));
         console.log(chalk.gray('═'.repeat(60)));
       }
@@ -35,7 +35,7 @@ async function initializeCore(): Promise<boolean> {
       // Initialize error handler first
       errorHandler = new ErrorHandler();
       if (args.length > 0) {
-        console.log(chalk.green('✅ Error Handler initialized'));
+        console.log(chalk.green('✓ Error Handler initialized'));
       }
       
       // Initialize configuration manager
@@ -45,7 +45,7 @@ async function initializeCore(): Promise<boolean> {
       if (!configInitialized) {
         throw new Error('Configuration initialization failed');
       }
-      console.log(chalk.green('✅ Configuration Manager initialized'));
+      console.log(chalk.green('✓ Configuration Manager initialized'));
       
       // Initialize core foundation with configuration
       const config = configManager.getConfig();
@@ -55,15 +55,15 @@ async function initializeCore(): Promise<boolean> {
       if (!coreInitialized) {
         throw new Error('Core foundation initialization failed');
       }
-      console.log(chalk.green('✅ Core Foundation initialized'));
+      console.log(chalk.green('✓ Core Foundation initialized'));
       
       // Setup configuration change handler
       configManager.onConfigChange('core-foundation', (newConfig) => {
-        console.log(chalk.yellow('🔄 Configuration changed, updating core systems...'));
+        console.log(chalk.yellow('⇔ Configuration changed, updating core systems...'));
       });
       
       console.log(chalk.gray('═'.repeat(60)));
-      console.log(chalk.green.bold('🚀 Core Infrastructure Ready (Legacy Mode)'));
+      console.log(chalk.green.bold('^ Core Infrastructure Ready (Legacy Mode)'));
       console.log();
     }
     
@@ -71,33 +71,33 @@ async function initializeCore(): Promise<boolean> {
     
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-    console.error(chalk.red('❌ Core initialization failed:'), errorMsg);
+    console.error(chalk.red('✗ Core initialization failed:'), errorMsg);
     return false;
   }
 }
 
 async function shutdown(): Promise<void> {
-  console.log(chalk.yellow('\n🔄 Initiating graceful shutdown...'));
+  console.log(chalk.yellow('\n⇔ Initiating graceful shutdown...'));
   
   try {
     if (configManager) {
       await configManager.shutdown();
-      console.log(chalk.green('✅ Configuration Manager shutdown'));
+      console.log(chalk.green('✓ Configuration Manager shutdown'));
     }
     
     if (errorHandler) {
       await errorHandler.shutdown();
-      console.log(chalk.green('✅ Error Handler shutdown'));
+      console.log(chalk.green('✓ Error Handler shutdown'));
     }
     
     if (coreFoundation) {
       await coreFoundation.gracefulShutdown();
     }
     
-    console.log(chalk.green('✅ Graceful shutdown completed'));
+    console.log(chalk.green('✓ Graceful shutdown completed'));
     
   } catch (error) {
-    console.error(chalk.red('❌ Shutdown error:'), error);
+    console.error(chalk.red('✗ Shutdown error:'), error);
     
     const { safeExit } = await import('./utils/test-utils');
     safeExit(1);
@@ -122,7 +122,7 @@ async function main() {
       const initialized = await initializeCore();
       
       if (!initialized) {
-        console.error(chalk.red('❌ Failed to initialize core infrastructure'));
+        console.error(chalk.red('✗ Failed to initialize core infrastructure'));
         process.exit(1);
       }
       
@@ -169,7 +169,7 @@ async function main() {
     }
     
     // Use unified architecture (default)
-    console.log(chalk.blue.bold('🔥 Phoenix Code Lite - Unified Architecture'));
+    console.log(chalk.blue.bold('* Phoenix Code Lite - Unified Architecture'));
     console.log(chalk.gray('Decoupled CLI with seamless mode switching'));
     console.log(chalk.gray('═'.repeat(60)));
     
@@ -207,7 +207,7 @@ async function main() {
 }
 
 function showMainHelp(): void {
-  console.log(chalk.blue.bold('🔥 Phoenix Code Lite - Entry Point Selection'));
+  console.log(chalk.blue.bold('* Phoenix Code Lite - Entry Point Selection'));
   console.log(chalk.gray('Choose between Legacy and Unified Architecture'));
   console.log();
   console.log(chalk.yellow('Legacy Mode (Default):'));

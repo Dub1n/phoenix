@@ -43,18 +43,18 @@ describe('Phase 2: Comprehensive CLI Test Suite', () => {
       
       // Wait for interactive CLI initialization
       await app.waitFor('Phoenix Code Lite Interactive CLI');
-      console.log('✅ Interactive CLI started successfully');
+      console.log('✓ Interactive CLI started successfully');
       
       // Wait for main menu to appear
       await app.waitFor('Main Menu');
-      console.log('✅ Main menu displayed');
+      console.log('✓ Main menu displayed');
       
       // Send quit command to exit gracefully
       app.input('quit\n');
       
       // Wait for confirmation prompt
       await app.waitFor('Are you sure you want to exit');
-      console.log('✅ Exit confirmation prompt appeared');
+      console.log('✓ Exit confirmation prompt appeared');
       
       // Confirm exit
       app.input('y\n');
@@ -79,7 +79,7 @@ describe('Phase 2: Comprehensive CLI Test Suite', () => {
       const app = logue('node', [CLI_PATH]);
       
       await app.waitFor('TDD Workflow Orchestrator');
-      console.log('✅ Found TDD workflow description');
+      console.log('✓ Found TDD workflow description');
       
       // Exit immediately
       app.input('quit\ny\n');
@@ -100,21 +100,21 @@ describe('Phase 2: Comprehensive CLI Test Suite', () => {
       
       // Wait for main menu and navigate to configuration
       await app.waitFor('Main Menu');
-      console.log('✅ Main menu loaded');
+      console.log('✓ Main menu loaded');
       
       // Select Configuration (option 2)
       app.input('2\n');
       
       // Wait for configuration menu
       await app.waitFor('Configuration');
-      console.log('✅ Configuration menu accessed');
+      console.log('✓ Configuration menu accessed');
       
       // Navigate back to main menu
       app.input('back\n');
       
       // Wait for main menu to reappear
       await app.waitFor('Main Menu');
-      console.log('✅ Successfully navigated back to main menu');
+      console.log('✓ Successfully navigated back to main menu');
       
       // Exit
       app.input('quit\ny\n');
@@ -137,12 +137,12 @@ describe('Phase 2: Comprehensive CLI Test Suite', () => {
       
       // Look for breadcrumb navigation
       await app.waitFor('Templates');
-      console.log('✅ Templates menu reached');
+      console.log('✓ Templates menu reached');
       
       // Test home command
       app.input('home\n');
       await app.waitFor('Main Menu');
-      console.log('✅ Home navigation works');
+      console.log('✓ Home navigation works');
       
       app.input('quit\ny\n');
       
@@ -160,7 +160,7 @@ describe('Phase 2: Comprehensive CLI Test Suite', () => {
       const app = enhancedLogue('node', [CLI_PATH, 'config', '--show']);
       
       await app.waitFor('Phoenix Code Lite Configuration');
-      console.log('✅ Configuration display started');
+      console.log('✓ Configuration display started');
       
       const result = await app.end();
       
@@ -185,14 +185,14 @@ describe('Phase 2: Comprehensive CLI Test Suite', () => {
       
       // Wait for configuration options
       await app.waitFor('Configuration');
-      console.log('✅ Configuration menu accessed via command');
+      console.log('✓ Configuration menu accessed via command');
       
       // Test show command within config context
       app.input('show\n');
       
       // Look for configuration details
       await app.waitFor('Configuration');
-      console.log('✅ Configuration details displayed');
+      console.log('✓ Configuration details displayed');
       
       app.input('back\nquit\ny\n');
       
@@ -210,7 +210,7 @@ describe('Phase 2: Comprehensive CLI Test Suite', () => {
       
       // Wait for generation workflow to start
       await app.waitFor('TDD');
-      console.log('✅ TDD workflow initiated');
+      console.log('✓ TDD workflow initiated');
       
       const result = await app.end();
       
@@ -234,7 +234,7 @@ describe('Phase 2: Comprehensive CLI Test Suite', () => {
       
       // Wait for generate options
       await app.waitFor('Generate');
-      console.log('✅ Generate menu accessed');
+      console.log('✓ Generate menu accessed');
       
       // Navigate back and exit
       app.input('back\nquit\ny\n');
@@ -252,7 +252,7 @@ describe('Phase 2: Comprehensive CLI Test Suite', () => {
       const app = logue('node', [CLI_PATH, 'help']);
       
       await app.waitFor('Usage:');
-      console.log('✅ Help system activated');
+      console.log('✓ Help system activated');
       
       const result = await app.end();
       
@@ -279,7 +279,7 @@ describe('Phase 2: Comprehensive CLI Test Suite', () => {
       
       // Wait for help display
       await app.waitFor('Help System');
-      console.log('✅ Interactive help system displayed');
+      console.log('✓ Interactive help system displayed');
       
       app.input('quit\ny\n');
       
@@ -305,7 +305,7 @@ describe('Phase 2: Comprehensive CLI Test Suite', () => {
       
       // Look for context-specific help
       await app.waitFor('Context Commands');
-      console.log('✅ Context-sensitive help displayed');
+      console.log('✓ Context-sensitive help displayed');
       
       app.input('back\nquit\ny\n');
       
@@ -329,12 +329,12 @@ describe('Phase 2: Comprehensive CLI Test Suite', () => {
       
       // Wait for error message
       await app.waitFor('Unknown command');
-      console.log('✅ Invalid command error displayed');
+      console.log('✓ Invalid command error displayed');
       
       // Should still be able to use valid commands
       app.input('help\n');
       await app.waitFor('Help System');
-      console.log('✅ Recovery successful - help command works');
+      console.log('✓ Recovery successful - help command works');
       
       app.input('quit\ny\n');
       
@@ -357,12 +357,12 @@ describe('Phase 2: Comprehensive CLI Test Suite', () => {
       
       // Wait for validation error
       await app.waitFor('Invalid input');
-      console.log('✅ Input validation error displayed');
+      console.log('✓ Input validation error displayed');
       
       // Test recovery
       app.input('help\n');
       await app.waitFor('Help System');
-      console.log('✅ Recovery after validation error successful');
+      console.log('✓ Recovery after validation error successful');
       
       app.input('quit\ny\n');
       
@@ -384,7 +384,7 @@ describe('Phase 2: Comprehensive CLI Test Suite', () => {
       
       // Wait for suggestion
       await app.waitFor('Did you mean');
-      console.log('✅ Command suggestion displayed');
+      console.log('✓ Command suggestion displayed');
       
       app.input('quit\ny\n');
       
@@ -402,7 +402,7 @@ describe('Phase 2: Comprehensive CLI Test Suite', () => {
       const app = logue('node', [CLI_PATH, '--version']);
       
       await app.waitFor('1.0.0');
-      console.log('✅ Version command working');
+      console.log('✓ Version command working');
       
       const result = await app.end();
       
@@ -415,7 +415,7 @@ describe('Phase 2: Comprehensive CLI Test Suite', () => {
       const app = logue('node', [CLI_PATH, 'init', '--help']);
       
       await app.waitFor('Initialize Phoenix-Code-Lite');
-      console.log('✅ Init command help displayed');
+      console.log('✓ Init command help displayed');
       
       const result = await app.end();
       
@@ -432,7 +432,7 @@ describe('Phase 2: Comprehensive CLI Test Suite', () => {
       
       // Wait for template system to respond
       await app.waitFor('template');
-      console.log('✅ Template command executed');
+      console.log('✓ Template command executed');
       
       const result = await app.end();
       
@@ -446,7 +446,7 @@ describe('Phase 2: Comprehensive CLI Test Suite', () => {
       
       // Wait for wizard to start
       await app.waitFor('wizard');
-      console.log('✅ Wizard command initiated');
+      console.log('✓ Wizard command initiated');
       
       const result = await app.end();
       

@@ -1,6 +1,6 @@
 # Phase 2: Core Architecture & Claude Code Integration
 
-## ⚠️ CRITICAL IMPLEMENTATION ISSUES
+## ⚠ CRITICAL IMPLEMENTATION ISSUES
 
 **Status**: Implemented with significant issues requiring fixes
 
@@ -804,7 +804,7 @@ export class SecurityGuardrailsManager {
       return true;
     }
     
-    console.log('\n🔒 SECURITY APPROVAL REQUIRED:');
+    console.log('\n⑄ SECURITY APPROVAL REQUIRED:');
     console.log('═══════════════════════════════════');
     console.log(`Action: ${action}`);
     console.log(`Target: ${target}`);
@@ -845,7 +845,7 @@ export class SecurityGuardrailsManager {
     
     // In production, this would write to secure audit log
     if (this.defaultPolicy.auditAll) {
-      console.log(`🔒 Security Audit: ${event.action} on ${event.target} - ${event.approved ? 'APPROVED' : 'DENIED'}`);
+      console.log(`⑄ Security Audit: ${event.action} on ${event.target} - ${event.approved ? 'APPROVED' : 'DENIED'}`);
       
       if (event.violations.length > 0) {
         console.log(`   Violations: ${event.violations.map(v => `${v.severity}: ${v.description}`).join(', ')}`);
@@ -1239,4 +1239,4 @@ console.log('Valid context:', TaskContextSchema.parse({
 - Resolve agent system integration issues
 - Ensure all integration tests pass
 
-**Phase 2 Status**: ⚠️ **IMPLEMENTED WITH ISSUES** - Core architecture established but Claude Code SDK integration and test failures need resolution before Phase 3 development.
+**Phase 2 Status**: ⚠ **IMPLEMENTED WITH ISSUES** - Core architecture established but Claude Code SDK integration and test failures need resolution before Phase 3 development.

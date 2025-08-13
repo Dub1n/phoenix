@@ -1,5 +1,5 @@
-✅ PASS: Environment context shows 0 obvious placeholders
-✅ PASS: Both development and production URLs documented
+✓ PASS: Environment context shows 0 obvious placeholders
+✓ PASS: Both development and production URLs documented
 Development URL: http://localhost:3000
 Production URL: Not deployed
-✅ PASS: Clear instructions on which URL to use for testing
+✓ PASS: Clear instructions on which URL to use for testing

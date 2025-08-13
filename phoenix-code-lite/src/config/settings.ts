@@ -1,3 +1,11 @@
+/**---
+ * title: [Configuration Settings - Core Configuration System]
+ * tags: [Configuration, Core, Zod]
+ * provides: [PhoenixCodeLiteConfig Class, PhoenixCodeLiteConfigData Types]
+ * requires: [zod, fs]
+ * description: [Core configuration system with schema validation, default management, and read/write operations.]
+ * ---*/
+
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import { z } from 'zod';

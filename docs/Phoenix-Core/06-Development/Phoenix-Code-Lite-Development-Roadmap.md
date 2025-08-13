@@ -11,7 +11,7 @@
 
 ---
 
-## 🏗️ Architecture Philosophy
+## ⊛ Architecture Philosophy
 
 ### **Phoenix-Code-Lite vs Phoenix-Lite**
 
@@ -1000,7 +1000,7 @@
         }
         
         // Phase 3: Refactor & Document with Final Quality Gates
-        console.log('✨ PHASE 3: Refactoring and documenting code...');
+        console.log('⑇ PHASE 3: Refactoring and documenting code...');
         const refactorResult = await this.refactorDocumentPhase.execute(implementResult, context);
         
         // Final quality assessment
@@ -2398,7 +2398,7 @@
   ├─ Errors: ${errors.length}
   └─ Quality Gates: ${eventCounts.quality_gate || 0}
   
-  📈 Event Types:
+  ⋰ Event Types:
   ${Object.entries(eventCounts)
     .map(([type, count]) => `├─ ${type}: ${count}`)
     .join('\n')}
@@ -2627,7 +2627,7 @@
   Session ID: ${metrics.sessionId}
   Duration: ${this.formatDuration(Date.now() - this.startTime.getTime())}
   
-  📈 Workflow Summary:
+  ⋰ Workflow Summary:
   ├─ Total Workflows: ${metrics.totalWorkflows}
   ├─ Successful: ${metrics.successfulWorkflows}
   ├─ Failed: ${metrics.failedWorkflows}
@@ -2969,9 +2969,9 @@
     phoenix-code-lite generate --task "Create a user authentication system with JWT"
   >```
   
-  ## ✨ Features
+  ## ⑇ Features
   
-  - 🧪 **Automated TDD Cycle**: Plan → Test → Implement → Refactor
+  - ⊎ **Automated TDD Cycle**: Plan → Test → Implement → Refactor
   - ⇔ **Self-Correcting**: Automatic retry and error fixing
   - ◊ **Quality Metrics**: Comprehensive code quality tracking
   - ○ **Claude Code Integration**: Seamless workflow within Claude Code

@@ -1,3 +1,11 @@
+/**---
+ * title: [Mock Claude Client - Testing Double]
+ * tags: [Testing, Mocks]
+ * provides: [Mock Claude Client]
+ * requires: []
+ * description: [Mock implementation of Claude client for deterministic testing.]
+ * ---*/
+
 import { createServer, Server } from 'http';
 import { URL } from 'url';
 

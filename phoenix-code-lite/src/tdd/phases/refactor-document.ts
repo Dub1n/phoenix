@@ -1,3 +1,11 @@
+/**---
+ * title: [TDD Phase - Refactor & Document]
+ * tags: [TDD, Service, Refactoring, Documentation]
+ * provides: [RefactorDocumentPhase Class, Refactoring Prompting, Test Validation, Artifact Collection]
+ * requires: [ClaudeCodeClient, TDDPrompts, SpecializedAgentContexts, TaskContext, PhaseResult]
+ * description: [Performs refactoring and documentation improvements via Claude Code, validates tests still pass, and records resulting artifacts.]
+ * ---*/
+
 import { ClaudeCodeClient } from '../../claude/client';
 import { TDDPrompts } from '../../claude/prompts';
 import { TaskContext, PhaseResult } from '../../types/workflow';

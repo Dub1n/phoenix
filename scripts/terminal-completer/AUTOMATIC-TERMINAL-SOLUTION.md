@@ -42,10 +42,10 @@ Automatic terminal management that prevents hanging calls without any manual ove
 ### For Agents (Automatic)
 
 ```powershell
-# ❌ WRONG - Direct terminal call
+# ✗ WRONG - Direct terminal call
 run_terminal_cmd("npm test")
 
-# ✅ CORRECT - Safe terminal call with automatic timeout
+# ✓ CORRECT - Safe terminal call with automatic timeout
 run_terminal_cmd("powershell -ExecutionPolicy Bypass -File scripts/auto-terminal-manager.ps1 -Command 'npm test'")
 ```
 
@@ -201,12 +201,12 @@ Get-Job
 
 ## Success Metrics
 
-- ✅ **No manual intervention required**
-- ✅ **Automatic timeout enforcement**
-- ✅ **Hanging process prevention**
-- ✅ **Retry logic for failed commands**
-- ✅ **Background job support**
-- ✅ **Configuration-driven behavior**
-- ✅ **Debug and troubleshooting support**
+- ✓ **No manual intervention required**
+- ✓ **Automatic timeout enforcement**
+- ✓ **Hanging process prevention**
+- ✓ **Retry logic for failed commands**
+- ✓ **Background job support**
+- ✓ **Configuration-driven behavior**
+- ✓ **Debug and troubleshooting support**
 
 This solution provides complete automatic terminal hanging prevention without any manual oversight needed.

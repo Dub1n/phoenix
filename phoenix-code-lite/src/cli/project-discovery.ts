@@ -1,3 +1,11 @@
+/**---
+ * title: [Project Discovery - Stack and Template Analysis]
+ * tags: [CLI, Service, Discovery, Analysis]
+ * provides: [ProjectDiscovery Class, analyzeProject Function, Stack Knowledge Database]
+ * requires: [fs, path, chalk]
+ * description: [Analyzes an existing project to infer language, framework, tooling, and recommends an appropriate Phoenix template with confidence scoring.]
+ * ---*/
+
 import { promises as fs } from 'fs';
 import { join, basename } from 'path';
 import chalk from 'chalk';
@@ -361,16 +369,16 @@ export class ProjectDiscovery {
   }
 
   displayAnalysis(context: ProjectContext): void {
-    console.log(chalk.blue('\n🔍 Project Discovery Results'));
+    console.log(chalk.blue('\n⌕ Project Discovery Results'));
     console.log(chalk.gray('═'.repeat(40)));
     
     console.log(`${chalk.green('Project Type:')} ${context.type}`);
     console.log(`${chalk.green('Language:')} ${context.language}`);
     console.log(`${chalk.green('Framework:')} ${context.framework || 'None detected'}`);
     console.log(`${chalk.green('Package Manager:')} ${context.packageManager}`);
-    console.log(`${chalk.green('Has Tests:')} ${context.hasTests ? '✅' : '❌'}`);
-    console.log(`${chalk.green('Has Linting:')} ${context.hasLinting ? '✅' : '❌'}`);
-    console.log(`${chalk.green('TypeScript:')} ${context.hasTypeScript ? '✅' : '❌'}`);
+    console.log(`${chalk.green('Has Tests:')} ${context.hasTests ? '✓' : '✗'}`);
+    console.log(`${chalk.green('Has Linting:')} ${context.hasLinting ? '✓' : '✗'}`);
+    console.log(`${chalk.green('TypeScript:')} ${context.hasTypeScript ? '✓' : '✗'}`);
     console.log(`${chalk.green('Confidence:')} ${Math.round(context.confidence * 100)}%`);
     console.log(`${chalk.green('Suggested Template:')} ${context.suggestedTemplate}`);
     

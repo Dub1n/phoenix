@@ -1,3 +1,11 @@
+/**---
+ * title: [Docs Generator - API & Architecture]
+ * tags: [Docs, Generator]
+ * provides: [Documentation Generator]
+ * requires: []
+ * description: [Generates documentation artifacts like API references and architecture diagrams.]
+ * ---*/
+
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import { glob } from 'glob';

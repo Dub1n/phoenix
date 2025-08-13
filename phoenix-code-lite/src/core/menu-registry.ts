@@ -1,10 +1,10 @@
-/**
- * Menu Registry Implementation
- * Created: 2025-01-06-175700
- * 
- * Centralized registry for menu definitions with skin support.
- * Manages menu inheritance, skin priority, and fallback mechanisms.
- */
+/**---
+ * title: [Menu Registry - Core Service Module]
+ * tags: [Core, Service, Menu-System, Theming]
+ * provides: [MenuRegistry Class, Menu Registration, Skin Loading, Inheritance Resolution, Priority Management]
+ * requires: [Menu Types]
+ * description: [Central registry for core and skin-provided menus with inheritance and priority resolution used by interactive CLI rendering.]
+ * ---*/
 
 import { MenuDefinition, LoadedSkin, MenuContext } from '../types/menu-definitions';
 
