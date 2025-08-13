@@ -1,3 +1,10 @@
+/**---
+ * title: [Project Discovery - Stack and Template Analysis]
+ * tags: [CLI, Service, Discovery, Analysis]
+ * provides: [ProjectDiscovery Class, analyzeProject Function, Stack Knowledge Database]
+ * requires: [fs, path, chalk]
+ * description: [Analyzes an existing project to infer language, framework, tooling, and recommends an appropriate Phoenix template with confidence scoring.]
+ * ---*/
 export interface ProjectContext {
     type: 'web' | 'api' | 'library' | 'cli' | 'unknown';
     language: 'javascript' | 'typescript' | 'python' | 'unknown';

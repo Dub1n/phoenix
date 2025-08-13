@@ -1,4 +1,11 @@
 "use strict";
+/**---
+ * title: [Help System - Context-Aware CLI Help]
+ * tags: [CLI, Interface, Help, Documentation]
+ * provides: [HelpSystem Class, Contextual Help Generation, Command Examples]
+ * requires: [fs, path, chalk, boxen]
+ * description: [Generates context-aware help content with examples, integrating project signals to tailor guidance for users.]
+ * ---*/
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -112,7 +119,7 @@ class HelpSystem {
                 ]
             }
         ];
-        let reference = chalk_1.default.bold.blue('🔥 Phoenix-Code-Lite Quick Reference Guide\n');
+        let reference = chalk_1.default.bold.blue('* Phoenix-Code-Lite Quick Reference Guide\n');
         reference += chalk_1.default.bold.gray('   TDD Workflow Orchestrator for Claude Code\n');
         reference += chalk_1.default.gray('═'.repeat(80)) + '\n\n';
         sections.forEach(section => {
@@ -126,13 +133,13 @@ class HelpSystem {
             });
             reference += '\n';
         });
-        reference += chalk_1.default.blue('🖥️  Interactive Mode (Recommended):\n');
+        reference += chalk_1.default.blue('⌨  Interactive Mode (Recommended):\n');
         reference += chalk_1.default.gray('─'.repeat(35)) + '\n';
         reference += chalk_1.default.cyan('  phoenix-code-lite') + chalk_1.default.gray(' - Start interactive CLI with guided navigation\n');
         reference += chalk_1.default.gray('  • Context-sensitive help and command completion\n');
         reference += chalk_1.default.gray('  • Visual menu system with Phoenix branding\n');
         reference += chalk_1.default.gray('  • Intelligent error handling and suggestions\n\n');
-        reference += chalk_1.default.blue('💡 Usage Examples:\n');
+        reference += chalk_1.default.blue('* Usage Examples:\n');
         reference += chalk_1.default.gray('─'.repeat(18)) + '\n';
         reference += chalk_1.default.green('  # Generate React login component\n');
         reference += chalk_1.default.gray('  phoenix-code-lite generate -t "Create login form with validation" -f react --type component\n\n');
@@ -200,7 +207,7 @@ class HelpSystem {
         return context;
     }
     getBaseHelp() {
-        return chalk_1.default.bold.blue('🔥 Phoenix-Code-Lite CLI Help\n') +
+        return chalk_1.default.bold.blue('* Phoenix-Code-Lite CLI Help\n') +
             chalk_1.default.gray('═'.repeat(50)) + '\n' +
             chalk_1.default.bold('TDD Workflow Orchestrator for Claude Code\n\n') +
             'Phoenix-Code-Lite transforms natural language task descriptions into tested, \n' +
@@ -229,7 +236,7 @@ class HelpSystem {
             chalk_1.default.gray('  • ') + chalk_1.default.green('phoenix-code-lite template') + chalk_1.default.gray(' - Choose configuration template\n\n');
     }
     getAuditLogsHelp() {
-        return chalk_1.default.blue('📈 Audit & Metrics Available\n') +
+        return chalk_1.default.blue('⋰ Audit & Metrics Available\n') +
             chalk_1.default.gray('Your project has workflow history and performance metrics.\n') +
             chalk_1.default.blue('Analysis options:\n') +
             chalk_1.default.gray('  • View metrics in interactive mode under Advanced → Metrics\n') +
@@ -263,7 +270,7 @@ class HelpSystem {
             });
             return help + '\n';
         }
-        return chalk_1.default.cyan(`📝 Language detected: ${language}\n`) +
+        return chalk_1.default.cyan(`⋇ Language detected: ${language}\n`) +
             chalk_1.default.gray('  Phoenix-Code-Lite will adapt to your project structure.\n\n');
     }
     initializeExamples() {

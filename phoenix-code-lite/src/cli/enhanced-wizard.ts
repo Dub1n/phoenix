@@ -1,3 +1,11 @@
+/**---
+ * title: [Enhanced Wizard - Guided Interactive Setup]
+ * tags: [CLI, Wizard, UX, Configuration]
+ * provides: [wizardCommand, Interactive Setup Flows, Validation]
+ * requires: [InteractivePrompts, PhoenixCodeLiteConfig, Templates, HelpSystem]
+ * description: [Guided interactive setup wizard for onboarding and configuration with validation and template selection.]
+ * ---*/
+
 import chalk from 'chalk';
 import { ProjectDiscovery, ProjectContext, StackKnowledge } from './project-discovery';
 import { InteractivePrompts, ConfigurationWizardAnswers } from './interactive';
@@ -34,7 +42,7 @@ export class EnhancedWizard {
 
     // Step 1: Project Discovery
     if (!options.skipDiscovery) {
-      console.log(chalk.yellow('🔍 Analyzing your project...'));
+      console.log(chalk.yellow('⌕ Analyzing your project...'));
       context = await this.discovery.analyzeProject(projectPath);
       
       if (options.verbose || context.confidence > 0.3) {
@@ -56,7 +64,7 @@ export class EnhancedWizard {
 
     // If we have good project detection, offer smart defaults
     if (context && context.confidence > 0.5) {
-      console.log(chalk.green('\n✨ Smart Configuration Available'));
+      console.log(chalk.green('\n⑇ Smart Configuration Available'));
       console.log(chalk.gray('Based on your project analysis, we can auto-configure settings.\n'));
 
       const { useSmartConfig } = await inquirer.default.prompt([
@@ -80,7 +88,7 @@ export class EnhancedWizard {
   private async generateSmartConfiguration(context: ProjectContext): Promise<EnhancedWizardAnswers> {
     const inquirer = await import('inquirer');
 
-    console.log(chalk.blue('\n🚀 Generating smart configuration...\n'));
+    console.log(chalk.blue('\n^ Generating smart configuration...\n'));
 
     // Convert detected context to wizard answers
     const baseAnswers: ConfigurationWizardAnswers = {
@@ -95,7 +103,7 @@ export class EnhancedWizard {
     const stackKnowledge = context.framework ? this.discovery.getStackKnowledge(context.framework) : null;
     
     if (stackKnowledge) {
-      console.log(chalk.cyan(`💡 ${stackKnowledge.framework} Stack Recommendations:`));
+      console.log(chalk.cyan(`* ${stackKnowledge.framework} Stack Recommendations:`));
       console.log(chalk.gray(`  • Recommended quality level: ${stackKnowledge.recommendations.qualityLevel}`));
       console.log(chalk.gray(`  • Suggested test coverage: ${Math.round(stackKnowledge.recommendations.testCoverage * 100)}%`));
       if (stackKnowledge.recommendations.additionalTools.length > 0) {
@@ -133,7 +141,7 @@ export class EnhancedWizard {
   ): Promise<EnhancedWizardAnswers> {
     const inquirer = await import('inquirer');
 
-    console.log(chalk.blue('\n⚙️ Customize Configuration\n'));
+    console.log(chalk.blue('\n⌘ Customize Configuration\n'));
 
     // Enhanced choices based on context
     const answers = await inquirer.default.prompt([
@@ -182,7 +190,7 @@ export class EnhancedWizard {
   }
 
   private async runManualConfiguration(context: ProjectContext | null): Promise<EnhancedWizardAnswers> {
-    console.log(chalk.blue('\n📝 Manual Configuration\n'));
+    console.log(chalk.blue('\n⋇ Manual Configuration\n'));
     
     // Use the existing wizard with enhanced choices
     const steps = this.getEnhancedWizardSteps(context);
@@ -215,7 +223,7 @@ export class EnhancedWizard {
         const navigationChoices = [
           new inquirer.default.Separator(),
           { name: '← Back to previous step', value: '__BACK__' },
-          { name: '❌ Cancel wizard', value: '__CANCEL__' },
+          { name: '✗ Cancel wizard', value: '__CANCEL__' },
         ];
         
         if (step.type === 'list') {
@@ -335,7 +343,7 @@ export class EnhancedWizard {
     if (stackKnowledge) {
       const recommendedChoice = choices.find(c => c.value === stackKnowledge.recommendations.qualityLevel);
       if (recommendedChoice) {
-        recommendedChoice.name += chalk.cyan(' 💡 (recommended)');
+        recommendedChoice.name += chalk.cyan(' * (recommended)');
       }
     }
 

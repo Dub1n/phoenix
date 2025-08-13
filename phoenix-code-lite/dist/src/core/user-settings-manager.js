@@ -1,11 +1,11 @@
 "use strict";
-/**
- * User Settings Manager
- * Created: 2025-01-06-175700
- *
- * Manages persistent user settings including interaction mode preferences.
- * Automatically resets settings when version changes.
- */
+/**---
+ * title: [User Settings Manager - Core Service Module]
+ * tags: [Core, Service, Settings, Persistence]
+ * provides: [UserSettingsManager Class, Settings Load/Save, Version Reset, Mode Preferences]
+ * requires: [fs, path, chalk]
+ * description: [Manages persistent per-user CLI preferences with version-aware resets, mode selection, and preference updates for consistent UX.]
+ * ---*/
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -28,16 +28,16 @@ class UserSettingsManager {
             await this.loadSettings();
             // Check if version has changed and reset if needed
             if (this.settings.version !== this.currentVersion) {
-                console.log(chalk_1.default.yellow(`📋 Version changed from ${this.settings.version} to ${this.currentVersion}`));
-                console.log(chalk_1.default.yellow('🔄 Resetting user settings to defaults'));
+                console.log(chalk_1.default.yellow(`⋇ Version changed from ${this.settings.version} to ${this.currentVersion}`));
+                console.log(chalk_1.default.yellow('⇔ Resetting user settings to defaults'));
                 this.settings = this.getDefaultSettings();
                 await this.saveSettings();
-                console.log(chalk_1.default.green('✅ Settings reset for new version'));
+                console.log(chalk_1.default.green('✓ Settings reset for new version'));
             }
             return true;
         }
         catch (error) {
-            console.error(chalk_1.default.red('❌ Failed to initialize user settings:'), error);
+            console.error(chalk_1.default.red('✗ Failed to initialize user settings:'), error);
             return false;
         }
     }
@@ -62,11 +62,11 @@ class UserSettingsManager {
             this.settings.debugMode = mode === 'debug';
             this.settings.lastModified = new Date().toISOString();
             await this.saveSettings();
-            console.log(chalk_1.default.green(`✅ Interaction mode set to: ${mode}`));
+            console.log(chalk_1.default.green(`✓ Interaction mode set to: ${mode}`));
             return true;
         }
         catch (error) {
-            console.error(chalk_1.default.red('❌ Failed to set interaction mode:'), error);
+            console.error(chalk_1.default.red('✗ Failed to set interaction mode:'), error);
             return false;
         }
     }
@@ -81,7 +81,7 @@ class UserSettingsManager {
             return true;
         }
         catch (error) {
-            console.error(chalk_1.default.red(`❌ Failed to update setting ${String(key)}:`), error);
+            console.error(chalk_1.default.red(`✗ Failed to update setting ${String(key)}:`), error);
             return false;
         }
     }
@@ -96,7 +96,7 @@ class UserSettingsManager {
             return true;
         }
         catch (error) {
-            console.error(chalk_1.default.red(`❌ Failed to update preference ${String(key)}:`), error);
+            console.error(chalk_1.default.red(`✗ Failed to update preference ${String(key)}:`), error);
             return false;
         }
     }
@@ -107,11 +107,11 @@ class UserSettingsManager {
         try {
             this.settings = this.getDefaultSettings();
             await this.saveSettings();
-            console.log(chalk_1.default.green('✅ Settings reset to defaults'));
+            console.log(chalk_1.default.green('✓ Settings reset to defaults'));
             return true;
         }
         catch (error) {
-            console.error(chalk_1.default.red('❌ Failed to reset settings:'), error);
+            console.error(chalk_1.default.red('✗ Failed to reset settings:'), error);
             return false;
         }
     }
@@ -131,7 +131,7 @@ class UserSettingsManager {
      * Display current settings
      */
     displaySettings() {
-        console.log(chalk_1.default.blue.bold('\n📋 Current User Settings'));
+        console.log(chalk_1.default.blue.bold('\n⋇ Current User Settings'));
         console.log(chalk_1.default.gray('═'.repeat(50)));
         console.log(chalk_1.default.yellow('Core Settings:'));
         console.log(`  Version: ${this.settings.version}`);
@@ -168,7 +168,7 @@ class UserSettingsManager {
      */
     async loadSettings() {
         if (!this.settingsFileExists()) {
-            console.log(chalk_1.default.yellow('📋 No settings file found, creating defaults'));
+            console.log(chalk_1.default.yellow('⋇ No settings file found, creating defaults'));
             this.settings = this.getDefaultSettings();
             await this.saveSettings();
             return;
@@ -187,7 +187,7 @@ class UserSettingsManager {
             };
         }
         catch (error) {
-            console.log(chalk_1.default.red('❌ Failed to parse settings file, using defaults'));
+            console.log(chalk_1.default.red('✗ Failed to parse settings file, using defaults'));
             this.settings = this.getDefaultSettings();
             await this.saveSettings();
         }

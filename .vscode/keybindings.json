@@ -1,12 +1,7 @@
 [
     {
-        "key": "ctrl+shift+e",
+        "key": "ctrl+alt+e",
         "command": "workbench.action.tasks.runTask",
-        "args": "Replace Emojis in Current File"
-    },
-    {
-        "key": "ctrl+shift+alt+e",
-        "command": "workbench.action.tasks.runTask",
-        "args": "Preview Emoji Replacements (Dry Run)"
+        "args": "Emoji Substitute (Auto Detect)"
     }
 ] 

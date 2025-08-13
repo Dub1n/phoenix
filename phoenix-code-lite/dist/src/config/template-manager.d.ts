@@ -1,3 +1,10 @@
+/**---
+ * title: [Template Manager - Template Lifecycle Operations]
+ * tags: [Configuration, Templates, Management]
+ * provides: [TemplateManager Class, Template CRUD]
+ * requires: [ConfigurationTemplates, PhoenixCodeLiteConfig]
+ * description: [Manages template creation, updates, switching, and persistence for Phoenix Code Lite.]
+ * ---*/
 import { PhoenixCodeLiteConfig, PhoenixCodeLiteConfigData } from './settings';
 import { TemplateMetadata } from './templates';
 export interface TemplateManagerOptions {

@@ -1,4 +1,11 @@
 "use strict";
+/**---
+ * title: [Configuration Templates - Starter/Enterprise/Performance]
+ * tags: [Configuration, Templates]
+ * provides: [ConfigurationTemplates, Template Data]
+ * requires: [PhoenixCodeLiteConfigData]
+ * description: [Provides built-in templates (starter, enterprise, performance) for quick configuration bootstrapping.]
+ * ---*/
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ConfigurationTemplates = void 0;
 class ConfigurationTemplates {

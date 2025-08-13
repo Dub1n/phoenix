@@ -1,13 +1,11 @@
 "use strict";
-/**
- * Layout System Validation - Unified vs Legacy Comparison
- *
- * Comprehensive validation suite that ensures the unified layout engine
- * produces equivalent results to the current MenuComposer + MenuLayoutManager system.
- *
- * This validates that the transformation preserves all functionality while
- * providing the benefits of the unified approach and PCL-Skins integration.
- */
+/**---
+ * title: [Layout System Validation - Unified vs Legacy Equivalence]
+ * tags: [CLI, Menu, Validation, Migration]
+ * provides: [Validation Suite, Conversion Checks, Migration Demo]
+ * requires: [MenuComposer, MenuLayoutManager, Unified Layout Engine, SkinMenuRenderer, Menu Types]
+ * description: [Validates that the unified layout engine produces equivalent results to legacy systems and supports migration readiness.]
+ * ---*/
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.validationTestCases = exports.LayoutSystemValidator = void 0;
 exports.runLayoutValidation = runLayoutValidation;
@@ -302,7 +300,7 @@ exports.validationTestCases = [
     {
         name: 'Simple Menu',
         content: {
-            title: '🔥 Phoenix Code Lite',
+            title: '* Phoenix Code Lite',
             subtitle: 'Quick Actions',
             sections: [{
                     heading: '⚡ Quick Commands:',
@@ -318,11 +316,11 @@ exports.validationTestCases = [
     {
         name: 'Complex Config Menu',
         content: {
-            title: '📋 Advanced Configuration Management Hub',
+            title: '⋇ Advanced Configuration Management Hub',
             subtitle: 'Comprehensive settings management with enterprise-grade options',
             sections: [
                 {
-                    heading: '🔧 Primary Configuration:',
+                    heading: '◦ Primary Configuration:',
                     theme: { headingColor: 'green', bold: true },
                     items: [
                         { label: '1. show', description: 'Display current configuration with detailed validation status', commands: ['show', '1'] },
@@ -332,7 +330,7 @@ exports.validationTestCases = [
                     ]
                 },
                 {
-                    heading: '⚙️ Advanced Settings:',
+                    heading: '⌘ Advanced Settings:',
                     theme: { headingColor: 'cyan', bold: true },
                     items: [
                         { label: '5. framework', description: 'Framework-specific optimization and performance settings', commands: ['framework', '5'] },
@@ -349,10 +347,10 @@ exports.validationTestCases = [
     {
         name: 'Medium Template Menu',
         content: {
-            title: '📄 Template Management',
+            title: '□ Template Management',
             subtitle: 'Manage configuration templates',
             sections: [{
-                    heading: '📦 Template Commands:',
+                    heading: '⌺ Template Commands:',
                     theme: { headingColor: 'yellow', bold: true },
                     items: [
                         { label: '1. list', description: 'Show available templates', commands: ['list', '1'] },
@@ -395,7 +393,7 @@ function generateValidationReport(result) {
         ''
     ];
     for (const test of result.results) {
-        const status = test.passed ? '✅ PASS' : '❌ FAIL';
+        const status = test.passed ? '✓ PASS' : '✗ FAIL';
         lines.push(`### ${test.test} - ${status}`);
         lines.push(`**Performance**: ${test.metrics.performanceGain.toFixed(1)}% improvement`);
         if (test.details.differences.length > 0) {

@@ -10,12 +10,12 @@ async function testEnhancedLogue() {
   const app = enhancedLogue('node', [CLI_PATH, 'config', '--show']);
   
   await app.waitFor('Phoenix Code Lite Configuration');
-  console.log('✅ Found expected text');
+  console.log('✓ Found expected text');
   
   console.log('Calling enhanced end()...');
   const result = await app.end();
   
-  console.log('✅ Enhanced end() completed!');
+  console.log('✓ Enhanced end() completed!');
   console.log('Result status:', result.status);
   console.log('Has stdout:', !!result.stdout);
   

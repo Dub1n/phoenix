@@ -1,11 +1,11 @@
 "use strict";
-/**
- * Unified CLI Entry Point
- * Created: 2025-01-06-175700
- *
- * Main entry point for the new unified CLI architecture.
- * Integrates menu registry, command registry, and session management.
- */
+/**---
+ * title: [Unified CLI Entry - Core Infrastructure Component]
+ * tags: [Core, Infrastructure, Entry-Point, CLI]
+ * provides: [initializeUnifiedPhoenixCLI Function, runUnifiedCLI Function]
+ * requires: [MenuRegistry, UnifiedCommandRegistry, UnifiedSessionManager, UserSettingsManager, chalk]
+ * description: [Main entry point for the unified CLI architecture, wiring menus, commands and session management with persisted user settings]
+ * ---*/
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -60,11 +60,11 @@ async function initializeUnifiedPhoenixCLI() {
     const packageJson = await Promise.resolve().then(() => __importStar(require('../package.json')));
     const currentVersion = packageJson.version;
     try {
-        console.log(chalk_1.default.blue('🔥 Initializing Phoenix Code Lite - Unified Architecture'));
+        console.log(chalk_1.default.blue('* Initializing Phoenix Code Lite - Unified Architecture'));
         console.log(chalk_1.default.gray('Decoupled CLI with seamless mode switching'));
         console.log(chalk_1.default.gray('═'.repeat(60)));
         // Initialize user settings
-        console.log(chalk_1.default.yellow('⚙️ Initializing user settings...'));
+        console.log(chalk_1.default.yellow('⌘ Initializing user settings...'));
         const settingsManager = new user_settings_manager_1.UserSettingsManager(currentVersion);
         const settingsInitialized = await settingsManager.initialize();
         if (!settingsInitialized) {
@@ -73,16 +73,16 @@ async function initializeUnifiedPhoenixCLI() {
         const userSettings = settingsManager.getSettings();
         const interactionMode = userSettings.interactionMode;
         const debugMode = userSettings.debugMode;
-        console.log(chalk_1.default.green(`✅ Settings loaded - Mode: ${chalk_1.default.cyan(interactionMode)}, Debug: ${debugMode ? 'enabled' : 'disabled'}`));
+        console.log(chalk_1.default.green(`✓ Settings loaded - Mode: ${chalk_1.default.cyan(interactionMode)}, Debug: ${debugMode ? 'enabled' : 'disabled'}`));
         // Initialize core components
         const menuRegistry = new menu_registry_1.MenuRegistry();
         const commandRegistry = new command_registry_1.UnifiedCommandRegistry();
         // Validate and register core menus
-        console.log(chalk_1.default.yellow('📋 Validating menu definitions...'));
+        console.log(chalk_1.default.yellow('⋇ Validating menu definitions...'));
         if (!(0, menu_registration_1.validateCoreMenus)()) {
             throw new Error('Menu validation failed');
         }
-        console.log(chalk_1.default.yellow('📋 Registering core menus...'));
+        console.log(chalk_1.default.yellow('⋇ Registering core menus...'));
         (0, menu_registration_1.registerCoreMenus)(menuRegistry);
         // Register core commands
         console.log(chalk_1.default.yellow('⚡ Registering command handlers...'));
@@ -93,7 +93,7 @@ async function initializeUnifiedPhoenixCLI() {
         }
         // Create interaction mode based on user settings
         const mode = createInteractionMode(interactionMode);
-        console.log(chalk_1.default.green(`✅ Initialization complete - Starting in ${mode.displayName} mode`));
+        console.log(chalk_1.default.green(`✓ Initialization complete - Starting in ${mode.displayName} mode`));
         console.log();
         // Create and start session manager
         const sessionManager = new unified_session_manager_1.UnifiedSessionManager(menuRegistry, commandRegistry, mode);
@@ -106,8 +106,8 @@ async function initializeUnifiedPhoenixCLI() {
         await sessionManager.start();
     }
     catch (error) {
-        console.error(chalk_1.default.red('❌ Failed to initialize Phoenix CLI:'), error);
-        console.log(chalk_1.default.yellow('💡 Try running with --debug for more information'));
+        console.error(chalk_1.default.red('✗ Failed to initialize Phoenix CLI:'), error);
+        console.log(chalk_1.default.yellow('* Try running with --debug for more information'));
         process.exit(1);
     }
 }
@@ -196,7 +196,7 @@ async function runUnifiedCLI() {
  * Show command line help
  */
 function showHelp() {
-    console.log(chalk_1.default.blue.bold('🔥 Phoenix Code Lite - Unified CLI'));
+    console.log(chalk_1.default.blue.bold('* Phoenix Code Lite - Unified CLI'));
     console.log(chalk_1.default.gray('TDD Workflow Orchestrator with Persistent Settings'));
     console.log();
     console.log(chalk_1.default.yellow('Usage:'));

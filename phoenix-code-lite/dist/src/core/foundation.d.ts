@@ -1,13 +1,14 @@
+/**---
+ * title: [Core Foundation - Phase 1 Infrastructure]
+ * tags: [Core, Infrastructure, Session-Management, Mode-Management]
+ * provides: [CoreFoundation Class, CoreConfigSchema, SystemState Tracking, Initialization & Shutdown APIs]
+ * requires: [SessionManager, ModeManager, AuditLogger, Zod, Test-Utils]
+ * description: [Provides foundational infrastructure for Phoenix Code Lite including session management, dual-mode control, system monitoring, and lifecycle coordination.]
+ * ---*/
 import { z } from 'zod';
 import { SessionManager } from './session-manager';
 import { ModeManager } from './mode-manager';
 import { AuditLogger } from '../utils/audit-logger';
-/**
- * Core Foundation - Phase 1 Infrastructure
- *
- * This module provides the foundational infrastructure for Phoenix Code Lite,
- * implementing session management, dual mode architecture, and core services.
- */
 export declare const CoreConfigSchema: z.ZodObject<{
     system: z.ZodObject<{
         name: z.ZodDefault<z.ZodString>;

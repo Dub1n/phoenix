@@ -1,10 +1,10 @@
-/**
- * Command Renderer Implementation
- * Created: 2025-01-06-175700
- *
- * Handles command-line interface mode with text input and command completion.
- * Provides efficient text-based interaction for power users.
- */
+/**---
+ * title: [Command Renderer - Unified Architecture]
+ * tags: [Unified, Interaction, Rendering]
+ * provides: [Command Renderer]
+ * requires: []
+ * description: [Renders command interactions for the unified CLI system.]
+ * ---*/
 import { InteractionRenderer, InteractionResult, InteractionMode } from '../types/interaction-abstraction';
 import { MenuDefinition, MenuContext } from '../types/menu-definitions';
 export declare class CommandRenderer implements InteractionRenderer {

@@ -1,10 +1,10 @@
-/**
- * Unified Session Manager
- * Created: 2025-01-06-175700
- * 
- * Coordinates menu definitions, interaction modes, and command execution.
- * Provides seamless mode switching and unified session management.
- */
+/**---
+ * title: [Unified Session Manager - Core Service Module]
+ * tags: [Core, Service, Session-Management, CLI-Integration]
+ * provides: [UnifiedSessionManager Class, Renderer Switching, Menu Display, Command Execution Loop]
+ * requires: [MenuRegistry, UnifiedCommandRegistry, InteractiveRenderer, CommandRenderer, DebugRenderer, Interaction/Command Types]
+ * description: [Coordinates unified interactive and command modes, handling menu navigation, action execution, and renderer lifecycle for the CLI.]
+ * ---*/
 
 import chalk from 'chalk';
 import { MenuRegistry } from './menu-registry';
@@ -100,7 +100,7 @@ export class UnifiedSessionManager {
       // The interactive renderer will handle everything
       if (this.currentRenderer.mode.name === 'interactive') {
         // Just show a simple header for interactive mode
-        console.log(chalk.blue.bold(`🔥 ${menuDefinition.title}`));
+        console.log(chalk.blue.bold(`* ${menuDefinition.title}`));
         if (menuDefinition.description) {
           console.log(chalk.gray(menuDefinition.description));
         }
@@ -325,7 +325,7 @@ export class UnifiedSessionManager {
    * Show welcome screen
    */
   private showWelcome(): void {
-    console.log(chalk.red.bold('🔥 Phoenix Code Lite • Unified CLI'));
+    console.log(chalk.red.bold('* Phoenix Code Lite • Unified CLI'));
     console.log(chalk.gray('TDD Workflow Orchestrator with Decoupled Architecture'));
     console.log(chalk.gray('═'.repeat(60)));
     console.log();
@@ -336,7 +336,7 @@ export class UnifiedSessionManager {
    */
   private showHeader(): void {
     const modeName = this.currentRenderer.mode.displayName;
-    console.log(chalk.red.bold('🔥 Phoenix Code Lite'));
+    console.log(chalk.red.bold('* Phoenix Code Lite'));
     console.log(chalk.gray(`Mode: ${modeName} • Level: ${this.sessionContext.level}`));
     console.log(chalk.gray('═'.repeat(60)));
     console.log();

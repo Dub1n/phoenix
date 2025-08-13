@@ -1,9 +1,10 @@
-/**
- * Audit Cryptography Validator
- *
- * Validates cryptographic functions specifically for QMS audit trails
- * and immutable record keeping
- */
+/**---
+ * title: [Audit Cryptography Validator - QMS]
+ * tags: [Preparation, QMS, Validation]
+ * provides: [AuditCryptographyValidator]
+ * requires: []
+ * description: [Validates cryptography usage and audit readiness for QMS requirements.]
+ * ---*/
 export interface AuditTrailIntegrityResult {
     success: boolean;
     integrity?: boolean;

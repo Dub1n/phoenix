@@ -1,9 +1,11 @@
 "use strict";
-/**
- * Regulatory Document Processor
- *
- * Processes regulatory documents (EN 62304, AAMI TIR45) for QMS requirements
- */
+/**---
+ * title: [Regulatory Document Processor - QMS]
+ * tags: [Preparation, QMS, Processing]
+ * provides: [RegulatoryDocumentProcessor, RegulatoryRequirement]
+ * requires: []
+ * description: [Parses and processes regulatory documents to extract structured requirements.]
+ * ---*/
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RegulatoryDocumentProcessor = void 0;
 const pdf_tool_validator_1 = require("./pdf-tool-validator");

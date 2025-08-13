@@ -1,9 +1,11 @@
 "use strict";
-/**
- * EN 62304 Requirement Analyzer
- *
- * Analyzes and extracts requirements from EN 62304 standard
- */
+/**---
+ * title: [EN 62304 Requirement Analyzer - QMS]
+ * tags: [Preparation, QMS, Analysis]
+ * provides: [EN62304RequirementAnalyzer]
+ * requires: []
+ * description: [Analyzes requirements and software lifecycle practices per EN 62304 standard.]
+ * ---*/
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.EN62304RequirementAnalyzer = void 0;
 const regulatory_document_processor_1 = require("./regulatory-document-processor");

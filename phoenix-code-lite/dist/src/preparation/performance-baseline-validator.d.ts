@@ -1,9 +1,10 @@
-/**
- * Performance Baseline Validator
- *
- * Establishes performance baselines for Phoenix-Code-Lite
- * and defines QMS performance targets
- */
+/**---
+ * title: [Performance Baseline Validator - QMS]
+ * tags: [Preparation, QMS, Validation]
+ * provides: [PerformanceBaselineValidator]
+ * requires: []
+ * description: [Validates that performance baselines are established and maintained for QMS tracking.]
+ * ---*/
 export interface CLIPerformanceMetrics {
     responseTime: number;
     memoryUsage: number;

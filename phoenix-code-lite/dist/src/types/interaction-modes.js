@@ -1,4 +1,11 @@
 "use strict";
+/**---
+ * title: [Interaction Modes - Schemas and Types]
+ * tags: [Types, CLI, Interaction, Zod]
+ * provides: [MenuModeConfigSchema, CommandModeConfigSchema, InteractionModeConfigSchema, Types]
+ * requires: [zod]
+ * description: [Zod schemas and related types describing CLI interaction modes and options.]
+ * ---*/
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.InteractionModeConfigSchema = exports.CommandModeConfigSchema = exports.MenuModeConfigSchema = void 0;
 const zod_1 = require("zod");

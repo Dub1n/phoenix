@@ -19,7 +19,7 @@ _A brief introduction to what this tutorial will teach and why it's valuable._
 **Time to complete:** XX minutes
 **Last updated:** YYYY-MM-DD
 
-## 📋 Prerequisites
+## ⋇ Prerequisites
 
 Before starting this tutorial, you should:
 
@@ -27,7 +27,7 @@ Before starting this tutorial, you should:
 - Have [software/tool] installed
 - Be familiar with [concept]
 
-## 🎯 Learning Objectives
+## ⊕ Learning Objectives
 
 By the end of this tutorial, you will be able to:
 

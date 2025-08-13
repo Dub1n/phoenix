@@ -1,4 +1,11 @@
 "use strict";
+/**---
+ * title: [TDD Orchestrator - Core Service Module]
+ * tags: [TDD, Service, Workflow, Quality-Assurance]
+ * provides: [TDDOrchestrator Class, 3-Phase Workflow Coordination, Quality Gate Integration, Audit & Metrics]
+ * requires: [ClaudeCodeClient, PlanTestPhase, ImplementFixPhase, RefactorDocumentPhase, QualityGateManager, CodebaseScanner, AuditLogger, MetricsCollector]
+ * description: [Coordinates Phoenix Code Lite’s TDD workflow (Plan & Test, Implement & Fix, Refactor & Document) with anti-reimplementation scanning, auditing, metrics, and quality gates.]
+ * ---*/
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TDDOrchestrator = void 0;
 const plan_test_1 = require("./phases/plan-test");
@@ -35,7 +42,7 @@ class TDDOrchestrator {
         let codebaseScanResult;
         try {
             // Phase 0: MANDATORY Codebase Scan (Anti-Reimplementation)
-            console.log('🔍 PHASE 0: Mandatory codebase scan to prevent reimplementation...');
+            console.log('⌕ PHASE 0: Mandatory codebase scan to prevent reimplementation...');
             codebaseScanResult = await this.codebaseScanner.scanCodebase(taskDescription, context);
             // Validate scan completion and agent acknowledgment
             if (!this.validateScanAcknowledgment(codebaseScanResult)) {
@@ -47,7 +54,7 @@ class TDDOrchestrator {
                 ...workflow.metadata
             };
             // Phase 1: Plan & Test with Quality Gates (Enhanced with Scan Results)
-            console.log('📋 PHASE 1: Planning and generating tests...');
+            console.log('⋇ PHASE 1: Planning and generating tests...');
             await this.auditLogger.logPhaseStart('plan-test', context);
             const enhancedContext = {
                 ...context,
@@ -86,7 +93,7 @@ class TDDOrchestrator {
                 throw new Error(`Implementation phase failed: ${implementResult.error}`);
             }
             // Phase 3: Refactor & Document with Final Quality Gates (Enhanced with Scan Results)
-            console.log('✨ PHASE 3: Refactoring and documenting code...');
+            console.log('⑇ PHASE 3: Refactoring and documenting code...');
             await this.auditLogger.logPhaseStart('refactor-document', context);
             const refactorResult = await this.refactorDocumentPhase.execute(implementResult, enhancedContext);
             await this.auditLogger.logPhaseEnd(refactorResult);
@@ -159,7 +166,7 @@ class TDDOrchestrator {
     }
     async applyQualityImprovements(report, context) {
         if (report.recommendations.length > 0) {
-            console.log('🔧 Applying quality improvements...');
+            console.log('◦ Applying quality improvements...');
             const improvementPrompt = [
                 'Based on the quality analysis, please apply the following improvements:',
                 ...report.recommendations.map(rec => `- ${rec}`),
@@ -207,7 +214,7 @@ class TDDOrchestrator {
     validateScanAcknowledgment(scanResult) {
         // CRITICAL: This method ensures the agent acknowledges scan results
         // before proceeding with implementation
-        console.log('\n🎯 MANDATORY VALIDATION: Codebase scan acknowledgment required');
+        console.log('\n⊕ MANDATORY VALIDATION: Codebase scan acknowledgment required');
         console.log('═══════════════════════════════════════════════════════════');
         console.log('Before proceeding with implementation, the agent must acknowledge:');
         console.log(`• Scan found ${scanResult.relevantAssets.length} relevant existing assets`);
@@ -226,7 +233,7 @@ class TDDOrchestrator {
                 console.log(`   • Consider reusing: ${opportunity.name} (${opportunity.filePath}:${opportunity.lineNumber})`);
             });
         }
-        console.log('\n📋 MANDATORY REQUIREMENTS:');
+        console.log('\n⋇ MANDATORY REQUIREMENTS:');
         console.log('• Agent must review all scan results above');
         console.log('• Agent must modify implementation plan to avoid reimplementation');
         console.log('• Agent must explicitly address conflicts and leverage reuse opportunities');

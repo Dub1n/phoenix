@@ -1,3 +1,10 @@
+/**---
+ * title: [TDD Orchestrator - Core Service Module]
+ * tags: [TDD, Service, Workflow, Quality-Assurance]
+ * provides: [TDDOrchestrator Class, 3-Phase Workflow Coordination, Quality Gate Integration, Audit & Metrics]
+ * requires: [ClaudeCodeClient, PlanTestPhase, ImplementFixPhase, RefactorDocumentPhase, QualityGateManager, CodebaseScanner, AuditLogger, MetricsCollector]
+ * description: [Coordinates Phoenix Code Lite’s TDD workflow (Plan & Test, Implement & Fix, Refactor & Document) with anti-reimplementation scanning, auditing, metrics, and quality gates.]
+ * ---*/
 import { ClaudeCodeClient } from '../claude/client';
 import { TaskContext, WorkflowResult } from '../types/workflow';
 export declare class TDDOrchestrator {

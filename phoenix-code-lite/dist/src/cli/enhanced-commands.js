@@ -1,4 +1,11 @@
 "use strict";
+/**---
+ * title: [Enhanced CLI Commands - Guided Workflow Orchestrations]
+ * tags: [CLI, Commands, Workflow, UX]
+ * provides: [enhancedGenerateCommand, wizardCommand, Template Utilities, Progress Integration]
+ * requires: [AdvancedCLI, ProgressTracker, InteractivePrompts, TDDOrchestrator, ClaudeCodeClient, PhoenixCodeLiteConfig, ConfigurationTemplates, ConfigFormatter, DocumentManager]
+ * description: [Implements enhanced CLI commands with progressive UX, banners, template-aware configuration, and orchestration of TDD workflows.]
+ * ---*/
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -133,10 +140,10 @@ async function wizardCommand() {
         // Apply configuration
         const fs = await Promise.resolve().then(() => __importStar(require('fs/promises')));
         await fs.writeFile('.phoenix-code-lite.json', JSON.stringify(configTemplate, null, 2));
-        console.log(chalk_1.default.green('\n✅ Enhanced configuration created successfully!'));
+        console.log(chalk_1.default.green('\n✓ Enhanced configuration created successfully!'));
         // Show discovery summary if available
         if (answers.discoveredContext && answers.useDiscoveredSettings) {
-            console.log(chalk_1.default.cyan('\n📊 Applied smart defaults based on project analysis:'));
+            console.log(chalk_1.default.cyan('\n◊ Applied smart defaults based on project analysis:'));
             console.log(chalk_1.default.gray(`  • Detected: ${answers.discoveredContext.language} ${answers.discoveredContext.framework ? `with ${answers.discoveredContext.framework}` : ''}`));
             console.log(chalk_1.default.gray(`  • Template: ${answers.qualityLevel}`));
             console.log(chalk_1.default.gray(`  • Confidence: ${Math.round(answers.discoveredContext.confidence * 100)}%`));
@@ -146,11 +153,11 @@ async function wizardCommand() {
     }
     catch (error) {
         if (error instanceof Error && error.message.includes('cancelled')) {
-            console.log(chalk_1.default.yellow('\n⚠️ Setup wizard cancelled by user.'));
+            console.log(chalk_1.default.yellow('\n⚠ Setup wizard cancelled by user.'));
             console.log(chalk_1.default.gray('You can run "phoenix-code-lite wizard" again anytime.'));
         }
         else {
-            console.error(chalk_1.default.red('\n❌ Setup wizard failed:'), error);
+            console.error(chalk_1.default.red('\n✗ Setup wizard failed:'), error);
             console.log(chalk_1.default.gray('Please try again or check the error message above.'));
         }
     }
@@ -222,7 +229,7 @@ async function executeConfigAction(command, data, context) {
     const config = await settings_1.PhoenixCodeLiteConfig.load();
     switch (command) {
         case 'show':
-            console.log(chalk_1.default.green.bold('\n📋 Current Configuration'));
+            console.log(chalk_1.default.green.bold('\n⋇ Current Configuration'));
             console.log(chalk_1.default.gray('═'.repeat(50)));
             console.log(config_formatter_1.ConfigFormatter.formatConfig(config.export()));
             break;
@@ -326,7 +333,7 @@ async function executeAdvancedAction(command, data, context) {
 }
 // Helper functions for template management with enhanced UX
 async function showTemplateList() {
-    console.log(chalk_1.default.yellow.bold('\n📄 Available Templates'));
+    console.log(chalk_1.default.yellow.bold('\n□ Available Templates'));
     console.log(chalk_1.default.gray('═'.repeat(50)));
     const templates = [
         { name: 'starter', description: 'Basic settings for learning and experimentation', coverage: '70%', quality: 'Basic' },
@@ -389,7 +396,7 @@ async function showSingleTemplatePreview(templateName) {
         console.log(chalk_1.default.red(`Unknown template: ${templateName}`));
         return;
     }
-    console.log(chalk_1.default.yellow.bold(`📊 ${templateName.toUpperCase()} TEMPLATE`));
+    console.log(chalk_1.default.yellow.bold(`◊ ${templateName.toUpperCase()} TEMPLATE`));
     console.log(chalk_1.default.gray('─'.repeat(30)));
     console.log(config_formatter_1.ConfigFormatter.formatConfigSummary(template));
     console.log();
@@ -433,7 +440,7 @@ async function editTemplate(templateName, context) {
         console.log(chalk_1.default.yellow('Please specify a template to edit (starter, enterprise, performance, default)'));
         return;
     }
-    console.log(chalk_1.default.yellow.bold(`\n📝 Editing Template: ${templateName}`));
+    console.log(chalk_1.default.yellow.bold(`\n⋇ Editing Template: ${templateName}`));
     console.log(chalk_1.default.gray('═'.repeat(50)));
     // For now, redirect to the configuration editor
     const prompts = new interactive_1.InteractivePrompts();
@@ -450,7 +457,7 @@ async function editTemplate(templateName, context) {
 }
 // Helper functions for other actions
 async function showFrameworkSettings(config) {
-    console.log(chalk_1.default.green.bold('\n⚙️ Framework Settings'));
+    console.log(chalk_1.default.green.bold('\n⌘ Framework Settings'));
     console.log(chalk_1.default.gray('═'.repeat(50)));
     console.log(`Claude Max Turns: ${config.get('claude.maxTurns')}`);
     console.log(`Claude Timeout: ${config.get('claude.timeout')}ms`);
@@ -458,20 +465,20 @@ async function showFrameworkSettings(config) {
     console.log(`TDD Max Attempts: ${config.get('tdd.maxImplementationAttempts')}`);
 }
 async function showQualitySettings(config) {
-    console.log(chalk_1.default.green.bold('\n📊 Quality Settings'));
+    console.log(chalk_1.default.green.bold('\n◊ Quality Settings'));
     console.log(chalk_1.default.gray('═'.repeat(50)));
     console.log(`Test Quality Threshold: ${config.get('tdd.testQualityThreshold')}`);
     console.log(`Min Test Coverage: ${config.get('quality.minTestCoverage')}`);
     console.log(`Max Complexity: ${config.get('quality.maxComplexity')}`);
 }
 async function showSecuritySettings() {
-    console.log(chalk_1.default.green.bold('\n🛡️ Security Settings'));
+    console.log(chalk_1.default.green.bold('\n⊜ Security Settings'));
     console.log(chalk_1.default.gray('═'.repeat(50)));
-    console.log(chalk_1.default.green('✅ Security Status: Active'));
+    console.log(chalk_1.default.green('✓ Security Status: Active'));
     console.log(chalk_1.default.gray('All security guardrails are operational'));
 }
 async function showConfigTemplateOptions() {
-    console.log(chalk_1.default.green.bold('\n📄 Configuration Templates'));
+    console.log(chalk_1.default.green.bold('\n□ Configuration Templates'));
     console.log(chalk_1.default.gray('═'.repeat(50)));
     console.log('Use the "templates" section to manage configuration templates');
     console.log(chalk_1.default.gray('Navigate to templates from the main menu'));
@@ -491,9 +498,9 @@ async function showAgentSettings() {
         const agentSettings = configData.agents || {};
         // Display each agent's configuration
         const agents = [
-            { key: 'planningAnalyst', name: 'Planning Analyst', icon: '🧠' },
+            { key: 'planningAnalyst', name: 'Planning Analyst', icon: '⏼' },
             { key: 'implementationEngineer', name: 'Implementation Engineer', icon: '⚡' },
-            { key: 'qualityReviewer', name: 'Quality Reviewer', icon: '🔍' }
+            { key: 'qualityReviewer', name: 'Quality Reviewer', icon: '⌕' }
         ];
         agents.forEach(agent => {
             const settings = agentSettings[agent.key] || {};
@@ -524,13 +531,13 @@ async function showAgentSettings() {
     }
 }
 async function showLoggingSettings() {
-    console.log(chalk_1.default.cyan.bold('\n📝 Logging Settings'));
+    console.log(chalk_1.default.cyan.bold('\n⋇ Logging Settings'));
     console.log(chalk_1.default.gray('═'.repeat(50)));
     console.log('Audit logging is enabled by default');
     console.log('All workflow operations are tracked');
 }
 async function showMetricsSettings() {
-    console.log(chalk_1.default.cyan.bold('\n📊 Metrics Settings'));
+    console.log(chalk_1.default.cyan.bold('\n◊ Metrics Settings'));
     console.log(chalk_1.default.gray('═'.repeat(50)));
     console.log('Performance metrics collection is active');
     console.log('Token usage and execution time are tracked');
@@ -543,7 +550,7 @@ async function showDebugSettings() {
 }
 async function executeDocumentManagementAction(data, context) {
     try {
-        console.log(chalk_1.default.cyan.bold('\n📋 Document Management'));
+        console.log(chalk_1.default.cyan.bold('\n⋇ Document Management'));
         console.log(chalk_1.default.gray('═'.repeat(50)));
         // Initialize document manager
         const documentManager = new document_manager_1.DocumentManager();
@@ -570,14 +577,14 @@ async function executeDocumentManagementAction(data, context) {
         console.log(chalk_1.default.gray('• Documents can be enabled/disabled per agent and per template'));
         console.log(chalk_1.default.gray('• Global documents are available to all agents when activated'));
         console.log(chalk_1.default.gray('• Agent-specific documents provide specialized context'));
-        console.log(chalk_1.default.cyan('\n🔗 Access Full Document Management:'));
+        console.log(chalk_1.default.cyan('\n∞ Access Full Document Management:'));
         console.log(chalk_1.default.gray('  → Configuration > Edit > Document Management'));
         console.log(chalk_1.default.gray('  → Interactive configuration editor with full document controls'));
     }
     catch (error) {
         console.log(chalk_1.default.red('Error loading document management:'));
         console.log(chalk_1.default.gray(`Details: ${error instanceof Error ? error.message : 'Unknown error'}`));
-        console.log(chalk_1.default.gray('\n💡 Troubleshooting:'));
+        console.log(chalk_1.default.gray('\n* Troubleshooting:'));
         console.log(chalk_1.default.gray('• Ensure .phoenix-documents directory exists'));
         console.log(chalk_1.default.gray('• Run: phoenix-code-lite init to initialize document system'));
         console.log(chalk_1.default.gray('• Check file permissions for document directory'));
@@ -617,7 +624,7 @@ async function executeApiGeneration(description, context) {
     await enhancedGenerateCommand(options);
 }
 async function executeTestGeneration(description, context) {
-    console.log(chalk_1.default.magenta.bold('\n🧪 Generating Tests'));
+    console.log(chalk_1.default.magenta.bold('\n⊎ Generating Tests'));
     console.log(chalk_1.default.gray('═'.repeat(50)));
     console.log(chalk_1.default.white(`Tests: ${description}`));
     const options = {

@@ -1,3 +1,11 @@
+/**---
+ * title: [Security Guardrails - Validation & Access Control]
+ * tags: [Security, Guardrails]
+ * provides: [SecurityGuardrailsManager, Policies]
+ * requires: []
+ * description: [Defines security guardrails and access control checks for file and command operations.]
+ * ---*/
+
 import { TaskContext } from '../types/workflow';
 
 export interface SecurityPolicy {
@@ -270,13 +278,13 @@ export class SecurityGuardrailsManager {
       return true;
     }
     
-    console.log('\n🔒 SECURITY APPROVAL REQUIRED:');
+    console.log('\n⑄ SECURITY APPROVAL REQUIRED:');
     console.log('═══════════════════════════════════');
     console.log(`Action: ${action}`);
     console.log(`Target: ${target}`);
     console.log('Session:', this.sessionId);
     console.log('═══════════════════════════════════');
-    console.log('⚠️ Manual approval required for security compliance');
+    console.log('⚠ Manual approval required for security compliance');
     console.log('In production, this would pause for user confirmation.');
     console.log('═══════════════════════════════════\n');
     
@@ -311,7 +319,7 @@ export class SecurityGuardrailsManager {
     
     // In production, this would write to secure audit log
     if (this.defaultPolicy.auditAll) {
-      console.log(`🔒 Security Audit: ${event.action} on ${event.target} - ${event.approved ? 'APPROVED' : 'DENIED'}`);
+      console.log(`⑄ Security Audit: ${event.action} on ${event.target} - ${event.approved ? 'APPROVED' : 'DENIED'}`);
       
       if (event.violations.length > 0) {
         console.log(`   Violations: ${event.violations.map(v => `${v.severity}: ${v.description}`).join(', ')}`);

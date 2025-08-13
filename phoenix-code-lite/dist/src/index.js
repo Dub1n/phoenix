@@ -1,5 +1,12 @@
 #!/usr/bin/env node
 "use strict";
+/**---
+ * title: [Phoenix Code Lite - Phase 1 Core Infrastructure]
+ * tags: [Assistant, Behavior, Riley, Personality, Guidelines]
+ * provides: [Riley Personality Definition, DSS Behaviors, Response Style Standards, Frontmatter Management,   Decision Making Framework]
+ * requires: [DSS Core Structure and Concepts]
+ * description: [This is the main entry point that initializes the core foundation including session management, dual mode architecture, configuration management, and comprehensive error handling]
+ * ---*/
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -47,13 +54,6 @@ Object.defineProperty(exports, "ConfigManager", { enumerable: true, get: functio
 const error_handler_1 = require("./core/error-handler");
 Object.defineProperty(exports, "ErrorHandler", { enumerable: true, get: function () { return error_handler_1.ErrorHandler; } });
 const chalk_1 = __importDefault(require("chalk"));
-/**
- * Phoenix Code Lite - Phase 1 Core Infrastructure
- *
- * This is the main entry point that initializes the core foundation
- * including session management, dual mode architecture, configuration
- * management, and comprehensive error handling.
- */
 let coreFoundation;
 let configManager;
 let errorHandler;
@@ -62,13 +62,13 @@ async function initializeCore() {
         // Only show initialization in command mode, not interactive mode
         const args = process.argv.slice(2);
         if (args.length > 0) {
-            console.log(chalk_1.default.blue.bold('🔥 Phoenix Code Lite - Phase 1 Initialization'));
+            console.log(chalk_1.default.blue.bold('* Phoenix Code Lite - Phase 1 Initialization'));
             console.log(chalk_1.default.gray('═'.repeat(60)));
         }
         // Initialize error handler first
         errorHandler = new error_handler_1.ErrorHandler();
         if (args.length > 0) {
-            console.log(chalk_1.default.green('✅ Error Handler initialized'));
+            console.log(chalk_1.default.green('✓ Error Handler initialized'));
         }
         // Initialize configuration manager
         configManager = new config_manager_1.ConfigManager();
@@ -76,7 +76,7 @@ async function initializeCore() {
         if (!configInitialized) {
             throw new Error('Configuration initialization failed');
         }
-        console.log(chalk_1.default.green('✅ Configuration Manager initialized'));
+        console.log(chalk_1.default.green('✓ Configuration Manager initialized'));
         // Initialize core foundation with configuration
         const config = configManager.getConfig();
         coreFoundation = new foundation_1.CoreFoundation(config);
@@ -84,41 +84,41 @@ async function initializeCore() {
         if (!coreInitialized) {
             throw new Error('Core foundation initialization failed');
         }
-        console.log(chalk_1.default.green('✅ Core Foundation initialized'));
+        console.log(chalk_1.default.green('✓ Core Foundation initialized'));
         // Setup configuration change handler
         configManager.onConfigChange('core-foundation', (newConfig) => {
-            console.log(chalk_1.default.yellow('🔄 Configuration changed, updating core systems...'));
+            console.log(chalk_1.default.yellow('⇔ Configuration changed, updating core systems...'));
             // In a real implementation, you might restart components or apply changes
         });
         console.log(chalk_1.default.gray('═'.repeat(60)));
-        console.log(chalk_1.default.green.bold('🚀 Phase 1 Core Infrastructure Ready'));
+        console.log(chalk_1.default.green.bold('^ Phase 1 Core Infrastructure Ready'));
         console.log();
         return true;
     }
     catch (error) {
         const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-        console.error(chalk_1.default.red('❌ Core initialization failed:'), errorMsg);
+        console.error(chalk_1.default.red('✗ Core initialization failed:'), errorMsg);
         return false;
     }
 }
 async function shutdown() {
-    console.log(chalk_1.default.yellow('\n🔄 Initiating graceful shutdown...'));
+    console.log(chalk_1.default.yellow('\n⇔ Initiating graceful shutdown...'));
     try {
         if (configManager) {
             await configManager.shutdown();
-            console.log(chalk_1.default.green('✅ Configuration Manager shutdown'));
+            console.log(chalk_1.default.green('✓ Configuration Manager shutdown'));
         }
         if (errorHandler) {
             await errorHandler.shutdown();
-            console.log(chalk_1.default.green('✅ Error Handler shutdown'));
+            console.log(chalk_1.default.green('✓ Error Handler shutdown'));
         }
         if (coreFoundation) {
             await coreFoundation.gracefulShutdown();
         }
-        console.log(chalk_1.default.green('✅ Graceful shutdown completed'));
+        console.log(chalk_1.default.green('✓ Graceful shutdown completed'));
     }
     catch (error) {
-        console.error(chalk_1.default.red('❌ Shutdown error:'), error);
+        console.error(chalk_1.default.red('✗ Shutdown error:'), error);
         // Use safeExit to handle test environments properly
         const { safeExit } = await Promise.resolve().then(() => __importStar(require('./utils/test-utils')));
         safeExit(1);
@@ -129,7 +129,7 @@ async function main() {
         // Initialize Phase 1 core infrastructure
         const initialized = await initializeCore();
         if (!initialized) {
-            console.error(chalk_1.default.red('❌ Failed to initialize core infrastructure'));
+            console.error(chalk_1.default.red('✗ Failed to initialize core infrastructure'));
             process.exit(1);
         }
         // Setup graceful shutdown handlers

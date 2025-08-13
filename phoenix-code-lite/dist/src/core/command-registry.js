@@ -1,11 +1,11 @@
 "use strict";
-/**
- * Command Registry Implementation
- * Created: 2025-01-06-175700
- *
- * Unified command execution system with validation, permissions, and audit logging.
- * Handles all commands regardless of interaction mode.
- */
+/**---
+ * title: [Unified Command Registry - Core Service Module]
+ * tags: [Core, Service, Command, Audit]
+ * provides: [UnifiedCommandRegistry Class, Command Execution, Validation, Audit Logging, Statistics]
+ * requires: [Types: command-execution]
+ * description: [Centralized command execution and validation service with permission checks, input validation, audit trail, and execution statistics used by unified/interactive CLI layers.]
+ * ---*/
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UnifiedCommandRegistry = void 0;
 class UnifiedCommandRegistry {

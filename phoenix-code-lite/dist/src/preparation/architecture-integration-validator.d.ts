@@ -1,8 +1,10 @@
-/**
- * Architecture Integration Validator
- *
- * Validates existing architecture for QMS integration
- */
+/**---
+ * title: [Architecture Integration Validator - QMS]
+ * tags: [Preparation, QMS, Validation]
+ * provides: [ArchitectureIntegrationValidator]
+ * requires: []
+ * description: [Validates architectural integration against QMS criteria and documented patterns.]
+ * ---*/
 export interface ComponentAnalysis {
     totalComponents: number;
     components: Array<{

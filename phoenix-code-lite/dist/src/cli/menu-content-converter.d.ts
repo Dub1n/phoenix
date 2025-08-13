@@ -1,3 +1,10 @@
+/**---
+ * title: [Menu Content Converter - Legacy to Unified Bridge]
+ * tags: [CLI, Menu, Migration, Conversion]
+ * provides: [convertMenuContentToSkinDefinition, convertWithLayoutConstraints, validateConversion]
+ * requires: [Menu Types, Unified Layout Engine]
+ * description: [Converts legacy MenuContent structures into unified SkinMenuDefinition for PCL-Skins architecture while preserving behavior.]
+ * ---*/
 /**
  * Menu Content Converter - Bridge between legacy and unified systems
  *

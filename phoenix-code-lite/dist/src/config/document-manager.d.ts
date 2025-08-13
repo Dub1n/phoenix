@@ -1,16 +1,10 @@
-/**
- * Document Management System for Phoenix Code Lite
- * Provides per-agent and global document management with template-level activation
- */
-import { DocumentInfo, DocumentConfiguration, DocumentInventory, DocumentTemplate, DocumentSearchOptions, DocumentSearchResult, DocumentOperationResult } from '../types/document-management';
-import { SecurityGuardrailsManager } from '../security/guardrails';
-/**
- * Document Management System for Phoenix Code Lite
- *
- * Provides comprehensive document management with per-agent and global document
- * organization, template-level configuration, and security validation.
- *
- * @example
+/**---
+ * title: [Document Manager - Inventory and Activation]
+ * tags: [Configuration, Documents, Management]
+ * provides: [DocumentManager Class, Inventory, Per-Template Activation]
+ * requires: [fs, path]
+ * description: [Manages document inventory, metadata extraction, and per-template activation for agent phases.]
+ *  * @example
  * ```typescript
  * const documentManager = new DocumentManager();
  * await documentManager.initializeDocumentSystem();
@@ -18,7 +12,9 @@ import { SecurityGuardrailsManager } from '../security/guardrails';
  * const inventory = await documentManager.getAvailableDocuments();
  * console.log(`Found ${inventory.global.length} global documents`);
  * ```
- */
+ * ---*/
+import { DocumentInfo, DocumentConfiguration, DocumentInventory, DocumentTemplate, DocumentSearchOptions, DocumentSearchResult, DocumentOperationResult } from '../types/document-management';
+import { SecurityGuardrailsManager } from '../security/guardrails';
 export declare class DocumentManager {
     private readonly documentsPath;
     private readonly config;

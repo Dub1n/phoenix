@@ -3,10 +3,10 @@
 ## Context & Prerequisites
 
 You are retrofitting Noderr to an existing codebase. The user has:
-- ✅ **Downloaded Noderr ZIP** and extracted to project root
-- ✅ **Existing codebase** with working application  
-- ✅ **Noderr template files** present in `noderr/`, `noderr/specs/`, `noderr/prompts/`
-- ✅ **Template `noderr/environment_context.md`** present and needs completion
+- ✓ **Downloaded Noderr ZIP** and extracted to project root
+- ✓ **Existing codebase** with working application  
+- ✓ **Noderr template files** present in `noderr/`, `noderr/specs/`, `noderr/prompts/`
+- ✓ **Template `noderr/environment_context.md`** present and needs completion
 
 ## Your Mission
 
@@ -38,7 +38,7 @@ Perform comprehensive analysis of the existing project and **update the Noderr t
    echo "Development environment indicators:"
    env | grep -E "REPL|CLOUD|VIRTUAL|AWS|GCP|AZURE|HEROKU|VERCEL|NETLIFY|LOVABLE"
    echo ""
-   echo "⚠️ CONFIRMING: I am documenting the DEVELOPMENT workspace, not production"
+   echo "⚠ CONFIRMING: I am documenting the DEVELOPMENT workspace, not production"
    echo "=== END ENVIRONMENT CHECK ==="
    ```
 3. **Execute EVERY discovery command** from the CRITICAL DISCOVERY SEQUENCE
@@ -79,7 +79,7 @@ access_urls:
   public_deployed_app:
     url: "https://myapp.repl.app"
     description: "Live production app - DO NOT MODIFY during development"
-    warning: "⚠️ Real users are using this!"
+    warning: "⚠ Real users are using this!"
 ```
 
 #### 1.3 MANDATORY Verification Step
@@ -97,9 +97,9 @@ access_urls:
    ```bash
    # Check that both URLs are documented
    if grep -q "local_dev_preview" noderr/environment_context.md && grep -q "public_deployed_app" noderr/environment_context.md; then
-       echo "✅ PASS: Both development and production URLs documented"
+       echo "✓ PASS: Both development and production URLs documented"
    else
-       echo "❌ FAIL: Environment distinction missing - CRITICAL for existing projects"
+       echo "✗ FAIL: Environment distinction missing - CRITICAL for existing projects"
        exit 1
    fi
    ```
@@ -138,26 +138,26 @@ access_urls:
 # MANDATORY: Verify environment context is 100% complete
 bracket_count=$(grep -c "\[.*\]" noderr/environment_context.md)
 if [ $bracket_count -eq 0 ]; then
-    echo "✅ Environment context complete: 0 placeholders remaining"
+    echo "✓ Environment context complete: 0 placeholders remaining"
 else
-    echo "❌ FAILED: $bracket_count placeholders still remain"
+    echo "✗ FAILED: $bracket_count placeholders still remain"
     echo "MUST complete environment context before proceeding"
     exit 1
 fi
 
 # MANDATORY: Verify environment distinction (CRITICAL for existing projects)
 if grep -q "local_dev_preview" noderr/environment_context.md && grep -q "public_deployed_app" noderr/environment_context.md; then
-    echo "✅ Development vs Production URLs properly documented"
+    echo "✓ Development vs Production URLs properly documented"
     
     # For existing projects, production URL should exist
     prod_url=$(grep -A 2 'public_deployed_app:' noderr/environment_context.md | grep 'url:' | head -1 | cut -d'"' -f2)
     if [[ "$prod_url" == *"Not deployed"* ]]; then
-        echo "⚠️ WARNING: Existing project but no production URL found"
+        echo "⚠ WARNING: Existing project but no production URL found"
     else
-        echo "✅ Production URL documented: $prod_url (DO NOT MODIFY)"
+        echo "✓ Production URL documented: $prod_url (DO NOT MODIFY)"
     fi
 else
-    echo "❌ FAILED: Must document both development and production URLs"
+    echo "✗ FAILED: Must document both development and production URLs"
     echo "This is CRITICAL for existing projects to avoid production accidents"
     exit 1
 fi
@@ -263,8 +263,8 @@ For every implemented component found:
    ```
 
 2. **Proper NodeID Convention** - ALL components must use TYPE_Name pattern:
-   - ✅ CORRECT: `UI_HomePage`, `API_GetUser`, `SVC_AuthService`
-   - ❌ WRONG: "HomePage", "GET /user", "auth-service"
+   - ✓ CORRECT: `UI_HomePage`, `API_GetUser`, `SVC_AuthService`
+   - ✗ WRONG: "HomePage", "GET /user", "auth-service"
 
 3. **Consistent Component Shapes**:
    - UI Components: `UI_Name[/Label/]`
@@ -339,11 +339,11 @@ echo "Total NodeIDs to process: $total_nodeids"
 
 # Verify architecture has content
 if [ $total_nodeids -eq 0 ]; then
-    echo "❌ FAILED: No NodeIDs found in architecture"
+    echo "✗ FAILED: No NodeIDs found in architecture"
     echo "MUST create complete architecture before proceeding"
     exit 1
 else
-    echo "✅ Architecture contains $total_nodeids NodeIDs"
+    echo "✓ Architecture contains $total_nodeids NodeIDs"
 fi
 ```
 
@@ -353,9 +353,9 @@ fi
 ```bash
 # Check for Legend presence (MANDATORY)
 if grep -q "subgraph Legend" noderr/noderr_architecture.md; then
-    echo "✅ PASS: Legend subgraph found"
+    echo "✓ PASS: Legend subgraph found"
 else
-    echo "❌ FAIL: Missing required Legend subgraph"
+    echo "✗ FAIL: Missing required Legend subgraph"
     echo "Architecture Generator REQUIRES a Legend section"
     exit 1
 fi
@@ -365,15 +365,15 @@ nodeids=$(grep -oE '\b[A-Z][A-Z_]*[A-Za-z]+\b' noderr/noderr_architecture.md | g
 invalid_count=0
 for nodeid in $nodeids; do
     if ! echo "$nodeid" | grep -qE "^[A-Z]+_[A-Za-z]+"; then
-        echo "❌ Invalid NodeID format: $nodeid"
+        echo "✗ Invalid NodeID format: $nodeid"
         ((invalid_count++))
     fi
 done
 
 if [ $invalid_count -eq 0 ]; then
-    echo "✅ PASS: All NodeIDs follow TYPE_Name convention"
+    echo "✓ PASS: All NodeIDs follow TYPE_Name convention"
 else
-    echo "❌ FAIL: $invalid_count NodeIDs don't follow convention"
+    echo "✗ FAIL: $invalid_count NodeIDs don't follow convention"
     exit 1
 fi
 ```
@@ -425,7 +425,7 @@ echo "$nodeid_list"
 [What this component actually does based on code analysis]
 
 ## Current Implementation Status
-✅ **IMPLEMENTED** - Component exists and is functional in the codebase
+✓ **IMPLEMENTED** - Component exists and is functional in the codebase
 
 ## Implementation Analysis
 - **Location**: [Actual file paths where this component exists]
@@ -505,9 +505,9 @@ echo "Spec files created: $spec_count"
 
 # REQUIREMENT: Must match exactly
 if [ $nodeid_count -eq $spec_count ]; then
-    echo "✅ PASS: Every NodeID has a spec ($nodeid_count = $spec_count)"
+    echo "✓ PASS: Every NodeID has a spec ($nodeid_count = $spec_count)"
 else
-    echo "❌ FAIL: Mismatch - $nodeid_count NodeIDs but $spec_count specs"
+    echo "✗ FAIL: Mismatch - $nodeid_count NodeIDs but $spec_count specs"
     echo "MUST create missing specs before proceeding"
     exit 1
 fi
@@ -565,10 +565,10 @@ fi
 sed -i "s/Progress: [0-9]*%/Progress: $progress_percent%/" noderr/noderr_tracker.md
 
 echo "System Health Analysis:"
-echo "✅ VERIFIED: $verified_count ($progress_percent%)"
+echo "✓ VERIFIED: $verified_count ($progress_percent%)"
 echo "⚪ TODO: $todo_count"
 echo "❗ ISSUES: $issue_count"
-echo "📊 TOTAL: $total_count components"
+echo "◊ TOTAL: $total_count components"
 ```
 
 ---
@@ -602,11 +602,11 @@ git log --oneline -3
 ```
 
 **Document Results:**
-- ✅ All commands work as documented
-- ✅ Development URL accessible for testing
-- ✅ Production URL documented with warnings
-- ⚠️ Some commands need adjustment 
-- ❌ Commands fail - environment context incomplete
+- ✓ All commands work as documented
+- ✓ Development URL accessible for testing
+- ✓ Production URL documented with warnings
+- ⚠ Some commands need adjustment 
+- ✗ Commands fail - environment context incomplete
 
 ---
 
@@ -668,16 +668,16 @@ git commit -m "feat: Complete Noderr v1.9 retrofit with existing component docum
 # MANDATORY: Verify environment context is 100% complete
 bracket_count=$(grep -c "\[.*\]" noderr/environment_context.md)
 if [ $bracket_count -eq 0 ]; then
-    echo "✅ Environment context complete: 0 placeholders remaining"
+    echo "✓ Environment context complete: 0 placeholders remaining"
 else
-    echo "❌ FAILED: $bracket_count placeholders still remain in noderr/environment_context.md"
+    echo "✗ FAILED: $bracket_count placeholders still remain in noderr/environment_context.md"
     echo "MUST fix all placeholders before proceeding"
     exit 1
 fi
 
 # MANDATORY: Verify environment distinction (CRITICAL for existing projects)
 if grep -q "local_dev_preview" noderr/environment_context.md && grep -q "public_deployed_app" noderr/environment_context.md; then
-    echo "✅ Development vs Production properly distinguished"
+    echo "✓ Development vs Production properly distinguished"
     
     dev_url=$(grep -A 2 'local_dev_preview:' noderr/environment_context.md | grep 'url:' | head -1 | cut -d'"' -f2)
     prod_url=$(grep -A 2 'public_deployed_app:' noderr/environment_context.md | grep 'url:' | head -1 | cut -d'"' -f2)
@@ -687,12 +687,12 @@ if grep -q "local_dev_preview" noderr/environment_context.md && grep -q "public_
     
     # Check for proper warnings
     if grep -q "DO NOT.*test\|real users\|DO NOT MODIFY" noderr/environment_context.md; then
-        echo "✅ Production warnings properly documented"
+        echo "✓ Production warnings properly documented"
     else
-        echo "⚠️ WARNING: Missing clear production warnings"
+        echo "⚠ WARNING: Missing clear production warnings"
     fi
 else
-    echo "❌ FAILED: Must document both development and production URLs"
+    echo "✗ FAILED: Must document both development and production URLs"
     echo "This is CRITICAL for existing projects to prevent production accidents"
     exit 1
 fi
@@ -703,19 +703,19 @@ fi
 ```bash
 # Verify Architecture follows Generator conventions
 if ! grep -q "subgraph Legend" noderr/noderr_architecture.md; then
-    echo "❌ FAILED: Architecture missing required Legend"
+    echo "✗ FAILED: Architecture missing required Legend"
     exit 1
 fi
 
 # Verify NodeID conventions
 invalid_nodeids=$(grep -oE '\b[A-Z][A-Z_]*[A-Za-z]+\b' noderr/noderr_architecture.md | grep -v "^L_" | grep -vE "^[A-Z]+_[A-Za-z]+")
 if [ -n "$invalid_nodeids" ]; then
-    echo "❌ FAILED: Found NodeIDs not following TYPE_Name convention:"
+    echo "✗ FAILED: Found NodeIDs not following TYPE_Name convention:"
     echo "$invalid_nodeids"
     exit 1
 fi
 
-echo "✅ Architecture follows all Generator conventions"
+echo "✓ Architecture follows all Generator conventions"
 ```
 
 #### 8.3 Update Tracker with Accurate Statuses
@@ -759,19 +759,19 @@ echo "✅ Architecture follows all Generator conventions"
 **Provide comprehensive retrofit summary:**
 
 ```markdown
-# Retrofit Complete! 🎉
+# Retrofit Complete! *
 
-## 📊 Existing System Documentation Results
-- **Environment Context**: ✅ 100% complete (0 [brackets] remaining)
-- **Environment Distinction**: ✅ CLEAR separation of dev vs prod
+## ◊ Existing System Documentation Results
+- **Environment Context**: ✓ 100% complete (0 [brackets] remaining)
+- **Environment Distinction**: ✓ CLEAR separation of dev vs prod
 - **Development URL**: [local_dev_preview] - for ALL testing
 - **Production URL**: [public_deployed_app] - DO NOT MODIFY (has real users)
-- **Architecture Conventions**: ✅ Follows Generator patterns (Legend, NodeIDs)
+- **Architecture Conventions**: ✓ Follows Generator patterns (Legend, NodeIDs)
 - **Existing Components Documented**: [X] NodeIDs identified and spec'd
 - **Specification Coverage**: 100% - Every existing component has complete spec
 - **Initial System Health**: [Y]% ([A] verified, [B] todo, [C] issues)
 
-## 🔍 Architecture Analysis Summary
+## ⌕ Architecture Analysis Summary
 - **Primary Pattern**: [Architectural style discovered]
 - **Technology Stack**: [Languages/frameworks with actual versions]
 - **NodeID Convention**: TYPE_Name pattern applied consistently
@@ -783,34 +783,34 @@ echo "✅ Architecture follows all Generator conventions"
   - Utilities: [B] (with UTIL_/CONFIG_ prefixes)
   - Infrastructure: [C] (with appropriate prefixes)
 
-## 🎯 Immediate Development Readiness
-- **Environment**: ✅ Fully configured and tested for DEVELOPMENT
-- **Testing Strategy**: ✅ Use [local_dev_preview] for ALL testing
-- **Production Safety**: ✅ [public_deployed_app] documented with warnings
-- **Architecture**: ✅ Complete visibility with proper conventions
-- **Specifications**: ✅ Every existing component documented with quality assessment
-- **Quality Assessment**: ✅ Realistic status assigned to all components
+## ⊕ Immediate Development Readiness
+- **Environment**: ✓ Fully configured and tested for DEVELOPMENT
+- **Testing Strategy**: ✓ Use [local_dev_preview] for ALL testing
+- **Production Safety**: ✓ [public_deployed_app] documented with warnings
+- **Architecture**: ✓ Complete visibility with proper conventions
+- **Specifications**: ✓ Every existing component documented with quality assessment
+- **Quality Assessment**: ✓ Realistic status assigned to all components
 
-## 🔧 Environment Ready
+## ◦ Environment Ready
 - **Platform**: [Detected platform and configuration]
 - **Stack**: [Technology stack with versions]
 - **Development Commands**: All tested and working
 - **Critical Tools**: [List verified tools]
 - **Dev Server**: Run with [command] and test at [local_dev_preview]
-- **⚠️ Production**: [public_deployed_app] - NEVER test here
+- **⚠ Production**: [public_deployed_app] - NEVER test here
 
-## 📋 Technical Debt Summary
+## ⋇ Technical Debt Summary
 - **High Priority**: [X] components needing immediate attention
 - **Medium Priority**: [Y] components needing improvement
 - **Low Priority**: [Z] components with minor issues
 
-## 🚨 Critical Reminders for Existing Projects
+## ⚡ Critical Reminders for Existing Projects
 1. **ALWAYS test at**: [local_dev_preview]
 2. **NEVER modify**: [public_deployed_app] - has real users!
 3. **Before deploying**: Test thoroughly in development first
 4. **Production access**: Use deployment commands, not direct modification
 
-## 🚀 Next Steps
+## ^ Next Steps
 The project retrofit is complete and ready for verification.
 
 **Next Command**: Use `NDv1.9__Onboarding_Audit_Verification.md` to verify retrofit completeness and identify highest priority development tasks.

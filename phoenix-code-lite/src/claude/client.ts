@@ -1,3 +1,11 @@
+/**---
+ * title: [Claude Code Client - LLM Integration Service]
+ * tags: [Claude, Service, Integration]
+ * provides: [ClaudeCodeClient Class, query, executeCommand]
+ * requires: [@anthropic-ai/claude-code, zod]
+ * description: [Wrapper around Claude Code SDK for querying and command execution with validation and error handling.]
+ * ---*/
+
 import { TaskContext, LLMResponse, CommandResult, TaskContextSchema, LLMResponseSchema, CommandResultSchema } from '../types/workflow';
 import { AgentPersona } from '../types/agents';
 import { z } from 'zod';

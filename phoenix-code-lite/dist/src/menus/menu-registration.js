@@ -1,11 +1,11 @@
 "use strict";
-/**
- * Menu Registration System
- * Created: 2025-01-06-175700
- *
- * Central registration point for all core menu definitions.
- * Manages menu lifecycle and provides validation.
- */
+/**---
+ * title: [Menu Registration - Unified Architecture]
+ * tags: [Unified, Menus, Registration]
+ * provides: [Menu Registration]
+ * requires: [core-menus]
+ * description: [Registers core menus into the unified menu registry for integrated CLI.]
+ * ---*/
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.registerCoreMenus = registerCoreMenus;
 exports.getCoreMenuIds = getCoreMenuIds;
@@ -23,10 +23,10 @@ function registerCoreMenus(menuRegistry) {
         menuRegistry.registerMenuSafe(core_menus_1.GenerateMenuDefinition);
         menuRegistry.registerMenuSafe(core_menus_1.AdvancedMenuDefinition);
         menuRegistry.registerMenuSafe(core_menus_1.SettingsMenuDefinition);
-        console.log('✅ All core menus registered successfully');
+        console.log('✓ All core menus registered successfully');
     }
     catch (error) {
-        console.error('❌ Failed to register core menus:', error);
+        console.error('✗ Failed to register core menus:', error);
         throw error;
     }
 }
@@ -62,7 +62,7 @@ function validateCoreMenus() {
         return true;
     }
     catch (error) {
-        console.error('❌ Menu validation failed:', error);
+        console.error('✗ Menu validation failed:', error);
         return false;
     }
 }

@@ -1,4 +1,11 @@
 "use strict";
+/**---
+ * title: [Interactive Session Manager - CLI Session Orchestrator]
+ * tags: [CLI, Interface, Session-Management, User-Interaction]
+ * provides: [InteractiveSession Class, Session Lifecycle, Main Menu Rendering, Command Dispatch Hooks]
+ * requires: [CommandFactory, IAuditLogger, IConfigManager, CLI Framework]
+ * description: [Manages persistent CLI sessions with menu navigation, command dispatch scaffolding, and context-aware user interactions.]
+ * ---*/
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.InteractiveSession = void 0;
 class InteractiveSession {
@@ -9,7 +16,7 @@ class InteractiveSession {
     }
     async start() {
         this.auditLogger.log('info', 'Interactive session started');
-        console.log('🔥 Phoenix Code Lite Interactive CLI');
+        console.log('* Phoenix Code Lite Interactive CLI');
         console.log('Type "help" for available commands or "quit" to exit');
         await this.showMainMenu();
     }

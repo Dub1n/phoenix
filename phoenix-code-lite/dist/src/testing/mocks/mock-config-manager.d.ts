@@ -1,3 +1,10 @@
+/**---
+ * title: [Mock Config Manager - Testing Double]
+ * tags: [Testing, Mocks]
+ * provides: [MockConfigManager]
+ * requires: []
+ * description: [Mock implementation of IConfigManager for unit and integration tests.]
+ * ---*/
 import { IConfigManager } from '../../cli/interfaces/config-manager';
 import { CoreConfig } from '../../core/foundation';
 export declare class MockConfigManager implements IConfigManager {

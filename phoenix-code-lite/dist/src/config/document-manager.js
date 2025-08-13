@@ -1,21 +1,11 @@
 "use strict";
-/**
- * Document Management System for Phoenix Code Lite
- * Provides per-agent and global document management with template-level activation
- */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.DocumentManager = void 0;
-const fs_1 = require("fs");
-const path_1 = require("path");
-const templates_1 = require("./templates");
-const guardrails_1 = require("../security/guardrails");
-/**
- * Document Management System for Phoenix Code Lite
- *
- * Provides comprehensive document management with per-agent and global document
- * organization, template-level configuration, and security validation.
- *
- * @example
+/**---
+ * title: [Document Manager - Inventory and Activation]
+ * tags: [Configuration, Documents, Management]
+ * provides: [DocumentManager Class, Inventory, Per-Template Activation]
+ * requires: [fs, path]
+ * description: [Manages document inventory, metadata extraction, and per-template activation for agent phases.]
+ *  * @example
  * ```typescript
  * const documentManager = new DocumentManager();
  * await documentManager.initializeDocumentSystem();
@@ -23,7 +13,13 @@ const guardrails_1 = require("../security/guardrails");
  * const inventory = await documentManager.getAvailableDocuments();
  * console.log(`Found ${inventory.global.length} global documents`);
  * ```
- */
+ * ---*/
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.DocumentManager = void 0;
+const fs_1 = require("fs");
+const path_1 = require("path");
+const templates_1 = require("./templates");
+const guardrails_1 = require("../security/guardrails");
 class DocumentManager {
     /**
      * Creates a new DocumentManager instance.

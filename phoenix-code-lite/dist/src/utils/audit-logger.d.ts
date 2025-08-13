@@ -1,3 +1,10 @@
+/**---
+ * title: [Audit Logger - Workflow Audit and Events]
+ * tags: [Utility, Logging, Audit]
+ * provides: [AuditLogger Class, Event Logging, Session Metadata]
+ * requires: [fs, path]
+ * description: [Structured audit logging for workflows, including events, session IDs, and summarization support.]
+ * ---*/
 import { TaskContext, WorkflowResult, PhaseResult } from '../types/workflow';
 import { z } from 'zod';
 export declare const AuditEventSchema: z.ZodObject<{

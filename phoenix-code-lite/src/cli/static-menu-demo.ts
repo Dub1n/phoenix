@@ -1,7 +1,10 @@
-/**
- * Demonstration of static menu height with consistent textbox positioning
- * Shows how different menus maintain the same command prompt position
- */
+/**---
+ * title: [Static Menu Demo - Consistent Textbox Positioning]
+ * tags: [CLI, Menu, Demo, UX]
+ * provides: [StaticMenuDemo Class, Demonstration Menus]
+ * requires: [menuComposer, Menu Types]
+ * description: [Demonstrates static menu height and consistent textbox positioning across different menus for UX validation.]
+ * ---*/
 
 import { menuComposer } from './menu-composer';
 import type { MenuContent, MenuDisplayContext } from './menu-types';
@@ -18,7 +21,7 @@ export class StaticMenuDemo {
    */
   showSimpleMenu(): void {
     const content: MenuContent = {
-      title: '🔥 Phoenix Code Lite',
+      title: '* Phoenix Code Lite',
       subtitle: 'Quick Actions',
       sections: [{
         heading: '⚡ Quick Commands:',
@@ -44,11 +47,11 @@ export class StaticMenuDemo {
    */
   showComplexMenu(): void {
     const content: MenuContent = {
-      title: '📋 Advanced Configuration Management Hub',
+      title: '⋇ Advanced Configuration Management Hub',
       subtitle: 'Comprehensive settings management with enterprise-grade options',
       sections: [
         {
-          heading: '🔧 Primary Configuration:',
+          heading: '◦ Primary Configuration:',
           theme: { headingColor: 'green', bold: true },
           items: [
             { label: '1. show', description: 'Display current configuration with detailed validation status', commands: ['show', '1'] },
@@ -58,7 +61,7 @@ export class StaticMenuDemo {
           ]
         },
         {
-          heading: '⚙️ Advanced Settings:',
+          heading: '⌘ Advanced Settings:',
           theme: { headingColor: 'cyan', bold: true },
           items: [
             { label: '5. framework', description: 'Framework-specific optimization and performance settings', commands: ['framework', '5'] },
@@ -86,10 +89,10 @@ export class StaticMenuDemo {
    */
   showMediumMenu(): void {
     const content: MenuContent = {
-      title: '📄 Template Management',
+      title: '□ Template Management',
       subtitle: 'Manage configuration templates',
       sections: [{
-        heading: '📦 Template Commands:',
+        heading: '⌺ Template Commands:',
         theme: { headingColor: 'yellow', bold: true },
         items: [
           { label: '1. list', description: 'Show available templates', commands: ['list', '1'] },

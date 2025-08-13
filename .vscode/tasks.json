@@ -25,43 +25,53 @@
             "detail": "Automatically activate terminal safety when workspace opens"
         },
         {
-            "label": "Replace Emojis in Current File",
+            "label": "Emoji Sub (Active File)",
             "type": "shell",
-            "command": "python",
+            "command": "pyw",
             "args": [
-                ".vscode/scripts/emoji_substitute.py",
-                "--verbose",
+                "-3",
+                "${workspaceFolder}/.vscode/scripts/emoji_substitute.py",
+                "-q",
+                "--files-only",
                 "${file}"
             ],
-            "group": "build",
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            },
-            "problemMatcher": [],
-            "detail": "Replace emojis with monospace-friendly Unicode characters in the currently active file"
+            "problemMatcher": []
         },
         {
-            "label": "Preview Emoji Replacements (Dry Run)",
+            "label": "Emoji Substitute (Auto Detect)",
             "type": "shell",
-            "command": "python",
+            "command": "powershell",
             "args": [
-                ".vscode/scripts/emoji_substitute.py",
-                "--dry-run",
-                "--verbose",
-                "${file}"
+                "-NoProfile",
+                "-ExecutionPolicy", "Bypass",
+                "-File", "${workspaceFolder}/.vscode/scripts/emoji_substitute.ps1"
             ],
-            "group": "build",
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
+            "options": {
+                "env": {
+                    "TARGET_FILE": "${file}",
+                    "VSCODE_EXPLORER_SELECTED_FILE": "${input:explorerFile}"
+                }
             },
-            "problemMatcher": [],
-            "detail": "Preview what emoji replacements would be made in the currently active file"
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "echo": false,
+                "reveal": "never",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": false,
+                "clear": false
+            },
+            "problemMatcher": []
+        }
+    ],
+    "inputs": [
+        {
+            "id": "explorerFile",
+            "type": "command",
+            "command": "extension.commandvariable.file.file"
         }
     ]
 } 

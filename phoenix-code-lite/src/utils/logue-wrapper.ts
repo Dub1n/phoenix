@@ -1,9 +1,10 @@
-/**
- * Enhanced Logue Wrapper with Proper Process Cleanup
- * 
- * This wrapper extends the logue library to provide proper cleanup
- * of child processes and stdio handles, preventing Jest hang issues.
- */
+/**---
+ * title: [Enhanced Logue Wrapper - Utility Functions Module]
+ * tags: [Utility, Logging, Process-Management, Testing]
+ * provides: [EnhancedLogue Class, enhancedLogue Function, Process Cleanup Hooks]
+ * requires: [logue Library, Node.js Child Process Streams]
+ * description: [Wraps logue to add robust process and stream cleanup to prevent hanging tests and ensure safe CLI automation]
+ * ---*/
 
 import logue from 'logue';
 

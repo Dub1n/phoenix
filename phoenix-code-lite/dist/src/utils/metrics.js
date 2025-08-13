@@ -1,4 +1,11 @@
 "use strict";
+/**---
+ * title: [Metrics Collector - Workflow Metrics]
+ * tags: [Utility, Metrics]
+ * provides: [MetricsCollector Class, Metrics Aggregation]
+ * requires: []
+ * description: [Collects and aggregates workflow metrics such as duration, phase counts, and success rates.]
+ * ---*/
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MetricsCollector = void 0;
 const fs_1 = require("fs");

@@ -1,4 +1,11 @@
 "use strict";
+/**---
+ * title: [Menu Composer - Content-Driven Menu Assembly]
+ * tags: [CLI, Menu, Composition, Formatting]
+ * provides: [MenuComposer Class, Separator Sizing, Content Formatting]
+ * requires: [display Utils, MenuLayoutManager, Menu Types]
+ * description: [Constructs formatted menus from content with procedural sizing and layout preparation for consistent CLI rendering.]
+ * ---*/
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -211,7 +218,7 @@ class MenuComposer {
         if (content.footerHints && content.footerHints.length > 0) {
             display_1.display.printDivider(layout.footerSeparatorLength);
             for (const hint of content.footerHints) {
-                console.log(chalk_1.default.blue('💡 ') + hint);
+                console.log(chalk_1.default.blue('* ') + hint);
             }
             console.log();
         }

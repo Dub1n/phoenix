@@ -1,3 +1,10 @@
+/**---
+ * title: [Enhanced Wizard - Guided Interactive Setup]
+ * tags: [CLI, Wizard, UX, Configuration]
+ * provides: [wizardCommand, Interactive Setup Flows, Validation]
+ * requires: [InteractivePrompts, PhoenixCodeLiteConfig, Templates, HelpSystem]
+ * description: [Guided interactive setup wizard for onboarding and configuration with validation and template selection.]
+ * ---*/
 import { ProjectContext } from './project-discovery';
 import { ConfigurationWizardAnswers } from './interactive';
 export interface EnhancedWizardOptions {

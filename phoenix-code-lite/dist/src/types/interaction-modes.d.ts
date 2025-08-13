@@ -1,3 +1,10 @@
+/**---
+ * title: [Interaction Modes - Schemas and Types]
+ * tags: [Types, CLI, Interaction, Zod]
+ * provides: [MenuModeConfigSchema, CommandModeConfigSchema, InteractionModeConfigSchema, Types]
+ * requires: [zod]
+ * description: [Zod schemas and related types describing CLI interaction modes and options.]
+ * ---*/
 import { z } from 'zod';
 export declare const MenuModeConfigSchema: z.ZodObject<{
     showNumbers: z.ZodDefault<z.ZodBoolean>;

@@ -1,10 +1,11 @@
 "use strict";
-/**
- * QMS Performance Target Validator
- *
- * Defines and validates QMS-specific performance targets
- * for regulatory compliance and audit trail requirements
- */
+/**---
+ * title: [QMS Performance Target Validator]
+ * tags: [Preparation, QMS, Validation]
+ * provides: [QMSPerformanceTargetValidator]
+ * requires: []
+ * description: [Validates documented performance targets against measured baselines and criteria.]
+ * ---*/
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.QMSPerformanceTargetValidator = void 0;
 class QMSPerformanceTargetValidator {

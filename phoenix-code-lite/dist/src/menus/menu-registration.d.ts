@@ -1,10 +1,10 @@
-/**
- * Menu Registration System
- * Created: 2025-01-06-175700
- *
- * Central registration point for all core menu definitions.
- * Manages menu lifecycle and provides validation.
- */
+/**---
+ * title: [Menu Registration - Unified Architecture]
+ * tags: [Unified, Menus, Registration]
+ * provides: [Menu Registration]
+ * requires: [core-menus]
+ * description: [Registers core menus into the unified menu registry for integrated CLI.]
+ * ---*/
 import { MenuRegistry } from '../core/menu-registry';
 /**
  * Register all core menu definitions

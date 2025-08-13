@@ -1,10 +1,10 @@
-/**
- * Core Command Handlers
- * Created: 2025-01-06-175700
- *
- * Extracted command handlers from the existing menu system.
- * Provides unified command execution independent of interaction mode.
- */
+/**---
+ * title: [Core Commands - Unified Architecture]
+ * tags: [Unified, Commands]
+ * provides: [Core Command Implementations]
+ * requires: []
+ * description: [Core command implementations used by the unified CLI system.]
+ * ---*/
 import { CommandHandler } from '../types/command-execution';
 export declare const ConfigShowCommand: CommandHandler;
 export declare const ConfigEditCommand: CommandHandler;

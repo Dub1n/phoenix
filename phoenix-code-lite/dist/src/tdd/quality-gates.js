@@ -1,4 +1,11 @@
 "use strict";
+/**---
+ * title: [Quality Gates - TDD Validation Module]
+ * tags: [TDD, Validation, Quality-Assurance, Scoring]
+ * provides: [QualityGateManager Class, QualityGate Types, Quality Reports, Heuristic Validators]
+ * requires: [Zod, Workflow Types]
+ * description: [Runs syntax, coverage, code quality, and documentation checks to produce weighted quality scores and recommendations across TDD phases.]
+ * ---*/
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.QualityGateManager = void 0;
 class QualityGateManager {

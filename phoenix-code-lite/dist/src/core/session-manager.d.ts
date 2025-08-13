@@ -1,3 +1,10 @@
+/**---
+ * title: [Session Manager - Core Service Module]
+ * tags: [Core, Service, Session-Management, Audit]
+ * provides: [SessionManager Class, Session Lifecycle, State Validation, Metrics, Cleanup]
+ * requires: [Zod, UUID, EventEmitter, AuditLogger, Workflow Types]
+ * description: [Manages interactive and command sessions with lifecycle control, schema validation, auditing, automatic cleanup, and metrics tracking.]
+ * ---*/
 import { EventEmitter } from 'events';
 import { SessionState } from '../types/workflow';
 export interface SessionManagerConfig {

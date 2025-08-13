@@ -1,3 +1,10 @@
+/**---
+ * title: [Menu Layout Manager - Consistent Height & Textbox Positioning]
+ * tags: [CLI, Menu, Layout, UX]
+ * provides: [MenuLayoutManager Class, CalculatedMenuLayout Types, Layout Constraints]
+ * requires: [Menu Types, chalk]
+ * description: [Calculates menu layout with fixed height and reserved areas to ensure consistent textbox positioning across submenus.]
+ * ---*/
 import type { MenuContent, MenuDisplayContext, MenuLayout } from './menu-types';
 /**
  * Extended menu layout manager that ensures consistent height and textbox positioning

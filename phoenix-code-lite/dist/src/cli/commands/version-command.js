@@ -1,4 +1,11 @@
 "use strict";
+/**---
+ * title: [Version Command - CLI Command]
+ * tags: [CLI, Command, Version]
+ * provides: [VersionCommand]
+ * requires: [IAuditLogger]
+ * description: [Displays current version and development status.]
+ * ---*/
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.VersionCommand = void 0;
 class VersionCommand {

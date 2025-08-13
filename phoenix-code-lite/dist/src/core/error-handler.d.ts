@@ -1,6 +1,10 @@
-/**
- * Error classification and severity levels
- */
+/**---
+ * title: [Error Handler - Core Infrastructure Component]
+ * tags: [Core, Infrastructure, Error-Handling, Audit]
+ * provides: [ErrorHandler Class, Error Severity/Category Enums, Strategy Registration, Statistics APIs]
+ * requires: [Zod, AuditLogger]
+ * description: [Comprehensive error handling system providing classification, strategies, auditing, and analytics for Phoenix Code Lite across CLI and workflow components.]
+ * ---*/
 export declare enum ErrorSeverity {
     LOW = "low",
     MEDIUM = "medium",

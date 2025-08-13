@@ -1,4 +1,11 @@
 "use strict";
+/**---
+ * title: [Workflow Schemas & Types - TDD Contracts]
+ * tags: [Types, Workflow, TDD, Zod]
+ * provides: [TaskContextSchema, LLMResponseSchema, CommandResultSchema, PhaseResultSchema, WorkflowResultSchema, SessionStateSchema]
+ * requires: [zod]
+ * description: [Defines core schemas and types for the Phoenix Code Lite TDD workflow, including context, results, and session state.]
+ * ---*/
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ModeConfigSchema = exports.SessionStateSchema = exports.WorkflowResultSchema = exports.PhaseResultSchema = exports.CommandResultSchema = exports.LLMResponseSchema = exports.TaskContextSchema = void 0;
 const zod_1 = require("zod");

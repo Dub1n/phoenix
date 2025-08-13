@@ -1,4 +1,11 @@
 "use strict";
+/**---
+ * title: [Mock Claude Client - Testing Double]
+ * tags: [Testing, Mocks]
+ * provides: [MockClaudeClient]
+ * requires: []
+ * description: [Mock implementation of IClaudeClient for unit and integration tests.]
+ * ---*/
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MockClaudeClient = void 0;
 class MockClaudeClient {

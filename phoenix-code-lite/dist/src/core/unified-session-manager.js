@@ -1,11 +1,11 @@
 "use strict";
-/**
- * Unified Session Manager
- * Created: 2025-01-06-175700
- *
- * Coordinates menu definitions, interaction modes, and command execution.
- * Provides seamless mode switching and unified session management.
- */
+/**---
+ * title: [Unified Session Manager - Core Service Module]
+ * tags: [Core, Service, Session-Management, CLI-Integration]
+ * provides: [UnifiedSessionManager Class, Renderer Switching, Menu Display, Command Execution Loop]
+ * requires: [MenuRegistry, UnifiedCommandRegistry, InteractiveRenderer, CommandRenderer, DebugRenderer, Interaction/Command Types]
+ * description: [Coordinates unified interactive and command modes, handling menu navigation, action execution, and renderer lifecycle for the CLI.]
+ * ---*/
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -69,7 +69,7 @@ class UnifiedSessionManager {
             // The interactive renderer will handle everything
             if (this.currentRenderer.mode.name === 'interactive') {
                 // Just show a simple header for interactive mode
-                console.log(chalk_1.default.blue.bold(`🔥 ${menuDefinition.title}`));
+                console.log(chalk_1.default.blue.bold(`* ${menuDefinition.title}`));
                 if (menuDefinition.description) {
                     console.log(chalk_1.default.gray(menuDefinition.description));
                 }
@@ -270,7 +270,7 @@ class UnifiedSessionManager {
      * Show welcome screen
      */
     showWelcome() {
-        console.log(chalk_1.default.red.bold('🔥 Phoenix Code Lite • Unified CLI'));
+        console.log(chalk_1.default.red.bold('* Phoenix Code Lite • Unified CLI'));
         console.log(chalk_1.default.gray('TDD Workflow Orchestrator with Decoupled Architecture'));
         console.log(chalk_1.default.gray('═'.repeat(60)));
         console.log();
@@ -280,7 +280,7 @@ class UnifiedSessionManager {
      */
     showHeader() {
         const modeName = this.currentRenderer.mode.displayName;
-        console.log(chalk_1.default.red.bold('🔥 Phoenix Code Lite'));
+        console.log(chalk_1.default.red.bold('* Phoenix Code Lite'));
         console.log(chalk_1.default.gray(`Mode: ${modeName} • Level: ${this.sessionContext.level}`));
         console.log(chalk_1.default.gray('═'.repeat(60)));
         console.log();

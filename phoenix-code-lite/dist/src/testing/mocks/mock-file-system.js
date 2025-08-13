@@ -1,4 +1,11 @@
 "use strict";
+/**---
+ * title: [Mock File System - Testing Double]
+ * tags: [Testing, Mocks]
+ * provides: [MockFileSystem]
+ * requires: []
+ * description: [Mock implementation of IFileSystem for unit and integration tests.]
+ * ---*/
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MockFileSystem = void 0;
 class MockFileSystem {

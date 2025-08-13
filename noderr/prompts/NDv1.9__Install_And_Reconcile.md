@@ -57,7 +57,7 @@ You have just completed an initial build based on blueprint, project, and archit
    echo "Development environment indicators:"
    env | grep -E "REPL|CLOUD|VIRTUAL|AWS|GCP|AZURE|HEROKU|VERCEL|NETLIFY|LOVABLE"
    echo ""
-   echo "⚠️ CONFIRMING: I am documenting the DEVELOPMENT workspace, not production"
+   echo "⚠ CONFIRMING: I am documenting the DEVELOPMENT workspace, not production"
    echo "=== END ENVIRONMENT CHECK ==="
    ```
 3. **Execute EVERY discovery command** from the CRITICAL DISCOVERY SEQUENCE
@@ -114,9 +114,9 @@ access_urls:
    ```bash
    # Check that both URLs are documented
    if grep -q "local_dev_preview" environment_context.md && grep -q "public_deployed_app" environment_context.md; then
-       echo "✅ PASS: Both development and production URLs documented"
+       echo "✓ PASS: Both development and production URLs documented"
    else
-       echo "❌ FAIL: Environment distinction missing"
+       echo "✗ FAIL: Environment distinction missing"
        exit 1
    fi
    ```
@@ -153,18 +153,18 @@ access_urls:
 # MANDATORY: Verify environment context is 100% complete
 bracket_count=$(grep -c "\[.*\]" noderr/environment_context.md)
 if [ $bracket_count -eq 0 ]; then
-    echo "✅ Environment context complete: 0 placeholders remaining"
+    echo "✓ Environment context complete: 0 placeholders remaining"
 else
-    echo "❌ FAILED: $bracket_count placeholders still remain"
+    echo "✗ FAILED: $bracket_count placeholders still remain"
     echo "MUST complete environment context before proceeding"
     exit 1
 fi
 
 # MANDATORY: Verify environment distinction
 if grep -q "local_dev_preview" noderr/environment_context.md && grep -q "public_deployed_app" noderr/environment_context.md; then
-    echo "✅ Development vs Production URLs properly documented"
+    echo "✓ Development vs Production URLs properly documented"
 else
-    echo "❌ FAILED: Must document both development and production URLs"
+    echo "✗ FAILED: Must document both development and production URLs"
     exit 1
 fi
 ```
@@ -440,9 +440,9 @@ total_needed=$((existing_count + missing_count))
 mvp_completion=$((existing_count * 100 / total_needed))
 
 echo "MVP Completion Analysis:"
-echo "✅ Existing: $existing_count components"
+echo "✓ Existing: $existing_count components"
 echo "⚪ Missing: $missing_count components"  
-echo "📊 MVP Completion: $mvp_completion% ($existing_count/$total_needed)"
+echo "◊ MVP Completion: $mvp_completion% ($existing_count/$total_needed)"
 ```
 
 ---
@@ -497,7 +497,7 @@ In `noderr/noderr_tracker.md`:
 [Clear description of what this component actually does based on code analysis]
 
 ## Current Implementation Status
-✅ **IMPLEMENTED** - Component exists and is functional
+✓ **IMPLEMENTED** - Component exists and is functional
 
 ## Implementation Details
 - **Location**: [File paths where this component exists]
@@ -641,9 +641,9 @@ In `noderr/noderr_tracker.md`:
    ```bash
    # Check that both URLs are documented
    if grep -q "local_dev_preview" environment_context.md && grep -q "public_deployed_app" environment_context.md; then
-       echo "✅ PASS: Both development and production URLs documented"
+       echo "✓ PASS: Both development and production URLs documented"
    else
-       echo "❌ FAIL: Environment distinction missing"
+       echo "✗ FAIL: Environment distinction missing"
        exit 1
    fi
    ```
@@ -720,20 +720,20 @@ Noderr framework completely installed and reconciled with existing build + MVP a
 # MANDATORY: Verify environment context is 100% complete
 bracket_count=$(grep -c "\[.*\]" environment_context.md)
 if [ $bracket_count -eq 0 ]; then
-    echo "✅ Environment context complete: 0 placeholders remaining"
+    echo "✓ Environment context complete: 0 placeholders remaining"
 else
-    echo "❌ FAILED: $bracket_count placeholders still remain in environment_context.md"
+    echo "✗ FAILED: $bracket_count placeholders still remain in environment_context.md"
     echo "MUST fix all placeholders before proceeding"
     exit 1
 fi
 
 # MANDATORY: Verify environment distinction
 if grep -q "local_dev_preview" environment_context.md && grep -q "public_deployed_app" environment_context.md; then
-    echo "✅ Development vs Production properly distinguished"
+    echo "✓ Development vs Production properly distinguished"
     echo "Development URL for testing: $(grep -A 1 'local_dev_preview:' environment_context.md | grep 'url:' | cut -d'"' -f2)"
     echo "Production URL (DO NOT USE): $(grep -A 1 'public_deployed_app:' environment_context.md | grep 'url:' | cut -d'"' -f2)"
 else
-    echo "❌ FAILED: Must document both development and production URLs"
+    echo "✗ FAILED: Must document both development and production URLs"
     exit 1
 fi
 ```
@@ -791,9 +791,9 @@ git commit -m "feat: Complete Noderr installation with comprehensive system docu
 #### Generate Final Report
 
 ```markdown
-# Installation Complete! 🎉
+# Installation Complete! *
 
-## 📊 Complete System Analysis Results
+## ◊ Complete System Analysis Results
 - **Existing Components**: [X] NodeIDs identified and documented
 - **Missing for MVP**: [Y] NodeIDs identified as needed
 - **Total System Size**: [X+Y] NodeIDs documented with complete specifications
@@ -806,14 +806,14 @@ git commit -m "feat: Complete Noderr installation with comprehensive system docu
   - Utilities: [M] existing + [N] needed = [O] total
   - Infrastructure: [P] existing + [Q] needed = [R] total
 
-## 📈 MVP Completion Status
+## ⋰ MVP Completion Status
 - **Current MVP Progress**: [X]% ([existing]/[total] components implemented)
 - **Verified Components**: [A] ([B]% of existing)
 - **Need Work**: [C] ([D]% of existing)  
 - **Have Issues**: [E] ([F]% of existing)
 - **Missing for MVP**: [Y] components with complete specifications ready for development
 
-## 🎯 Development Roadmap
+## ⊕ Development Roadmap
 **The system now provides a complete roadmap from current state to MVP completion:**
 
 ### Immediate Priorities (Fix Issues):
@@ -825,7 +825,7 @@ git commit -m "feat: Complete Noderr installation with comprehensive system docu
 ### MVP Completion Development:
 - [List missing components needed for MVP, in dependency order]
 
-## 🔧 Environment Ready
+## ◦ Environment Ready
 - **Platform**: [Detected platform and configuration]
 - **Stack**: [Technology stack with versions]
 - **Development Commands**: All tested and working
@@ -834,12 +834,12 @@ git commit -m "feat: Complete Noderr installation with comprehensive system docu
 - **Testing URL**: [local_dev_preview URL] - USE THIS FOR ALL TESTING
 - **Production URL**: [public_deployed_app URL or "Not deployed"] - DO NOT USE FOR TESTING
 
-## 📋 Technical Debt Summary
+## ⋇ Technical Debt Summary
 - **High Priority**: [X] components needing immediate attention
 - **Medium Priority**: [Y] components needing improvement
 - **Low Priority**: [Z] components with minor issues
 
-## 🚀 Next Steps
+## ^ Next Steps
 **The Noderr system installation is complete with full MVP roadmap.**
 
 **Architecture**: ONE unified diagram contains all [X+Y] NodeIDs (existing + missing)

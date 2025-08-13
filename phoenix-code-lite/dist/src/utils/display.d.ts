@@ -1,3 +1,10 @@
+/**---
+ * title: [Display Utilities - Terminal Formatting]
+ * tags: [Utility, Display, Formatting]
+ * provides: [display Functions, Color Helpers]
+ * requires: [chalk]
+ * description: [Terminal output helpers for consistent formatting and color usage across CLI components.]
+ * ---*/
 import chalk from 'chalk';
 /**
  * Display utility for consistent UI formatting across Phoenix Code Lite

@@ -1,11 +1,11 @@
 "use strict";
-/**
- * Core Command Handlers
- * Created: 2025-01-06-175700
- *
- * Extracted command handlers from the existing menu system.
- * Provides unified command execution independent of interaction mode.
- */
+/**---
+ * title: [Core Commands - Unified Architecture]
+ * tags: [Unified, Commands]
+ * provides: [Core Command Implementations]
+ * requires: []
+ * description: [Core command implementations used by the unified CLI system.]
+ * ---*/
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -52,7 +52,7 @@ exports.ConfigShowCommand = {
             const { PhoenixCodeLiteConfig } = await Promise.resolve().then(() => __importStar(require('../config/settings')));
             const config = await PhoenixCodeLiteConfig.load();
             const configData = config.export();
-            console.log('📋 Current Configuration:');
+            console.log('⋇ Current Configuration:');
             console.log('═'.repeat(50));
             console.log(JSON.stringify(configData, null, 2));
             return {
@@ -73,7 +73,7 @@ exports.ConfigEditCommand = {
     id: 'config:edit',
     handler: async (context) => {
         try {
-            console.log('🔧 Interactive Configuration Editor');
+            console.log('◦ Interactive Configuration Editor');
             console.log('This would open the configuration editor...');
             // TODO: Implement interactive configuration editor
             return {
@@ -93,7 +93,7 @@ exports.ConfigTemplatesCommand = {
     id: 'config:templates',
     handler: async (context) => {
         try {
-            console.log('📄 Configuration Templates');
+            console.log('□ Configuration Templates');
             console.log('Available templates: Starter, Enterprise, Performance');
             return {
                 success: true,
@@ -113,7 +113,7 @@ exports.ConfigFrameworkCommand = {
     id: 'config:framework',
     handler: async (context) => {
         try {
-            console.log('🏗️ Framework Configuration');
+            console.log('⊛ Framework Configuration');
             console.log('Framework-specific settings and optimizations...');
             return {
                 success: true,
@@ -132,7 +132,7 @@ exports.ConfigQualityCommand = {
     id: 'config:quality',
     handler: async (context) => {
         try {
-            console.log('🎯 Quality Gates Configuration');
+            console.log('⊕ Quality Gates Configuration');
             console.log('Test coverage thresholds, linting rules, etc...');
             return {
                 success: true,
@@ -151,7 +151,7 @@ exports.ConfigSecurityCommand = {
     id: 'config:security',
     handler: async (context) => {
         try {
-            console.log('🛡️ Security Policies Configuration');
+            console.log('⊜ Security Policies Configuration');
             console.log('Security rules, vulnerability scanning, etc...');
             return {
                 success: true,
@@ -173,7 +173,7 @@ exports.TemplatesListCommand = {
     id: 'templates:list',
     handler: async (context) => {
         try {
-            console.log('📄 Available Templates:');
+            console.log('□ Available Templates:');
             console.log('═'.repeat(50));
             console.log('1. Starter - Basic configuration for new projects');
             console.log('2. Enterprise - Full-featured enterprise setup');
@@ -203,7 +203,7 @@ exports.TemplatesUseCommand = {
                     message: 'Please specify a template name (e.g., "use starter")'
                 };
             }
-            console.log(`📦 Applying template: ${templateName}`);
+            console.log(`⌺ Applying template: ${templateName}`);
             console.log('Template applied successfully!');
             return {
                 success: true,
@@ -302,7 +302,7 @@ exports.TemplatesResetCommand = {
                     message: 'Please specify a template name (e.g., "reset starter")'
                 };
             }
-            console.log(`🔄 Resetting template: ${templateName}`);
+            console.log(`⇔ Resetting template: ${templateName}`);
             console.log('Template reset to defaults!');
             return {
                 success: true,
@@ -393,7 +393,7 @@ exports.GenerateTestCommand = {
     handler: async (context) => {
         try {
             const description = context.parameters.description || context.parameters.args?.join(' ');
-            console.log(`🧪 Generating test suite: ${description || 'comprehensive tests'}`);
+            console.log(`⊎ Generating test suite: ${description || 'comprehensive tests'}`);
             console.log('Creating test files with full coverage...');
             return {
                 success: true,
@@ -453,7 +453,7 @@ exports.AdvancedLoggingCommand = {
     id: 'advanced:logging',
     handler: async (context) => {
         try {
-            console.log('📝 Audit Logging Configuration');
+            console.log('⋇ Audit Logging Configuration');
             console.log('Session tracking and audit trail settings...');
             return {
                 success: true,
@@ -472,7 +472,7 @@ exports.AdvancedMetricsCommand = {
     id: 'advanced:metrics',
     handler: async (context) => {
         try {
-            console.log('📊 Performance Metrics');
+            console.log('◊ Performance Metrics');
             console.log('Analytics, success rates, and performance data...');
             return {
                 success: true,
@@ -607,7 +607,7 @@ exports.SettingsResetCommand = {
                     message: 'Settings manager not available'
                 };
             }
-            console.log('⚠️  This will reset all settings to defaults.');
+            console.log('⚠  This will reset all settings to defaults.');
             console.log('Settings being reset...');
             const success = await settingsManager.resetToDefaults();
             if (success) {

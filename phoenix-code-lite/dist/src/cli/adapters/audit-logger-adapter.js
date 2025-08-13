@@ -1,4 +1,11 @@
 "use strict";
+/**---
+ * title: [Audit Logger Adapter - CLI Integration]
+ * tags: [CLI, Adapter, Logging]
+ * provides: [Adapter Functions, Logger Wiring]
+ * requires: [AuditLogger, IAuditLogger]
+ * description: [Adapter bridging CLI components to the audit logger implementation and metrics.]
+ * ---*/
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuditLoggerAdapter = void 0;
 class AuditLoggerAdapter {

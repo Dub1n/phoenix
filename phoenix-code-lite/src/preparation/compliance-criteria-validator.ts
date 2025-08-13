@@ -1,8 +1,10 @@
-/**
- * Compliance Criteria Validator
- * 
- * Creates and validates compliance criteria for QMS requirements
- */
+/**---
+ * title: [Compliance Criteria Validator - QMS]
+ * tags: [Preparation, QMS, Validation]
+ * provides: [ComplianceCriteriaValidator]
+ * requires: []
+ * description: [Validates project elements against explicit compliance criteria (e.g., EN standards).]
+ * ---*/
 
 export interface ComplianceCriteria {
   en62304: {

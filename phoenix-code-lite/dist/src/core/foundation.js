@@ -1,4 +1,11 @@
 "use strict";
+/**---
+ * title: [Core Foundation - Phase 1 Infrastructure]
+ * tags: [Core, Infrastructure, Session-Management, Mode-Management]
+ * provides: [CoreFoundation Class, CoreConfigSchema, SystemState Tracking, Initialization & Shutdown APIs]
+ * requires: [SessionManager, ModeManager, AuditLogger, Zod, Test-Utils]
+ * description: [Provides foundational infrastructure for Phoenix Code Lite including session management, dual-mode control, system monitoring, and lifecycle coordination.]
+ * ---*/
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -39,12 +46,6 @@ const session_manager_1 = require("./session-manager");
 const mode_manager_1 = require("./mode-manager");
 const audit_logger_1 = require("../utils/audit-logger");
 const test_utils_1 = require("../utils/test-utils");
-/**
- * Core Foundation - Phase 1 Infrastructure
- *
- * This module provides the foundational infrastructure for Phoenix Code Lite,
- * implementing session management, dual mode architecture, and core services.
- */
 // Core system configuration schema
 exports.CoreConfigSchema = zod_1.z.object({
     system: zod_1.z.object({
@@ -153,7 +154,7 @@ class CoreFoundation {
                 systemState: this.systemState,
                 timestamp: new Date().toISOString()
             });
-            console.log('🚀 Phoenix Code Lite Core Foundation initialized successfully');
+            console.log('^ Phoenix Code Lite Core Foundation initialized successfully');
             return true;
         }
         catch (error) {
@@ -161,7 +162,7 @@ class CoreFoundation {
                 error: error instanceof Error ? error.message : 'Unknown error',
                 timestamp: new Date().toISOString()
             });
-            console.error('❌ Core Foundation initialization failed:', error);
+            console.error('✗ Core Foundation initialization failed:', error);
             return false;
         }
     }
@@ -179,7 +180,7 @@ class CoreFoundation {
         const totalMemory = process.memoryUsage().rss;
         const maxMemoryMB = this.config.performance.maxMemoryUsage;
         if (totalMemory > maxMemoryMB * 1024 * 1024) {
-            console.warn(`⚠️  Memory usage (${Math.round(totalMemory / 1024 / 1024)}MB) exceeds configured limit (${maxMemoryMB}MB)`);
+            console.warn(`⚠  Memory usage (${Math.round(totalMemory / 1024 / 1024)}MB) exceeds configured limit (${maxMemoryMB}MB)`);
         }
         // Validate file system access
         try {
@@ -210,7 +211,7 @@ class CoreFoundation {
             await Promise.resolve().then(() => __importStar(require('@anthropic-ai/claude-code')));
             // Check for API key
             if (process.env.ANTHROPIC_API_KEY) {
-                console.log('🔗 Claude Code SDK detected, switching to integrated mode');
+                console.log('∞ Claude Code SDK detected, switching to integrated mode');
                 await this.modeManager.switchMode('integrated');
                 this.systemState.mode = 'integrated';
             }
@@ -322,7 +323,7 @@ class CoreFoundation {
             systemState: this.systemState,
             timestamp: new Date().toISOString()
         });
-        console.error(`🚨 Critical Error (${type}):`, error);
+        console.error(`⚡ Critical Error (${type}):`, error);
         // Attempt graceful recovery
         try {
             await this.gracefulShutdown();
@@ -369,7 +370,7 @@ class CoreFoundation {
      * Graceful shutdown
      */
     async gracefulShutdown() {
-        console.log('🔄 Initiating graceful shutdown...');
+        console.log('⇔ Initiating graceful shutdown...');
         try {
             // Clear monitoring intervals
             this.monitoringIntervals.forEach(interval => clearInterval(interval));
@@ -385,11 +386,11 @@ class CoreFoundation {
             });
             // Destroy audit logger to clear intervals and flush buffer
             await this.auditLogger.destroy();
-            console.log('✅ Phoenix Code Lite shutdown completed');
+            console.log('✓ Phoenix Code Lite shutdown completed');
             (0, test_utils_1.safeExit)(0);
         }
         catch (error) {
-            console.error('❌ Error during shutdown:', error);
+            console.error('✗ Error during shutdown:', error);
             (0, test_utils_1.safeExit)(1);
         }
     }

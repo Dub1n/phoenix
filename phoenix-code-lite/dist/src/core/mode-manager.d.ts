@@ -1,3 +1,10 @@
+/**---
+ * title: [Mode Manager - Core Service Module]
+ * tags: [Core, Service, Mode-Management, Integration]
+ * provides: [ModeManager Class, Dual-Mode Capabilities, Mode Switching, Audit Events]
+ * requires: [Zod, AuditLogger, Workflow Types]
+ * description: [Controls standalone vs integrated operation modes, exposing capabilities, validating transitions, and logging mode lifecycle events.]
+ * ---*/
 import { ModeConfig } from '../types/workflow';
 export interface DualModeCapabilities {
     standalone: {

@@ -1,3 +1,11 @@
+/**---
+ * title: [Mock Audit Logger - Testing Double]
+ * tags: [Testing, Mocks]
+ * provides: [MockAuditLogger]
+ * requires: []
+ * description: [Mock implementation of IAuditLogger for unit and integration tests.]
+ * ---*/
+
 import { IAuditLogger, AuditMetrics } from '../../cli/interfaces/audit-logger';
 
 export class MockAuditLogger implements IAuditLogger {

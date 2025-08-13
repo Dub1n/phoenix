@@ -1,4 +1,11 @@
 "use strict";
+/**---
+ * title: [Generate Command - CLI Command]
+ * tags: [CLI, Command, Generation]
+ * provides: [GenerateCommand]
+ * requires: [IClaudeClient, IConfigManager, IAuditLogger, IFileSystem, TDDOrchestrator, ClaudeCodeClient]
+ * description: [Executes TDD workflow to generate code using Claude Code with configuration awareness and validation.]
+ * ---*/
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };

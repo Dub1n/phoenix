@@ -1,8 +1,10 @@
-/**
- * Regulatory Document Processor
- *
- * Processes regulatory documents (EN 62304, AAMI TIR45) for QMS requirements
- */
+/**---
+ * title: [Regulatory Document Processor - QMS]
+ * tags: [Preparation, QMS, Processing]
+ * provides: [RegulatoryDocumentProcessor, RegulatoryRequirement]
+ * requires: []
+ * description: [Parses and processes regulatory documents to extract structured requirements.]
+ * ---*/
 export interface RegulatoryRequirement {
     id: string;
     text: string;

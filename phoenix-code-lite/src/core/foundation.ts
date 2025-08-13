@@ -1,15 +1,16 @@
+/**---
+ * title: [Core Foundation - Phase 1 Infrastructure]
+ * tags: [Core, Infrastructure, Session-Management, Mode-Management]
+ * provides: [CoreFoundation Class, CoreConfigSchema, SystemState Tracking, Initialization & Shutdown APIs]
+ * requires: [SessionManager, ModeManager, AuditLogger, Zod, Test-Utils]
+ * description: [Provides foundational infrastructure for Phoenix Code Lite including session management, dual-mode control, system monitoring, and lifecycle coordination.]
+ * ---*/
+
 import { z } from 'zod';
 import { SessionManager } from './session-manager';
 import { ModeManager } from './mode-manager';
 import { AuditLogger } from '../utils/audit-logger';
 import { safeExit } from '../utils/test-utils';
-
-/**
- * Core Foundation - Phase 1 Infrastructure
- * 
- * This module provides the foundational infrastructure for Phoenix Code Lite,
- * implementing session management, dual mode architecture, and core services.
- */
 
 // Core system configuration schema
 export const CoreConfigSchema = z.object({
@@ -167,7 +168,7 @@ export class CoreFoundation {
         timestamp: new Date().toISOString()
       });
 
-      console.log('🚀 Phoenix Code Lite Core Foundation initialized successfully');
+      console.log('^ Phoenix Code Lite Core Foundation initialized successfully');
       return true;
 
     } catch (error) {
@@ -176,7 +177,7 @@ export class CoreFoundation {
         timestamp: new Date().toISOString()
       });
 
-      console.error('❌ Core Foundation initialization failed:', error);
+      console.error('✗ Core Foundation initialization failed:', error);
       return false;
     }
   }
@@ -198,7 +199,7 @@ export class CoreFoundation {
     const maxMemoryMB = this.config.performance.maxMemoryUsage;
     
     if (totalMemory > maxMemoryMB * 1024 * 1024) {
-      console.warn(`⚠️  Memory usage (${Math.round(totalMemory / 1024 / 1024)}MB) exceeds configured limit (${maxMemoryMB}MB)`);
+      console.warn(`⚠  Memory usage (${Math.round(totalMemory / 1024 / 1024)}MB) exceeds configured limit (${maxMemoryMB}MB)`);
     }
 
     // Validate file system access
@@ -233,7 +234,7 @@ export class CoreFoundation {
       
       // Check for API key
       if (process.env.ANTHROPIC_API_KEY) {
-        console.log('🔗 Claude Code SDK detected, switching to integrated mode');
+        console.log('∞ Claude Code SDK detected, switching to integrated mode');
         await this.modeManager.switchMode('integrated');
         this.systemState.mode = 'integrated';
       }
@@ -361,7 +362,7 @@ export class CoreFoundation {
       timestamp: new Date().toISOString()
     });
 
-    console.error(`🚨 Critical Error (${type}):`, error);
+    console.error(`⚡ Critical Error (${type}):`, error);
     
     // Attempt graceful recovery
     try {
@@ -425,7 +426,7 @@ export class CoreFoundation {
    * Graceful shutdown
    */
   public async gracefulShutdown(): Promise<void> {
-    console.log('🔄 Initiating graceful shutdown...');
+    console.log('⇔ Initiating graceful shutdown...');
 
     try {
       // Clear monitoring intervals
@@ -446,12 +447,12 @@ export class CoreFoundation {
       // Destroy audit logger to clear intervals and flush buffer
       await this.auditLogger.destroy();
 
-      console.log('✅ Phoenix Code Lite shutdown completed');
+      console.log('✓ Phoenix Code Lite shutdown completed');
       
       safeExit(0);
 
     } catch (error) {
-      console.error('❌ Error during shutdown:', error);
+      console.error('✗ Error during shutdown:', error);
       
       safeExit(1);
     }

@@ -1,3 +1,10 @@
+/**---
+ * title: [Advanced CLI - Rich Output and Command History]
+ * tags: [CLI, Interface, Output, History]
+ * provides: [AdvancedCLI Class, Command History, Results Display, Contextual Help Integration]
+ * requires: [fs, cli-table3, HelpSystem, InteractivePrompts, ProgressTracker]
+ * description: [Provides enhanced CLI utilities including formatted result tables, command history recording, contextual help integration, and prompt workflows.]
+ * ---*/
 import { WorkflowResult } from '../types/workflow';
 export interface CommandHistoryEntry {
     command: string;

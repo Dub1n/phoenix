@@ -1,3 +1,10 @@
+/**---
+ * title: [Interactive Prompts - CLI Input Utilities]
+ * tags: [CLI, Interface, Prompts, UX]
+ * provides: [InteractivePrompts Class, Input Helpers, Confirmation Flows]
+ * requires: [inquirer]
+ * description: [Abstraction over inquirer-based prompts to support interactive flows within Phoenix Code Lite CLI.]
+ * ---*/
 import { PhoenixCodeLiteConfig } from '../config/settings';
 export interface ConfigurationWizardAnswers {
     projectType: 'web' | 'api' | 'library' | 'cli';

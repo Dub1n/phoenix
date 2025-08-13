@@ -1,3 +1,10 @@
+/**---
+ * title: [Codebase Scanner - TDD Support Module]
+ * tags: [TDD, Service, Code-Analysis, Anti-Reimplementation]
+ * provides: [CodebaseScanner Class, Scan Configuration, Scan Results, Recommendations]
+ * requires: [ClaudeCodeClient, Workflow Types]
+ * description: [Analyzes project files to identify reusable assets and conflicts before implementation, producing recommendations to prevent reimplementation.]
+ * ---*/
 import { ClaudeCodeClient } from '../claude/client';
 import { TaskContext } from '../types/workflow';
 export interface AssetReference {

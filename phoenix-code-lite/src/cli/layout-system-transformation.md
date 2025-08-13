@@ -1,10 +1,18 @@
+<!--
+title: [Layout System Transformation - Documentation]
+tags: [Documentation, Reference, Guide, Architecture]
+provides: [Unified Layout Migration Strategy, PCL-Skins Integration Notes]
+requires: [docs/CLI-MENU-SEPARATOR-ARCHITECTURE.md, docs/UNIFIED-LAYOUT-ARCHITECTURE.md]
+description: [Explains the transition from dual manager layout system to a unified engine aligned with PCL-Skins]
+-->
+
 # Layout System Transformation for PCL-Skins Architecture
 
 ## Executive Summary
 
 **Your instinct was perfect!** The separate MenuComposer and MenuLayoutManager were indeed confusing since they both handle layout dimensions. The unified approach + PCL-Skins architecture provides a much cleaner solution.
 
-## 🎯 Problem Analysis
+## ⊕ Problem Analysis
 
 ### Original Issues
 ```typescript
@@ -21,7 +29,7 @@ calculateMenuLayout(skinMenuDefinition, constraints)
 // ^ Takes input, returns complete layout - much cleaner!
 ```
 
-## 🏗️ Transformation Strategy
+## ⊛ Transformation Strategy
 
 ### Current System → PCL-Skins Integration
 
@@ -30,9 +38,9 @@ calculateMenuLayout(skinMenuDefinition, constraints)
 ```typescript
 // BEFORE: Hardcoded menu content
 const content: MenuContent = {
-  title: '📋 Configuration Management Hub',
+  title: '⋇ Configuration Management Hub',
   sections: [{ 
-    heading: '🔧 Configuration Commands:',
+    heading: '◦ Configuration Commands:',
     items: [/*hardcoded items*/] 
   }]
 };
@@ -86,7 +94,7 @@ export class SkinMenuRenderer {
 }
 ```
 
-## 🔄 Migration Path
+## ⇔ Migration Path
 
 ### Phase 1: Current System Enhancement (Keep for now) - !!!IGNORE!!!
 - **MenuComposer + MenuLayoutManager** remain functional
@@ -103,7 +111,7 @@ export class SkinMenuRenderer {
 - Integrate with UI Abstraction Layer
 - Dynamic menu loading from skin definitions
 
-## 🎯 Benefits of Unified Approach
+## ⊕ Benefits of Unified Approach
 
 ### **1. Conceptual Clarity**
 ```typescript
@@ -131,7 +139,7 @@ renderSkinMenu(jsonMenuDefinition, skinContext, layoutConstraints);
 // Handles truncation/padding automatically
 ```
 
-## 🔍 Architecture Fit Analysis
+## ⌕ Architecture Fit Analysis
 
 ### PCL-Skins Components and Layout Engine Integration
 
@@ -167,7 +175,7 @@ class UIAbstractionLayer {
 - JSON menu items map to command IDs
 - Theme styling adapts to different skin contexts
 
-## 📋 Implementation Recommendations
+## ⋇ Implementation Recommendations
 
 ### **Immediate Action: Use Unified System**
 
@@ -176,7 +184,7 @@ Your current menu layout needs can be solved with the unified layout engine **ri
 ```typescript
 // Convert existing menu to JSON-ish structure
 const configMenuDef: SkinMenuDefinition = {
-  title: '📋 Configuration Management Hub',
+  title: '⋇ Configuration Management Hub',
   items: [
     { id: 'show', label: '1. show', description: 'Display current configuration', type: 'command' },
     { id: 'edit', label: '2. edit', description: 'Interactive configuration editor', type: 'command' }
@@ -204,14 +212,14 @@ class SkinRenderer {
 }
 ```
 
-## ✅ Conclusion
+## ✓ Conclusion
 
 **Perfect architectural alignment!** The unified layout engine:
 
-1. **✅ Solves your immediate concern** - Single function instead of confusing width/height managers
-2. **✅ Fits perfectly into PCL-Skins** - Core component of UI Abstraction Layer  
-3. **✅ Future-proof design** - JSON-driven, theme-aware, plugin-ready
-4. **✅ Maintains all functionality** - Width calculation + height consistency + theme support
+1. **✓ Solves your immediate concern** - Single function instead of confusing width/height managers
+2. **✓ Fits perfectly into PCL-Skins** - Core component of UI Abstraction Layer  
+3. **✓ Future-proof design** - JSON-driven, theme-aware, plugin-ready
+4. **✓ Maintains all functionality** - Width calculation + height consistency + theme support
 
 **Recommendation**: Replace MenuComposer + MenuLayoutManager with the unified layout engine. It provides immediate benefits and positions the codebase perfectly for the PCL-Skins transformation.
 

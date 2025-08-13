@@ -1,10 +1,10 @@
-/**
- * Command Registration System
- * Created: 2025-01-06-175700
- *
- * Central registration point for all command handlers.
- * Manages command lifecycle and provides categorization.
- */
+/**---
+ * title: [Command Registration - Unified Architecture]
+ * tags: [Unified, Commands, Registration]
+ * provides: [Command Registration, Registry Wiring]
+ * requires: [core-commands]
+ * description: [Registers core commands into the unified command registry for integrated CLI.]
+ * ---*/
 import { CommandRegistry } from '../types/command-execution';
 /**
  * Register all core command handlers

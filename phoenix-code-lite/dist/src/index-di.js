@@ -1,5 +1,12 @@
 #!/usr/bin/env node
 "use strict";
+/**---
+ * title: [Phoenix Code Lite - Dependency Injection Entry Point]
+ * tags: [Core, Infrastructure, Entry-Point, Dependency-Injection]
+ * provides: [DI Bootstrap, Dependency Wiring, Interactive Session Startup, Command Dispatch]
+ * requires: [CoreFoundation, ConfigManager, ErrorHandler, CommandFactory, InteractiveSession, ClaudeCodeClient, AuditLogger, FileSystem]
+ * description: [Main entry point that boots the system using dependency injection patterns to wire core services and CLI components; supports interactive and command modes]
+ * ---*/
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -55,29 +62,23 @@ const config_manager_adapter_1 = require("./cli/adapters/config-manager-adapter"
 const audit_logger_adapter_1 = require("./cli/adapters/audit-logger-adapter");
 const file_system_1 = require("./utils/file-system");
 const chalk_1 = __importDefault(require("chalk"));
-/**
- * Phoenix Code Lite - Dependency Injection Architecture
- *
- * This is the main entry point that uses dependency injection patterns
- * to create a more testable and maintainable CLI architecture.
- */
 let coreFoundation;
 let configManager;
 let errorHandler;
 async function initializeCore() {
     try {
-        console.log(chalk_1.default.blue.bold('🔥 Phoenix Code Lite - Phase 1 Initialization'));
+        console.log(chalk_1.default.blue.bold('* Phoenix Code Lite - Phase 1 Initialization'));
         console.log(chalk_1.default.gray('═'.repeat(60)));
         // Initialize error handler first
         errorHandler = new error_handler_1.ErrorHandler();
-        console.log(chalk_1.default.green('✅ Error Handler initialized'));
+        console.log(chalk_1.default.green('✓ Error Handler initialized'));
         // Initialize configuration manager
         configManager = new config_manager_1.ConfigManager();
         const configInitialized = await configManager.initialize();
         if (!configInitialized) {
             throw new Error('Configuration initialization failed');
         }
-        console.log(chalk_1.default.green('✅ Configuration Manager initialized'));
+        console.log(chalk_1.default.green('✓ Configuration Manager initialized'));
         // Initialize core foundation with configuration
         const config = configManager.getConfig();
         coreFoundation = new foundation_1.CoreFoundation(config);
@@ -85,36 +86,36 @@ async function initializeCore() {
         if (!coreInitialized) {
             throw new Error('Core foundation initialization failed');
         }
-        console.log(chalk_1.default.green('✅ Core Foundation initialized'));
+        console.log(chalk_1.default.green('✓ Core Foundation initialized'));
         console.log(chalk_1.default.gray('═'.repeat(60)));
-        console.log(chalk_1.default.green.bold('🚀 Phase 1 Core Infrastructure Ready'));
+        console.log(chalk_1.default.green.bold('^ Phase 1 Core Infrastructure Ready'));
         console.log();
         return true;
     }
     catch (error) {
         const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-        console.error(chalk_1.default.red('❌ Core initialization failed:'), errorMsg);
+        console.error(chalk_1.default.red('✗ Core initialization failed:'), errorMsg);
         return false;
     }
 }
 async function shutdown() {
-    console.log(chalk_1.default.yellow('\n🔄 Initiating graceful shutdown...'));
+    console.log(chalk_1.default.yellow('\n⇔ Initiating graceful shutdown...'));
     try {
         if (configManager) {
             await configManager.shutdown();
-            console.log(chalk_1.default.green('✅ Configuration Manager shutdown'));
+            console.log(chalk_1.default.green('✓ Configuration Manager shutdown'));
         }
         if (errorHandler) {
             await errorHandler.shutdown();
-            console.log(chalk_1.default.green('✅ Error Handler shutdown'));
+            console.log(chalk_1.default.green('✓ Error Handler shutdown'));
         }
         if (coreFoundation) {
             await coreFoundation.gracefulShutdown();
         }
-        console.log(chalk_1.default.green('✅ Graceful shutdown completed'));
+        console.log(chalk_1.default.green('✓ Graceful shutdown completed'));
     }
     catch (error) {
-        console.error(chalk_1.default.red('❌ Shutdown error:'), error);
+        console.error(chalk_1.default.red('✗ Shutdown error:'), error);
         // Use safeExit to handle test environments properly
         const { safeExit } = await Promise.resolve().then(() => __importStar(require('./utils/test-utils')));
         safeExit(1);
@@ -142,7 +143,7 @@ async function main() {
         // Initialize Phase 1 core infrastructure
         const initialized = await initializeCore();
         if (!initialized) {
-            console.error(chalk_1.default.red('❌ Failed to initialize core infrastructure'));
+            console.error(chalk_1.default.red('✗ Failed to initialize core infrastructure'));
             process.exit(1);
         }
         // Setup graceful shutdown handlers

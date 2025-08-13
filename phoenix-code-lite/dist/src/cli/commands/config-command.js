@@ -1,4 +1,11 @@
 "use strict";
+/**---
+ * title: [Config Command - CLI Command]
+ * tags: [CLI, Command, Configuration]
+ * provides: [ConfigCommand]
+ * requires: [IConfigManager, IAuditLogger, ConfigFormatter, InteractivePrompts]
+ * description: [Manages Phoenix Code Lite configuration operations including show, edit, adjust, use, and template application.]
+ * ---*/
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };

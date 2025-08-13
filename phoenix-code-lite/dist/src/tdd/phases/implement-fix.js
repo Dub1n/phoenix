@@ -1,4 +1,11 @@
 "use strict";
+/**---
+ * title: [TDD Phase - Implement & Fix]
+ * tags: [TDD, Service, Implementation, Testing]
+ * provides: [ImplementFixPhase Class, Implementation Loop, Test Execution, Artifact Collection]
+ * requires: [ClaudeCodeClient, TDDPrompts, SpecializedAgentContexts, TaskContext, PhaseResult]
+ * description: [Executes iterative implementation attempts using Claude Code, runs tests, aggregates artifacts, and records outcomes until criteria pass or attempts exhausted.]
+ * ---*/
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ImplementFixPhase = void 0;
 const prompts_1 = require("../../claude/prompts");

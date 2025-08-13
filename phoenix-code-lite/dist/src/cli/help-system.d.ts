@@ -1,3 +1,10 @@
+/**---
+ * title: [Help System - Context-Aware CLI Help]
+ * tags: [CLI, Interface, Help, Documentation]
+ * provides: [HelpSystem Class, Contextual Help Generation, Command Examples]
+ * requires: [fs, path, chalk, boxen]
+ * description: [Generates context-aware help content with examples, integrating project signals to tailor guidance for users.]
+ * ---*/
 export interface CommandExample {
     description: string;
     command: string;

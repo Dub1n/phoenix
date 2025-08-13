@@ -1,3 +1,11 @@
+/**---
+ * title: [CLI Argument Parser - CLI Interface Module]
+ * tags: [CLI, Interface, Command-Processing, TypeScript]
+ * provides: [setupCLI Function, PhoenixCodeLiteOptions Type, Command Definitions]
+ * requires: [commander, fs, path, Commands Hub]
+ * description: [Defines Phoenix Code Lite command-line interface with commands (generate, init, wizard, config, template) and options parsing using Commander.]
+ * ---*/
+
 import { Command } from 'commander';
 import { promises as fs } from 'fs';
 import { join } from 'path';

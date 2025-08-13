@@ -1,10 +1,11 @@
 "use strict";
-/**
- * Phase 1 Core Infrastructure Exports
- *
- * This module provides centralized access to all Phase 1 core components
- * including session management, mode management, configuration, and error handling.
- */
+/**---
+ * title: [Core Infrastructure Exports - Index]
+ * tags: [Core, Infrastructure, Exports, Validation]
+ * provides: [Centralized Core Exports, CoreInfrastructure Utils, Types]
+ * requires: [Core Modules: foundation, session-manager, mode-manager, config-manager, error-handler]
+ * description: [Aggregates and re-exports Phase 1 core infrastructure modules and provides environment validation and system info utilities]
+ * ---*/
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);

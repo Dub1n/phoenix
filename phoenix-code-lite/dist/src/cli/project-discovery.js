@@ -1,4 +1,11 @@
 "use strict";
+/**---
+ * title: [Project Discovery - Stack and Template Analysis]
+ * tags: [CLI, Service, Discovery, Analysis]
+ * provides: [ProjectDiscovery Class, analyzeProject Function, Stack Knowledge Database]
+ * requires: [fs, path, chalk]
+ * description: [Analyzes an existing project to infer language, framework, tooling, and recommends an appropriate Phoenix template with confidence scoring.]
+ * ---*/
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -290,15 +297,15 @@ class ProjectDiscovery {
         return this.stackDatabase.get(framework) || null;
     }
     displayAnalysis(context) {
-        console.log(chalk_1.default.blue('\n🔍 Project Discovery Results'));
+        console.log(chalk_1.default.blue('\n⌕ Project Discovery Results'));
         console.log(chalk_1.default.gray('═'.repeat(40)));
         console.log(`${chalk_1.default.green('Project Type:')} ${context.type}`);
         console.log(`${chalk_1.default.green('Language:')} ${context.language}`);
         console.log(`${chalk_1.default.green('Framework:')} ${context.framework || 'None detected'}`);
         console.log(`${chalk_1.default.green('Package Manager:')} ${context.packageManager}`);
-        console.log(`${chalk_1.default.green('Has Tests:')} ${context.hasTests ? '✅' : '❌'}`);
-        console.log(`${chalk_1.default.green('Has Linting:')} ${context.hasLinting ? '✅' : '❌'}`);
-        console.log(`${chalk_1.default.green('TypeScript:')} ${context.hasTypeScript ? '✅' : '❌'}`);
+        console.log(`${chalk_1.default.green('Has Tests:')} ${context.hasTests ? '✓' : '✗'}`);
+        console.log(`${chalk_1.default.green('Has Linting:')} ${context.hasLinting ? '✓' : '✗'}`);
+        console.log(`${chalk_1.default.green('TypeScript:')} ${context.hasTypeScript ? '✓' : '✗'}`);
         console.log(`${chalk_1.default.green('Confidence:')} ${Math.round(context.confidence * 100)}%`);
         console.log(`${chalk_1.default.green('Suggested Template:')} ${context.suggestedTemplate}`);
         if (context.detectedFiles.length > 0) {

@@ -1,4 +1,11 @@
 "use strict";
+/**---
+ * title: [Command Factory - CLI Command Instantiation]
+ * tags: [CLI, Factory, Commands]
+ * provides: [CommandFactory Class, Command Creators]
+ * requires: [generate-command, config-command, init-command, help-command, version-command]
+ * description: [Centralized factory for constructing CLI command handlers, wiring options and dependencies.]
+ * ---*/
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CommandFactory = void 0;
 const config_command_1 = require("../commands/config-command");

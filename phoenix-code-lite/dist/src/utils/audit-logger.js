@@ -1,4 +1,11 @@
 "use strict";
+/**---
+ * title: [Audit Logger - Workflow Audit and Events]
+ * tags: [Utility, Logging, Audit]
+ * provides: [AuditLogger Class, Event Logging, Session Metadata]
+ * requires: [fs, path]
+ * description: [Structured audit logging for workflows, including events, session IDs, and summarization support.]
+ * ---*/
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuditLogger = exports.AuditEventSchema = void 0;
 const fs_1 = require("fs");

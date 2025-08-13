@@ -1,3 +1,10 @@
+/**---
+ * title: [Workflow Schemas & Types - TDD Contracts]
+ * tags: [Types, Workflow, TDD, Zod]
+ * provides: [TaskContextSchema, LLMResponseSchema, CommandResultSchema, PhaseResultSchema, WorkflowResultSchema, SessionStateSchema]
+ * requires: [zod]
+ * description: [Defines core schemas and types for the Phoenix Code Lite TDD workflow, including context, results, and session state.]
+ * ---*/
 import { z } from 'zod';
 export declare const TaskContextSchema: z.ZodObject<{
     taskDescription: z.ZodString;

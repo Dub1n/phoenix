@@ -1,3 +1,10 @@
+/**---
+ * title: [TDD Phase - Implement & Fix]
+ * tags: [TDD, Service, Implementation, Testing]
+ * provides: [ImplementFixPhase Class, Implementation Loop, Test Execution, Artifact Collection]
+ * requires: [ClaudeCodeClient, TDDPrompts, SpecializedAgentContexts, TaskContext, PhaseResult]
+ * description: [Executes iterative implementation attempts using Claude Code, runs tests, aggregates artifacts, and records outcomes until criteria pass or attempts exhausted.]
+ * ---*/
 import { ClaudeCodeClient } from '../../claude/client';
 import { TaskContext, PhaseResult } from '../../types/workflow';
 export declare class ImplementFixPhase {

@@ -1,10 +1,11 @@
 "use strict";
-/**
- * Audit Cryptography Validator
- *
- * Validates cryptographic functions specifically for QMS audit trails
- * and immutable record keeping
- */
+/**---
+ * title: [Audit Cryptography Validator - QMS]
+ * tags: [Preparation, QMS, Validation]
+ * provides: [AuditCryptographyValidator]
+ * requires: []
+ * description: [Validates cryptography usage and audit readiness for QMS requirements.]
+ * ---*/
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);

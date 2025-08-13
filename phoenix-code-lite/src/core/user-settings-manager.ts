@@ -1,10 +1,10 @@
-/**
- * User Settings Manager
- * Created: 2025-01-06-175700
- * 
- * Manages persistent user settings including interaction mode preferences.
- * Automatically resets settings when version changes.
- */
+/**---
+ * title: [User Settings Manager - Core Service Module]
+ * tags: [Core, Service, Settings, Persistence]
+ * provides: [UserSettingsManager Class, Settings Load/Save, Version Reset, Mode Preferences]
+ * requires: [fs, path, chalk]
+ * description: [Manages persistent per-user CLI preferences with version-aware resets, mode selection, and preference updates for consistent UX.]
+ * ---*/
 
 import fs from 'fs';
 import path from 'path';
@@ -43,18 +43,18 @@ export class UserSettingsManager {
       
       // Check if version has changed and reset if needed
       if (this.settings.version !== this.currentVersion) {
-        console.log(chalk.yellow(`📋 Version changed from ${this.settings.version} to ${this.currentVersion}`));
-        console.log(chalk.yellow('🔄 Resetting user settings to defaults'));
+        console.log(chalk.yellow(`⋇ Version changed from ${this.settings.version} to ${this.currentVersion}`));
+        console.log(chalk.yellow('⇔ Resetting user settings to defaults'));
         
         this.settings = this.getDefaultSettings();
         await this.saveSettings();
         
-        console.log(chalk.green('✅ Settings reset for new version'));
+        console.log(chalk.green('✓ Settings reset for new version'));
       }
       
       return true;
     } catch (error) {
-      console.error(chalk.red('❌ Failed to initialize user settings:'), error);
+      console.error(chalk.red('✗ Failed to initialize user settings:'), error);
       return false;
     }
   }
@@ -84,10 +84,10 @@ export class UserSettingsManager {
       
       await this.saveSettings();
       
-      console.log(chalk.green(`✅ Interaction mode set to: ${mode}`));
+      console.log(chalk.green(`✓ Interaction mode set to: ${mode}`));
       return true;
     } catch (error) {
-      console.error(chalk.red('❌ Failed to set interaction mode:'), error);
+      console.error(chalk.red('✗ Failed to set interaction mode:'), error);
       return false;
     }
   }
@@ -103,7 +103,7 @@ export class UserSettingsManager {
       await this.saveSettings();
       return true;
     } catch (error) {
-      console.error(chalk.red(`❌ Failed to update setting ${String(key)}:`), error);
+      console.error(chalk.red(`✗ Failed to update setting ${String(key)}:`), error);
       return false;
     }
   }
@@ -122,7 +122,7 @@ export class UserSettingsManager {
       await this.saveSettings();
       return true;
     } catch (error) {
-      console.error(chalk.red(`❌ Failed to update preference ${String(key)}:`), error);
+      console.error(chalk.red(`✗ Failed to update preference ${String(key)}:`), error);
       return false;
     }
   }
@@ -135,10 +135,10 @@ export class UserSettingsManager {
       this.settings = this.getDefaultSettings();
       await this.saveSettings();
       
-      console.log(chalk.green('✅ Settings reset to defaults'));
+      console.log(chalk.green('✓ Settings reset to defaults'));
       return true;
     } catch (error) {
-      console.error(chalk.red('❌ Failed to reset settings:'), error);
+      console.error(chalk.red('✗ Failed to reset settings:'), error);
       return false;
     }
   }
@@ -161,7 +161,7 @@ export class UserSettingsManager {
    * Display current settings
    */
   displaySettings(): void {
-    console.log(chalk.blue.bold('\n📋 Current User Settings'));
+    console.log(chalk.blue.bold('\n⋇ Current User Settings'));
     console.log(chalk.gray('═'.repeat(50)));
     
     console.log(chalk.yellow('Core Settings:'));
@@ -203,7 +203,7 @@ export class UserSettingsManager {
    */
   private async loadSettings(): Promise<void> {
     if (!this.settingsFileExists()) {
-      console.log(chalk.yellow('📋 No settings file found, creating defaults'));
+      console.log(chalk.yellow('⋇ No settings file found, creating defaults'));
       this.settings = this.getDefaultSettings();
       await this.saveSettings();
       return;
@@ -224,7 +224,7 @@ export class UserSettingsManager {
       };
       
     } catch (error) {
-      console.log(chalk.red('❌ Failed to parse settings file, using defaults'));
+      console.log(chalk.red('✗ Failed to parse settings file, using defaults'));
       this.settings = this.getDefaultSettings();
       await this.saveSettings();
     }

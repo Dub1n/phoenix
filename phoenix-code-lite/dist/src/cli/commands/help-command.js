@@ -1,4 +1,11 @@
 "use strict";
+/**---
+ * title: [Help Command - CLI Command]
+ * tags: [CLI, Command, Help]
+ * provides: [HelpCommand]
+ * requires: [IAuditLogger]
+ * description: [Displays available commands and guidance for Phoenix Code Lite.]
+ * ---*/
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.HelpCommand = void 0;
 class HelpCommand {

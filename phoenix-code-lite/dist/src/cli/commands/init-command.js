@@ -1,4 +1,11 @@
 "use strict";
+/**---
+ * title: [Init Command - CLI Command]
+ * tags: [CLI, Command, Initialization]
+ * provides: [InitCommand]
+ * requires: [IConfigManager, IAuditLogger, IFileSystem]
+ * description: [Initializes Phoenix Code Lite in the current directory and manages project setup tasks.]
+ * ---*/
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };

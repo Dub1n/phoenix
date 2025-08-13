@@ -1,10 +1,10 @@
-/**
- * Unified CLI Entry Point
- * Created: 2025-01-06-175700
- *
- * Main entry point for the new unified CLI architecture.
- * Integrates menu registry, command registry, and session management.
- */
+/**---
+ * title: [Unified CLI Entry - Core Infrastructure Component]
+ * tags: [Core, Infrastructure, Entry-Point, CLI]
+ * provides: [initializeUnifiedPhoenixCLI Function, runUnifiedCLI Function]
+ * requires: [MenuRegistry, UnifiedCommandRegistry, UnifiedSessionManager, UserSettingsManager, chalk]
+ * description: [Main entry point for the unified CLI architecture, wiring menus, commands and session management with persisted user settings]
+ * ---*/
 /**
  * Initialize and start the unified Phoenix Code Lite CLI
  */

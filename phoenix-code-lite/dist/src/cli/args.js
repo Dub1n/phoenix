@@ -1,4 +1,11 @@
 "use strict";
+/**---
+ * title: [CLI Argument Parser - CLI Interface Module]
+ * tags: [CLI, Interface, Command-Processing, TypeScript]
+ * provides: [setupCLI Function, PhoenixCodeLiteOptions Type, Command Definitions]
+ * requires: [commander, fs, path, Commands Hub]
+ * description: [Defines Phoenix Code Lite command-line interface with commands (generate, init, wizard, config, template) and options parsing using Commander.]
+ * ---*/
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);

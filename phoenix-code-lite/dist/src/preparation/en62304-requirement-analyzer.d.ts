@@ -1,8 +1,10 @@
-/**
- * EN 62304 Requirement Analyzer
- *
- * Analyzes and extracts requirements from EN 62304 standard
- */
+/**---
+ * title: [EN 62304 Requirement Analyzer - QMS]
+ * tags: [Preparation, QMS, Analysis]
+ * provides: [EN62304RequirementAnalyzer]
+ * requires: []
+ * description: [Analyzes requirements and software lifecycle practices per EN 62304 standard.]
+ * ---*/
 import { RegulatoryRequirement } from './regulatory-document-processor';
 export interface EN62304Requirement extends RegulatoryRequirement {
     safetyClass?: 'A' | 'B' | 'C';

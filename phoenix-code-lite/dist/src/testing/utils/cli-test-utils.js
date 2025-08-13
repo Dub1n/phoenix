@@ -1,4 +1,11 @@
 "use strict";
+/**---
+ * title: [CLI Test Utilities - Integration Helpers]
+ * tags: [Testing, Utils]
+ * provides: [CLI test helpers]
+ * requires: []
+ * description: [Helper functions for running and validating CLI integration tests.]
+ * ---*/
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CLITestUtils = void 0;
 const mock_config_manager_1 = require("../mocks/mock-config-manager");

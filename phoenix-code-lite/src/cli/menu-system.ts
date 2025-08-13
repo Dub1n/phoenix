@@ -1,3 +1,11 @@
+/**---
+ * title: [Menu System - Contextual Menu Routing]
+ * tags: [CLI, Menu, Navigation, Rendering]
+ * provides: [MenuSystem Class, Contextual Menus, Submenu Routing]
+ * requires: [SessionContext, SkinMenuRenderer, Menu Types]
+ * description: [Renders contextual menus for main sections and routes navigation between them using session state.]
+ * ---*/
+
 import chalk from 'chalk';
 import { SessionContext, MenuAction } from './session';
 import { renderLegacyWithUnified } from './skin-menu-renderer';
@@ -75,7 +83,7 @@ export class MenuSystem {
 
   private showMainMenu(): void {
     const content: MenuContent = {
-      title: '🔥 Phoenix Code Lite • TDD Workflow Orchestrator',
+      title: '* Phoenix Code Lite • TDD Workflow Orchestrator',
       subtitle: 'Transform natural language into production-ready code through TDD',
       sections: [{
         heading: 'Main Navigation',
@@ -130,14 +138,14 @@ export class MenuSystem {
 
   private showConfigMenu(context: SessionContext): void {
     const title = context.currentItem ? 
-      `📋 Configuration › ${context.currentItem}` : 
-      '📋 Configuration Management Hub';
+      `⋇ Configuration › ${context.currentItem}` : 
+      '⋇ Configuration Management Hub';
       
     const content: MenuContent = {
       title,
       subtitle: 'Manage Phoenix Code Lite settings and preferences',
       sections: [{
-        heading: '🔧 Configuration Commands:',
+        heading: '◦ Configuration Commands:',
         theme: { headingColor: 'yellow', bold: true },
         items: [
           {
@@ -201,14 +209,14 @@ export class MenuSystem {
 
   private showTemplatesMenu(context: SessionContext): void {
     const title = context.currentItem ? 
-      `📄 Templates › ${context.currentItem}` : 
-      '📄 Template Management Center';
+      `□ Templates › ${context.currentItem}` : 
+      '□ Template Management Center';
       
     const content: MenuContent = {
       title,
       subtitle: 'Choose from Starter, Enterprise, Performance, or create custom templates',
       sections: [{
-        heading: '📦 Template Commands:',
+        heading: '⌺ Template Commands:',
         theme: { headingColor: 'yellow', bold: true },
         items: [
           {
@@ -330,10 +338,10 @@ export class MenuSystem {
 
   private showAdvancedMenu(context: SessionContext): void {
     const content: MenuContent = {
-      title: '🔧 Advanced Configuration Center',
+      title: '◦ Advanced Configuration Center',
       subtitle: 'Expert settings, debugging tools, and performance monitoring',
       sections: [{
-        heading: '⚙️ Advanced Commands:',
+        heading: '⌘ Advanced Commands:',
         theme: { headingColor: 'cyan', bold: true },
         items: [
           {
@@ -555,17 +563,17 @@ export class MenuSystem {
   }
 
   public generateTitle(context: SessionContext): string {
-    const phoenixBrand = '🔥 Phoenix Code Lite';
+    const phoenixBrand = '* Phoenix Code Lite';
     
     switch (context.level) {
       case 'templates':
-        return `${phoenixBrand} • 📄 Template Manager${context.currentItem ? ` › ${context.currentItem}` : ''}`;
+        return `${phoenixBrand} • □ Template Manager${context.currentItem ? ` › ${context.currentItem}` : ''}`;
       case 'config':
-        return `${phoenixBrand} • 📋 Configuration${context.currentItem ? ` › ${context.currentItem}` : ''}`;
+        return `${phoenixBrand} • ⋇ Configuration${context.currentItem ? ` › ${context.currentItem}` : ''}`;
       case 'generate':
         return `${phoenixBrand} • ⚡ Code Generation`;
       case 'advanced':
-        return `${phoenixBrand} • 🔧 Advanced Settings`;
+        return `${phoenixBrand} • ◦ Advanced Settings`;
       default:
         return `${phoenixBrand} • TDD Workflow Orchestrator`;
     }

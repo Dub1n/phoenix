@@ -1,3 +1,11 @@
+/**---
+ * title: [Help System - Context-Aware CLI Help]
+ * tags: [CLI, Interface, Help, Documentation]
+ * provides: [HelpSystem Class, Contextual Help Generation, Command Examples]
+ * requires: [fs, path, chalk, boxen]
+ * description: [Generates context-aware help content with examples, integrating project signals to tailor guidance for users.]
+ * ---*/
+
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import chalk from 'chalk';
@@ -87,7 +95,7 @@ export class HelpSystem {
       }
     ];
 
-    let reference = chalk.bold.blue('🔥 Phoenix-Code-Lite Quick Reference Guide\n');
+    let reference = chalk.bold.blue('* Phoenix-Code-Lite Quick Reference Guide\n');
     reference += chalk.bold.gray('   TDD Workflow Orchestrator for Claude Code\n');
     reference += chalk.gray('═'.repeat(80)) + '\n\n';
 
@@ -104,14 +112,14 @@ export class HelpSystem {
       reference += '\n';
     });
 
-    reference += chalk.blue('🖥️  Interactive Mode (Recommended):\n');
+    reference += chalk.blue('⌨  Interactive Mode (Recommended):\n');
     reference += chalk.gray('─'.repeat(35)) + '\n';
     reference += chalk.cyan('  phoenix-code-lite') + chalk.gray(' - Start interactive CLI with guided navigation\n');
     reference += chalk.gray('  • Context-sensitive help and command completion\n');
     reference += chalk.gray('  • Visual menu system with Phoenix branding\n');
     reference += chalk.gray('  • Intelligent error handling and suggestions\n\n');
     
-    reference += chalk.blue('💡 Usage Examples:\n');
+    reference += chalk.blue('* Usage Examples:\n');
     reference += chalk.gray('─'.repeat(18)) + '\n';
     reference += chalk.green('  # Generate React login component\n');
     reference += chalk.gray('  phoenix-code-lite generate -t "Create login form with validation" -f react --type component\n\n');
@@ -182,7 +190,7 @@ export class HelpSystem {
   }
 
   private getBaseHelp(): string {
-    return chalk.bold.blue('🔥 Phoenix-Code-Lite CLI Help\n') +
+    return chalk.bold.blue('* Phoenix-Code-Lite CLI Help\n') +
            chalk.gray('═'.repeat(50)) + '\n' +
            chalk.bold('TDD Workflow Orchestrator for Claude Code\n\n') +
            'Phoenix-Code-Lite transforms natural language task descriptions into tested, \n' +
@@ -214,7 +222,7 @@ export class HelpSystem {
   }
 
   private getAuditLogsHelp(): string {
-    return chalk.blue('📈 Audit & Metrics Available\n') +
+    return chalk.blue('⋰ Audit & Metrics Available\n') +
            chalk.gray('Your project has workflow history and performance metrics.\n') +
            chalk.blue('Analysis options:\n') +
            chalk.gray('  • View metrics in interactive mode under Advanced → Metrics\n') +
@@ -251,7 +259,7 @@ export class HelpSystem {
       return help + '\n';
     }
     
-    return chalk.cyan(`📝 Language detected: ${language}\n`) +
+    return chalk.cyan(`⋇ Language detected: ${language}\n`) +
            chalk.gray('  Phoenix-Code-Lite will adapt to your project structure.\n\n');
   }
 

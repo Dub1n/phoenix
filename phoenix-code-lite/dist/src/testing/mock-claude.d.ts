@@ -1,3 +1,10 @@
+/**---
+ * title: [Mock Claude Client - Testing Double]
+ * tags: [Testing, Mocks]
+ * provides: [Mock Claude Client]
+ * requires: []
+ * description: [Mock implementation of Claude client for deterministic testing.]
+ * ---*/
 export type ResponseMode = 'success' | 'failure' | 'intermittent-failure' | 'slow';
 export declare class MockClaudeServer {
     private server;

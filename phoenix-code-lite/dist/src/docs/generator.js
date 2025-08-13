@@ -1,4 +1,11 @@
 "use strict";
+/**---
+ * title: [Docs Generator - API & Architecture]
+ * tags: [Docs, Generator]
+ * provides: [Documentation Generator]
+ * requires: []
+ * description: [Generates documentation artifacts like API references and architecture diagrams.]
+ * ---*/
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DocumentationGenerator = void 0;
 const fs_1 = require("fs");

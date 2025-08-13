@@ -1,10 +1,10 @@
-/**
- * Unified Session Manager
- * Created: 2025-01-06-175700
- *
- * Coordinates menu definitions, interaction modes, and command execution.
- * Provides seamless mode switching and unified session management.
- */
+/**---
+ * title: [Unified Session Manager - Core Service Module]
+ * tags: [Core, Service, Session-Management, CLI-Integration]
+ * provides: [UnifiedSessionManager Class, Renderer Switching, Menu Display, Command Execution Loop]
+ * requires: [MenuRegistry, UnifiedCommandRegistry, InteractiveRenderer, CommandRenderer, DebugRenderer, Interaction/Command Types]
+ * description: [Coordinates unified interactive and command modes, handling menu navigation, action execution, and renderer lifecycle for the CLI.]
+ * ---*/
 import { MenuRegistry } from './menu-registry';
 import { MenuContext, MenuAction, SessionContext } from '../types/menu-definitions';
 import { InteractionResult, InteractionMode } from '../types/interaction-abstraction';

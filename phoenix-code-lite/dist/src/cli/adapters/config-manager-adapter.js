@@ -1,4 +1,11 @@
 "use strict";
+/**---
+ * title: [Config Manager Adapter - CLI Integration]
+ * tags: [CLI, Adapter, Configuration]
+ * provides: [Adapter Functions, Manager Wiring]
+ * requires: [PhoenixCodeLiteConfig, IConfigManager]
+ * description: [Adapter bridging CLI usage patterns to config manager contracts and implementation.]
+ * ---*/
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ConfigManagerAdapter = void 0;
 class ConfigManagerAdapter {

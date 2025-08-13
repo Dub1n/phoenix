@@ -1,12 +1,10 @@
-/**
- * Unified Layout Engine for PCL-Skins Architecture
- *
- * Combines width (separator length) and height (consistent positioning) management
- * into a single function that works with JSON skin definitions.
- *
- * This replaces the separate MenuComposer + MenuLayoutManager approach
- * with a unified system designed for the PCL-Skins plugin architecture.
- */
+/**---
+ * title: [Unified Layout Engine - JSON-Driven Menu Layout]
+ * tags: [CLI, Menu, Layout, Engine]
+ * provides: [calculateMenuLayout, renderMenuWithLayout, renderSkinMenu, Type Definitions]
+ * requires: [chalk]
+ * description: [Unified engine that manages menu width/height constraints and renders SkinMenuDefinition with theme support for consistent CLI UX.]
+ * ---*/
 export interface SkinMenuDefinition {
     title: string;
     subtitle?: string;

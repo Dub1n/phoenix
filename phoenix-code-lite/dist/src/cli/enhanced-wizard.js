@@ -1,4 +1,11 @@
 "use strict";
+/**---
+ * title: [Enhanced Wizard - Guided Interactive Setup]
+ * tags: [CLI, Wizard, UX, Configuration]
+ * provides: [wizardCommand, Interactive Setup Flows, Validation]
+ * requires: [InteractivePrompts, PhoenixCodeLiteConfig, Templates, HelpSystem]
+ * description: [Guided interactive setup wizard for onboarding and configuration with validation and template selection.]
+ * ---*/
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -54,7 +61,7 @@ class EnhancedWizard {
         let context = null;
         // Step 1: Project Discovery
         if (!options.skipDiscovery) {
-            console.log(chalk_1.default.yellow('🔍 Analyzing your project...'));
+            console.log(chalk_1.default.yellow('⌕ Analyzing your project...'));
             context = await this.discovery.analyzeProject(projectPath);
             if (options.verbose || context.confidence > 0.3) {
                 this.discovery.displayAnalysis(context);
@@ -71,7 +78,7 @@ class EnhancedWizard {
         const inquirer = await Promise.resolve().then(() => __importStar(require('inquirer')));
         // If we have good project detection, offer smart defaults
         if (context && context.confidence > 0.5) {
-            console.log(chalk_1.default.green('\n✨ Smart Configuration Available'));
+            console.log(chalk_1.default.green('\n⑇ Smart Configuration Available'));
             console.log(chalk_1.default.gray('Based on your project analysis, we can auto-configure settings.\n'));
             const { useSmartConfig } = await inquirer.default.prompt([
                 {
@@ -90,7 +97,7 @@ class EnhancedWizard {
     }
     async generateSmartConfiguration(context) {
         const inquirer = await Promise.resolve().then(() => __importStar(require('inquirer')));
-        console.log(chalk_1.default.blue('\n🚀 Generating smart configuration...\n'));
+        console.log(chalk_1.default.blue('\n^ Generating smart configuration...\n'));
         // Convert detected context to wizard answers
         const baseAnswers = {
             projectType: context.type === 'unknown' ? 'web' : context.type,
@@ -102,7 +109,7 @@ class EnhancedWizard {
         // Get stack-specific recommendations
         const stackKnowledge = context.framework ? this.discovery.getStackKnowledge(context.framework) : null;
         if (stackKnowledge) {
-            console.log(chalk_1.default.cyan(`💡 ${stackKnowledge.framework} Stack Recommendations:`));
+            console.log(chalk_1.default.cyan(`* ${stackKnowledge.framework} Stack Recommendations:`));
             console.log(chalk_1.default.gray(`  • Recommended quality level: ${stackKnowledge.recommendations.qualityLevel}`));
             console.log(chalk_1.default.gray(`  • Suggested test coverage: ${Math.round(stackKnowledge.recommendations.testCoverage * 100)}%`));
             if (stackKnowledge.recommendations.additionalTools.length > 0) {
@@ -131,7 +138,7 @@ class EnhancedWizard {
     }
     async customizeSmartConfiguration(baseAnswers, context, stackKnowledge) {
         const inquirer = await Promise.resolve().then(() => __importStar(require('inquirer')));
-        console.log(chalk_1.default.blue('\n⚙️ Customize Configuration\n'));
+        console.log(chalk_1.default.blue('\n⌘ Customize Configuration\n'));
         // Enhanced choices based on context
         const answers = await inquirer.default.prompt([
             {
@@ -177,7 +184,7 @@ class EnhancedWizard {
         };
     }
     async runManualConfiguration(context) {
-        console.log(chalk_1.default.blue('\n📝 Manual Configuration\n'));
+        console.log(chalk_1.default.blue('\n⋇ Manual Configuration\n'));
         // Use the existing wizard with enhanced choices
         const steps = this.getEnhancedWizardSteps(context);
         const answers = await this.runSteppedWizard(steps);
@@ -204,7 +211,7 @@ class EnhancedWizard {
                 const navigationChoices = [
                     new inquirer.default.Separator(),
                     { name: '← Back to previous step', value: '__BACK__' },
-                    { name: '❌ Cancel wizard', value: '__CANCEL__' },
+                    { name: '✗ Cancel wizard', value: '__CANCEL__' },
                 ];
                 if (step.type === 'list') {
                     stepWithNavigation.choices = [...(step.choices || []), ...navigationChoices];
@@ -308,7 +315,7 @@ class EnhancedWizard {
         if (stackKnowledge) {
             const recommendedChoice = choices.find(c => c.value === stackKnowledge.recommendations.qualityLevel);
             if (recommendedChoice) {
-                recommendedChoice.name += chalk_1.default.cyan(' 💡 (recommended)');
+                recommendedChoice.name += chalk_1.default.cyan(' * (recommended)');
             }
         }
         return choices;

@@ -1,9 +1,11 @@
 "use strict";
-/**
- * Architecture Integration Validator
- *
- * Validates existing architecture for QMS integration
- */
+/**---
+ * title: [Architecture Integration Validator - QMS]
+ * tags: [Preparation, QMS, Validation]
+ * provides: [ArchitectureIntegrationValidator]
+ * requires: []
+ * description: [Validates architectural integration against QMS criteria and documented patterns.]
+ * ---*/
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -39,6 +41,11 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ArchitectureIntegrationValidator = void 0;
+/**
+ * Architecture Integration Validator
+ *
+ * Validates existing architecture for QMS integration
+ */
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 class ArchitectureIntegrationValidator {

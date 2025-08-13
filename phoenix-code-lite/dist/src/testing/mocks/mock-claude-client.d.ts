@@ -1,3 +1,10 @@
+/**---
+ * title: [Mock Claude Client - Testing Double]
+ * tags: [Testing, Mocks]
+ * provides: [MockClaudeClient]
+ * requires: []
+ * description: [Mock implementation of IClaudeClient for unit and integration tests.]
+ * ---*/
 import { IClaudeClient } from '../../cli/interfaces/claude-client';
 import { TaskContext, LLMResponse } from '../../types/workflow';
 export declare class MockClaudeClient implements IClaudeClient {

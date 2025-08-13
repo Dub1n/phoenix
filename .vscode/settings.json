@@ -32,5 +32,17 @@
             "-Command",
             ". \"${workspaceFolder}/scripts/terminal-completer/cursor-terminal-init.ps1\""
         ]
-    }
+    },
+
+    "multiCommand.commands": [
+        {
+            "command": "multiCommand.emojiSubstituteRun",
+            "sequence": [
+                {
+                    "command": "workbench.action.tasks.runTask",
+                    "args": "Emoji Substitute (Auto Detect)"
+                }
+            ]
+        }
+    ]
 } 

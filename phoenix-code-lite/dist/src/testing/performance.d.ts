@@ -1,3 +1,10 @@
+/**---
+ * title: [Performance Tests - CLI/TDD Performance Scenarios]
+ * tags: [Testing, Performance]
+ * provides: [Performance Test Suite]
+ * requires: [jest]
+ * description: [Performance-oriented test scenarios for Phoenix Code Lite workflows.]
+ * ---*/
 export interface BenchmarkTest {
     name: string;
     task: string;

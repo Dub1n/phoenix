@@ -37,14 +37,14 @@ describe('Interactive CLI Tests - Phase 1', () => {
     
     // Wait for expected text
     await app.waitFor('Phoenix Code Lite Configuration');
-    console.log('✅ Found expected text in CLI output');
+    console.log('✓ Found expected text in CLI output');
     
     console.log('About to call enhanced app.end()...');
     
     // Enhanced logue handles cleanup automatically
     const result = await app.end();
     
-    console.log('✅ Enhanced app.end() completed successfully!');
+    console.log('✓ Enhanced app.end() completed successfully!');
     console.log('CLI Result:', {
       status: result.status,
       stdout: result.stdout.substring(0, 300) + '...'
@@ -59,7 +59,7 @@ describe('Interactive CLI Tests - Phase 1', () => {
     const app = logue('node', [CLI_PATH, 'help']);
     
     await app.waitFor('Usage:');
-    console.log('✅ Found Usage text in help output');
+    console.log('✓ Found Usage text in help output');
     
     const result = await app.end();
     
@@ -77,7 +77,7 @@ describe('Interactive CLI Tests - Phase 1', () => {
     const app = logue('node', [CLI_PATH, '--version']);
     
     await app.waitFor('1.0.0');
-    console.log('✅ Found version number in output');
+    console.log('✓ Found version number in output');
     
     const result = await app.end();
     

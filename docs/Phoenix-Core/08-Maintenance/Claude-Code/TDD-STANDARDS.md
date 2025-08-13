@@ -1,10 +1,10 @@
 # Test-Driven Development (TDD) Standards
 
-## 🎯 TDD Philosophy for Phoenix Code Lite
+## ⊕ TDD Philosophy for Phoenix Code Lite
 
 Test-Driven Development is **mandatory** for all Phoenix Code Lite development. This ensures code quality, maintainability, and user confidence in the system.
 
-## 📋 TDD Cycle Overview
+## ⋇ TDD Cycle Overview
 
 ### The Red-Green-Refactor Cycle
 
@@ -15,7 +15,7 @@ Test-Driven Development is **mandatory** for all Phoenix Code Lite development. 
     ↓
 🔵 REFACTOR: Improve code quality
     ↓
-🔄 REPEAT: Next feature/improvement
+⇔ REPEAT: Next feature/improvement
 ```
 
 ### Detailed Process
@@ -41,7 +41,7 @@ Test-Driven Development is **mandatory** for all Phoenix Code Lite development. 
 - **Quality**: Apply TypeScript best practices, improve readability
 - **Documentation**: Add comments and improve structure
 
-## 🧪 Testing Framework Standards
+## ⊎ Testing Framework Standards
 
 ### Jest Configuration
 
@@ -86,7 +86,7 @@ tests/
     └── sample-configs/
 ```
 
-## 📝 Test Writing Standards
+## ⋇ Test Writing Standards
 
 ### Unit Test Structure
 
@@ -171,7 +171,7 @@ describe('TDD Workflow Integration', () => {
 });
 ```
 
-## 🎯 Test Categories by Component
+## ⊕ Test Categories by Component
 
 ### Core TDD Components
 
@@ -245,7 +245,7 @@ Test configuration management and templates:
 - Custom template creation
 ```
 
-## 🔒 Testing Security Components
+## ⑄ Testing Security Components
 
 ### Security Guardrails Testing
 
@@ -272,7 +272,7 @@ describe('SecurityGuardrailsManager', () => {
 });
 ```
 
-## 📊 Coverage Requirements
+## ◊ Coverage Requirements
 
 ### Minimum Coverage Thresholds
 
@@ -290,7 +290,7 @@ Exclude from coverage requirements:
 - Generated code and build artifacts
 - External dependency integrations (test with mocks)
 
-## 🚀 TDD Implementation Workflow
+## ^ TDD Implementation Workflow
 
 ### For New Features
 
@@ -319,7 +319,7 @@ Exclude from coverage requirements:
 4. **Continuous Testing**: Run tests frequently during refactoring
 5. **Final Validation**: Ensure all tests still pass after refactoring
 
-## 🛠️ Testing Utilities and Mocks
+## ◦ Testing Utilities and Mocks
 
 ### Mock Claude Code SDK
 
@@ -356,7 +356,7 @@ export const complexTaskContext: TaskContext = {
 };
 ```
 
-## 🎯 Quality Gates for Tests
+## ⊕ Quality Gates for Tests
 
 ### Test Quality Requirements
 
@@ -372,7 +372,7 @@ export const complexTaskContext: TaskContext = {
 - **Parallel Execution**: Tests should be safe to run in parallel
 - **Cleanup**: Tests should clean up after themselves
 
-## 📝 TDD Documentation Standards
+## ⋇ TDD Documentation Standards
 
 ### Test Documentation
 

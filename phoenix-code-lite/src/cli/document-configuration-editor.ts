@@ -1,7 +1,10 @@
-/**
- * Document Configuration Editor for Phoenix Code Lite
- * Provides CLI interface for managing per-agent and global document configurations
- */
+/**---
+ * title: [Document Configuration Editor - Template-Aware Docs Management]
+ * tags: [CLI, Configuration, Documents, Templates]
+ * provides: [DocumentConfigurationEditor Class, Interactive Editing, Preview Rendering]
+ * requires: [DocumentManager, chalk, Document Types]
+ * description: [Interactive editor for per-template document activation and preview, integrating with the document management system.]
+ * ---*/
 
 import chalk from 'chalk';
 import { DocumentManager } from '../config/document-manager';
@@ -42,7 +45,7 @@ export class DocumentConfigurationEditor {
   }
 
   private async showCurrentConfiguration(config: DocumentConfiguration, inventory: DocumentInventory): Promise<void> {
-    console.log(chalk.yellow('\n📋 Current Document Configuration:'));
+    console.log(chalk.yellow('\n⋇ Current Document Configuration:'));
     console.log(chalk.gray('─'.repeat(40)));
 
     // Show global documents
@@ -87,7 +90,7 @@ export class DocumentConfigurationEditor {
     config: DocumentConfiguration, 
     inventory: DocumentInventory
   ): Promise<void> {
-    console.log(chalk.yellow('\n🔧 Interactive Document Editor'));
+    console.log(chalk.yellow('\n◦ Interactive Document Editor'));
     console.log(chalk.gray('─'.repeat(40)));
     console.log(chalk.gray('Type document numbers to toggle, "save" to save changes, "quit" to exit'));
 
@@ -95,7 +98,7 @@ export class DocumentConfigurationEditor {
     const workingConfig = JSON.parse(JSON.stringify(config)); // Deep copy
 
     while (true) {
-      console.log(chalk.cyan('\n📋 Available Actions:'));
+      console.log(chalk.cyan('\n⋇ Available Actions:'));
       console.log('1. Toggle Global Documents');
       console.log('2. Toggle Planning Analyst Documents');
       console.log('3. Toggle Implementation Engineer Documents');
@@ -125,7 +128,7 @@ export class DocumentConfigurationEditor {
         case '6':
           if (hasChanges) {
             await this.saveConfiguration(templateName, workingConfig);
-            console.log(chalk.green('\n✅ Configuration saved successfully!'));
+            console.log(chalk.green('\n✓ Configuration saved successfully!'));
           } else {
             console.log(chalk.yellow('\n ℹ No changes to save.'));
           }
@@ -140,7 +143,7 @@ export class DocumentConfigurationEditor {
           console.log(chalk.gray('\n👋 Exiting without saving.'));
           return;
         default:
-          console.log(chalk.red('\n❌ Invalid choice. Please select 1-7.'));
+          console.log(chalk.red('\n✗ Invalid choice. Please select 1-7.'));
       }
     }
   }
@@ -155,7 +158,7 @@ export class DocumentConfigurationEditor {
       return false;
     }
 
-    console.log(chalk.cyan(`\n📂 ${categoryName} Documents:`));
+    console.log(chalk.cyan(`\n▪ ${categoryName} Documents:`));
     documents.forEach((doc, index) => {
       const isEnabled = configSection[doc.filename] || false;
       const status = isEnabled ? chalk.green('✓ ON ') : chalk.gray('○ OFF');
@@ -183,7 +186,7 @@ export class DocumentConfigurationEditor {
         console.log(`   ${newStatus}: ${doc.name}`);
         hasChanges = true;
       } else {
-        console.log(chalk.red(`   ❌ Invalid number: ${num}`));
+        console.log(chalk.red(`   ✗ Invalid number: ${num}`));
       }
     }
 
@@ -194,7 +197,7 @@ export class DocumentConfigurationEditor {
     const result = await this.documentManager.updateTemplateDocumentConfiguration(templateName, config);
     
     if (!result.success) {
-      console.log(chalk.red(`\n❌ Failed to save configuration: ${result.message}`));
+      console.log(chalk.red(`\n✗ Failed to save configuration: ${result.message}`));
       if (result.errors) {
         result.errors.forEach(error => console.log(chalk.red(`   • ${error}`)));
       }
@@ -202,21 +205,21 @@ export class DocumentConfigurationEditor {
   }
 
   async initializeDocumentSystem(): Promise<DocumentOperationResult> {
-    console.log(chalk.blue('\n🚀 Initializing Document Management System...'));
+    console.log(chalk.blue('\n^ Initializing Document Management System...'));
     
     const result = await this.documentManager.initializeDocumentSystem();
     
     if (result.success) {
-      console.log(chalk.green('\n✅ Document system initialized successfully!'));
-      console.log(chalk.gray('\n📁 Created directories:'));
+      console.log(chalk.green('\n✓ Document system initialized successfully!'));
+      console.log(chalk.gray('\n▫ Created directories:'));
       result.affectedDocuments?.forEach(dir => {
         console.log(chalk.gray(`   • ${dir}`));
       });
       
-      console.log(chalk.cyan('\n📄 Default documents created in each category.'));
+      console.log(chalk.cyan('\n□ Default documents created in each category.'));
       console.log(chalk.gray('You can now configure which documents are active for each template.'));
     } else {
-      console.log(chalk.red('\n❌ Failed to initialize document system:'));
+      console.log(chalk.red('\n✗ Failed to initialize document system:'));
       console.log(chalk.red(`   ${result.message}`));
       if (result.errors) {
         result.errors.forEach(error => console.log(chalk.red(`   • ${error}`)));
@@ -236,7 +239,7 @@ export class DocumentConfigurationEditor {
     const totalDocs = inventory.global.length + 
       Object.values(inventory.agents).reduce((sum, docs) => sum + docs.length, 0);
     
-    console.log(chalk.cyan(`\n📊 Summary: ${totalDocs} total documents`));
+    console.log(chalk.cyan(`\n◊ Summary: ${totalDocs} total documents`));
     console.log(`   🌐 Global: ${inventory.global.length}`);
     console.log(`   🤖 Agent-specific: ${Object.values(inventory.agents).reduce((sum, docs) => sum + docs.length, 0)}`);
 

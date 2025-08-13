@@ -1,10 +1,14 @@
 "use strict";
+/**---
+ * title: [Error Handler - Core Infrastructure Component]
+ * tags: [Core, Infrastructure, Error-Handling, Audit]
+ * provides: [ErrorHandler Class, Error Severity/Category Enums, Strategy Registration, Statistics APIs]
+ * requires: [Zod, AuditLogger]
+ * description: [Comprehensive error handling system providing classification, strategies, auditing, and analytics for Phoenix Code Lite across CLI and workflow components.]
+ * ---*/
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ErrorHandler = exports.ErrorCategory = exports.ErrorSeverity = void 0;
 const audit_logger_1 = require("../utils/audit-logger");
-/**
- * Error classification and severity levels
- */
 var ErrorSeverity;
 (function (ErrorSeverity) {
     ErrorSeverity["LOW"] = "low";

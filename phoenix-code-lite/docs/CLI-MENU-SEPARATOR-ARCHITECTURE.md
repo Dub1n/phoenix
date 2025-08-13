@@ -1,3 +1,11 @@
+<!--
+title: [CLI Menu Separator Architecture - Documentation]
+tags: [Documentation, Architecture, CLI, Layout]
+provides: [Content-Driven Menu Composer Spec, Layout Calculation Approach]
+requires: [src/cli/menu-types.ts, src/utils/display.ts]
+description: [Proposes content-driven separator sizing with a dedicated composition system for CLI menus]
+-->
+
 # CLI Menu Separator Architecture Design
 
 ## Current Architecture Issues
@@ -15,7 +23,7 @@
 ```typescript
 // Current approach in menu-system.ts
 private showMainMenu(): void {
-  console.log(chalk.red.bold('🔥 Phoenix Code Lite') + chalk.gray(' • ') + chalk.blue('TDD Workflow Orchestrator'));
+  console.log(chalk.red.bold('* Phoenix Code Lite') + chalk.gray(' • ') + chalk.blue('TDD Workflow Orchestrator'));
   display.printSeparator(display.LENGTHS.MAIN_MENU); // Manual call
   console.log(chalk.dim('Transform natural language into production-ready code through TDD'));
   // ... menu content ...
@@ -173,15 +181,15 @@ export class DisplayUtility {
 ```typescript
 private showConfigMenu(context: SessionContext): void {
   const title = context.currentItem ? 
-    `📋 Configuration › ${context.currentItem}` : 
-    '📋 Configuration Management Hub';
+    `⋇ Configuration › ${context.currentItem}` : 
+    '⋇ Configuration Management Hub';
     
   console.log(chalk.green.bold(title));
   display.printSeparator(display.LENGTHS.SUB_MENU); // Manual
   console.log(chalk.dim('Manage Phoenix Code Lite settings and preferences'));
   console.log();
   
-  console.log(chalk.yellow.bold('🔧 Configuration Commands:'));
+  console.log(chalk.yellow.bold('◦ Configuration Commands:'));
   console.log(chalk.green('  1. show      ') + chalk.gray('- Display current configuration with validation status'));
   // ... more content ...
 }
@@ -193,11 +201,11 @@ private showConfigMenu(context: SessionContext): void {
 private showConfigMenu(context: SessionContext): void {
   const content: MenuContent = {
     title: context.currentItem ? 
-      `📋 Configuration › ${context.currentItem}` : 
-      '📋 Configuration Management Hub',
+      `⋇ Configuration › ${context.currentItem}` : 
+      '⋇ Configuration Management Hub',
     subtitle: 'Manage Phoenix Code Lite settings and preferences',
     sections: [{
-      heading: '🔧 Configuration Commands:',
+      heading: '◦ Configuration Commands:',
       items: [
         { label: '1. show', description: 'Display current configuration with validation status', commands: ['show', '1'] },
         { label: '2. edit', description: 'Interactive configuration editor with guided setup', commands: ['edit', '2'] },

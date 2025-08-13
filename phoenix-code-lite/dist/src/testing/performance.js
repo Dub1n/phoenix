@@ -1,4 +1,11 @@
 "use strict";
+/**---
+ * title: [Performance Tests - CLI/TDD Performance Scenarios]
+ * tags: [Testing, Performance]
+ * provides: [Performance Test Suite]
+ * requires: [jest]
+ * description: [Performance-oriented test scenarios for Phoenix Code Lite workflows.]
+ * ---*/
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PerformanceBenchmark = void 0;
 const perf_hooks_1 = require("perf_hooks");

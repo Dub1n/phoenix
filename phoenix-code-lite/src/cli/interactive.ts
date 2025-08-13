@@ -1,3 +1,11 @@
+/**---
+ * title: [Interactive Prompts - CLI Input Utilities]
+ * tags: [CLI, Interface, Prompts, UX]
+ * provides: [InteractivePrompts Class, Input Helpers, Confirmation Flows]
+ * requires: [inquirer]
+ * description: [Abstraction over inquirer-based prompts to support interactive flows within Phoenix Code Lite CLI.]
+ * ---*/
+
 import chalk from 'chalk';
 import readline from 'readline';
 import { PhoenixCodeLiteConfig, PhoenixCodeLiteConfigData } from '../config/settings';
@@ -51,7 +59,7 @@ export class InteractivePrompts {
           navigationChoices.push({ name: '← Back to previous step', value: '__BACK__' });
         }
         if (canCancel) {
-          navigationChoices.push({ name: '❌ Cancel wizard', value: '__CANCEL__' });
+          navigationChoices.push({ name: '✗ Cancel wizard', value: '__CANCEL__' });
         }
         
         if (step.type === 'list') {
@@ -270,7 +278,7 @@ export class InteractivePrompts {
   }
 
   async runInteractiveConfigEditor(): Promise<ConfigEditResult> {
-    console.log(chalk.blue.bold('\n📋 Phoenix Code Lite Configuration Editor\n'));
+    console.log(chalk.blue.bold('\n⋇ Phoenix Code Lite Configuration Editor\n'));
     
     const config = await PhoenixCodeLiteConfig.load();
     let currentConfig = config.clone();
@@ -334,7 +342,7 @@ export class InteractivePrompts {
     
     // Clear screen and show consistent header
     console.clear();
-    console.log(chalk.blue.bold('📋 Phoenix Code Lite Configuration Editor'));
+    console.log(chalk.blue.bold('⋇ Phoenix Code Lite Configuration Editor'));
     console.log(chalk.gray('═'.repeat(50)));
     console.log(chalk.gray(`Current: ${ConfigFormatter.formatConfigSummary(config.export())}`));
     console.log(chalk.dim('Press ESC at any time to exit'));
@@ -346,15 +354,15 @@ export class InteractivePrompts {
         name: 'action',
         message: 'Select configuration section:',
         choices: [
-          { name: '⚙️  Framework Settings', value: 'framework' },
+          { name: '⌘  Framework Settings', value: 'framework' },
           { name: '🔤 Language Preferences', value: 'language' },
-          { name: '📊 Quality Thresholds', value: 'quality' },
-          { name: '🛡️  Security Policies', value: 'security' },
-          { name: '📄 Templates', value: 'templates' },
-          { name: '🔧 Advanced Settings', value: 'advanced' },
+          { name: '◊ Quality Thresholds', value: 'quality' },
+          { name: '⊜  Security Policies', value: 'security' },
+          { name: '□ Templates', value: 'templates' },
+          { name: '◦ Advanced Settings', value: 'advanced' },
           new inquirer.default.Separator(),
-          { name: '💾 Save Configuration', value: 'save' },
-          { name: '❌ Cancel', value: 'cancel' },
+          { name: '□ Save Configuration', value: 'save' },
+          { name: '✗ Cancel', value: 'cancel' },
         ],
         pageSize: 10,
         loop: false,
@@ -368,9 +376,9 @@ export class InteractivePrompts {
     const inquirer = await import('inquirer');
     
     console.clear();
-    console.log(chalk.blue.bold('📋 Phoenix Code Lite Configuration Editor'));
+    console.log(chalk.blue.bold('⋇ Phoenix Code Lite Configuration Editor'));
     console.log(chalk.gray('═'.repeat(50)));
-    console.log(chalk.blue.bold('⚙️  Framework Settings'));
+    console.log(chalk.blue.bold('⌘  Framework Settings'));
     console.log(chalk.gray('═'.repeat(50)));
     
     const { setting } = await inquirer.default.prompt([
@@ -518,7 +526,7 @@ export class InteractivePrompts {
     const inquirer = await import('inquirer');
     
     console.clear();
-    console.log(chalk.blue.bold('📋 Phoenix Code Lite Configuration Editor'));
+    console.log(chalk.blue.bold('⋇ Phoenix Code Lite Configuration Editor'));
     console.log(chalk.gray('═'.repeat(50)));
     console.log(chalk.blue.bold('🔤 Language Preferences'));
     console.log(chalk.gray('═'.repeat(50)));
@@ -542,15 +550,15 @@ export class InteractivePrompts {
     
     switch (action) {
       case 'default':
-        console.log(chalk.yellow('\n💡 Language preferences are now set per-project during generation.'));
+        console.log(chalk.yellow('\n* Language preferences are now set per-project during generation.'));
         console.log(chalk.gray('This provides better flexibility for multi-language projects.'));
         break;
       case 'framework':
-        console.log(chalk.yellow('\n⚙️ Framework-specific language settings'));
+        console.log(chalk.yellow('\n⌘ Framework-specific language settings'));
         console.log(chalk.gray('Configure language defaults based on detected frameworks.'));
         break;
       case 'template':
-        console.log(chalk.yellow('\n📄 Template-specific language overrides'));
+        console.log(chalk.yellow('\n□ Template-specific language overrides'));
         console.log(chalk.gray('Set language preferences that override template defaults.'));
         break;
     }
@@ -563,7 +571,7 @@ export class InteractivePrompts {
     const inquirer = await import('inquirer');
     
     console.clear();
-    console.log(chalk.blue.bold('📋 Phoenix Code Lite Configuration Editor'));
+    console.log(chalk.blue.bold('⋇ Phoenix Code Lite Configuration Editor'));
     console.log(chalk.gray('═'.repeat(50)));
     console.log(chalk.blue.bold('🤖 Agent Configuration'));
     console.log(chalk.gray('═'.repeat(50)));
@@ -582,9 +590,9 @@ export class InteractivePrompts {
     const inquirer = await import('inquirer');
     
     console.clear();
-    console.log(chalk.blue.bold('📋 Phoenix Code Lite Configuration Editor'));
+    console.log(chalk.blue.bold('⋇ Phoenix Code Lite Configuration Editor'));
     console.log(chalk.gray('═'.repeat(50)));
-    console.log(chalk.blue.bold('📝 Audit Logging Configuration'));
+    console.log(chalk.blue.bold('⋇ Audit Logging Configuration'));
     console.log(chalk.gray('═'.repeat(50)));
     
     console.log(chalk.green('✓ Audit logging is enabled by default'));
@@ -600,9 +608,9 @@ export class InteractivePrompts {
     const inquirer = await import('inquirer');
     
     console.clear();
-    console.log(chalk.blue.bold('📋 Phoenix Code Lite Configuration Editor'));
+    console.log(chalk.blue.bold('⋇ Phoenix Code Lite Configuration Editor'));
     console.log(chalk.gray('═'.repeat(50)));
-    console.log(chalk.blue.bold('📊 Performance Metrics Configuration'));
+    console.log(chalk.blue.bold('◊ Performance Metrics Configuration'));
     console.log(chalk.gray('═'.repeat(50)));
     
     console.log(chalk.green('✓ Performance metrics collection is active'));
@@ -619,9 +627,9 @@ export class InteractivePrompts {
     const inquirer = await import('inquirer');
     
     console.clear();
-    console.log(chalk.blue.bold('📋 Phoenix Code Lite Configuration Editor'));
+    console.log(chalk.blue.bold('⋇ Phoenix Code Lite Configuration Editor'));
     console.log(chalk.gray('═'.repeat(50)));
-    console.log(chalk.blue.bold('📊 Quality Thresholds'));
+    console.log(chalk.blue.bold('◊ Quality Thresholds'));
     console.log(chalk.gray('═'.repeat(50)));
     
     const { setting } = await inquirer.default.prompt([
@@ -650,9 +658,9 @@ export class InteractivePrompts {
     const inquirer = await import('inquirer');
     
     console.clear();
-    console.log(chalk.blue.bold('📋 Phoenix Code Lite Configuration Editor'));
+    console.log(chalk.blue.bold('⋇ Phoenix Code Lite Configuration Editor'));
     console.log(chalk.gray('═'.repeat(50)));
-    console.log(chalk.blue.bold('🛡️  Security Policies'));
+    console.log(chalk.blue.bold('⊜  Security Policies'));
     console.log(chalk.gray('═'.repeat(50)));
     
     console.log(chalk.yellow('Security policies are managed through the security guardrails system.'));
@@ -665,8 +673,8 @@ export class InteractivePrompts {
         message: 'Security policy options:',
         choices: [
           { name: '📖 View Security Documentation', value: 'docs' },
-          { name: '🔍 Check Current Security Status', value: 'status' },
-          { name: '⚙️  Security Settings (Advanced)', value: 'settings' },
+          { name: '⌕ Check Current Security Status', value: 'status' },
+          { name: '⌘  Security Settings (Advanced)', value: 'settings' },
           new inquirer.default.Separator(),
           { name: '← Back to Main Menu', value: 'back' },
         ],
@@ -685,7 +693,7 @@ export class InteractivePrompts {
         console.log(chalk.gray('• Audit logging for security events'));
         break;
       case 'status':
-        console.log(chalk.green('\n✅ Security Status: Active'));
+        console.log(chalk.green('\n✓ Security Status: Active'));
         console.log(chalk.gray('All security guardrails are operational.'));
         break;
       case 'settings':
@@ -704,7 +712,7 @@ export class InteractivePrompts {
   private async manageTemplates(config: PhoenixCodeLiteConfig): Promise<{ hasChanges: boolean; templateUpdated?: string }> {
     const inquirer = await import('inquirer');
     
-    console.log(chalk.blue('\n📄 Template Management'));
+    console.log(chalk.blue('\n□ Template Management'));
     
     const { action } = await inquirer.default.prompt([
       {
@@ -748,9 +756,9 @@ export class InteractivePrompts {
     const inquirer = await import('inquirer');
     
     console.clear();
-    console.log(chalk.blue.bold('📋 Phoenix Code Lite Configuration Editor'));
+    console.log(chalk.blue.bold('⋇ Phoenix Code Lite Configuration Editor'));
     console.log(chalk.gray('═'.repeat(50)));
-    console.log(chalk.blue.bold('🔧 Advanced Settings'));
+    console.log(chalk.blue.bold('◦ Advanced Settings'));
     console.log(chalk.gray('═'.repeat(50)));
     
     const { setting } = await inquirer.default.prompt([
@@ -761,10 +769,10 @@ export class InteractivePrompts {
         choices: [
           { name: '🔤 Language Preferences', value: 'language' },
           { name: '🤖 Agent Configuration', value: 'agents' },
-          { name: '📝 Audit Logging', value: 'logging' },
-          { name: '📊 Performance Metrics', value: 'metrics' },
+          { name: '⋇ Audit Logging', value: 'logging' },
+          { name: '◊ Performance Metrics', value: 'metrics' },
           { name: '🔊 Verbose Output', value: 'verbose' },
-          { name: '📋 Log Level', value: 'logLevel' },
+          { name: '⋇ Log Level', value: 'logLevel' },
           new inquirer.default.Separator(),
           { name: '← Back to Main Menu', value: 'back' },
         ],
@@ -799,7 +807,7 @@ export class InteractivePrompts {
         message: 'Select a configuration template:',
         choices: [
           {
-            name: '🚀 Starter Template\n     Perfect for learning and experimentation\n     • Test Coverage: 70% • Quality Gates: Basic validation • Performance: Balanced',
+            name: '^ Starter Template\n     Perfect for learning and experimentation\n     • Test Coverage: 70% • Quality Gates: Basic validation • Performance: Balanced',
             value: 'starter',
           },
           {
@@ -811,7 +819,7 @@ export class InteractivePrompts {
             value: 'performance',
           },
           {
-            name: '🎯 Default Template\n     Balanced configuration suitable for most projects\n     • Test Coverage: 80% • Quality Gates: Standard validation • Performance: Balanced',
+            name: '⊕ Default Template\n     Balanced configuration suitable for most projects\n     • Test Coverage: 80% • Quality Gates: Standard validation • Performance: Balanced',
             value: 'default',
           },
           new inquirer.default.Separator(),
@@ -826,7 +834,7 @@ export class InteractivePrompts {
   private async showTemplatePreview(): Promise<void> {
     const templates = ['starter', 'enterprise', 'performance', 'default'];
     
-    console.log(chalk.blue('\n📄 Template Previews\n'));
+    console.log(chalk.blue('\n□ Template Previews\n'));
     
     for (const templateName of templates) {
       let templateData;

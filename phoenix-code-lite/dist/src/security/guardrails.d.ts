@@ -1,3 +1,10 @@
+/**---
+ * title: [Security Guardrails - Validation & Access Control]
+ * tags: [Security, Guardrails]
+ * provides: [SecurityGuardrailsManager, Policies]
+ * requires: []
+ * description: [Defines security guardrails and access control checks for file and command operations.]
+ * ---*/
 import { TaskContext } from '../types/workflow';
 export interface SecurityPolicy {
     allowedPaths: string[];

@@ -1,4 +1,11 @@
 "use strict";
+/**---
+ * title: [Claude Code Client - LLM Integration Service]
+ * tags: [Claude, Service, Integration]
+ * provides: [ClaudeCodeClient Class, query, executeCommand]
+ * requires: [@anthropic-ai/claude-code, zod]
+ * description: [Wrapper around Claude Code SDK for querying and command execution with validation and error handling.]
+ * ---*/
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ClaudeCodeClient = void 0;
 const workflow_1 = require("../types/workflow");

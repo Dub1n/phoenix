@@ -1,9 +1,11 @@
 "use strict";
-/**
- * AAMI TIR45 Requirement Analyzer
- *
- * Analyzes and extracts requirements from AAMI TIR45 standard
- */
+/**---
+ * title: [AAMI TIR45 Requirement Analyzer - QMS]
+ * tags: [Preparation, QMS, Analysis]
+ * provides: [AAMITIR45RequirementAnalyzer]
+ * requires: []
+ * description: [Analyzes requirements and development practices per AAMI TIR45 guidance.]
+ * ---*/
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AAMITIR45RequirementAnalyzer = void 0;
 const regulatory_document_processor_1 = require("./regulatory-document-processor");

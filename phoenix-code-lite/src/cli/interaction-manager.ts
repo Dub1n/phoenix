@@ -1,3 +1,11 @@
+/**---
+ * title: [Dual Mode Interaction Manager - Input & Navigation Handler]
+ * tags: [CLI, Interface, Input, Navigation]
+ * provides: [InteractionManager Class, Readline Lifecycle, Keyboard Shortcuts, Menu Rendering Bridge]
+ * requires: [readline, InteractionModeConfig, SkinMenuRenderer, Menu Types]
+ * description: [Handles keyboard input for Menu and Command modes, manages readline lifecycle, and bridges input to menu layout rendering.]
+ * ---*/
+
 import chalk from 'chalk';
 import { createInterface, Interface } from 'readline';
 import { 

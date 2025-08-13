@@ -1,7 +1,10 @@
-/**
- * Demonstration of static menu height with consistent textbox positioning
- * Shows how different menus maintain the same command prompt position
- */
+/**---
+ * title: [Static Menu Demo - Consistent Textbox Positioning]
+ * tags: [CLI, Menu, Demo, UX]
+ * provides: [StaticMenuDemo Class, Demonstration Menus]
+ * requires: [menuComposer, Menu Types]
+ * description: [Demonstrates static menu height and consistent textbox positioning across different menus for UX validation.]
+ * ---*/
 /**
  * STATIC MENU DEMO
  * All these menus will have the textbox in the exact same position

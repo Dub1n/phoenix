@@ -1,4 +1,11 @@
 "use strict";
+/**---
+ * title: [Menu Layout Manager - Consistent Height & Textbox Positioning]
+ * tags: [CLI, Menu, Layout, UX]
+ * provides: [MenuLayoutManager Class, CalculatedMenuLayout Types, Layout Constraints]
+ * requires: [Menu Types, chalk]
+ * description: [Calculates menu layout with fixed height and reserved areas to ensure consistent textbox positioning across submenus.]
+ * ---*/
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -159,7 +166,7 @@ class MenuLayoutManager {
         console.log(chalk_1.default.gray('─'.repeat(60)));
         // Navigation hint line
         const navHint = this.generateNavigationHint(context);
-        console.log(chalk_1.default.blue('💡 ') + navHint);
+        console.log(chalk_1.default.blue('* ') + navHint);
         // The actual textbox positioning will be handled by the session manager
         // This just ensures the space is reserved consistently
     }

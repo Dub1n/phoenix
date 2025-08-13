@@ -4,10 +4,10 @@ const skin_menu_renderer_1 = require("../../../src/cli/skin-menu-renderer");
 const unified_layout_engine_1 = require("../../../src/cli/unified-layout-engine");
 describe('Procedural Numbering', () => {
     const createTestMenuContent = () => ({
-        title: '📄 Template Management Center',
+        title: '□ Template Management Center',
         subtitle: 'Choose from Starter, Enterprise, Performance, or create custom templates',
         sections: [{
-                heading: '📦 Template Commands:',
+                heading: '⌺ Template Commands:',
                 theme: { headingColor: 'yellow', bold: true },
                 items: [
                     {

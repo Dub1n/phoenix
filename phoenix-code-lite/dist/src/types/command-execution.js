@@ -1,10 +1,10 @@
 "use strict";
-/**
- * Command Execution Types
- * Created: 2025-01-06-175700
- *
- * Unified command execution independent of how command was triggered.
- * Provides consistent command handling across all interaction modes.
- */
+/**---
+ * title: [Command Execution - Unified Command Contracts]
+ * tags: [Types, CLI, Commands]
+ * provides: [CommandHandler, CommandContext, CommandResult, CommandRegistry, PermissionRequirement, CommandMetadata, ValidationContext, AuditLogEntry]
+ * requires: [MenuContext, ValidationSchema, SessionContext, InteractionMode]
+ * description: [Unifies command execution contracts across interaction modes for consistent handling and auditing.]
+ * ---*/
 Object.defineProperty(exports, "__esModule", { value: true });
 //# sourceMappingURL=command-execution.js.map

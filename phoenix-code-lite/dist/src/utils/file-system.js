@@ -1,4 +1,11 @@
 "use strict";
+/**---
+ * title: [File System Utilities - Safe FS Operations]
+ * tags: [Utility, FileSystem]
+ * provides: [readJson, writeJson, path helpers]
+ * requires: [fs, path]
+ * description: [Utility helpers for safe file system operations and JSON read/write.]
+ * ---*/
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.FileSystem = void 0;
 const fs_1 = require("fs");

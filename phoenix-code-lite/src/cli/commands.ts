@@ -1,3 +1,11 @@
+/**---
+ * title: [CLI Commands Hub - CLI Interface Module]
+ * tags: [CLI, Interface, Command-Processing, Orchestration]
+ * provides: [generateCommand, initCommand, configCommand, templateCommand, Support Utilities]
+ * requires: [ClaudeCodeClient, TDDOrchestrator, PhoenixCodeLiteConfig, ConfigurationTemplates, InteractivePrompts, ConfigFormatter]
+ * description: [Implements Phoenix Code Lite CLI command handlers bridging CLI parsing to TDD workflow, configuration management, and interactive operations.]
+ * ---*/
+
 import { ClaudeCodeClient } from '../claude/client';
 import { TDDOrchestrator } from '../tdd/orchestrator';
 import { TaskContextSchema } from '../types/workflow';
@@ -242,7 +250,7 @@ async function applyTemplate(templateName: string): Promise<void> {
 }
 
 async function adjustTemplate(templateName: string, interactive: InteractivePrompts): Promise<void> {
-  console.log(chalk.blue.bold(`🔧 Adjusting Template: ${templateName}`));
+  console.log(chalk.blue.bold(`◦ Adjusting Template: ${templateName}`));
   console.log(chalk.gray('═'.repeat(50)));
   
   // Load the specified template
@@ -297,11 +305,11 @@ async function addTemplate(templateName: string, interactive: InteractivePrompts
       name: 'baseTemplate',
       message: `Select base template for '${templateName}':`,
       choices: [
-        { name: '🚀 Starter Template (Basic settings)', value: 'starter' },
+        { name: '^ Starter Template (Basic settings)', value: 'starter' },
         { name: '🏢 Enterprise Template (Production-ready)', value: 'enterprise' },
         { name: '⚡ Performance Template (Speed-optimized)', value: 'performance' },
-        { name: '🎯 Default Template (Balanced)', value: 'default' },
-        { name: '⭐ Empty Template (Start from scratch)', value: 'empty' },
+        { name: '⊕ Default Template (Balanced)', value: 'default' },
+        { name: '* Empty Template (Start from scratch)', value: 'empty' },
       ],
     },
   ]);
@@ -348,7 +356,7 @@ async function addTemplate(templateName: string, interactive: InteractivePrompts
 }
 
 export async function templateCommand(options: any): Promise<void> {
-  console.log(chalk.blue.bold('📄 Phoenix Code Lite Template Manager'));
+  console.log(chalk.blue.bold('□ Phoenix Code Lite Template Manager'));
   console.log(chalk.gray('═'.repeat(50)));
   
   const interactive = new InteractivePrompts();
@@ -361,13 +369,13 @@ export async function templateCommand(options: any): Promise<void> {
         name: 'action',
         message: 'Select template operation:',
         choices: [
-          { name: '🔄 Switch to Template', value: 'use' },
-          { name: '🔧 Adjust Template Settings', value: 'adjust' },
+          { name: '⇔ Switch to Template', value: 'use' },
+          { name: '◦ Adjust Template Settings', value: 'adjust' },
           { name: '➕ Create New Template', value: 'add' },
-          { name: '🔄 Reset to Default Template', value: 'reset' },
-          { name: '📋 View Template Previews', value: 'preview' },
+          { name: '⇔ Reset to Default Template', value: 'reset' },
+          { name: '⋇ View Template Previews', value: 'preview' },
           new inquirer.default.Separator(),
-          { name: '❌ Cancel', value: 'cancel' },
+          { name: '✗ Cancel', value: 'cancel' },
         ],
         pageSize: 10,
         loop: false,
@@ -432,12 +440,12 @@ async function selectTemplateForUse(): Promise<string | null> {
       name: 'template',
       message: 'Select template to use:',
       choices: [
-        { name: '🚀 Starter Template (Basic settings)', value: 'starter' },
+        { name: '^ Starter Template (Basic settings)', value: 'starter' },
         { name: '🏢 Enterprise Template (Production-ready)', value: 'enterprise' },
         { name: '⚡ Performance Template (Speed-optimized)', value: 'performance' },
-        { name: '🎯 Default Template (Balanced)', value: 'default' },
+        { name: '⊕ Default Template (Balanced)', value: 'default' },
         new inquirer.default.Separator(),
-        { name: '❌ Cancel', value: 'cancel' },
+        { name: '✗ Cancel', value: 'cancel' },
       ],
       pageSize: 8,
       loop: false,
@@ -456,12 +464,12 @@ async function selectTemplateForAdjust(): Promise<string | null> {
       name: 'template',
       message: 'Select template to adjust:',
       choices: [
-        { name: '🚀 Starter Template', value: 'starter' },
+        { name: '^ Starter Template', value: 'starter' },
         { name: '🏢 Enterprise Template', value: 'enterprise' },
         { name: '⚡ Performance Template', value: 'performance' },
-        { name: '🎯 Default Template', value: 'default' },
+        { name: '⊕ Default Template', value: 'default' },
         new inquirer.default.Separator(),
-        { name: '❌ Cancel', value: 'cancel' },
+        { name: '✗ Cancel', value: 'cancel' },
       ],
       pageSize: 8,
       loop: false,
@@ -499,7 +507,7 @@ async function getNewTemplateName(): Promise<string | null> {
 }
 
 async function adjustTemplateSettings(templateName: string, interactive: InteractivePrompts): Promise<void> {
-  console.log(chalk.blue.bold(`🔧 Adjusting Template: ${templateName}`));
+  console.log(chalk.blue.bold(`◦ Adjusting Template: ${templateName}`));
   console.log(chalk.gray('═'.repeat(50)));
   
   // Load the specified template
@@ -570,7 +578,7 @@ async function resetToDefaultTemplate(): Promise<void> {
 async function showTemplatePreview(): Promise<void> {
   const templates = ['starter', 'enterprise', 'performance', 'default'];
   
-  console.log(chalk.blue('\n📄 Template Previews\n'));
+  console.log(chalk.blue('\n□ Template Previews\n'));
   
   for (const templateName of templates) {
     let templateData;

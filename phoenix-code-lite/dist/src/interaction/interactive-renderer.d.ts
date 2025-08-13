@@ -1,10 +1,10 @@
-/**
- * Interactive Renderer Implementation
- * Created: 2025-01-06-175700
- *
- * Handles interactive navigation mode with arrow keys, numbered options, and shortcuts.
- * Converts MenuDefinition to Interactive UI using existing rendering infrastructure.
- */
+/**---
+ * title: [Interactive Renderer - Unified Architecture]
+ * tags: [Unified, Interaction, Rendering]
+ * provides: [Interactive Renderer]
+ * requires: []
+ * description: [Renderer for interactive (menu) mode in unified CLI system.]
+ * ---*/
 import { InteractionRenderer, InteractionResult, InteractionMode } from '../types/interaction-abstraction';
 import { MenuDefinition, MenuContext } from '../types/menu-definitions';
 export declare class InteractiveRenderer implements InteractionRenderer {

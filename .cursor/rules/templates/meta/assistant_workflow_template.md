@@ -47,7 +47,7 @@ For tasks meeting the above criteria, follow this workflow:
 
 {Continue numbering as needed...}
 
-🔧 **DSS Maintenance Integration:**
+◦ **DSS Maintenance Integration:**
 
 - **Update INDEX.md:** If new files were created or project structure changed, update [INDEX.md](mdc:INDEX.md). See [How to Update Index](mdc:docs/how_to_update_index.md).
 - **Validate Frontmatter:** Ensure proper YAML frontmatter follows [DSS Config](mdc:meta/dss_config.yml) standards.
@@ -98,8 +98,8 @@ When transitioning from this workflow to others, refer to [Workflow Transitions]
 
 **Criteria Assessment**:
 
-- ✅ {Criterion}: {How this task meets it}
-- ✅ {Criterion}: {How this task meets it}
+- ✓ {Criterion}: {How this task meets it}
+- ✓ {Criterion}: {How this task meets it}
 
 **Workflow Application**:
 

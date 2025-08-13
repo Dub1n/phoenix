@@ -1,3 +1,10 @@
+/**---
+ * title: [Interactive CLI Session - Dual Mode Navigation]
+ * tags: [CLI, Interface, Session-Management, Navigation]
+ * provides: [SessionContext Types, Menu Navigation, Command Mode Handling, Back/Home Controls]
+ * requires: [InteractionManager, PhoenixCodeLiteConfig, SkinMenuRenderer, Menu Types]
+ * description: [Coordinates menu and command modes, maintains navigation stack and breadcrumbs, and orchestrates overall CLI session behavior.]
+ * ---*/
 import { NavigationItem } from '../types/interaction-modes';
 export interface SessionContext {
     level: 'main' | 'config' | 'templates' | 'advanced' | 'generate';

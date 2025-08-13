@@ -1,3 +1,10 @@
+/**---
+ * title: [Menu Composer - Content-Driven Menu Assembly]
+ * tags: [CLI, Menu, Composition, Formatting]
+ * provides: [MenuComposer Class, Separator Sizing, Content Formatting]
+ * requires: [display Utils, MenuLayoutManager, Menu Types]
+ * description: [Constructs formatted menus from content with procedural sizing and layout preparation for consistent CLI rendering.]
+ * ---*/
 import type { MenuContent, MenuDisplayContext, MenuComposerOptions } from './menu-types';
 /**
  * Content-driven menu composition system

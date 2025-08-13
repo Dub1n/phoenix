@@ -1,12 +1,17 @@
+/**---
+ * title: [Configuration Manager - Core Infrastructure Component]
+ * tags: [Core, Infrastructure, Configuration, Validation]
+ * provides: [ConfigManager Class, Template Loading, Hot Reloading, Validation, Summary APIs]
+ * requires: [Zod, FS, CoreConfigSchema, AuditLogger]
+ * description: [Manages Phoenix Code Lite configuration with schema validation, file persistence, hot reload, template management, and change notifications for core systems.]
+ * ---*/
+
 import { z } from 'zod';
 import { promises as fs } from 'fs';
 import { join, dirname } from 'path';
 import { CoreConfig, CoreConfigSchema } from './foundation';
 import { AuditLogger } from '../utils/audit-logger';
 
-/**
- * Configuration templates for different use cases
- */
 export const ConfigTemplates = {
   starter: {
     system: {
@@ -143,9 +148,9 @@ export class ConfigManager {
       if (!loaded) {
         // Create default configuration
         await this.saveToFile();
-        console.log('📝 Created default configuration file');
+        console.log('⋇ Created default configuration file');
       } else {
-        console.log('✅ Loaded existing configuration');
+        console.log('✓ Loaded existing configuration');
       }
 
       // Setup file watching
@@ -165,7 +170,7 @@ export class ConfigManager {
         timestamp: new Date().toISOString()
       });
 
-      console.error('❌ Configuration manager initialization failed:', error);
+      console.error('✗ Configuration manager initialization failed:', error);
       return false;
     }
   }
@@ -203,7 +208,7 @@ export class ConfigManager {
         timestamp: new Date().toISOString()
       });
 
-      console.log('✅ Configuration updated successfully');
+      console.log('✓ Configuration updated successfully');
       return true;
     } catch (error) {
       await this.auditLogger.logEvent('config_update_failed', {
@@ -212,7 +217,7 @@ export class ConfigManager {
         timestamp: new Date().toISOString()
       });
 
-      console.error('❌ Configuration update failed:', error);
+      console.error('✗ Configuration update failed:', error);
       return false;
     }
   }
@@ -234,7 +239,7 @@ export class ConfigManager {
         timestamp: new Date().toISOString()
       });
 
-      console.log(`📋 Loaded ${templateName} template`);
+      console.log(`⋇ Loaded ${templateName} template`);
       return true;
     } catch (error) {
       await this.auditLogger.logEvent('template_load_failed', {
@@ -243,7 +248,7 @@ export class ConfigManager {
         timestamp: new Date().toISOString()
       });
 
-      console.error(`❌ Failed to load ${templateName} template:`, error);
+      console.error(`✗ Failed to load ${templateName} template:`, error);
       return false;
     }
   }
@@ -419,7 +424,7 @@ export class ConfigManager {
         const stats = await fs.stat(this.configPath);
         
         if (this.lastModified && stats.mtime > this.lastModified) {
-          console.log('🔄 Configuration file changed, reloading...');
+          console.log('⇔ Configuration file changed, reloading...');
           
           const reloaded = await this.loadFromFile();
           if (reloaded) {
@@ -430,7 +435,7 @@ export class ConfigManager {
               config: this.sanitizeConfig(this.config)
             });
             
-            console.log('✅ Configuration reloaded');
+            console.log('✓ Configuration reloaded');
           }
         }
       } catch (error) {

@@ -1,8 +1,11 @@
 "use strict";
-/**
- * Example migration from hardcoded separators to content-driven composition
- * Shows before/after comparison for the config menu
- */
+/**---
+ * title: [Menu Migration Example - Legacy to Unified]
+ * tags: [CLI, Menu, Example, Migration]
+ * provides: [Demonstration Code, Conversion Examples]
+ * requires: [Menu Content Converter, Unified Layout Engine]
+ * description: [Example demonstrating conversion from legacy menu content to unified skin definitions for migration reference.]
+ * ---*/
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -11,20 +14,16 @@ exports.usagePattern = exports.separatorLengthExamples = exports.comparisonDemo 
 const chalk_1 = __importDefault(require("chalk"));
 const display_1 = require("../utils/display");
 const menu_composer_1 = require("./menu-composer");
-/**
- * BEFORE: Original hardcoded approach
- * Manual separator calls scattered throughout the function
- */
 class OldMenuSystem {
     showConfigMenuOld(context) {
         const title = context.currentItem ?
-            `📋 Configuration › ${context.currentItem}` :
-            '📋 Configuration Management Hub';
+            `⋇ Configuration › ${context.currentItem}` :
+            '⋇ Configuration Management Hub';
         console.log(chalk_1.default.green.bold(title));
         display_1.display.printSeparator(display_1.display.LENGTHS.SUB_MENU); // HARDCODED LENGTH
         console.log(chalk_1.default.dim('Manage Phoenix Code Lite settings and preferences'));
         console.log();
-        console.log(chalk_1.default.yellow.bold('🔧 Configuration Commands:'));
+        console.log(chalk_1.default.yellow.bold('◦ Configuration Commands:'));
         console.log(chalk_1.default.green('  1. show      ') + chalk_1.default.gray('- Display current configuration with validation status'));
         console.log(chalk_1.default.green('  2. edit      ') + chalk_1.default.gray('- Interactive configuration editor with guided setup'));
         console.log(chalk_1.default.green('  3. templates ') + chalk_1.default.gray('- Browse and apply configuration templates'));
@@ -32,7 +31,7 @@ class OldMenuSystem {
         console.log(chalk_1.default.green('  5. quality   ') + chalk_1.default.gray('- Quality gates and testing thresholds'));
         console.log(chalk_1.default.green('  6. security  ') + chalk_1.default.gray('- Security policies and guardrails'));
         console.log();
-        console.log(chalk_1.default.blue('💡 Navigation: ') + chalk_1.default.cyan('command name') + chalk_1.default.gray(', ') + chalk_1.default.cyan('number') + chalk_1.default.gray(', ') + chalk_1.default.cyan('"back"') + chalk_1.default.gray(' to return, ') + chalk_1.default.cyan('"quit"') + chalk_1.default.gray(' to exit'));
+        console.log(chalk_1.default.blue('* Navigation: ') + chalk_1.default.cyan('command name') + chalk_1.default.gray(', ') + chalk_1.default.cyan('number') + chalk_1.default.gray(', ') + chalk_1.default.cyan('"back"') + chalk_1.default.gray(' to return, ') + chalk_1.default.cyan('"quit"') + chalk_1.default.gray(' to exit'));
         console.log();
     }
 }
@@ -46,11 +45,11 @@ class NewMenuSystem {
         // Define menu content as structured data
         const content = {
             title: context.currentItem ?
-                `📋 Configuration › ${context.currentItem}` :
-                '📋 Configuration Management Hub',
+                `⋇ Configuration › ${context.currentItem}` :
+                '⋇ Configuration Management Hub',
             subtitle: 'Manage Phoenix Code Lite settings and preferences',
             sections: [{
-                    heading: '🔧 Configuration Commands:',
+                    heading: '◦ Configuration Commands:',
                     theme: {
                         headingColor: 'yellow',
                         bold: true
@@ -145,7 +144,7 @@ exports.separatorLengthExamples = {
     },
     complexMenu: {
         content: {
-            title: '🔧 Advanced Configuration Management System',
+            title: '◦ Advanced Configuration Management System',
             sections: [
                 { heading: 'Primary Configuration Options', items: [ /* 6 items */] },
                 { heading: 'Advanced Settings and Preferences', items: [ /* 8 items */] }

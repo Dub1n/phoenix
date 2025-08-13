@@ -18,7 +18,7 @@ _A concise description of what this reference documents._
 **Version:** X.Y.Z
 **Last updated:** YYYY-MM-DD
 
-## 📋 Overview
+## ⋇ Overview
 
 A brief overview of this component/module/API and its purpose in the system.
 

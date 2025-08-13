@@ -1,3 +1,10 @@
+/**---
+ * title: [E2E Runner - End-to-End Workflow Testing]
+ * tags: [Testing, E2E]
+ * provides: [PhoenixCodeLiteE2E Class, End-to-End Harness]
+ * requires: [jest]
+ * description: [End-to-end test runner for executing Phoenix Code Lite workflows and validating outputs.]
+ * ---*/
 export interface E2EWorkflowOptions {
     task: string;
     framework?: string;

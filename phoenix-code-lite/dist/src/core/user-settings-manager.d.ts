@@ -1,10 +1,10 @@
-/**
- * User Settings Manager
- * Created: 2025-01-06-175700
- *
- * Manages persistent user settings including interaction mode preferences.
- * Automatically resets settings when version changes.
- */
+/**---
+ * title: [User Settings Manager - Core Service Module]
+ * tags: [Core, Service, Settings, Persistence]
+ * provides: [UserSettingsManager Class, Settings Load/Save, Version Reset, Mode Preferences]
+ * requires: [fs, path, chalk]
+ * description: [Manages persistent per-user CLI preferences with version-aware resets, mode selection, and preference updates for consistent UX.]
+ * ---*/
 export interface UserSettings {
     version: string;
     interactionMode: 'interactive' | 'command' | 'debug';

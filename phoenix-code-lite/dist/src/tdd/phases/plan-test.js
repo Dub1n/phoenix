@@ -1,4 +1,11 @@
 "use strict";
+/**---
+ * title: [Plan & Test Phase - TDD Phase Module]
+ * tags: [TDD, Phase, Planning, Test-Generation]
+ * provides: [PlanTestPhase Class, Test Planning Execution, Test Validation]
+ * requires: [ClaudeCodeClient, TDDPrompts, Workflow Types, Agents]
+ * description: [Generates a planning strategy and test suite using Claude with specialized persona and validates test creation for the TDD workflow.]
+ * ---*/
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PlanTestPhase = void 0;
 const prompts_1 = require("../../claude/prompts");

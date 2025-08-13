@@ -10,7 +10,7 @@ async function testLogueCleanup() {
   const app = logue('node', [CLI_PATH, 'config', '--show']);
   
   await app.waitFor('Phoenix Code Lite Configuration');
-  console.log('✅ Found expected text');
+  console.log('✓ Found expected text');
   
   // Access the internal process for manual cleanup
   const logueInternal = app as any;
@@ -44,7 +44,7 @@ async function testLogueCleanup() {
     // Manually remove all listeners
     childProcess.removeAllListeners();
     
-    console.log('✅ Manual cleanup completed');
+    console.log('✓ Manual cleanup completed');
     
   } catch (error) {
     console.error('Cleanup error:', error);

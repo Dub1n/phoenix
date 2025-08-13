@@ -1,11 +1,10 @@
-/**
- * Example migration from hardcoded separators to content-driven composition
- * Shows before/after comparison for the config menu
- */
-/**
- * BEFORE: Original hardcoded approach
- * Manual separator calls scattered throughout the function
- */
+/**---
+ * title: [Menu Migration Example - Legacy to Unified]
+ * tags: [CLI, Menu, Example, Migration]
+ * provides: [Demonstration Code, Conversion Examples]
+ * requires: [Menu Content Converter, Unified Layout Engine]
+ * description: [Example demonstrating conversion from legacy menu content to unified skin definitions for migration reference.]
+ * ---*/
 export declare class OldMenuSystem {
     private showConfigMenuOld;
 }

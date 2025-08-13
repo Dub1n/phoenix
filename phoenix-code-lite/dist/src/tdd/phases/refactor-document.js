@@ -1,4 +1,11 @@
 "use strict";
+/**---
+ * title: [TDD Phase - Refactor & Document]
+ * tags: [TDD, Service, Refactoring, Documentation]
+ * provides: [RefactorDocumentPhase Class, Refactoring Prompting, Test Validation, Artifact Collection]
+ * requires: [ClaudeCodeClient, TDDPrompts, SpecializedAgentContexts, TaskContext, PhaseResult]
+ * description: [Performs refactoring and documentation improvements via Claude Code, validates tests still pass, and records resulting artifacts.]
+ * ---*/
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RefactorDocumentPhase = void 0;
 const prompts_1 = require("../../claude/prompts");

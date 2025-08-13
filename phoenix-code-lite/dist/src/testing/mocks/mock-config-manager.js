@@ -1,4 +1,11 @@
 "use strict";
+/**---
+ * title: [Mock Config Manager - Testing Double]
+ * tags: [Testing, Mocks]
+ * provides: [MockConfigManager]
+ * requires: []
+ * description: [Mock implementation of IConfigManager for unit and integration tests.]
+ * ---*/
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MockConfigManager = void 0;
 function createDefaultConfig() {

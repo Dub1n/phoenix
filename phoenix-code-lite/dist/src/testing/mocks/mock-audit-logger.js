@@ -1,4 +1,11 @@
 "use strict";
+/**---
+ * title: [Mock Audit Logger - Testing Double]
+ * tags: [Testing, Mocks]
+ * provides: [MockAuditLogger]
+ * requires: []
+ * description: [Mock implementation of IAuditLogger for unit and integration tests.]
+ * ---*/
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MockAuditLogger = void 0;
 class MockAuditLogger {

@@ -1,4 +1,11 @@
 "use strict";
+/**---
+ * title: [Mock Claude Client - Testing Double]
+ * tags: [Testing, Mocks]
+ * provides: [Mock Claude Client]
+ * requires: []
+ * description: [Mock implementation of Claude client for deterministic testing.]
+ * ---*/
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MockClaudeServer = void 0;
 const http_1 = require("http");

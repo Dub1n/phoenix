@@ -1,11 +1,11 @@
 #!/usr/bin/env node
-/**
- * Phoenix Code Lite - Unified Architecture Entry Point
- * Created: 2025-01-06-175700
- *
- * New main entry point that integrates the CLI Interaction Decoupling Architecture
- * with the existing foundation infrastructure.
- */
+/**---
+ * title: [Phoenix Code Lite - Unified Architecture Entry Point]
+ * tags: [Core, Infrastructure, Entry-Point, Unified-Architecture]
+ * provides: [Unified CLI Bootstrap, Legacy Mode Bridge, Core Initialization, Unified CLI Launcher]
+ * requires: [CoreFoundation, ConfigManager, ErrorHandler, unified-cli, CLI Args]
+ * description: [Entry point for running Phoenix Code Lite with the unified architecture, including fallback to legacy initialization; coordinates core setup and unified CLI execution.]
+ * ---*/
 import { setupCLI } from './cli/args';
 import { CoreFoundation } from './core/foundation';
 import { ConfigManager } from './core/config-manager';

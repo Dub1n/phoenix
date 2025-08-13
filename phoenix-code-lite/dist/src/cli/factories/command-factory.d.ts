@@ -1,3 +1,10 @@
+/**---
+ * title: [Command Factory - CLI Command Instantiation]
+ * tags: [CLI, Factory, Commands]
+ * provides: [CommandFactory Class, Command Creators]
+ * requires: [generate-command, config-command, init-command, help-command, version-command]
+ * description: [Centralized factory for constructing CLI command handlers, wiring options and dependencies.]
+ * ---*/
 import { IConfigManager } from '../interfaces/config-manager';
 import { IAuditLogger } from '../interfaces/audit-logger';
 import { IClaudeClient } from '../interfaces/claude-client';

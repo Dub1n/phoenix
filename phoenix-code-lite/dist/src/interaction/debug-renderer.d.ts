@@ -1,10 +1,10 @@
-/**
- * Debug Renderer Implementation
- * Created: 2025-01-06-175700
- *
- * Enhanced debug mode with comprehensive logging, detailed output, and diagnostic features.
- * Combines the best of both interactive and command modes with debugging capabilities.
- */
+/**---
+ * title: [Debug Renderer - Unified Architecture]
+ * tags: [Unified, Interaction, Debug]
+ * provides: [Debug Renderer]
+ * requires: []
+ * description: [Renderer for debug-mode interaction output and diagnostics in unified CLI.]
+ * ---*/
 import { InteractionRenderer, InteractionResult, InteractionMode } from '../types/interaction-abstraction';
 import { MenuDefinition, MenuContext } from '../types/menu-definitions';
 export declare class DebugRenderer implements InteractionRenderer {

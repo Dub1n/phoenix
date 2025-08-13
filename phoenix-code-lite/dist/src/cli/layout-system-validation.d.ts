@@ -1,12 +1,10 @@
-/**
- * Layout System Validation - Unified vs Legacy Comparison
- *
- * Comprehensive validation suite that ensures the unified layout engine
- * produces equivalent results to the current MenuComposer + MenuLayoutManager system.
- *
- * This validates that the transformation preserves all functionality while
- * providing the benefits of the unified approach and PCL-Skins integration.
- */
+/**---
+ * title: [Layout System Validation - Unified vs Legacy Equivalence]
+ * tags: [CLI, Menu, Validation, Migration]
+ * provides: [Validation Suite, Conversion Checks, Migration Demo]
+ * requires: [MenuComposer, MenuLayoutManager, Unified Layout Engine, SkinMenuRenderer, Menu Types]
+ * description: [Validates that the unified layout engine produces equivalent results to legacy systems and supports migration readiness.]
+ * ---*/
 import type { MenuContent, MenuDisplayContext } from './menu-types';
 /**
  * Validation result structure

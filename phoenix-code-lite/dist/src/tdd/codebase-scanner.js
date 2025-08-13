@@ -1,4 +1,11 @@
 "use strict";
+/**---
+ * title: [Codebase Scanner - TDD Support Module]
+ * tags: [TDD, Service, Code-Analysis, Anti-Reimplementation]
+ * provides: [CodebaseScanner Class, Scan Configuration, Scan Results, Recommendations]
+ * requires: [ClaudeCodeClient, Workflow Types]
+ * description: [Analyzes project files to identify reusable assets and conflicts before implementation, producing recommendations to prevent reimplementation.]
+ * ---*/
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CodebaseScanner = void 0;
 class CodebaseScanner {
@@ -15,7 +22,7 @@ class CodebaseScanner {
     async scanCodebase(taskDescription, context, config) {
         const scanConfig = { ...this.defaultConfig, ...config };
         const scanId = this.generateScanId();
-        console.log('🔍 CODEBASE SCAN: Analyzing existing assets to prevent reimplementation...');
+        console.log('⌕ CODEBASE SCAN: Analyzing existing assets to prevent reimplementation...');
         try {
             // Step 1: Discover all relevant files
             const projectFiles = await this.discoverProjectFiles(context.projectPath, scanConfig);
@@ -189,13 +196,13 @@ Focus on public/exported assets only.
             recommendations.push(`⚠ CONFLICT RISKS: Potential conflicts with existing: ${conflictRisks.map(a => `${a.name} (${a.filePath})`).join(', ')}`);
         }
         if (relevantAssets.length > 5) {
-            recommendations.push(`📊 ARCHITECTURE REVIEW: ${relevantAssets.length} related assets found - consider architectural consistency`);
+            recommendations.push(`◊ ARCHITECTURE REVIEW: ${relevantAssets.length} related assets found - consider architectural consistency`);
         }
         if (relevantAssets.length === 0) {
             recommendations.push(`✓ CLEAR TO IMPLEMENT: No conflicting assets found for this task`);
         }
         // Always add the mandatory verification step
-        recommendations.push(`🎯 MANDATORY: Agent must acknowledge scan results before proceeding with implementation`);
+        recommendations.push(`⊕ MANDATORY: Agent must acknowledge scan results before proceeding with implementation`);
         return recommendations;
     }
     displayScanResults(result) {
@@ -207,7 +214,7 @@ Focus on public/exported assets only.
         console.log(`Reuse Opportunities: ${result.reuseOpportunities.length}`);
         console.log(`Conflict Risks: ${result.conflictRisks.length}`);
         if (result.recommendations.length > 0) {
-            console.log('\n📋 RECOMMENDATIONS:');
+            console.log('\n⋇ RECOMMENDATIONS:');
             result.recommendations.forEach(rec => console.log(`   ${rec}`));
         }
         if (result.conflictRisks.length > 0) {

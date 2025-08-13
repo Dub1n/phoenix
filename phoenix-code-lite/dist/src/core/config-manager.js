@@ -1,4 +1,11 @@
 "use strict";
+/**---
+ * title: [Configuration Manager - Core Infrastructure Component]
+ * tags: [Core, Infrastructure, Configuration, Validation]
+ * provides: [ConfigManager Class, Template Loading, Hot Reloading, Validation, Summary APIs]
+ * requires: [Zod, FS, CoreConfigSchema, AuditLogger]
+ * description: [Manages Phoenix Code Lite configuration with schema validation, file persistence, hot reload, template management, and change notifications for core systems.]
+ * ---*/
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ConfigManager = exports.ConfigTemplates = void 0;
 const zod_1 = require("zod");
@@ -6,9 +13,6 @@ const fs_1 = require("fs");
 const path_1 = require("path");
 const foundation_1 = require("./foundation");
 const audit_logger_1 = require("../utils/audit-logger");
-/**
- * Configuration templates for different use cases
- */
 exports.ConfigTemplates = {
     starter: {
         system: {
@@ -131,10 +135,10 @@ class ConfigManager {
             if (!loaded) {
                 // Create default configuration
                 await this.saveToFile();
-                console.log('📝 Created default configuration file');
+                console.log('⋇ Created default configuration file');
             }
             else {
-                console.log('✅ Loaded existing configuration');
+                console.log('✓ Loaded existing configuration');
             }
             // Setup file watching
             this.setupFileWatching();
@@ -151,7 +155,7 @@ class ConfigManager {
                 configPath: this.configPath,
                 timestamp: new Date().toISOString()
             });
-            console.error('❌ Configuration manager initialization failed:', error);
+            console.error('✗ Configuration manager initialization failed:', error);
             return false;
         }
     }
@@ -181,7 +185,7 @@ class ConfigManager {
                 changes: this.getConfigChanges(previousConfig, validatedConfig),
                 timestamp: new Date().toISOString()
             });
-            console.log('✅ Configuration updated successfully');
+            console.log('✓ Configuration updated successfully');
             return true;
         }
         catch (error) {
@@ -190,7 +194,7 @@ class ConfigManager {
                 updates,
                 timestamp: new Date().toISOString()
             });
-            console.error('❌ Configuration update failed:', error);
+            console.error('✗ Configuration update failed:', error);
             return false;
         }
     }
@@ -208,7 +212,7 @@ class ConfigManager {
                 config: this.sanitizeConfig(updatedConfig),
                 timestamp: new Date().toISOString()
             });
-            console.log(`📋 Loaded ${templateName} template`);
+            console.log(`⋇ Loaded ${templateName} template`);
             return true;
         }
         catch (error) {
@@ -217,7 +221,7 @@ class ConfigManager {
                 error: error instanceof Error ? error.message : 'Unknown error',
                 timestamp: new Date().toISOString()
             });
-            console.error(`❌ Failed to load ${templateName} template:`, error);
+            console.error(`✗ Failed to load ${templateName} template:`, error);
             return false;
         }
     }
@@ -355,7 +359,7 @@ class ConfigManager {
             try {
                 const stats = await fs_1.promises.stat(this.configPath);
                 if (this.lastModified && stats.mtime > this.lastModified) {
-                    console.log('🔄 Configuration file changed, reloading...');
+                    console.log('⇔ Configuration file changed, reloading...');
                     const reloaded = await this.loadFromFile();
                     if (reloaded) {
                         this.notifyCallbacks(this.config);
@@ -363,7 +367,7 @@ class ConfigManager {
                             timestamp: new Date().toISOString(),
                             config: this.sanitizeConfig(this.config)
                         });
-                        console.log('✅ Configuration reloaded');
+                        console.log('✓ Configuration reloaded');
                     }
                 }
             }

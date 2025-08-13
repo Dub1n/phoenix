@@ -1,3 +1,10 @@
+/**---
+ * title: [Configuration Templates - Starter/Enterprise/Performance]
+ * tags: [Configuration, Templates]
+ * provides: [ConfigurationTemplates, Template Data]
+ * requires: [PhoenixCodeLiteConfigData]
+ * description: [Provides built-in templates (starter, enterprise, performance) for quick configuration bootstrapping.]
+ * ---*/
 import { PhoenixCodeLiteConfigData } from './settings';
 import { DocumentConfiguration } from '../types/document-management';
 export interface TemplateMetadata {

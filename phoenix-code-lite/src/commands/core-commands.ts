@@ -1,10 +1,10 @@
-/**
- * Core Command Handlers
- * Created: 2025-01-06-175700
- * 
- * Extracted command handlers from the existing menu system.
- * Provides unified command execution independent of interaction mode.
- */
+/**---
+ * title: [Core Commands - Unified Architecture]
+ * tags: [Unified, Commands]
+ * provides: [Core Command Implementations]
+ * requires: []
+ * description: [Core command implementations used by the unified CLI system.]
+ * ---*/
 
 import { CommandHandler, CommandContext, CommandResult } from '../types/command-execution';
 
@@ -22,7 +22,7 @@ export const ConfigShowCommand: CommandHandler = {
       const config = await PhoenixCodeLiteConfig.load();
       const configData = config.export();
       
-      console.log('📋 Current Configuration:');
+      console.log('⋇ Current Configuration:');
       console.log('═'.repeat(50));
       console.log(JSON.stringify(configData, null, 2));
       
@@ -44,7 +44,7 @@ export const ConfigEditCommand: CommandHandler = {
   id: 'config:edit',
   handler: async (context: CommandContext): Promise<CommandResult> => {
     try {
-      console.log('🔧 Interactive Configuration Editor');
+      console.log('◦ Interactive Configuration Editor');
       console.log('This would open the configuration editor...');
       // TODO: Implement interactive configuration editor
       
@@ -65,7 +65,7 @@ export const ConfigTemplatesCommand: CommandHandler = {
   id: 'config:templates',
   handler: async (context: CommandContext): Promise<CommandResult> => {
     try {
-      console.log('📄 Configuration Templates');
+      console.log('□ Configuration Templates');
       console.log('Available templates: Starter, Enterprise, Performance');
       
       return {
@@ -86,7 +86,7 @@ export const ConfigFrameworkCommand: CommandHandler = {
   id: 'config:framework',
   handler: async (context: CommandContext): Promise<CommandResult> => {
     try {
-      console.log('🏗️ Framework Configuration');
+      console.log('⊛ Framework Configuration');
       console.log('Framework-specific settings and optimizations...');
       
       return {
@@ -106,7 +106,7 @@ export const ConfigQualityCommand: CommandHandler = {
   id: 'config:quality',
   handler: async (context: CommandContext): Promise<CommandResult> => {
     try {
-      console.log('🎯 Quality Gates Configuration');
+      console.log('⊕ Quality Gates Configuration');
       console.log('Test coverage thresholds, linting rules, etc...');
       
       return {
@@ -126,7 +126,7 @@ export const ConfigSecurityCommand: CommandHandler = {
   id: 'config:security',
   handler: async (context: CommandContext): Promise<CommandResult> => {
     try {
-      console.log('🛡️ Security Policies Configuration');
+      console.log('⊜ Security Policies Configuration');
       console.log('Security rules, vulnerability scanning, etc...');
       
       return {
@@ -150,7 +150,7 @@ export const TemplatesListCommand: CommandHandler = {
   id: 'templates:list',
   handler: async (context: CommandContext): Promise<CommandResult> => {
     try {
-      console.log('📄 Available Templates:');
+      console.log('□ Available Templates:');
       console.log('═'.repeat(50));
       console.log('1. Starter - Basic configuration for new projects');
       console.log('2. Enterprise - Full-featured enterprise setup');
@@ -183,7 +183,7 @@ export const TemplatesUseCommand: CommandHandler = {
         };
       }
       
-      console.log(`📦 Applying template: ${templateName}`);
+      console.log(`⌺ Applying template: ${templateName}`);
       console.log('Template applied successfully!');
       
       return {
@@ -293,7 +293,7 @@ export const TemplatesResetCommand: CommandHandler = {
         };
       }
       
-      console.log(`🔄 Resetting template: ${templateName}`);
+      console.log(`⇔ Resetting template: ${templateName}`);
       console.log('Template reset to defaults!');
       
       return {
@@ -394,7 +394,7 @@ export const GenerateTestCommand: CommandHandler = {
     try {
       const description = context.parameters.description || context.parameters.args?.join(' ');
       
-      console.log(`🧪 Generating test suite: ${description || 'comprehensive tests'}`);
+      console.log(`⊎ Generating test suite: ${description || 'comprehensive tests'}`);
       console.log('Creating test files with full coverage...');
       
       return {
@@ -458,7 +458,7 @@ export const AdvancedLoggingCommand: CommandHandler = {
   id: 'advanced:logging',
   handler: async (context: CommandContext): Promise<CommandResult> => {
     try {
-      console.log('📝 Audit Logging Configuration');
+      console.log('⋇ Audit Logging Configuration');
       console.log('Session tracking and audit trail settings...');
       
       return {
@@ -478,7 +478,7 @@ export const AdvancedMetricsCommand: CommandHandler = {
   id: 'advanced:metrics',
   handler: async (context: CommandContext): Promise<CommandResult> => {
     try {
-      console.log('📊 Performance Metrics');
+      console.log('◊ Performance Metrics');
       console.log('Analytics, success rates, and performance data...');
       
       return {
@@ -629,7 +629,7 @@ export const SettingsResetCommand: CommandHandler = {
         };
       }
       
-      console.log('⚠️  This will reset all settings to defaults.');
+      console.log('⚠  This will reset all settings to defaults.');
       console.log('Settings being reset...');
       
       const success = await settingsManager.resetToDefaults();

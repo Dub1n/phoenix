@@ -1,6 +1,12 @@
-# CLI Interaction Mode Decoupling Architecture
+<!--
+title: [CLI Interaction Decoupling Architecture - Documentation]
+tags: [Documentation, Architecture, CLI, Decoupling]
+provides: [Decoupled Architecture Specification, Interfaces, Migration Strategy]
+requires: [docs/index/CODEBASE-INDEX.md, docs/index/ARCHITECTURE-DIAGRAM.md]
+description: [Design document for decoupling interaction modes from menu definitions with migration plan]
+-->
 
-*Created: 2025-01-06-120000*
+# CLI Interaction Mode Decoupling Architecture
 
 ## Executive Summary
 
@@ -143,7 +149,7 @@ interface MenuAction {
 ```typescript
 const MainMenuDefinition: MenuDefinition = {
   id: 'main',
-  title: '🔥 Phoenix Code Lite • TDD Workflow Orchestrator',
+  title: '* Phoenix Code Lite • TDD Workflow Orchestrator',
   sections: [{
     id: 'navigation',
     heading: 'Main Navigation',

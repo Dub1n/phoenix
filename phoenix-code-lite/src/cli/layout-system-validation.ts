@@ -1,12 +1,10 @@
-/**
- * Layout System Validation - Unified vs Legacy Comparison
- * 
- * Comprehensive validation suite that ensures the unified layout engine
- * produces equivalent results to the current MenuComposer + MenuLayoutManager system.
- * 
- * This validates that the transformation preserves all functionality while
- * providing the benefits of the unified approach and PCL-Skins integration.
- */
+/**---
+ * title: [Layout System Validation - Unified vs Legacy Equivalence]
+ * tags: [CLI, Menu, Validation, Migration]
+ * provides: [Validation Suite, Conversion Checks, Migration Demo]
+ * requires: [MenuComposer, MenuLayoutManager, Unified Layout Engine, SkinMenuRenderer, Menu Types]
+ * description: [Validates that the unified layout engine produces equivalent results to legacy systems and supports migration readiness.]
+ * ---*/
 
 import { MenuComposer } from './menu-composer';
 import { MenuLayoutManager } from './menu-layout-manager';
@@ -422,7 +420,7 @@ export const validationTestCases: Array<{
   {
     name: 'Simple Menu',
     content: {
-      title: '🔥 Phoenix Code Lite',
+      title: '* Phoenix Code Lite',
       subtitle: 'Quick Actions',
       sections: [{
         heading: '⚡ Quick Commands:',
@@ -439,11 +437,11 @@ export const validationTestCases: Array<{
   {
     name: 'Complex Config Menu',
     content: {
-      title: '📋 Advanced Configuration Management Hub',
+      title: '⋇ Advanced Configuration Management Hub',
       subtitle: 'Comprehensive settings management with enterprise-grade options',
       sections: [
         {
-          heading: '🔧 Primary Configuration:',
+          heading: '◦ Primary Configuration:',
           theme: { headingColor: 'green', bold: true },
           items: [
             { label: '1. show', description: 'Display current configuration with detailed validation status', commands: ['show', '1'] },
@@ -453,7 +451,7 @@ export const validationTestCases: Array<{
           ]
         },
         {
-          heading: '⚙️ Advanced Settings:',
+          heading: '⌘ Advanced Settings:',
           theme: { headingColor: 'cyan', bold: true },
           items: [
             { label: '5. framework', description: 'Framework-specific optimization and performance settings', commands: ['framework', '5'] },
@@ -471,10 +469,10 @@ export const validationTestCases: Array<{
   {
     name: 'Medium Template Menu',
     content: {
-      title: '📄 Template Management',
+      title: '□ Template Management',
       subtitle: 'Manage configuration templates',
       sections: [{
-        heading: '📦 Template Commands:',
+        heading: '⌺ Template Commands:',
         theme: { headingColor: 'yellow', bold: true },
         items: [
           { label: '1. list', description: 'Show available templates', commands: ['list', '1'] },
@@ -520,7 +518,7 @@ export function generateValidationReport(result: BatchValidationResult): string 
   ];
   
   for (const test of result.results) {
-    const status = test.passed ? '✅ PASS' : '❌ FAIL';
+    const status = test.passed ? '✓ PASS' : '✗ FAIL';
     lines.push(`### ${test.test} - ${status}`);
     lines.push(`**Performance**: ${test.metrics.performanceGain.toFixed(1)}% improvement`);
     

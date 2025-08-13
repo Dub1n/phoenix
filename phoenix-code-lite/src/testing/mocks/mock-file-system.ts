@@ -1,3 +1,11 @@
+/**---
+ * title: [Mock File System - Testing Double]
+ * tags: [Testing, Mocks]
+ * provides: [MockFileSystem]
+ * requires: []
+ * description: [Mock implementation of IFileSystem for unit and integration tests.]
+ * ---*/
+
 import { IFileSystem } from '../../cli/interfaces/file-system';
 
 export class MockFileSystem implements IFileSystem {

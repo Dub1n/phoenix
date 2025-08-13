@@ -1,8 +1,11 @@
 "use strict";
-/**
- * Demonstration of static menu height with consistent textbox positioning
- * Shows how different menus maintain the same command prompt position
- */
+/**---
+ * title: [Static Menu Demo - Consistent Textbox Positioning]
+ * tags: [CLI, Menu, Demo, UX]
+ * provides: [StaticMenuDemo Class, Demonstration Menus]
+ * requires: [menuComposer, Menu Types]
+ * description: [Demonstrates static menu height and consistent textbox positioning across different menus for UX validation.]
+ * ---*/
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.staticMenuConfig = exports.usageInstructions = exports.staticMenuComparison = exports.StaticMenuDemo = void 0;
 const menu_composer_1 = require("./menu-composer");
@@ -16,7 +19,7 @@ class StaticMenuDemo {
      */
     showSimpleMenu() {
         const content = {
-            title: '🔥 Phoenix Code Lite',
+            title: '* Phoenix Code Lite',
             subtitle: 'Quick Actions',
             sections: [{
                     heading: '⚡ Quick Commands:',
@@ -39,11 +42,11 @@ class StaticMenuDemo {
      */
     showComplexMenu() {
         const content = {
-            title: '📋 Advanced Configuration Management Hub',
+            title: '⋇ Advanced Configuration Management Hub',
             subtitle: 'Comprehensive settings management with enterprise-grade options',
             sections: [
                 {
-                    heading: '🔧 Primary Configuration:',
+                    heading: '◦ Primary Configuration:',
                     theme: { headingColor: 'green', bold: true },
                     items: [
                         { label: '1. show', description: 'Display current configuration with detailed validation status', commands: ['show', '1'] },
@@ -53,7 +56,7 @@ class StaticMenuDemo {
                     ]
                 },
                 {
-                    heading: '⚙️ Advanced Settings:',
+                    heading: '⌘ Advanced Settings:',
                     theme: { headingColor: 'cyan', bold: true },
                     items: [
                         { label: '5. framework', description: 'Framework-specific optimization and performance settings', commands: ['framework', '5'] },
@@ -78,10 +81,10 @@ class StaticMenuDemo {
      */
     showMediumMenu() {
         const content = {
-            title: '📄 Template Management',
+            title: '□ Template Management',
             subtitle: 'Manage configuration templates',
             sections: [{
-                    heading: '📦 Template Commands:',
+                    heading: '⌺ Template Commands:',
                     theme: { headingColor: 'yellow', bold: true },
                     items: [
                         { label: '1. list', description: 'Show available templates', commands: ['list', '1'] },

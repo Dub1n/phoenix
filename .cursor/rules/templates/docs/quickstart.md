@@ -24,7 +24,7 @@ _A one-sentence description of what this quickstart covers._
 - Prerequisite 2
 - Prerequisite 3
 
-## 📋 TL;DR: Quick Steps
+## ⋇ TL;DR: Quick Steps
 
 For the impatient, here's the shortest path to success:
 
@@ -79,7 +79,7 @@ Once you've completed this quickstart, you can:
 - Check the [API reference](mdc:docs/api_reference.md)
 - Explore [example projects](mdc:docs/examples/)
 
-## 🔍 Common Issues
+## ⌕ Common Issues
 
 - **Issue 1**: Quick solution
 - **Issue 2**: Quick solution

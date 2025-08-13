@@ -1,3 +1,10 @@
+/**---
+ * title: [Config Command - CLI Command]
+ * tags: [CLI, Command, Configuration]
+ * provides: [ConfigCommand]
+ * requires: [IConfigManager, IAuditLogger, ConfigFormatter, InteractivePrompts]
+ * description: [Manages Phoenix Code Lite configuration operations including show, edit, adjust, use, and template application.]
+ * ---*/
 import { IConfigManager } from '../interfaces/config-manager';
 import { IAuditLogger } from '../interfaces/audit-logger';
 export declare class ConfigCommand {

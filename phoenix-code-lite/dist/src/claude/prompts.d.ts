@@ -1,3 +1,10 @@
+/**---
+ * title: [TDD Prompts - Phase-Specific Prompt Builders]
+ * tags: [Claude, Prompts, TDD]
+ * provides: [TDDPrompts, Planning Prompt, Implementation Prompt, Refactor Prompt]
+ * requires: []
+ * description: [Centralized prompt templates for planning, implementation, and refactoring phases used by the TDD orchestrator.]
+ * ---*/
 import { TaskContext } from '../types/workflow';
 import { AgentPersona } from '../types/agents';
 export declare class TDDPrompts {

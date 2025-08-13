@@ -1,4 +1,11 @@
 "use strict";
+/**---
+ * title: [Config Formatter - Human-Readable Configuration Output]
+ * tags: [CLI, Utility, Formatting, Configuration]
+ * provides: [ConfigFormatter Class, Section Formatting, Value Rendering]
+ * requires: [chalk, PhoenixCodeLiteConfigData]
+ * description: [Formats Phoenix Code Lite configuration into readable sections and items with colorized output suitable for CLI display.]
+ * ---*/
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };

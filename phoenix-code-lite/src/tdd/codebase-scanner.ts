@@ -1,3 +1,11 @@
+/**---
+ * title: [Codebase Scanner - TDD Support Module]
+ * tags: [TDD, Service, Code-Analysis, Anti-Reimplementation]
+ * provides: [CodebaseScanner Class, Scan Configuration, Scan Results, Recommendations]
+ * requires: [ClaudeCodeClient, Workflow Types]
+ * description: [Analyzes project files to identify reusable assets and conflicts before implementation, producing recommendations to prevent reimplementation.]
+ * ---*/
+
 import { ClaudeCodeClient } from '../claude/client';
 import { TaskContext } from '../types/workflow';
 
@@ -52,7 +60,7 @@ export class CodebaseScanner {
     const scanConfig = { ...this.defaultConfig, ...config };
     const scanId = this.generateScanId();
     
-    console.log('🔍 CODEBASE SCAN: Analyzing existing assets to prevent reimplementation...');
+    console.log('⌕ CODEBASE SCAN: Analyzing existing assets to prevent reimplementation...');
     
     try {
       // Step 1: Discover all relevant files
@@ -282,7 +290,7 @@ Focus on public/exported assets only.
     
     if (relevantAssets.length > 5) {
       recommendations.push(
-        `📊 ARCHITECTURE REVIEW: ${relevantAssets.length} related assets found - consider architectural consistency`
+        `◊ ARCHITECTURE REVIEW: ${relevantAssets.length} related assets found - consider architectural consistency`
       );
     }
     
@@ -294,7 +302,7 @@ Focus on public/exported assets only.
     
     // Always add the mandatory verification step
     recommendations.push(
-      `🎯 MANDATORY: Agent must acknowledge scan results before proceeding with implementation`
+      `⊕ MANDATORY: Agent must acknowledge scan results before proceeding with implementation`
     );
     
     return recommendations;
@@ -310,7 +318,7 @@ Focus on public/exported assets only.
     console.log(`Conflict Risks: ${result.conflictRisks.length}`);
     
     if (result.recommendations.length > 0) {
-      console.log('\n📋 RECOMMENDATIONS:');
+      console.log('\n⋇ RECOMMENDATIONS:');
       result.recommendations.forEach(rec => console.log(`   ${rec}`));
     }
     

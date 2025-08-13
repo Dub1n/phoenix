@@ -1,3 +1,10 @@
+/**---
+ * title: [Test Utilities - Safe Exit and Helpers]
+ * tags: [Utility, Testing]
+ * provides: [safeExit, timers, helpers]
+ * requires: []
+ * description: [Testing-safe process helpers including safe exit for CI and controlled timing utilities.]
+ * ---*/
 /**
  * Test Environment Utilities
  *

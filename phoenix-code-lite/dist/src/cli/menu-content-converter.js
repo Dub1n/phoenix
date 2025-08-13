@@ -1,13 +1,11 @@
 "use strict";
-/**
- * Menu Content Converter - Bridge between legacy and unified systems
- *
- * Converts existing MenuContent structures to SkinMenuDefinition format
- * for use with the unified layout engine and PCL-Skins architecture.
- *
- * This enables gradual migration from the current system to the unified approach
- * while maintaining backward compatibility and equivalent functionality.
- */
+/**---
+ * title: [Menu Content Converter - Legacy to Unified Bridge]
+ * tags: [CLI, Menu, Migration, Conversion]
+ * provides: [convertMenuContentToSkinDefinition, convertWithLayoutConstraints, validateConversion]
+ * requires: [Menu Types, Unified Layout Engine]
+ * description: [Converts legacy MenuContent structures into unified SkinMenuDefinition for PCL-Skins architecture while preserving behavior.]
+ * ---*/
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.conversionExamples = void 0;
 exports.convertMenuContentToSkinDefinition = convertMenuContentToSkinDefinition;
@@ -178,12 +176,12 @@ function createMigrationDemo(content, context) {
             '5. Update any direct separator calls to use unified system'
         ],
         benefits: [
-            '✅ Single layout function handles both width and height',
-            '✅ PCL-Skins architecture integration ready',
-            '✅ JSON-based menu definitions for easy customization',
-            '✅ Theme support with context-aware colors',
-            '✅ Consistent textbox positioning across all menus',
-            '✅ Automatic content truncation and padding'
+            '✓ Single layout function handles both width and height',
+            '✓ PCL-Skins architecture integration ready',
+            '✓ JSON-based menu definitions for easy customization',
+            '✓ Theme support with context-aware colors',
+            '✓ Consistent textbox positioning across all menus',
+            '✓ Automatic content truncation and padding'
         ]
     };
 }
@@ -192,7 +190,7 @@ exports.conversionExamples = {
     // Simple menu conversion
     simpleMenu: {
         original: {
-            title: '🔥 Phoenix Code Lite',
+            title: '* Phoenix Code Lite',
             subtitle: 'Quick Actions',
             sections: [{
                     heading: '⚡ Quick Commands:',
@@ -204,7 +202,7 @@ exports.conversionExamples = {
                 }]
         },
         expectedConverted: {
-            title: '🔥 Phoenix Code Lite',
+            title: '* Phoenix Code Lite',
             subtitle: 'Quick Actions',
             items: [
                 { id: 'help', label: '1. help', description: 'Show help', type: 'command' },

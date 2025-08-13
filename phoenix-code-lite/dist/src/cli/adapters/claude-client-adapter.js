@@ -1,4 +1,11 @@
 "use strict";
+/**---
+ * title: [Claude Client Adapter - CLI Integration]
+ * tags: [CLI, Adapter, Integration]
+ * provides: [Adapter Functions, Client Wiring]
+ * requires: [ClaudeCodeClient, IClaudeClient]
+ * description: [Adapter layer to bridge CLI abstractions with the Claude client implementation.]
+ * ---*/
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ClaudeClientAdapter = void 0;
 class ClaudeClientAdapter {

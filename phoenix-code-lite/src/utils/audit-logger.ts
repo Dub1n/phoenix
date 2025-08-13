@@ -1,3 +1,11 @@
+/**---
+ * title: [Audit Logger - Workflow Audit and Events]
+ * tags: [Utility, Logging, Audit]
+ * provides: [AuditLogger Class, Event Logging, Session Metadata]
+ * requires: [fs, path]
+ * description: [Structured audit logging for workflows, including events, session IDs, and summarization support.]
+ * ---*/
+
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import { TaskContext, WorkflowResult, PhaseResult } from '../types/workflow';

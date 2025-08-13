@@ -1,4 +1,19 @@
 "use strict";
+/**---
+ * title: [Test Utilities - Safe Exit and Helpers]
+ * tags: [Utility, Testing]
+ * provides: [safeExit, timers, helpers]
+ * requires: []
+ * description: [Testing-safe process helpers including safe exit for CI and controlled timing utilities.]
+ * ---*/
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.isTestEnvironment = isTestEnvironment;
+exports.isLogueChildProcess = isLogueChildProcess;
+exports.safeExit = safeExit;
+exports.processExit = processExit;
+exports.isJestWorker = isJestWorker;
+exports.isTestWithTimeouts = isTestWithTimeouts;
+exports.waitForCLIShutdown = waitForCLIShutdown;
 /**
  * Test Environment Utilities
  *
@@ -20,14 +35,6 @@
  * }
  * ```
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.isTestEnvironment = isTestEnvironment;
-exports.isLogueChildProcess = isLogueChildProcess;
-exports.safeExit = safeExit;
-exports.processExit = processExit;
-exports.isJestWorker = isJestWorker;
-exports.isTestWithTimeouts = isTestWithTimeouts;
-exports.waitForCLIShutdown = waitForCLIShutdown;
 /**
  * Check if the current environment is a test environment.
  *

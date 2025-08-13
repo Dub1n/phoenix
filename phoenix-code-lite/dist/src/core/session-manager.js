@@ -1,4 +1,11 @@
 "use strict";
+/**---
+ * title: [Session Manager - Core Service Module]
+ * tags: [Core, Service, Session-Management, Audit]
+ * provides: [SessionManager Class, Session Lifecycle, State Validation, Metrics, Cleanup]
+ * requires: [Zod, UUID, EventEmitter, AuditLogger, Workflow Types]
+ * description: [Manages interactive and command sessions with lifecycle control, schema validation, auditing, automatic cleanup, and metrics tracking.]
+ * ---*/
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SessionManager = void 0;
 const uuid_1 = require("uuid");

@@ -1,11 +1,11 @@
 "use strict";
-/**
- * Interactive Renderer Implementation
- * Created: 2025-01-06-175700
- *
- * Handles interactive navigation mode with arrow keys, numbered options, and shortcuts.
- * Converts MenuDefinition to Interactive UI using existing rendering infrastructure.
- */
+/**---
+ * title: [Interactive Renderer - Unified Architecture]
+ * tags: [Unified, Interaction, Rendering]
+ * provides: [Interactive Renderer]
+ * requires: []
+ * description: [Renderer for interactive (menu) mode in unified CLI system.]
+ * ---*/
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -42,7 +42,7 @@ class InteractiveRenderer {
         // For interactive mode, we don't need to render the old menu display
         // since inquirer will handle the interactive interface
         // Just show a simple header
-        console.log(chalk_1.default.blue.bold(`🔥 ${definition.title}`));
+        console.log(chalk_1.default.blue.bold(`* ${definition.title}`));
         if (definition.description) {
             console.log(chalk_1.default.gray(definition.description));
         }
@@ -124,7 +124,7 @@ class InteractiveRenderer {
             // Add section header if it has a heading
             if (section.heading) {
                 choices.push({
-                    name: chalk_1.default.cyan(`📋 ${section.heading}`),
+                    name: chalk_1.default.cyan(`⋇ ${section.heading}`),
                     value: `section-${section.id}`,
                     short: section.heading
                 });

@@ -104,7 +104,7 @@ async fn execute_phoenix_lite(task: &str) -> Result<()> {
     let implementation = implement_and_fix(&plan_and_tests).await?;
     
     // Step 3: Refactor & Document
-    println!("✨ STEP 3: Refactoring and documenting code...");
+    println!("⑇ STEP 3: Refactoring and documenting code...");
     let final_code = refactor_and_document(&implementation).await?;
     
     println!("* Phoenix-Lite completed successfully!");

@@ -1,11 +1,11 @@
 "use strict";
-/**
- * Command Registration System
- * Created: 2025-01-06-175700
- *
- * Central registration point for all command handlers.
- * Manages command lifecycle and provides categorization.
- */
+/**---
+ * title: [Command Registration - Unified Architecture]
+ * tags: [Unified, Commands, Registration]
+ * provides: [Command Registration, Registry Wiring]
+ * requires: [core-commands]
+ * description: [Registers core commands into the unified command registry for integrated CLI.]
+ * ---*/
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.registerCoreCommands = registerCoreCommands;
 exports.getCommandsByCategory = getCommandsByCategory;
@@ -47,10 +47,10 @@ function registerCoreCommands(commandRegistry) {
         commandRegistry.register(core_commands_1.SettingsModeCommand);
         commandRegistry.register(core_commands_1.SettingsResetCommand);
         commandRegistry.register(core_commands_1.SettingsPreferencesCommand);
-        console.log('✅ All core commands registered successfully');
+        console.log('✓ All core commands registered successfully');
     }
     catch (error) {
-        console.error('❌ Failed to register core commands:', error);
+        console.error('✗ Failed to register core commands:', error);
         throw error;
     }
 }
@@ -111,10 +111,10 @@ function validateCommandRegistration(commandRegistry) {
     const registeredCommands = commandRegistry.listHandlers().map(h => h.id);
     const missingCommands = expectedCommands.filter(id => !registeredCommands.includes(id));
     if (missingCommands.length > 0) {
-        console.error('❌ Missing command registrations:', missingCommands);
+        console.error('✗ Missing command registrations:', missingCommands);
         return false;
     }
-    console.log(`✅ All ${expectedCommands.length} commands registered and validated`);
+    console.log(`✓ All ${expectedCommands.length} commands registered and validated`);
     return true;
 }
 //# sourceMappingURL=command-registration.js.map

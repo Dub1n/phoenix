@@ -1,3 +1,10 @@
+/**---
+ * title: [Configuration Settings - Core Configuration System]
+ * tags: [Configuration, Core, Zod]
+ * provides: [PhoenixCodeLiteConfig Class, PhoenixCodeLiteConfigData Types]
+ * requires: [zod, fs]
+ * description: [Core configuration system with schema validation, default management, and read/write operations.]
+ * ---*/
 import { z } from 'zod';
 export declare const AgentConfigSchema: z.ZodObject<{
     enabled: z.ZodDefault<z.ZodBoolean>;

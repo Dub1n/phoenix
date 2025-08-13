@@ -67,11 +67,11 @@ const path_1 = __importDefault(require("path"));
         const app = (0, logue_wrapper_1.enhancedLogue)('node', [CLI_PATH, 'config', '--show']);
         // Wait for expected text
         await app.waitFor('Phoenix Code Lite Configuration');
-        console.log('✅ Found expected text in CLI output');
+        console.log('✓ Found expected text in CLI output');
         console.log('About to call enhanced app.end()...');
         // Enhanced logue handles cleanup automatically
         const result = await app.end();
-        console.log('✅ Enhanced app.end() completed successfully!');
+        console.log('✓ Enhanced app.end() completed successfully!');
         console.log('CLI Result:', {
             status: result.status,
             stdout: result.stdout.substring(0, 300) + '...'
@@ -82,7 +82,7 @@ const path_1 = __importDefault(require("path"));
         console.log('Testing CLI help command with logue...');
         const app = (0, logue_1.default)('node', [CLI_PATH, 'help']);
         await app.waitFor('Usage:');
-        console.log('✅ Found Usage text in help output');
+        console.log('✓ Found Usage text in help output');
         const result = await app.end();
         console.log('Help Result:', {
             stdout: result.stdout.substring(0, 300) + '...'
@@ -94,7 +94,7 @@ const path_1 = __importDefault(require("path"));
         console.log('Testing CLI version command with logue...');
         const app = (0, logue_1.default)('node', [CLI_PATH, '--version']);
         await app.waitFor('1.0.0');
-        console.log('✅ Found version number in output');
+        console.log('✓ Found version number in output');
         const result = await app.end();
         console.log('Version Result:', {
             stdout: result.stdout.substring(0, 300) + '...'

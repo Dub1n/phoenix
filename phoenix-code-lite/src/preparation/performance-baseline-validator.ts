@@ -1,3 +1,11 @@
+/**---
+ * title: [Performance Baseline Validator - QMS]
+ * tags: [Preparation, QMS, Validation]
+ * provides: [PerformanceBaselineValidator]
+ * requires: []
+ * description: [Validates that performance baselines are established and maintained for QMS tracking.]
+ * ---*/
+
 /**
  * Performance Baseline Validator
  * 

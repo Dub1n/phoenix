@@ -1,3 +1,10 @@
+/**---
+ * title: [Menu System - Contextual Menu Routing]
+ * tags: [CLI, Menu, Navigation, Rendering]
+ * provides: [MenuSystem Class, Contextual Menus, Submenu Routing]
+ * requires: [SessionContext, SkinMenuRenderer, Menu Types]
+ * description: [Renders contextual menus for main sections and routes navigation between them using session state.]
+ * ---*/
 import { SessionContext, MenuAction } from './session';
 export interface MenuContext {
     level: 'main' | 'config' | 'templates' | 'advanced' | 'generate';

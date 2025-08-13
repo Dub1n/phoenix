@@ -1,7 +1,11 @@
+/**---
+ * title: [Configuration Manager - Core Infrastructure Component]
+ * tags: [Core, Infrastructure, Configuration, Validation]
+ * provides: [ConfigManager Class, Template Loading, Hot Reloading, Validation, Summary APIs]
+ * requires: [Zod, FS, CoreConfigSchema, AuditLogger]
+ * description: [Manages Phoenix Code Lite configuration with schema validation, file persistence, hot reload, template management, and change notifications for core systems.]
+ * ---*/
 import { CoreConfig } from './foundation';
-/**
- * Configuration templates for different use cases
- */
 export declare const ConfigTemplates: {
     readonly starter: {
         readonly system: {

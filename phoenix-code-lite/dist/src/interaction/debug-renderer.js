@@ -1,11 +1,11 @@
 "use strict";
-/**
- * Debug Renderer Implementation
- * Created: 2025-01-06-175700
- *
- * Enhanced debug mode with comprehensive logging, detailed output, and diagnostic features.
- * Combines the best of both interactive and command modes with debugging capabilities.
- */
+/**---
+ * title: [Debug Renderer - Unified Architecture]
+ * tags: [Unified, Interaction, Debug]
+ * provides: [Debug Renderer]
+ * requires: []
+ * description: [Renderer for debug-mode interaction output and diagnostics in unified CLI.]
+ * ---*/
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -381,7 +381,7 @@ class DebugRenderer {
      * Show context details
      */
     showContextDetails(context) {
-        console.log(chalk_1.default.blue.bold('\n🎯 Context Details'));
+        console.log(chalk_1.default.blue.bold('\n⊕ Context Details'));
         console.log(chalk_1.default.gray('═'.repeat(50)));
         console.log(`  Level: ${context.level}`);
         console.log(`  Session Context: ${JSON.stringify(context.sessionContext, null, 2)}`);
@@ -394,7 +394,7 @@ class DebugRenderer {
      * Show execution trace
      */
     showExecutionTrace() {
-        console.log(chalk_1.default.blue.bold('\n📋 Execution Trace'));
+        console.log(chalk_1.default.blue.bold('\n⋇ Execution Trace'));
         console.log(chalk_1.default.gray('═'.repeat(50)));
         console.log(`  Current Mode: ${this.mode.name}`);
         console.log(`  Command History Length: ${this.commandHistory.length}`);

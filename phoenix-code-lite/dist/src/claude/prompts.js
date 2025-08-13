@@ -1,4 +1,11 @@
 "use strict";
+/**---
+ * title: [TDD Prompts - Phase-Specific Prompt Builders]
+ * tags: [Claude, Prompts, TDD]
+ * provides: [TDDPrompts, Planning Prompt, Implementation Prompt, Refactor Prompt]
+ * requires: []
+ * description: [Centralized prompt templates for planning, implementation, and refactoring phases used by the TDD orchestrator.]
+ * ---*/
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TDDPrompts = void 0;
 const agents_1 = require("../types/agents");

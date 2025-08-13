@@ -1,4 +1,11 @@
 "use strict";
+/**---
+ * title: [Dual Mode Interaction Manager - Input & Navigation Handler]
+ * tags: [CLI, Interface, Input, Navigation]
+ * provides: [InteractionManager Class, Readline Lifecycle, Keyboard Shortcuts, Menu Rendering Bridge]
+ * requires: [readline, InteractionModeConfig, SkinMenuRenderer, Menu Types]
+ * description: [Handles keyboard input for Menu and Command modes, manages readline lifecycle, and bridges input to menu layout rendering.]
+ * ---*/
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };

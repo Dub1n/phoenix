@@ -1,3 +1,10 @@
+/**---
+ * title: [Config Manager Adapter - CLI Integration]
+ * tags: [CLI, Adapter, Configuration]
+ * provides: [Adapter Functions, Manager Wiring]
+ * requires: [PhoenixCodeLiteConfig, IConfigManager]
+ * description: [Adapter bridging CLI usage patterns to config manager contracts and implementation.]
+ * ---*/
 import { IConfigManager } from '../interfaces/config-manager';
 import { ConfigManager } from '../../core/config-manager';
 import { CoreConfig } from '../../core/foundation';

@@ -1,8 +1,10 @@
-/**
- * AAMI TIR45 Requirement Analyzer
- *
- * Analyzes and extracts requirements from AAMI TIR45 standard
- */
+/**---
+ * title: [AAMI TIR45 Requirement Analyzer - QMS]
+ * tags: [Preparation, QMS, Analysis]
+ * provides: [AAMITIR45RequirementAnalyzer]
+ * requires: []
+ * description: [Analyzes requirements and development practices per AAMI TIR45 guidance.]
+ * ---*/
 import { RegulatoryRequirement } from './regulatory-document-processor';
 export interface AAMITIR45Requirement extends RegulatoryRequirement {
     agilePractice?: string;

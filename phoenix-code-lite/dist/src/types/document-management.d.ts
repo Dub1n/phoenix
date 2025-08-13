@@ -1,3 +1,10 @@
+/**---
+ * title: [Document Management - Inventory & Configuration Types]
+ * tags: [Types, Documents, Templates]
+ * provides: [DocumentInfo, DocumentConfiguration, DocumentInventory, DocumentOperationResult]
+ * requires: []
+ * description: [Type contracts for document inventory, per-template activation, and operations used by the document configuration editor.]
+ * ---*/
 /**
  * Document Management Types for Phoenix Code Lite
  * Supports per-agent and global document management with template-level activation

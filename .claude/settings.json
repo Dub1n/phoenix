@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./secrets/**)",
+      "Read(./config/credentials.*)",
+      "Read(./node_modules/**)",
+      "Read(./.git/**)",
+      "Read(./Obsidian/QMS/Docs/**/*.pdf)",
+      "Write(./.env)",
+      "Write(./.env.*)",
+      "Write(./secrets/**)",
+      "Write(./config/credentials.*)"
+    ]
+  },
+  "env": {
+    "VDL_VAULT_DEFAULT_PROJECT": "phoenix-code-lite",
+    "VDL_VAULT_TDD_COVERAGE_THRESHOLD": "90",
+    "VDL_VAULT_QMS_COVERAGE_THRESHOLD": "95",
+    "VDL_VAULT_QUALITY_GATES_ENABLED": "true"
+  }
+}

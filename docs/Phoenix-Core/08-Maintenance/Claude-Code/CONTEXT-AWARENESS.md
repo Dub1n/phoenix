@@ -1,10 +1,10 @@
 # Context Awareness for Phoenix Code Lite Development
 
-## 🎯 Understanding User Context
+## ⊕ Understanding User Context
 
 Every change to Phoenix Code Lite must consider **where the user is in their workflow** and **what they're trying to achieve**. This document provides the context framework for making user-centric development decisions.
 
-## 🔄 User Workflow Stages
+## ⇔ User Workflow Stages
 
 ### 1. Project Setup & Initialization
 
@@ -144,7 +144,7 @@ Error Occurrence → Error Message → Troubleshooting → Resolution
 - Audit logging for troubleshooting
 - Validation and security guardrails
 
-## 🏗️ Technical Context Layers
+## ⊛ Technical Context Layers
 
 ### 1. Application Layer Context
 
@@ -290,7 +290,7 @@ throw new ValidationError(
 throw new Error('Invalid input');
 ```
 
-## 🔍 Component-Specific Context
+## ⌕ Component-Specific Context
 
 ### 1. TDD Orchestrator Context
 
@@ -340,7 +340,7 @@ throw new Error('Invalid input');
 - **Document Management**: Integrated per-template document activation
 - **Session Persistence**: Changes maintained within session, can be saved or discarded
 
-## 🚨 Critical Context Awareness Rules
+## ⚡ Critical Context Awareness Rules
 
 ### 1. Never Break User Workflows
 
@@ -370,7 +370,7 @@ throw new Error('Invalid input');
 - **Advanced Usage**: Power users should have advanced options
 - **Troubleshooting**: Problem resolution should be straightforward
 
-## 📊 Context Validation Checklist
+## ◊ Context Validation Checklist
 
 Before implementing any change, validate against these context considerations:
 

@@ -1,4 +1,11 @@
 "use strict";
+/**---
+ * title: [Display Utilities - Terminal Formatting]
+ * tags: [Utility, Display, Formatting]
+ * provides: [display Functions, Color Helpers]
+ * requires: [chalk]
+ * description: [Terminal output helpers for consistent formatting and color usage across CLI components.]
+ * ---*/
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };

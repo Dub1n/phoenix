@@ -1,3 +1,10 @@
+/**---
+ * title: [Audit Logger Adapter - CLI Integration]
+ * tags: [CLI, Adapter, Logging]
+ * provides: [Adapter Functions, Logger Wiring]
+ * requires: [AuditLogger, IAuditLogger]
+ * description: [Adapter bridging CLI components to the audit logger implementation and metrics.]
+ * ---*/
 import { IAuditLogger, AuditMetrics } from '../interfaces/audit-logger';
 import { AuditLogger } from '../../utils/audit-logger';
 export declare class AuditLoggerAdapter implements IAuditLogger {

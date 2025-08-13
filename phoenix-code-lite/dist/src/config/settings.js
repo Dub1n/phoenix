@@ -1,4 +1,11 @@
 "use strict";
+/**---
+ * title: [Configuration Settings - Core Configuration System]
+ * tags: [Configuration, Core, Zod]
+ * provides: [PhoenixCodeLiteConfig Class, PhoenixCodeLiteConfigData Types]
+ * requires: [zod, fs]
+ * description: [Core configuration system with schema validation, default management, and read/write operations.]
+ * ---*/
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PhoenixCodeLiteConfig = exports.PhoenixCodeLiteConfigSchema = exports.QualityGateConfigSchema = exports.AgentConfigSchema = void 0;
 const fs_1 = require("fs");
