@@ -1,0 +1,278 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://haruspex.dev/schemas/universal-skin-engine/v1.0.0",
+  "title": "Universal Skin Engine - Validation Schema v1.0",
+  "description": "JSON Schema for Universal Skin Engine skin definitions with comprehensive validation rules",
+  "type": "object",
+  "required": ["metadata", "views", "menus", "commands", "workflows", "theme", "backendConfig"],
+  "additionalProperties": false,
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "title": "Skin Metadata",
+      "description": "Core identification and compatibility information",
+      "required": ["id", "name", "version", "description", "targetInterfaces", "backendService"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9-]+$",
+          "minLength": 3,
+          "maxLength": 50,
+          "description": "Unique skin identifier (kebab-case)"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "description": "Human-readable display name"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+(-[a-zA-Z0-9.-]+)?$",
+          "description": "Semantic version (semver format)"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500,
+          "description": "Detailed description of skin functionality"
+        },
+        "targetInterfaces": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["vscode", "cli", "command"]
+          },
+          "minItems": 1,
+          "maxItems": 3,
+          "uniqueItems": true,
+          "description": "Supported interface types"
+        },
+        "backendService": {
+          "type": "string",
+          "pattern": "^[a-z0-9-]+$",
+          "description": "Backend service identifier"
+        },
+        "minimumVersion": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "description": "Minimum required backend version"
+        },
+        "features": {
+          "$ref": "#/definitions/FeatureMatrix"
+        },
+        "performance": {
+          "$ref": "#/definitions/PerformanceHints"
+        }
+      }
+    },
+    "views": {
+      "type": "object",
+      "title": "VSCode Interface Views",
+      "description": "VSCode-specific UI components and layouts",
+      "properties": {
+        "treeViews": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TreeViewDefinition"
+          },
+          "maxItems": 10,
+          "description": "VSCode TreeView definitions"
+        },
+        "panels": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PanelDefinition"
+          },
+          "maxItems": 5,
+          "description": "VSCode Panel definitions"
+        },
+        "statusBar": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/StatusBarDefinition"
+          },
+          "maxItems": 3,
+          "description": "VSCode Status Bar items"
+        },
+        "decorations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/DecorationDefinition"
+          },
+          "maxItems": 5,
+          "description": "VSCode Text decorations"
+        }
+      }
+    },
+    "menus": {
+      "type": "object",
+      "title": "CLI Interface Menus",
+      "description": "CLI menu structures and navigation",
+      "required": ["main"],
+      "properties": {
+        "main": {
+          "$ref": "#/definitions/MenuDefinition",
+          "description": "Main CLI menu"
+        },
+        "submenus": {
+          "type": "object",
+          "patternProperties": {
+            "^[a-z0-9-]+$": {
+              "$ref": "#/definitions/MenuDefinition"
+            }
+          },
+          "maxProperties": 20,
+          "description": "Named submenus"
+        },
+        "contexts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ContextMenuDefinition"
+          },
+          "maxItems": 5,
+          "description": "Context-specific menus"
+        }
+      }
+    },
+    "commands": {
+      "type": "object",
+      "title": "Command-line Interface",
+      "description": "Command-line commands and help system",
+      "required": ["primary", "help"],
+      "properties": {
+        "primary": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CommandDefinition"
+          },
+          "minItems": 1,
+          "maxItems": 50,
+          "description": "Primary command definitions"
+        },
+        "aliases": {
+          "type": "object",
+          "patternProperties": {
+            "^[a-z0-9-]+$": {
+              "type": "string",
+              "pattern": "^[a-z0-9-]+$"
+            }
+          },
+          "maxProperties": 100,
+          "description": "Command aliases"
+        },
+        "help": {
+          "$ref": "#/definitions/HelpDefinition",
+          "description": "Help system configuration"
+        },
+        "completions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CompletionDefinition"
+          },
+          "description": "Command completion definitions"
+        }
+      }
+    },
+    "workflows": {
+      "type": "object",
+      "title": "Multi-step Workflows",
+      "description": "Automated workflow definitions",
+      "properties": {
+        "workflows": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/WorkflowDefinition"
+          },
+          "maxItems": 20,
+          "description": "Workflow definitions"
+        },
+        "templates": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/WorkflowTemplate"
+          },
+          "maxItems": 10,
+          "description": "Workflow templates"
+        }
+      }
+    },
+    "shortcuts": {
+      "type": "object",
+      "patternProperties": {
+        "^[a-z0-9-]+$": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9+\\-\\s]+$"
+        }
+      },
+      "maxProperties": 50,
+      "description": "Cross-interface keyboard shortcuts"
+    },
+    "theme": {
+      "$ref": "#/definitions/SkinTheme",
+      "description": "Theme configuration for all interfaces"
+    },
+    "backendConfig": {
+      "$ref": "#/definitions/BackendConfig",
+      "description": "Backend service integration configuration"
+    },
+    "caching": {
+      "$ref": "#/definitions/CachingStrategy",
+      "description": "Performance caching configuration"
+    },
+    "validation": {
+      "$ref": "#/definitions/ValidationRules",
+      "description": "Validation rules and configuration"
+    }
+  },
+  "definitions": {
+    "FeatureMatrix": {
+      "type": "object",
+      "title": "Feature Support Matrix",
+      "description": "Interface-specific feature availability",
+      "properties": {
+        "vscode": {
+          "type": "object",
+          "properties": {
+            "treeViews": {"type": "boolean", "default": true},
+            "panels": {"type": "boolean", "default": true},
+            "statusBar": {"type": "boolean", "default": true},
+            "decorations": {"type": "boolean", "default": false},
+            "commands": {"type": "boolean", "default": true},
+            "contextMenus": {"type": "boolean", "default": true}
+          }
+        },
+        "cli": {
+          "type": "object",
+          "properties": {
+            "interactiveMenus": {"type": "boolean", "default": true},
+            "keyboardNavigation": {"type": "boolean", "default": true},
+            "progressIndicators": {"type": "boolean", "default": true},
+            "inputValidation": {"type": "boolean", "default": true},
+            "sessionManagement": {"type": "boolean", "default": false}
+          }
+        },
+        "command": {
+          "type": "object",
+          "properties": {
+            "flagParsing": {"type": "boolean", "default": true},
+            "pipeSupport": {"type": "boolean", "default": false},
+            "completions": {"type": "boolean", "default": true},
+            "helpGeneration": {"type": "boolean", "default": true},
+            "aliasSupport": {"type": "boolean", "default": true}
+          }
+        },
+        "shared": {
+          "type": "object",
+          "properties": {
+            "workflows": {"type": "boolean", "default": false},
+            "theming": {"type": "boolean", "default": true},
+            "caching": {"type": "boolean", "default": true},
+            "stateSync": {"type": "boolean", "default": true},
+            "errorHandling": {"type": "boolean", "default": true}
+          }
+        }
+      }
+    }
+  }
+}

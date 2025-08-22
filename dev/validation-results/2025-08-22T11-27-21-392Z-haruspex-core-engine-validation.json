@@ -1,0 +1,18 @@
+{
+  "componentName": "haruspex-core-engine",
+  "timestamp": "2025-08-22T11:27:21.390Z",
+  "status": "❌ Missing",
+  "priority": "Critical",
+  "evidence": [
+    "No component files found in expected locations"
+  ],
+  "errors": [
+    "Component haruspex-core-engine not found in any expected location"
+  ],
+  "warnings": [],
+  "files": [],
+  "compilationStatus": null,
+  "testStatus": null,
+  "dependencies": [],
+  "recommendations": []
+}

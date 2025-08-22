@@ -1,0 +1,385 @@
+# Change Documentation Standards
+
+## ⊕ Overview
+
+Every change to any project **must be documented** with a structured change log entry. This ensures traceability, facilitates debugging, and helps future developers understand the evolution of the system.
+
+## ⋇ Change Documentation Requirements
+
+### Mandatory Documentation
+
+All changes require a new file in `<Project>/docs/changes` following the naming convention:
+
+``` text
+YYYY-MM-DD-HHMMSS-{brief-description}.md
+```
+
+### Automatic Timestamping
+
+**Never use memory for timestamps**. Always use a command or script:
+
+``` bash
+# Get current timestamp (adapt for your system)
+# Windows PowerShell (include the "powershell", use it as it is written here):
+powershell "Get-Date -Format 'yyyy-MM-dd-HHmmss'"
+
+# Unix/Linux/macOS:
+date "+%Y-%m-%d-%H%M%S"
+
+# Example filename
+2024-08-02-143022-fix-version-command.md
+```
+
+## ⋇ Change Document Template
+
+Use this exact template for all change documentation:
+
+```markdown
+# Change Documentation: {Brief Description}
+
+## Change Information
+
+- **Date**: {YYYY-MM-DD HH:MM:SS} (Generated with: `date` or equivalent)
+- **Type**: {Bug Fix|Feature|Enhancement|Refactor|Security|Documentation}
+- **Severity**: {Critical|High|Medium|Low}
+- **Components**: {List affected components/files}
+
+## Task Description
+
+### Original Task
+
+{Copy the exact task description that was provided}
+
+### Why This Change Was Needed
+
+{Explain the problem, requirement, or improvement opportunity}
+
+## Implementation Details
+
+### What Changed
+
+{Describe the specific changes made}
+
+### Files Modified
+
+- `path/to/file1.ts` - {Description of changes}
+- `path/to/file2.ts` - {Description of changes}
+- `path/to/test.ts` - {Test changes}
+
+### Code Changes Summary
+
+{Brief technical summary of the code modifications}
+
+## Development Process
+
+### TDD Approach
+
+- [ ] Tests written first
+- [ ] Implementation follows TDD cycle
+- [ ] All tests pass
+- [ ] Coverage maintained >90%
+
+### Quality Gates
+
+- [ ] Compilation/build: ✓/✗
+- [ ] Linting validation: ✓/✗
+- [ ] Test execution: ✓/✗
+- [ ] Security validation: ✓/✗
+
+## Issues and Challenges
+
+### Problems Encountered
+
+{Describe any issues that came up during development}
+
+### Solutions Applied
+
+{How the problems were resolved}
+
+### Lessons Learned
+
+{Key insights from this change}
+
+## Testing and Validation
+
+### Test Strategy
+
+{Describe how the change was tested}
+
+### Test Results
+
+{Summary of test outcomes}
+
+### Manual Testing
+
+{Any manual testing performed}
+
+## Impact Assessment
+
+### User Impact
+
+{How this affects user experience}
+
+### System Impact
+
+{How this affects system behavior}
+
+### Performance Impact
+
+{Any performance implications}
+
+### Security Impact
+
+{Any security implications}
+
+## Documentation Updates
+
+### Documentation Modified
+
+- [ ] API documentation updated
+- [ ] User guide updated
+- [ ] Architecture documentation updated
+- [ ] README files updated
+
+### New Documentation
+
+{Any new documentation created}
+
+## Future Considerations
+
+### Technical Debt
+
+{Any technical debt introduced or resolved}
+
+### Improvement Opportunities
+
+{Areas for future enhancement}
+
+### Related Work
+
+{References to related tasks or future work}
+
+## Verification
+
+### Smoke Tests
+
+- [ ] Basic functionality works
+- [ ] No regressions introduced
+- [ ] Integration points work correctly
+
+### Deployment Considerations
+
+{Any special deployment or configuration considerations}
+
+---
+**Generated**: {timestamp} using `date` command or equivalent
+**Author**: {Your Name or Team}
+**Review Status**: {Pending|Reviewed|Approved}
+```
+
+## ⇔ Change Types and Guidelines
+
+### Bug Fix Changes
+
+**Focus**: Correcting incorrect behavior  
+**Key Documentation**:
+
+- Clear description of the bug
+- Steps to reproduce the issue
+- Root cause analysis
+- Fix verification steps
+
+**Example Structure**:
+
+```markdown
+## Bug Description
+
+The `<project> -v` command was not working due to missing version handling in the <component> parser.
+
+## Root Cause
+
+The <Framework>.js configuration was missing the version option setup.
+
+## Fix Applied
+
+Added version option to <Framework> configuration with proper version retrieval from package.json.
+```
+
+### Feature Changes
+
+**Focus**: Adding new functionality  
+**Key Documentation**:
+
+- Feature requirements and user stories
+- Implementation approach and alternatives considered
+- User experience design decisions
+- Integration with existing features
+
+### Enhancement Changes
+
+**Focus**: Improving existing functionality  
+**Key Documentation**:
+
+- Current limitations being addressed
+- Improvement objectives and success criteria
+- Impact on existing users
+- Migration path if needed
+
+### Security Changes
+
+**Focus**: Addressing security concerns  
+**Key Documentation**:
+
+- Security vulnerability or improvement
+- Risk assessment and mitigation
+- Security testing performed
+- Impact on security model
+
+## ◦ Implementation Context Documentation
+
+### User Workflow Context
+
+Always document **where in the user's workflow** this change has impact:
+
+```markdown
+## User Workflow Impact
+
+### Affected User Journey Stage
+
+- [ ] Project Setup & Initialization
+- [ ] Configuration & Customization  
+- [ ] Daily Development Workflow
+- [ ] Quality Review & Validation
+- [ ] Troubleshooting & Problem Resolution
+
+### Specific Workflow Context
+
+{Detailed description of how the change affects the user's experience}
+```
+
+### System Architecture Context
+
+Document how the change fits into the overall system:
+
+```markdown
+## Architecture Context
+
+### Component Relationships
+
+{How this change affects component interactions}
+
+### Data Flow Impact
+
+{How this change affects data flow through the system}
+
+### Integration Points
+
+{How this affects integration with other systems}
+```
+
+## ◊ Quality Standards for Documentation
+
+### Completeness Requirements
+
+- [ ] **All sections filled out** - No template sections left empty
+- [ ] **Specific details** - Avoid vague descriptions
+- [ ] **Actionable information** - Include enough detail for future debugging
+- [ ] **Context awareness** - Explain the "why" not just the "what"
+
+### Accuracy Requirements
+
+- [ ] **Accurate timestamps** - Generated with commands, not memory
+- [ ] **Precise file paths** - Exact paths to modified files
+- [ ] **Specific test results** - Actual test outcomes, not assumptions
+- [ ] **Verified impact** - Confirmed impact on users and system
+
+### Clarity Requirements
+
+- [ ] **Clear language** - Avoid jargon and ambiguous terms
+- [ ] **Logical structure** - Information flows logically
+- [ ] **Complete sentences** - Professional writing standards
+- [ ] **Technical accuracy** - Technically correct descriptions
+
+## ⌕ Review and Validation Process
+
+### Self-Review Checklist
+
+Before finalizing change documentation:
+
+- [ ] **Template compliance** - All required sections completed
+- [ ] **Timestamp accuracy** - Generated with command/script
+- [ ] **File accuracy** - All modified files listed with accurate paths
+- [ ] **Test verification** - All quality gates actually run and verified
+- [ ] **Impact assessment** - User and system impact thoroughly considered
+
+### Documentation Quality Gates
+
+- [ ] **Completeness**: All template sections filled with relevant information
+- [ ] **Accuracy**: Technical details are correct and verifiable
+- [ ] **Clarity**: Documentation is understandable to future developers
+- [ ] **Traceability**: Change can be understood and potentially reversed
+
+## ▫ File Organization
+
+### Directory Structure
+
+``` text
+<Project>/docs/changes/
+├── 2024-08-01-091500-initial-setup.md
+├── 2024-08-01-143000-fix-cli-version.md
+├── 2024-08-02-104500-enhance-config-display.md
+└── 2024-08-02-161200-add-interactive-config.md
+```
+
+### Naming Conventions
+
+- **Date Format**: YYYY-MM-DD-HHMMSS (24-hour format)
+- **Description**: Brief, hyphenated description (max 50 characters)
+- **No Spaces**: Use hyphens instead of spaces
+- **Descriptive**: Name should indicate the type of change
+
+### File Lifecycle
+
+1. **Creation**: Created at the start of implementing a change
+2. **Development**: Updated throughout development process
+3. **Completion**: Finalized when change is complete
+4. **Archive**: Kept permanently for historical reference
+
+## ⚡ Critical Documentation Rules
+
+### Never Skip Documentation
+
+- **No exceptions** - Every change, no matter how small, requires documentation
+- **Real-time updates** - Update documentation as you work, not after
+- **Complete information** - Don't leave sections incomplete for "later"
+
+### Always Use Commands for Timestamps
+
+```bash
+# Good - generates actual current time
+# Unix/Linux/macOS:
+date "+%Y-%m-%d-%H%M%S"
+
+# Windows PowerShell:
+Get-Date -Format "yyyy-MM-dd-HHmmss"
+
+# Bad - using memory or estimates
+# "around 2:30 PM" or "sometime this afternoon"
+```
+
+### Include Context, Not Just Changes
+
+- **Why not just what** - Explain the reasoning behind changes
+- **User impact** - Always consider how this affects users
+- **System implications** - Document broader system effects
+
+### Link to Related Documentation
+
+- **API docs** - Reference relevant API documentation
+- **User guides** - Link to affected user documentation
+- **Architecture docs** - Reference architectural implications
+- **Previous changes** - Reference related historical changes
+
+---
+
+**Remember**: Documentation is not overhead—it's a critical part of maintaining a professional, reliable system. Future you (and future developers) will thank you for thorough documentation across any project or technology stack.

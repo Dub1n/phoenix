@@ -1,0 +1,18 @@
+{
+  "componentName": "analysis-engine",
+  "timestamp": "2025-08-22T11:31:09.949Z",
+  "status": "❌ Missing",
+  "priority": "Critical",
+  "evidence": [
+    "No component files found in expected locations"
+  ],
+  "errors": [
+    "Component analysis-engine not found in any expected location"
+  ],
+  "warnings": [],
+  "files": [],
+  "compilationStatus": null,
+  "testStatus": null,
+  "dependencies": [],
+  "recommendations": []
+}

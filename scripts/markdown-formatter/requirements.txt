@@ -1,0 +1,11 @@
+# Markdown Formatter Dependencies
+# Install with: pip install -r requirements.txt
+
+# Core dependencies
+pyyaml>=6.0              # YAML configuration file support
+pathlib2>=2.3.5          # Path manipulation (for Python <3.4)
+
+# Optional dependencies (uncomment if needed)
+# colorama>=0.4.4         # Cross-platform colored terminal output
+# tqdm>=4.64.0           # Progress bars for batch operations
+# watchdog>=2.1.9        # File system monitoring for auto-formatting

@@ -1,0 +1,218 @@
+{
+  "name": "haruspex",
+  "displayName": "Haruspex",
+  "publisher": "infotopology",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "main": "./dist/src/extension.js",
+  "bin": {
+    "haruspex-cli": "./dist/src/debugging/cli-bin.js",
+    "haruspex-debug": "./dist/src/debugging/cli-bin.js"
+  },
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "haruspex",
+          "title": "Haruspex",
+          "icon": "$(symbol-structure)"
+        }
+      ]
+    },
+    "views": {
+      "explorer": [
+        {
+          "id": "haruspex.documentationTree",
+          "name": "Documentation",
+          "when": "workspaceFolderCount > 0",
+          "contextualTitle": "Haruspex Documentation"
+        }
+      ],
+      "haruspex": [
+        {
+          "type": "webview",
+          "id": "haruspex.mermaidView",
+          "name": "Architecture Diagrams"
+        },
+        {
+          "type": "webview",
+          "id": "haruspex.kanbanView",
+          "name": "TDD Workflow"
+        },
+        {
+          "type": "webview",
+          "id": "haruspex.truthMatrix",
+          "name": "Health Dashboard"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "haruspex.refreshAll",
+        "title": "Haruspex: Refresh All"
+      },
+      {
+        "command": "haruspex.showHealth",
+        "title": "Haruspex: Show Health Status"
+      },
+      {
+        "command": "haruspex.showMetrics",
+        "title": "Haruspex: Show Engine Metrics"
+      },
+      {
+        "command": "haruspex.refreshDocumentationTree",
+        "title": "Haruspex: Refresh Documentation Tree",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "haruspex.navigateToFile",
+        "title": "Haruspex: Open File"
+      },
+      {
+        "command": "haruspex.generateStub",
+        "title": "Generate Documentation Stub",
+        "icon": "$(add)"
+      },
+      {
+        "command": "haruspex.setup.runWizard",
+        "title": "Haruspex: Initialize Workspace",
+        "icon": "$(gear)"
+      },
+      {
+        "command": "haruspex.initWorkspace",
+        "title": "Haruspex: Setup Documentation",
+        "icon": "$(symbol-structure)"
+      },
+      {
+        "command": "haruspex.debug.showInfo",
+        "title": "Haruspex: Show Diagnostics",
+        "icon": "$(info)"
+      },
+      {
+        "command": "haruspex.debug.showOutput",
+        "title": "Haruspex: Show Debug Output",
+        "icon": "$(output)"
+      },
+      {
+        "command": "haruspex.debug.clearOutput",
+        "title": "Haruspex: Clear Debug Output",
+        "icon": "$(clear-all)"
+      },
+      {
+        "command": "haruspex.debug.exportReport",
+        "title": "Haruspex: Export Debug Report",
+        "icon": "$(export)"
+      },
+      {
+        "command": "haruspex.debug.start",
+        "title": "Haruspex: Start Agent Debugging",
+        "icon": "$(debug-start)"
+      },
+      {
+        "command": "haruspex.debug.stop",
+        "title": "Haruspex: Stop Agent Debugging",
+        "icon": "$(debug-stop)"
+      },
+      {
+        "command": "haruspex.debug.connect",
+        "title": "Haruspex: Connect Debug Agent",
+        "icon": "$(plug)"
+      },
+      {
+        "command": "haruspex.debug.disconnect",
+        "title": "Haruspex: Disconnect Debug Agent",
+        "icon": "$(debug-disconnect)"
+      },
+      {
+        "command": "haruspex.debug.status",
+        "title": "Haruspex: Show Connection Status",
+        "icon": "$(circle-outline)"
+      },
+      {
+        "command": "haruspex.debug.executeCommand",
+        "title": "Haruspex: Execute Debug Command",
+        "icon": "$(terminal)"
+      },
+      {
+        "command": "haruspex.debug.testConnection",
+        "title": "Haruspex: Test Debug Connection",
+        "icon": "$(pulse)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "haruspex.refreshDocumentationTree",
+          "when": "view == haruspex.documentationTree",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "haruspex.generateStub",
+          "when": "view == haruspex.documentationTree && viewItem == haruspexDocNodeWithFile",
+          "group": "inline"
+        },
+        {
+          "command": "haruspex.navigateToFile",
+          "when": "view == haruspex.documentationTree && viewItem == haruspexDocNodeWithFile",
+          "group": "navigation"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "build": "tsc -p .",
+    "build:cli": "npm run build && chmod +x ./dist/debugging/cli-bin.js",
+    "lint": "eslint . --ext .ts",
+    "test:unit": "jest --coverage",
+    "test:ext": "node ./dist/test/runTests.js",
+    "test": "npm run build && npm run test:unit && npm run test:ext",
+    "install:cli": "npm run build:cli && npm link",
+    "debug:cli": "npm run build && node ./dist/src/debugging/cli-bin.js",
+    "debug:connect": "npm run debug:cli connect",
+    "debug:status": "npm run debug:cli status",
+    "debug:health": "npm run debug:cli health",
+    "debug:ping": "npm run debug:cli ping",
+    "test:ipc-connection": "npm run build && node ./test/test-ipc-connection.js",
+    "test:cli-connection": "npm run build && node ./test/test-cli-connection.js",
+    "test:live-debugging": "npm run build && node ./test/test-live-debugging.js",
+    "test:command-execution": "npm run build && node ./test/test-command-execution.js",
+    "test:connection-comprehensive": "npm run debug:cli test-connection",
+    "test:validate-connection": "npm run debug:cli validate",
+    "test:validate-system": "npm run build && node ./test/validate-system.js",
+    "test:benchmark": "npm run build && node ./test/benchmark.js",
+    "test:stress": "npm run build && node ./test/stress-test.js",
+    "test:error-recovery": "npm run build && node ./test/error-recovery-test.js",
+    "test:resource-monitor": "npm run build && node ./test/resource-monitor.js",
+    "test:all-comprehensive": "npm run test:validate-system && npm run test:benchmark && npm run test:stress && npm run test:error-recovery",
+    "test:suite-core": "npm run test:ipc-connection && npm run test:cli-connection && npm run test:live-debugging && npm run test:command-execution",
+    "test:suite-advanced": "npm run test:benchmark && npm run test:stress && npm run test:error-recovery && npm run test:resource-monitor",
+    "test:production-ready": "npm run test:validate-system"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.0.0",
+    "@types/node": "^18.0.0",
+    "@types/vscode": "^1.74.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "@vscode/test-electron": "^2.3.0",
+    "eslint": "^8.56.0",
+    "jest": "^29.0.0",
+    "prettier": "^3.0.0",
+    "ts-jest": "^29.0.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@types/inquirer": "^9.0.9",
+    "cli-table3": "^0.6.5",
+    "commander": "^13.1.0",
+    "inquirer": "^12.9.2",
+    "zod": "^3.25.76"
+  }
+}

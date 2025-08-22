@@ -1,0 +1,29 @@
+{
+  "name": "refactor-protocol-performance",
+  "version": "1.0.0",
+  "description": "Phase 2 Performance Optimization components for the refactor protocol",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "lint": "eslint . --ext .ts"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.0.0",
+    "typescript": "^5.0.0"
+  },
+  "keywords": [
+    "refactor",
+    "protocol",
+    "performance",
+    "optimization",
+    "template-cache",
+    "memory-management"
+  ],
+  "author": "Claude Code Agent",
+  "license": "MIT"
+}

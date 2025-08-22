@@ -1,0 +1,31 @@
+{
+  "componentName": "haruspex-core-engine",
+  "timestamp": "2025-08-22T09:43:37.006Z",
+  "status": "🔴 Broken",
+  "priority": "Critical",
+  "evidence": [
+    "Component files exist",
+    "Compilation failed",
+    "Tests fail",
+    "Minimal dependencies"
+  ],
+  "errors": [
+    "Command failed: npx tsc --noEmit src\\core\\haruspex-core-engine.ts",
+    "Test execution failed: Command failed: npm test -- --testPathPattern=\"haruspex-core-engine\" --passWithNoTests"
+  ],
+  "warnings": [],
+  "files": [
+    "C:\\Users\\gabri\\Documents\\Infotopology\\VDL_Vault\\Haruspex\\src\\core\\haruspex-core-engine.ts"
+  ],
+  "compilationStatus": "Compilation failed: 1 errors",
+  "testStatus": "Tests failed: Command failed: npm test -- --testPathPattern=\"haruspex-core-engine\" --passWithNoTests",
+  "dependencies": [
+    "vscode"
+  ],
+  "recommendations": [
+    "Fix TypeScript compilation errors before proceeding",
+    "Check import paths and type definitions",
+    "Component requires immediate attention",
+    "Consider architectural review if issues persist"
+  ]
+}

@@ -19,6 +19,7 @@
 - **[TDD-STANDARDS.md](standards/TDD-STANDARDS.md)** - Test-driven development methodology for all TypeScript projects in the repository
 - **[CODE-STANDARDS.md](standards/CODE-STANDARDS.md)** - TypeScript coding standards, ESLint configuration, and quality requirements
 - **[CONTEXT-AWARENESS.md](standards/CONTEXT-AWARENESS.md)** - User context understanding for development across all projects
+- **[Critical-Collaborator.md](workflows/Critical-Collaborator.md)** - Critical analysis principles and differentiated response protocols for AI-assisted development
 
 ### ⊛ `/architecture/`
 
@@ -88,6 +89,7 @@
 2. references/VDL-VAULT-PROJECT-INDEX.md    # All project locations
 3. workflows/DEVELOPMENT-WORKFLOW.md         # Cross-project coordination
 4. standards/CODE-STANDARDS.md               # Consistent standards
+5. workflows/Critical-Collaborator.md        # Critical analysis and plan-first development
 ```
 
 ## ⊕ Development Patterns by Task
@@ -99,6 +101,7 @@
 3. **TDD Process**: Follow [TDD Standards](standards/TDD-STANDARDS.md) for TypeScript projects
 4. **Quality Validation**: Apply [Code Standards](standards/CODE-STANDARDS.md)
 5. **Context Consideration**: Review [Context Awareness](standards/CONTEXT-AWARENESS.md)
+6. **Critical Analysis**: Apply [Critical Collaboration](workflows/Critical-Collaborator.md) principles for plan-first development
 
 ### Bug Fixes
 
@@ -191,6 +194,13 @@ All documentation uses `@` syntax for automatic context inclusion:
 - `@.claude/references/VDL-VAULT-PROJECT-INDEX.md` - Auto-included project navigation
 - `@.claude/workflows/DEVELOPMENT-WORKFLOW.md` - Auto-included development process
 - `@.claude/standards/TDD-STANDARDS.md` - Auto-included testing methodology
+
+#### Critical Collaboration Standards
+
+- **[Critical-Collaborator.md](workflows/Critical-Collaborator.md)** - Enforces critical analysis for tentative suggestions, assumed fallibility principles, and plan-first development approach
+- **Differentiated Response Protocol** - Distinguishes between imperative commands, tentative suggestions, and factual statements
+- **Mandatory Chain of Thought** - Requires structured thinking before code generation or analysis
+- **Plan-First Mandate** - Ensures implementation plans are presented and approved before execution
 
 #### Specialized Subagents (via settings.json)
 

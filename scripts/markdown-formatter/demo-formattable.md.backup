@@ -1,0 +1,96 @@
+# Demo Markdown File for Formatting
+
+This file contains various formatting issues that the markdown formatter can fix.
+
+##   Inconsistent Header Spacing
+
+Some headers have extra spaces, others don't.
+
+###Table Formatting Issues
+
+|Column 1|Column 2|Column 3|
+|---|---|---|
+|Data 1|Data 2|Data 3|
+|Longer data that needs alignment|Short|Medium length data|
+
+##List Formatting Problems
+
+-   Inconsistent list spacing
+-   Mixed list markers
+  *   Nested items with different markers
+  +   Another nested item
+-   Trailing spaces in list items   
+-   Inconsistent indentation
+
+##Whitespace Issues
+
+This paragraph has    multiple    spaces    between    words.
+
+This line has trailing spaces.   
+This line has tabs	and	spaces	mixed.
+
+##Link and Reference Issues
+
+[Broken link](broken-link.md)
+[Relative link](./relative-file.md)
+[External link](https://example.com)
+
+##Code Block Issues
+
+```python
+def badly_formatted_function(  param1,param2,param3  ):
+    if param1==True:
+        print("This code has spacing issues")
+    return param1+param2
+```
+
+##Blockquote Issues
+
+> This blockquote has inconsistent spacing
+>   And this line has extra indentation
+>This line has no space after >
+
+##Mixed Content Issues
+
+1.   Numbered list with extra spaces
+2.   Another numbered item
+   -   Mixed with bullet points
+   -   And inconsistent indentation
+
+##End of File Issues
+
+This is the last line with trailing spaces.   
+
+Multiple empty lines below:
+
+
+
+
+##Summary
+
+This file demonstrates:
+-   Inconsistent spacing
+-   Mixed list markers
+-   Table alignment issues
+-   Header spacing problems
+-   Whitespace inconsistencies
+-   Code formatting issues
+-   Mixed content structure
+
+## Unbold Headers Demo Section
+
+### Before (Problematic Format)
+# **Bold Main Header**
+## *Italic Section Header*
+### **Mixed *emphasis* Header**
+#### **Complex **Nested** Bold** Header
+##### *Simple Italic Header*
+###### **Bold Level 6 Header**
+
+### After (Expected Result)
+# Bold Main Header
+## Italic Section Header
+### Mixed emphasis Header
+#### Complex Nested Bold Header
+##### Simple Italic Header
+###### Bold Level 6 Header

@@ -1,4 +1,0 @@
-=== ARCHITECTURE GENERATOR CONVENTIONS CHECK ===
-✓ PASS: Legend subgraph found
-✓ PASS: All NodeIDs follow TYPE_Name convention
-✓ PASS: Legend defines UI component shape

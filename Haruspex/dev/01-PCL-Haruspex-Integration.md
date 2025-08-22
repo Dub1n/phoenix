@@ -1,0 +1,6 @@
+- [ ] Integrate into Haruspex to use Haruspex as a view - in the same way the Interactive or Command views work
+- [ ] This means that Haruspex needs to use the same menu-import system as PCL
+- [ ] Replace/add shortcuts so that when, say, saving a file it performs the desired functions such as running tests/compliance checks etc.
+- [ ] The Skin Builder can be a view in the Haruspex extension
+- [ ] The Skin Builder should include the ability to manage the shortcuts, workflows, and automated process, not just the menu interface(s)
+- [ ] VSCode/a fork of it can be used as the "workspace" for PCL, rather than just the CLI - it would be the GUI that would otherwise be a GUI-on-the-CLI

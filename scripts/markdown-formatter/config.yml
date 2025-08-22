@@ -1,0 +1,48 @@
+# Markdown Formatter Configuration
+# This file controls which formatting rules are enabled and their settings
+
+# Enable/disable specific formatting rules
+enabled_rules:
+  - unbold_headers
+  - emoji_substitute
+
+# General settings
+backup_files: true          # Create backup files before formatting
+dry_run: false              # Show changes without applying them
+verbose: false              # Enable detailed logging
+
+# Rule-specific configurations
+rules:
+  unbold_headers:
+    enabled: true
+    remove_single_asterisks: true
+    remove_double_asterisks: true
+  
+  emoji_substitute:
+    enabled: true
+    enable_success_marks: true      # Check marks, etc.
+    enable_error_marks: true        # Cross marks, etc.
+    enable_warnings: true           # Warning symbols
+    enable_information: true        # Info, notes, etc.
+    enable_progress: true           # Progress indicators
+    enable_actions: true            # Tools, actions
+    enable_navigation: true         # Arrows, directions
+    enable_files: true              # File-related symbols
+    enable_time: true               # Time-related symbols
+    enable_communication: true      # Speech, thought balloons
+    enable_misc: true               # Other symbols
+    preserve_variation_selectors: false  # Whether to keep VS16/VS15
+
+# File patterns to include/exclude
+include_patterns:
+  - "*.md"
+  - "*.markdown"
+  - "*.mdown"
+
+exclude_patterns:
+  - "**/node_modules/**"
+  - "**/.git/**"
+  - "**/dist/**"
+  - "**/build/**"
+  - "**/*.backup"
+  - "**/*.bak"

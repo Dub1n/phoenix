@@ -1,0 +1,62 @@
+{
+  "name": "templum",
+  "version": "1.0.0",
+  "description": "Universal interface orchestrator for multi-backend services",
+  "main": "dist/src/index.js",
+  "bin": {
+    "templum": "./dist/src/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "ts-node src/index.ts",
+    "test": "jest",
+    "test:coverage": "jest --coverage",
+    "test:watch": "jest --watch",
+    "lint": "eslint src tests",
+    "start": "node dist/src/index.js",
+    "prepublishOnly": "npm run build",
+    "phase6-validation": "npm run build && node dist/src/scripts/run-phase6-integration-validation.js run",
+    "phase6-health": "npm run build && node dist/src/scripts/run-phase6-integration-validation.js health",
+    "phase6-services": "npm run build && node dist/src/scripts/run-phase6-integration-validation.js services"
+  },
+  "keywords": [
+    "templum",
+    "universal-interface",
+    "orchestrator",
+    "multi-backend",
+    "vscode",
+    "cli",
+    "command-line"
+  ],
+  "author": "VDL Vault",
+  "license": "MIT",
+  "directories": {
+    "test": "tests"
+  },
+  "dependencies": {
+    "@types/uuid": "^10.0.0",
+    "boxen": "^8.0.1",
+    "chalk": "^4.1.2",
+    "cli-table3": "^0.6.5",
+    "commander": "^13.1.0",
+    "inquirer": "^12.9.0",
+    "ora": "^5.4.1",
+    "uuid": "^11.1.0",
+    "ws": "^8.16.0",
+    "zod": "^4.0.14"
+  },
+  "devDependencies": {
+    "@types/inquirer": "^9.0.8",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^24.1.0",
+    "@types/ws": "^8.5.10",
+    "@typescript-eslint/eslint-plugin": "^8.38.0",
+    "@typescript-eslint/parser": "^8.38.0",
+    "eslint": "^9.32.0",
+    "jest": "^30.0.5",
+    "prettier": "^3.6.2",
+    "ts-jest": "^29.4.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  }
+}

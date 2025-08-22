@@ -98,3 +98,6 @@ Obsidian/
 .tmp.driveupload/
 .trash/
 attachments/
+
+# Excluded files
+docs/00-QMS/Docs/
