@@ -100,7 +100,14 @@
     "prepublishOnly": "npm run build",
     "phase6-validation": "npm run build && node dist/src/scripts/run-phase6-integration-validation.js run",
     "phase6-health": "npm run build && node dist/src/scripts/run-phase6-integration-validation.js health",
-    "phase6-services": "npm run build && node dist/src/scripts/run-phase6-integration-validation.js services"
+    "phase6-services": "npm run build && node dist/src/scripts/run-phase6-integration-validation.js services",
+    "check:types": "node scripts/check-types.js",
+    "check:tests": "node scripts/check-tests.js",
+    "test:health": "node scripts/test-health-monitor.js",
+    "test:health-status": "node scripts/test-health-monitor.js status",
+    "coverage:reality-check": "node scripts/coverage-reality-check.js",
+    "prepare": "husky install || true",
+    "precommit": "npm run check:types && npm run check:tests && npm run test:health"
   },
   "keywords": [
     "templum",
@@ -137,6 +144,7 @@
     "@types/ws": "^8.5.10",
     "@vscode/test-electron": "^2.3.0",
     "eslint": "^9.32.0",
+    "husky": "^8.0.3",
     "jest": "^30.0.5",
     "prettier": "^3.6.2",
     "ts-jest": "^29.4.0",

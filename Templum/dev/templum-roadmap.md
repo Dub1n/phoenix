@@ -178,7 +178,7 @@ For each new task, identify:
 
 1. [ ] **Check Phase Completion**: Are all tasks in a phase complete?
    - If YES → Update phase status to complete
-   - If YES → Archive completed chain to templum-completed.md
+   - If YES → Archive completed chain to templum-data-tracker.md
    - If YES → Move to next phase activation
 
 2. [ ] **Check Phase Balance**: Do new tasks change phase priorities?
@@ -220,7 +220,6 @@ Before marking a phase complete:
 - [ ] Success criteria validated through testing
 - [ ] No critical blocking issues discovered
 - [ ] Patterns documented in templum-patterns.md
-- [ ] Phase archived to templum-completed.md
 
 ### 🚨 CRITICAL: System Integrity Gates **NEW**
 
@@ -296,7 +295,6 @@ Monthly check for roadmap accuracy:
 
 - **Task Tracking**: templum-active-tasks.md (authoritative task list)
 - **Implementation Patterns**: templum-patterns.md (reusable solutions)
-- **Historical Archive**: templum-completed.md (completed work and lessons)
 - **Status Dashboard**: templum-tracker-data.md (health and metrics)
 
 ---

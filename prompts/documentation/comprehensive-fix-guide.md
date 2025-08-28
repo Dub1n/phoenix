@@ -462,7 +462,6 @@ When you discover issues during:
    - [ ] Check if task completes entire dependency chain
    - [ ] If chain complete AND no pending dependencies:
      - [ ] REMOVE entire chain from `templum-active-tasks.md`
-     - [ ] Archive one-line summary to `templum-completed.md`
      - [ ] Update roadmap phase status if phase complete
      - [ ] Ensure patterns are preserved in `templum-patterns.md`
 

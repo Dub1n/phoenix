@@ -22,15 +22,25 @@ export interface TemplumConfiguration {
   };
 }
 
-// Universal Skin Definition
+// Universal Skin Definition - Aligned with real implementation API
 export interface UniversalSkinDefinition {
+  // Core identification - moved from metadata to root level to match real implementation
+  id: string;
+  name: string;
+  version: string;
+  description?: string;
+  
+  // PCL compatibility features - required by real implementation
+  pclCompatibility?: PCLCompatibility;
+  
+  // Core metadata (backward compatibility - includes id/name for existing code)
   metadata: {
     id: string;
     name: string;
-    backend: BackendType;
     version: string;
-    compatibleInterfaces: InterfaceType[];
     description?: string;
+    backend: BackendType;
+    compatibleInterfaces: InterfaceType[];
     author?: string;
     tags?: string[];
   };
@@ -61,7 +71,16 @@ export interface UniversalSkinDefinition {
     [keybinding: string]: string;
   };
 
-  theme?: SkinTheme;
+  // Theme support - changed from singular 'theme' to plural 'themes' to match real implementation
+  themes?: Record<string, SkinTheme>;
+  theme?: SkinTheme; // Backward compatibility
+  
+  // Additional properties needed by real implementation
+  components?: Record<string, any>;
+  assets?: SkinAssets;
+  inheritance?: SkinInheritance;
+  rendering?: RenderingConfiguration;
+  performance?: SkinPerformanceConfig;
 }
 
 // Interface adapter base contract
@@ -191,6 +210,11 @@ export interface WorkflowStepDefinition {
 
 // System status interfaces
 export interface TemplumSystemStatus {
+  // Root-level properties for extension compatibility
+  health?: 'healthy' | 'warning' | 'error';
+  activeBackends?: string[];
+  activeInterfaces?: InterfaceType[];
+  
   coreEngine: {
     initialized: boolean;
     activeInterfaces: InterfaceType[];
@@ -455,4 +479,36 @@ export interface MetricsSignalPayload extends SignalPayload {
 export interface ErrorSignalPayload extends SignalPayload {
   error: TemplumError;
   severity: 'low' | 'medium' | 'high' | 'critical';
+}
+
+// Additional type definitions for Universal Skin Engine API alignment
+export interface PCLCompatibility {
+  enabled: boolean;
+  version?: string;
+  features?: string[];
+}
+
+export interface SkinAssets {
+  icons?: Record<string, string>;
+  images?: Record<string, string>;
+  fonts?: Record<string, string>;
+  sounds?: Record<string, string>;
+}
+
+export interface SkinInheritance {
+  parent?: string;
+  mixins?: string[];
+  overrides?: Record<string, any>;
+}
+
+export interface RenderingConfiguration {
+  mode?: 'standard' | 'optimized' | 'compatibility';
+  caching?: boolean;
+  lazyLoading?: boolean;
+}
+
+export interface SkinPerformanceConfig {
+  enableOptimization?: boolean;
+  cacheTimeout?: number;
+  maxConcurrentRenders?: number;
 }

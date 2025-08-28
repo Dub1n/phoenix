@@ -29,7 +29,6 @@
 ``` filesystem
 templum-active-tasks.md      # Current work queue (main document)
 templum-patterns.md          # Implementation patterns (reference only)
-templum-completed.md         # Historical archive (append-only)
 templum-tracker-data.md      # Status dashboard (minimal updates)
 ```
 
@@ -128,7 +127,6 @@ NEW: Update 1 task marker + create fix document + extract patterns
 
 - ✅ Created templum-active-tasks.md with current queue
 - ✅ Extracted patterns to templum-patterns.md  
-- ✅ Archived completed work to templum-completed.md
 - ✅ Streamlined tracker-data.md to single-line format
 - ✅ Updated fix guides with enhanced documentation rules
 

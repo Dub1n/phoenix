@@ -6,7 +6,7 @@
  * Context: Phase 5 implementation validation support
  */
 
-import { UniversalSkinDefinition } from '../types/universal-skin-engine-types';
+import { UniversalSkinDefinition } from '../types/templum-types';
 
 export interface ValidationResult {
   valid: boolean;

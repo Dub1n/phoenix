@@ -100,6 +100,16 @@ describe('Phase 5: Universal Skin System Cross-Interface Consistency', () => {
 
     test('validates skin definitions against JSON schema', async () => {
       const testSkinDefinition: UniversalSkinDefinition = {
+        id: 'test-haruspex-skin',
+        name: 'Haruspex Analysis Skin',
+        version: '1.0.0',
+        description: 'Test skin for Haruspex analysis features',
+        pclCompatibility: {
+          version: '1.0.0',
+          reusePercentage: 75,
+          inheritancePatterns: ['command-pattern', 'factory-pattern'],
+          optimizations: ['lazy-loading', 'caching']
+        },
         metadata: {
           id: 'test-haruspex-skin',
           name: 'Haruspex Analysis Skin',
@@ -197,30 +207,52 @@ describe('Phase 5: Universal Skin System Cross-Interface Consistency', () => {
           'predict': 'Ctrl+Shift+P',
           'refresh': 'F5'
         },
-        theme: {
-          name: 'Haruspex Default',
+        themes: {
+          'default': {
+            name: 'Haruspex Default',
           colors: {
-            primary: '#007ACC',
-            secondary: '#6C757D',
-            success: '#28A745',
-            warning: '#FFC107',
-            error: '#DC3545',
+            primary: { 50: '#E3F2FD', 100: '#BBDEFB', 200: '#90CAF9', 300: '#64B5F6', 400: '#42A5F5', 500: '#007ACC', 600: '#1E88E5', 700: '#1976D2', 800: '#1565C0', 900: '#0D47A1' },
+            secondary: { 50: '#F8F9FA', 100: '#E9ECEF', 200: '#DEE2E6', 300: '#CED4DA', 400: '#ADB5BD', 500: '#6C757D', 600: '#5A6268', 700: '#495057', 800: '#343A40', 900: '#212529' },
+            success: { 50: '#F1F8E9', 100: '#DCEDC8', 200: '#C5E1A5', 300: '#AED581', 400: '#9CCC65', 500: '#28A745', 600: '#689F38', 700: '#558B2F', 800: '#33691E', 900: '#1B5E20' },
+            warning: { 50: '#FFFDE7', 100: '#FFF9C4', 200: '#FFF59D', 300: '#FFF176', 400: '#FFEE58', 500: '#FFC107', 600: '#FDD835', 700: '#F9A825', 800: '#F57F17', 900: '#FF8F00' },
+            error: { 50: '#FFEBEE', 100: '#FFCDD2', 200: '#EF9A9A', 300: '#E57373', 400: '#EF5350', 500: '#DC3545', 600: '#E53935', 700: '#D32F2F', 800: '#C62828', 900: '#B71C1C' },
             background: {
               primary: '#FFFFFF',
-              secondary: '#F8F9FA'
+              secondary: '#F8F9FA',
+              tertiary: '#E9ECEF',
+              overlay: 'rgba(0, 0, 0, 0.5)'
             },
             text: {
               primary: '#212529',
-              secondary: '#6C757D'
+              secondary: '#6C757D',
+              disabled: '#ADB5BD',
+              inverse: '#FFFFFF'
             }
           },
           typography: {
-            fontFamily: 'Segoe UI, sans-serif',
-            fontSize: {
+            fontFamilies: {
+              primary: 'Segoe UI, sans-serif',
+              secondary: 'Arial, sans-serif',
+              monospace: 'Monaco, monospace'
+            },
+            fontSizes: {
               small: '12px',
               medium: '14px',
               large: '16px'
+            },
+            fontWeights: {
+              normal: 400,
+              bold: 700
+            },
+            lineHeights: {
+              normal: 1.5,
+              tight: 1.2
+            },
+            letterSpacing: {
+              normal: '0px',
+              wide: '0.1em'
             }
+          }
           }
         },
         backendConfig: {
@@ -599,13 +631,39 @@ function createTestPCLSkinDefinition(): UniversalSkinDefinition {
       ]
     },
     shortcuts: {},
-    theme: {
-      name: 'PCL Default',
-      colors: {
-        primary: '#007ACC',
-        secondary: '#6C757D',
-        background: { primary: '#FFFFFF' },
-        text: { primary: '#212529' }
+    themes: {
+      'default': {
+        name: 'PCL Default',
+        colors: {
+          primary: { 50: '#E3F2FD', 100: '#BBDEFB', 200: '#90CAF9', 300: '#64B5F6', 400: '#42A5F5', 500: '#007ACC', 600: '#1E88E5', 700: '#1976D2', 800: '#1565C0', 900: '#0D47A1' },
+          secondary: { 50: '#F8F9FA', 100: '#E9ECEF', 200: '#DEE2E6', 300: '#CED4DA', 400: '#ADB5BD', 500: '#6C757D', 600: '#5A6268', 700: '#495057', 800: '#343A40', 900: '#212529' },
+          accent: { 50: '#E8F5E8', 100: '#C8E6C9', 200: '#A5D6A7', 300: '#81C784', 400: '#66BB6A', 500: '#4CAF50', 600: '#43A047', 700: '#388E3C', 800: '#2E7D32', 900: '#1B5E20' },
+          neutral: { 50: '#FAFAFA', 100: '#F5F5F5', 200: '#EEEEEE', 300: '#E0E0E0', 400: '#BDBDBD', 500: '#9E9E9E', 600: '#757575', 700: '#616161', 800: '#424242', 900: '#212121' },
+          semantic: {
+            success: { 50: '#F1F8E9', 100: '#DCEDC8', 200: '#C5E1A5', 300: '#AED581', 400: '#9CCC65', 500: '#8BC34A', 600: '#7CB342', 700: '#689F38', 800: '#558B2F', 900: '#33691E' },
+            warning: { 50: '#FFFDE7', 100: '#FFF9C4', 200: '#FFF59D', 300: '#FFF176', 400: '#FFEE58', 500: '#FFEB3B', 600: '#FDD835', 700: '#F9A825', 800: '#F57F17', 900: '#FF8F00' },
+            error: { 50: '#FFEBEE', 100: '#FFCDD2', 200: '#EF9A9A', 300: '#E57373', 400: '#EF5350', 500: '#F44336', 600: '#E53935', 700: '#D32F2F', 800: '#C62828', 900: '#B71C1C' },
+            info: { 50: '#E3F2FD', 100: '#BBDEFB', 200: '#90CAF9', 300: '#64B5F6', 400: '#42A5F5', 500: '#2196F3', 600: '#1E88E5', 700: '#1976D2', 800: '#1565C0', 900: '#0D47A1' }
+          },
+          background: { 
+            primary: '#FFFFFF', 
+            secondary: '#F8F9FA', 
+            tertiary: '#E9ECEF', 
+            overlay: 'rgba(0, 0, 0, 0.5)' 
+          },
+          text: { 
+            primary: '#212529', 
+            secondary: '#6C757D', 
+            disabled: '#ADB5BD', 
+            inverse: '#FFFFFF' 
+          },
+          border: {
+            primary: '#DEE2E6',
+            secondary: '#E9ECEF',
+            focus: '#007ACC',
+            error: '#DC3545'
+          }
+        }
       }
     },
     backendConfig: {
@@ -703,13 +761,39 @@ function createTestHaruspexSkinDefinition(): UniversalSkinDefinition {
       ]
     },
     shortcuts: {},
-    theme: {
-      name: 'Haruspex Default',
-      colors: {
-        primary: '#28A745',
-        secondary: '#6C757D',
-        background: { primary: '#FFFFFF' },
-        text: { primary: '#212529' }
+    themes: {
+      'default': {
+        name: 'Haruspex Default',
+        colors: {
+          primary: { 50: '#F1F8E9', 100: '#DCEDC8', 200: '#C5E1A5', 300: '#AED581', 400: '#9CCC65', 500: '#28A745', 600: '#689F38', 700: '#558B2F', 800: '#33691E', 900: '#1B5E20' },
+          secondary: { 50: '#F8F9FA', 100: '#E9ECEF', 200: '#DEE2E6', 300: '#CED4DA', 400: '#ADB5BD', 500: '#6C757D', 600: '#5A6268', 700: '#495057', 800: '#343A40', 900: '#212529' },
+          accent: { 50: '#E8F5E8', 100: '#C8E6C9', 200: '#A5D6A7', 300: '#81C784', 400: '#66BB6A', 500: '#4CAF50', 600: '#43A047', 700: '#388E3C', 800: '#2E7D32', 900: '#1B5E20' },
+          neutral: { 50: '#FAFAFA', 100: '#F5F5F5', 200: '#EEEEEE', 300: '#E0E0E0', 400: '#BDBDBD', 500: '#9E9E9E', 600: '#757575', 700: '#616161', 800: '#424242', 900: '#212121' },
+          semantic: {
+            success: { 50: '#F1F8E9', 100: '#DCEDC8', 200: '#C5E1A5', 300: '#AED581', 400: '#9CCC65', 500: '#8BC34A', 600: '#7CB342', 700: '#689F38', 800: '#558B2F', 900: '#33691E' },
+            warning: { 50: '#FFFDE7', 100: '#FFF9C4', 200: '#FFF59D', 300: '#FFF176', 400: '#FFEE58', 500: '#FFEB3B', 600: '#FDD835', 700: '#F9A825', 800: '#F57F17', 900: '#FF8F00' },
+            error: { 50: '#FFEBEE', 100: '#FFCDD2', 200: '#EF9A9A', 300: '#E57373', 400: '#EF5350', 500: '#F44336', 600: '#E53935', 700: '#D32F2F', 800: '#C62828', 900: '#B71C1C' },
+            info: { 50: '#E3F2FD', 100: '#BBDEFB', 200: '#90CAF9', 300: '#64B5F6', 400: '#42A5F5', 500: '#2196F3', 600: '#1E88E5', 700: '#1976D2', 800: '#1565C0', 900: '#0D47A1' }
+          },
+          background: { 
+            primary: '#FFFFFF', 
+            secondary: '#F8F9FA', 
+            tertiary: '#E9ECEF', 
+            overlay: 'rgba(0, 0, 0, 0.5)' 
+          },
+          text: { 
+            primary: '#212529', 
+            secondary: '#6C757D', 
+            disabled: '#ADB5BD', 
+            inverse: '#FFFFFF' 
+          },
+          border: {
+            primary: '#DEE2E6',
+            secondary: '#E9ECEF',
+            focus: '#28A745',
+            error: '#DC3545'
+          }
+        }
       }
     },
     backendConfig: {
@@ -772,12 +856,39 @@ function createBaseSkinDefinition(): UniversalSkinDefinition {
       workflows: []
     },
     shortcuts: {},
-    theme: {
-      name: 'Base Theme',
-      colors: {
-        primary: '#000000',
-        background: { primary: '#FFFFFF' },
-        text: { primary: '#000000' }
+    themes: {
+      'default': {
+        name: 'Base Theme',
+        colors: {
+          primary: { 50: '#F5F5F5', 100: '#E0E0E0', 200: '#BDBDBD', 300: '#9E9E9E', 400: '#757575', 500: '#000000', 600: '#424242', 700: '#303030', 800: '#212121', 900: '#000000' },
+          secondary: { 50: '#F8F9FA', 100: '#E9ECEF', 200: '#DEE2E6', 300: '#CED4DA', 400: '#ADB5BD', 500: '#6C757D', 600: '#5A6268', 700: '#495057', 800: '#343A40', 900: '#212529' },
+          accent: { 50: '#E8F5E8', 100: '#C8E6C9', 200: '#A5D6A7', 300: '#81C784', 400: '#66BB6A', 500: '#4CAF50', 600: '#43A047', 700: '#388E3C', 800: '#2E7D32', 900: '#1B5E20' },
+          neutral: { 50: '#FAFAFA', 100: '#F5F5F5', 200: '#EEEEEE', 300: '#E0E0E0', 400: '#BDBDBD', 500: '#9E9E9E', 600: '#757575', 700: '#616161', 800: '#424242', 900: '#212121' },
+          semantic: {
+            success: { 50: '#F1F8E9', 100: '#DCEDC8', 200: '#C5E1A5', 300: '#AED581', 400: '#9CCC65', 500: '#8BC34A', 600: '#7CB342', 700: '#689F38', 800: '#558B2F', 900: '#33691E' },
+            warning: { 50: '#FFFDE7', 100: '#FFF9C4', 200: '#FFF59D', 300: '#FFF176', 400: '#FFEE58', 500: '#FFEB3B', 600: '#FDD835', 700: '#F9A825', 800: '#F57F17', 900: '#FF8F00' },
+            error: { 50: '#FFEBEE', 100: '#FFCDD2', 200: '#EF9A9A', 300: '#E57373', 400: '#EF5350', 500: '#F44336', 600: '#E53935', 700: '#D32F2F', 800: '#C62828', 900: '#B71C1C' },
+            info: { 50: '#E3F2FD', 100: '#BBDEFB', 200: '#90CAF9', 300: '#64B5F6', 400: '#42A5F5', 500: '#2196F3', 600: '#1E88E5', 700: '#1976D2', 800: '#1565C0', 900: '#0D47A1' }
+          },
+          background: { 
+            primary: '#FFFFFF', 
+            secondary: '#F8F9FA', 
+            tertiary: '#E9ECEF', 
+            overlay: 'rgba(0, 0, 0, 0.5)' 
+          },
+          text: { 
+            primary: '#000000', 
+            secondary: '#6C757D', 
+            disabled: '#ADB5BD', 
+            inverse: '#FFFFFF' 
+          },
+          border: {
+            primary: '#DEE2E6',
+            secondary: '#E9ECEF',
+            focus: '#007ACC',
+            error: '#DC3545'
+          }
+        }
       }
     },
     backendConfig: {
@@ -851,12 +962,39 @@ function createChildSkinDefinition(parentId: string): UniversalSkinDefinition {
       workflows: []
     },
     shortcuts: {},
-    theme: {
-      name: 'Child Theme',
-      colors: {
-        primary: '#007ACC',
-        background: { primary: '#F8F9FA' },
-        text: { primary: '#212529' }
+    themes: {
+      'default': {
+        name: 'Child Theme',
+        colors: {
+          primary: { 50: '#E3F2FD', 100: '#BBDEFB', 200: '#90CAF9', 300: '#64B5F6', 400: '#42A5F5', 500: '#007ACC', 600: '#1E88E5', 700: '#1976D2', 800: '#1565C0', 900: '#0D47A1' },
+          secondary: { 50: '#F8F9FA', 100: '#E9ECEF', 200: '#DEE2E6', 300: '#CED4DA', 400: '#ADB5BD', 500: '#6C757D', 600: '#5A6268', 700: '#495057', 800: '#343A40', 900: '#212529' },
+          accent: { 50: '#E8F5E8', 100: '#C8E6C9', 200: '#A5D6A7', 300: '#81C784', 400: '#66BB6A', 500: '#4CAF50', 600: '#43A047', 700: '#388E3C', 800: '#2E7D32', 900: '#1B5E20' },
+          neutral: { 50: '#FAFAFA', 100: '#F5F5F5', 200: '#EEEEEE', 300: '#E0E0E0', 400: '#BDBDBD', 500: '#9E9E9E', 600: '#757575', 700: '#616161', 800: '#424242', 900: '#212121' },
+          semantic: {
+            success: { 50: '#F1F8E9', 100: '#DCEDC8', 200: '#C5E1A5', 300: '#AED581', 400: '#9CCC65', 500: '#8BC34A', 600: '#7CB342', 700: '#689F38', 800: '#558B2F', 900: '#33691E' },
+            warning: { 50: '#FFFDE7', 100: '#FFF9C4', 200: '#FFF59D', 300: '#FFF176', 400: '#FFEE58', 500: '#FFEB3B', 600: '#FDD835', 700: '#F9A825', 800: '#F57F17', 900: '#FF8F00' },
+            error: { 50: '#FFEBEE', 100: '#FFCDD2', 200: '#EF9A9A', 300: '#E57373', 400: '#EF5350', 500: '#F44336', 600: '#E53935', 700: '#D32F2F', 800: '#C62828', 900: '#B71C1C' },
+            info: { 50: '#E3F2FD', 100: '#BBDEFB', 200: '#90CAF9', 300: '#64B5F6', 400: '#42A5F5', 500: '#2196F3', 600: '#1E88E5', 700: '#1976D2', 800: '#1565C0', 900: '#0D47A1' }
+          },
+          background: { 
+            primary: '#F8F9FA', 
+            secondary: '#E9ECEF', 
+            tertiary: '#DEE2E6', 
+            overlay: 'rgba(0, 0, 0, 0.5)' 
+          },
+          text: { 
+            primary: '#212529', 
+            secondary: '#6C757D', 
+            disabled: '#ADB5BD', 
+            inverse: '#FFFFFF' 
+          },
+          border: {
+            primary: '#DEE2E6',
+            secondary: '#E9ECEF',
+            focus: '#007ACC',
+            error: '#DC3545'
+          }
+        }
       }
     },
     backendConfig: {

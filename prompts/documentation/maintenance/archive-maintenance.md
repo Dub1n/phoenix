@@ -18,7 +18,7 @@ If you receive this archive maintenance prompt, follow this autonomous workflow 
 **Priority Search Order**:
 
 1. **Find Active Tasks**: Look for `*-active-tasks.md` in project `/dev/` folder
-2. **Find Completed Archive**: Look for `*-completed.md` for existing archive structure
+2. **Find Completed Archive**: Look for `*-tracker-data.md` for existing archive structure
 3. **Find Tracker Data**: Look for `*-tracker-data.md` for component completion history
 4. **Find Patterns**: Look for `*-patterns.md` for pattern success tracking
 5. **Find Fix Documentation**: Look for `dev/fixes/` folder for completed fix evidence

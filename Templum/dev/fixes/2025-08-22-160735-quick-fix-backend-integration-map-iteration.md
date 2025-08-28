@@ -6,6 +6,7 @@
 - **Component**: PCL Backend Integration (src/backend/pcl-backend-integration.ts)
 - **Fix Type**: Compilation Error
 - **Tracker**: templum-fix-planning.md
+- **Task ID**: [/] Backend Integration Map Iteration Errors
 
 ## Issue Details
 

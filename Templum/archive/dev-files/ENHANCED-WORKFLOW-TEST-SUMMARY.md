@@ -32,7 +32,6 @@
 templum-active-tasks.md     # 19 tasks, single source of truth
 templum-roadmap.md          # Strategic guide with task integration protocols
 templum-patterns.md         # Implementation patterns reference
-templum-completed.md        # Historical archive with lessons learned
 templum-tracker-data.md     # Status dashboard with single-line log entries
 ```
 

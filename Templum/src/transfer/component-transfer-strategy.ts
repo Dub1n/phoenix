@@ -567,22 +567,143 @@ export class ComponentTransferStrategy extends EventEmitter {
    */
   private async loadPCLComponent(componentPath: string): Promise<any> {
     try {
-      // TODO: [TASK-NEW-036] Implement dynamic PCL component loading
-      // Priority: High | Complexity: 6
-      // Location: Component transfer validation during real integration
-      // Dependencies: Real PCL component paths, dynamic import system
-      // Phase: Integration
+      // Dynamic import of real PCL component
+      const componentModule = await import(componentPath);
+      
+      // Get the main exported class (first exported class found)
+      const ComponentClass = this.extractComponentClass(componentModule);
+      
+      if (!ComponentClass) {
+        throw new Error(`No component class found in ${componentPath}`);
+      }
 
-      // For now, return a mock structure to demonstrate the interface
-      // This needs to be replaced with actual dynamic import when implemented
+      // Create instance with error handling for different constructor patterns
+      const componentInstance = this.createComponentInstance(ComponentClass, componentPath);
+
+      // Return standardized interface wrapper for PCL component
       return {
-        healthCheck: async () => true,
-        validateConfiguration: async () => true,
-        initialize: async () => true,
-        getName: () => componentPath.split('/').pop()?.replace('.ts', '') || 'unknown'
+        healthCheck: async () => {
+          try {
+            // Try different health check patterns
+            if (typeof componentInstance.healthCheck === 'function') {
+              return await componentInstance.healthCheck();
+            }
+            if (typeof componentInstance.isHealthy === 'function') {
+              return await componentInstance.isHealthy();
+            }
+            // If no health check method, assume healthy if instance created successfully
+            return true;
+          } catch {
+            return false;
+          }
+        },
+        
+        validateConfiguration: async () => {
+          try {
+            if (typeof componentInstance.validateConfiguration === 'function') {
+              return await componentInstance.validateConfiguration();
+            }
+            if (typeof componentInstance.validate === 'function') {
+              return await componentInstance.validate();
+            }
+            // Default to valid if no validation method
+            return true;
+          } catch {
+            return false;
+          }
+        },
+        
+        initialize: async () => {
+          try {
+            if (typeof componentInstance.initialize === 'function') {
+              await componentInstance.initialize();
+              return true;
+            }
+            if (typeof componentInstance.init === 'function') {
+              await componentInstance.init();
+              return true;
+            }
+            // If no initialize method, assume already initialized
+            return true;
+          } catch {
+            return false;
+          }
+        },
+        
+        getName: () => componentPath.split('/').pop()?.replace('.ts', '') || 'unknown',
+        
+        // Provide access to the actual component instance for advanced operations
+        _instance: componentInstance,
+        _class: ComponentClass
       };
+      
     } catch (error) {
+      // Log the specific error for debugging
+      console.warn(`Failed to load PCL component from ${componentPath}:`, error);
       return null;
+    }
+  }
+
+  /**
+   * Extract the main component class from a loaded module
+   */
+  private extractComponentClass(module: any): any {
+    // Look for common class export patterns
+    if (module.default && typeof module.default === 'function') {
+      return module.default;
+    }
+
+    // Look for named exports that are classes
+    const classNames = [
+      'AuditLogger', 'ErrorHandler', 'MenuContentConverter', 'ConfigManager',
+      'LayoutEngine', 'MenuRegistry', 'CommandRegistry', 'SessionManager',
+      'StateSynchronizer', 'BackendOrchestrator'
+    ];
+
+    for (const className of classNames) {
+      if (module[className] && typeof module[className] === 'function') {
+        return module[className];
+      }
+    }
+
+    // Look for any function/class export
+    for (const key in module) {
+      if (typeof module[key] === 'function' && module[key].prototype) {
+        return module[key];
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Create component instance with proper constructor handling
+   */
+  private createComponentInstance(ComponentClass: any, componentPath: string): any {
+    try {
+      // Try different constructor patterns based on component type
+      const componentName = componentPath.split('/').pop()?.replace('.ts', '') || 'unknown';
+
+      // AuditLogger needs source parameter
+      if (componentName.includes('audit-logger') || ComponentClass.name === 'AuditLogger') {
+        return new ComponentClass('templum-component-transfer');
+      }
+
+      // Most PCL components can be instantiated without parameters
+      return new ComponentClass();
+      
+    } catch (error) {
+      // If constructor fails, try with minimal parameters
+      try {
+        return new ComponentClass({});
+      } catch {
+        // If all fails, try with null/minimal constructor
+        try {
+          return new ComponentClass(null);
+        } catch {
+          throw new Error(`Failed to instantiate component class: ${error}`);
+        }
+      }
     }
   }
 

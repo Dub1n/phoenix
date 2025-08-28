@@ -8,12 +8,11 @@
 - **Severity**: High (Foundation requirement for Phase 2)
 - **Components Fixed**: TemplumCore dependency management system
 - **Complexity Score**: 15 (from original estimate of 18 - PCL pattern adaptation successful)
+- **Task ID**: [TASK-076] Adapter-Based Dependency Injection
 
 ## Issue Analysis
 
 ### Original Issue from Implementation Tracker
-
-**[TASK-076]: Adapter-Based Dependency Injection**
 
 - Priority: 20 | Complexity: 18 | Status: Sequence 2
 - Pattern: pcl-adapter-extension

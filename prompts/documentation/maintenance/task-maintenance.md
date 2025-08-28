@@ -19,8 +19,7 @@ If you receive this task maintenance prompt, follow this autonomous workflow to 
 
 1. **Find Active Tasks**: Look for `*-active-tasks.md` in project `/dev/` folder
 2. **Find Tracker Data**: Look for `*-tracker-data.md` in project `/dev/` folder  
-3. **Find Completed Tasks**: Look for `*-completed.md` for archival context
-4. **Find Patterns**: Look for `*-patterns.md` for pattern validation
+3. **Find Patterns**: Look for `*-patterns.md` for pattern validation
 
 #### B. Pre-Maintenance Assessment
 
@@ -230,7 +229,7 @@ If you receive this task maintenance prompt, follow this autonomous workflow to 
 
 **Archival Process**:
 
-1. **Extract Completed**: Move completed tasks to *-completed.md
+1. **Extract Completed**: Move completed tasks to *-tracker-data.md as stubs
 2. **Preserve Context**: Maintain task history and outcomes
 3. **Update References**: Remove archived tasks from active counts
 4. **Cross-Reference Updates**: Update any references to archived tasks

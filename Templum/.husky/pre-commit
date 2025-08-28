@@ -1,0 +1,28 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Test Infrastructure Health Monitoring - Pre-commit Hook
+echo "🧪 Running test infrastructure health checks..."
+
+# 1. TypeScript compilation check
+echo "📝 Checking TypeScript compilation..."
+if ! npm run check:types; then
+    echo "❌ TypeScript compilation failed. Fix compilation errors before committing."
+    exit 1
+fi
+
+# 2. Test compilation check
+echo "🔧 Checking test compilation..."
+if ! npm run check:tests; then
+    echo "❌ Test compilation failed. Fix test compilation errors before committing."
+    exit 1
+fi
+
+# 3. Basic test health check
+echo "🩺 Running test health check..."
+if ! npm run test:health; then
+    echo "❌ Test infrastructure health check failed."
+    exit 1
+fi
+
+echo "✅ All test infrastructure health checks passed!"

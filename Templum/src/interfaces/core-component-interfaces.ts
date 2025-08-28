@@ -228,7 +228,55 @@ export interface ITemplumCoreDependencies {
 }
 
 /**
- * Dependency injection configuration
+ * Dependency injection validation levels
+ */
+export type ValidationLevel = 'strict' | 'standard' | 'relaxed';
+
+/**
+ * Component validation status
+ */
+export interface ComponentValidationStatus {
+  name: string;
+  valid: boolean;
+  issues: string[];
+  interfaceCompliance: boolean;
+  methodAvailability: boolean;
+  initializationStatus: 'pending' | 'initializing' | 'initialized' | 'failed';
+}
+
+/**
+ * Dependency wiring validation status
+ */
+export interface DependencyWiringStatus {
+  sourceComponent: string;
+  targetComponent: string;
+  wiringValid: boolean;
+  issues: string[];
+  circularDependency: boolean;
+  interfaceCompatibility: boolean;
+}
+
+/**
+ * Comprehensive validation report
+ */
+export interface ValidationReport {
+  timestamp: number;
+  overallValid: boolean;
+  validationLevel: ValidationLevel;
+  componentValidation: ComponentValidationStatus[];
+  dependencyWiring: DependencyWiringStatus[];
+  integrityValidation: {
+    allRequiredPresent: boolean;
+    noDuplicateInstances: boolean;
+    circularDependencies: string[];
+    initializationOrder: boolean;
+  };
+  recommendations: string[];
+  executionTime: number;
+}
+
+/**
+ * Enhanced dependency injection configuration with validation options
  */
 export interface IDependencyInjectionConfig {
   enableSkinEngine?: boolean;
@@ -237,6 +285,15 @@ export interface IDependencyInjectionConfig {
   enableBackendServiceRouter?: boolean;
   enableResourceManager?: boolean;
   enableObservabilityService?: boolean;
+  
+  // Validation configuration
+  validationLevel?: ValidationLevel;
+  enableValidationReporting?: boolean;
+  validateComponentInterfaces?: boolean;
+  validateDependencyWiring?: boolean;
+  validateInitializationOrder?: boolean;
+  validationTimeout?: number;
+  
   customFactories?: {
     skinEngine?: () => ISkinEngine;
     stateManager?: () => IStateManager;

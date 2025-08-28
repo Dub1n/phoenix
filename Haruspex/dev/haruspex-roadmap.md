@@ -158,7 +158,6 @@ When adding ANY new task, determine phase based on:
 
 1. [ ] **Check Phase Completion**: Are all phase tasks complete?
    - If YES → Update phase status to complete
-   - If YES → Archive completed chain to haruspex-completed.md
    - If YES → Move to next phase activation
 
 2. [ ] **Check Service Dependencies**: Do new tasks affect dependency chains?
@@ -188,7 +187,7 @@ When adding ANY new task, determine phase based on:
 
 - **Task Tracking**: haruspex-active-tasks.md (authoritative task list)
 - **Implementation Patterns**: haruspex-patterns.md (backend service solutions)
-- **Historical Archive**: haruspex-completed.md (completed work and lessons)
+- **Historical Archive**: haruspex-tracker-data.md (completed work and lessons)
 - **Status Dashboard**: haruspex-tracker-data.md (health and metrics)
 
 ---

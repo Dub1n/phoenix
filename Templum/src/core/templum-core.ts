@@ -295,7 +295,15 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
             console.log(`TemplumCore: Routing command '${command}' to ${selectedBackend} backend...`);
             
             // Execute command through real backend service
-            executionResult = await this.dependencies.backendServiceRouter.executeCommand(
+            if (!this.dependencies?.backendServiceRouter) {
+              throw createTemplumError('Backend service router not initialized', 'SERVICE_NOT_READY', 'configuration');
+            }
+            
+            const router = this.dependencies!.backendServiceRouter!;
+            if (!router.executeCommand) {
+              throw createTemplumError('Backend service router executeCommand method not available', 'SERVICE_NOT_READY', 'configuration');
+            }
+            executionResult = await router.executeCommand(
               selectedBackend,
               command,
               args
@@ -356,7 +364,7 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
         timestamp: Date.now(),
         executionTime: Date.now() - startTime,
         metadata: {
-          backendId: selectedBackend,
+          backendId: selectedBackend || undefined,
           routing: selectedBackend ? 'real-backend' : 'local-fallback',
           executionMode: 'enhanced-delegation'
         }
@@ -439,7 +447,7 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
         initialized: this.initialized,
         activeInterfaces: Array.from(this.activeInterfaces),
         loadedSkins: Array.from(this.loadedSkins.keys()),
-        backendConnections: this.dependencies.backendServiceRouter?.getConnectionStatus() || {
+        backendConnections: this.dependencies?.backendServiceRouter?.getConnectionStatus?.() || {
           totalConnections: 0,
           healthyConnections: 0,
           backends: {}
@@ -501,7 +509,7 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
       // Emit event to notify interested components
       this.emit('backend-services-refreshed', {
         timestamp: Date.now(),
-        status: this.dependencies.backendServiceRouter.getConnectionStatus()
+        status: this.dependencies?.backendServiceRouter?.getConnectionStatus?.() || { healthy: false, lastCheck: Date.now(), services: {} }
       });
       
     } catch (error) {
@@ -651,58 +659,487 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
     return this.dependencies.skinEngine;
   }
 
+  // Enhanced skin caching system - TASK-NEW-009 implementation
+  private skinCache = new Map<string, {
+    definition: UniversalSkinDefinition;
+    lastAccessed: number;
+    accessCount: number;
+    size: number;
+    ttl: number;
+  }>();
+  private skinCacheMetrics = {
+    hits: 0,
+    misses: 0,
+    evictions: 0,
+    totalLoadTime: 0,
+    validationFailures: 0
+  };
+  private readonly SKIN_CACHE_MAX_SIZE = 50; // Maximum cached skins
+  private readonly SKIN_CACHE_TTL = 30 * 60 * 1000; // 30 minutes in milliseconds
+  private readonly SKIN_CACHE_MAX_MEMORY = 10 * 1024 * 1024; // 10MB
+
   /**
-   * Load backend skin definition for WebView rendering
-   * Enhancement tracked: TASK-NEW-009 (skin caching and validation)
-   * Dependencies: Universal Skin Engine integration
+   * Load backend skin definition with enhanced caching and validation
+   * Enhancement: TASK-NEW-009 - Comprehensive caching, validation, and performance monitoring
+   * Dependencies: Universal Skin Engine integration, Resource Manager
    */
   async loadBackendSkin(backendId: string): Promise<UniversalSkinDefinition | null> {
     if (!this.initialized) {
       throw createTemplumError('Templum Core not initialized', 'SERVICE_NOT_READY', 'configuration');
     }
 
+    const cacheKey = `backend:${backendId}`;
+    const startTime = Date.now();
+
     try {
-      // Allocate cache resource for skin definition
+      // Check enhanced cache first with TTL validation
+      const cachedEntry = this.skinCache.get(cacheKey);
+      if (cachedEntry && this.isCacheEntryValid(cachedEntry)) {
+        // Update cache metrics and access patterns
+        this.skinCacheMetrics.hits++;
+        cachedEntry.lastAccessed = Date.now();
+        cachedEntry.accessCount++;
+        
+        // Update resource access time for cached entry
+        this.dependencies.resourceManager.updateResourceAccess(`skin-cache-${cacheKey}`);
+        
+        console.log(`Templum Core: Loaded backend skin from cache for ${backendId} (hit rate: ${this.getCacheHitRate()}%)`);
+        return cachedEntry.definition;
+      }
+
+      // Cache miss - increment miss counter
+      this.skinCacheMetrics.misses++;
+
+      // Allocate enhanced cache resource with detailed metadata
       const resourceId = await this.dependencies.resourceManager.allocateResource({
         type: 'cache',
         owner: 'templum-core',
-        size: 1, // 1MB for skin definition
+        size: 2, // 2MB for enhanced skin definition with validation metadata
         priority: 7,
-        metadata: { backendId, operation: 'loadBackendSkin' },
-        cleanup: async () => console.log('Cleaned up skin cache resource')
+        metadata: { 
+          backendId, 
+          operation: 'loadBackendSkin',
+          cacheKey,
+          timestamp: Date.now()
+        },
+        cleanup: async () => {
+          console.log(`Cleaned up enhanced skin cache resource for ${backendId}`);
+          this.skinCache.delete(cacheKey);
+        }
       });
 
-      // Load skin definition from backend service router via dependency injection
-      const skinDefinition = await this.dependencies.backendServiceRouter.loadBackendSkin(backendId);
+      // Load skin definition from backend service router
+      const rawSkinDefinition = await this.dependencies.backendServiceRouter.loadBackendSkin(backendId);
       
-      if (skinDefinition) {
-        // Store in loaded skins for consistency with existing skin management
-        this.loadedSkins.set(skinDefinition.metadata.id, skinDefinition);
+      if (rawSkinDefinition) {
+        // Comprehensive skin validation - TASK-NEW-009 enhancement
+        const validationResult = this.validateSkinDefinitionComprehensive(rawSkinDefinition);
+        if (!validationResult.isValid) {
+          this.skinCacheMetrics.validationFailures++;
+          throw createTemplumError(
+            `Skin validation failed for ${backendId}: ${validationResult.errors.join(', ')}`,
+            'SKIN_VALIDATION_ERROR',
+            'validation'
+          );
+        }
+
+        // Calculate skin definition size for cache management
+        const skinSize = this.calculateSkinDefinitionSize(rawSkinDefinition);
+        
+        // Enhanced cache storage with metadata
+        const cacheEntry = {
+          definition: rawSkinDefinition,
+          lastAccessed: Date.now(),
+          accessCount: 1,
+          size: skinSize,
+          ttl: Date.now() + this.SKIN_CACHE_TTL
+        };
+
+        // Ensure cache doesn't exceed memory limits
+        await this.evictExpiredAndOversizedEntries();
+        
+        // Apply LRU eviction if needed
+        if (this.shouldEvictForNewEntry(skinSize)) {
+          await this.evictLeastRecentlyUsedEntries(skinSize);
+        }
+
+        // Store in enhanced cache
+        this.skinCache.set(cacheKey, cacheEntry);
+        
+        // Store in loaded skins for backward compatibility
+        this.loadedSkins.set(rawSkinDefinition.metadata.id, rawSkinDefinition);
         
         // Update resource access time
         this.dependencies.resourceManager.updateResourceAccess(resourceId);
         
-        // Emit skin loaded event for consistency with loadSkin() method
+        // Track loading performance
+        const loadTime = Date.now() - startTime;
+        this.skinCacheMetrics.totalLoadTime += loadTime;
+        
+        // Emit enhanced skin loaded event with validation status
         this.emit('skinLoaded', {
-          skinId: skinDefinition.metadata.id,
-          skinName: skinDefinition.metadata.name,
+          skinId: rawSkinDefinition.metadata.id,
+          skinName: rawSkinDefinition.metadata.name,
           backend: backendId,
-          compatibleInterfaces: skinDefinition.metadata.compatibleInterfaces,
-          timestamp: Date.now()
+          compatibleInterfaces: rawSkinDefinition.metadata.compatibleInterfaces,
+          timestamp: Date.now(),
+          cached: false,
+          loadTime,
+          validationStatus: 'passed'
         });
 
-        console.log(`Templum Core: Loaded backend skin ${skinDefinition.metadata.name} from ${backendId} via dependency injection`);
+        console.log(`Templum Core: Loaded and cached backend skin ${rawSkinDefinition.metadata.name} from ${backendId} (${loadTime}ms, ${this.formatBytes(skinSize)})`);
+        
+        // Log cache performance metrics periodically
+        if ((this.skinCacheMetrics.hits + this.skinCacheMetrics.misses) % 10 === 0) {
+          this.logCachePerformanceMetrics();
+        }
+        
+        return rawSkinDefinition;
       } else {
         // Deallocate resource if no skin was loaded
         await this.dependencies.resourceManager.deallocateResource(resourceId);
+        return null;
       }
       
-      return skinDefinition;
     } catch (error) {
+      const loadTime = Date.now() - startTime;
+      this.skinCacheMetrics.totalLoadTime += loadTime;
+      
       const errorMessage = isTemplumError(error) ? error.message : (error instanceof Error ? error.message : 'Unknown error');
-      console.error(`Failed to load skin from backend '${backendId}':`, errorMessage);
+      console.error(`Failed to load skin from backend '${backendId}' (${loadTime}ms):`, errorMessage);
+      
+      // Emit error event with performance data
+      this.emit('skinLoadError', {
+        backend: backendId,
+        error: errorMessage,
+        loadTime,
+        timestamp: Date.now()
+      });
+      
       return null;
     }
+  }
+
+  /**
+   * Comprehensive skin definition validation - TASK-NEW-009 enhancement
+   * Validates both templum-types and universal-skin-engine-types formats
+   */
+  private validateSkinDefinitionComprehensive(skinDef: any): { isValid: boolean; errors: string[] } {
+    const errors: string[] = [];
+
+    try {
+      // Basic structure validation
+      if (!skinDef || typeof skinDef !== 'object') {
+        errors.push('Skin definition must be a valid object');
+        return { isValid: false, errors };
+      }
+
+      // Core identification validation - support both formats with safe property access
+      const hasMetadataId = skinDef.metadata && typeof skinDef.metadata === 'object' && skinDef.metadata.id;
+      const hasDirectId = skinDef.id;
+
+      if (hasMetadataId) {
+        // templum-types format validation
+        this.validateTemplumTypesFormat(skinDef, errors);
+      } else if (hasDirectId) {
+        // universal-skin-engine-types format validation
+        this.validateUniversalSkinEngineFormat(skinDef, errors);
+      } else {
+        errors.push('Skin definition missing required id field');
+      }
+
+      // Version validation with safe property access
+      const version = (skinDef.metadata && skinDef.metadata.version) || skinDef.version;
+      if (!version || typeof version !== 'string') {
+        errors.push('Skin definition missing or invalid version');
+      } else if (!this.isValidSemanticVersion(version)) {
+        errors.push('Skin definition version must follow semantic versioning (e.g., 1.0.0)');
+      }
+
+      // Interface compatibility validation with safe property access
+      const compatibleInterfaces = (skinDef.metadata && skinDef.metadata.compatibleInterfaces) || 
+                                  (skinDef.metadata && skinDef.metadata.supportedInterfaces);
+      if (compatibleInterfaces && Array.isArray(compatibleInterfaces)) {
+        const validInterfaces = ['vscode', 'cli', 'command'];
+        const invalidInterfaces = compatibleInterfaces.filter((iface: string) => !validInterfaces.includes(iface));
+        if (invalidInterfaces.length > 0) {
+          errors.push(`Invalid interface types: ${invalidInterfaces.join(', ')}`);
+        }
+      }
+
+      // Theme validation if present (check both possible locations)
+      const theme = skinDef.theme || (skinDef.themes && skinDef.themes[0]);
+      if (theme) {
+        this.validateSkinTheme(theme, errors);
+      }
+
+      // Menu structure validation if present
+      if (skinDef.menus) {
+        this.validateSkinMenus(skinDef.menus, errors);
+      }
+
+      // Command structure validation if present
+      if (skinDef.commands) {
+        this.validateSkinCommands(skinDef.commands, errors);
+      }
+
+      // PCL compatibility validation if present
+      if (skinDef.pclCompatibility) {
+        this.validatePCLCompatibility(skinDef.pclCompatibility, errors);
+      }
+
+    } catch (validationError) {
+      const errorMessage = validationError instanceof Error ? validationError.message : 'Unknown validation error';
+      errors.push(`Validation process error: ${errorMessage}`);
+    }
+
+    return { isValid: errors.length === 0, errors };
+  }
+
+  /**
+   * Validate templum-types.ts UniversalSkinDefinition format
+   */
+  private validateTemplumTypesFormat(skinDef: any, errors: string[]): void {
+    if (!skinDef.metadata || typeof skinDef.metadata !== 'object') {
+      errors.push('metadata object is required');
+      return;
+    }
+    
+    const metadata = skinDef.metadata;
+    
+    if (!metadata.id || typeof metadata.id !== 'string') {
+      errors.push('metadata.id is required and must be a string');
+    }
+    
+    if (!metadata.name || typeof metadata.name !== 'string') {
+      errors.push('metadata.name is required and must be a string');
+    }
+    
+    if (metadata.backend !== undefined && typeof metadata.backend !== 'string') {
+      errors.push('metadata.backend must be a string if provided');
+    }
+    
+    if (metadata.compatibleInterfaces !== undefined && !Array.isArray(metadata.compatibleInterfaces)) {
+      errors.push('metadata.compatibleInterfaces must be an array if provided');
+    }
+  }
+
+  /**
+   * Validate universal-skin-engine-types.ts UniversalSkinDefinition format
+   */
+  private validateUniversalSkinEngineFormat(skinDef: any, errors: string[]): void {
+    if (!skinDef.id || typeof skinDef.id !== 'string') {
+      errors.push('id is required and must be a string');
+    }
+    
+    if (!skinDef.name || typeof skinDef.name !== 'string') {
+      errors.push('name is required and must be a string');
+    }
+    
+    if (skinDef.metadata && typeof skinDef.metadata === 'object') {
+      if (skinDef.metadata.supportedInterfaces !== undefined && !Array.isArray(skinDef.metadata.supportedInterfaces)) {
+        errors.push('metadata.supportedInterfaces should be an array if provided');
+      }
+    }
+  }
+
+  /**
+   * Additional validation helper methods
+   */
+  private isValidSemanticVersion(version: string): boolean {
+    const semverRegex = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/;
+    return semverRegex.test(version);
+  }
+
+  private validateSkinTheme(theme: any, errors: string[]): void {
+    if (!theme || typeof theme !== 'object') {
+      errors.push('theme must be a valid object');
+      return;
+    }
+    
+    if (theme.colors !== undefined && typeof theme.colors !== 'object') {
+      errors.push('theme.colors must be an object if provided');
+    }
+    
+    // Validate color fields if present
+    if (theme.colors && theme.colors.primary !== undefined && typeof theme.colors.primary !== 'string') {
+      errors.push('theme.colors.primary must be a string if provided');
+    }
+
+    if (theme.name !== undefined && typeof theme.name !== 'string') {
+      errors.push('theme.name must be a string if provided');
+    }
+  }
+
+  private validateSkinMenus(menus: any, errors: string[]): void {
+    if (!menus || typeof menus !== 'object') {
+      errors.push('menus must be a valid object');
+      return;
+    }
+    
+    if (menus.main !== undefined) {
+      if (typeof menus.main !== 'object') {
+        errors.push('menus.main must be an object if provided');
+      } else if (menus.main.items !== undefined && !Array.isArray(menus.main.items)) {
+        errors.push('menus.main.items must be an array if provided');
+      }
+    }
+  }
+
+  private validateSkinCommands(commands: any, errors: string[]): void {
+    if (!commands) {
+      return; // Commands are optional
+    }
+    
+    if (!Array.isArray(commands) && typeof commands !== 'object') {
+      errors.push('commands must be an array or object if provided');
+      return;
+    }
+    
+    if (Array.isArray(commands)) {
+      commands.forEach((cmd, index) => {
+        if (!cmd || typeof cmd !== 'object') {
+          errors.push(`commands[${index}] must be a valid object`);
+        } else if (!cmd.id || typeof cmd.id !== 'string') {
+          errors.push(`commands[${index}].id is required and must be a string`);
+        }
+      });
+    } else if (commands.primary !== undefined && Array.isArray(commands.primary)) {
+      commands.primary.forEach((cmd: any, index: number) => {
+        if (!cmd || typeof cmd !== 'object') {
+          errors.push(`commands.primary[${index}] must be a valid object`);
+        } else if (!cmd.id || typeof cmd.id !== 'string') {
+          errors.push(`commands.primary[${index}].id is required and must be a string`);
+        }
+      });
+    }
+  }
+
+  private validatePCLCompatibility(pclCompat: any, errors: string[]): void {
+    if (!pclCompat || typeof pclCompat !== 'object') {
+      errors.push('pclCompatibility must be a valid object');
+      return;
+    }
+    
+    if (pclCompat.version !== undefined && typeof pclCompat.version !== 'string') {
+      errors.push('pclCompatibility.version must be a string if provided');
+    }
+
+    if (pclCompat.requiredFeatures !== undefined && !Array.isArray(pclCompat.requiredFeatures)) {
+      errors.push('pclCompatibility.requiredFeatures must be an array if provided');
+    }
+  }
+
+  /**
+   * Enhanced cache management methods - TASK-NEW-009 implementation
+   */
+  private isCacheEntryValid(entry: any): boolean {
+    return Date.now() <= entry.ttl;
+  }
+
+  private calculateSkinDefinitionSize(skinDef: any): number {
+    // Rough calculation of skin definition size in bytes
+    return JSON.stringify(skinDef).length * 2; // UTF-16 encoding approximation
+  }
+
+  private async evictExpiredAndOversizedEntries(): Promise<void> {
+    const now = Date.now();
+    const entriesToEvict = [];
+    
+    for (const [key, entry] of Array.from(this.skinCache.entries())) {
+      if (now > entry.ttl) {
+        entriesToEvict.push(key);
+      }
+    }
+    
+    for (const key of entriesToEvict) {
+      this.skinCache.delete(key);
+      this.skinCacheMetrics.evictions++;
+    }
+    
+    if (entriesToEvict.length > 0) {
+      console.log(`Templum Core: Evicted ${entriesToEvict.length} expired skin cache entries`);
+    }
+  }
+
+  private shouldEvictForNewEntry(newEntrySize: number): boolean {
+    if (this.skinCache.size >= this.SKIN_CACHE_MAX_SIZE) {
+      return true;
+    }
+    
+    const totalSize = Array.from(this.skinCache.values()).reduce((sum, entry) => sum + entry.size, 0);
+    return (totalSize + newEntrySize) > this.SKIN_CACHE_MAX_MEMORY;
+  }
+
+  private async evictLeastRecentlyUsedEntries(requiredSpace: number): Promise<void> {
+    const sortedEntries = Array.from(this.skinCache.entries())
+      .sort(([,a], [,b]) => a.lastAccessed - b.lastAccessed);
+    
+    let freedSpace = 0;
+    const evicted = [];
+    
+    for (const [key, entry] of sortedEntries) {
+      this.skinCache.delete(key);
+      this.skinCacheMetrics.evictions++;
+      freedSpace += entry.size;
+      evicted.push(key);
+      
+      if (freedSpace >= requiredSpace || this.skinCache.size < this.SKIN_CACHE_MAX_SIZE) {
+        break;
+      }
+    }
+    
+    if (evicted.length > 0) {
+      console.log(`Templum Core: LRU evicted ${evicted.length} skin cache entries (freed ${this.formatBytes(freedSpace)})`);
+    }
+  }
+
+  private getCacheHitRate(): number {
+    const total = this.skinCacheMetrics.hits + this.skinCacheMetrics.misses;
+    return total > 0 ? Math.round((this.skinCacheMetrics.hits / total) * 100) : 0;
+  }
+
+  private getAverageLoadTime(): number {
+    const total = this.skinCacheMetrics.hits + this.skinCacheMetrics.misses;
+    return total > 0 ? Math.round(this.skinCacheMetrics.totalLoadTime / total) : 0;
+  }
+
+  private formatBytes(bytes: number): string {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  }
+
+  private logCachePerformanceMetrics(): void {
+    const totalSize = Array.from(this.skinCache.values()).reduce((sum, entry) => sum + entry.size, 0);
+    
+    console.log(`Templum Core Cache Metrics - Entries: ${this.skinCache.size}/${this.SKIN_CACHE_MAX_SIZE}, ` +
+                `Size: ${this.formatBytes(totalSize)}/${this.formatBytes(this.SKIN_CACHE_MAX_MEMORY)}, ` +
+                `Hit Rate: ${this.getCacheHitRate()}%, ` +
+                `Avg Load Time: ${this.getAverageLoadTime()}ms, ` +
+                `Evictions: ${this.skinCacheMetrics.evictions}, ` +
+                `Validation Failures: ${this.skinCacheMetrics.validationFailures}`);
+  }
+
+  /**
+   * Get enhanced skin cache performance metrics - TASK-NEW-009 enhancement
+   */
+  getSkinCacheMetrics(): any {
+    const totalSize = Array.from(this.skinCache.values()).reduce((sum, entry) => sum + entry.size, 0);
+    
+    return {
+      entries: this.skinCache.size,
+      maxEntries: this.SKIN_CACHE_MAX_SIZE,
+      totalSize,
+      maxSize: this.SKIN_CACHE_MAX_MEMORY,
+      hitRate: this.getCacheHitRate(),
+      averageLoadTime: this.getAverageLoadTime(),
+      metrics: { ...this.skinCacheMetrics },
+      ttlMinutes: this.SKIN_CACHE_TTL / (60 * 1000)
+    };
   }
 
   /**

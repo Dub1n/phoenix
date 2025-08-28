@@ -108,6 +108,7 @@ export class UniversalSkinEngine extends EventEmitter {
         components,
         performance: {
           renderTime,
+          outputSize: JSON.stringify(components).length,
           cacheHit: false
         },
         customization: {
@@ -136,6 +137,7 @@ export class UniversalSkinEngine extends EventEmitter {
         components: [],
         performance: {
           renderTime: Date.now() - startTime,
+          outputSize: 0,
           cacheHit: false
         },
         customization: {},

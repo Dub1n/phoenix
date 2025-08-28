@@ -14,9 +14,9 @@ import {
   ErrorSignalPayload, 
   MetricsSignalPayload,
   createTemplumError, 
-  isTemplumError 
+  isTemplumError,
+  UniversalSkinDefinition
 } from '../types/templum-types';
-import { UniversalSkinDefinition } from '../types/universal-skin-engine-types';
 
 /**
  * Universal WebView Provider for Backend Service Integration

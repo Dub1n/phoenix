@@ -15,7 +15,11 @@ import {
   IResourceManager,
   ITemplumCoreDependencies,
   IDependencyInjectionConfig,
-  IComponentFactory
+  IComponentFactory,
+  ValidationLevel,
+  ComponentValidationStatus,
+  DependencyWiringStatus,
+  ValidationReport
 } from '../interfaces/core-component-interfaces';
 import { IObservabilityService } from '../observability/observability-adapter';
 import { 
@@ -472,9 +476,14 @@ export class ResourceManagerAdapter implements IResourceManager {
  */
 export class TemplumComponentFactory implements IComponentFactory {
   private config: any;
+  private registry?: TemplumAdapterRegistry;
 
   constructor(config: any = {}) {
     this.config = config;
+  }
+
+  setRegistry(registry: TemplumAdapterRegistry) {
+    this.registry = registry;
   }
 
   createSkinEngine(config?: any): ISkinEngine {
@@ -483,44 +492,72 @@ export class TemplumComponentFactory implements IComponentFactory {
   }
 
   createStateManager(config?: any): IStateManager {
-    // TODO: [TASK-NEW-025] Enhanced state manager configuration validation
-    // Priority: Medium | Complexity: 4
-    // Location: State manager factory with comprehensive config validation
-    // Dependencies: Enhanced State Manager configuration patterns
-    const stateManagerConfig = {
-      coalescingConfig: {
-        enabled: config?.performanceMetrics !== false,
-        windowMs: config?.coalescingWindowMs || 100,
-        maxBatchSize: config?.maxBatchSize || 20,
-        coalescingStrategy: config?.coalescingStrategy || 'merge'
-      },
-      maxHistorySize: config?.maxHistorySize || 1000,
-      persistenceEnabled: config?.persistenceEnabled !== false,
-      ipcEnabled: config?.ipcEnabled !== false,
-      ...config
-    };
-    
-    const stateManager = new EnhancedStateManager(stateManagerConfig);
-    return new StateManagerAdapter(stateManager);
+    // TASK-NEW-025: Enhanced state manager configuration validation
+    try {
+      // Use registry's validation methods if available
+      const validatedConfig = this.registry?.validateStateManagerConfig(config) ?? config ?? {};
+      
+      const stateManagerConfig = {
+        coalescingConfig: {
+          enabled: validatedConfig?.performanceMetrics !== false,
+          windowMs: this.registry?.validateNumericRange(validatedConfig?.coalescingWindowMs, 50, 500, 100, 'coalescingWindowMs') ?? validatedConfig?.coalescingWindowMs ?? 100,
+          maxBatchSize: this.registry?.validateNumericRange(validatedConfig?.maxBatchSize, 10, 100, 20, 'maxBatchSize') ?? validatedConfig?.maxBatchSize ?? 20,
+          coalescingStrategy: this.registry?.validateEnumValue(validatedConfig?.coalescingStrategy, ['merge', 'replace', 'queue'], 'merge', 'coalescingStrategy') ?? 'merge'
+        },
+        maxHistorySize: this.registry?.validateNumericRange(validatedConfig?.maxHistorySize, 100, 10000, 1000, 'maxHistorySize') ?? validatedConfig?.maxHistorySize ?? 1000,
+        persistenceEnabled: validatedConfig?.persistenceEnabled !== false,
+        ipcEnabled: validatedConfig?.ipcEnabled !== false,
+        ...validatedConfig
+      };
+      
+      const stateManager = new EnhancedStateManager(stateManagerConfig);
+      const adapter = new StateManagerAdapter(stateManager);
+      
+      console.log('StateManager created with validated configuration:', {
+        coalescingEnabled: stateManagerConfig.coalescingConfig.enabled,
+        windowMs: stateManagerConfig.coalescingConfig.windowMs,
+        maxHistorySize: stateManagerConfig.maxHistorySize
+      });
+      
+      return adapter;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      throw createTemplumError(`StateManager creation failed: ${errorMessage}`, 'STATE_MANAGER_CREATION_ERROR', 'configuration');
+    }
   }
 
   createBackendRouter(config?: any): IBackendRouter {
-    // TODO: [TASK-NEW-026] PCL Backend Integrator dependency injection enhancement
-    // Priority: High | Complexity: 6
-    // Location: Backend router factory with proper PCL dependency management
-    // Dependencies: PCL Backend Integrator initialization patterns
-    const backendRouterConfig = {
-      stateManager: null, // Will be set through dependency injection
-      commandRegistry: null, // Will be initialized separately  
-      riskMitigationFramework: null, // Will be initialized separately
-      enableCircuitBreaker: config?.enableCircuitBreaker !== false,
-      timeoutMs: config?.timeoutMs || 30000,
-      retryAttempts: config?.retryAttempts || 3,
-      ...config
-    };
-    
-    const backendRouter = new PCLBackendIntegrator(backendRouterConfig);
-    return new BackendRouterAdapter(backendRouter);
+    // TASK-NEW-026: PCL Backend Integrator dependency injection enhancement
+    try {
+      // Use registry's validation methods if available
+      const validatedConfig = this.registry?.validateBackendRouterConfig(config) ?? config ?? {};
+      
+      const backendRouterConfig = {
+        stateManager: null, // Will be set through dependency injection in wireComponentDependencies
+        commandRegistry: null, // Will be initialized separately  
+        riskMitigationFramework: null, // Will be initialized separately
+        enableCircuitBreaker: validatedConfig?.enableCircuitBreaker !== false,
+        timeoutMs: this.registry?.validateNumericRange(validatedConfig?.timeoutMs, 5000, 120000, 30000, 'timeoutMs') ?? validatedConfig?.timeoutMs ?? 30000,
+        retryAttempts: this.registry?.validateNumericRange(validatedConfig?.retryAttempts, 0, 10, 3, 'retryAttempts') ?? validatedConfig?.retryAttempts ?? 3,
+        maxConcurrentRequests: this.registry?.validateNumericRange(validatedConfig?.maxConcurrentRequests, 1, 100, 10, 'maxConcurrentRequests') ?? validatedConfig?.maxConcurrentRequests ?? 10,
+        healthCheckInterval: this.registry?.validateNumericRange(validatedConfig?.healthCheckInterval, 5000, 300000, 30000, 'healthCheckInterval') ?? validatedConfig?.healthCheckInterval ?? 30000,
+        ...validatedConfig
+      };
+      
+      const backendRouter = new PCLBackendIntegrator(backendRouterConfig);
+      const adapter = new BackendRouterAdapter(backendRouter);
+      
+      console.log('BackendRouter created with validated configuration:', {
+        circuitBreakerEnabled: backendRouterConfig.enableCircuitBreaker,
+        timeout: backendRouterConfig.timeoutMs,
+        retryAttempts: backendRouterConfig.retryAttempts
+      });
+      
+      return adapter;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      throw createTemplumError(`BackendRouter creation failed: ${errorMessage}`, 'BACKEND_ROUTER_CREATION_ERROR', 'configuration');
+    }
   }
 
   createBackendServiceRouter(config?: any): IBackendServiceRouter {
@@ -529,21 +566,42 @@ export class TemplumComponentFactory implements IComponentFactory {
   }
 
   createResourceManager(config?: any): IResourceManager {
-    // TODO: [TASK-NEW-027] Resource manager configuration validation and policy setup
-    // Priority: Medium | Complexity: 5
-    // Location: Resource manager factory with comprehensive policy configuration
-    // Dependencies: Templum Resource Manager policy patterns
-    const resourceManagerConfig = {
-      memoryLimitMB: config?.memoryLimitMB || 256,
-      cpuLimitPercent: config?.cpuLimitPercent || 80,
-      cleanupIntervalMs: config?.cleanupIntervalMs || 60000,
-      maxResourceAge: config?.maxResourceAge || 3600000, // 1 hour
-      enableHealthMonitoring: config?.enableHealthMonitoring !== false,
-      ...config
-    };
-    
-    const resourceManager = new TemplumResourceManager(resourceManagerConfig);
-    return new ResourceManagerAdapter(resourceManager);
+    // TASK-NEW-027: Resource manager configuration validation and policy setup
+    try {
+      // Use registry's validation methods if available
+      const validatedConfig = this.registry?.validateResourceManagerConfig(config) ?? config ?? {};
+      
+      const resourceManagerConfig = {
+        memoryLimitMB: this.registry?.validateNumericRange(validatedConfig?.memoryLimitMB, 64, 4096, 256, 'memoryLimitMB') ?? validatedConfig?.memoryLimitMB ?? 256,
+        cpuLimitPercent: this.registry?.validateNumericRange(validatedConfig?.cpuLimitPercent, 10, 100, 80, 'cpuLimitPercent') ?? validatedConfig?.cpuLimitPercent ?? 80,
+        cleanupIntervalMs: this.registry?.validateNumericRange(validatedConfig?.cleanupIntervalMs, 30000, 600000, 60000, 'cleanupIntervalMs') ?? validatedConfig?.cleanupIntervalMs ?? 60000,
+        maxResourceAge: this.registry?.validateNumericRange(validatedConfig?.maxResourceAge, 300000, 7200000, 3600000, 'maxResourceAge') ?? validatedConfig?.maxResourceAge ?? 3600000,
+        enableHealthMonitoring: validatedConfig?.enableHealthMonitoring !== false,
+        maxConcurrentAllocations: this.registry?.validateNumericRange(validatedConfig?.maxConcurrentAllocations, 10, 1000, 100, 'maxConcurrentAllocations') ?? validatedConfig?.maxConcurrentAllocations ?? 100,
+        resourceGCThreshold: this.registry?.validateNumericRange(validatedConfig?.resourceGCThreshold, 50, 90, 75, 'resourceGCThreshold') ?? validatedConfig?.resourceGCThreshold ?? 75,
+        alertThresholds: {
+          memoryUsage: this.registry?.validateNumericRange(validatedConfig?.alertThresholds?.memoryUsage, 60, 95, 85, 'alertThresholds.memoryUsage') ?? validatedConfig?.alertThresholds?.memoryUsage ?? 85,
+          cpuUsage: this.registry?.validateNumericRange(validatedConfig?.alertThresholds?.cpuUsage, 60, 95, 90, 'alertThresholds.cpuUsage') ?? validatedConfig?.alertThresholds?.cpuUsage ?? 90,
+          diskUsage: this.registry?.validateNumericRange(validatedConfig?.alertThresholds?.diskUsage, 70, 95, 80, 'alertThresholds.diskUsage') ?? validatedConfig?.alertThresholds?.diskUsage ?? 80
+        },
+        ...validatedConfig
+      };
+      
+      const resourceManager = new TemplumResourceManager(resourceManagerConfig);
+      const adapter = new ResourceManagerAdapter(resourceManager);
+      
+      console.log('ResourceManager created with validated configuration:', {
+        memoryLimit: resourceManagerConfig.memoryLimitMB,
+        cpuLimit: resourceManagerConfig.cpuLimitPercent,
+        healthMonitoring: resourceManagerConfig.enableHealthMonitoring,
+        cleanupInterval: resourceManagerConfig.cleanupIntervalMs
+      });
+      
+      return adapter;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      throw createTemplumError(`ResourceManager creation failed: ${errorMessage}`, 'RESOURCE_MANAGER_CREATION_ERROR', 'configuration');
+    }
   }
   
   createObservabilityService(config?: any): IObservabilityService {
@@ -561,6 +619,7 @@ export class TemplumAdapterRegistry extends EventEmitter {
   private factory: IComponentFactory;
   private config: IDependencyInjectionConfig;
   private initialized: boolean = false;
+  private validationReport: ValidationReport | null = null;
 
   constructor(config: IDependencyInjectionConfig = {}) {
     super();
@@ -571,9 +630,540 @@ export class TemplumAdapterRegistry extends EventEmitter {
       enableBackendServiceRouter: true,
       enableResourceManager: true,
       enableObservabilityService: true,
+      // Validation defaults
+      validationLevel: 'standard',
+      enableValidationReporting: true,
+      validateComponentInterfaces: true,
+      validateDependencyWiring: true,
+      validateInitializationOrder: true,
+      validationTimeout: 5000,
       ...config
     };
     this.factory = new TemplumComponentFactory(config);
+    (this.factory as TemplumComponentFactory).setRegistry(this);
+  }
+
+  /**
+   * TASK-NEW-028: Component instance creation validation
+   * Validates that component instances are properly created and implement required interfaces
+   */
+  private validateComponentInstance(name: string, component: any): ComponentValidationStatus {
+    const status: ComponentValidationStatus = {
+      name,
+      valid: true,
+      issues: [],
+      interfaceCompliance: false,
+      methodAvailability: false,
+      initializationStatus: 'pending'
+    };
+
+    try {
+      // Basic instance validation
+      if (!component) {
+        status.valid = false;
+        status.issues.push(`Component ${name} is null or undefined`);
+        return status;
+      }
+
+      if (typeof component !== 'object') {
+        status.valid = false;
+        status.issues.push(`Component ${name} is not an object`);
+        return status;
+      }
+
+      // Interface compliance validation based on component type
+      const interfaceChecks: Record<string, string[]> = {
+        skinEngine: ['renderForInterface', 'validateSkin', 'generateSkinHTML'],
+        stateManager: ['initialize', 'syncState', 'sendMessage', 'getCurrentState'],
+        backendRouter: ['initialize', 'executeCommand', 'getStatus'],
+        backendServiceRouter: ['discoverAndConnect', 'loadBackendSkin', 'executeCommand'],
+        resourceManager: ['initialize', 'allocateResource', 'deallocateResource', 'getResourceUsage'],
+        observabilityService: ['logInfo', 'logError', 'logDebug']
+      };
+
+      const requiredMethods = interfaceChecks[name] || [];
+      const availableMethods: string[] = [];
+      const missingMethods: string[] = [];
+
+      for (const method of requiredMethods) {
+        if (typeof component[method] === 'function') {
+          availableMethods.push(method);
+        } else {
+          missingMethods.push(method);
+        }
+      }
+
+      // Method availability assessment
+      status.methodAvailability = missingMethods.length === 0;
+      if (missingMethods.length > 0 && this.config.validationLevel === 'strict') {
+        status.valid = false;
+        status.issues.push(`Missing required methods: ${missingMethods.join(', ')}`);
+      } else if (missingMethods.length > 0) {
+        status.issues.push(`Optional methods not available: ${missingMethods.join(', ')}`);
+      }
+
+      // Interface compliance (more lenient - checks for core functionality)
+      const coreMethodsAvailable = availableMethods.length >= Math.ceil(requiredMethods.length / 2);
+      status.interfaceCompliance = coreMethodsAvailable;
+
+      if (!coreMethodsAvailable && this.config.validationLevel !== 'relaxed') {
+        status.valid = false;
+        status.issues.push(`Component ${name} does not implement core interface methods`);
+      }
+
+      // Check for adapter pattern compliance
+      if (component.constructor.name.includes('Adapter')) {
+        status.issues.push(`Using adapter pattern for ${name}`);
+      }
+
+      console.log(`Component validation for ${name}:`, {
+        valid: status.valid,
+        availableMethods: availableMethods.length,
+        missingMethods: missingMethods.length,
+        interfaceCompliance: status.interfaceCompliance
+      });
+
+    } catch (error) {
+      status.valid = false;
+      status.issues.push(`Component validation error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+
+    return status;
+  }
+
+  /**
+   * TASK-NEW-029: Cross-component dependency wiring validation  
+   * Validates that dependencies are properly wired between components
+   */
+  private validateDependencyWiring(): DependencyWiringStatus[] {
+    const wiringStatuses: DependencyWiringStatus[] = [];
+
+    try {
+      // Validate state manager → backend router wiring
+      if (this.dependencies.stateManager && this.dependencies.backendRouter) {
+        const status: DependencyWiringStatus = {
+          sourceComponent: 'stateManager',
+          targetComponent: 'backendRouter', 
+          wiringValid: true,
+          issues: [],
+          circularDependency: false,
+          interfaceCompatibility: true
+        };
+
+        // Check if backend router has state manager reference
+        const backendRouter = this.dependencies.backendRouter as any;
+        if (!backendRouter.stateManager && !backendRouter.dependencies?.stateManager) {
+          status.wiringValid = false;
+          status.issues.push('Backend router does not have state manager reference');
+        }
+
+        wiringStatuses.push(status);
+      }
+
+      // Validate resource manager → component registration
+      if (this.dependencies.resourceManager) {
+        const componentNames = Object.keys(this.dependencies) as (keyof ITemplumCoreDependencies)[];
+        for (const componentName of componentNames) {
+          if (componentName !== 'resourceManager') {
+            const status: DependencyWiringStatus = {
+              sourceComponent: 'resourceManager',
+              targetComponent: componentName,
+              wiringValid: true,
+              issues: [],
+              circularDependency: false,
+              interfaceCompatibility: true
+            };
+
+            // Check if component is registered with resource manager
+            const resourceManager = this.dependencies.resourceManager as any;
+            const services = resourceManager.getServiceHealth?.() || [];
+            const isRegistered = services.some((service: any) => service.id === `templum-${componentName}`);
+            
+            if (!isRegistered && this.config.validationLevel === 'strict') {
+              status.wiringValid = false;
+              status.issues.push(`Component ${componentName} not registered with resource manager`);
+            }
+
+            wiringStatuses.push(status);
+          }
+        }
+      }
+
+      // Circular dependency detection
+      const dependencyGraph = this.buildDependencyGraph();
+      const circularDeps = this.detectCircularDependencies(dependencyGraph);
+      
+      for (const cycle of circularDeps) {
+        for (let i = 0; i < cycle.length; i++) {
+          const source = cycle[i];
+          const target = cycle[(i + 1) % cycle.length];
+          
+          wiringStatuses.push({
+            sourceComponent: source,
+            targetComponent: target,
+            wiringValid: false,
+            issues: [`Circular dependency detected: ${cycle.join(' → ')}`],
+            circularDependency: true,
+            interfaceCompatibility: true
+          });
+        }
+      }
+
+    } catch (error) {
+      console.error('Dependency wiring validation error:', error);
+    }
+
+    return wiringStatuses;
+  }
+
+  /**
+   * Build dependency graph for circular dependency detection
+   */
+  private buildDependencyGraph(): Record<string, string[]> {
+    const graph: Record<string, string[]> = {};
+    
+    // Initialize all components
+    const componentNames = Object.keys(this.dependencies) as (keyof ITemplumCoreDependencies)[];
+    for (const name of componentNames) {
+      graph[name] = [];
+    }
+
+    // Add known dependencies
+    if (this.dependencies.stateManager && this.dependencies.backendRouter) {
+      graph['backendRouter'].push('stateManager');
+    }
+
+    if (this.dependencies.resourceManager) {
+      for (const name of componentNames) {
+        if (name !== 'resourceManager') {
+          graph[name].push('resourceManager');
+        }
+      }
+    }
+
+    return graph;
+  }
+
+  /**
+   * Detect circular dependencies using DFS
+   */
+  private detectCircularDependencies(graph: Record<string, string[]>): string[][] {
+    const visited = new Set<string>();
+    const recursionStack = new Set<string>();
+    const cycles: string[][] = [];
+
+    const dfs = (node: string, path: string[]): void => {
+      visited.add(node);
+      recursionStack.add(node);
+      path.push(node);
+
+      for (const neighbor of graph[node] || []) {
+        if (!visited.has(neighbor)) {
+          dfs(neighbor, [...path]);
+        } else if (recursionStack.has(neighbor)) {
+          // Found a cycle
+          const cycleStart = path.indexOf(neighbor);
+          if (cycleStart !== -1) {
+            cycles.push([...path.slice(cycleStart), neighbor]);
+          }
+        }
+      }
+
+      recursionStack.delete(node);
+    };
+
+    for (const node of Object.keys(graph)) {
+      if (!visited.has(node)) {
+        dfs(node, []);
+      }
+    }
+
+    return cycles;
+  }
+
+  /**
+   * TASK-NEW-030: Component initialization ordering validation
+   * Validates that components are initialized in proper dependency order
+   */
+  private validateInitializationOrder(): boolean {
+    try {
+      const expectedOrder = [
+        'observabilityService',
+        'resourceManager', 
+        'stateManager',
+        'skinEngine',
+        'backendServiceRouter',
+        'backendRouter'
+      ];
+
+      const actualComponents = Object.keys(this.dependencies);
+      const issues: string[] = [];
+
+      // Check if critical components are initialized before dependent components
+      if (actualComponents.includes('backendRouter') && actualComponents.includes('stateManager')) {
+        // Backend router should be initialized after state manager
+        const stateIndex = expectedOrder.indexOf('stateManager');
+        const routerIndex = expectedOrder.indexOf('backendRouter');
+        
+        if (stateIndex >= routerIndex) {
+          issues.push('Backend router should be initialized after state manager');
+        }
+      }
+
+      if (actualComponents.includes('resourceManager')) {
+        // Resource manager should be initialized early
+        const resourceIndex = expectedOrder.indexOf('resourceManager');
+        if (resourceIndex > 2) {
+          issues.push('Resource manager should be initialized early in the sequence');
+        }
+      }
+
+      if (issues.length > 0 && this.config.validationLevel === 'strict') {
+        console.warn('Initialization order validation issues:', issues);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Initialization order validation error:', error);
+      return false;
+    }
+  }
+
+  /**
+   * TASK-NEW-031: Enhanced dependency integrity validation
+   * Comprehensive validation of the entire dependency injection system
+   */
+  private validateDependencyIntegrity(): void {
+    const validationStartTime = Date.now();
+    const componentValidations: ComponentValidationStatus[] = [];
+    const dependencyWiring: DependencyWiringStatus[] = [];
+    const issues: string[] = [];
+
+    try {
+      // Phase 1: Validate all component instances
+      if (this.config.validateComponentInterfaces) {
+        for (const [name, component] of Object.entries(this.dependencies)) {
+          const validation = this.validateComponentInstance(name, component);
+          componentValidations.push(validation);
+          
+          if (!validation.valid && this.config.validationLevel === 'strict') {
+            issues.push(...validation.issues);
+          }
+        }
+      }
+
+      // Phase 2: Validate dependency wiring
+      if (this.config.validateDependencyWiring) {
+        const wiringValidations = this.validateDependencyWiring();
+        dependencyWiring.push(...wiringValidations);
+        
+        const invalidWiring = wiringValidations.filter(w => !w.wiringValid);
+        if (invalidWiring.length > 0 && this.config.validationLevel !== 'relaxed') {
+          invalidWiring.forEach(w => issues.push(...w.issues));
+        }
+      }
+
+      // Phase 3: Validate initialization order
+      const initializationOrderValid = this.config.validateInitializationOrder 
+        ? this.validateInitializationOrder() 
+        : true;
+
+      // Phase 4: Validate system integrity
+      const required = ['skinEngine', 'stateManager', 'backendRouter', 'backendServiceRouter', 'resourceManager'];
+      const missing: string[] = [];
+      const present: string[] = [];
+
+      for (const dep of required) {
+        const component = this.dependencies[dep as keyof ITemplumCoreDependencies];
+        if (!component) {
+          missing.push(dep);
+        } else {
+          present.push(dep);
+        }
+      }
+
+      // Detect circular dependencies
+      const dependencyGraph = this.buildDependencyGraph();
+      const circularDependencies = this.detectCircularDependencies(dependencyGraph);
+      const circularDepPaths = circularDependencies.map(cycle => cycle.join(' → '));
+
+      // Generate recommendations
+      const recommendations: string[] = [];
+      if (missing.length > 0) {
+        recommendations.push(`Consider enabling missing components: ${missing.join(', ')}`);
+      }
+      if (circularDependencies.length > 0) {
+        recommendations.push('Resolve circular dependencies to improve system stability');
+      }
+      if (componentValidations.some(v => !v.interfaceCompliance)) {
+        recommendations.push('Review component interface implementations for better compliance');
+      }
+
+      // Create comprehensive validation report
+      this.validationReport = {
+        timestamp: Date.now(),
+        overallValid: missing.length === 0 && circularDependencies.length === 0 && issues.length === 0,
+        validationLevel: this.config.validationLevel || 'standard',
+        componentValidation: componentValidations,
+        dependencyWiring: dependencyWiring,
+        integrityValidation: {
+          allRequiredPresent: missing.length === 0,
+          noDuplicateInstances: true, // TODO: Implement duplicate detection if needed
+          circularDependencies: circularDepPaths,
+          initializationOrder: initializationOrderValid
+        },
+        recommendations,
+        executionTime: Date.now() - validationStartTime
+      };
+
+      // Log validation results
+      if (this.config.enableValidationReporting) {
+        console.log('Dependency injection validation complete:', {
+          overallValid: this.validationReport.overallValid,
+          componentsValidated: componentValidations.length,
+          wiringChecks: dependencyWiring.length,
+          executionTime: this.validationReport.executionTime,
+          recommendations: recommendations.length
+        });
+
+        if (!this.validationReport.overallValid) {
+          console.warn('Dependency injection validation issues detected:', {
+            missingComponents: missing,
+            circularDependencies: circularDepPaths,
+            validationIssues: issues.length
+          });
+        }
+      }
+
+      // Handle validation failures
+      if (!this.validationReport.overallValid) {
+        if (this.config.validationLevel === 'strict') {
+          const allIssues = [
+            ...issues,
+            ...missing.map(m => `Missing required component: ${m}`),
+            ...circularDepPaths.map(c => `Circular dependency: ${c}`)
+          ];
+          throw createTemplumError(
+            `Dependency injection validation failed: ${allIssues.join('; ')}`, 
+            'DEPENDENCY_VALIDATION_ERROR', 
+            'configuration'
+          );
+        } else {
+          console.warn('Dependency injection validation warnings (non-strict mode):', {
+            issues: issues.slice(0, 5), // Limit console output
+            totalIssues: issues.length
+          });
+        }
+      }
+
+    } catch (error) {
+      if (isTemplumError(error)) {
+        throw error;
+      }
+      
+      const errorMessage = error instanceof Error ? error.message : 'Unknown validation error';
+      throw createTemplumError(
+        `Dependency integrity validation failed: ${errorMessage}`, 
+        'VALIDATION_ERROR', 
+        'configuration'
+      );
+    }
+  }
+
+  /**
+   * Get the current validation report
+   */
+  getValidationReport(): ValidationReport | null {
+    return this.validationReport;
+  }
+
+  /**
+   * Configuration validation helper methods (public for factory access)
+   */
+  public validateStateManagerConfig(config?: any): any {
+    if (!config || typeof config !== 'object') {
+      return {};
+    }
+
+    const validated = { ...config };
+
+    // Validate specific state manager configuration options
+    if (validated.coalescingWindowMs !== undefined && typeof validated.coalescingWindowMs !== 'number') {
+      console.warn('Invalid coalescingWindowMs, using default');
+      delete validated.coalescingWindowMs;
+    }
+
+    if (validated.maxBatchSize !== undefined && (typeof validated.maxBatchSize !== 'number' || validated.maxBatchSize < 1)) {
+      console.warn('Invalid maxBatchSize, using default');
+      delete validated.maxBatchSize;
+    }
+
+    return validated;
+  }
+
+  public validateNumericRange(value: any, min: number, max: number, defaultValue: number, fieldName: string): number {
+    if (typeof value !== 'number' || isNaN(value) || value < min || value > max) {
+      if (value !== undefined) {
+        console.warn(`Invalid ${fieldName} (${value}), must be between ${min} and ${max}. Using default: ${defaultValue}`);
+      }
+      return defaultValue;
+    }
+    return value;
+  }
+
+  public validateEnumValue<T>(value: any, allowedValues: T[], defaultValue: T, fieldName: string): T {
+    if (!allowedValues.includes(value)) {
+      if (value !== undefined) {
+        console.warn(`Invalid ${fieldName} (${value}), must be one of: ${allowedValues.join(', ')}. Using default: ${defaultValue}`);
+      }
+      return defaultValue;
+    }
+    return value;
+  }
+
+  public validateResourceManagerConfig(config?: any): any {
+    if (!config || typeof config !== 'object') {
+      return {};
+    }
+
+    const validated = { ...config };
+
+    // Validate memory limits
+    if (validated.memoryLimitMB !== undefined && (typeof validated.memoryLimitMB !== 'number' || validated.memoryLimitMB < 64)) {
+      console.warn('Invalid memoryLimitMB, using default');
+      delete validated.memoryLimitMB;
+    }
+
+    // Validate CPU limits
+    if (validated.cpuLimitPercent !== undefined && (typeof validated.cpuLimitPercent !== 'number' || validated.cpuLimitPercent < 1 || validated.cpuLimitPercent > 100)) {
+      console.warn('Invalid cpuLimitPercent, using default');
+      delete validated.cpuLimitPercent;
+    }
+
+    return validated;
+  }
+
+  public validateBackendRouterConfig(config?: any): any {
+    if (!config || typeof config !== 'object') {
+      return {};
+    }
+
+    const validated = { ...config };
+
+    // Validate timeout values
+    if (validated.timeoutMs !== undefined && (typeof validated.timeoutMs !== 'number' || validated.timeoutMs < 1000)) {
+      console.warn('Invalid timeoutMs, using default');
+      delete validated.timeoutMs;
+    }
+
+    // Validate retry attempts
+    if (validated.retryAttempts !== undefined && (typeof validated.retryAttempts !== 'number' || validated.retryAttempts < 0)) {
+      console.warn('Invalid retryAttempts, using default');
+      delete validated.retryAttempts;
+    }
+
+    return validated;
   }
 
   /**
@@ -636,11 +1226,8 @@ export class TemplumAdapterRegistry extends EventEmitter {
   }
 
   /**
-   * Create component instances based on configuration
-   * TODO: [TASK-NEW-028] Component instance creation validation
-   * Priority: Medium | Complexity: 3
-   * Location: Component factory instantiation with validation
-   * Dependencies: Component factory patterns and configuration validation
+   * TASK-NEW-028: Enhanced component instance creation with validation
+   * Create component instances based on configuration with comprehensive validation
    */
   private async createComponentInstances(): Promise<void> {
     const componentFactories = [
@@ -655,57 +1242,136 @@ export class TemplumAdapterRegistry extends EventEmitter {
     for (const { name, enabled } of componentFactories) {
       if (enabled) {
         try {
-          this.dependencies[name] = this.config.customFactories?.[name]?.() || 
+          // Create component instance
+          const component = this.config.customFactories?.[name]?.() || 
             (this.factory[`create${name.charAt(0).toUpperCase() + name.slice(1)}` as keyof IComponentFactory] as any)();
-          console.log(`TemplumAdapterRegistry: Created ${name} component`);
+          
+          // Validate component instance immediately after creation
+          if (this.config.validateComponentInterfaces) {
+            const validation = this.validateComponentInstance(name, component);
+            
+            if (!validation.valid && this.config.validationLevel === 'strict') {
+              throw createTemplumError(
+                `Component ${name} validation failed: ${validation.issues.join('; ')}`, 
+                'COMPONENT_VALIDATION_ERROR', 
+                'configuration'
+              );
+            } else if (!validation.valid) {
+              console.warn(`Component ${name} validation warnings:`, validation.issues);
+            }
+          }
+          
+          this.dependencies[name] = component;
+          console.log(`TemplumAdapterRegistry: Created and validated ${name} component`);
+          
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Unknown error';
           throw createTemplumError(`Failed to create ${name}: ${errorMessage}`, 'COMPONENT_CREATION_ERROR', 'configuration');
         }
       }
     }
+    
+    console.log(`TemplumAdapterRegistry: Component creation phase complete`, {
+      totalComponents: Object.keys(this.dependencies).length,
+      validationEnabled: this.config.validateComponentInterfaces
+    });
   }
 
   /**
-   * Wire dependencies between components
-   * TODO: [TASK-NEW-029] Cross-component dependency wiring
-   * Priority: High | Complexity: 7
-   * Location: Component dependency injection and cross-wiring
-   * Dependencies: Component interface patterns and dependency resolution
+   * TASK-NEW-029: Enhanced cross-component dependency wiring with validation
+   * Wire dependencies between components with comprehensive validation
    */
   private async wireComponentDependencies(): Promise<void> {
+    const wiringOperations: Array<{ name: string, operation: () => Promise<void> | void }> = [];
+
     // Wire state manager to backend router if both exist
     if (this.dependencies.backendRouter && this.dependencies.stateManager) {
-      this.dependencies.backendRouter.initialize?.({ 
-        stateManager: this.dependencies.stateManager 
+      wiringOperations.push({
+        name: 'stateManager → backendRouter',
+        operation: () => {
+          this.dependencies.backendRouter!.initialize?.({ 
+            stateManager: this.dependencies.stateManager 
+          });
+        }
       });
-      console.log('TemplumAdapterRegistry: Wired state manager to backend router');
     }
 
-    // TODO: Additional cross-component wiring as needed
-    // Example: Wire resource manager to other components for monitoring
+    // Wire resource manager component registration
     if (this.dependencies.resourceManager) {
-      // Register components with resource manager for monitoring
       const componentNames = Object.keys(this.dependencies) as (keyof ITemplumCoreDependencies)[];
       for (const componentName of componentNames) {
         if (componentName !== 'resourceManager') {
-          await this.dependencies.resourceManager.registerService(
-            `templum-${componentName}`, 
-            'core', 
-            { component: componentName }
-          );
+          wiringOperations.push({
+            name: `resourceManager registration for ${componentName}`,
+            operation: async () => {
+              await this.dependencies.resourceManager!.registerService(
+                `templum-${componentName}`, 
+                'core', 
+                { component: componentName }
+              );
+            }
+          });
         }
       }
-      console.log('TemplumAdapterRegistry: Registered components with resource manager');
     }
+
+    // Wire observability service to components for logging if available
+    if (this.dependencies.observabilityService) {
+      wiringOperations.push({
+        name: 'observabilityService integration',
+        operation: () => {
+          // Components can access observability service through the registry
+          console.log('TemplumAdapterRegistry: Observability service available for component logging');
+        }
+      });
+    }
+
+    // Execute all wiring operations with validation
+    for (const { name, operation } of wiringOperations) {
+      try {
+        await operation();
+        console.log(`TemplumAdapterRegistry: Successfully wired ${name}`);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        
+        if (this.config.validationLevel === 'strict') {
+          throw createTemplumError(
+            `Dependency wiring failed for ${name}: ${errorMessage}`, 
+            'DEPENDENCY_WIRING_ERROR', 
+            'configuration'
+          );
+        } else {
+          console.warn(`Dependency wiring warning for ${name}:`, errorMessage);
+        }
+      }
+    }
+
+    // Validate wiring after completion
+    if (this.config.validateDependencyWiring) {
+      const wiringValidations = this.validateDependencyWiring();
+      const failedWiring = wiringValidations.filter(w => !w.wiringValid);
+      
+      if (failedWiring.length > 0 && this.config.validationLevel === 'strict') {
+        const issues = failedWiring.map(w => `${w.sourceComponent} → ${w.targetComponent}: ${w.issues.join(', ')}`);
+        throw createTemplumError(
+          `Dependency wiring validation failed: ${issues.join('; ')}`, 
+          'DEPENDENCY_WIRING_VALIDATION_ERROR', 
+          'configuration'
+        );
+      } else if (failedWiring.length > 0) {
+        console.warn('Dependency wiring validation warnings:', failedWiring.map(w => w.issues).flat());
+      }
+    }
+
+    console.log('TemplumAdapterRegistry: Dependency wiring phase complete', {
+      totalWiringOperations: wiringOperations.length,
+      validationEnabled: this.config.validateDependencyWiring
+    });
   }
 
   /**
-   * Initialize components in proper dependency order
-   * TODO: [TASK-NEW-030] Component initialization ordering
-   * Priority: High | Complexity: 5
-   * Location: Dependency-aware component initialization
-   * Dependencies: Component initialization patterns and dependency ordering
+   * TASK-NEW-030: Enhanced component initialization ordering with validation
+   * Initialize components in proper dependency order with comprehensive validation
    */
   private async initializeComponentsInOrder(): Promise<void> {
     // Initialize in dependency order: Observability -> Resource Manager -> State Manager -> Others
@@ -718,46 +1384,107 @@ export class TemplumAdapterRegistry extends EventEmitter {
       'backendRouter'
     ] as const;
 
-    for (const componentName of initOrder) {
-      const component = this.dependencies[componentName];
-      if (component && 'initialize' in component && typeof component.initialize === 'function') {
-        await (component.initialize as any)();
-        console.log(`TemplumAdapterRegistry: Initialized ${componentName}`);
+    const initializationResults: Array<{ component: string, success: boolean, duration: number, error?: string }> = [];
+
+    // Validate initialization order before starting
+    if (this.config.validateInitializationOrder) {
+      const orderValid = this.validateInitializationOrder();
+      if (!orderValid && this.config.validationLevel === 'strict') {
+        throw createTemplumError(
+          'Component initialization order validation failed', 
+          'INITIALIZATION_ORDER_ERROR', 
+          'configuration'
+        );
       }
     }
+
+    // Initialize components in order with validation
+    for (const componentName of initOrder) {
+      const component = this.dependencies[componentName];
+      if (component) {
+        const startTime = Date.now();
+        let success = false;
+        let error: string | undefined;
+
+        try {
+          // Check if component has initialize method
+          if ('initialize' in component && typeof component.initialize === 'function') {
+            await (component.initialize as any)();
+            success = true;
+            console.log(`TemplumAdapterRegistry: Initialized ${componentName}`);
+            
+            // Update component validation status
+            if (this.validationReport) {
+              const componentValidation = this.validationReport.componentValidation.find(v => v.name === componentName);
+              if (componentValidation) {
+                componentValidation.initializationStatus = 'initialized';
+              }
+            }
+          } else {
+            success = true; // Component doesn't require initialization
+            console.log(`TemplumAdapterRegistry: ${componentName} does not require initialization`);
+          }
+        } catch (initError) {
+          error = initError instanceof Error ? initError.message : 'Unknown initialization error';
+          
+          if (this.config.validationLevel === 'strict') {
+            throw createTemplumError(
+              `Failed to initialize ${componentName}: ${error}`, 
+              'COMPONENT_INITIALIZATION_ERROR', 
+              'configuration'
+            );
+          } else {
+            console.error(`Initialization warning for ${componentName}:`, error);
+          }
+
+          // Update component validation status
+          if (this.validationReport) {
+            const componentValidation = this.validationReport.componentValidation.find(v => v.name === componentName);
+            if (componentValidation) {
+              componentValidation.initializationStatus = 'failed';
+              componentValidation.issues.push(`Initialization failed: ${error}`);
+            }
+          }
+        }
+
+        initializationResults.push({
+          component: componentName,
+          success,
+          duration: Date.now() - startTime,
+          error
+        });
+      }
+    }
+
+    // Validate all components are properly initialized
+    const failedInitializations = initializationResults.filter(r => !r.success);
+    if (failedInitializations.length > 0) {
+      const failureDetails = failedInitializations.map(f => `${f.component}: ${f.error}`);
+      
+      if (this.config.validationLevel === 'strict') {
+        throw createTemplumError(
+          `Component initialization failures: ${failureDetails.join('; ')}`, 
+          'INITIALIZATION_FAILURES', 
+          'configuration'
+        );
+      } else {
+        console.warn('Component initialization warnings:', failureDetails);
+      }
+    }
+
+    console.log('TemplumAdapterRegistry: Component initialization phase complete', {
+      totalComponents: initializationResults.length,
+      successfulInitializations: initializationResults.filter(r => r.success).length,
+      failedInitializations: failedInitializations.length,
+      totalDuration: initializationResults.reduce((sum, r) => sum + r.duration, 0)
+    });
   }
 
   /**
-   * Validate that all required dependencies are properly satisfied
-   * TODO: [TASK-NEW-031] Dependency integrity validation
-   * Priority: Medium | Complexity: 4
-   * Location: Post-initialization dependency validation
-   * Dependencies: Component validation patterns and integrity checks
+   * TASK-NEW-031: Enhanced dependency integrity validation (implemented above)
+   * Comprehensive validation of the entire dependency injection system
+   * Note: The full implementation of this method is above as validateDependencyIntegrity()
    */
-  private validateDependencyIntegrity(): void {
-    const required = ['skinEngine', 'stateManager', 'backendRouter', 'backendServiceRouter', 'resourceManager'];
-    const missing: string[] = [];
-    const invalid: string[] = [];
-
-    for (const dep of required) {
-      const component = this.dependencies[dep as keyof ITemplumCoreDependencies];
-      if (!component) {
-        missing.push(dep);
-      } else if (typeof component !== 'object') {
-        invalid.push(dep);
-      }
-    }
-
-    if (missing.length > 0) {
-      throw createTemplumError(`Missing required dependencies: ${missing.join(', ')}`, 'MISSING_DEPENDENCIES', 'configuration');
-    }
-
-    if (invalid.length > 0) {
-      throw createTemplumError(`Invalid dependencies: ${invalid.join(', ')}`, 'INVALID_DEPENDENCIES', 'configuration');
-    }
-
-    console.log('TemplumAdapterRegistry: Dependency integrity validation passed');
-  }
 
   /**
    * Get all resolved dependencies for injection

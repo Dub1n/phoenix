@@ -12,9 +12,9 @@ import {
   MetricsSignalPayload,
   createTemplumError, 
   isTemplumError,
-  InterfaceType
+  InterfaceType,
+  UniversalSkinDefinition
 } from '../types/templum-types';
-import { UniversalSkinDefinition } from '../types/universal-skin-engine-types';
 import { 
   ITemplumOrchestrator, 
   IInterfaceAdapter 

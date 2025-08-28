@@ -6,6 +6,7 @@
 - **Component**: Integration Test Framework (src/tests/integration-validation-framework.ts)
 - **Fix Type**: Type Error Resolution
 - **Tracker**: templum-fix-planning.md
+- **Task ID**: [/] Integration Test Framework Type Safety
 
 ## Issue Details
 

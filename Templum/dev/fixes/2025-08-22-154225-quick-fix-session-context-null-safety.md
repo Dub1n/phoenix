@@ -6,6 +6,7 @@
 - **Component**: Universal Skin Renderer (src/rendering/universal-skin-renderer.ts:219)
 - **Fix Type**: Type Error
 - **Tracker**: templum-tracker-data.md
+- **Task ID**: [/] Session Context Null Safety
 
 ## Issue Details
 

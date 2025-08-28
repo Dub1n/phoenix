@@ -3,11 +3,12 @@
 ## Fix Information
 
 - **Date**: 2025-08-23-144827
-- **Issue Source**: templum-active-tasks.md: [3] Validate Architectural Separation in All Components [TASK-REALIGN-003]
+- **Issue Source**: templum-active-tasks.md
 - **Issue Category**: Architecture
 - **Severity**: HIGH
 - **Components Analyzed**: Backend Service Router, Templum Core, VSCode WebView Provider, Session Manager
 - **Complexity Score**: 12 (Medium/High complexity)
+- **Task ID**: [TASK-REALIGN-003] Validate Architectural Separation in All Components
 
 ## Issue Analysis
 

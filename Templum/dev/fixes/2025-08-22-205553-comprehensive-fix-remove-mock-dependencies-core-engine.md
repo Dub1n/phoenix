@@ -8,6 +8,7 @@
 - **Severity**: Critical
 - **Components Fixed**: TemplumCore (src/core/templum-core.ts)
 - **Complexity Score**: 28 (High - comprehensive approach required)
+- **Task ID**: [/] Remove Mock Dependencies from Core Engine
 
 ## Issue Analysis
 

@@ -8,12 +8,11 @@
 - **Severity**: High
 - **Components Fixed**: Backend Service Router (architectural separation established)
 - **Complexity Score**: 16 → **Actual: 7** (Refactoring rather than architectural complexity)
+- **Task ID**: [TASK-REMEDIATE-003] Replace Skin Definition Generation with Backend Fetching
 
 ## Issue Analysis
 
 ### Original Issue from Implementation Tracker
-
-**[1] Replace Skin Definition Generation with Backend Fetching** [TASK-REMEDIATE-003] | Found in: backend-service-router.ts:267-301 | Priority: HIGH | Complexity: 16
 
 - Pattern: templum-universal-interface-adapter | See: templum-patterns.md#templum-universal-interface
 - **Issue**: Service router creates skin definitions instead of fetching from backend services  

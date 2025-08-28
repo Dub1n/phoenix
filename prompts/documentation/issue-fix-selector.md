@@ -31,11 +31,13 @@
 **Primary Selection** (Enhanced with roadmap integration):
 
 1. **[!] Priority Override**: User-specified tasks (do this next)
-2. **[1-9] Sequenced Tasks**: Follow numerical sequence  
+2. **[n] Sequenced Tasks**: Follow numerical sequence  d
 3. **[ ] Pending Tasks**: Available tasks by priority score
 4. **Phase-Aware Selection**: Consider current roadmap phase (Foundation/Interface/Integration)
 5. **Investigation Queue**: Tasks requiring analysis before implementation
 6. **Discovered Issues**: Items from TODO tags during development
+
+> !IMPORTANT! If there is one task with [!] and/or at least one with [n] marker(s), you do not need to read the roadmap file as those tasks are the priority with a predefined sequence. Start with [!] if it there, then [n] in ascending order.
 
 **NEW: Task Discovery Integration**:
 

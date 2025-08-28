@@ -106,4 +106,4 @@
 ---
 
 **IMPLEMENTATION PATTERNS** → See `haruspex-patterns.md` for backend service implementation patterns  
-**LESSONS LEARNED** → See `haruspex-completed.md` for historical lessons and insights
+**LESSONS LEARNED** → See `haruspex-tracker-data.md` for historical lessons and insights

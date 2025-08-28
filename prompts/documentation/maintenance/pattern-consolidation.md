@@ -19,7 +19,7 @@ If you receive this pattern consolidation prompt, follow this autonomous workflo
 
 1. **Find Patterns Document**: Look for `*-patterns.md` in project `/dev/` folder
 2. **Find Active Tasks**: Look for `*-active-tasks.md` for pattern usage references
-3. **Find Completed Tasks**: Look for `*-completed.md` for successful pattern applications
+3. **Find Completed Tasks**: Look for `*-tracker-data.md` for successful pattern applications
 4. **Common locations**: `/dev/` folder (preferred), project root, `/docs/` folder
 
 #### B. Pattern Inventory and Classification

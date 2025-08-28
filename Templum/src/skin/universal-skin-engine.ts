@@ -34,7 +34,14 @@ import {
   RenderingConfiguration,
   InterfaceRenderingConfig,
   SkinPerformanceConfig,
-  SkinOverride
+  SkinOverride,
+  // Version management types
+  ISkinVersionManager,
+  SkinRegistrationRequest,
+  SkinRegistrationResult,
+  SkinVersionQuery,
+  VersionConflict,
+  ConflictResolutionStrategy
 } from '../types/universal-skin-engine-types';
 import {
   TemplumError,
@@ -52,6 +59,9 @@ import {
   UniversalLayoutConstraints,
   UniversalRenderResult
 } from './pcl-rendering-adapter';
+
+// Import Skin Version Manager
+import { SkinVersionManager } from './skin-version-manager';
 
 // All type definitions imported from types files - removing duplicates
 
@@ -117,62 +127,188 @@ export interface SkinEngineStats {
 
 export class UniversalSkinEngine extends EventEmitter {
   private skins: Map<string, UniversalSkinDefinition> = new Map();
+  private skinVersions: Map<string, Map<string, UniversalSkinDefinition>> = new Map(); // skinId -> version -> skin
   private activeThemes: Map<string, string> = new Map(); // interface -> theme
   private renderCache: Map<string, SkinRenderResult> = new Map();
   private interfaceStates: Map<string, any> = new Map(); // interface -> state
   private renderingEngines: Map<string, any> = new Map();
   private interfaceAdapters: Map<string, any> = new Map();
   private pclRenderingAdapter: PCLRenderingAdapter;
+  private versionManager: ISkinVersionManager;
   private config: {
     cacheTimeout: number;
     maxCacheSize: number;
     defaultTheme: string;
     performanceMode: 'development' | 'production';
+    systemVersion: string;
   };
 
-  constructor() {
+  constructor(systemVersion?: string) {
     super();
     this.config = {
       cacheTimeout: 300000, // 5 minutes
       maxCacheSize: 100, // 100 rendered skins
       defaultTheme: 'default-light',
-      performanceMode: 'production'
+      performanceMode: 'production',
+      systemVersion: systemVersion || '1.0.0'
     };
     this.pclRenderingAdapter = new PCLRenderingAdapter();
+    this.versionManager = new SkinVersionManager(this.config.systemVersion);
     this.initializePCLSkinIntegration();
     this.initializeDefaultSkins();
   }
 
   /**
-   * Register universal skin with PCL-Skins integration
+   * Register universal skin with version management and PCL-Skins integration
    */
-  async registerSkin(skinDefinition: UniversalSkinDefinition): Promise<void> {
-    // Validate skin definition
-    const validation = await this.validateSkinDefinition(skinDefinition);
-    if (!validation.valid) {
-      throw new Error(`Invalid skin definition: ${validation.errors.join(', ')}`);
+  async registerSkin(
+    skinDefinition: UniversalSkinDefinition, 
+    options?: { 
+      overrideExisting?: boolean; 
+      preferredResolution?: ConflictResolutionStrategy;
+      validateCompatibility?: boolean 
     }
+  ): Promise<SkinRegistrationResult> {
+    try {
+      // Create registration request
+      const request: SkinRegistrationRequest = {
+        skin: skinDefinition,
+        overrideExisting: options?.overrideExisting || false,
+        preferredResolution: options?.preferredResolution || 'last-writer-wins',
+        validateCompatibility: options?.validateCompatibility !== false // Default to true
+      };
 
-    // Optimize skin with PCL patterns
-    const optimizedSkin = await this.optimizeWithPCLPatterns(skinDefinition);
-    
-    // Setup inheritance chain
-    await this.setupSkinInheritance(optimizedSkin);
-    
-    // Prepare rendering configurations for each supported interface
-    await this.prepareInterfaceConfigurations(optimizedSkin);
-    
-    this.skins.set(skinDefinition.id, optimizedSkin);
-    
-    this.emit('skinRegistered', {
-      skinId: skinDefinition.id,
-      name: skinDefinition.name,
-      pclReusePercentage: optimizedSkin.pclCompatibility.reusePercentage,
-      supportedInterfaces: optimizedSkin.metadata.supportedInterfaces,
-      timestamp: Date.now()
-    });
+      return await this.registerSkinWithVersioning(request);
+    } catch (error) {
+      if (isTemplumError(error)) {
+        throw error;
+      }
+      throw createTemplumError(`Failed to register skin ${skinDefinition.id}: ${error}`, 'skin-registration-error', 'validation');
+    }
+  }
 
-    console.log(`Universal Skin Engine: Registered ${skinDefinition.name} with ${optimizedSkin.pclCompatibility.reusePercentage}% PCL reuse`);
+  /**
+   * Version-aware skin registration with comprehensive conflict detection
+   */
+  async registerSkinWithVersioning(request: SkinRegistrationRequest): Promise<SkinRegistrationResult> {
+    const { skin } = request;
+    const result: SkinRegistrationResult = {
+      success: false,
+      skinId: skin.id,
+      version: skin.version,
+      action: 'rejected',
+      conflicts: [],
+      migrations: [],
+      warnings: [],
+      errors: []
+    };
+
+    try {
+      // 1. Validate skin definition (including version compatibility)
+      const validation = await this.validateSkinDefinitionWithVersioning(skin);
+      if (!validation.valid) {
+        result.errors = validation.errors;
+        return result;
+      }
+
+      // 2. Check for existing versions and conflicts
+      const existingVersions = this.skinVersions.get(skin.id);
+      const conflicts: VersionConflict[] = [];
+      
+      if (existingVersions) {
+        for (const [existingVersion, existingSkin] of Array.from(existingVersions)) {
+          const detected = this.versionManager.detectConflicts(existingSkin, skin);
+          conflicts.push(...detected);
+        }
+      }
+
+      result.conflicts = conflicts;
+
+      // 3. Handle conflicts if any exist
+      if (conflicts.length > 0) {
+        const resolution = await this.versionManager.resolveConflicts(
+          conflicts, 
+          request.preferredResolution || 'last-writer-wins'
+        );
+
+        if (!resolution.overallSuccess && !request.overrideExisting) {
+          result.errors?.push('Version conflicts detected and could not be auto-resolved');
+          return result;
+        }
+      }
+
+      // 4. Apply migrations if needed
+      const migrations: Array<{ strategy: any; applied: boolean; duration?: number }> = [];
+      if (existingVersions && existingVersions.size > 0) {
+        for (const [existingVersion, existingSkin] of Array.from(existingVersions)) {
+          const migrationStrategy = this.versionManager.findMigrationStrategy(
+            existingVersion, 
+            skin.version
+          );
+          
+          if (migrationStrategy) {
+            const migrationResult = await this.versionManager.applyMigration(skin, migrationStrategy);
+            migrations.push({
+              strategy: migrationStrategy,
+              applied: migrationResult.migrated,
+              duration: migrationResult.duration
+            });
+
+            if (migrationResult.migrated && migrationResult.result) {
+              // Use migrated skin for registration
+              request.skin = migrationResult.result;
+            }
+          }
+        }
+      }
+
+      result.migrations = migrations;
+
+      // 5. Optimize skin with PCL patterns
+      const optimizedSkin = await this.optimizeWithPCLPatterns(request.skin);
+      
+      // 6. Setup inheritance chain
+      await this.setupSkinInheritance(optimizedSkin);
+      
+      // 7. Prepare rendering configurations for each supported interface
+      await this.prepareInterfaceConfigurations(optimizedSkin);
+
+      // 8. Register skin in version storage
+      await this.storeSkinVersion(optimizedSkin);
+
+      // 9. Update caches and indexes
+      await this.updateSkinCaches(optimizedSkin);
+
+      // 10. Success!
+      result.success = true;
+      result.action = existingVersions && existingVersions.size > 0 ? 'updated' : 'registered';
+
+      // Emit registration event with version information
+      this.emit('skinRegistered', {
+        skinId: optimizedSkin.id,
+        name: optimizedSkin.name,
+        version: optimizedSkin.version,
+        action: result.action,
+        conflicts: result.conflicts?.length || 0,
+        migrations: result.migrations?.length || 0,
+        pclReusePercentage: optimizedSkin.pclCompatibility.reusePercentage,
+        supportedInterfaces: optimizedSkin.metadata.supportedInterfaces,
+        timestamp: Date.now()
+      });
+
+      console.log(
+        `Universal Skin Engine: ${result.action === 'registered' ? 'Registered' : 'Updated'} ` +
+        `${optimizedSkin.name} v${optimizedSkin.version} with ${optimizedSkin.pclCompatibility.reusePercentage}% PCL reuse`
+      );
+
+      return result;
+    } catch (error) {
+      result.errors?.push(`Registration failed: ${error}`);
+      if (isTemplumError(error)) {
+        throw error;
+      }
+      throw createTemplumError(`Failed to register skin with versioning: ${error}`, 'skin-registration-error', 'validation');
+    }
   }
 
   /**
@@ -187,7 +323,7 @@ export class UniversalSkinEngine extends EventEmitter {
     
     try {
       // Generate cache key using skin.id instead of skin.metadata.id
-      const cacheKey = this.generateCacheKey(skin.id, interfaceType, context.theme);
+      const cacheKey = this.generateCacheKey(skin.id, interfaceType, context.theme, context, skin.version);
       
       // Check cache first
       if (this.renderCache.has(cacheKey)) {
@@ -418,7 +554,7 @@ export class UniversalSkinEngine extends EventEmitter {
     }
 
     const startTime = Date.now();
-    const cacheKey = this.generateCacheKey(skinId, interfaceType, themeName, options);
+    const cacheKey = this.generateCacheKey(skinId, interfaceType, themeName, options, skin?.version);
 
     // Check cache first
     if (this.renderCache.has(cacheKey)) {
@@ -709,7 +845,7 @@ export class UniversalSkinEngine extends EventEmitter {
       const avgLoadTime = interfaceResults.length > 0 ?
         interfaceResults.reduce((sum, r) => sum + r.performance.renderTime, 0) / interfaceResults.length : 0;
       const successRate = interfaceResults.length > 0 ?
-        (interfaceResults.filter(r => r.validation.valid).length / interfaceResults.length) * 100 : 0;
+        (interfaceResults.filter(r => r.validation?.valid).length / interfaceResults.length) * 100 : 0;
 
       interfaceSupport[iface] = {
         supportedSkins: supportingSkins.length,
@@ -734,6 +870,212 @@ export class UniversalSkinEngine extends EventEmitter {
       },
       interfaceSupport
     };
+  }
+
+  // ============================================================================
+  // Version-Aware Skin Management Public Methods
+  // ============================================================================
+
+  /**
+   * Load skin with version-aware resolution
+   */
+  async loadSkin(query: SkinVersionQuery): Promise<UniversalSkinDefinition | null> {
+    try {
+      const availableVersions = new Map<string, UniversalSkinDefinition>();
+      
+      // Get all versions of the requested skin
+      const versionMap = this.skinVersions.get(query.skinId);
+      if (versionMap) {
+        for (const [version, skin] of Array.from(versionMap)) {
+          availableVersions.set(`${query.skinId}:${version}`, skin);
+        }
+      }
+
+      // Use version manager to resolve the best version
+      const resolution = await this.versionManager.resolveVersion(query, availableVersions);
+      
+      if (resolution.resolved && resolution.skin) {
+        console.log(`Loaded skin ${query.skinId} v${resolution.version}${resolution.fallbackUsed ? ' (fallback)' : ''}`);
+        return resolution.skin;
+      }
+
+      console.warn(`Failed to load skin ${query.skinId}: ${resolution.reason}`);
+      return null;
+    } catch (error) {
+      console.error(`Error loading skin ${query.skinId}:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Get all available versions of a skin
+   */
+  getSkinVersions(skinId: string): { version: string; skin: UniversalSkinDefinition }[] {
+    const versionMap = this.skinVersions.get(skinId);
+    if (!versionMap) {
+      return [];
+    }
+
+    return Array.from(versionMap.entries()).map(([version, skin]) => ({ version, skin }));
+  }
+
+  /**
+   * Get skin version information including compatibility
+   */
+  async getSkinVersionInfo(skinId: string, version?: string): Promise<any> {
+    try {
+      const versionMap = this.skinVersions.get(skinId);
+      if (!versionMap) {
+        return null;
+      }
+
+      // If specific version requested
+      if (version) {
+        const skin = versionMap.get(version);
+        if (!skin) {
+          return null;
+        }
+        return await this.versionManager.getVersionInfo(skin, this.config.systemVersion);
+      }
+
+      // Return info for all versions
+      const allVersionInfo = [];
+      for (const [v, skin] of Array.from(versionMap)) {
+        const info = await this.versionManager.getVersionInfo(skin, this.config.systemVersion);
+        allVersionInfo.push({ ...info, version: v });
+      }
+
+      return allVersionInfo.sort((a, b) => this.versionManager.compareVersions(b.version, a.version));
+    } catch (error) {
+      console.error(`Error getting version info for ${skinId}:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Check if a specific skin version is compatible with the system
+   */
+  async checkSkinCompatibility(skinId: string, version: string): Promise<{
+    compatible: boolean;
+    level: 'full' | 'partial' | 'breaking' | 'incompatible';
+    issues: string[];
+    recommendations: string[];
+  } | null> {
+    try {
+      const versionMap = this.skinVersions.get(skinId);
+      if (!versionMap) {
+        return null;
+      }
+
+      const skin = versionMap.get(version);
+      if (!skin) {
+        return null;
+      }
+
+      return await this.versionManager.validateCompatibility(skin, this.config.systemVersion);
+    } catch (error) {
+      console.error(`Error checking compatibility for ${skinId} v${version}:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Get latest compatible version of a skin
+   */
+  async getLatestCompatibleSkin(skinId: string, includePrerelease: boolean = false): Promise<{
+    skin: UniversalSkinDefinition;
+    version: string;
+    compatibilityLevel: string;
+  } | null> {
+    try {
+      const query: SkinVersionQuery = {
+        skinId,
+        versionPattern: 'latest',
+        fallbackStrategy: 'latest-compatible',
+        includePrerelease
+      };
+
+      const availableVersions = new Map<string, UniversalSkinDefinition>();
+      const versionMap = this.skinVersions.get(skinId);
+      if (versionMap) {
+        for (const [version, skin] of Array.from(versionMap)) {
+          availableVersions.set(`${skinId}:${version}`, skin);
+        }
+      }
+
+      const resolution = await this.versionManager.resolveVersion(query, availableVersions);
+      if (resolution.resolved && resolution.skin) {
+        const compatibility = await this.versionManager.validateCompatibility(
+          resolution.skin, 
+          this.config.systemVersion
+        );
+
+        return {
+          skin: resolution.skin,
+          version: resolution.version!,
+          compatibilityLevel: compatibility.level
+        };
+      }
+
+      return null;
+    } catch (error) {
+      console.error(`Error getting latest compatible skin for ${skinId}:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Unregister a specific skin version
+   */
+  async unregisterSkinVersion(skinId: string, version: string): Promise<boolean> {
+    try {
+      const versionMap = this.skinVersions.get(skinId);
+      if (!versionMap || !versionMap.has(version)) {
+        return false;
+      }
+
+      // Remove from version storage
+      versionMap.delete(version);
+      if (versionMap.size === 0) {
+        this.skinVersions.delete(skinId);
+      }
+
+      // Update main storage if this was the current version
+      const currentSkin = this.skins.get(skinId);
+      if (currentSkin && currentSkin.version === version) {
+        // Find and set the latest remaining version
+        if (versionMap.size > 0) {
+          const latestVersion = this.versionManager.getLatestVersion(skinId, false);
+          if (latestVersion) {
+            const latestSkin = versionMap.get(latestVersion.raw);
+            if (latestSkin) {
+              this.skins.set(skinId, latestSkin);
+            }
+          }
+        } else {
+          this.skins.delete(skinId);
+        }
+      }
+
+      // Clear related cache entries
+      const keysToRemove: string[] = [];
+      for (const [cacheKey] of Array.from(this.renderCache)) {
+        if (cacheKey.includes(`${skinId}:${version}`)) {
+          keysToRemove.push(cacheKey);
+        }
+      }
+      keysToRemove.forEach(key => this.renderCache.delete(key));
+
+      // Unregister from version manager
+      this.versionManager.unregisterSkinVersion(skinId, version);
+
+      this.emit('skinVersionUnregistered', { skinId, version, timestamp: Date.now() });
+      console.log(`Unregistered skin ${skinId} v${version}`);
+      return true;
+    } catch (error) {
+      console.error(`Error unregistering skin ${skinId} v${version}:`, error);
+      return false;
+    }
   }
 
   /**
@@ -787,6 +1129,251 @@ export class UniversalSkinEngine extends EventEmitter {
     return { valid: errors.length === 0, errors };
   }
 
+  /**
+   * Enhanced validation with version compatibility checking
+   */
+  private async validateSkinDefinitionWithVersioning(skin: UniversalSkinDefinition): Promise<{ valid: boolean; errors: string[] }> {
+    try {
+      // Start with basic validation
+      const basicValidation = await this.validateSkinDefinition(skin);
+      if (!basicValidation.valid) {
+        return basicValidation;
+      }
+
+      const errors: string[] = [...basicValidation.errors];
+
+      // Additional version-specific validation
+      try {
+        // Validate semantic version format
+        this.versionManager.parseVersion(skin.version);
+      } catch (versionError) {
+        errors.push(`Invalid version format: ${skin.version}`);
+      }
+
+      // Validate system compatibility
+      const compatibility = await this.versionManager.validateCompatibility(skin, this.config.systemVersion);
+      if (!compatibility.compatible && compatibility.level === 'incompatible') {
+        errors.push(...compatibility.issues);
+      } else if (compatibility.issues.length > 0) {
+        // Add warnings for partial compatibility issues
+        console.warn(`Skin ${skin.id} v${skin.version} compatibility warnings:`, compatibility.issues);
+      }
+
+      return { valid: errors.length === 0, errors };
+    } catch (error) {
+      return { 
+        valid: false, 
+        errors: [`Validation error: ${error}`] 
+      };
+    }
+  }
+
+  /**
+   * Comprehensive validation with advanced compatibility checking (TASK-SKIN-002)
+   * 
+   * This method extends basic validation with deep compatibility analysis
+   * for interface requirements, performance constraints, and cross-interface support
+   */
+  async validateSkinDefinitionComprehensive(
+    skin: UniversalSkinDefinition, 
+    targetInterface?: InterfaceType,
+    options?: {
+      includeAdvancedValidation?: boolean;
+      validateAssets?: boolean;
+      checkPerformance?: boolean;
+      crossInterfaceValidation?: boolean;
+      strictMode?: boolean;
+    }
+  ): Promise<{ 
+    valid: boolean; 
+    errors: string[];
+    warnings: string[];
+    advancedReport?: any; // AdvancedCompatibilityReport but avoiding circular imports
+  }> {
+    const opts = {
+      includeAdvancedValidation: true,
+      validateAssets: true,
+      checkPerformance: true,
+      crossInterfaceValidation: false,
+      strictMode: false,
+      ...options
+    };
+
+    try {
+      // Start with existing enhanced validation
+      const basicValidation = await this.validateSkinDefinitionWithVersioning(skin);
+      const errors: string[] = [...basicValidation.errors];
+      const warnings: string[] = [];
+      let advancedReport: any = undefined;
+
+      // If basic validation fails and we're in strict mode, stop here
+      if (!basicValidation.valid && opts.strictMode) {
+        return { valid: false, errors, warnings };
+      }
+
+      // Perform advanced compatibility validation if requested and target interface specified
+      if (opts.includeAdvancedValidation && targetInterface) {
+        try {
+          advancedReport = await this.versionManager.validateAdvancedCompatibility(skin, targetInterface, {
+            includeWarnings: true,
+            validateAssets: opts.validateAssets,
+            checkPerformance: opts.checkPerformance,
+            crossInterfaceValidation: opts.crossInterfaceValidation,
+            strictMode: opts.strictMode
+          });
+
+          // Add advanced validation errors and warnings
+          if (advancedReport.errors && advancedReport.errors.length > 0) {
+            errors.push(...advancedReport.errors);
+          }
+
+          if (advancedReport.warnings && advancedReport.warnings.length > 0) {
+            warnings.push(...advancedReport.warnings);
+          }
+
+          // In strict mode, incompatible or partially compatible skins are considered invalid
+          if (opts.strictMode && advancedReport.overall !== 'compatible') {
+            errors.push(`Skin not fully compatible with ${targetInterface} interface`);
+          }
+
+        } catch (advancedError) {
+          console.warn(`Advanced compatibility validation failed: ${advancedError}`);
+          if (opts.strictMode) {
+            errors.push(`Advanced validation error: ${advancedError}`);
+          } else {
+            warnings.push(`Advanced validation warning: ${advancedError}`);
+          }
+        }
+      }
+
+      const valid = errors.length === 0;
+
+      // Log comprehensive validation results
+      if (advancedReport) {
+        console.log(`[SKIN-VALIDATION] ${skin.id} v${skin.version} → ${targetInterface}: ${advancedReport.overall} (score: ${advancedReport.score})`);
+        if (advancedReport.recommendations && advancedReport.recommendations.length > 0) {
+          console.log(`[SKIN-VALIDATION] Recommendations:`, advancedReport.recommendations);
+        }
+      }
+
+      return { 
+        valid, 
+        errors, 
+        warnings,
+        advancedReport
+      };
+
+    } catch (error) {
+      return {
+        valid: false,
+        errors: [`Comprehensive validation failed: ${error}`],
+        warnings: []
+      };
+    }
+  }
+
+  /**
+   * Validate skin compatibility for specific interface (TASK-SKIN-002)
+   * 
+   * Quick method to check if a skin is compatible with a target interface
+   */
+  async validateSkinForInterface(
+    skin: UniversalSkinDefinition,
+    targetInterface: InterfaceType,
+    strictMode: boolean = false
+  ): Promise<{ 
+    compatible: boolean; 
+    score: number; 
+    issues: string[];
+    recommendations: string[];
+  }> {
+    try {
+      const advancedReport = await this.versionManager.validateAdvancedCompatibility(skin, targetInterface, {
+        includeWarnings: !strictMode,
+        validateAssets: true,
+        checkPerformance: true,
+        crossInterfaceValidation: false,
+        strictMode
+      });
+
+      const issues: string[] = [];
+      if (advancedReport.errors) issues.push(...advancedReport.errors);
+      if (advancedReport.warnings) issues.push(...advancedReport.warnings);
+
+      return {
+        compatible: advancedReport.overall === 'compatible' || (!strictMode && advancedReport.overall === 'partially-compatible'),
+        score: advancedReport.score,
+        issues,
+        recommendations: advancedReport.recommendations || []
+      };
+
+    } catch (error) {
+      return {
+        compatible: false,
+        score: 0,
+        issues: [`Compatibility validation failed: ${error}`],
+        recommendations: ['Consider using basic validation instead']
+      };
+    }
+  }
+
+  /**
+   * Store skin version in versioned storage
+   */
+  private async storeSkinVersion(skin: UniversalSkinDefinition): Promise<void> {
+    try {
+      // Get or create version map for this skin
+      let versionMap = this.skinVersions.get(skin.id);
+      if (!versionMap) {
+        versionMap = new Map();
+        this.skinVersions.set(skin.id, versionMap);
+      }
+
+      // Store this version
+      versionMap.set(skin.version, skin);
+
+      // Also update the main skins map with latest version logic
+      // Check if this is the latest version
+      const existingSkin = this.skins.get(skin.id);
+      if (!existingSkin || this.versionManager.compareVersions(skin.version, existingSkin.version) > 0) {
+        this.skins.set(skin.id, skin);
+      }
+
+      // Register version with version manager for tracking
+      const parsedVersion = this.versionManager.parseVersion(skin.version);
+      this.versionManager.registerSkinVersion(skin.id, parsedVersion);
+
+      console.log(`Stored skin ${skin.id} v${skin.version} in versioned storage`);
+    } catch (error) {
+      throw createTemplumError(`Failed to store skin version: ${error}`, 'skin-storage-error', 'validation');
+    }
+  }
+
+  /**
+   * Update caches with version-aware keys
+   */
+  private async updateSkinCaches(skin: UniversalSkinDefinition): Promise<void> {
+    try {
+      // Clear version-specific cache entries for this skin
+      const keysToRemove: string[] = [];
+      for (const [cacheKey] of Array.from(this.renderCache)) {
+        if (cacheKey.includes(skin.id)) {
+          keysToRemove.push(cacheKey);
+        }
+      }
+
+      keysToRemove.forEach(key => this.renderCache.delete(key));
+
+      // TODO: Pre-warm cache for common interface/theme combinations
+      // This could be added based on usage patterns
+
+      console.log(`Updated caches for skin ${skin.id} v${skin.version}`);
+    } catch (error) {
+      console.warn(`Failed to update caches for skin ${skin.id}:`, error);
+      // Don't throw - cache updates are not critical for registration success
+    }
+  }
+
   private async optimizeWithPCLPatterns(skin: UniversalSkinDefinition): Promise<UniversalSkinDefinition> {
     const optimized = { ...skin };
 
@@ -797,17 +1384,17 @@ export class UniversalSkinEngine extends EventEmitter {
       
       optimized.pclCompatibility.reusePercentage = Math.max(
         skin.pclCompatibility.reusePercentage,
-        pclOptimizations.potentialReuse || 0
+        (pclOptimizations as any)?.potentialReuse || 0
       );
       
       optimized.pclCompatibility.inheritancePatterns = [
         ...skin.pclCompatibility.inheritancePatterns,
-        ...pclOptimizations.recommendedPatterns || []
+        ...((pclOptimizations as any)?.recommendedPatterns || [])
       ];
       
       optimized.pclCompatibility.optimizations = [
         ...skin.pclCompatibility.optimizations,
-        ...pclOptimizations.availableOptimizations || []
+        ...((pclOptimizations as any)?.availableOptimizations || [])
       ];
     }
 
@@ -949,9 +1536,16 @@ export class UniversalSkinEngine extends EventEmitter {
     return baseConfig;
   }
 
-  private generateCacheKey(skinId: string, interfaceType: string, themeName: string, options?: any): string {
+  private generateCacheKey(skinId: string, interfaceType: string, themeName: string, options?: any, version?: string): string {
+    // Get version from skin if not explicitly provided
+    let skinVersion = version;
+    if (!skinVersion) {
+      const skin = this.skins.get(skinId);
+      skinVersion = skin?.version || 'unknown';
+    }
+    
     const optionsHash = options ? JSON.stringify(options) : '';
-    return `${skinId}-${interfaceType}-${themeName}-${optionsHash}`;
+    return `${skinId}:${skinVersion}-${interfaceType}-${themeName}-${optionsHash}`;
   }
 
   private async getRenderer(skin: UniversalSkinDefinition, interfaceType: string): Promise<any> {

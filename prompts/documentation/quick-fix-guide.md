@@ -340,7 +340,6 @@ Update `project/dev/*-tracker-data.md` with:
 3. **Chain Completion & Roadmap Update Protocol** (NEW):
    - [ ] Check if completed task finishes entire dependency chain
    - [ ] If chain complete AND no other dependencies: REMOVE chain from active tasks
-   - [ ] Archive chain summary to `templum-completed.md` (one line)
    - [ ] Check if phase complete → Update `templum-roadmap.md` phase status
    - [ ] Check if new tasks affect phase balance → Consider roadmap updates
 

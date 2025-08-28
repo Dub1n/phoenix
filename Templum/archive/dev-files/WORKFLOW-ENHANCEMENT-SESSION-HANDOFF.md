@@ -25,7 +25,6 @@
 | `C:\Users\gabri\Documents\Infotopology\VDL_Vault\Templum\dev\templum-active-tasks.md` | Task tracking hub | ALL 19 tasks, single occurrence | 140 lines |
 | `C:\Users\gabri\Documents\Infotopology\VDL_Vault\Templum\dev\templum-roadmap.md` | Strategic integration guide | Task classification, phase management | 95 lines |
 | `C:\Users\gabri\Documents\Infotopology\VDL_Vault\Templum\dev\templum-patterns.md` | Implementation reference | Reusable patterns | 187 lines |
-| `C:\Users\gabri\Documents\Infotopology\VDL_Vault\Templum\dev\templum-completed.md` | Historical archive | Completed work, lessons learned | 146 lines |
 | `C:\Users\gabri\Documents\Infotopology\VDL_Vault\Templum\dev\templum-tracker-data.md` | Status dashboard | Health metrics, single-line log | Minimal |
 
 #### 2. Task Discovery Protocol Enhancement
@@ -149,8 +148,7 @@ Enhanced Version:
 2. **Extract all tasks** → Create `haruspex-active-tasks.md`
 3. **Strategic content** → Create `haruspex-roadmap.md`
 4. **Patterns** → Create `haruspex-patterns.md` (if not already exists)
-5. **Historical data** → Create `haruspex-completed.md` (if not already exists)
-6. **Apply same principles**: Single-occurrence, bidirectional integration, aggressive pruning
+5. **Apply same principles**: Single-occurrence, bidirectional integration, aggressive pruning
 
 ## 🔍 Key Success Patterns to Replicate
 

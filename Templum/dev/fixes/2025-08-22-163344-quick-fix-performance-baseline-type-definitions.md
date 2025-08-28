@@ -6,6 +6,7 @@
 - **Component**: Phase6 Integration Validation Suite and Performance Validation Framework
 - **Fix Type**: Type Error
 - **Tracker**: templum-fix-planning.md
+- **Task ID**: [/] Performance Baseline Type Definitions
 
 ## Issue Details
 
