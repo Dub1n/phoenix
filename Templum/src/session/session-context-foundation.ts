@@ -89,9 +89,20 @@ export class SessionContextFoundation extends EventEmitter {
   setActiveSession(sessionId: string): boolean {
     const startTime = Date.now();
     
-    const session = this.sessions.get(sessionId);
+    let session = this.sessions.get(sessionId);
     if (!session) {
-      return false;
+      // Auto-create session if it doesn't exist for seamless backend integration
+      const now = new Date();
+      session = {
+        sessionId,
+        activeInterface: 'cli', // Default interface
+        createdAt: now,
+        lastAccessedAt: now,
+        state: {},
+        metadata: {}
+      };
+      this.sessions.set(sessionId, session);
+      this.emit('sessionCreated', session);
     }
 
     this.activeSession = sessionId;

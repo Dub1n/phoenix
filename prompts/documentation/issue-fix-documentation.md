@@ -172,16 +172,16 @@ Use these validation scripts at each workflow stage:
 
 ```bash
 # After issue selection
-node scripts/validaton/validate-component.js <component-name>
+node scripts/validation/validate-component.js <component-name>
 
 # Before implementation starts  
-node scripts/validaton/estimate-complexity.js <issue-id>
+node scripts/validation/estimate-complexity.js <issue-id>
 
 # After implementation complete
-node scripts/validaton/verify-fix.js <component-name>
+node scripts/validation/verify-fix.js <component-name>
 
 # Before creating fix documentation
-node scripts/validaton/generate-evidence.js <fix-id>
+node scripts/validation/generate-evidence.js <fix-id>
 ```
 
 **Script Purposes**:

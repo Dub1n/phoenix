@@ -70,7 +70,7 @@ Maximum possible: 35 points
 - **4**: 6-10 dependencies, significant interface changes
 - **5**: >10 dependencies, architectural changes required
 
-### Uncertainty Score (1-5)
+### Uncertainty Score (1-5) ⚡ **UPDATED**
 
 - **1**: Clear problem, obvious solution, well-understood domain
 - **2**: Clear problem, straightforward solution, some investigation needed
@@ -78,12 +78,60 @@ Maximum possible: 35 points
 - **4**: Unclear problem, solution uncertain, significant investigation
 - **5**: Problem unclear, solution unknown, major investigation required
 
-### Complexity Levels & Guide Selection
+### Refactoring vs. Architecture Assessment ⚡ **NEW**
+
+**⚠️ Apply this modifier to prevent over-engineering**:
+
+**Refactoring Indicators** (Reduce complexity score by 5-10 points):
+
+- Method name changes but same conceptual operations
+- Constructor parameter differences that can be handled with initialization
+- Async/sync pattern differences (just add `await`)
+- Real implementations exist and work
+- API differences but same data flow
+
+**True Architectural Issues** (Maintain or increase complexity score):
+
+- Fundamental paradigm differences (event vs. request-response)
+- Circular dependencies requiring design changes
+- Security model conflicts requiring system changes
+- Performance requirement conflicts
+- Missing implementations requiring new design
+
+### Complexity Levels & Guide Selection ⚡ **UPDATED**
+
+**⚠️ Apply Refactoring vs. Architecture Assessment first**:
 
 - **25-35**: **High Complexity** - Use comprehensive-fix-guide.md, consider escalation
 - **15-24**: **Medium Complexity** - Use comprehensive-fix-guide.md, proceed with caution  
-- **8-14**: **Low-Medium Complexity** - Consider guide based on other factors
+- **8-14**: **Low-Medium Complexity** - **Check refactoring indicators** - may be simple refactoring
 - **0-7**: **Low Complexity** - Use quick-fix-guide.md
+
+### Common Over-Engineering Prevention ⚡ **NEW**
+
+**🚨 Warning Signs of Over-Engineering**:
+
+1. **Treating refactoring as architecture**
+   - Method name differences → "API incompatibility"
+   - Constructor parameters → "Complex dependency injection"
+   - Async differences → "Architectural paradigm conflict"
+
+2. **Creating unnecessary abstractions**
+   - Adapter layers for simple method mapping
+   - Compatibility interfaces for parameter differences
+   - Event systems for direct method calls
+
+3. **Escalating normal development work**
+   - "Requires architectural review" for method updates
+   - "Cross-system implications" for constructor parameters
+   - "Unknown complexity" for well-documented APIs
+
+**✅ Simplicity Check Questions**:
+
+- Can you explain the solution in one sentence?
+- Would a junior developer understand this as normal refactoring?
+- Are you creating more code than you're replacing?
+- Is the "complex" solution really simpler long-term?
 
 ## 🔗 Tracker-to-Fix Evidence Mapping
 
@@ -202,6 +250,62 @@ node scripts/validation/generate-evidence.js <fix-id>
    ├─ Security implications → comprehensive-fix-guide.md
    └─ Multiple components affected → comprehensive-fix-guide.md
 ```
+
+## 🔧 Validation Script Integration
+
+**Automated Assessment Tools** available in `scripts/validation/`:
+
+### Component Health Validation
+
+```bash
+node scripts/validation/validate-component.js <component-name>
+```
+
+**Use when**: Before starting any fix, during implementation, after completion  
+**Output**: Health score (0-100), status indicators, compilation errors, test results
+
+### Complexity Estimation  
+
+```bash
+node scripts/validation/estimate-complexity.js <issue-id-or-component>
+```
+
+**Use when**: Before selecting fix approach, during pre-assessment  
+**Output**: Complexity score (0-35), template recommendation, time estimate
+
+### Fix Verification
+
+```bash
+node scripts/validation/verify-fix.js <component-name>
+```
+
+**Use when**: After implementing fixes, before marking complete  
+**Output**: Multi-stage verification results, pass/fail status, regression detection
+
+### Evidence Generation
+
+```bash
+node scripts/validation/generate-evidence.js <fix-id>
+```
+
+**Use when**: For comprehensive fixes, tracker updates, documentation  
+**Output**: Before/after analysis, JSON evidence, tracker update entries
+
+### Integration with Scoring Systems
+
+**Validation scripts provide automated scoring** that maps to the manual scoring frameworks:
+
+- **Component Health Score** (0-100) → Direct mapping to component status
+- **Complexity Score** (0-35) → Maps to Complexity Scoring Framework  
+- **Priority Assessment** → Can inform Impact and Blocking Factor scores
+- **Evidence Collection** → Provides structured data for Evidence Mapping
+
+**Workflow Integration Points**:
+
+- **Issue Selection**: Use `validate-component.js` to assess baseline health
+- **Template Selection**: Use `estimate-complexity.js` for automated routing
+- **Progress Tracking**: Use `verify-fix.js` for validation checkpoints
+- **Documentation**: Use `generate-evidence.js` for tracker integration
 
 ## 📊 Success Metrics Framework
 

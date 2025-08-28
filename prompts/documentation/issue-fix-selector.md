@@ -9,14 +9,16 @@
 
 **If given this selector without specific instructions**, follow this autonomous workflow:
 
-### Step 1: Locate Project Files
+### Step 1: Locate Project Files (ENHANCED)
 
-**Priority Search Order**:
+**Priority Search Order** (Updated for new document structure):
 
-1. **Find Fix Planning Queue**: Look for `*-fix-planning.md` in project `/dev/` folder
-2. **Find Tracker Data**: Look for `*-tracker-data.md` in project `/dev/` folder  
-3. **Fallback**: Look for legacy `*Implementation-Tracker.md` files
-4. **Common locations**: `/dev/` folder (preferred), project root, `/docs/` folder
+1. **Find Active Tasks Queue**: Look for `*-active-tasks.md` in project `/dev/` folder (PRIMARY TASK SOURCE)
+2. **Find Strategic Roadmap**: Look for `*-roadmap.md` in project `/dev/` folder (TASK CLASSIFICATION GUIDE) *only use if active-tasks in innaccessible or further guidance is needed*
+3. **Find Patterns Document**: Look for `*-patterns.md` in project `/dev/` folder
+4. **Find Tracker Data**: Look for `*-tracker-data.md` in project `/dev/` folder  
+5. **Fallback**: Look for legacy `*-fix-planning.md` or `*Implementation-Tracker.md` files
+6. **Common locations**: `/dev/` folder (preferred), project root, `/docs/` folder
 
 **File Validation**:
 
@@ -26,12 +28,20 @@
 
 ### Step 2: Select from Planning Queues
 
-**Primary Selection** (if planning file exists):
+**Primary Selection** (Enhanced with roadmap integration):
 
-1. **Immediate Priority Queue**: Ready-to-implement tasks with clear next actions
-2. **Investigation Queue**: Tasks requiring analysis before implementation
-3. **Verification Queue**: Items needing validation or testing
-4. **Architecture Queue**: System-level design tasks
+1. **[!] Priority Override**: User-specified tasks (do this next)
+2. **[1-9] Sequenced Tasks**: Follow numerical sequence  
+3. **[ ] Pending Tasks**: Available tasks by priority score
+4. **Phase-Aware Selection**: Consider current roadmap phase (Foundation/Interface/Integration)
+5. **Investigation Queue**: Tasks requiring analysis before implementation
+6. **Discovered Issues**: Items from TODO tags during development
+
+**NEW: Task Discovery Integration**:
+
+- If discovering new issues during selection: Use roadmap classification guide
+- Add tasks directly to active-tasks.md with appropriate phase assignment
+- Consult roadmap for dependency chains and priority context
 
 **Fallback Selection** (if no planning file):
 
@@ -77,7 +87,19 @@ Each factor: 1-5 points, Total: 3-15 points
 
 ### Step 4: Complexity Pre-Assessment
 
-**For your selected issue, estimate complexity**:
+#### Option A: Use Validation Scripts for Precise Assessment
+
+```bash
+# Automated complexity estimation (recommended)
+node scripts/validation/estimate-complexity.js <component-name-or-issue-id>
+
+# Component health assessment (optional but valuable)
+node scripts/validation/validate-component.js <component-name>
+```
+
+#### Option B: Manual Complexity Estimation
+
+**For your selected issue, estimate complexity manually**:
 
 ``` formula
 Quick Complexity = Files + Dependencies + Uncertainty
@@ -102,23 +124,64 @@ Each factor: 1-3 points, Total: 3-9 points
 - 2: Some investigation needed
 - 3: Unclear problem or solution
 
-### Step 5: Route to Appropriate Guide
+### Step 5: CRITICAL - System Integrity Requirements 🚨 **NEW**
 
-**Based on complexity assessment**:
+**MANDATORY**: All task implementations must maintain system integrity
 
-**Low Complexity (3-5 points)**: Use `quick-fix-guide.md`
+#### Task Completion Definition - SYSTEM INTEGRITY FIRST
+
+**A task is ONLY considered complete when ALL criteria are met**:
+
+1. ✅ **Core functionality implemented** and working as specified
+2. ✅ **Code compiles without errors** (`npx tsc --noEmit` must pass)  
+3. ✅ **No regression in existing functionality** (previously working features still work)
+4. ✅ **Build process succeeds** (`npm run build` if applicable)
+5. ✅ **Documentation created** (as specified in fix guide)
+
+**If ANY criterion fails**: Task is NOT complete - use expanded status options.
+
+#### Enhanced Task Status System 🆕
+
+**Replace simple completed/pending with expanded statuses**:
+
+- **completed** ✅: All system integrity criteria met, fully validated
+- **implemented-broken** ⚠️: Feature logic implemented but compilation/build fails  
+- **implemented-testing** 🧪: Code compiles, feature works, needs validation
+- **blocked** 🚧: Cannot proceed due to dependencies or technical barriers
+- **in-progress** 🔄: Active development work ongoing
+- **analysis-required** 🔍: Needs investigation before implementation approach
+
+#### System Integrity Validation - MANDATORY CHECKS
+
+**Before marking any task as "completed"**:
+
+- [ ] **Compilation Check**: Run `npx tsc --noEmit` - must pass with zero errors
+- [ ] **Build Verification**: Run build process if applicable - must succeed  
+- [ ] **Regression Test**: Verify no previously working functionality is broken
+- [ ] **Integration Test**: Ensure new functionality integrates properly
+- [ ] **Documentation Check**: Required documentation exists and is accurate
+
+**Emergency Protocol**: If system is left in broken state, immediately mark as "implemented-broken" and create structural fix task.
+
+### Step 6: Route to Appropriate Guide
+
+**Based on complexity assessment AND system integrity requirements**:
+
+[!] **Low Complexity (3-5 points)**: READ `./quick-fix-guide.md`
 
 - Simple fixes, clear solutions
 - Expected completion: <3 hours
 - Minimal documentation required
+- **MUST maintain system integrity**: Compilation + no regressions
 
-**Medium/High Complexity (6-9 points)**: Use `comprehensive-fix-guide.md`
+[!] **Medium/High Complexity (6-9 points)**: READ `./comprehensive-fix-guide.md`
 
 - Complex fixes requiring detailed analysis
 - Expected completion: >3 hours
 - Full documentation and escalation protocols
+- **MUST maintain system integrity**: Full validation checklist required
 
-**Route by including the appropriate guide in your context**:
+[!] **ROUTE BY INCLUDING THE APPROPRIATE GUIDE IN YOUR CONTEXT**:
 
 ``` bash
 # For Low Complexity
@@ -166,16 +229,34 @@ Quick Assessment:
 Reason: Insufficient evidence, unclear scope, low feasibility
 ```
 
-## 📋 Selection Checklist
+## 📋 Enhanced Selection Checklist 🆕
 
 **Before proceeding with any issue**:
+
+### Basic Requirements (All Must Pass)
 
 - [ ] Issue has specific error counts or clear evidence
 - [ ] Component location is clearly identified
 - [ ] Fix scope appears manageable (not system-wide)
 - [ ] Priority score ≥9 points
 - [ ] Complexity assessment completed
-- [ ] Appropriate guide selected
+- [!] *Appropriate guide selected* !IMPORTANT
+- [!] *Appropriate guide ADDED TO CONTEXT* !IMPORTANT
+
+### System Integrity Commitments (New Requirements)
+
+- [ ] **Compilation Responsibility**: Commit to maintaining TypeScript compilation
+- [ ] **Regression Prevention**: Commit to preserving existing functionality  
+- [ ] **Build Integrity**: Commit to keeping build process working
+- [ ] **Status Accuracy**: Commit to using expanded status system accurately
+- [ ] **Completion Honesty**: Will only mark "completed" when ALL criteria met
+
+### Pre-Implementation Verification
+
+- [ ] **Baseline Check**: Run `npx tsc --noEmit` to establish current compilation state
+- [ ] **Build Check**: Verify current build process works (if applicable)
+- [ ] **Functionality Check**: Verify existing functionality works as expected
+- [ ] **Documentation Baseline**: Identify what documentation will be required
 
 ## 🛤️ Alternative Entry Points
 
@@ -208,7 +289,7 @@ Reason: Insufficient evidence, unclear scope, low feasibility
 **Support**:
 
 - `tracker-template.md` - Tracker and planning file structure guide
-- Validation scripts in `scripts/validation/` (placeholders)
+- Validation scripts in `scripts/validation/` (comprehensive toolset for assessment and verification)
 - Planning files in `project/dev/*-fix-planning.md` for organized task queues
 
 ## ⚠️ Important Notes
@@ -220,6 +301,8 @@ Reason: Insufficient evidence, unclear scope, low feasibility
 **Fallback behavior** - If tracker not found or issues unclear, default to comprehensive-fix-guide.md for safety.
 
 **Integration** - All selected issues should reference back to the Implementation Tracker for status updates.
+
+**Guidance** - ALWAYS read the appropriate fix guide before starting work.
 
 ---
 **Generated**: For modular issue-fix system architecture  

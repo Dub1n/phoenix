@@ -22,7 +22,7 @@ Templum 1.0 is a universal interface orchestrator that provides seamless present
 
 ### **Universal Interface Management**
 
-```typescript
+```diagram
 ┌─────────────────────────────────────────────────────────────────┐
 │                    Templum Universal Interface                  │
 │  ┌──────────────────────────────────────────────────────────┐   │

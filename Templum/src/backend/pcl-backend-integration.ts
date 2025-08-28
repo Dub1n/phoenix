@@ -410,7 +410,7 @@ export class PCLCommandRouter extends EventEmitter {
       route: routingInfo.routing.primaryBackend,
       fallbackRoutes: routingInfo.routing.fallbackBackends,
       reusePercentage: 0,
-      optimizationApplied: []
+      optimizationApplied: [] as string[]
     };
 
     // Apply PCL reuse optimization based on component complexity
@@ -496,7 +496,7 @@ export class PCLCommandRouter extends EventEmitter {
   getRoutingStats(): Record<string, any> {
     const stats: Record<string, any> = {};
     
-    for (const [key, routingStats] of this.routingStats) {
+    for (const [key, routingStats] of Array.from(this.routingStats.entries())) {
       stats[key] = { ...routingStats };
     }
 
@@ -635,7 +635,7 @@ export class ValidationFramework extends EventEmitter {
 
   private async performPeriodicValidation(): Promise<void> {
     // Validate performance for all components with baselines
-    for (const [componentId] of this.performanceBaselines) {
+    for (const componentId of Array.from(this.performanceBaselines.keys())) {
       try {
         await this.validateComponentPerformance(componentId, 'periodic-validation');
       } catch (error) {
@@ -689,7 +689,7 @@ export class ValidationFramework extends EventEmitter {
     let rollbacksTriggered = 0;
     let fallbacksRecommended = 0;
 
-    for (const results of this.validationResults.values()) {
+    for (const results of Array.from(this.validationResults.values())) {
       totalValidations += results.length;
       
       for (const result of results) {
@@ -1272,7 +1272,7 @@ export class PCLBackendIntegrator extends EventEmitter {
   private async performHealthChecks(): Promise<void> {
     let healthyCount = 0;
     
-    for (const [backendId, connection] of this.backendConnections) {
+    for (const [backendId, connection] of Array.from(this.backendConnections.entries())) {
       try {
         const startTime = performance.now();
         

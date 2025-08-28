@@ -1,0 +1,70 @@
+{
+  "componentName": "error-handler",
+  "timestamp": "2025-08-27T08:34:55.490Z",
+  "overallStatus": "FIX_FAILED",
+  "checks": {
+    "COMPILATION": {
+      "name": "TypeScript Compilation",
+      "status": "FAIL",
+      "details": "Compilation failed: 1 errors",
+      "evidence": [
+        "Compilation failed with 1 errors"
+      ]
+    },
+    "TESTS": {
+      "name": "Component Tests",
+      "status": "WARNING",
+      "details": "No test files found for component",
+      "evidence": [
+        "Component lacks test coverage"
+      ]
+    },
+    "INTEGRATION": {
+      "name": "Integration Check",
+      "status": "PASS",
+      "details": "Component exports are accessible",
+      "evidence": [
+        "error-handler.ts has exports"
+      ]
+    },
+    "REGRESSION": {
+      "name": "Regression Check",
+      "status": "FAIL",
+      "details": "Potential regressions detected",
+      "evidence": [
+        "Component changes may have introduced regressions",
+        "Component has 1 external dependencies to monitor"
+      ]
+    },
+    "EXPORTS": {
+      "name": "Export Validation",
+      "status": "PASS",
+      "details": "Component has 4 exports across 1 files",
+      "evidence": [
+        "error-handler.ts: 4 exports (default: 0, named: 4, re-exports: 0)"
+      ]
+    }
+  },
+  "evidence": [],
+  "errors": [
+    "Command failed: npx tsc --noEmit src\\core\\error-handler.ts"
+  ],
+  "warnings": [
+    "Component lacks test coverage"
+  ],
+  "files": [
+    "C:\\Users\\gabri\\Documents\\Infotopology\\VDL_Vault\\phoenix-code-lite\\src\\core\\error-handler.ts"
+  ],
+  "beforeStatus": null,
+  "afterStatus": "🔴 Broken",
+  "recommendations": [
+    "Fix verification failed - component requires additional work",
+    "Address compilation and test failures before proceeding",
+    "Priority: Fix 2 failed verification checks",
+    "- Address TypeScript Compilation: Compilation failed: 1 errors",
+    "- Address Regression Check: Potential regressions detected",
+    "Consider addressing 1 warnings for completeness",
+    "Add test coverage for better component validation",
+    "Create unit tests for public methods and interfaces"
+  ]
+}

@@ -1,11 +1,11 @@
-# Haruspex 2.0 Implementation Tracker Data
+# Haruspex 2.0 Project Health Dashboard
 
-> **Purpose**: Track actual implementation status vs claimed status for Haruspex 2.0 backend service  
+> **Purpose**: User dashboard for project health monitoring - not used in automated workflow  
 > **Created**: 2025-08-21  
 > **Last Updated**: 2025-08-22  
 > **Status**: Critical gaps in Phase 4 backend transformation  
-> **Integration**: Uses issue-fix-selector.md, comprehensive-fix-guide.md, shared-components.md  
-> **Planning**: See haruspex-fix-planning.md for task queues and work organization
+> **Integration**: Updated by agents as final step in fix workflow  
+> **Task Selection**: Agents use haruspex-active-tasks.md and haruspex-roadmap.md for workflow
 
 ## Quick Status Dashboard
 
@@ -21,14 +21,14 @@
 
 ### 📈 Component Summary
 
-| Category | Total | Working | Broken | Missing | Health |
-|----------|-------|---------|--------|---------|--------|
-| Backend Services (Phase 4 Claims) | 7 | 0 | 4 | 7 | 🔴 **Critical Gap** |
-| Legacy Extension (1.2) | 20 | 20 | 0 | 0 | 🟢 **Functional** |
-| PCL Integration | 4 | 4 | 0 | 0 | 🟢 **Complete** |
-| Development Tools | 6 | 5 | 1 | 0 | 🟢 **Mostly Functional** |
-| Monitoring & Performance | 3 | 3 | 0 | 0 | 🟢 **Operational** |
-| **Overall** | **40** | **32** | **5** | **7** | **🔴 Mixed Status** |
+| Category                          | Total  | Working | Broken | Missing | Health                   |
+|-----------------------------------|--------|---------|--------|---------|--------------------------|
+| Backend Services (Phase 4 Claims) | 7      | 0       | 4      | 7       | 🔴 **Critical Gap**      |
+| Legacy Extension (1.2)            | 20     | 20      | 0      | 0       | 🟢 **Functional**        |
+| PCL Integration                   | 4      | 4       | 0      | 0       | 🟢 **Complete**          |
+| Development Tools                 | 6      | 5       | 1      | 0       | 🟢 **Mostly Functional** |
+| Monitoring & Performance          | 3      | 3       | 0      | 0       | 🟢 **Operational**       |
+| **Overall**                       | **40** | **32**  | **5**  | **7**   | 🔴 **Mixed Status**      |
 
 ### 🔴 Critical Issues (Priority Score ≥21)
 
@@ -77,41 +77,6 @@
 | Update Coordinator | `src/monitoring/update-coordinator.ts` | ✅ **Working** | Change coordination ✓, Update synchronization operational | 2025-08-21 |
 | Conflict Resolver | `src/core/conflict-resolver.ts` | ✅ **Working** | Resource conflict resolution ✓, State management operational | 2025-08-21 |
 
-## Build Issues Log
-
-### 2025-08-21 - Critical Discovery: Phase 4 Backend Transformation Never Implemented
-
-- **Component**: Multiple backend services
-- **Issue Type**: Missing Implementation
-- **Priority Score**: 32 (Critical)
-- **Complexity Score**: 25 (High)
-- **Status**: New - Discovery phase
-- **Evidence**: PowerShell Test-Path verification shows 6 of 7 claimed files missing, npx tsc compilation fails with 87 errors
-- **Fix Documentation**: None - awaiting fix attempt
-- **Agent Notes**: Phase 4 marked as "100% complete" but verification shows no core implementation
-
-### 2025-08-21 - Backend Service Import Dependencies Broken
-
-- **Component**: Backend Service
-- **Issue Type**: Compilation Error
-- **Priority Score**: 25 (Critical)
-- **Complexity Score**: 22 (Medium-High)
-- **Status**: New - Blocked on missing dependencies
-- **Evidence**: 5+ import errors for analysis-engine, prediction-engine, cache-manager, diagnostic-system modules
-- **Fix Documentation**: None - blocked by missing dependencies
-- **Agent Notes**: Main service exists but cannot function without missing modules
-
-### 2025-08-21 - API Gateway Protocol Modules Missing
-
-- **Component**: API Gateway
-- **Issue Type**: Integration Issue
-- **Priority Score**: 18 (Medium)
-- **Complexity Score**: 20 (Medium)
-- **Status**: New - Type system incomplete
-- **Evidence**: 11+ TypeScript errors, missing 8 required protocol modules
-- **Fix Documentation**: None - requires comprehensive type system work
-- **Agent Notes**: Gateway architecture partially implemented, protocol layer missing
-
 ## Fix Success Metrics Dashboard
 
 ### Current Period: August 2025
@@ -138,71 +103,7 @@
 - **Escalation Appropriateness**: 0/0 escalations (Discovery phase)
 - **Documentation Completeness**: 0/0 templates completed (No fixes yet)
 
-## Lessons Learned
+---
 
-### 2025-08-21 - Agent Behavior: Phase Implementation Claims Without Verification
-
-**Category**: Agent Verification Failures
-**Component Type**: Backend Service Architecture
-**Outcome**: Critical Discovery - Implementation Never Started
-
-**Key Learning**:
-
-- Always require compilation output evidence before accepting completion claims
-- Phase completion percentages without actual file verification are unreliable
-- Agent claims of "100% complete" require independent verification
-
-**Agent Verification**: PowerShell Test-Path verification revealed false claims
-**Complexity Notes**: Agent underestimated verification requirements
-**Future Reference**: Apply Agent Verification Protocol for all phase completion claims
-
-### 2025-08-21 - System Architecture: Backend Service Dependency Chain Analysis
-
-**Category**: Architecture Understanding
-**Component Type**: Service Integration
-**Outcome**: Dependency Mapping Complete
-
-**Key Learning**:
-
-- Backend services form complex dependency chain: Analysis Engine → Prediction Engine → IPC/HTTP/WebSocket → Cache/Diagnostics
-- Missing any component in chain breaks entire backend functionality
-- Legacy 1.2 VSCode extension components are stable and well-tested
-
-**Agent Verification**: File system analysis confirmed component relationships
-**Complexity Notes**: Full backend restoration requires coordinated multi-component implementation
-**Future Reference**: Use dependency chain analysis for complex service architectures
-
-## Evidence Archive
-
-### 2025-08-21 - Agent Verification Protocol: Phase 4 Claims Investigation
-
-- **Verification Type**: Agent Verification Protocol compliance
-- **Components Tested**: Analysis Engine, Prediction Engine, IPC Server, HTTP Server, WebSocket Server, Cache Manager
-- **Evidence Method**: PowerShell Test-Path, TypeScript compilation (npx tsc --noEmit)
-- **Results**:
-
-  ``` log
-  PowerShell Test-Path Results:
-  - src/engine/analysis-engine.ts: False
-  - src/engine/prediction-engine.ts: False  
-  - src/api/ipc-server.ts: False
-  - src/api/http-server.ts: False
-  - src/api/websocket-server.ts: False
-  - src/cache/cache-manager.ts: False
-  
-  TypeScript Compilation:
-  npx tsc --noEmit: 87 errors
-  npm test: Fails at compilation step
-  ```
-
-- **Documentation**: Phase 4 claims vs. actual implementation severe mismatch
-- **Agent Performance**: Phase completion claims were inaccurate without verification
-
-### 2025-08-21 - Component Health Assessment: Legacy vs. Backend Status
-
-- **Verification Type**: Comprehensive component status analysis
-- **Components Tested**: All 40+ components across legacy and backend systems
-- **Evidence Method**: Test execution, compilation verification, integration testing
-- **Results**: Legacy 1.2 components 100% functional (20/20), Backend 2.0 components 0% functional (0/7 critical)
-- **Documentation**: Clear separation between working legacy system and missing backend transformation
-- **Agent Performance**: Component categorization accurate when evidence-based
+**IMPLEMENTATION PATTERNS** → See `haruspex-patterns.md` for backend service implementation patterns  
+**LESSONS LEARNED** → See `haruspex-completed.md` for historical lessons and insights

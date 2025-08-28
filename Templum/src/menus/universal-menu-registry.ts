@@ -603,7 +603,8 @@ export class UniversalMenuRegistry extends EventEmitter {
     return {
       activeMenu: 'main',
       navigationHistory: [],
-      customization: {}
+      customization: {},
+      syncLatency: 0 // Default sync latency
     };
   }
 

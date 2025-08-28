@@ -1,0 +1,46 @@
+{
+  "componentName": "abstraction-layer",
+  "timestamp": "2025-08-27T11:51:29.800Z",
+  "overallStatus": "PENDING",
+  "checks": {
+    "COMPILATION": {
+      "name": "TypeScript Compilation",
+      "status": "PENDING",
+      "details": "",
+      "evidence": []
+    },
+    "TESTS": {
+      "name": "Component Tests",
+      "status": "PENDING",
+      "details": "",
+      "evidence": []
+    },
+    "INTEGRATION": {
+      "name": "Integration Check",
+      "status": "PENDING",
+      "details": "",
+      "evidence": []
+    },
+    "REGRESSION": {
+      "name": "Regression Check",
+      "status": "PENDING",
+      "details": "",
+      "evidence": []
+    },
+    "EXPORTS": {
+      "name": "Export Validation",
+      "status": "PENDING",
+      "details": "",
+      "evidence": []
+    }
+  },
+  "evidence": [],
+  "errors": [
+    "Component abstraction-layer not found in any expected location"
+  ],
+  "warnings": [],
+  "files": [],
+  "beforeStatus": null,
+  "afterStatus": null,
+  "recommendations": []
+}

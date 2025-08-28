@@ -1,13 +1,96 @@
 {
   "name": "templum",
+  "displayName": "Templum",
+  "publisher": "infotopology",
   "version": "1.0.0",
   "description": "Universal interface orchestrator for multi-backend services",
   "main": "dist/src/index.js",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
   "bin": {
     "templum": "./dist/src/index.js"
   },
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "templum",
+          "title": "Templum",
+          "icon": "$(symbol-interface)"
+        }
+      ]
+    },
+    "views": {
+      "explorer": [
+        {
+          "id": "templum.serviceTree",
+          "name": "Backend Services",
+          "when": "workspaceFolderCount > 0",
+          "contextualTitle": "Templum Backend Services"
+        }
+      ],
+      "templum": [
+        {
+          "type": "webview",
+          "id": "templum.universalInterface",
+          "name": "Universal Interface"
+        },
+        {
+          "type": "webview",
+          "id": "templum.serviceStatus",
+          "name": "Service Status"
+        },
+        {
+          "type": "webview",
+          "id": "templum.sessionManager",
+          "name": "Session Manager"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "templum.refreshAll",
+        "title": "Templum: Refresh All Services"
+      },
+      {
+        "command": "templum.showServiceStatus",
+        "title": "Templum: Show Service Status"
+      },
+      {
+        "command": "templum.switchInterface",
+        "title": "Templum: Switch Interface Mode"
+      },
+      {
+        "command": "templum.refreshServiceTree",
+        "title": "Templum: Refresh Service Tree",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "templum.connectService",
+        "title": "Templum: Connect to Service"
+      },
+      {
+        "command": "templum.disconnectService",
+        "title": "Templum: Disconnect Service"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "templum.refreshServiceTree",
+          "when": "view == templum.serviceTree",
+          "group": "navigation"
+        }
+      ]
+    }
+  },
   "scripts": {
     "build": "tsc",
+    "build:component": "node ../scripts/validation/component-build.js",
     "dev": "ts-node src/index.ts",
     "test": "jest",
     "test:coverage": "jest --coverage",
@@ -46,17 +129,19 @@
     "zod": "^4.0.14"
   },
   "devDependencies": {
+    "@eslint/js": "^9.34.0",
     "@types/inquirer": "^9.0.8",
     "@types/jest": "^30.0.0",
     "@types/node": "^24.1.0",
+    "@types/vscode": "^1.74.0",
     "@types/ws": "^8.5.10",
-    "@typescript-eslint/eslint-plugin": "^8.38.0",
-    "@typescript-eslint/parser": "^8.38.0",
+    "@vscode/test-electron": "^2.3.0",
     "eslint": "^9.32.0",
     "jest": "^30.0.5",
     "prettier": "^3.6.2",
     "ts-jest": "^29.4.0",
     "ts-node": "^10.9.2",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.41.0"
   }
 }

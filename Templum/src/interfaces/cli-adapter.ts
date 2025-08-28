@@ -17,6 +17,8 @@ import { UniversalCommandRegistry } from '../commands/universal-command-registry
 import { UniversalMenuRegistry } from '../menus/universal-menu-registry';
 import { SessionContextFoundation } from '../session/session-context-foundation';
 import { UniversalLayoutEngine } from '../rendering/universal-layout-engine';
+import { ITemplumOrchestrator } from './templum-orchestrator-interface';
+import { InterfaceType, createTemplumError, isTemplumError } from '../types/templum-types';
 
 export interface CLIAdapter {
   type: 'cli';
@@ -88,6 +90,7 @@ export class CLIInterfaceAdapter extends EventEmitter implements CLIAdapter {
   private menuRegistry: UniversalMenuRegistry;
   private sessionContext: SessionContextFoundation;
   private layoutEngine: UniversalLayoutEngine;
+  private orchestrator?: ITemplumOrchestrator;
   private config: CLIAdapterConfig;
   private isInitialized = false;
   private readlineInterface: readline.Interface | null = null;
@@ -100,12 +103,14 @@ export class CLIInterfaceAdapter extends EventEmitter implements CLIAdapter {
     commandRegistry: UniversalCommandRegistry,
     menuRegistry: UniversalMenuRegistry,
     sessionContext: SessionContextFoundation,
-    config?: Partial<CLIAdapterConfig>
+    config?: Partial<CLIAdapterConfig>,
+    orchestrator?: ITemplumOrchestrator
   ) {
     super();
     this.commandRegistry = commandRegistry;
     this.menuRegistry = menuRegistry;
     this.sessionContext = sessionContext;
+    this.orchestrator = orchestrator;
     this.layoutEngine = new UniversalLayoutEngine();
     this.config = {
       enableInteractiveMode: true,
@@ -381,6 +386,8 @@ export class CLIInterfaceAdapter extends EventEmitter implements CLIAdapter {
       return;
     } else if (input === 'help') {
       this.displayHelp();
+    } else if (input === 'status') {
+      this.displayBackendStatus();
     } else if (input === 'refresh') {
       await this.renderCurrentMenu();
     } else if (/^\d+$/.test(input)) {
@@ -406,14 +413,52 @@ export class CLIInterfaceAdapter extends EventEmitter implements CLIAdapter {
 
   private async handleCommandInput(input: CLIInput): Promise<CLIInputResult> {
     try {
+      console.log(`CLI Adapter: Processing command '${input.value}' with real backend integration...`);
+      
+      // Enhanced real backend command execution
+      if (this.orchestrator?.isInitialized()) {
+        try {
+          // First attempt: Execute through orchestrator (real backend integration)
+          console.log('CLI Adapter: Attempting real backend command execution...');
+          const orchResult = await this.orchestrator.executeCommand(
+            input.value,
+            'cli',
+            [],
+            { 
+              interfaceType: 'cli',
+              source: 'CLIInterfaceAdapter',
+              timestamp: Date.now(),
+              sessionId: this.sessionContext.getActiveSession()?.sessionId
+            }
+          );
+          
+          if (orchResult) {
+            console.log('CLI Adapter: Command executed successfully via real backend integration');
+            console.log(orchResult.message || 'Command executed successfully');
+            
+            // Display backend execution information
+            if (orchResult.metadata?.backendId) {
+              console.log(`[Backend: ${orchResult.metadata.backendId}] ${orchResult.message || 'Success'}`);
+            }
+            
+            return { handled: true, result: orchResult };
+          }
+        } catch (orchestratorError) {
+          console.warn('CLI Adapter: Real backend command execution failed, falling back to local registry:', orchestratorError);
+        }
+      }
+      
+      // Fallback: Execute through local command registry
+      console.log('CLI Adapter: Executing command through local registry fallback...');
       const result = await this.commandRegistry.executeCommand(
         input.value,
         {},
         { interfaceType: 'cli' }
       );
 
-      console.log(result.message || 'Command executed successfully');
+      console.log(result.message || 'Command executed successfully (local registry)');
       return { handled: true, result };
+      
     } catch (error) {
       console.error(`Command failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
       return { 
@@ -645,6 +690,7 @@ export class CLIInterfaceAdapter extends EventEmitter implements CLIAdapter {
     console.log('  back     - Go to previous menu');
     console.log('  home     - Go to main menu');
     console.log('  refresh  - Refresh current menu');
+    console.log('  status   - Show backend service status');
     console.log('  quit     - Exit application');
     console.log('\nNavigation:');
     console.log('  1-9      - Select menu item by number');
@@ -656,7 +702,57 @@ export class CLIInterfaceAdapter extends EventEmitter implements CLIAdapter {
         console.log(`  ${key}       - ${command}`);
       }
     }
+    
+    // Display real backend integration status
+    if (this.orchestrator?.isInitialized()) {
+      console.log('\nBackend Integration:');
+      console.log('  ✅ Real backend integration active');
+      this.displayBackendStatus();
+    } else {
+      console.log('\nBackend Integration:');
+      console.log('  ⚠️  Local registry fallback mode');
+    }
     console.log();
+  }
+
+  /**
+   * Display current backend service status
+   * @private
+   */
+  private displayBackendStatus(): void {
+    if (!this.orchestrator?.isInitialized()) {
+      console.log('Backend status unavailable - orchestrator not initialized');
+      return;
+    }
+
+    try {
+      const systemStatus = this.orchestrator.getSystemStatus();
+      const backends = systemStatus.coreEngine.backendConnections.backends;
+      
+      console.log('\nBackend Service Status:');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('Service      Status      Health    Response   Capabilities');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      
+      for (const [serviceId, status] of Object.entries(backends)) {
+        const conn = status.connected ? '🟢 Connected ' : '🔴 Disconnected';
+        const health = status.health || 'Unknown';
+        const responseTime = status.responseTime ? `${status.responseTime}ms` : 'N/A';
+        const capabilities = status.capabilities?.slice(0, 2).join(', ') || 'None';
+        
+        console.log(`${serviceId.padEnd(12)} ${conn.padEnd(12)} ${health.padEnd(9)} ${responseTime.padEnd(10)} ${capabilities}`);
+      }
+      
+      const connectedCount = Object.values(backends).filter((b: any) => b.connected).length;
+      const totalCount = Object.keys(backends).length;
+      const healthyCount = Object.values(backends).filter((b: any) => b.health === 'healthy').length;
+      
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log(`Connected: ${connectedCount}/${totalCount} | Healthy: ${healthyCount}/${connectedCount} | Status: ${healthyCount > 0 ? 'Operational' : 'Discovery Mode'}`);
+      
+    } catch (error) {
+      console.log('Failed to retrieve backend status:', error);
+    }
   }
 
   /**

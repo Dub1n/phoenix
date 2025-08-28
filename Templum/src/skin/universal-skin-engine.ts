@@ -12,246 +12,88 @@ import {
   SkinRenderResult, 
   RenderingContext, 
   InterfaceType,
-  RenderedComponent 
+  RenderedComponent,
+  ThemeDefinition,
+  ColorPalette,
+  ColorScale,
+  Typography,
+  SpacingSystem,
+  BorderSystem,
+  ShadowSystem,
+  AnimationSystem,
+  ComponentSkin,
+  ComponentVariant,
+  ComponentState,
+  ResponsiveConfig,
+  AccessibilityConfig,
+  SkinAssets,
+  IconDefinition,
+  ImageDefinition,
+  FontDefinition,
+  SoundDefinition,
+  RenderingConfiguration,
+  InterfaceRenderingConfig,
+  SkinPerformanceConfig,
+  SkinOverride
 } from '../types/universal-skin-engine-types';
+import {
+  TemplumError,
+  isTemplumError,
+  createTemplumError,
+  Signals,
+  ErrorSignalPayload,
+  MetricsSignalPayload
+} from '../types/templum-types';
 
-// Type definitions are now imported from the types file
+// Import PCL Rendering Adapter for 70% code reuse
+import { 
+  PCLRenderingAdapter, 
+  UniversalMenuDefinition,
+  UniversalLayoutConstraints,
+  UniversalRenderResult
+} from './pcl-rendering-adapter';
 
-export interface ThemeDefinition {
-  name: string;
-  type: 'light' | 'dark' | 'high-contrast' | 'custom';
-  colors: ColorPalette;
-  typography: Typography;
-  spacing: SpacingSystem;
-  borders: BorderSystem;
-  shadows: ShadowSystem;
-  animations: AnimationSystem;
-  customProperties: Record<string, any>;
-  variants: Record<string, Partial<ThemeDefinition>>;
-}
+// All type definitions imported from types files - removing duplicates
 
-export interface ColorPalette {
-  primary: ColorScale;
-  secondary: ColorScale;
-  accent: ColorScale;
-  neutral: ColorScale;
-  semantic: {
-    success: ColorScale;
-    warning: ColorScale;
-    error: ColorScale;
-    info: ColorScale;
-  };
-  text: {
-    primary: string;
-    secondary: string;
-    disabled: string;
-    inverse: string;
-  };
-  background: {
-    primary: string;
-    secondary: string;
-    tertiary: string;
-    overlay: string;
-  };
-  border: {
-    primary: string;
-    secondary: string;
-    focus: string;
-    error: string;
-  };
-}
+// ThemeDefinition now imported from types file
 
-export interface ColorScale {
-  50: string;
-  100: string;
-  200: string;
-  300: string;
-  400: string;
-  500: string; // Base color
-  600: string;
-  700: string;
-  800: string;
-  900: string;
-}
+// ColorPalette now imported from types file
 
-export interface Typography {
-  fontFamilies: {
-    primary: string;
-    secondary: string;
-    monospace: string;
-  };
-  fontSizes: Record<string, string>;
-  fontWeights: Record<string, number>;
-  lineHeights: Record<string, number>;
-  letterSpacing: Record<string, string>;
-}
+// ColorScale now imported from types file
 
-export interface SpacingSystem {
-  unit: number; // Base spacing unit in pixels
-  scale: Record<string, number>; // Multipliers for the base unit
-}
+// Typography now imported from types file
 
-export interface BorderSystem {
-  radii: Record<string, string>;
-  widths: Record<string, string>;
-  styles: Record<string, string>;
-}
+// SpacingSystem now imported from types file
 
-export interface ShadowSystem {
-  elevations: Record<string, string>;
-  colors: Record<string, string>;
-}
+// BorderSystem now imported from types file
 
-export interface AnimationSystem {
-  durations: Record<string, string>;
-  easings: Record<string, string>;
-  transitions: Record<string, string>;
-}
+// ShadowSystem now imported from types file
 
-export interface ComponentSkin {
-  name: string;
-  type: 'container' | 'input' | 'display' | 'navigation' | 'feedback' | 'overlay';
-  variants: Record<string, ComponentVariant>;
-  states: Record<string, ComponentState>;
-  responsive: ResponsiveConfig;
-  accessibility: AccessibilityConfig;
-  pclMapping: {
-    pclComponent?: string;
-    reuseLevel: 'high' | 'medium' | 'low';
-    adaptationRequired: boolean;
-  };
-}
+// AnimationSystem now imported from types file
 
-export interface ComponentVariant {
-  styles: Record<string, any>;
-  tokens: Record<string, string>;
-  modifiers: Record<string, any>;
-}
+// ComponentSkin now imported from types file
 
-export interface ComponentState {
-  condition: string;
-  styles: Record<string, any>;
-  transitions: string[];
-}
+// ComponentVariant now imported from types file
 
-export interface ResponsiveConfig {
-  breakpoints: Record<string, string>;
-  adaptiveStyles: Record<string, Record<string, any>>;
-  fluidScaling: boolean;
-}
+// ComponentState now imported from types file
 
-export interface AccessibilityConfig {
-  focusStyles: Record<string, any>;
-  highContrastMode: Record<string, any>;
-  screenReaderSupport: {
-    ariaLabels: Record<string, string>;
-    descriptions: Record<string, string>;
-  };
-  keyboardNavigation: {
-    tabOrder: number;
-    shortcuts: Record<string, string>;
-  };
-}
+// ResponsiveConfig now imported from types file
 
-export interface SkinAssets {
-  icons: Record<string, IconDefinition>;
-  images: Record<string, ImageDefinition>;
-  fonts: Record<string, FontDefinition>;
-  sounds: Record<string, SoundDefinition>;
-}
+// AccessibilityConfig now imported from types file
 
-export interface IconDefinition {
-  source: string;
-  format: 'svg' | 'font' | 'png' | 'webp';
-  variants: Record<string, string>;
-  sizing: Record<string, string>;
-}
+// SkinAssets, IconDefinition, ImageDefinition, FontDefinition, SoundDefinition now imported from types file
 
-export interface ImageDefinition {
-  source: string;
-  format: 'png' | 'jpg' | 'webp' | 'svg';
-  variants: Record<string, string>;
-  responsive: boolean;
-}
+// RenderingConfiguration now imported from types file
 
-export interface FontDefinition {
-  family: string;
-  source: string;
-  weights: number[];
-  formats: string[];
-}
+// InterfaceRenderingConfig now imported from types file
 
-export interface SoundDefinition {
-  source: string;
-  format: 'mp3' | 'wav' | 'ogg';
-  variants: Record<string, string>;
-}
+// SkinPerformanceConfig now imported from types file
 
-export interface RenderingConfiguration {
-  engine: 'css' | 'styled-components' | 'emotion' | 'tailwind' | 'css-in-js';
-  output: 'css' | 'js' | 'json' | 'tokens';
-  optimizations: {
-    treeshaking: boolean;
-    minification: boolean;
-    caching: boolean;
-    lazyLoading: boolean;
-  };
-  targets: Record<string, InterfaceRenderingConfig>;
-}
+// SkinOverride now imported from types file
 
-export interface InterfaceRenderingConfig {
-  interface: 'vscode' | 'cli' | 'command' | 'web';
-  renderer: string;
-  adaptations: Record<string, any>;
-  constraints: {
-    colorDepth: number;
-    maxFileSize: number;
-    supportedFeatures: string[];
-  };
-}
+// SkinRenderResult now imported from types file - removing duplicate definition
 
-export interface SkinPerformanceConfig {
-  loadingStrategy: 'eager' | 'lazy' | 'progressive';
-  cachingPolicy: 'memory' | 'disk' | 'hybrid';
-  compressionLevel: number; // 1-9
-  criticalPath: string[];
-  metrics: {
-    targetLoadTime: number; // ms
-    maxMemoryUsage: number; // MB
-    renderBudget: number; // ms per frame
-  };
-}
-
-export interface SkinOverride {
-  target: string; // CSS selector or component path
-  property: string;
-  value: any;
-  condition?: string;
-  priority: 'low' | 'medium' | 'high';
-}
-
-export interface SkinRenderResult {
-  skinId: string;
-  interface: string;
-  theme: string;
-  output: {
-    css?: string;
-    tokens?: Record<string, any>;
-    assets?: Record<string, string>;
-    metadata?: any;
-  };
-  performance: {
-    renderTime: number;
-    outputSize: number;
-    cacheHit: boolean;
-  };
-  validation: {
-    valid: boolean;
-    warnings: string[];
-    errors: string[];
-  };
-}
-
+// Keeping SkinEngineStats as it's specific to the engine implementation
 export interface SkinEngineStats {
   totalSkins: number;
   activeThemes: number;
@@ -280,7 +122,7 @@ export class UniversalSkinEngine extends EventEmitter {
   private interfaceStates: Map<string, any> = new Map(); // interface -> state
   private renderingEngines: Map<string, any> = new Map();
   private interfaceAdapters: Map<string, any> = new Map();
-  private pclSkinIntegration: any;
+  private pclRenderingAdapter: PCLRenderingAdapter;
   private config: {
     cacheTimeout: number;
     maxCacheSize: number;
@@ -296,6 +138,7 @@ export class UniversalSkinEngine extends EventEmitter {
       defaultTheme: 'default-light',
       performanceMode: 'production'
     };
+    this.pclRenderingAdapter = new PCLRenderingAdapter();
     this.initializePCLSkinIntegration();
     this.initializeDefaultSkins();
   }
@@ -343,8 +186,8 @@ export class UniversalSkinEngine extends EventEmitter {
     const startTime = Date.now();
     
     try {
-      // Generate cache key
-      const cacheKey = this.generateCacheKey(skin.metadata.id, interfaceType, context.theme);
+      // Generate cache key using skin.id instead of skin.metadata.id
+      const cacheKey = this.generateCacheKey(skin.id, interfaceType, context.theme);
       
       // Check cache first
       if (this.renderCache.has(cacheKey)) {
@@ -353,60 +196,57 @@ export class UniversalSkinEngine extends EventEmitter {
         return cachedResult;
       }
       
-      // Create rendered components based on interface type
-      const components: RenderedComponent[] = [];
-      
-      if (interfaceType === 'vscode' && skin.views?.treeViews) {
-        skin.views.treeViews.forEach(treeView => {
-          components.push({
-            id: treeView.id,
-            type: 'treeView',
-            backend: skin.metadata.backendService,
-            content: treeView
-          });
-        });
-      }
-      
-      if (interfaceType === 'cli' && skin.menus?.main) {
-        components.push({
-          id: skin.menus.main.id,
-          type: 'menu',
-          backend: skin.metadata.backendService,
-          content: skin.menus.main
-        });
-      }
-      
-      if (interfaceType === 'command' && skin.commands?.primary) {
-        skin.commands.primary.forEach(command => {
-          components.push({
-            id: command.id,
-            type: 'command',
-            backend: skin.metadata.backendService,
-            content: command
-          });
-        });
-      }
-      
-      const renderTime = Date.now() - startTime;
-      
+      // ✅ NEW: Convert to Universal Menu Definition using PCL patterns
+      const universalMenuDefinition = this.pclRenderingAdapter.convertToUniversalMenuDefinition(
+        skin, 
+        interfaceType, 
+        context
+      );
+
+      // ✅ NEW: Calculate layout constraints using PCL layout engine patterns
+      const layoutConstraints = this.pclRenderingAdapter.calculateUniversalLayout(
+        interfaceType,
+        context,
+        universalMenuDefinition.items.length
+      );
+
+      // ✅ NEW: Render using PCL patterns for sophisticated rendering
+      const pclRenderResult = await this.pclRenderingAdapter.renderUniversalMenu(
+        universalMenuDefinition,
+        layoutConstraints,
+        context
+      );
+
+      // Convert PCL render result to Universal Skin Engine format
       const result: SkinRenderResult = {
-        success: true,
+        success: pclRenderResult.success,
         interface: interfaceType,
         metadata: {
-          skinId: skin.metadata.id,
-          backendService: skin.metadata.backendService
+          skinId: skin.id,
+          backendService: skin.metadata.backendService,
+          pclIntegration: true,
+          reusePercentage: pclRenderResult.performance.pclReusePercentage
         },
-        components,
+        components: pclRenderResult.components,
         performance: {
-          renderTime,
-          cacheHit: false
+          renderTime: pclRenderResult.performance.renderTime,
+          cacheHit: pclRenderResult.performance.cacheHit,
+          outputSize: (pclRenderResult.htmlContent || pclRenderResult.cliContent || '').length
         },
         customization: {
-          analysisMode: context.preferences?.analysisMode || 'standard'
+          analysisMode: context.preferences?.analysisMode || 'standard',
+          pclTheme: pclRenderResult.theme,
+          layoutConstraints: layoutConstraints
         },
         inheritance: {
           parentSkin: skin.metadata.parentSkin,
           applied: !!skin.metadata.parentSkin
+        },
+        // ✅ NEW: Enhanced content with PCL rendering
+        renderedContent: {
+          html: pclRenderResult.htmlContent,
+          cli: pclRenderResult.cliContent,
+          layout: pclRenderResult.layout
         }
       };
       
@@ -414,22 +254,71 @@ export class UniversalSkinEngine extends EventEmitter {
       this.renderCache.set(cacheKey, result);
       this.maintainCacheSize();
       
+      // Emit success metrics
+      this.emit('performance:metric', {
+        timestamp: Date.now(),
+        source: 'universal-skin-engine',
+        category: 'performance' as const,
+        metrics: {
+          memory: {
+            heapUsed: process.memoryUsage().heapUsed,
+            rss: process.memoryUsage().rss
+          },
+          cpu: {
+            user: process.cpuUsage().user,
+            system: process.cpuUsage().system
+          },
+          interfaces: {
+            [interfaceType]: {
+              responseTime: pclRenderResult.performance.renderTime,
+              lastActivity: Date.now(),
+              pcl_reuse_percentage: pclRenderResult.performance.pclReusePercentage,
+              components_rendered: pclRenderResult.components.length,
+              cache_hit: false
+            }
+          }
+        }
+      } as MetricsSignalPayload);
+      
       return result;
       
     } catch (error) {
+      // Enhanced error handling with signal emission
+      const errorMessage = isTemplumError(error) ? error.message : String(error);
+      
+      this.emit('skin-engine:error', {
+        timestamp: Date.now(),
+        source: 'universal-skin-engine',
+        severity: 'high',
+        error: createTemplumError(`PCL-enhanced skin rendering failed for ${skin.id} on ${interfaceType}: ${errorMessage}`, 'RENDERING_ERROR', 'runtime'),
+        context: 'Universal Skin Engine with PCL Integration',
+        skinId: skin.id,
+        interface: interfaceType
+      } as ErrorSignalPayload);
+      
+      // TODO: [TASK-NEW-040] Fallback to basic rendering when PCL integration fails
+      // Priority: Medium | Complexity: 6
+      // Dependencies: Basic component rendering patterns, error recovery system
+      // Phase: Integration
+      
       return {
         success: false,
         interface: interfaceType,
         metadata: {
-          skinId: skin.metadata.id,
-          backendService: skin.metadata.backendService
+          skinId: skin.id,
+          backendService: skin.metadata.backendService,
+          error: errorMessage,
+          pclIntegration: false
         },
         components: [],
         performance: {
           renderTime: Date.now() - startTime,
-          cacheHit: false
+          cacheHit: false,
+          outputSize: 0
         },
-        customization: {},
+        customization: {
+          analysisMode: context.preferences?.analysisMode || 'standard'
+        },
         inheritance: {
           parentSkin: skin.metadata.parentSkin,
           applied: false
@@ -520,12 +409,12 @@ export class UniversalSkinEngine extends EventEmitter {
     }
 
     if (!skin.metadata.supportedInterfaces.includes(interfaceType as any)) {
-      throw new Error(`Skin ${skinId} does not support interface ${interfaceType}`);
+      throw createTemplumError(`Skin ${skinId} does not support interface ${interfaceType}`, 'InterfaceNotSupported', 'validation');
     }
 
     const theme = skin.themes[themeName];
     if (!theme) {
-      throw new Error(`Theme ${themeName} not found in skin ${skinId}`);
+      throw createTemplumError(`Theme ${themeName} not found in skin ${skinId}`, 'ThemeNotFound', 'validation');
     }
 
     const startTime = Date.now();
@@ -569,11 +458,21 @@ export class UniversalSkinEngine extends EventEmitter {
         skinId,
         interface: interfaceType,
         theme: themeName,
+        metadata: {
+          skinId,
+          backendService: skin.metadata.backendService
+        },
+        components: [],
         output: optimizedOutput,
         performance: {
           renderTime: Date.now() - startTime,
           outputSize: this.calculateOutputSize(optimizedOutput),
           cacheHit: false
+        },
+        customization: {},
+        inheritance: {
+          parentSkin: skin.metadata.parentSkin,
+          applied: !!skin.metadata.parentSkin
         },
         validation
       };
@@ -588,16 +487,29 @@ export class UniversalSkinEngine extends EventEmitter {
       return result;
 
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage = isTemplumError(error) 
+        ? error.message 
+        : (error instanceof Error ? error.message : 'Unknown error');
+      
       const errorResult: SkinRenderResult = {
         skinId,
         interface: interfaceType,
         theme: themeName,
+        metadata: {
+          skinId,
+          backendService: skin.metadata.backendService
+        },
+        components: [],
         output: {},
         performance: {
           renderTime: Date.now() - startTime,
           outputSize: 0,
           cacheHit: false
+        },
+        customization: {},
+        inheritance: {
+          parentSkin: skin.metadata.parentSkin,
+          applied: false
         },
         validation: {
           valid: false,
@@ -606,6 +518,15 @@ export class UniversalSkinEngine extends EventEmitter {
         }
       };
 
+      // Emit error signal with proper payload
+      const errorPayload: ErrorSignalPayload = {
+        error: isTemplumError(error) ? error : createTemplumError(errorMessage, 'SkinRenderError', 'runtime'),
+        timestamp: Date.now(),
+        source: 'UniversalSkinEngine',
+        severity: 'high'
+      };
+      (process as any).emit('skinRenderError', errorPayload);
+      
       this.emit('skinRenderError', errorResult);
       throw new Error(`Skin rendering failed: ${errorMessage}`);
     }
@@ -659,12 +580,12 @@ export class UniversalSkinEngine extends EventEmitter {
   ): Promise<void> {
     const baseSkin = this.skins.get(baseSkinId);
     if (!baseSkin) {
-      throw new Error(`Base skin ${baseSkinId} not found`);
+      throw createTemplumError(`Base skin ${baseSkinId} not found`, 'SkinNotFound', 'validation');
     }
 
     const baseTheme = baseSkin.themes[baseThemeName];
     if (!baseTheme) {
-      throw new Error(`Base theme ${baseThemeName} not found`);
+      throw createTemplumError(`Base theme ${baseThemeName} not found`, 'ThemeNotFound', 'validation');
     }
 
     // Create variant theme with PCL inheritance patterns
@@ -716,7 +637,7 @@ export class UniversalSkinEngine extends EventEmitter {
       performanceOptimizations: [] as any[]
     };
 
-    for (const [skinId, skin] of this.skins) {
+    for (const [skinId, skin] of Array.from(this.skins.entries())) {
       // Analyze PCL pattern adoption
       const pclAnalysis = this.analyzePCLPatternAdoption(skin);
       if (pclAnalysis.improvementPotential > 15) {
@@ -819,7 +740,7 @@ export class UniversalSkinEngine extends EventEmitter {
    * Connect PCL-Skins integration service
    */
   connectPCLSkinsService(pclSkinsService: any): void {
-    this.pclSkinIntegration = pclSkinsService;
+    // PCL integration now handled by PCLRenderingAdapter - deprecated method
     
     this.emit('pclSkinsConnected', {
       serviceVersion: pclSkinsService.version || 'unknown',
@@ -869,9 +790,10 @@ export class UniversalSkinEngine extends EventEmitter {
   private async optimizeWithPCLPatterns(skin: UniversalSkinDefinition): Promise<UniversalSkinDefinition> {
     const optimized = { ...skin };
 
-    // Apply PCL-Skins inheritance patterns
-    if (this.pclSkinIntegration) {
-      const pclOptimizations = await this.pclSkinIntegration.analyzeSkinOptimizations(skin);
+    // PCL optimization now handled by PCLRenderingAdapter
+    // Maintain compatibility with existing PCL compatibility structure
+    if (false) { // Disabled legacy PCL integration
+      const pclOptimizations = null; // await this.pclSkinIntegration.analyzeSkinOptimizations(skin);
       
       optimized.pclCompatibility.reusePercentage = Math.max(
         skin.pclCompatibility.reusePercentage,
@@ -1053,7 +975,7 @@ export class UniversalSkinEngine extends EventEmitter {
       case 'tokens':
         return { render: this.renderToTokens.bind(this) };
       default:
-        throw new Error(`Unknown renderer: ${rendererName}`);
+        throw createTemplumError(`Unknown renderer: ${rendererName}`, 'UnknownRenderer', 'configuration');
     }
   }
 
@@ -1192,7 +1114,7 @@ export class UniversalSkinEngine extends EventEmitter {
       .filter(skin => skin.themes[themeName]);
 
     if (compatibleSkins.length === 0) {
-      throw new Error(`No compatible skins found for interface ${interfaceType} with theme ${themeName}`);
+      throw createTemplumError(`No compatible skins found for interface ${interfaceType} with theme ${themeName}`, 'NoCompatibleSkins', 'validation');
     }
 
     // Select skin with highest PCL reuse percentage
@@ -1313,7 +1235,7 @@ export class UniversalSkinEngine extends EventEmitter {
   private getRenderingEngineStats(): Record<string, number> {
     const stats: Record<string, number> = {};
     
-    for (const [engineName] of this.renderingEngines) {
+    for (const [engineName] of Array.from(this.renderingEngines.entries())) {
       const skinsUsingEngine = Array.from(this.skins.values())
         .filter(skin => Object.values(skin.rendering.targets).some(target => target.renderer === engineName));
       stats[engineName] = skinsUsingEngine.length;
@@ -1429,7 +1351,8 @@ export class UniversalSkinEngine extends EventEmitter {
         description: 'Default universal theme with PCL integration',
         author: 'Templum System',
         tags: ['default', 'universal', 'pcl-compatible'],
-        supportedInterfaces: ['vscode', 'cli', 'command', 'web'],
+        supportedInterfaces: ['vscode', 'cli', 'command'],
+        backendService: 'templum-default',
         dependencies: []
       },
       inheritance: {

@@ -7,7 +7,7 @@
     "noderr:audit:apply": "node scripts/noderr-audit/index.cjs --apply",
     "noderr:audit:scan": "node scripts/noderr-audit/index.cjs --scan",
     "noderr:audit:all": "node scripts/noderr-audit/index.cjs --apply --scan",
-    "validate:component": "node scripts/validaton/validate-component.js"
+    "validate:component": "node scripts/validation/validate-component.js"
   },
   "dependencies": {
     "typescript": "^5.9.2"

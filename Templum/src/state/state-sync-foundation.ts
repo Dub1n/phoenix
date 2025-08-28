@@ -102,10 +102,19 @@ export class StateSyncFoundation extends EventEmitter {
    */
   async getState(interfaceId?: string): Promise<Record<string, any>> {
     if (interfaceId) {
-      return this.interfaceStates.get(interfaceId) || {};
+      const interfaceState = this.interfaceStates.get(interfaceId) || {};
+      return {
+        ...interfaceState,
+        syncLatency: this.getLastSyncLatency(),
+        conflictsResolved: this.hasConflictsResolved()
+      };
     }
 
-    return { ...this.globalState };
+    return { 
+      ...this.globalState,
+      conflictsResolved: this.hasConflictsResolved(),
+      syncLatency: this.getLastSyncLatency()
+    };
   }
 
   /**
@@ -334,6 +343,20 @@ export class StateSyncFoundation extends EventEmitter {
         (this.metrics.averageSyncTime * (this.metrics.totalUpdates - 1) + newTime) / 
         this.metrics.totalUpdates;
     }
+  }
+
+  /**
+   * Get the last synchronization latency
+   */
+  private getLastSyncLatency(): number {
+    return this.metrics.averageSyncTime;
+  }
+
+  /**
+   * Check if any conflicts have been resolved
+   */
+  private hasConflictsResolved(): boolean {
+    return this.metrics.conflictsResolved > 0;
   }
 
   /**

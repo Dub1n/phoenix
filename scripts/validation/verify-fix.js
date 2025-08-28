@@ -4,7 +4,7 @@
  * Fix Verification Script
  * 
  * Purpose: Verifies fix completeness and validates component functionality
- * Usage: npm run verify:fix <component-name>
+ * Usage: node verify-fix.js <component-name> [--save]
  * Integration: Used by quick-fix-guide.md and comprehensive-fix-guide.md after implementation
  * 
  * Functionality:
@@ -16,11 +16,18 @@
  * - Confirm component status change from broken to working
  * - Generate evidence in shared-components.md compatible format for tracker updates
  * - Provide verification data for Quick Fix or Comprehensive Fix templates
+ * - Optional file saving (use --save flag or SAVE_VERIFICATION_RESULTS=true env var)
  * 
  * Input: Component name or fix ID
  * Output: Verification report with pass/fail for each check and tracker-compatible evidence
+ * File Output: Optional JSON results file (only when --save flag is used)
+ * 
+ * Agent Usage:
+ * - Default: Results displayed in console only (no file saving required)
+ * - Optional: Use --save flag when detailed results file is needed for documentation
  */
 
+import fs from 'fs';
 import path from 'path';
 import {
   STATUS,
@@ -203,7 +210,6 @@ class FixVerifier {
       for (const file of this.verification.files) {
         try {
           // Simulate checking if the file has valid exports
-          const fs = await import('fs');
           const content = fs.readFileSync(file, 'utf8');
           
           // Basic check for export statements
@@ -286,7 +292,6 @@ class FixVerifier {
     const check = this.verification.checks.EXPORTS;
     
     try {
-      const fs = await import('fs');
       const exportCounts = {};
       let totalExports = 0;
       
@@ -414,20 +419,36 @@ class FixVerifier {
   }
 
   /**
-   * Save verification results
+   * Save verification results (optional)
    */
   async saveResults() {
-    const resultsDir = this.detector.getValidationResultsDir();
-    if (!fs.existsSync(resultsDir)) {
-      fs.mkdirSync(resultsDir, { recursive: true });
+    // Check if user wants to save results (optional feature)
+    const shouldSave = process.argv.includes('--save') || process.env.SAVE_VERIFICATION_RESULTS === 'true';
+    
+    if (!shouldSave) {
+      console.log('\n💾 Results not saved (use --save flag to save verification results to file)');
+      console.log('   Agent workflow: Verification complete - no file saving required for fix validation');
+      return;
     }
 
-    const filename = `${new Date().toISOString().replace(/[:.]/g, '-')}-${this.componentName}-verification.json`;
-    const filepath = path.join(resultsDir, filename);
-    
-    const fs = await import('fs');
-    fs.writeFileSync(filepath, JSON.stringify(this.verification, null, 2));
-    console.log(`\n💾 Results saved to: ${path.relative(this.detector.getProjectRoot(), filepath)}`);
+    try {
+      const resultsDir = this.detector.getValidationResultsDir();
+      if (!fs.existsSync(resultsDir)) {
+        fs.mkdirSync(resultsDir, { recursive: true });
+      }
+
+      const filename = `${new Date().toISOString().replace(/[:.]/g, '-')}-${this.componentName}-verification.json`;
+      const filepath = path.join(resultsDir, filename);
+      
+      fs.writeFileSync(filepath, JSON.stringify(this.verification, null, 2));
+      const relativePath = path.relative(this.detector.getProjectRoot(), filepath);
+      console.log(`\n💾 Results saved to: ${relativePath}`);
+      console.log(`   Full path: ${filepath}`);
+      console.log(`   Agent note: Verification file saved for detailed analysis or documentation`);
+    } catch (error) {
+      console.warn(`\n⚠️  Could not save results: ${error.message}`);
+      console.log('   Agent workflow: Continuing without file save - verification data available in console output');
+    }
   }
 
   /**

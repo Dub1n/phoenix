@@ -19,7 +19,7 @@
 - TypeScript compilation errors
 - Missing import/export statements
 - Simple type definition mismatches  
-- Straightforward mock-to-real transitions
+- Simple mock-to-real transitions (when real components exist)
 
 ## 🎯 Autonomous Quick Fix Workflow
 
@@ -45,7 +45,22 @@
 - Clear error messages with specific file locations
 - Components marked as ready for simple fixes
 
-### Step 2: Validate Quick Fix Suitability
+### Step 2: Validate Quick Fix Suitability ⚡ **UPDATED**
+
+**✅ Simplicity Check** (Reference comprehensive-fix-guide.md Step 3.5 for details):
+
+**Quick Questions**:
+
+- Can you explain the fix in one sentence? → ✅ Quick fix
+- Are you just updating method names or parameters? → ✅ Quick fix  
+- Does the real implementation already exist? → ✅ Quick fix
+- Is this mock-to-real with working components? → ✅ Quick fix (refactoring)
+
+**⚠️ Escalate to comprehensive if**:
+
+- You need multiple sentences with "however" to explain → Comprehensive
+- Real implementations don't exist → Comprehensive
+- Fundamental design pattern conflicts → Comprehensive
 
 **Quick Checklist**:
 
@@ -66,27 +81,171 @@
 
 ### Step 4: Validation
 
-**Required validation**:
+**Multi-Stage Validation Process**:
+
+#### Stage 1: Pre-Fix Component Assessment
+
+**Before starting the fix** - Use validation scripts to assess current state:
 
 ```bash
-# TypeScript compilation
-npx tsc --noEmit
-
-# Basic functionality test
-npm test <component-name> # if component tests exist
-
-# Quick integration check
-npm run build # if build exists
+# Assess component health and complexity before fixing
+node scripts/validation/validate-component.js <component-name>
+node scripts/validation/estimate-complexity.js <component-name>
 ```
 
-### Step 5: Document and Update Files
+**When to use these scripts**:
 
-1. **Create Fix Document** using Quick Fix template (below)
-2. **Update Tracker Status** in `project/dev/*-tracker-data.md`
-3. **Update Planning Queue** in `project/dev/*-fix-planning.md`:
+- `validate-component.js`: Run before starting any fix to get baseline health status
+- `estimate-complexity.js`: Use to confirm this is appropriate for quick-fix (should score 0-7)
+
+#### Stage 2: Compilation Validation
+
+```bash
+npx tsc --noEmit  # TypeScript compilation
+npm run lint      # Code quality checks
+```
+
+#### Stage 3: Component Validation
+
+```bash
+node scripts/validation/validate-component.js <component-name>
+npm test <component-name>  # Component-specific tests
+```
+
+#### Stage 4: Fix Verification
+
+```bash
+npm run build     # Full build process
+npm test          # Full test suite
+node scripts/validation/verify-fix.js <component-name>
+```
+
+**When to use verification**:
+
+- `verify-fix.js`: Run after implementing fix to confirm resolution and no regressions
+
+#### Stage 5: Evidence Generation
+
+```bash
+# Generate evidence for documentation (optional for quick fixes)
+node scripts/validation/generate-evidence.js <fix-id>
+```
+
+**When to use evidence generation**:
+
+- For tracker updates requiring before/after proof
+- When fix affects multiple components
+- For fixes that will be referenced later
+
+#### Stage 6: System Validation
+
+- Manual testing of fixed functionality
+- Integration point verification
+- Performance impact assessment
+- No regression confirmation
+
+### Step 5: Pattern Analysis and Documentation Update
+
+#### 5.1: Pattern Compliance Analysis
+
+**Before creating fix documentation**, analyze what patterns were established or used:
+
+1. **Identify Patterns Applied** (if any of these were relevant to your fix):
+   - **Map Iteration Pattern**: Did you need to convert `for (const [key, value] of map)` to `for (const [key, value] of Array.from(map.entries()))`?
+   - **Error Handling Pattern**: Did you apply `isTemplumError` type guard in catch blocks?
+   - **Type System Integration**: Did you use types from `../types/templum-types.ts`?
+   - **Signal Emission Pattern**: Did you use typed signal payloads (`ErrorSignalPayload`, `MetricsSignalPayload`)?
+   - **Interface Property Alignment**: Did you align Map types with Map usage or fix object literal violations?
+   - **Async Method Pattern**: Did you implement async methods following established patterns?
+
+2. **Document Pattern Usage** in your fix documentation:
+
+   ```markdown
+   ## Implementation Patterns Used
+   **Pattern Compliance**: [List which patterns were applied]
+   - Map Iteration: ✅/❌ (Applied Array.from() pattern)
+   - Error Handling: ✅/❌ (Used isTemplumError type guard)
+   - Type System: ✅/❌ (Imported from templum-types.ts)
+   - [Only list patterns that were relevant to this fix]
+   ```
+
+3. **Update Planning Document** if patterns were discovered or refined:
+   - If you found a new pattern or variation, note it in the planning queue
+   - If existing pattern guidance was incomplete, add clarifying notes
+
+**Pattern Sync Frequency**: This analysis ensures all fixes contribute to the evolving architectural knowledge base and prevents future developers from having to rediscover or recreate solutions that have already been established.
+
+#### 5.2: Pattern Documentation Maintenance Guidelines 🚨 **ENHANCED**
+
+**CRITICAL**: Follow established pattern consolidation framework to prevent organic document growth and maintain information quality.
+
+**Pattern Addition Rules**:
+
+1. **Before Adding New Patterns**:
+   - [ ] **Check for Existing Patterns**: Search `*-patterns.md` for similar solutions
+   - [ ] **Consolidation Assessment**: Can this be merged with existing patterns?
+   - [ ] **Usage Frequency Test**: Will this pattern be used in 3+ scenarios?
+   - [ ] **Evidence Requirement**: Do you have success evidence from ≥2 applications?
+
+2. **When Adding is Justified** (only if all above criteria met):
+
+   ```markdown
+   ### {Pattern Name} {#pattern-anchor}
+   
+   **Status**: 🔄 IN DEVELOPMENT | **Category**: {Foundation|Integration|Implementation}
+   **Usage Evidence**: [{task-references}] | **Last Updated**: {timestamp}
+   
+   **Problem**: {one-sentence problem description}
+   **Solution**: {concise solution summary}
+   **Implementation**: {essential code example only}
+   **Used By Active Tasks**: [List current references]
+   **Integration Points**: [Related patterns]
+   ```
+
+3. **Pattern Enhancement Rules** (preferred over new patterns):
+   - **Existing Pattern Found**: Add implementation variation to existing pattern
+   - **Similar Pattern Exists**: Consolidate into existing pattern with variations
+   - **Pattern Family**: Add to existing pattern family rather than create new
+
+4. **Pattern Promotion Process**:
+   - 🔄 IN DEVELOPMENT → ✅ ESTABLISHED after 3+ successful applications
+   - Add to Enhanced Pattern Index with usage frequency indicators
+   - Update "Used By Active Tasks" sections
+   - Add difficulty level and time estimates
+
+#### 5.3: Create Fix Documentation and Update Files
+
+1. **Create Fix Document** using Quick Fix template (below) with pattern analysis included
+2. **Update Planning Queue** in `project/dev/*-active-tasks.md`:
    - Mark task as completed (check off item)
    - Remove from appropriate queue
    - Add any new discoveries to investigation queue
+   - Add any tasks that have emerged during this implementation, and their details, to the relevant queue
+   - Add pattern notes to any affected items following consolidation guidelines
+3. **Pattern Documentation Updates** (if applicable):
+   - [ ] **Enhancement Over Addition**: Prefer enhancing existing patterns
+   - [ ] **Consolidation Check**: Merge similar patterns rather than create new ones
+   - [ ] **Usage Tracking**: Update "Used By Active Tasks" sections
+   - [ ] **Index Maintenance**: Update Enhanced Pattern Index if pattern status changes
+
+### Step 6: Update Project Dashboard (Final Step)
+
+**After all implementation, validation, and documentation is complete**:
+
+Update `project/dev/*-tracker-data.md` with:
+
+- [ ] **Fix History Log**: Add single-line entry with date, component, and fix document link
+- [ ] **Component Status**: Update status if component moved from broken to working  
+- [ ] **Build Status**: Update error count if compilation errors were resolved
+- [ ] **Quick Status Dashboard**: Update component counts and percentages if appropriate
+- [ ] **Fix Success Metrics**: Update success rates if this represents a significant milestone
+
+**Dashboard Update Guidelines**:
+
+- Only update after fix is fully complete and validated
+- Keep updates concise - detailed information stays in fix documents
+- This provides user visibility into project health trends
+- **Note**: Dashboard is for user monitoring only - not part of task selection workflow
 
 ## ⚡ Quick Fix Documentation Template
 
@@ -114,6 +273,25 @@ npm run build # if build exists
 ### Files Modified
 - `{path/to/file.ts}` - {Brief description of fix}
 
+### Imports Added
+- {List any new imports, especially from Type System Foundation}
+
+## Implementation Patterns Used
+**Pattern Application** (✅ = Applied, ➕ = Enhanced, 🆕 = New):
+- {List specific patterns with status indicators}
+- {Reference existing pattern documentation with anchor links}
+- {Note any pattern enhancements made during implementation}
+
+**Pattern Consolidation Compliance**:
+- [ ] **Checked existing patterns** before creating new solutions
+- [ ] **Enhanced existing patterns** rather than creating duplicates  
+- [ ] **Updated cross-references** in patterns document if applicable
+- [ ] **Maintained usage tracking** for applied patterns
+
+**Quick Fix Methodology**:
+- {Brief notes on approach taken and any pattern applications}
+- {Any lessons learned about pattern effectiveness}
+
 ## Verification Results
 - [ ] TypeScript Compilation: ✓/✗ 
 - [ ] Component Tests: ✓/✗ ({X} tests passed)
@@ -133,20 +311,44 @@ npm run build # if build exists
 **Template**: Quick Fix
 ```
 
-## 🔄 Implementation Tracker Integration
+## 🔄 Enhanced Documentation Integration
 
-**Update these tracker sections**:
+**ENHANCED Documentation Update Checklist**:
 
-1. **Component Status Table**: Change from 🔴 Broken to 🟢 Working
-2. **Build Issues Log**: Add entry with date and fix summary
-3. **Component Summary**: Update broken/working counts
+1. **Task Discovery Protocols**:
 
-**Status transition format**:
+   **A. In-Workflow Discovery (TODO Tags)**:
+   - [ ] Use TODO tags: `// TODO: [TASK-NEW-XXX] Description | Priority: High/Medium/Low | Phase: Foundation/Interface/Integration`
+   - [ ] Include Complexity (1-10), Location, Dependencies in comments
 
-``` log
-Before: "Component Name - STATUS: 🔴 Broken (X compilation errors)"
-After:  "Component Name - STATUS: 🟢 Working (0 compilation errors, verified)"
-```
+   **B. Architectural Discovery (NEW)**:
+   - [ ] For issues found during quick fixes, analysis, or general development:
+     - [ ] Add directly to `templum-active-tasks.md` using roadmap classification
+     - [ ] Consult `templum-roadmap.md` Task Classification Guide
+     - [ ] Assign to appropriate phase and priority queue
+
+2. **Post-Implementation Documentation**:
+   - [ ] Search for TODO tags: `grep -r "TODO: \[TASK-" .`
+   - [ ] For each TODO: Use `templum-roadmap.md` to classify phase and calculate priority
+   - [ ] Add discovered issues to `templum-active-tasks.md` in correct queue
+   - [ ] Update task status to [✅] in active tasks queue
+   - [ ] Add ONE-LINE entry to `templum-tracker-data.md` log
+   - [ ] Create detailed fix document in `dev/fixes/` folder
+   - [ ] Extract reusable patterns to `templum-patterns.md`
+   - [ ] Remove TODO tags after documenting
+
+3. **Chain Completion & Roadmap Update Protocol** (NEW):
+   - [ ] Check if completed task finishes entire dependency chain
+   - [ ] If chain complete AND no other dependencies: REMOVE chain from active tasks
+   - [ ] Archive chain summary to `templum-completed.md` (one line)
+   - [ ] Check if phase complete → Update `templum-roadmap.md` phase status
+   - [ ] Check if new tasks affect phase balance → Consider roadmap updates
+
+**Status Update Rules**:
+
+- Update task marker: `[ ]` → `[✅]` in `templum-active-tasks.md`
+- Tracker log entry: `Date | Component | ✅ | dev/fixes/fix-document.md`
+- NO duplication: Details go ONLY in fix document, not tracker-data.md
 
 ## ❌ When to Escalate
 
@@ -157,12 +359,15 @@ After:  "Component Name - STATUS: 🟢 Working (0 compilation errors, verified)"
 - Discovers additional broken components  
 - Needs architectural changes
 - Uncovers security issues
+- Creates >3 TODO tags during implementation
+- Discovers architectural issues requiring roadmap consultation
 
 **Escalation process**:
 
-1. Document investigation findings in tracker
-2. Note escalation reason
-3. Switch to `comprehensive-fix-guide.md`
+1. Document all TODO tags found during investigation
+2. Add escalation task to `templum-active-tasks.md` with [!] priority marker
+3. Note escalation reason in task description
+4. Switch to `comprehensive-fix-guide.md`
 
 ## 📊 Quick Reference Links
 
@@ -170,12 +375,54 @@ After:  "Component Name - STATUS: 🟢 Working (0 compilation errors, verified)"
 **For complex fixes**: Use `comprehensive-fix-guide.md`  
 **For tracker structure**: See `tracker-template.md`
 
-**Validation scripts** (placeholder):
+**Validation scripts** - Essential tools for quick fix workflow:
 
 ```bash
+# Pre-fix assessment (run before starting)
 node scripts/validation/validate-component.js <component-name>
+node scripts/validation/estimate-complexity.js <component-name>
+
+# Post-fix verification (run after implementing)
 node scripts/validation/verify-fix.js <component-name>
+
+# Documentation evidence (optional, for complex quick fixes)
+node scripts/validation/generate-evidence.js <fix-id>
 ```
+
+**Script Usage Guidelines**:
+
+- **Component Validation**: Always run before starting to establish baseline
+- **Complexity Estimation**: Use to verify quick-fix approach is appropriate (score should be 0-7)
+- **Fix Verification**: Required after implementation to confirm success
+- **Evidence Generation**: Use when tracker requires detailed before/after proof
+
+## 📚 Pattern Maintenance Quick Reference
+
+**Pattern Consolidation Checklist** (❗ Before adding ANY pattern content):
+
+- [ ] **Search First**: `grep -r "pattern-name" {project}-patterns.md`
+- [ ] **Enhancement Over Addition**: Can this enhance an existing pattern?
+- [ ] **Usage Test**: Will this be used in 3+ scenarios?
+- [ ] **Evidence Requirement**: Do you have success evidence from ≥2 applications?
+
+**If Pattern Addition Required**:
+
+```markdown
+### {Pattern Name} {#pattern-anchor}
+**Status**: 🔄 IN DEVELOPMENT | **Category**: Foundation|Integration|Implementation  
+**Usage Evidence**: [{current-task-references}] | **Last Updated**: {timestamp}
+**Problem**: {one-sentence description}
+**Solution**: {concise summary}
+**Implementation**: {minimal essential code only}
+**Used By Active Tasks**: [List current references]
+```
+
+**Pattern Enhancement Guidelines**:
+
+- **Existing Pattern**: Add implementation variation to existing pattern
+- **Similar Pattern**: Consolidate into existing pattern with variations section  
+- **Status Updates**: 🔄 IN DEVELOPMENT → ✅ ESTABLISHED after 3+ applications
+- **Cross-References**: Always update "Used By Active Tasks" sections
 
 ## ✅ Success Criteria
 
@@ -186,6 +433,7 @@ node scripts/validation/verify-fix.js <component-name>
 - Requires no architectural changes
 - Introduces no new errors or regressions
 - Updates tracker status accurately
+- **Follows pattern consolidation framework**
 
 **Quality standards**:
 
@@ -193,6 +441,7 @@ node scripts/validation/verify-fix.js <component-name>
 - Basic functionality verified
 - Tracker integration complete
 - Documentation follows template
+- **Pattern documentation maintained** (enhancement over addition)
 
 ---
 **Template Type**: Quick Fix Guide  

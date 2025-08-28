@@ -83,11 +83,19 @@ export interface CommandContext {
 
 export interface CommandResult {
   success: boolean;
+  message?: string;
   data?: any;
   error?: string;
   source?: InterfaceType;
   timestamp?: number;
   executionTime?: number;
+  context?: CommandContext;
+  metadata?: {
+    backendId?: string;
+    routing?: string;
+    executionMode?: string;
+    [key: string]: any;
+  };
 }
 
 export interface CommandDefinition {
@@ -203,6 +211,9 @@ export interface BackendConnectionStatus {
       health: 'healthy' | 'unhealthy' | 'error';
       lastCheck: number;
       lastError?: string;
+      capabilities?: string[];
+      responseTime?: number;
+      version?: string;
     };
   };
 }

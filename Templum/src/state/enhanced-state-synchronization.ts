@@ -8,6 +8,7 @@
 
 import { EventEmitter } from 'events';
 import { performance } from 'perf_hooks';
+import { TemplumError, isTemplumError, Signals, ErrorSignalPayload } from '../types/templum-types';
 
 // Core interfaces for IPC-based state coordination
 export interface IPCStateMessage {
@@ -140,7 +141,7 @@ export class IPCCoordinator extends EventEmitter {
     this.processingQueue = true;
     
     try {
-      for (const [queueKey] of this.messageQueue) {
+      for (const [queueKey] of Array.from(this.messageQueue)) {
         await this.processMessageQueue(queueKey);
       }
     } finally {
@@ -196,7 +197,7 @@ export class ConflictResolver {
       const conflictGroups = this.groupConflictsByPath(changes);
       const resolvedChanges: StateChange[] = [];
 
-      for (const [path, pathChanges] of conflictGroups) {
+      for (const [path, pathChanges] of Array.from(conflictGroups)) {
         if (pathChanges.length === 1) {
           resolvedChanges.push(pathChanges[0]);
           continue;
@@ -218,7 +219,8 @@ export class ConflictResolver {
 
       return resolvedChanges;
     } catch (error) {
-      throw new Error(`Conflict resolution failed: ${error.message}`);
+      const errorMessage = isTemplumError(error) ? error.message : (error instanceof Error ? error.message : 'Unknown conflict resolution error');
+      throw new Error(`Conflict resolution failed: ${errorMessage}`);
     }
   }
 
@@ -423,7 +425,8 @@ export class StatePersistence {
       this.emitMetrics('state-store', duration, 1);
       
     } catch (error) {
-      throw new Error(`State storage failed: ${error.message}`);
+      const errorMessage = isTemplumError(error) ? error.message : (error instanceof Error ? error.message : 'Unknown state storage error');
+      throw new Error(`State storage failed: ${errorMessage}`);
     }
   }
 
@@ -441,7 +444,8 @@ export class StatePersistence {
       
       return snapshot ? this.deserializeStateData(snapshot.state) : null;
     } catch (error) {
-      throw new Error(`State retrieval failed: ${error.message}`);
+      const errorMessage = isTemplumError(error) ? error.message : (error instanceof Error ? error.message : 'Unknown state retrieval error');
+      throw new Error(`State retrieval failed: ${errorMessage}`);
     }
   }
 
@@ -585,7 +589,7 @@ export class CrossInterfaceSync {
     const syncPromises: Promise<void>[] = [];
 
     try {
-      for (const [interfaceId, interfaceInfo] of this.interfaceRegistry) {
+      for (const [interfaceId, interfaceInfo] of Array.from(this.interfaceRegistry)) {
         // Skip source interface to avoid loops
         if (interfaceId === sourceInterface) continue;
 
@@ -601,7 +605,8 @@ export class CrossInterfaceSync {
       this.emitMetrics('cross-interface-sync', duration, syncPromises.length);
       
     } catch (error) {
-      throw new Error(`Cross-interface sync failed: ${error.message}`);
+      const errorMessage = isTemplumError(error) ? error.message : (error instanceof Error ? error.message : 'Unknown cross-interface sync error');
+      throw new Error(`Cross-interface sync failed: ${errorMessage}`);
     }
   }
 
@@ -626,12 +631,19 @@ export class CrossInterfaceSync {
       this.interfaceRegistry.get(interfaceId)!.lastSync = Date.now();
     } catch (error) {
       // Log error but don't fail entire sync
-      process.emit('state-sync:error' as any, {
-        error: error.message,
-        interfaceId,
-        interfaceType: interfaceInfo.type,
-        timestamp: Date.now()
-      });
+      const errorPayload: ErrorSignalPayload = {
+        timestamp: Date.now(),
+        source: `cross-interface-sync:${interfaceId}`,
+        error: isTemplumError(error) ? error : {
+          name: 'SyncError',
+          message: (error instanceof Error ? error.message : 'Unknown sync error'),
+          code: 'SYNC_INTERFACE_ERROR',
+          category: 'integration' as const,
+          timestamp: Date.now(),
+        } as TemplumError,
+        severity: 'medium' as const
+      };
+      (process as any).emit('state-sync:error', errorPayload);
     }
   }
 
@@ -644,7 +656,7 @@ export class CrossInterfaceSync {
   private async processSyncQueue(): Promise<void> {
     const processPromises: Promise<void>[] = [];
 
-    for (const [interfaceId, stateQueue] of this.syncQueue) {
+    for (const [interfaceId, stateQueue] of Array.from(this.syncQueue)) {
       if (stateQueue.length === 0) continue;
 
       const interfaceInfo = this.interfaceRegistry.get(interfaceId);
@@ -678,7 +690,7 @@ export class CrossInterfaceSync {
   getSyncStats(): { interfaceCount: number; averageSyncTime: number; queueSizes: Record<string, number> } {
     const queueSizes: Record<string, number> = {};
     
-    for (const [interfaceId, queue] of this.syncQueue) {
+    for (const [interfaceId, queue] of Array.from(this.syncQueue)) {
       queueSizes[interfaceId] = queue.length;
     }
 
@@ -740,7 +752,8 @@ export class EnhancedStateManager extends EventEmitter {
       this.emit('initialized', { timestamp: Date.now() });
       
     } catch (error) {
-      this.emit('error', { error: error.message, operation: 'initialization' });
+      const errorMessage = isTemplumError(error) ? error.message : (error instanceof Error ? error.message : 'Unknown initialization error');
+      this.emit('error', { error: errorMessage, operation: 'initialization' });
       throw error;
     }
   }
@@ -797,7 +810,8 @@ export class EnhancedStateManager extends EventEmitter {
 
     } catch (error) {
       this.performanceMetrics.errorCount++;
-      this.emit('error', { error: error.message, operation: 'updateState', componentId });
+      const errorMessage = isTemplumError(error) ? error.message : (error instanceof Error ? error.message : 'Unknown update state error');
+      this.emit('error', { error: errorMessage, operation: 'updateState', componentId });
       throw error;
     }
   }
@@ -836,7 +850,8 @@ export class EnhancedStateManager extends EventEmitter {
       
     } catch (error) {
       this.performanceMetrics.errorCount++;
-      throw error;
+      const errorMessage = isTemplumError(error) ? error.message : (error instanceof Error ? error.message : 'Unknown request state error');
+      throw isTemplumError(error) ? error : new Error(`State request failed: ${errorMessage}`);
     }
   }
 

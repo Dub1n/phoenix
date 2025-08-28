@@ -11,6 +11,7 @@
  */
 
 import chalk from 'chalk';
+import { InterfaceType } from '../types/templum-types';
 
 // Extended interfaces for multi-interface support
 export interface UniversalSkinMenuDefinition extends PCLSkinMenuDefinition {
@@ -52,7 +53,7 @@ export interface SkinTheme {
   useIcons: boolean;
 }
 
-export type InterfaceType = 'vscode' | 'cli' | 'command';
+// InterfaceType imported from ../types/templum-types
 
 export interface VSCodeInterfaceConfig {
   treeViewProvider?: boolean;

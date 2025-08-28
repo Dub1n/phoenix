@@ -1,0 +1,28 @@
+{
+  "issueId": "templum-config-manager",
+  "timestamp": "2025-08-23T06:08:04.196Z",
+  "filesScore": 3,
+  "dependenciesScore": 3,
+  "uncertaintyScore": 1,
+  "totalScore": 12,
+  "complexityLevel": "LOW_MEDIUM",
+  "template": "comprehensive-fix-guide.md",
+  "timeEstimate": "3-6 hours",
+  "filesAffected": [
+    "C:\\Users\\gabri\\Documents\\Infotopology\\VDL_Vault\\phoenix-code-lite\\src\\core\\config-manager.ts",
+    "C:\\Users\\gabri\\Documents\\Infotopology\\VDL_Vault\\phoenix-code-lite\\src\\core\\Config-manager.ts",
+    "C:\\Users\\gabri\\Documents\\Infotopology\\VDL_Vault\\Templum\\src\\core\\templum-config-manager.ts",
+    "C:\\Users\\gabri\\Documents\\Infotopology\\VDL_Vault\\phoenix-code-lite\\src\\cli\\interfaces\\config-manager.ts"
+  ],
+  "dependencies": [
+    "zod",
+    "fs",
+    "path",
+    "events"
+  ],
+  "uncertaintyFactors": [],
+  "recommendations": [
+    "Use comprehensive-fix-guide.md template for this fix",
+    "Estimated time investment: 3-6 hours"
+  ]
+}

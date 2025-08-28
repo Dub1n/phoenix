@@ -25,39 +25,59 @@ export type ConflictResolutionStrategy = 'last-writer-wins' | 'merge-compatible'
  * Single definition supports VSCode, CLI, and Command interfaces
  */
 export interface UniversalSkinDefinition {
+  // Core identification - aligned with implementation
+  id: string;
+  name: string;
+  description?: string;
+  version: string;
+  
+  // PCL compatibility features
+  pclCompatibility: PCLCompatibility;
+  
   // Core metadata and identification
   metadata: SkinMetadata;
   
   // Interface-specific definitions
-  views: SkinViews;           // VSCode TreeViews, panels
-  menus: SkinMenus;           // CLI menu structures  
-  commands: SkinCommands;     // Command-line commands
-  workflows: SkinWorkflows;   // Multi-step automation
+  views?: SkinViews;           // VSCode TreeViews, panels
+  menus?: SkinMenus;           // CLI menu structures  
+  commands?: SkinCommands;     // Command-line commands
+  workflows?: SkinWorkflows;   // Multi-step automation
   
   // Cross-interface features
-  shortcuts: Record<string, string>;
-  theme: SkinTheme;
-  backendConfig: BackendConfig;
+  shortcuts?: Record<string, string>;
+  themes: Record<string, ThemeDefinition>; // Multiple themes support
+  components: Record<string, ComponentSkin>;
+  assets: SkinAssets;
   
-  // Performance and validation
-  caching: CachingStrategy;
-  validation: ValidationRules;
+  // Backend and inheritance
+  backendConfig?: BackendConfig;
+  inheritance: SkinInheritance;
+  
+  // Rendering and performance
+  rendering: RenderingConfiguration;
+  performance: SkinPerformanceConfig;
+  
+  // Validation
+  caching?: CachingStrategy;
+  validation?: ValidationRules;
 }
 
 /**
  * Skin metadata with compatibility and requirements
  */
 export interface SkinMetadata {
-  // Identity
-  id: string;                    // Unique identifier (e.g., 'haruspex-analysis')
-  name: string;                  // Display name
-  version: string;               // Semantic version
+  // Identity - some properties moved to root level for implementation compatibility
+  id?: string;                   // Optional since moved to root
+  name?: string;                 // Optional since moved to root
   description: string;           // Human-readable description
+  author?: string;               // Author information
+  tags?: string[];               // Categorization tags
   
   // Compatibility and requirements
-  targetInterfaces: InterfaceType[];  // ['vscode', 'cli', 'command']
+  supportedInterfaces: InterfaceType[];  // Renamed from targetInterfaces for implementation compatibility
   backendService: string;        // Backend service identifier
   minimumVersion?: string;       // Minimum backend version required
+  dependencies?: string[];       // Dependencies list
   
   // Feature support matrix
   features?: FeatureMatrix;      // Interface-specific feature availability
@@ -124,6 +144,8 @@ export interface SkinViews {
 export interface TreeViewDefinition {
   id: string;
   name: string;
+  title?: string;
+  description?: string;
   icon?: string;
   dataProvider: string;
   refreshCommand?: string;
@@ -161,12 +183,14 @@ export interface SkinMenus {
 export interface MenuDefinition {
   id: string;
   title: string;
+  description?: string;
   items: MenuItemDefinition[];
 }
 
 export interface MenuItemDefinition {
   id: string;
   label: string;
+  description?: string;
   command?: string;
   shortcut?: string;
   submenu?: string;
@@ -189,7 +213,9 @@ export interface SkinCommands {
 export interface CommandDefinition {
   id: string;
   name: string;
+  title?: string;
   description: string;
+  command?: string;
   category?: string;
   parameters?: ParameterDefinition[];
 }
@@ -301,21 +327,38 @@ export interface PerformanceHints {
 // ============================================================================
 
 export interface SkinRenderResult {
-  success: boolean;
+  success?: boolean; // Optional for compatibility
+  skinId?: string;   // Alternative format support
   interface: string;
+  theme?: string;    // Theme information
   metadata: {
     skinId: string;
     backendService: string;
+    pclIntegration?: boolean;
+    reusePercentage?: number;
+    error?: string;
   };
   components: RenderedComponent[];
   performance: {
     renderTime: number;
+    outputSize: number; // Required by implementation
     cacheHit: boolean;
   };
+  output?: Record<string, any>; // Rendering output
   customization: Record<string, any>;
   inheritance: {
     parentSkin?: string;
     applied: boolean;
+  };
+  validation?: {
+    valid: boolean;
+    warnings: string[];
+    errors: string[];
+  };
+  renderedContent?: {
+    html?: string;
+    cli?: string;
+    layout?: any;
   };
 }
 
@@ -329,9 +372,231 @@ export interface RenderedComponent {
 export interface RenderingContext {
   interface: InterfaceType;
   theme: string;
-  preferences: any;
-  capabilities: any;
-  session: any;
+  preferences?: any;
+  capabilities?: any;
+  session?: any;
+}
+
+// ============================================================================
+// Additional Required Interfaces for Implementation
+// ============================================================================
+
+// PCL Compatibility Interface
+export interface PCLCompatibility {
+  version: string;
+  reusePercentage: number;
+  inheritancePatterns: string[];
+  optimizations: string[];
+}
+
+// Theme Definition (expanded from SkinTheme)
+export interface ThemeDefinition {
+  name: string;
+  type: 'light' | 'dark' | 'high-contrast' | 'custom';
+  colors: ColorPalette;
+  typography: Typography;
+  spacing: SpacingSystem;
+  borders: BorderSystem;
+  shadows: ShadowSystem;
+  animations: AnimationSystem;
+  customProperties: Record<string, any>;
+  variants?: Record<string, Partial<ThemeDefinition>>;
+}
+
+export interface ColorPalette {
+  primary: ColorScale;
+  secondary: ColorScale;
+  accent: ColorScale;
+  neutral: ColorScale;
+  semantic: {
+    success: ColorScale;
+    warning: ColorScale;
+    error: ColorScale;
+    info: ColorScale;
+  };
+  text: {
+    primary: string;
+    secondary: string;
+    disabled: string;
+    inverse: string;
+  };
+  background: {
+    primary: string;
+    secondary: string;
+    tertiary: string;
+    overlay: string;
+  };
+  border: {
+    primary: string;
+    secondary: string;
+    focus: string;
+    error: string;
+  };
+}
+
+export interface ColorScale {
+  50: string; 100: string; 200: string; 300: string; 400: string;
+  500: string; // Base color
+  600: string; 700: string; 800: string; 900: string;
+}
+
+export interface Typography {
+  fontFamilies: {
+    primary: string;
+    secondary: string;
+    monospace: string;
+  };
+  fontSizes: Record<string, string>;
+  fontWeights: Record<string, number>;
+  lineHeights: Record<string, number>;
+  letterSpacing: Record<string, string>;
+}
+
+export interface SpacingSystem {
+  unit: number; // Base spacing unit in pixels
+  scale: Record<string, number>; // Multipliers for the base unit
+}
+
+export interface BorderSystem {
+  radii: Record<string, string>;
+  widths: Record<string, string>;
+  styles: Record<string, string>;
+}
+
+export interface ShadowSystem {
+  elevations: Record<string, string>;
+  colors: Record<string, string>;
+}
+
+export interface AnimationSystem {
+  durations: Record<string, string>;
+  easings: Record<string, string>;
+  transitions: Record<string, string>;
+}
+
+// Component and Asset Interfaces
+export interface ComponentSkin {
+  name: string;
+  type: 'container' | 'input' | 'display' | 'navigation' | 'feedback' | 'overlay';
+  variants: Record<string, ComponentVariant>;
+  states: Record<string, ComponentState>;
+  responsive: ResponsiveConfig;
+  accessibility: AccessibilityConfig;
+  pclMapping: {
+    pclComponent?: string;
+    reuseLevel: 'high' | 'medium' | 'low';
+    adaptationRequired: boolean;
+  };
+}
+
+export interface ComponentVariant {
+  styles: Record<string, any>;
+  tokens: Record<string, string>;
+  modifiers: Record<string, any>;
+}
+
+export interface ResponsiveConfig {
+  breakpoints: Record<string, string>;
+  adaptiveStyles: Record<string, Record<string, any>>;
+  fluidScaling: boolean;
+}
+
+export interface AccessibilityConfig {
+  focusStyles: Record<string, any>;
+  highContrastMode: Record<string, any>;
+  screenReaderSupport: {
+    ariaLabels: Record<string, string>;
+    descriptions: Record<string, string>;
+  };
+  keyboardNavigation: {
+    tabOrder: number;
+    shortcuts: Record<string, string>;
+  };
+}
+
+export interface SkinAssets {
+  icons: Record<string, IconDefinition>;
+  images: Record<string, ImageDefinition>;
+  fonts: Record<string, FontDefinition>;
+  sounds: Record<string, SoundDefinition>;
+}
+
+export interface IconDefinition {
+  source: string;
+  format: 'svg' | 'font' | 'png' | 'webp';
+  variants: Record<string, string>;
+  sizing: Record<string, string>;
+}
+
+export interface ImageDefinition {
+  source: string;
+  format: 'png' | 'jpg' | 'webp' | 'svg';
+  variants: Record<string, string>;
+  responsive: boolean;
+}
+
+export interface FontDefinition {
+  family: string;
+  source: string;
+  weights: number[];
+  formats: string[];
+}
+
+export interface SoundDefinition {
+  source: string;
+  format: 'mp3' | 'wav' | 'ogg';
+  variants: Record<string, string>;
+}
+
+// Inheritance and Configuration
+export interface SkinInheritance {
+  parentSkins: string[];
+  baseTheme?: string;
+  mixins: string[];
+  overrides: SkinOverride[];
+}
+
+export interface SkinOverride {
+  target: string; // CSS selector or component path
+  property: string;
+  value: any;
+  condition?: string;
+  priority: 'low' | 'medium' | 'high';
+}
+
+export interface RenderingConfiguration {
+  engine: 'css' | 'styled-components' | 'emotion' | 'tailwind' | 'css-in-js';
+  output: 'css' | 'js' | 'json' | 'tokens';
+  optimizations: {
+    treeshaking: boolean;
+    minification: boolean;
+    caching: boolean;
+    lazyLoading: boolean;
+  };
+  targets: Record<string, InterfaceRenderingConfig>;
+}
+
+export interface InterfaceRenderingConfig {
+  interface: 'vscode' | 'cli' | 'command' | 'web';
+  renderer: string;
+  adaptations: Record<string, any>;
+  constraints: {
+    colorDepth: number;
+    maxFileSize: number;
+    supportedFeatures: string[];
+  };
+}
+
+export interface SkinPerformanceConfig {
+  loadingStrategy: 'eager' | 'lazy' | 'progressive';
+  cachingPolicy: 'memory' | 'disk' | 'hybrid';
+  compressionLevel: number; // 1-9
+  criticalPath: string[];
+  metrics: {
+    targetLoadTime: number; // ms
+    maxMemoryUsage: number; // MB
+    renderBudget: number; // ms per frame
+  };
 }
 
 // ============================================================================
@@ -344,6 +609,12 @@ export interface IUniversalSkinEngine {
     skin: UniversalSkinDefinition,
     interfaceType: string,
     context: RenderingContext
+  ): Promise<SkinRenderResult>;
+  renderSkin(
+    skinId: string,
+    interfaceType: string,
+    themeName: string,
+    options?: any
   ): Promise<SkinRenderResult>;
   switchInterface(
     fromInterface: string,

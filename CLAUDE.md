@@ -30,8 +30,8 @@ Use `/spawn tdd-specialist`, `/spawn qms-specialist`, or `/spawn architecture-sp
 
 #### References: For Any Development Task
 
-1. **@.claude/references/VDL-VAULT-PROJECT-INDEX.md** - Quick access to all projects and their development commands
-2. **@.claude/architecture/VDL-VAULT-REPOSITORY-ARCHITECTURE.md** - Multi-project system overview with Mermaid diagrams
+1. **.claude/references/VDL-VAULT-PROJECT-INDEX.md** - Quick access to all projects and their development commands
+2. **.claude/architecture/VDL-VAULT-REPOSITORY-ARCHITECTURE.md** - Multi-project system overview with Mermaid diagrams
 3. **.claude/workflows/DEVELOPMENT-WORKFLOW.md** - Step-by-step development process for all project types
 
 #### References: For Phoenix Code Lite Development
@@ -231,7 +231,7 @@ The VDL_Vault repository is a comprehensive ecosystem for medical device softwar
 
 ## ^ Quick Reference Card
 
-### Essential @ References for Auto-Context
+### Essential References for Auto-Context
 
 ``` links
 .claude/references/VDL-VAULT-PROJECT-INDEX.md     # Project navigation

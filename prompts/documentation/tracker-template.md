@@ -361,6 +361,57 @@ See prompts\documentation\issue-fix-selector.md and files referenced there.
 
 see prompts\documentation\issue-fix-documentation.md or prompts\documentation\quick-fix-guide.md depending on the fix type.
 
+## 🔧 Validation Script Integration
+
+**Automated tools available** in `scripts/validation/` for maintaining tracker accuracy:
+
+### Evidence Generation and Validation
+
+```bash
+# Generate evidence for tracker updates
+node scripts/validation/generate-evidence.js <fix-id>
+
+# Validate component health for status updates
+node scripts/validation/validate-component.js <component-name>
+
+# Verify fixes before updating tracker status
+node scripts/validation/verify-fix.js <component-name>
+```
+
+### Tracker Maintenance Workflow
+
+**When updating component status**:
+
+1. Run `validate-component.js` to confirm current health
+2. Update tracker with validation results
+3. Include health score and evidence in tracker entry
+
+**When completing fixes**:
+
+1. Run `verify-fix.js` to confirm fix success
+2. Run `generate-evidence.js` to create documentation evidence
+3. Update tracker with verification results and evidence links
+
+**For evidence field updates**:
+
+- Use output from `validate-component.js` for current health evidence  
+- Use output from `generate-evidence.js` for before/after fix evidence
+- Include validation timestamps for audit trail
+
+### Automated Tracker Updates
+
+**Evidence field format** (when using validation scripts):
+
+``` log
+Evidence: Health Score: XX/100 | Validation: YYYY-MM-DD | Status: [Working/Broken/Partial] | Details: [Script output summary]
+```
+
+**Build Issues Log format** (when using verification):
+
+``` log
+[DATE] - [Component]: Fix verified via scripts | Before: X errors | After: Y errors | Verification: PASS/FAIL
+```
+
 ## 🔄 File Synchronization & Maintenance
 
 ### Regular Synchronization Protocol

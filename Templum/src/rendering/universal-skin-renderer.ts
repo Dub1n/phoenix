@@ -217,7 +217,7 @@ export class UniversalSkinRenderer extends EventEmitter {
         interfaceType,
         interfaceSpecific: renderResult,
         sessionContext: fullContext.sessionId 
-          ? this.sessionContext.getSession(fullContext.sessionId) 
+          ? (this.sessionContext.getSession(fullContext.sessionId) || undefined)
           : undefined,
         cacheKey
       };

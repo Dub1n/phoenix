@@ -11,7 +11,7 @@ All validation scripts have been successfully refactored to be project-agnostic 
 ## 📁 **File Structure**
 
 ``` filesystem
-scripts/validaton/
+scripts/validation/
 ├── validation-helpers.js           # Shared functionality across all scripts
 ├── validate-component.js           # Main component validation (refactored)
 ├── estimate-complexity-impl.js     # Complexity estimation (implemented)
@@ -203,30 +203,30 @@ const COMPLEXITY_LEVELS = {
 
 ```bash
 # From any directory in the repository
-node scripts/validaton/validate-component.js "haruspex-core-engine"
-node scripts/validaton/validate-component.js "analysis-engine"
+node scripts/validation/validate-component.js "haruspex-core-engine"
+node scripts/validation/validate-component.js "analysis-engine"
 ```
 
 ### **Estimate Fix Complexity**
 
 ```bash
 # Using issue ID or component name
-node scripts/validaton/estimate-complexity-impl.js "backend-service-fix"
-node scripts/validaton/estimate-complexity-impl.js "haruspex-core-engine"
+node scripts/validation/estimate-complexity-impl.js "backend-service-fix"
+node scripts/validation/estimate-complexity-impl.js "haruspex-core-engine"
 ```
 
 ### **Verify a Fix**
 
 ```bash
 # After implementing a fix
-node scripts/validaton/verify-fix-impl.js "haruspex-core-engine"
+node scripts/validation/verify-fix-impl.js "haruspex-core-engine"
 ```
 
 ### **Generate Evidence**
 
 ```bash
 # For fix documentation
-node scripts/validaton/generate-evidence-impl.js "core-engine-fix"
+node scripts/validation/generate-evidence-impl.js "core-engine-fix"
 ```
 
 ## 📊 **Integration with Fix Documentation**

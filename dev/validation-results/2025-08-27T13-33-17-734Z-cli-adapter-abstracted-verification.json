@@ -1,0 +1,65 @@
+{
+  "componentName": "cli-adapter-abstracted",
+  "timestamp": "2025-08-27T13:33:13.485Z",
+  "overallStatus": "FIX_PARTIAL",
+  "checks": {
+    "COMPILATION": {
+      "name": "TypeScript Compilation",
+      "status": "PASS",
+      "details": "Component compiles without errors",
+      "evidence": [
+        "TypeScript compilation successful"
+      ]
+    },
+    "TESTS": {
+      "name": "Component Tests",
+      "status": "WARNING",
+      "details": "No test files found for component",
+      "evidence": [
+        "Component lacks test coverage"
+      ]
+    },
+    "INTEGRATION": {
+      "name": "Integration Check",
+      "status": "PASS",
+      "details": "Component exports are accessible",
+      "evidence": [
+        "cli-adapter-abstracted.ts has exports"
+      ]
+    },
+    "REGRESSION": {
+      "name": "Regression Check",
+      "status": "PASS",
+      "details": "No regressions detected",
+      "evidence": [
+        "Component changes do not break existing functionality",
+        "Component has 2 external dependencies to monitor"
+      ]
+    },
+    "EXPORTS": {
+      "name": "Export Validation",
+      "status": "PASS",
+      "details": "Component has 8 exports across 1 files",
+      "evidence": [
+        "cli-adapter-abstracted.ts: 8 exports (default: 0, named: 8, re-exports: 0)"
+      ]
+    }
+  },
+  "evidence": [],
+  "errors": [],
+  "warnings": [
+    "Component lacks test coverage"
+  ],
+  "files": [
+    "C:\\Users\\gabri\\Documents\\Infotopology\\VDL_Vault\\Templum\\src\\interfaces\\cli-adapter-abstracted.ts"
+  ],
+  "beforeStatus": null,
+  "afterStatus": "🟡 Partial",
+  "recommendations": [
+    "Fix is partially successful but has warnings to address",
+    "Review warnings and determine if additional work is needed",
+    "Consider addressing 1 warnings for completeness",
+    "Add test coverage for better component validation",
+    "Create unit tests for public methods and interfaces"
+  ]
+}
