@@ -90,62 +90,71 @@ When adding ANY new task, determine phase based on:
 
 ## 🚀 Implementation Strategy
 
-### Backend Service Architecture Approach
+### Templum 2.1 Migration Architecture Approach
 
-**Strategy**: Build missing backend services using proven architectural patterns  
-**Focus**: Analysis Engine → Prediction Engine → Communication Layer → Integration  
-**Risk**: Medium - architectural work with established patterns from legacy system
+**Strategy**: Migrate from VSCode-centric 2.0 to Templum-compatible 2.1 pure backend  
+**Focus**: HTTP Gateway → Universal Skin → Auto-Registration → Backend Refactoring  
+**Risk**: Medium - architectural migration with clear 2.1 specification and Templum integration patterns
 
-### Component Development Priority
+### Component Development Priority (2.1 Migration)
 
-1. **Foundation Services**: Analysis Engine, Prediction Engine, IPC Server (immediate)
-2. **Service Layer**: HTTP/WebSocket servers, Cache Manager, Backend Service restoration
-3. **Integration Layer**: API Gateway, Type System, Diagnostic System, comprehensive testing
+1. **Templum Foundation**: HTTP Gateway, Universal Skin Provider, Auto-Registration, Protocol Adapter (immediate)
+2. **Backend Migration**: Backend Service refactoring, Core Engine HTTP migration, VSCode decoupling, Command system
+3. **Integration & Validation**: Health monitoring, caching optimization, model integration, performance validation
 
 ## 📋 Implementation Phases
 
-### Phase 1: Backend Foundation (ACTIVE)
+### Phase 1: Templum Foundation (ACTIVE)
 
-**Completion Gate**: Core backend services operational  
-**Status**: 0/3 priority tasks complete  
-**Current Focus**: [!] Analysis Engine Implementation
+**Completion Gate**: Templum 1.2 integration operational  
+**Status**: 0/4 foundation tasks complete  
+**Current Focus**: [!] HTTP Gateway Implementation for Templum [TASK-H-M01]
 
-**Phase 1 Tasks** (Reference only - see haruspex-active-tasks.md for details):
+**Phase 1 Migration Tasks** (Reference only - see haruspex-active-tasks.md for details):
 
-- [!] Analysis Engine Implementation
-- [1] Prediction Engine Implementation  
-- [2] IPC Server Implementation
+- [!] HTTP Gateway Implementation for Templum
+- [1] Universal Skin Provider Implementation  
+- [2] Auto-Registration Service Implementation
+- [3] Templum Protocol Adapter Implementation
 
 **Success Criteria**:
 
-- [ ] Analysis Engine processes code analysis requests
-- [ ] Prediction Engine provides ML-based predictions
-- [ ] IPC Server enables Templum communication
-- [ ] Core backend compilation successful (0 critical errors)
+- [ ] HTTP Gateway serves required Templum endpoints (/getSkinDefinition, /executeCommand, /health)
+- [ ] Universal Skin Definition generated and Templum-compliant
+- [ ] Auto-registration works with ~/.templum/services directory
+- [ ] Templum can discover, connect, and communicate with Haruspex
+- [ ] All basic commands work via HTTP instead of IPC
 
-### Phase 2: Service Integration (PENDING)
+### Phase 2: Backend Migration (PENDING)
 
-**Completion Gate**: Backend services integrated and functional  
+**Completion Gate**: Pure backend architecture operational without VSCode  
 **Status**: Not started - awaits Phase 1 completion
 
+**Phase 2 Migration Focus**: Core refactoring and VSCode decoupling
+
 **Success Criteria**:
 
-- [ ] Backend Service dependency chain restored
-- [ ] HTTP/WebSocket servers operational
-- [ ] Cache management functional
-- [ ] Service-to-service communication working
+- [ ] Backend Service operates without VSCode dependencies
+- [ ] Core Engine provides analysis via HTTP endpoints  
+- [ ] VSCode extension fully decoupled from backend functionality
+- [ ] Command execution system maps skin commands to HTTP operations
+- [ ] All existing functionality preserved through HTTP API
 
-### Phase 3: System Integration (PENDING)  
+### Phase 3: Integration & Validation (PENDING)  
 
-**Completion Gate**: Full system integration with legacy components  
+**Completion Gate**: Full Haruspex 2.1 compliance and production readiness  
 **Status**: Not started - awaits Phase 2 completion
 
+**Phase 3 Migration Focus**: Integration testing, performance optimization, multi-interface support
+
 **Success Criteria**:
 
-- [ ] API Gateway protocols complete
-- [ ] Type system fully implemented
-- [ ] Diagnostic monitoring operational
-- [ ] PCL integration verified functional
+- [ ] Health monitoring provides comprehensive Templum-compliant status
+- [ ] Cache management optimized for HTTP request/response patterns  
+- [ ] ML model management integrated with HTTP prediction endpoints
+- [ ] Configuration system works for pure backend deployment
+- [ ] All performance targets met (<200ms health, <2s analysis, <5s predictions)
+- [ ] Multi-interface compatibility (VSCode, CLI, command-line) validated
 
 ## 🔄 Roadmap Reassessment Protocol
 

@@ -6,6 +6,25 @@
  * description: [Comprehensive API contract definitions for all Haruspex 2.0 protocols]
  * ---*/
 
+// Import stub implementations for missing types
+import {
+  OverallScore, CriticalIssue, Recommendation, CoverageMetrics, AnalysisPhase,
+  ClassInfo, FunctionInfo, DependencyInfo, TestCoverageInfo, CodeIssue,
+  PerformanceBottleneck, MemoryAnalysis, ComplexityAnalysis, ResourceUsageAnalysis, OptimizationOpportunity, PerformanceImpact,
+  SecurityVulnerability, DataFlowInfo, AccessControlIssue, CryptographicIssue, ComplianceResult,
+  DesignPattern, AntiPattern, ModularityAnalysis, CouplingAnalysis, CohesionAnalysis, LayeringAnalysis, ArchitecturalRecommendation,
+  DetectedPattern, CodeSmell, BestPracticeResult, RefactoringOpportunity, QualityGateResult,
+  HistoricalData, TeamMetrics, PatternPrediction, BugPrediction, RefactoringPrediction, PerformancePrediction, EvolutionPrediction,
+  CorrelatedInsight, OverallRiskAssessment, PrioritizedAction, ConfidenceMetrics, ValidationMetrics, TimelineProjection,
+  CacheStatus, SystemHealthReport,
+  SkinTheme, BackendConfig, PanelDefinition, StatusBarDefinition, ExplorerDefinition,
+  MenuDefinition, ContextMenuDefinition, ToolbarDefinition,
+  CommandParameter, WorkflowStep, WorkflowErrorHandling,
+  ProjectDependencies, ProjectConfiguration, GitHistory
+} from './analysis-types-stub';
+
+export * from './analysis-types-stub';
+
 // ================================
 // Core Service Types
 // ================================
@@ -452,9 +471,10 @@ export interface ProjectContext {
   packageManager: 'npm' | 'yarn' | 'pnpm' | 'maven' | 'gradle' | 'pip' | 'cargo';
   buildSystem?: string;
   testFramework?: string;
-  dependencies: string[];
+  dependencies: string[] | ProjectDependencies;  // Allow both formats for compatibility
   devDependencies: string[];
   scripts: Record<string, string>;
+  configuration?: ProjectConfiguration;  // Added missing property
 }
 
 export interface CodeContext {

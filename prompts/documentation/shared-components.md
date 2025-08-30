@@ -4,7 +4,7 @@
 > **Scope**: Common components referenced by all fix guides and tracker templates  
 > **Usage**: Reference file - import specific sections as needed
 
-## 🎯 Priority Scoring Matrix
+## Priority Scoring Matrix
 
 **Formula**:
 
@@ -45,7 +45,7 @@ Maximum possible: 35 points
 - **7-13**: **Low Priority** - Fix when convenient
 - **0-6**: **Defer** - Consider if worth fixing
 
-## 🧮 Complexity Scoring Framework
+## Complexity Scoring Framework
 
 **Formula**:
 
@@ -70,7 +70,7 @@ Maximum possible: 35 points
 - **4**: 6-10 dependencies, significant interface changes
 - **5**: >10 dependencies, architectural changes required
 
-### Uncertainty Score (1-5) ⚡ **UPDATED**
+### Uncertainty Score (1-5)
 
 - **1**: Clear problem, obvious solution, well-understood domain
 - **2**: Clear problem, straightforward solution, some investigation needed
@@ -78,9 +78,9 @@ Maximum possible: 35 points
 - **4**: Unclear problem, solution uncertain, significant investigation
 - **5**: Problem unclear, solution unknown, major investigation required
 
-### Refactoring vs. Architecture Assessment ⚡ **NEW**
+### Refactoring vs. Architecture Assessment
 
-**⚠️ Apply this modifier to prevent over-engineering**:
+**Apply this modifier to prevent over-engineering**:
 
 **Refactoring Indicators** (Reduce complexity score by 5-10 points):
 
@@ -98,18 +98,18 @@ Maximum possible: 35 points
 - Performance requirement conflicts
 - Missing implementations requiring new design
 
-### Complexity Levels & Guide Selection ⚡ **UPDATED**
+### Complexity Levels & Guide Selection
 
-**⚠️ Apply Refactoring vs. Architecture Assessment first**:
+**Apply Refactoring vs. Architecture Assessment first**:
 
 - **25-35**: **High Complexity** - Use comprehensive-fix-guide.md, consider escalation
 - **15-24**: **Medium Complexity** - Use comprehensive-fix-guide.md, proceed with caution  
 - **8-14**: **Low-Medium Complexity** - **Check refactoring indicators** - may be simple refactoring
 - **0-7**: **Low Complexity** - Use quick-fix-guide.md
 
-### Common Over-Engineering Prevention ⚡ **NEW**
+### Common Over-Engineering Prevention
 
-**🚨 Warning Signs of Over-Engineering**:
+**Warning Signs of Over-Engineering**:
 
 1. **Treating refactoring as architecture**
    - Method name differences → "API incompatibility"
@@ -126,14 +126,14 @@ Maximum possible: 35 points
    - "Cross-system implications" for constructor parameters
    - "Unknown complexity" for well-documented APIs
 
-**✅ Simplicity Check Questions**:
+**Simplicity Check Questions**:
 
 - Can you explain the solution in one sentence?
 - Would a junior developer understand this as normal refactoring?
 - Are you creating more code than you're replacing?
 - Is the "complex" solution really simpler long-term?
 
-## 🔗 Tracker-to-Fix Evidence Mapping
+## Tracker-to-Fix Evidence Mapping
 
 **Essential Field Mappings** for consistency between Implementation Tracker and Fix Documentation:
 
@@ -176,11 +176,11 @@ From Implementation Tracker:
 Tracker Before: "STATUS: 🔴 Broken ([X] compilation errors)"
 Fix Document: "Component Status: Broken, Build Errors: [X]"
 
-Tracker After: "STATUS: ✅ Working (0 compilation errors, functionality verified)"  
+Tracker After: "STATUS: 🟢 Working (0 compilation errors, functionality verified)"  
 Fix Document: "Component Status: Working, Build Errors: 0"
 ```
 
-## ⚙️ Validation Commands Reference
+## Validation Commands Reference
 
 **Placeholder Scripts** (implementation planned for Session 2):
 
@@ -207,7 +207,7 @@ node scripts/validation/generate-evidence.js <fix-id>
 - **verify-fix.js**: Fix completeness validation with compilation and test verification
 - **generate-evidence.js**: Structured evidence collection for documentation
 
-## 📚 Common Definitions
+## Common Definitions
 
 ### Issue Categories
 
@@ -251,7 +251,7 @@ node scripts/validation/generate-evidence.js <fix-id>
    └─ Multiple components affected → comprehensive-fix-guide.md
 ```
 
-## 🔧 Validation Script Integration
+## Validation Script Integration
 
 **Automated Assessment Tools** available in `scripts/validation/`:
 
@@ -307,7 +307,7 @@ node scripts/validation/generate-evidence.js <fix-id>
 - **Progress Tracking**: Use `verify-fix.js` for validation checkpoints
 - **Documentation**: Use `generate-evidence.js` for tracker integration
 
-## 📊 Success Metrics Framework
+## Success Metrics Framework
 
 ### Key Performance Indicators
 

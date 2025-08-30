@@ -24,6 +24,16 @@ import {
   ITemplumOrchestrator, 
   IInterfaceAdapter 
 } from './templum-orchestrator-interface';
+import {
+  TerminalUI,
+  TerminalColorTheme,
+  DefaultColorThemes,
+  ProgressBar,
+  Spinner,
+  InteractivePrompt,
+  ResponsiveLayout,
+  createTerminalUI
+} from './terminal-ui-components';
 
 /**
  * CLI Input Types (Interface-specific)
@@ -76,6 +86,9 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
   private keyboardShortcuts = new Map<string, string>();
   private isInteractiveMode: boolean = false;
   private config: CLIAdapterConfig;
+  private terminalUI: TerminalUI;
+  private activeSpinner: Spinner | null = null;
+  private activeProgressBar: ProgressBar | null = null;
 
   constructor(config?: Partial<CLIAdapterConfig>) {
     super();
@@ -88,8 +101,26 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
       clearScreenOnRender: true,
       maxHistorySize: 50,
       inputTimeout: 30000,
+      terminalTheme: 'default',
+      enableResponsiveLayout: true,
       ...config
     };
+
+    // Initialize terminal UI with theme
+    const theme = DefaultColorThemes[this.config.terminalTheme] || DefaultColorThemes.default;
+    this.terminalUI = createTerminalUI({
+      theme,
+      responsive: {
+        minWidth: 40,
+        minHeight: 10,
+        breakpoints: {
+          small: 60,
+          medium: 100,
+          large: 140
+        },
+        theme
+      }
+    });
   }
 
   /**
@@ -229,15 +260,24 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
   }
 
   /**
-   * Execute command using orchestrator abstraction
+   * Execute command using orchestrator abstraction with terminal UI enhancements
    */
   async executeCommand(command: string, args: any[] = []): Promise<any> {
     if (!this.orchestrator.isInitialized()) {
       throw createTemplumError('Orchestrator not initialized', 'SERVICE_NOT_READY', 'configuration');
     }
 
+    let spinner: Spinner | null = null;
+    
     try {
-      console.log(`CLIInterfaceAdapter: Executing command '${command}' via orchestrator abstraction...`);
+      // Show spinner for command execution if enabled
+      if (this.config.enableProgressIndicators) {
+        spinner = this.terminalUI.createSpinner({
+          text: `Executing command: ${command}`,
+          frames: ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
+        });
+        spinner.start();
+      }
       
       // Execute command through orchestrator abstraction
       const result = await this.orchestrator.executeCommand(
@@ -252,15 +292,24 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
         }
       );
 
-      // Display results in CLI format
+      // Stop spinner and show success
+      if (spinner) {
+        spinner.succeed(`Command '${command}' executed successfully`);
+      }
+
+      // Display results in CLI format with responsive layout
       this.displayCommandResult(result);
       
-      console.log(`CLIInterfaceAdapter: Executed command '${command}' via orchestrator abstraction`);
       return result;
       
     } catch (error) {
       const errorMessage = isTemplumError(error) ? error.message : (error instanceof Error ? error.message : 'Unknown error');
-      console.error(`Command execution failed: ${errorMessage}`);
+      
+      // Stop spinner and show error
+      if (spinner) {
+        spinner.fail(`Command '${command}' failed: ${errorMessage}`);
+      }
+      
       throw createTemplumError(`Command execution failed: ${errorMessage}`, 'COMMAND_EXECUTION_ERROR', 'runtime');
     }
   }
@@ -321,6 +370,9 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
         await this.stopInteractiveSession();
       }
 
+      // Cleanup terminal UI components
+      await this.terminalUI.cleanup();
+
       // Clean up resources
       this.keyboardShortcuts.clear();
       this.navigationHistory = [];
@@ -331,6 +383,97 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       console.error('CLIInterfaceAdapter disposal error:', errorMessage);
     }
+  }
+
+  /**
+   * Create and display a progress bar for long-running operations
+   */
+  createProgressBar(total: number, message?: string): ProgressBar {
+    const progressBar = this.terminalUI.createProgressBar({
+      width: this.getOptimalProgressBarWidth(),
+      format: ':bar :percent :eta :message',
+      showPercentage: true,
+      showEta: true
+    });
+    
+    progressBar.start(total);
+    if (message) {
+      progressBar.update(0, message);
+    }
+    
+    this.activeProgressBar = progressBar;
+    return progressBar;
+  }
+
+  /**
+   * Create an interactive prompt for user input
+   */
+  createPrompt(): InteractivePrompt {
+    return this.terminalUI.createPrompt();
+  }
+
+  /**
+   * Show a spinner with message
+   */
+  showSpinner(message: string): Spinner {
+    const spinner = this.terminalUI.createSpinner({
+      text: message
+    });
+    
+    spinner.start();
+    this.activeSpinner = spinner;
+    return spinner;
+  }
+
+  /**
+   * Hide active spinner
+   */
+  hideSpinner(finalMessage?: string): void {
+    if (this.activeSpinner) {
+      if (finalMessage) {
+        this.activeSpinner.succeed(finalMessage);
+      } else {
+        this.activeSpinner.stop();
+      }
+      this.activeSpinner = null;
+    }
+  }
+
+  /**
+   * Set terminal theme
+   */
+  setTheme(themeName: keyof typeof DefaultColorThemes): void {
+    const theme = DefaultColorThemes[themeName];
+    if (theme) {
+      this.terminalUI.setTheme(theme);
+      this.config.terminalTheme = themeName;
+    }
+  }
+
+  /**
+   * Get responsive layout manager
+   */
+  getResponsiveLayout(): ResponsiveLayout {
+    return this.terminalUI.getLayout();
+  }
+
+  /**
+   * Format content with responsive layout
+   */
+  formatResponsiveContent<T>(content: T, formatters: {
+    small: (content: T) => string;
+    medium: (content: T) => string;
+    large: (content: T) => string;
+  }): string {
+    return this.terminalUI.getLayout().formatForBreakpoint(content, formatters);
+  }
+
+  /**
+   * Create responsive table display
+   */
+  displayTable(data: any[], headers: string[]): void {
+    const table = this.terminalUI.getLayout().createTable(data, headers);
+    console.log(table);
   }
 
   /**
@@ -617,31 +760,74 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
   }
 
   /**
-   * Display backend status information
+   * Get optimal progress bar width based on terminal size
+   * @private
+   */
+  private getOptimalProgressBarWidth(): number {
+    const layout = this.terminalUI.getLayout();
+    const dimensions = layout.getDimensions();
+    const breakpoint = layout.getCurrentBreakpoint();
+    
+    switch (breakpoint) {
+      case 'small':
+        return Math.min(30, dimensions.width - 20);
+      case 'medium':
+        return Math.min(50, dimensions.width - 30);
+      case 'large':
+        return Math.min(70, dimensions.width - 40);
+      default:
+        return 40;
+    }
+  }
+
+  /**
+   * Display backend status information with responsive layout
    * @private
    */
   private displayBackendStatus(backendConnections: any): void {
-    console.log('\n🌐 Backend Service Status:');
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('Service      Status      Health    Response   Capabilities');
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    const theme = this.terminalUI.getTheme();
+    const layout = this.terminalUI.getLayout();
     
-    for (const [serviceId, status] of Object.entries(backendConnections.backends)) {
-      const statusTyped = status as any; // Type assertion for backend status
-      const conn = statusTyped.connected ? '🟢 Connected ' : '🔴 Disconnected';
-      const health = statusTyped.health || 'Unknown';
-      const responseTime = statusTyped.responseTime ? `${statusTyped.responseTime}ms` : 'N/A';
-      const capabilities = statusTyped.capabilities?.slice(0, 2).join(', ') || 'None';
+    console.log(theme.primary('\n🌐 Backend Service Status:'));
+    
+    // Create table data for responsive display
+    const tableData = Object.entries(backendConnections.backends).map(([serviceId, status]) => {
+      const statusTyped = status as any;
+      return {
+        service: serviceId,
+        status: statusTyped.connected ? 'Connected' : 'Disconnected',
+        health: statusTyped.health || 'Unknown',
+        response: statusTyped.responseTime ? `${statusTyped.responseTime}ms` : 'N/A',
+        capabilities: statusTyped.capabilities?.slice(0, 2).join(', ') || 'None'
+      };
+    });
+    
+    const headers = ['service', 'status', 'health', 'response', 'capabilities'];
+    
+    // Use responsive table layout
+    if (this.config.enableResponsiveLayout) {
+      const table = layout.createTable(tableData, headers);
+      console.log(table);
+    } else {
+      // Fallback to original table format
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('Service      Status      Health    Response   Capabilities');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       
-      console.log(`${serviceId.padEnd(12)} ${conn.padEnd(12)} ${health.padEnd(9)} ${responseTime.padEnd(10)} ${capabilities}`);
+      tableData.forEach(row => {
+        const statusIcon = row.status === 'Connected' ? '🟢' : '🔴';
+        const statusText = `${statusIcon} ${row.status}`;
+        console.log(`${row.service.padEnd(12)} ${statusText.padEnd(12)} ${row.health.padEnd(9)} ${row.response.padEnd(10)} ${row.capabilities}`);
+      });
+      
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     }
     
     const connectedCount = Object.values(backendConnections.backends).filter((b: any) => b.connected).length;
     const totalCount = Object.keys(backendConnections.backends).length;
     const healthyCount = Object.values(backendConnections.backends).filter((b: any) => b.health === 'healthy').length;
     
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log(`Connected: ${connectedCount}/${totalCount} | Healthy: ${healthyCount}/${connectedCount} | Status: ${healthyCount > 0 ? 'Operational' : 'Discovery Mode'}`);
+    console.log(theme.info(`Connected: ${connectedCount}/${totalCount} | Healthy: ${healthyCount}/${connectedCount} | Status: ${healthyCount > 0 ? theme.success('Operational') : theme.warning('Discovery Mode')}`));
     console.log();
   }
 
@@ -805,6 +991,8 @@ export interface CLIAdapterConfig {
   clearScreenOnRender: boolean;
   maxHistorySize: number;
   inputTimeout?: number;
+  terminalTheme: keyof typeof DefaultColorThemes;
+  enableResponsiveLayout: boolean;
 }
 
 /**

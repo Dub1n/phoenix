@@ -16,14 +16,16 @@ import {
   SystemDiagnostics,
   UniversalSkinDefinition,
   ServiceUnavailableError,
-  HaruspexAPIError
+  HaruspexAPIError,
+  ProjectDependencies
 } from './api/types/api-contracts';
 import { APIGateway } from './api/gateway/api-gateway';
-import { AnalysisEngine } from './engines/analysis-engine';
-import { PredictionEngine } from './engines/prediction-engine';
+import { HaruspexCoreEngine, HaruspexCoreEngineConfig } from './core/haruspex-core-engine';
 import { DiagnosticSystem } from './diagnostics/diagnostic-system';
 import { CacheManager } from './cache/cache-manager';
 import { SkinProvider } from './skin/skin-provider';
+import { TemplumRegistrationService } from './integration/templum-registration-service';
+import { createBackendDependencies, createDefaultBackendConfig, validateBackendEnvironment } from './core/backend-dependencies';
 
 export interface ServiceStatus {
   status: 'starting' | 'healthy' | 'degraded' | 'critical' | 'stopping' | 'stopped';
@@ -80,16 +82,16 @@ export interface ServiceMetrics {
  * Haruspex 2.0 Backend Service
  * 
  * Main orchestrator that coordinates all backend components in a pure service architecture.
- * Provides comprehensive code analysis and prediction capabilities through multiple API protocols
- * while maintaining enterprise-grade reliability, performance, and monitoring.
+ * Provides comprehensive code analysis and prediction capabilities through HTTP-first architecture
+ * using the integrated HaruspexCoreEngine with enterprise-grade reliability, performance, and monitoring.
  */
 export class HaruspexBackendService extends EventEmitter {
-  private analysisEngine: AnalysisEngine;
-  private predictionEngine: PredictionEngine;
+  private coreEngine!: HaruspexCoreEngine; // Will be initialized in initialize()
   private apiGateway: APIGateway;
   private diagnosticSystem: DiagnosticSystem;
   private cacheManager: CacheManager;
   private skinProvider: SkinProvider;
+  private templumRegistration?: TemplumRegistrationService;
 
   private serviceStatus: ServiceStatus;
   private activeAnalyses: Map<string, any> = new Map();
@@ -98,16 +100,46 @@ export class HaruspexBackendService extends EventEmitter {
   private startTime: number = 0;
   private healthCheckInterval?: NodeJS.Timeout;
   private isInitialized = false;
+  private coreEngineConfig: HaruspexCoreEngineConfig;
 
   constructor(private config: HaruspexServiceConfig) {
     super();
 
-    // Initialize core components
-    this.analysisEngine = new AnalysisEngine(config.analysis);
-    this.predictionEngine = new PredictionEngine(config.prediction);
+    // Store Core Engine configuration for later initialization with backend dependencies
+    this.coreEngineConfig = {
+      circuitBreaker: {
+        failureThreshold: 5,
+        recoveryTimeout: 30000,
+        monitorWindow: 60000
+      },
+      errorBoundary: {
+        isolationStrategy: 'component',
+        recoveryStrategy: 'graceful-degradation',
+        maxRetries: 3
+      },
+      telemetry: {
+        privacyCompliant: true,
+        performanceMetrics: true,
+        errorReporting: true,
+        logLevel: 'info'
+      },
+      fileMonitoring: {
+        enabled: false, // Disabled for HTTP-first backend
+        patterns: ['**/*.{ts,tsx,js,jsx,md,json}'],
+        debounceMs: 500
+      },
+      analysis: {
+        timeout: config.analysis.timeoutMs,
+        maxConcurrentRequests: config.analysis.maxConcurrentAnalyses,
+        cacheEnabled: config.analysis.cacheEnabled,
+        cacheTtl: config.analysis.cacheTtlMs
+      }
+    };
+
+    // Initialize other components (Core Engine will be initialized with backend dependencies in initialize())
     this.apiGateway = new APIGateway(config.api);
-    this.diagnosticSystem = new DiagnosticSystem(config.diagnostics);
-    this.cacheManager = new CacheManager(config.analysis);
+    this.diagnosticSystem = new DiagnosticSystem();
+    this.cacheManager = new CacheManager();
     this.skinProvider = new SkinProvider();
 
     // Initialize service status
@@ -130,26 +162,66 @@ export class HaruspexBackendService extends EventEmitter {
     this.serviceStatus.status = 'starting';
 
     try {
+      // Initialize backend environment
+      console.log('Haruspex Backend Service: Validating backend environment...');
+      await validateBackendEnvironment();
+
       // Initialize components in dependency order
       console.log('Haruspex Backend Service: Initializing cache manager...');
       await this.cacheManager.initialize();
       this.serviceStatus.components.cache = 'operational';
 
-      console.log('Haruspex Backend Service: Initializing analysis engine...');
-      await this.analysisEngine.initialize();
-      this.serviceStatus.components.analysisEngine = 'operational';
+      // Create backend dependencies for Core Engine
+      console.log('Haruspex Backend Service: Creating backend dependencies...');
+      const runtimeConfig = createDefaultBackendConfig(process.cwd());
+      const backendDependencies = await createBackendDependencies(runtimeConfig);
 
-      console.log('Haruspex Backend Service: Initializing prediction engine...');
-      await this.predictionEngine.initialize();
+      // Initialize Core Engine with backend dependencies
+      console.log('Haruspex Backend Service: Initializing Core Engine with backend dependencies...');
+      this.coreEngine = new HaruspexCoreEngine(
+        process.cwd(),
+        this.coreEngineConfig,
+        undefined, // No PCL adapters for pure backend
+        backendDependencies
+      );
+      
+      await this.coreEngine.initialize();
+      this.serviceStatus.components.analysisEngine = 'operational';
       this.serviceStatus.components.predictionEngine = 'operational';
+      console.log('Haruspex Backend Service: Core Engine initialization complete');
 
       console.log('Haruspex Backend Service: Initializing diagnostic system...');
       await this.diagnosticSystem.startMonitoring();
       this.serviceStatus.components.diagnostics = 'operational';
 
       console.log('Haruspex Backend Service: Starting API gateway...');
-      await this.apiGateway.start(this);
+      await this.apiGateway.start(this.coreEngine);
       this.serviceStatus.components.apiGateway = 'operational';
+
+      // Register with Templum for service discovery
+      console.log('Haruspex Backend Service: Registering with Templum...');
+      try {
+        this.templumRegistration = new TemplumRegistrationService({
+          serviceName: 'haruspex-analysis',
+          port: this.config.api.http.port,
+          version: '2.1.0',
+          capabilities: [
+            'code-analysis',
+            'pattern-detection', 
+            'security-scanning',
+            'performance-analysis',
+            'architecture-analysis',
+            'bug-prediction',
+            'refactoring-recommendations',
+            'evolution-prediction'
+          ]
+        });
+        await this.templumRegistration.register();
+        console.log('Haruspex Backend Service: Templum registration successful');
+      } catch (error) {
+        console.warn('Haruspex Backend Service: Templum registration failed (non-critical):', error);
+        // Don't fail the entire service startup if Templum registration fails
+      }
 
       // Start health monitoring
       this.startHealthMonitoring();
@@ -200,7 +272,7 @@ export class HaruspexBackendService extends EventEmitter {
 
       // Check cache first
       const cacheKey = this.generateCacheKey('analysis', request.contentHash);
-      const cachedResult = await this.cacheManager.get<AnalysisResult>(cacheKey);
+      const cachedResult = await this.cacheManager.get(cacheKey) as AnalysisResult;
       
       if (cachedResult && this.isCacheValid(cachedResult, request)) {
         console.log(`Analysis cache hit for session ${sessionId}`);
@@ -223,13 +295,9 @@ export class HaruspexBackendService extends EventEmitter {
         return enhancedResult;
       }
 
-      // Perform analysis
+      // Perform analysis using HTTP-compatible Core Engine
       console.log(`Starting analysis for session ${sessionId}`);
-      const result = await this.analysisEngine.analyzeCode(request, {
-        sessionId,
-        startTime,
-        timeout: request.timeout || this.config.analysis.timeoutMs
-      });
+      const result = await this.coreEngine.analyzeCode(request);
 
       // Generate predictions if requested
       if (request.includePredictions) {
@@ -237,18 +305,22 @@ export class HaruspexBackendService extends EventEmitter {
           codeContext: {
             projectPath: request.filePath || '',
             files: [request.filePath || 'inline-code'],
-            dependencies: request.projectContext?.dependencies || { production: [], development: [] },
-            configuration: request.projectContext?.configuration || {}
+            dependencies: { 
+              production: {},
+              development: {}
+            },
+            configuration: request.projectContext?.configuration || {
+              language: request.language,
+              framework: request.framework || 'unknown',
+              buildTool: 'unknown'
+            }
           },
           timeHorizon: '30d',
           predictionTypes: ['pattern-evolution', 'bug-prediction', 'refactoring-opportunities']
         };
 
         try {
-          const predictions = await this.predictionEngine.generatePredictions(
-            result,
-            predictionRequest
-          );
+          const predictions = await this.coreEngine.predictCodeEvolution(predictionRequest);
           
           (result as any).predictions = predictions;
         } catch (predictionError) {
@@ -318,7 +390,7 @@ export class HaruspexBackendService extends EventEmitter {
 
       // Check cache
       const cacheKey = this.generateCacheKey('prediction', JSON.stringify(request));
-      const cachedResult = await this.cacheManager.get<PredictionResult>(cacheKey);
+      const cachedResult = await this.cacheManager.get(cacheKey) as PredictionResult;
       
       if (cachedResult && this.isPredictionCacheValid(cachedResult, request)) {
         console.log(`Prediction cache hit for session ${sessionId}`);
@@ -335,9 +407,9 @@ export class HaruspexBackendService extends EventEmitter {
         return enhancedResult;
       }
 
-      // Generate predictions
+      // Generate predictions using HTTP-compatible Core Engine
       console.log(`Starting prediction for session ${sessionId}`);
-      const result = await this.predictionEngine.predictEvolution(request);
+      const result = await this.coreEngine.predictCodeEvolution(request);
 
       // Cache the result (shorter TTL for predictions)
       await this.cacheManager.set(cacheKey, result, Math.floor(this.config.analysis.cacheTtlMs / 2));
@@ -381,47 +453,19 @@ export class HaruspexBackendService extends EventEmitter {
   }
 
   /**
-   * Get comprehensive system diagnostics
+   * Get comprehensive system diagnostics using HTTP-compatible Core Engine
    */
   async getSystemDiagnostics(): Promise<SystemDiagnostics> {
-    const diagnostics: SystemDiagnostics = {
-      timestamp: Date.now(),
-      
-      coreEngine: {
-        status: this.serviceStatus.status === 'healthy' ? 'healthy' : 
-               this.serviceStatus.status === 'degraded' ? 'degraded' : 'critical',
-        activeAnalyses: this.activeAnalyses.size,
-        totalAnalyses: await this.getTotalAnalyses(),
-        averageResponseTime: await this.getAverageResponseTime(),
-        memoryUsage: this.getMemoryUsage()
-      },
-      
-      analysisEngine: await this.analysisEngine.getDiagnostics(),
-      predictionEngine: await this.predictionEngine.getDiagnostics(),
-      apiGateway: this.apiGateway.getStatus(),
-      cacheManager: this.cacheManager.getStatus(),
-      
-      performance: await this.getPerformanceMetrics(),
-      health: await this.getSystemHealth(),
-      alerts: await this.getSystemAlerts()
-    };
-
-    return diagnostics;
+    // Delegate to HTTP-compatible Core Engine for comprehensive diagnostics
+    return await this.coreEngine.getSystemDiagnostics();
   }
 
   /**
-   * Provide skin definition for Templum integration
+   * Provide skin definition for Templum integration using HTTP-compatible Core Engine
    */
   async provideSkinDefinition(): Promise<UniversalSkinDefinition> {
-    return this.skinProvider.generateSkinDefinition({
-      serviceVersion: this.serviceStatus.version,
-      capabilities: await this.getServiceCapabilities(),
-      customization: {
-        showAdvancedFeatures: true,
-        enableRealTimeUpdates: true,
-        supportStreaming: true
-      }
-    });
+    // Delegate to HTTP-compatible Core Engine for Templum skin definition
+    return await this.coreEngine.provideSkinDefinition();
   }
 
   /**
@@ -471,6 +515,17 @@ export class HaruspexBackendService extends EventEmitter {
       await this.apiGateway.stop();
       this.serviceStatus.components.apiGateway = 'offline';
 
+      // Unregister from Templum
+      if (this.templumRegistration) {
+        console.log('Haruspex Backend Service: Unregistering from Templum...');
+        try {
+          await this.templumRegistration.unregister();
+          console.log('Haruspex Backend Service: Templum unregistration successful');
+        } catch (error) {
+          console.warn('Haruspex Backend Service: Templum unregistration failed:', error);
+        }
+      }
+
       // Wait for active operations to complete
       await this.waitForActiveOperations();
 
@@ -478,10 +533,9 @@ export class HaruspexBackendService extends EventEmitter {
       await this.diagnosticSystem.stop();
       this.serviceStatus.components.diagnostics = 'offline';
 
-      await this.predictionEngine.shutdown();
+      // Shutdown HTTP-compatible Core Engine
+      this.coreEngine.dispose();
       this.serviceStatus.components.predictionEngine = 'offline';
-
-      await this.analysisEngine.shutdown();
       this.serviceStatus.components.analysisEngine = 'offline';
 
       await this.cacheManager.shutdown();
@@ -516,19 +570,12 @@ export class HaruspexBackendService extends EventEmitter {
       this.updateComponentStatus('apiGateway', 'degraded');
     });
 
-    // Handle component events
-    this.analysisEngine.on('error', (error) => {
-      console.error('Analysis Engine error:', error);
-      this.updateComponentStatus('analysisEngine', 'degraded');
-    });
-
-    this.predictionEngine.on('error', (error) => {
-      console.error('Prediction Engine error:', error);
-      this.updateComponentStatus('predictionEngine', 'degraded');
-    });
+    // Handle Core Engine events (Note: Core Engine uses internal error handling)
+    // The Core Engine integrates circuit breakers and error boundaries internally
+    // so we rely on its internal reliability mechanisms rather than external event handling
 
     // Handle diagnostic alerts
-    this.diagnosticSystem.on('alert', (alert) => {
+    this.diagnosticSystem.on('alert', (alert: any) => {
       console.warn('System alert:', alert);
       this.emit('systemAlert', alert);
     });
@@ -638,7 +685,7 @@ export class HaruspexBackendService extends EventEmitter {
     return {
       status: 'stopped',
       uptime: 0,
-      version: '2.0.0',
+      version: '2.1.0',
       components: {
         analysisEngine: 'offline',
         predictionEngine: 'offline',

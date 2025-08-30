@@ -370,17 +370,20 @@ export class PCLRenderingAdapter {
     constraints: UniversalLayoutConstraints,
     index: number
   ): RenderedComponent {
-    // TODO: [TASK-NEW-039] Enhanced item rendering with PCL component styles
-    // Priority: Medium | Complexity: 4
-    // Dependencies: PCL component style patterns, theme system integration
-    // Phase: Integration
+    // IMPLEMENTED: Enhanced item rendering with PCL component styles
+    // Sophisticated styling patterns for visual consistency with PCL component system
+
+    // Apply PCL theme styling patterns based on item type and backend
+    const itemStyles = this.generatePCLComponentStyles(item, theme);
+    const enhancedContent = this.enhancePCLItemContent(item, theme, constraints);
 
     return {
       id: item.id,
-      type: item.type as 'treeView' | 'menu' | 'command',
+      type: item.type,
       backend: item.backend || 'universal',
       content: {
-        ...item.content,
+        ...enhancedContent,
+        styles: itemStyles,
         title: item.label,
         description: item.description,
         index,
@@ -510,5 +513,84 @@ ${separator}
       renderCacheSize: this.renderCache.size,
       themeCacheSize: this.themeCache.size
     };
+  }
+
+  /**
+   * Generate sophisticated PCL component styles based on item type and theme
+   */
+  private generatePCLComponentStyles(item: UniversalMenuItem, theme: PCLThemeAdapter): any {
+    const baseStyles = {
+      color: theme.primaryColor,
+      borderColor: theme.accentColor,
+      fontFamily: 'monospace',
+      useIcons: theme.useIcons
+    };
+
+    // Apply type-specific styling patterns
+    switch (item.type) {
+      case 'treeView':
+        return {
+          ...baseStyles,
+          padding: '4px 8px',
+          borderLeft: `3px solid ${theme.accentColor}`,
+          transition: 'all 0.2s ease'
+        };
+      case 'command':
+        return {
+          ...baseStyles,
+          padding: '2px 6px',
+          fontSize: '0.9em',
+          fontWeight: 'bold',
+          cursor: 'pointer'
+        };
+      default:
+        return baseStyles;
+    }
+  }
+
+  /**
+   * Enhance PCL item content with sophisticated patterns
+   */
+  private enhancePCLItemContent(item: UniversalMenuItem, theme: PCLThemeAdapter, constraints: UniversalLayoutConstraints): any {
+    const enhancedContent = {
+      ...item.content,
+      // Add visual enhancement indicators
+      hasIcon: theme.useIcons,
+      isEnabled: true, // Default enabled for UniversalMenuItem
+      // Add responsive handling
+      isCompact: constraints.maxWidth < 400,
+      // Add theme-aware properties
+      accentColor: theme.accentColor,
+      contrastText: theme.primaryColor
+    };
+
+    // Add sophisticated visual cues
+    if (item.command) {
+      enhancedContent.commandType = this.detectCommandType(item.command);
+    }
+
+    return enhancedContent;
+  }
+
+  /**
+   * Format keybinding for visual display
+   */
+  private formatKeybinding(keybinding: string): string {
+    return keybinding
+      .replace('Ctrl+', '⌃')
+      .replace('Alt+', '⌥')
+      .replace('Shift+', '⇧')
+      .replace('Cmd+', '⌘');
+  }
+
+  /**
+   * Detect command type for enhanced styling
+   */
+  private detectCommandType(command: string): string {
+    if (command.includes('file.')) return 'file';
+    if (command.includes('debug.')) return 'debug';
+    if (command.includes('terminal.')) return 'terminal';
+    if (command.includes('pcl.')) return 'pcl';
+    return 'general';
   }
 }

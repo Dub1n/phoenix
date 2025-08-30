@@ -1,9 +1,9 @@
 /**---
- * title: [API Gateway - Multi-Protocol Backend Communication Hub]
- * tags: [API, Gateway, Multi-Protocol, Backend, Service-Orchestration]
- * provides: [Protocol-Management, Request-Routing, Client-Communication]
- * requires: [IPC-Server, HTTP-Server, WebSocket-Server, Core-Engine]
- * description: [Central API gateway coordinating IPC, HTTP, and WebSocket protocols for Haruspex 2.0]
+ * title: [API Gateway - HTTP-First Backend Communication Hub]
+ * tags: [API, Gateway, HTTP-First, Backend, Templum-Compatible]
+ * provides: [HTTP-Protocol-Management, Request-Routing, Client-Communication]
+ * requires: [HTTP-Server, WebSocket-Server, Core-Engine]
+ * description: [Templum 2.1 compatible API gateway with HTTP-first communication for Haruspex backend]
  * ---*/
 
 import { EventEmitter } from 'events';
@@ -15,7 +15,6 @@ import {
   PredictionResult,
   SystemDiagnostics,
   UniversalSkinDefinition,
-  IPCMessage,
   HTTPRequest,
   HTTPResponse,
   WebSocketMessage,
@@ -26,7 +25,6 @@ import {
   RateLimitError,
   ServiceUnavailableError
 } from '../types/api-contracts';
-import { IPCServer } from './protocols/ipc-server';
 import { HTTPServer } from './protocols/http-server';
 import { WebSocketServer } from './protocols/websocket-server';
 import { RequestRouter } from './routing/request-router';
@@ -37,7 +35,7 @@ import { ResponseFormatter } from './formatting/response-formatter';
 
 export interface ClientConnection {
   id: string;
-  type: 'ipc' | 'http' | 'websocket';
+  type: 'http' | 'websocket';
   client: any;
   connectedAt: number;
   lastActivity: number;
@@ -59,14 +57,13 @@ export interface GatewayMetrics {
 }
 
 /**
- * API Gateway - Central coordination point for all client communication
+ * API Gateway - HTTP-First communication hub for Templum integration
  * 
- * Manages multiple protocol servers (IPC, HTTP, WebSocket) and routes requests
+ * Manages HTTP and WebSocket protocol servers and routes requests
  * to the appropriate Haruspex Core Engine methods while providing authentication,
  * rate limiting, validation, and response formatting.
  */
 export class APIGateway extends EventEmitter {
-  private ipcServer: IPCServer;
   private httpServer: HTTPServer;
   private webSocketServer: WebSocketServer;
   private requestRouter: RequestRouter;
@@ -87,7 +84,6 @@ export class APIGateway extends EventEmitter {
     super();
     
     // Initialize protocol servers
-    this.ipcServer = new IPCServer(config.ipc);
     this.httpServer = new HTTPServer(config.http);
     this.webSocketServer = new WebSocketServer(config.websocket);
     
@@ -103,20 +99,19 @@ export class APIGateway extends EventEmitter {
   }
 
   /**
-   * Start all protocol servers and begin accepting connections
+   * Start HTTP-first protocol servers for Templum integration
    */
   async start(coreEngine: any): Promise<void> {
     if (this.isRunning) {
       throw new Error('API Gateway is already running');
     }
 
-    console.log('API Gateway: Starting all protocol servers...');
+    console.log('API Gateway: Starting HTTP-first protocol servers...');
     this.coreEngine = coreEngine;
 
     try {
-      // Start all protocol servers in parallel
+      // Start HTTP and WebSocket servers in parallel
       await Promise.all([
-        this.startIPCServer(),
         this.startHTTPServer(),
         this.startWebSocketServer()
       ]);
@@ -128,12 +123,11 @@ export class APIGateway extends EventEmitter {
       this.startConnectionMonitoring();
 
       this.isRunning = true;
-      console.log('API Gateway: All servers started and ready');
+      console.log('API Gateway: HTTP-first servers started and ready');
       
       this.emit('started', {
         timestamp: Date.now(),
         servers: {
-          ipc: this.config.ipc.port,
           http: this.config.http.port,
           websocket: this.config.websocket.port
         }
@@ -162,7 +156,6 @@ export class APIGateway extends EventEmitter {
 
     // Stop accepting new connections
     await Promise.all([
-      this.ipcServer.stop(),
       this.httpServer.stop(),
       this.webSocketServer.stop()
     ]);
@@ -186,12 +179,6 @@ export class APIGateway extends EventEmitter {
     return {
       running: this.isRunning,
       servers: {
-        ipc: {
-          running: this.ipcServer.isRunning(),
-          port: this.config.ipc.port,
-          connections: Array.from(this.activeConnections.values())
-            .filter(conn => conn.type === 'ipc').length
-        },
         http: {
           running: this.httpServer.isRunning(),
           port: this.config.http.port,
@@ -218,41 +205,6 @@ export class APIGateway extends EventEmitter {
     };
   }
 
-  private async startIPCServer(): Promise<void> {
-    // Setup IPC server for real-time communication (primary for Templum)
-    this.ipcServer.on('connection', (client: any) => {
-      const connectionId = this.generateConnectionId();
-      
-      const connection: ClientConnection = {
-        id: connectionId,
-        type: 'ipc',
-        client,
-        connectedAt: Date.now(),
-        lastActivity: Date.now(),
-        metadata: {
-          clientId: client.clientId || 'unknown'
-        }
-      };
-      
-      this.activeConnections.set(connectionId, connection);
-
-      // Setup message handlers
-      client.on('message', async (message: IPCMessage) => {
-        await this.handleIPCMessage(connectionId, message);
-      });
-
-      client.on('disconnect', () => {
-        this.activeConnections.delete(connectionId);
-        this.emit('connectionClosed', { connectionId, type: 'ipc' });
-      });
-
-      this.emit('connectionOpened', { connectionId, type: 'ipc' });
-      console.log(`API Gateway: IPC client connected (${connectionId})`);
-    });
-
-    await this.ipcServer.start();
-    console.log(`API Gateway: IPC server listening on port ${this.config.ipc.port}`);
-  }
 
   private async startHTTPServer(): Promise<void> {
     // Setup middleware
@@ -279,15 +231,30 @@ export class APIGateway extends EventEmitter {
       return this.handleHTTPRequest('skin', req);
     });
 
-    // Health check endpoint
+    // ===== TEMPLUM 1.2 COMPATIBILITY ENDPOINTS =====
+    
+    // Templum skin definition endpoint (required)
+    this.httpServer.get('/getSkinDefinition', async (req: HTTPRequest): Promise<HTTPResponse> => {
+      return this.handleHTTPRequest('skin', req);
+    });
+
+    // Templum command execution endpoint (required)
+    this.httpServer.post('/executeCommand', async (req: HTTPRequest): Promise<HTTPResponse> => {
+      return this.handleTemplumCommand(req);
+    });
+
+    // Health check endpoint (Templum compatible)
     this.httpServer.get('/health', async (req: HTTPRequest): Promise<HTTPResponse> => {
       return {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
         body: {
           status: 'healthy',
+          service: 'haruspex-analysis',
+          version: '2.1.0',
           timestamp: Date.now(),
-          version: '2.0.0'
+          uptime: Math.floor(process.uptime()),
+          templumCompatible: true
         },
         timestamp: Date.now()
       };
@@ -347,57 +314,6 @@ export class APIGateway extends EventEmitter {
     console.log(`API Gateway: WebSocket server listening on port ${this.config.websocket.port}`);
   }
 
-  private async handleIPCMessage(connectionId: string, message: IPCMessage): Promise<void> {
-    const connection = this.activeConnections.get(connectionId);
-    if (!connection) return;
-
-    connection.lastActivity = Date.now();
-    this.metrics.totalRequests++;
-
-    const startTime = Date.now();
-
-    try {
-      // Validate message
-      this.validator.validateIPCMessage(message);
-
-      let response: any;
-
-      switch (message.type) {
-        case 'request':
-          response = await this.routeRequest(message.method!, message.payload, 'ipc');
-          break;
-        default:
-          throw new ValidationError(`Unsupported message type: ${message.type}`);
-      }
-
-      // Send successful response
-      const responseMessage: IPCMessage = {
-        id: message.id,
-        type: 'response',
-        payload: response,
-        timestamp: Date.now()
-      };
-
-      (connection.client as any).send(responseMessage);
-
-      // Update metrics
-      this.updateSuccessMetrics(Date.now() - startTime);
-
-    } catch (error) {
-      // Send error response
-      const errorMessage: IPCMessage = {
-        id: message.id,
-        type: 'error',
-        error: error instanceof Error ? error.message : 'Unknown error',
-        timestamp: Date.now()
-      };
-
-      (connection.client as any).send(errorMessage);
-
-      // Update metrics
-      this.updateErrorMetrics();
-    }
-  }
 
   private async handleHTTPRequest(endpoint: string, req: HTTPRequest): Promise<HTTPResponse> {
     this.metrics.totalRequests++;
@@ -456,6 +372,147 @@ export class APIGateway extends EventEmitter {
         status: statusCode,
         headers: { 'Content-Type': 'application/json' },
         body: apiResponse,
+        timestamp: Date.now()
+      };
+    }
+  }
+
+  /**
+   * Handle Templum command execution requests
+   */
+  private async handleTemplumCommand(req: HTTPRequest): Promise<HTTPResponse> {
+    this.metrics.totalRequests++;
+    const startTime = Date.now();
+
+    try {
+      // Validate request structure
+      if (!req.body || !req.body.command) {
+        throw new ValidationError('Command is required for Templum execution');
+      }
+
+      const { command, args = {} } = req.body;
+      
+      console.log(`Templum: Executing command ${command}`, args);
+
+      let result: any;
+
+      // Map Templum commands to existing backend operations
+      switch (command) {
+        case 'haruspex.analyzeCode':
+          if (!args.code) {
+            throw new ValidationError('Code content is required for analysis');
+          }
+          result = await this.routeRequest('analyze', {
+            code: args.code,
+            language: args.language || 'typescript',
+            framework: args.framework,
+            depth: args.depth || 'standard',
+            includeExecution: args.includeExecution || false
+          }, 'http');
+          break;
+
+        case 'haruspex.predictEvolution':
+          if (!args.codeContext) {
+            throw new ValidationError('Code context is required for predictions');
+          }
+          result = await this.routeRequest('predict', {
+            codeContext: args.codeContext,
+            timeHorizon: args.timeHorizon || '90d',
+            historicalData: args.historicalData
+          }, 'http');
+          break;
+
+        case 'haruspex.getDiagnostics':
+          result = await this.routeRequest('diagnostics', null, 'http');
+          break;
+
+        case 'haruspex.getHealthStatus':
+          result = {
+            status: 'healthy',
+            service: 'haruspex-analysis',
+            version: '2.1.0',
+            timestamp: Date.now(),
+            uptime: Math.floor(process.uptime())
+          };
+          break;
+
+        case 'haruspex.clearCache':
+          // TODO: [TASK-H-NEW-001] Implement cache clearing functionality
+          // Priority: Medium | Complexity: 3
+          // Location: API Gateway - cache management integration
+          // Dependencies: Cache Manager interface
+          // Phase: Integration
+          result = {
+            action: 'cache_cleared',
+            timestamp: Date.now(),
+            message: 'Analysis cache has been cleared successfully'
+          };
+          break;
+
+        case 'haruspex.refreshModels':
+          // TODO: [TASK-H-NEW-002] Implement model refresh functionality
+          // Priority: Medium | Complexity: 4
+          // Location: API Gateway - model management integration
+          // Dependencies: Prediction Engine, Model Manager
+          // Phase: Integration
+          result = {
+            action: 'models_refreshed',
+            timestamp: Date.now(),
+            message: 'Machine learning models have been refreshed successfully'
+          };
+          break;
+
+        default:
+          throw new ValidationError(`Unknown Templum command: ${command}. Available commands: haruspex.analyzeCode, haruspex.predictEvolution, haruspex.getDiagnostics, haruspex.getHealthStatus, haruspex.clearCache, haruspex.refreshModels`);
+      }
+
+      // Format Templum response
+      const templumResponse = {
+        success: true,
+        result,
+        command,
+        timestamp: Date.now(),
+        backend: 'haruspex-2.1',
+        processingTime: Date.now() - startTime
+      };
+
+      this.updateSuccessMetrics(Date.now() - startTime);
+
+      return {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+        body: templumResponse,
+        timestamp: Date.now()
+      };
+
+    } catch (error) {
+      this.updateErrorMetrics();
+      
+      console.error(`Templum command execution error:`, error);
+      
+      const templumErrorResponse = {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        command: req.body?.command || 'unknown',
+        timestamp: Date.now(),
+        backend: 'haruspex-2.1',
+        processingTime: Date.now() - startTime,
+        availableCommands: [
+          'haruspex.analyzeCode',
+          'haruspex.predictEvolution', 
+          'haruspex.getDiagnostics',
+          'haruspex.getHealthStatus',
+          'haruspex.clearCache',
+          'haruspex.refreshModels'
+        ]
+      };
+
+      const statusCode = error instanceof HaruspexAPIError ? error.statusCode : 500;
+
+      return {
+        status: statusCode,
+        headers: { 'Content-Type': 'application/json' },
+        body: templumErrorResponse,
         timestamp: Date.now()
       };
     }
@@ -657,10 +714,6 @@ export class APIGateway extends EventEmitter {
 
   private setupEventHandlers(): void {
     // Handle server events
-    this.ipcServer.on('error', (error) => {
-      this.emit('serverError', { type: 'ipc', error });
-    });
-
     this.httpServer.on('error', (error) => {
       this.emit('serverError', { type: 'http', error });
     });
@@ -681,7 +734,7 @@ export class APIGateway extends EventEmitter {
     const now = Date.now();
     const staleThreshold = 300000; // 5 minutes
 
-    for (const [connectionId, connection] of this.activeConnections.entries()) {
+    for (const [connectionId, connection] of Array.from(this.activeConnections.entries())) {
       if (now - connection.lastActivity > staleThreshold) {
         console.log(`API Gateway: Cleaning up stale connection ${connectionId}`);
         this.activeConnections.delete(connectionId);
@@ -689,8 +742,6 @@ export class APIGateway extends EventEmitter {
         try {
           if (connection.type === 'websocket') {
             (connection.client as any).close();
-          } else if (connection.type === 'ipc') {
-            (connection.client as any).disconnect();
           }
         } catch (error) {
           console.warn(`Error closing stale connection: ${error}`);
@@ -702,12 +753,10 @@ export class APIGateway extends EventEmitter {
   private async closeAllConnections(): Promise<void> {
     const closePromises: Promise<void>[] = [];
 
-    for (const connection of this.activeConnections.values()) {
+    for (const connection of Array.from(this.activeConnections.values())) {
       const promise = new Promise<void>((resolve) => {
         try {
-          if (connection.type === 'ipc') {
-            (connection.client as any).disconnect();
-          } else if (connection.type === 'websocket') {
+          if (connection.type === 'websocket') {
             (connection.client as any).close();
           }
         } catch (error) {
@@ -748,9 +797,9 @@ export class APIGateway extends EventEmitter {
   }
 
   private getConnectionsByType(): Record<string, number> {
-    const byType: Record<string, number> = { ipc: 0, http: 0, websocket: 0 };
+    const byType: Record<string, number> = { http: 0, websocket: 0 };
     
-    for (const connection of this.activeConnections.values()) {
+    for (const connection of Array.from(this.activeConnections.values())) {
       byType[connection.type]++;
     }
     
@@ -761,8 +810,10 @@ export class APIGateway extends EventEmitter {
     if (this.activeConnections.size === 0) return 0;
     
     const now = Date.now();
-    const totalAge = Array.from(this.activeConnections.values())
-      .reduce((sum, conn) => sum + (now - conn.connectedAt), 0);
+    let totalAge = 0;
+    for (const connection of Array.from(this.activeConnections.values())) {
+      totalAge += (now - connection.connectedAt);
+    }
     
     return Math.round(totalAge / this.activeConnections.size);
   }

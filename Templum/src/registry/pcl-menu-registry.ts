@@ -1,12 +1,14 @@
 /**---
- * title: [PCL Menu Registry - Multi-Backend Menu Orchestration]
- * tags: [Registry, Menu, PCL-Integration, Multi-Backend, 80%-Reuse]
+ * title: [Universal Menu Registry - Multi-Backend Menu Orchestration]
+ * tags: [Registry, Menu, Universal-Integration, Multi-Backend, Generic-Backend]
  * provides: [Menu Pattern Reuse, Backend Coordination, Interface Adaptation, Theme Consistency]
- * requires: [PCL Backend Services, Interface Adapters, Universal Skin Engine]
- * description: [PCL-optimized menu registry leveraging 80% reuse potential with multi-backend storage patterns]
+ * requires: [Backend Services, Interface Adapters, Universal Skin Engine, Backend Integration Config]
+ * description: [Universal menu registry supporting generic backend integration with configurable command routing]
  * ---*/
 
 import { EventEmitter } from 'events';
+import { backendIntegrationConfig } from '../backend/backend-integration-config';
+import { DynamicCommandRouter } from '../backend/dynamic-command-router';
 
 export interface MenuDefinition {
   id: string;
@@ -105,9 +107,11 @@ export class PCLMenuRegistry extends EventEmitter {
   private backendConnections: Map<string, any> = new Map();
   private interfaceAdapters: Map<string, any> = new Map();
   private stats: MenuRegistryStats;
+  private commandRouter: DynamicCommandRouter | null = null;
 
-  constructor() {
+  constructor(commandRouter?: DynamicCommandRouter) {
     super();
+    this.commandRouter = commandRouter || null;
     this.stats = this.initializeStats();
     this.initializePCLMenuPatterns();
   }
@@ -371,12 +375,26 @@ export class PCLMenuRegistry extends EventEmitter {
 
   private async optimizeMenuItemsWithPCL(items: MenuItem[]): Promise<MenuItem[]> {
     return items.map(item => {
-      // Apply PCL command mapping
-      if (item.command && !item.command.startsWith('pcl.')) {
-        const pclCommand = this.mapToPCLCommand(item.command);
-        if (pclCommand) {
-          item.command = pclCommand;
+      // PHASE 1: Configurable command routing based on feature flags
+      const config = backendIntegrationConfig.getConfig();
+      
+      if (config.features.useDynamicCommandRouting && this.commandRouter) {
+        // IMPLEMENTED: Dynamic command routing using DynamicCommandRouter
+        // Routes commands based on skin definitions instead of hardcoded patterns
+        if (item.command) {
+          // Check if command is registered in dynamic router
+          const commandRoute = this.commandRouter.getCommandRoute(item.command);
+          if (commandRoute) {
+            // Command is already registered - use as-is
+            console.log(`[PCLMenuRegistry] Using dynamic route for command: ${item.command} -> ${commandRoute.backend.id}`);
+          } else {
+            // Generic system: Commands should be registered in dynamic router via skin definitions
+            console.warn(`[PCLMenuRegistry] Command ${item.command} not found in dynamic router - backend may not be properly configured`);
+          }
         }
+      } else {
+        // Generic system failure: Dynamic command routing should always be available
+        console.error('[PCLMenuRegistry] Dynamic command router not available - system configuration error');
       }
 
       // Optimize submenu recursively
@@ -392,22 +410,31 @@ export class PCLMenuRegistry extends EventEmitter {
     let pclPatternCount = 0;
     let totalPatternCount = 0;
 
-    // Count PCL command usage
-    const countPCLCommands = (items: MenuItem[]): void => {
+    // Count command routing patterns (dynamic or legacy)
+    const countCommandPatterns = (items: MenuItem[]): void => {
       items.forEach(item => {
         if (item.command) {
           totalPatternCount++;
-          if (item.command.startsWith('pcl.')) {
+          
+          // Check if using dynamic routing
+          if (this.commandRouter) {
+            const commandRoute = this.commandRouter.getCommandRoute(item.command);
+            if (commandRoute) {
+              // Command is routed through dynamic system
+              pclPatternCount++;
+            }
+          } else if (item.command.startsWith('pcl.')) {
+            // Legacy PCL pattern detection
             pclPatternCount++;
           }
         }
         if (item.submenu) {
-          countPCLCommands(item.submenu);
+          countCommandPatterns(item.submenu);
         }
       });
     };
 
-    countPCLCommands(menu.structure.items);
+    countCommandPatterns(menu.structure.items);
 
     // Factor in other PCL pattern usage
     if (menu.pclPatterns.optimizations.smartCaching) pclPatternCount += 2;
@@ -632,8 +659,22 @@ export class PCLMenuRegistry extends EventEmitter {
 
     const checkItems = (items: MenuItem[]): void => {
       items.forEach(item => {
-        if (item.command && !item.command.startsWith('pcl.') && this.mapToPCLCommand(item.command)) {
-          unmapped.push(item.command);
+        if (item.command) {
+          // Check if command is not routed
+          if (this.commandRouter) {
+            const commandRoute = this.commandRouter.getCommandRoute(item.command);
+            if (!commandRoute) {
+              // Not routed through dynamic system, check for legacy mapping
+              if (!item.command.startsWith('pcl.') && this.mapToPCLCommand(item.command)) {
+                unmapped.push(item.command);
+              }
+            }
+          } else {
+            // No dynamic router - use legacy detection
+            if (!item.command.startsWith('pcl.') && this.mapToPCLCommand(item.command)) {
+              unmapped.push(item.command);
+            }
+          }
         }
         if (item.submenu) {
           checkItems(item.submenu);

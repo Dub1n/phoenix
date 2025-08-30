@@ -8,6 +8,11 @@
 
 import { EventEmitter } from 'events';
 import { performance } from 'perf_hooks';
+import { 
+  TemplumError, 
+  isTemplumError, 
+  createTemplumError 
+} from '../types/templum-types';
 
 // Performance baseline definitions from Phase 1 requirements
 export interface ComponentPerformanceBaseline {
@@ -32,6 +37,23 @@ export interface ComponentPerformanceBaseline {
     confidenceLevel: number;    // 0.95 for 95% confidence
     trendAnalysisWindow: number; // samples for trend analysis
   };
+}
+
+export interface ComponentPerformanceBaselineWithTimestamp extends ComponentPerformanceBaseline {
+  timestamp: number;
+}
+
+export interface BaselineComparison {
+  deltas: Record<string, number>;
+  thresholdBreaches: Array<{metric: string; level: 'warning' | 'critical'; delta: number}>;
+  overallScore: number;
+}
+
+export interface RegressionAnalysis {
+  regressionDetected: boolean;
+  confidence: number;
+  trend: 'improving' | 'stable' | 'degrading';
+  statisticalSignificance: number;
 }
 
 export interface PerformanceMetrics {
@@ -120,7 +142,7 @@ export interface ValidationReport {
  */
 export class ComponentBaselineManager extends EventEmitter {
   private baselines: Map<string, ComponentPerformanceBaseline> = new Map();
-  private baselineHistory: Map<string, ComponentPerformanceBaseline[]> = new Map();
+  private baselineHistory: Map<string, ComponentPerformanceBaselineWithTimestamp[]> = new Map();
   private readonly maxHistorySize: number = 100;
 
   constructor() {
@@ -353,7 +375,7 @@ export class ComponentBaselineManager extends EventEmitter {
   private async performTypicalSystemOperation(): Promise<void> {
     // Simulate typical file system operation
     await new Promise((resolve, reject) => {
-      require('fs').readdir(process.cwd(), (err, files) => {
+      require('fs').readdir(process.cwd(), (err: NodeJS.ErrnoException | null, files: string[]) => {
         if (err) reject(err);
         else resolve(files);
       });
@@ -396,7 +418,7 @@ export class ComponentBaselineManager extends EventEmitter {
    */
   private async simulateCommandRouting(): Promise<void> {
     // Simulate command routing overhead with object operations
-    const testObj: any = {};
+    const testObj: Record<string, string> = {};
     for (let i = 0; i < 100; i++) {
       testObj[`key${i}`] = `value${i}`;
     }
@@ -478,7 +500,11 @@ export class ComponentBaselineManager extends EventEmitter {
     }
     
     const history = this.baselineHistory.get(componentId)!;
-    history.push({ ...baseline, timestamp: Date.now() } as any);
+    const baselineWithTimestamp: ComponentPerformanceBaselineWithTimestamp = { 
+      ...baseline, 
+      timestamp: Date.now() 
+    };
+    history.push(baselineWithTimestamp);
     
     // Limit history size
     if (history.length > this.maxHistorySize) {
@@ -699,7 +725,17 @@ export class ContinuousMonitor extends EventEmitter {
         }
       }
     } catch (error) {
-      this.emit('monitoringError', { error: error.message });
+      let errorMessage = 'Unknown monitoring error';
+      
+      if (isTemplumError(error)) {
+        errorMessage = `${error.category} error: ${error.message} (code: ${error.code})`;
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      }
+      
+      this.emit('monitoringError', { error: errorMessage });
     }
   }
 
@@ -760,13 +796,13 @@ export class ContinuousMonitor extends EventEmitter {
 
   private generateAlerts(
     componentId: string,
-    comparison: any,
-    regression: any
+    comparison: BaselineComparison,
+    regression: RegressionAnalysis
   ): ValidationResult['alerts'] {
     const alerts: ValidationResult['alerts'] = [];
 
     // Performance threshold alerts
-    comparison.thresholdBreaches.forEach((breach: any) => {
+    comparison.thresholdBreaches.forEach((breach) => {
       alerts.push({
         level: breach.level,
         metric: breach.metric,
@@ -802,8 +838,8 @@ export class ContinuousMonitor extends EventEmitter {
 
   private generateRecommendations(
     componentId: string,
-    comparison: any,
-    regression: any
+    comparison: BaselineComparison,
+    regression: RegressionAnalysis
   ): string[] {
     const recommendations: string[] = [];
 
@@ -1070,7 +1106,17 @@ export class PerformanceValidator extends EventEmitter {
       this.emit('initialized', { timestamp: Date.now() });
       
     } catch (error) {
-      this.emit('error', { error: error.message, operation: 'initialization' });
+      let errorMessage = 'Unknown initialization error';
+      
+      if (isTemplumError(error)) {
+        errorMessage = `${error.category} error: ${error.message} (code: ${error.code})`;
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      }
+      
+      this.emit('error', { error: errorMessage, operation: 'initialization' });
       throw error;
     }
   }

@@ -7,20 +7,24 @@
 ## Quick Navigation by Project
 
 ### * Phoenix Code Lite (PCL)
-**Primary TypeScript TDD Workflow Orchestrator**
+
+**Primary TypeScript TDD Workflow Orchestrator**:
 
 #### Key Locations
+
 - **Source Code**: `phoenix-code-lite/src/`
 - **Tests**: `phoenix-code-lite/tests/`
 - **Documentation**: `phoenix-code-lite/docs/`
 - **Configuration**: `phoenix-code-lite/package.json`, `phoenix-code-lite/tsconfig.json`
 
 #### Essential Documentation
+
 - **[Codebase Index](./../references/PHOENIX-CODE-LITE-INDEX.md)** - Complete file-by-file documentation
 - **[API Reference](./../references/PHOENIX-CODE-LITE-API.md)** - TypeScript interfaces and method signatures
 - **[Architecture Diagram](./../architecture/PHOENIX-CODE-LITE-ARCHITECTURE.md)** - Visual system architecture
 
 #### Development Commands
+
 ```bash
 cd phoenix-code-lite
 npm install          # Install dependencies
@@ -31,6 +35,7 @@ npm start            # Start CLI application
 ```
 
 #### Key Components for Development
+
 - **CLI System**: `src/cli/` - Interactive CLI and commands
 - **TDD Engine**: `src/tdd/` - TDD workflow orchestration
 - **Core Infrastructure**: `src/core/` - Foundation, config, session management
@@ -40,21 +45,25 @@ npm start            # Start CLI application
 ---
 
 ### 🏥 QMS Infrastructure
-**Medical Device Software Compliance Framework**
 
-#### Key Locations
+**Medical Device Software Compliance Framework**:
+
+#### QMS: Key Locations
+
 - **Primary Integration**: Within Phoenix Code Lite (`phoenix-code-lite/src/preparation/`)
 - **Documentation**: `Obsidian/QMS/`
 - **Standards**: `Obsidian/QMS/Docs/AAMI/`, `Obsidian/QMS/Docs/EN 62304-2006+A1-2015/`
 - **Process Documentation**: `Obsidian/QMS/Docs/SSI-SOP-*/`
 
-#### Regulatory Standards Covered
+#### QMS: Regulatory Standards Covered
+
 - **EN 62304**: Medical device software lifecycle requirements
 - **AAMI TIR45**: AGILE practices in medical device development
 - **ISO Standards**: Quality management systems
 - **QMS Processes**: Design controls, risk management, validation
 
 #### QMS Components for Development
+
 - **Compliance Validators**: `phoenix-code-lite/src/preparation/*-validator.ts`
 - **Document Processors**: `phoenix-code-lite/src/preparation/regulatory-document-processor.ts`
 - **Standards Analyzers**: `phoenix-code-lite/src/preparation/en62304-requirement-analyzer.ts`
@@ -63,14 +72,17 @@ npm start            # Start CLI application
 ---
 
 ### 🔮 Haruspex
-**Enhanced Analysis and Prediction System**
 
-#### Key Locations
+**Enhanced Analysis and Prediction System**:
+
+#### Haruspex: Key Locations
+
 - **Documentation**: `Haruspex/docs/`
 - **Architecture**: `Haruspex/docs/enhanced_noderr_architecture_design.md`
 - **Analysis**: `Haruspex/docs/noderr_critical_analysis_and_solutions.md`
 
-#### Current Status
+#### Haruspex: Current Status
+
 - **Phase**: Early planning and architecture design
 - **Integration**: Planned integration with noderr architecture verification
 - **Purpose**: Enhanced analysis capabilities beyond current PCL scope
@@ -80,7 +92,8 @@ npm start            # Start CLI application
 ### 📚 Documentation Systems
 
 #### Phoenix Core Documentation (`docs/Phoenix-Core/`)
-**Comprehensive framework documentation and guides**
+
+**Comprehensive framework documentation and guides**:
 
 - **Framework Overview**: `docs/Phoenix-Core/01-Framework-Overview/`
 - **Core Concepts**: `docs/Phoenix-Core/02-Core-Concepts/`
@@ -91,7 +104,8 @@ npm start            # Start CLI application
 - **Maintenance & Changes**: `docs/Phoenix-Core/08-Maintenance/`
 
 #### PCL Strategic Documentation (`PCL-Info/`)
-**Strategic analysis and planning for PCL development**
+
+**Strategic analysis and planning for PCL development**:
 
 - **Overview**: `PCL-Info/00-PCL-Overview/`
 - **QMS Integration**: `PCL-Info/01-QMS-via-PCL.md`
@@ -100,7 +114,8 @@ npm start            # Start CLI application
 - **Current State**: `PCL-Info/05-Current-State.md`
 
 #### QMS Documentation (`docs/PCL-QMS/`)
-**QMS infrastructure technical documentation**
+
+**QMS infrastructure technical documentation**:
 
 - **Roadmap**: `docs/PCL-QMS/QMS_Roadmap/`
 - **Technical Notes**: `docs/PCL-QMS/QMS-Infrastructure-Technical-Notes.md`
@@ -112,14 +127,16 @@ npm start            # Start CLI application
 ### ◦ Infrastructure & Tooling
 
 #### Scripts (`scripts/`)
-**Development automation and tooling**
+
+**Development automation and tooling**:
 
 - **Terminal Management**: `scripts/terminal-completer/`
 - **Update Tools**: `scripts/update-phoenix/`
 - **NoDeRR Audit**: `scripts/noderr-audit/`
 
 #### NoDeRR (`noderr/`)
-**Error analysis and architecture verification**
+
+**Error analysis and architecture verification**:
 
 - **Architecture**: `noderr/noderr_architecture.md`
 - **Project Analysis**: `noderr/noderr_project.md`
@@ -132,6 +149,7 @@ npm start            # Start CLI application
 ## Development Context by Task Type
 
 ### TDD Development Tasks
+
 **Primary Location**: Phoenix Code Lite
 
 ```bash
@@ -146,11 +164,13 @@ cd phoenix-code-lite
 ```
 
 **Essential Documentation**:
+
 - [PCL Codebase Index](./../references/PHOENIX-CODE-LITE-INDEX.md)
 - [TDD Standards](./../standards/TDD-STANDARDS.md)
 - [Development Workflow](./../workflows/DEVELOPMENT-WORKFLOW.md)
 
 ### QMS Compliance Tasks
+
 **Primary Locations**: PCL preparation/ + Obsidian/QMS/
 
 ```bash
@@ -168,11 +188,13 @@ cd Obsidian/QMS/Docs
 ```
 
 **Essential Documentation**:
+
 - QMS Standards in `Obsidian/QMS/Docs/`
 - QMS Roadmap in `docs/PCL-QMS/QMS_Roadmap/`
 - Regulatory requirements documentation
 
 ### CLI Development Tasks
+
 **Primary Location**: Phoenix Code Lite CLI system
 
 ```bash
@@ -186,6 +208,7 @@ cd phoenix-code-lite/src/cli
 ```
 
 ### Documentation Tasks
+
 **Locations**: Varies by documentation type
 
 ```bash
@@ -203,15 +226,18 @@ cd PCL-Info
 ```
 
 ### Cross-Project Integration Tasks
+
 **Multiple Locations**: Coordinate across projects
 
 **Planning Approach**:
+
 1. **Impact Assessment**: Review all affected projects
 2. **Dependency Analysis**: Check cross-project dependencies
 3. **Coordinated Implementation**: Plan sequenced changes
 4. **Integration Testing**: Verify compatibility across projects
 
 **Key Integration Points**:
+
 - Shared TypeScript patterns and utilities
 - Common configuration and template systems
 - Cross-project documentation references
@@ -222,6 +248,7 @@ cd PCL-Info
 ## Quick Commands by Project
 
 ### Phoenix Code Lite Development
+
 ```bash
 cd phoenix-code-lite
 npm run build && npm test && npm run lint  # Full validation
@@ -230,12 +257,14 @@ npm start                                  # CLI application
 ```
 
 ### Documentation Validation
+
 ```bash
 # Check markdown links and formatting
 # (Project-specific validation varies)
 ```
 
 ### Repository-Wide Checks
+
 ```bash
 # Check for cross-project impacts
 find . -name "*.ts" -exec grep -l "specific-pattern" {} \;
@@ -247,6 +276,7 @@ find . -name "*.md" -exec grep -l "cross-reference" {} \;
 ## Integration with Claude Code
 
 ### Claude Code Configuration Files
+
 - **Repository Root**: `.claude/` (this directory structure)
 - **Workflows**: `.claude/workflows/DEVELOPMENT-WORKFLOW.md`
 - **Standards**: `.claude/standards/TDD-STANDARDS.md`
@@ -254,6 +284,7 @@ find . -name "*.md" -exec grep -l "cross-reference" {} \;
 - **References**: `.claude/references/` (this file and project indices)
 
 ### AI Development Patterns
+
 - **PCL**: TDD workflow orchestration with comprehensive testing
 - **QMS**: Compliance-first development with regulatory validation
 - **Documentation**: Consistent documentation patterns across projects
@@ -262,6 +293,7 @@ find . -name "*.md" -exec grep -l "cross-reference" {} \;
 ---
 
 **Navigation Tips**:
+
 - Use this index to quickly locate project resources
 - Follow project-specific development patterns
 - Consult project documentation before making changes

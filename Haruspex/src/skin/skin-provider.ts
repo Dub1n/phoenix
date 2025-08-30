@@ -151,6 +151,8 @@ export class SkinProvider {
       {
         id: 'haruspex.analysisPanel',
         title: 'Analysis Dashboard',
+        location: 'main',
+        size: 'medium',
         type: 'webview',
         contentUrl: '/analysis-dashboard',
         messageHandler: 'haruspex.handlePanelMessage'
@@ -158,6 +160,8 @@ export class SkinProvider {
       {
         id: 'haruspex.predictionPanel',
         title: 'Prediction Insights',
+        location: 'main',
+        size: 'medium',
         type: 'webview',
         contentUrl: '/prediction-dashboard',
         messageHandler: 'haruspex.handlePredictionMessage'
@@ -169,6 +173,8 @@ export class SkinProvider {
       panels.push({
         id: 'haruspex.streamingPanel',
         title: 'Real-time Analysis',
+        location: 'side',
+        size: 'large',
         type: 'webview',
         contentUrl: '/streaming-dashboard',
         messageHandler: 'haruspex.handleStreamingMessage'
@@ -180,6 +186,8 @@ export class SkinProvider {
       panels.push({
         id: 'haruspex.diagnosticsPanel',
         title: 'System Diagnostics',
+        location: 'bottom',
+        size: 'small',
         type: 'webview',
         contentUrl: '/diagnostics-dashboard',
         messageHandler: 'haruspex.handleDiagnosticsMessage'
@@ -195,7 +203,8 @@ export class SkinProvider {
         id: 'haruspex.status',
         text: 'Haruspex Ready',
         tooltip: 'Haruspex Analysis Service Status - Click for diagnostics',
-        priority: 'normal'
+        priority: 'normal',
+        alignment: 'left'
       }
     ];
 
@@ -204,7 +213,8 @@ export class SkinProvider {
         id: 'haruspex.activity',
         text: '$(sync~spin) Analyzing...',
         tooltip: 'Active analysis operations',
-        priority: 'low'
+        priority: 'low',
+        alignment: 'right'
       });
     }
 
@@ -254,33 +264,39 @@ export class SkinProvider {
           id: 'separator-1',
           label: '────────────────',
           description: '',
-          action: 'separator'
+          action: 'separator',
+          icon: '',
+          shortcut: ''
         },
         {
           id: 'stream-analysis',
           label: '4. Stream Analysis',
           description: 'Start real-time streaming analysis with live updates',
           action: 'haruspex.startStreaming',
-          icon: 'radio-tower'
+          icon: 'radio-tower',
+          shortcut: 'Ctrl+Shift+S'
         },
         {
           id: 'export-results',
           label: '5. Export Results',
           description: 'Export analysis results in various formats',
           action: 'haruspex.exportResults',
-          icon: 'export'
+          icon: 'export',
+          shortcut: 'Ctrl+Shift+E'
         },
         {
           id: 'manage-cache',
           label: '6. Cache Management',
           description: 'View and manage analysis result cache',
           action: 'haruspex.manageCache',
-          icon: 'database'
+          icon: 'database',
+          shortcut: 'Ctrl+Shift+C'
         }
       );
     }
 
     return {
+      id: 'haruspex.mainMenu',
       title: 'Haruspex Analysis Service',
       subtitle: 'Code Analysis & Prediction with Machine Learning',
       items: mainItems
@@ -407,14 +423,37 @@ export class SkinProvider {
             'export --format pdf --include predictions'
           ]
         },
-        'haruspex.manageCache': {
-          title: 'Cache Management',
-          description: 'View, clear, and optimize analysis result cache for improved performance',
-          handler: 'manageCache',
-          shortcuts: ['cache'],
+        'haruspex.clearCache': {
+          title: 'Clear Analysis Cache',
+          description: 'Clear cached analysis results to free memory and ensure fresh analysis',
+          handler: 'clearCache',
+          shortcuts: ['clearcache', 'cache-clear'],
           examples: [
-            'cache --status',
-            'cache --clear --older-than 24h'
+            'clearcache',
+            'haruspex.clearCache',
+            'cache-clear --confirm'
+          ]
+        },
+        'haruspex.refreshModels': {
+          title: 'Refresh ML Models',
+          description: 'Refresh machine learning models for improved prediction accuracy',
+          handler: 'refreshModels',
+          shortcuts: ['refreshmodels', 'models-refresh'],
+          examples: [
+            'refreshmodels',
+            'haruspex.refreshModels',
+            'models-refresh --force'
+          ]
+        },
+        'haruspex.getHealthStatus': {
+          title: 'Get Health Status',
+          description: 'Get detailed health and performance status of the Haruspex service',
+          handler: 'getHealthStatus',
+          shortcuts: ['healthstatus', 'service-health'],
+          examples: [
+            'healthstatus',
+            'haruspex.getHealthStatus',
+            'service-health --detailed'
           ]
         }
       });
@@ -520,26 +559,18 @@ export class SkinProvider {
   }
 
   private generateBackendConfig(options: SkinGenerationOptions): BackendConfig {
+    // Use dynamic port from configuration (defaulting to standard HTTP port)
+    const httpPort = process.env.HARUSPEX_HTTP_PORT || '3002';
+    const wsPort = process.env.HARUSPEX_WS_PORT || '3004';
+    
     return {
-      endpoint: 'ipc://haruspex-backend',
-      protocol: 'ipc',
+      type: 'http',
+      endpoints: [`http://localhost:${httpPort}`],
+      endpoint: `http://localhost:${httpPort}`,
+      protocol: 'http',
       timeout: 30000,
       retries: 3,
-      healthCheck: {
-        interval: 30000,
-        endpoint: '/health',
-        timeout: 5000
-      },
-      streaming: {
-        enabled: options.customization?.supportStreaming || false,
-        endpoint: 'ws://localhost:3004',
-        heartbeat: 30000
-      },
-      cache: {
-        enabled: true,
-        ttl: 300000,
-        maxSize: '100MB'
-      }
+      authentication: false
     };
   }
 }

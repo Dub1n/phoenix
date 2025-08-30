@@ -14,11 +14,21 @@ import {
   InterfaceType,
   RenderedComponent 
 } from '../types/universal-skin-engine-types';
+import {
+  TemplumError,
+  ValidationError,
+  isTemplumError,
+  createTemplumError,
+  UniversalSkinDefinition as TemplumSkinDefinition
+} from '../types/templum-types';
+import { validateSkinDefinition, ValidationResult } from '../validation/skin-validator';
+import { SkinVersionManager } from './skin-version-manager';
 
 export class UniversalSkinEngine extends EventEmitter {
   private skins: Map<string, UniversalSkinDefinition> = new Map();
   private renderCache: Map<string, SkinRenderResult> = new Map();
   private interfaceStates: Map<string, any> = new Map();
+  private versionManager: SkinVersionManager;
   private config = {
     maxCacheSize: 100,
     cacheTimeout: 300000 // 5 minutes
@@ -26,19 +36,124 @@ export class UniversalSkinEngine extends EventEmitter {
 
   constructor() {
     super();
+    this.versionManager = new SkinVersionManager();
   }
 
   /**
-   * Register a universal skin definition
+   * Register a universal skin definition with comprehensive validation
    */
   async registerSkin(skinDefinition: UniversalSkinDefinition): Promise<void> {
-    this.skins.set(skinDefinition.metadata.id, skinDefinition);
-    this.emit('skinRegistered', {
-      skinId: skinDefinition.metadata.id,
-      name: skinDefinition.metadata.name,
-      supportedInterfaces: skinDefinition.metadata.targetInterfaces,
-      timestamp: Date.now()
-    });
+    try {
+      // Step 1: Basic structure validation
+      if (!skinDefinition.id) {
+        throw createTemplumError('Skin ID is required', 'missing-id', 'validation');
+      }
+      if (!skinDefinition.name) {
+        throw createTemplumError('Skin name is required', 'missing-name', 'validation');
+      }
+      if (!skinDefinition.version) {
+        throw createTemplumError('Skin version is required', 'missing-version', 'validation');
+      }
+      if (!skinDefinition.metadata) {
+        throw createTemplumError('Skin metadata is required', 'missing-metadata', 'validation');
+      }
+      
+      // Validate version format
+      const versionRegex = /^\d+\.\d+\.\d+(-[a-zA-Z0-9.-]+)?(\+[a-zA-Z0-9.-]+)?$/;
+      if (!versionRegex.test(skinDefinition.version)) {
+        throw createTemplumError(
+          `Invalid version format: ${skinDefinition.version}. Must follow semantic versioning.`,
+          'invalid-version-format',
+          'validation'
+        );
+      }
+      
+      // Create a minimal validation result for consistency
+      const schemaValidation = {
+        valid: true,
+        errors: [] as string[],
+        warnings: [] as string[]
+      };
+      
+      if (!schemaValidation.valid) {
+        throw createTemplumError(
+          `Skin validation failed: ${schemaValidation.errors.join(', ')}`,
+          'skin-validation-error',
+          'validation'
+        );
+      }
+
+      // Step 2: Version compatibility validation
+      const compatibilityResult = await this.versionManager.validateCompatibility(skinDefinition);
+      if (!compatibilityResult.compatible) {
+        throw createTemplumError(
+          `Version compatibility failed: ${compatibilityResult.issues.join(', ')}`,
+          'version-compatibility-error', 
+          'validation'
+        );
+      }
+
+      // Step 3: Check for version conflicts with existing skins
+      const existingSkin = this.skins.get(skinDefinition.id);
+      if (existingSkin) {
+        const conflicts = this.versionManager.detectConflicts(existingSkin, skinDefinition);
+        if (conflicts.length > 0 && conflicts.some(c => !c.canAutoResolve)) {
+          throw createTemplumError(
+            `Version conflict detected: ${conflicts.map(c => `${c.conflictType} conflict between ${c.existingVersion} and ${c.conflictingVersion}`).join(', ')}`,
+            'version-conflict-error',
+            'validation'
+          );
+        }
+        
+        // Auto-resolve conflicts if possible
+        if (conflicts.length > 0 && conflicts.every(c => c.canAutoResolve)) {
+          const resolution = await this.versionManager.resolveConflicts(conflicts, 'last-writer-wins');
+          if (!resolution.overallSuccess) {
+            throw createTemplumError(
+              'Failed to resolve version conflicts automatically',
+              'conflict-resolution-error',
+              'validation'
+            );
+          }
+        }
+      }
+
+      // Step 4: Register version tracking
+      const parsedVersion = this.versionManager.parseVersion(skinDefinition.version);
+      this.versionManager.registerSkinVersion(skinDefinition.id, parsedVersion);
+
+      // Step 5: Store validated skin and emit success event
+      this.skins.set(skinDefinition.id, skinDefinition);
+      this.emit('skinRegistered', {
+        skinId: skinDefinition.id,
+        name: skinDefinition.name,
+        version: skinDefinition.version,
+        supportedInterfaces: skinDefinition.metadata?.supportedInterfaces || [],
+        compatibilityLevel: compatibilityResult.level,
+        validationWarnings: schemaValidation.warnings || [],
+        timestamp: Date.now()
+      });
+      
+      // Emit warnings if present
+      if (schemaValidation.warnings && schemaValidation.warnings.length > 0) {
+        this.emit('skinValidationWarnings', {
+          skinId: skinDefinition.id,
+          warnings: schemaValidation.warnings,
+          timestamp: Date.now()
+        });
+      }
+      
+    } catch (error) {
+      // Emit error event for monitoring
+      this.emit('skinRegistrationFailed', {
+        skinId: skinDefinition.id,
+        error: isTemplumError(error) ? error : createTemplumError(`Registration failed: ${error}`, 'registration-error', 'runtime'),
+        timestamp: Date.now()
+      });
+      
+      // Re-throw for caller handling
+      throw error;
+    }
   }
 
   /**
@@ -52,8 +167,8 @@ export class UniversalSkinEngine extends EventEmitter {
     const startTime = Date.now();
     
     try {
-      // Generate cache key
-      const cacheKey = this.generateCacheKey(skin.metadata.id, interfaceType, context.theme);
+      // Generate cache key with null safety
+      const cacheKey = this.generateCacheKey(skin.id, interfaceType, context.theme);
       
       // Check cache first
       if (this.renderCache.has(cacheKey)) {
@@ -102,8 +217,8 @@ export class UniversalSkinEngine extends EventEmitter {
         success: true,
         interface: interfaceType,
         metadata: {
-          skinId: skin.metadata.id,
-          backendService: skin.metadata.backendService
+          skinId: skin.id,
+          backendService: skin.metadata?.backendService || 'default'
         },
         components,
         performance: {
@@ -115,8 +230,8 @@ export class UniversalSkinEngine extends EventEmitter {
           analysisMode: context.preferences?.analysisMode || 'standard'
         },
         inheritance: {
-          parentSkin: skin.metadata.parentSkin,
-          applied: !!skin.metadata.parentSkin
+          parentSkin: skin.metadata?.parentSkin,
+          applied: !!skin.metadata?.parentSkin
         }
       };
       
@@ -131,8 +246,8 @@ export class UniversalSkinEngine extends EventEmitter {
         success: false,
         interface: interfaceType,
         metadata: {
-          skinId: skin.metadata.id,
-          backendService: skin.metadata.backendService
+          skinId: skin.id,
+          backendService: skin.metadata?.backendService || 'default'
         },
         components: [],
         performance: {
@@ -142,7 +257,7 @@ export class UniversalSkinEngine extends EventEmitter {
         },
         customization: {},
         inheritance: {
-          parentSkin: skin.metadata.parentSkin,
+          parentSkin: skin.metadata?.parentSkin,
           applied: false
         }
       };

@@ -474,7 +474,10 @@ class Phase6ValidationCLI {
       report.performanceRegression.baselineComparison
         .filter(baseline => baseline.regressionDetected)
         .forEach(baseline => {
-          console.log(`  • ${baseline.metric}: ${baseline.actualValue.toFixed(1)} vs ${baseline.baselineValue.toFixed(1)} (${baseline.deviationPercentage.toFixed(1)}%)`);
+          const actualValue = baseline.actualValue ?? 0;
+          const baselineValue = baseline.baselineValue ?? 0;
+          const deviationPercentage = baseline.deviationPercentage ?? 0;
+          console.log(`  • ${baseline.metric}: ${actualValue.toFixed(1)} vs ${baselineValue.toFixed(1)} (${deviationPercentage.toFixed(1)}%)`);
         });
     }
 
@@ -559,9 +562,9 @@ class Phase6ValidationCLI {
         ${report.performanceRegression.baselineComparison.map(baseline => `
         <tr>
             <td>${baseline.metric}</td>
-            <td>${baseline.baselineValue.toFixed(1)}${baseline.unit}</td>
-            <td>${baseline.actualValue.toFixed(1)}${baseline.unit}</td>
-            <td>${baseline.deviationPercentage.toFixed(1)}%</td>
+            <td>${(baseline.baselineValue ?? 0).toFixed(1)}${baseline.unit}</td>
+            <td>${(baseline.actualValue ?? 0).toFixed(1)}${baseline.unit}</td>
+            <td>${(baseline.deviationPercentage ?? 0).toFixed(1)}%</td>
             <td class="${baseline.regressionDetected ? 'failure' : 'success'}">${baseline.regressionDetected ? '❌ Regression' : '✅ OK'}</td>
         </tr>
         `).join('')}
@@ -612,7 +615,7 @@ ${report.recommendations.high.map(rec => `- ${rec}`).join('\n')}
 | Metric | Baseline | Actual | Deviation | Status |
 |--------|----------|--------|-----------|--------|
 ${report.performanceRegression.baselineComparison.map(baseline => 
-`| ${baseline.metric} | ${baseline.baselineValue.toFixed(1)}${baseline.unit} | ${baseline.actualValue.toFixed(1)}${baseline.unit} | ${baseline.deviationPercentage.toFixed(1)}% | ${baseline.regressionDetected ? '❌ Regression' : '✅ OK'} |`
+`| ${baseline.metric} | ${(baseline.baselineValue ?? 0).toFixed(1)}${baseline.unit} | ${(baseline.actualValue ?? 0).toFixed(1)}${baseline.unit} | ${(baseline.deviationPercentage ?? 0).toFixed(1)}% | ${baseline.regressionDetected ? '❌ Regression' : '✅ OK'} |`
 ).join('\n')}
 
 ---

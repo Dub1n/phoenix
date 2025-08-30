@@ -6,7 +6,13 @@
 - description: [Central export module for all Templum observability infrastructure components and interfaces]        
 - ---*/
 
-// Core observability system
+// Import types for local use in helper functions
+import { 
+  TemplumObservabilitySystem,
+  type ObservabilityConfig
+} from './templum-observability-system';
+
+// Core observability system - Re-export all types and classes
 export {
   TemplumObservabilitySystem,
   ObservabilityLogger,

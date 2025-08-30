@@ -128,17 +128,6 @@ The VDL_Vault repository is a comprehensive ecosystem for medical device softwar
 
 **Use for**: Web automation, testing, browser interaction, web scraping, form filling, and any web-based task automation
 
-#### ripgrep MCP
-
-**Tools Available**: Based on the ripgrep command-line tool
-
-- Fast text-based regex search across files
-- Respects gitignore rules
-- Skips hidden/binary files by default
-- Recursive directory searching
-
-**Use for**: Fast text-based regex search when you need to find exact pattern matches across files, code searching, log analysis
-
 #### sequential-thinking MCP
 
 **Tools Available**:

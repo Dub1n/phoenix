@@ -157,10 +157,10 @@ export class TemplumUniversalWebViewProvider implements vscode.WebviewViewProvid
     try {
       // ✅ APPLY: Backend availability validation before interaction
       const backendRouter = this.templumCore.getBackendRouter();
-      const connectionStatus = backendRouter.getConnectionStatus();
+      const connectionStatus = backendRouter.getConnectionStatus?.();
       
       // Validate backend is available before attempting interaction
-      const backendStatus = connectionStatus.backends[backendId] as { 
+      const backendStatus = connectionStatus?.backends?.[backendId] as { 
         connected: boolean; 
         capabilities?: string[]; 
         lastCheck?: number 
@@ -288,13 +288,13 @@ export class TemplumUniversalWebViewProvider implements vscode.WebviewViewProvid
       };
       
       // Render skin using Universal Skin Engine
-      const renderResult = await skinEngine.renderForInterface(
+      const renderResult = await skinEngine.renderForInterface?.(
         skinDefinition,
         'vscode',
         renderingContext
       );
       
-      if (renderResult.success) {
+      if (renderResult?.success) {
         // ✅ ENHANCED: Use PCL-rendered HTML if available, fallback to generated HTML
         const renderedHTML = renderResult.renderedContent?.html || this.generateSkinHTML(renderResult, skinDefinition);
         
@@ -303,7 +303,7 @@ export class TemplumUniversalWebViewProvider implements vscode.WebviewViewProvid
           await this.view.webview.postMessage({
             type: 'render_backend_skin',
             payload: {
-              backend: skinDefinition.metadata.backendService,
+              backend: skinDefinition.metadata.backend,
               name: skinDefinition.metadata.name || skinDefinition.id,
               renderResult: renderResult,
               customHTML: renderedHTML,
@@ -319,7 +319,7 @@ export class TemplumUniversalWebViewProvider implements vscode.WebviewViewProvid
         // Emit success metrics
         this.emitMetricsSignal({
           event_type: 'skin_render_complete',
-          backend_id: skinDefinition.metadata.backendService,
+          backend_id: skinDefinition.metadata.backend,
           skin_id: skinDefinition.id,
           render_time: renderResult.performance.renderTime,
           component_count: renderResult.components.length,
@@ -332,7 +332,7 @@ export class TemplumUniversalWebViewProvider implements vscode.WebviewViewProvid
         
       } else {
         throw createTemplumError(
-          `Skin rendering failed for ${skinDefinition.metadata.backendService}`,
+          `Skin rendering failed for ${skinDefinition.metadata.backend}`,
           'SkinRenderError',
           'runtime'
         );
@@ -344,7 +344,7 @@ export class TemplumUniversalWebViewProvider implements vscode.WebviewViewProvid
       
       // Emit error signal with context
       this.emitErrorSignal('skin_render_failed', error, {
-        backend_service: skinDefinition.metadata.backendService,
+        backend_service: skinDefinition.metadata.backend,
         skin_id: skinDefinition.id,
         render_time: Date.now() - startTime
       });
@@ -354,7 +354,7 @@ export class TemplumUniversalWebViewProvider implements vscode.WebviewViewProvid
         await this.view.webview.postMessage({
           type: 'skin_render_error',
           payload: {
-            backend: skinDefinition.metadata.backendService,
+            backend: skinDefinition.metadata.backend,
             name: skinDefinition.name,
             error: errorMessage,
             fallbackAvailable: true
@@ -362,7 +362,7 @@ export class TemplumUniversalWebViewProvider implements vscode.WebviewViewProvid
         });
       }
       
-      console.error(`Universal Skin Engine: Failed to render skin for ${skinDefinition.metadata.backendService}:`, errorMessage);
+      console.error(`Universal Skin Engine: Failed to render skin for ${skinDefinition.metadata.backend}:`, errorMessage);
     }
   }
   
@@ -393,10 +393,10 @@ export class TemplumUniversalWebViewProvider implements vscode.WebviewViewProvid
       
       // Wrap in themed container
       return `
-        <div class="backend-skin-container" data-backend="${skinDefinition.metadata.backendService}">
+        <div class="backend-skin-container" data-backend="${skinDefinition.metadata.backend}">
           <div class="skin-header">
             <h3>${skinDefinition.metadata.name || skinDefinition.id}</h3>
-            <span class="backend-label">${skinDefinition.metadata.backendService}</span>
+            <span class="backend-label">${skinDefinition.metadata.backend}</span>
           </div>
           <div class="skin-content">
             ${htmlContent || '<p>No renderable components found</p>'}
@@ -496,7 +496,7 @@ export class TemplumUniversalWebViewProvider implements vscode.WebviewViewProvid
       // Pattern: backend-service-router-pattern with Haruspex debug manager integration
       
       const backendRouter = this.templumCore.getBackendRouter();
-      const connectionStatus = backendRouter.getConnectionStatus();
+      const connectionStatus = backendRouter.getConnectionStatus?.();
       
       const backends: BackendServiceInfo[] = [];
       const statusStartTime = Date.now();
@@ -645,7 +645,7 @@ export class TemplumUniversalWebViewProvider implements vscode.WebviewViewProvid
   }
   
   private getBackendDisplayName(backendId: string): string {
-    const names = {
+    const names: { [key: string]: string } = {
       'haruspex': 'Haruspex Analysis Service',
       'pcl': 'Phoenix Code Lite TDD Engine', 
       'litany': 'Litany Context Manager'
@@ -654,7 +654,7 @@ export class TemplumUniversalWebViewProvider implements vscode.WebviewViewProvid
   }
   
   private getBackendDescription(backendId: string): string {
-    const descriptions = {
+    const descriptions: { [key: string]: string } = {
       'haruspex': 'Advanced code analysis and prediction service',
       'pcl': 'Test-driven development workflow orchestration',
       'litany': 'Intelligent context and memory management'

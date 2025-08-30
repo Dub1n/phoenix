@@ -7,6 +7,13 @@
  * Usage: node verify-fix.js <component-name> [--save]
  * Integration: Used by quick-fix-guide.md and comprehensive-fix-guide.md after implementation
  * 
+ * Enhanced Component Finding:
+ * - FOLDER-AGNOSTIC: Recursively searches ALL subdirectories for component files
+ * - MULTI-EXTENSION: Supports .ts, .js, .tsx, .jsx file types automatically
+ * - SMART VARIATIONS: Searches for camelCase, PascalCase, kebab-case, snake_case variations
+ * - NO DEPTH LIMIT: Searches entire project structure (excludes node_modules, .git, etc.)
+ * - FALLBACK SUPPORT: Falls back to legacy search if recursive search fails
+ * 
  * Functionality:
  * - Run TypeScript compilation check (compatible with both templates)
  * - Execute component-specific tests and report results

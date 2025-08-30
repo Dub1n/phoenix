@@ -285,16 +285,16 @@ function createMockSkinDefinition(): UniversalSkinDefinition {
     version: '1.0.0',
     description: 'Test skin for core engine',
     pclCompatibility: {
+      enabled: true,
       version: '1.0.0',
-      reusePercentage: 85,
-      inheritancePatterns: ['hybrid-pattern', 'component-pattern'],
-      optimizations: ['caching', 'lazy-loading']
+      features: ['caching', 'lazy-loading']
     },
     metadata: {
       id: 'test-skin',
       name: 'Test Skin',
       backend: 'pcl',
       version: '1.0.0',
+      description: 'Test skin for core engine',
       compatibleInterfaces: ['vscode', 'cli', 'command']
     },
     commands: {

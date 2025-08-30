@@ -125,8 +125,12 @@ describe('Haruspex Backend Service - Phase 4 TDD Validation', () => {
         codeContext: {
           projectPath: '/test/project',
           files: ['test.ts'],
-          dependencies: { production: [], development: [] },
-          configuration: {}
+          dependencies: { production: {}, development: {} },
+          configuration: {
+            language: 'typescript',
+            framework: 'node',
+            buildTool: 'tsc'
+          }
         },
         timeHorizon: '30d',
         predictionTypes: ['pattern-evolution', 'bug-prediction']

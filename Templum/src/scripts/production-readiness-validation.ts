@@ -127,7 +127,8 @@ class ProductionReadinessValidationScript {
       this.provideRecommendations(result);
       
     } catch (error) {
-      console.error(`${colors.red}❌ Production readiness validation failed:${colors.reset}`, error.message);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error(`${colors.red}❌ Production readiness validation failed:${colors.reset}`, errorMessage);
       process.exit(1);
     }
   }
@@ -153,7 +154,7 @@ class ProductionReadinessValidationScript {
           priority: resource.priority,
           cleanup: async () => { /* Test cleanup */ }
         });
-        console.log(`   ✓ Allocated ${resource.type} resource: ${handle.id}`);
+        console.log(`   ✓ Allocated ${resource.type} resource: ${handle}`);
       }
 
       const status = await this.resourceManager.getStatus();
@@ -161,7 +162,8 @@ class ProductionReadinessValidationScript {
       console.log(`   ✓ Policy violations: ${status.policyViolations}\n`);
       
     } catch (error) {
-      console.error(`   ❌ Resource Manager initialization failed: ${error.message}\n`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error(`   ❌ Resource Manager initialization failed: ${errorMessage}\n`);
       throw error;
     }
   }
@@ -173,8 +175,8 @@ class ProductionReadinessValidationScript {
     const startTime = performance.now();
     
     // File system operation
-    await new Promise((resolve, reject) => {
-      require('fs').readdir(process.cwd(), (err, files) => {
+    await new Promise<string[]>((resolve, reject) => {
+      require('fs').readdir(process.cwd(), (err: NodeJS.ErrnoException | null, files: string[]) => {
         if (err) reject(err);
         else resolve(files);
       });
@@ -246,7 +248,7 @@ class ProductionReadinessValidationScript {
     console.log(`   Network: ${result.systemMetrics.network.connectivityStatus}${result.systemMetrics.network.latencyMs ? ` (${result.systemMetrics.network.latencyMs}ms)` : ''}\n`);
   }
 
-  private printCategoryResult(name: string, category: any): void {
+  private printCategoryResult(name: string, category: import('../validation/production-readiness-validator').ProductionReadinessCategory): void {
     const statusColor = category.status === 'PASS' ? colors.green : 
                        category.status === 'WARNING' ? colors.yellow : colors.red;
     const statusIcon = category.status === 'PASS' ? '✅' : 
@@ -255,9 +257,9 @@ class ProductionReadinessValidationScript {
     console.log(`   ${statusIcon} ${name}: ${statusColor}${category.status}${colors.reset} (${this.getScoreColor(category.score)}${category.score}/100${colors.reset})`);
     
     // Show failed checks
-    const failedChecks = category.checks.filter((check: any) => check.status === 'FAIL');
+    const failedChecks = category.checks.filter((check) => check.status === 'FAIL');
     if (failedChecks.length > 0) {
-      console.log(`      Failed: ${failedChecks.map((check: any) => check.name).join(', ')}`);
+      console.log(`      Failed: ${failedChecks.map((check) => check.name).join(', ')}`);
     }
   }
 
@@ -343,7 +345,8 @@ Features:
     console.log(`${colors.blue}TASK-MOCK-002 implementation verified with real system measurements.${colors.reset}`);
     
   } catch (error) {
-    console.error(`\n${colors.red}${colors.bright}💥 Validation failed:${colors.reset}`, error.message);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error(`\n${colors.red}${colors.bright}💥 Validation failed:${colors.reset}`, errorMessage);
     process.exit(1);
   }
 }

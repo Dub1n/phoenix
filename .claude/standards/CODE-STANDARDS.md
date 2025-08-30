@@ -1,10 +1,10 @@
 # Code Standards for VDL_Vault Repository
 
-## ⊕ Overview
+## Overview
 
 The VDL_Vault repository maintains consistent coding standards across all TypeScript projects to ensure maintainability, readability, and type safety. These standards apply to Phoenix Code Lite, QMS Infrastructure components, and any other TypeScript projects in the repository.
 
-## ⋇ TypeScript Configuration Standards
+## TypeScript Configuration Standards
 
 ### Standard Compiler Settings (tsconfig.json)
 
@@ -37,10 +37,12 @@ For all TypeScript projects in the repository:
 ### Project-Specific Variations
 
 #### Phoenix Code Lite
+
 - Additional `"resolveJsonModule": true` for configuration loading
 - `"esModuleInterop": true` for Claude SDK compatibility
 
 #### QMS Infrastructure Components
+
 - Additional `"preserveConstEnums": true` for compliance validation
 - `"skipLibCheck": false` for strict regulatory compliance
 
@@ -91,11 +93,12 @@ module.exports = {
 };
 ```
 
-## ⊛ Code Structure Standards
+## Code Structure Standards
 
 ### File Organization
 
 #### Directory Structure
+
 ```text
 src/
 ├── core/                 # Core infrastructure (all projects)
@@ -110,6 +113,7 @@ src/
 ```
 
 #### File Naming Conventions
+
 - **Classes**: `PascalCase.ts` (e.g., `ConfigManager.ts`)
 - **Utilities**: `kebab-case.ts` (e.g., `audit-logger.ts`)
 - **Types**: `kebab-case.ts` with descriptive names (e.g., `workflow-types.ts`)
@@ -119,6 +123,7 @@ src/
 ### Import Standards
 
 #### Import Order
+
 ```typescript
 // 1. Node.js built-in modules
 import { readFile } from 'fs/promises';
@@ -137,6 +142,7 @@ import type { WorkflowContext, TaskContext } from '../types/workflow.js';
 ```
 
 #### Import Path Standards
+
 - Use relative imports for nearby files (`./`, `../`)
 - Use absolute imports from `src/` for cross-module imports
 - Always include `.js` extension for ES module compatibility
@@ -145,6 +151,7 @@ import type { WorkflowContext, TaskContext } from '../types/workflow.js';
 ### Function and Class Standards
 
 #### Function Declarations
+
 ```typescript
 // Use explicit return types
 function processWorkflow(context: WorkflowContext): Promise<WorkflowResult> {
@@ -158,6 +165,7 @@ const validateInput = (input: unknown): input is ValidInput => {
 ```
 
 #### Class Structure
+
 ```typescript
 export class ComponentName {
   // 1. Private readonly properties first
@@ -189,7 +197,7 @@ export class ComponentName {
 }
 ```
 
-## ◊ Type Safety Standards
+## Type Safety Standards
 
 ### Schema-First Development
 
@@ -216,6 +224,7 @@ function processWorkflow(context: WorkflowContext): Promise<WorkflowResult> {
 ### Error Handling Standards
 
 #### Error Types
+
 ```typescript
 // Define specific error types
 export class ValidationError extends Error {
@@ -238,6 +247,7 @@ export class ConfigurationError extends Error {
 ```
 
 #### Result Pattern
+
 ```typescript
 // Use Result pattern for operations that may fail
 export type Result<T, E = Error> = {
@@ -265,15 +275,17 @@ function processData(input: unknown): Result<ProcessedData, ValidationError> {
 }
 ```
 
-## ⑄ Security Standards
+## Security Standards
 
 ### Input Validation
+
 - **All external input** must be validated with Zod schemas
 - **No direct object access** without validation
 - **Sanitize file paths** before any file operations
 - **Validate configuration** before application
 
 ### Secure Coding Practices
+
 ```typescript
 // Good: Schema validation
 function processUserInput(input: unknown): Result<ValidInput> {
@@ -291,6 +303,7 @@ function processUserInput(input: any) {
 ```
 
 ### File Operations
+
 ```typescript
 // Use security guardrails for all file operations
 import { SecurityGuardrailsManager } from '../security/guardrails.js';
@@ -310,9 +323,10 @@ async function readProjectFile(filePath: string): Promise<Result<string>> {
 }
 ```
 
-## ⋇ Documentation Standards
+## Documentation Standards
 
 ### Code Comments
+
 ```typescript
 /**
  * Orchestrates TDD workflow execution with quality gates and audit logging
@@ -339,6 +353,7 @@ public async executeWorkflow(
 ```
 
 ### Interface Documentation
+
 ```typescript
 /**
  * Configuration settings for TDD workflow orchestration
@@ -357,29 +372,33 @@ export interface WorkflowConfig {
 }
 ```
 
-## ⊕ Project-Specific Standards
+## Project-Specific Standards
 
-### Phoenix Code Lite
+### Project Standards: Phoenix Code Lite
+
 - **CLI Responsiveness**: All CLI operations must complete within 200ms or show progress
 - **Session Management**: Maintain user context across all interactions
 - **Error Recovery**: Graceful degradation with helpful error messages
 - **Testing**: 90% coverage minimum for all new code
 
-### QMS Infrastructure
+### Project Standards: QMS Infrastructure
+
 - **Compliance First**: All code must maintain regulatory compliance
 - **Audit Trail**: Comprehensive logging for all operations
 - **Validation**: 95% test coverage for compliance-critical code
 - **Documentation**: All compliance decisions must be documented
 
-### Cross-Project Components
+### Project Standards: Cross-Project Components
+
 - **Consistency**: Use established patterns from other projects
 - **Integration**: Test compatibility with existing project components
 - **Documentation**: Update all affected project documentation
 - **Migration**: Provide migration guides for breaking changes
 
-## ✓ Quality Gates
+## Quality Gates
 
 ### Pre-Commit Checks
+
 ```bash
 # Run before any commit
 npm run lint        # ESLint validation
@@ -389,6 +408,7 @@ npm run type-check # Additional type checking
 ```
 
 ### Code Review Standards
+
 - **Type Safety**: No `any` types without explicit justification
 - **Error Handling**: All async operations have proper error handling
 - **Testing**: New functionality includes comprehensive tests
@@ -396,6 +416,7 @@ npm run type-check # Additional type checking
 - **Security**: Security implications reviewed and addressed
 
 ### Performance Standards
+
 - **Build Time**: TypeScript compilation under 30 seconds
 - **Test Time**: Unit tests complete under 10 seconds
 - **Lint Time**: ESLint validation under 5 seconds
@@ -404,6 +425,7 @@ npm run type-check # Additional type checking
 ---
 
 **These standards ensure**:
+
 - **Consistency**: Uniform code quality across all repository projects
 - **Maintainability**: Code that is easy to understand and modify
 - **Type Safety**: Comprehensive type checking and validation

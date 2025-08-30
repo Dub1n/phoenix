@@ -32,6 +32,7 @@ export class InterfaceAdapterRegistry extends EventEmitter implements IInterface
   private adapterFactories: Map<InterfaceType, () => IInterfaceAdapter> = new Map();
   private orchestrator!: ITemplumOrchestrator;
   private initialized: boolean = false;
+  private vsCodeContext: any = null;
 
   /**
    * Initialize the registry with orchestrator abstraction
@@ -214,6 +215,25 @@ export class InterfaceAdapterRegistry extends EventEmitter implements IInterface
   }
 
   /**
+   * Set VSCode context for enhanced context provider integration
+   * This provides a clean way to inject VSCode extension context
+   * @param context VSCode extension context from activation
+   */
+  setVSCodeContext(context: any): void {
+    this.vsCodeContext = context;
+    this.emit('vsCodeContextSet', { 
+      timestamp: Date.now(),
+      hasContext: !!context,
+      contextKeys: context ? Object.keys(context) : []
+    });
+    
+    console.log('InterfaceAdapterRegistry: VSCode context set', {
+      hasContext: !!context,
+      contextType: context?.constructor?.name || 'unknown'
+    });
+  }
+
+  /**
    * Get registry status
    */
   getStatus(): any {
@@ -223,7 +243,10 @@ export class InterfaceAdapterRegistry extends EventEmitter implements IInterface
       availableFactories: Array.from(this.adapterFactories.keys()),
       orchestratorReady: this.orchestrator?.isInitialized() || false,
       contextStatus: {
-        vscodeContextAvailable: !!(global as any).__templumVSCodeContext
+        vscodeContextAvailable: !!(this.vsCodeContext || (global as any).__templumVSCodeContext || process.env.VSCODE_IPC_HOOK),
+        vscodeContextSource: this.vsCodeContext ? 'registry' : 
+                           (global as any).__templumVSCodeContext ? 'global' : 
+                           process.env.VSCODE_IPC_HOOK ? 'environment' : 'none'
       }
     };
   }
@@ -278,13 +301,37 @@ export class InterfaceAdapterRegistry extends EventEmitter implements IInterface
           // Dynamic import to avoid circular dependencies
           const { createVSCodeInterfaceAdapter } = require('./vscode-adapter-abstracted');
           
-          // TODO: [TASK-NEW-056] VSCode Context Provider Integration
-          // Priority: Medium | Complexity: 4
-          // Context will be provided through proper extension context integration
-          // For now, we'll need to handle context provision at adapter creation time
+          // Enhanced VSCode Context Provider Integration
+          // Supports multiple context provision strategies with fallback chain
+          let context: any = null;
           
-          // Get VSCode extension context from global state if available
-          const context = (global as any).__templumVSCodeContext;
+          // Strategy 1: Context provided via registry setVSCodeContext method (preferred)
+          if (this.vsCodeContext) {
+            context = this.vsCodeContext;
+          }
+          // Strategy 2: Global state fallback for legacy integration
+          else if ((global as any).__templumVSCodeContext) {
+            context = (global as any).__templumVSCodeContext;
+            console.info('InterfaceAdapterRegistry: Using global VSCode context (legacy fallback)');
+          }
+          // Strategy 3: Dynamic context resolution from VSCode environment
+          else if (typeof process !== 'undefined' && process.env.VSCODE_IPC_HOOK) {
+            // VSCode environment detected, create minimal context for extension integration
+            context = {
+              subscriptions: [],
+              extensionPath: process.cwd(),
+              globalState: {
+                get: () => undefined,
+                update: () => Promise.resolve()
+              },
+              workspaceState: {
+                get: () => undefined,
+                update: () => Promise.resolve()
+              }
+            };
+            console.info('InterfaceAdapterRegistry: Created minimal VSCode context from environment');
+          }
+          
           if (!context) {
             console.warn('InterfaceAdapterRegistry: VSCode context not available, adapter creation will be deferred');
             throw createTemplumError('VSCode context not available for adapter creation', 'CONTEXT_NOT_AVAILABLE', 'configuration');

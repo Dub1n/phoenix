@@ -5,7 +5,7 @@
 > **Exit Criteria**: Condensed, organized patterns document with no useful information lost  
 > **Integration**: Maintains all pattern references from active tasks while improving accessibility
 
-## ⚡ Autonomous Pattern Consolidation Workflow
+## Autonomous Pattern Consolidation Workflow
 
 ### When Given This Prompt
 
@@ -30,11 +30,11 @@ If you receive this pattern consolidation prompt, follow this autonomous workflo
 ## Pattern Classification Schema
 
 ### By Status
-- **✅ ESTABLISHED**: Successfully applied with evidence
-- **🔄 IN DEVELOPMENT**: Being refined through application
-- **⚠️ EXPERIMENTAL**: Theoretical or single-use
-- **🔄 EVOLVING**: Pattern changing based on experience
-- **❌ DEPRECATED**: Replaced or proven ineffective
+- **ESTABLISHED**: Successfully applied with evidence
+- **IN DEVELOPMENT**: Being refined through application
+- **EXPERIMENTAL**: Theoretical or single-use
+- **EVOLVING**: Pattern changing based on experience
+- **DEPRECATED**: Replaced or proven ineffective
 
 ### By Category
 - **Core Infrastructure**: Fundamental system patterns
@@ -97,9 +97,9 @@ If you receive this pattern consolidation prompt, follow this autonomous workflo
 **Preservation Template**:
 
 ```markdown
-### {Pattern Name} {#pattern-anchor}
+### {Pattern Name}
 
-**Status**: ✅ ESTABLISHED | 🔄 IN DEVELOPMENT | ⚠️ EXPERIMENTAL | ❌ DEPRECATED
+**Status**: ESTABLISHED | IN DEVELOPMENT | EXPERIMENTAL | DEPRECATED
 **Category**: {category}
 **Used By**: [{task-count} active tasks] [{application-count} successful applications]
 **Last Updated**: {timestamp}
@@ -121,9 +121,9 @@ If you receive this pattern consolidation prompt, follow this autonomous workflo
 
 **Lessons Learned**:
 
-- **✅ Success Factors**: {what made this pattern work}
-- **⚠️ Pitfalls**: {what to avoid when applying}
-- **🔄 Evolution**: {how pattern has improved over time}
+- **Success Factors**: {what made this pattern work}
+- **Pitfalls**: {what to avoid when applying}
+- **Evolution**: {how pattern has improved over time}
 
 ```
 
@@ -200,7 +200,7 @@ If you receive this pattern consolidation prompt, follow this autonomous workflo
 ```markdown
 ### {Consolidated Pattern Name} {#consolidated-anchor}
 
-**Status**: ✅ ESTABLISHED
+**Status**: ESTABLISHED
 **Consolidated From**: [{original-pattern-1}], [{original-pattern-2}], [{original-pattern-3}]
 **Consolidation Date**: {timestamp}
 

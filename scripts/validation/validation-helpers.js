@@ -174,19 +174,138 @@ export class ComponentSearcher {
   }
 
   /**
-   * Find component files using comprehensive search strategy
+   * Find component files using comprehensive recursive search strategy
    */
   findComponentFiles(componentName) {
-    const possiblePaths = this.getPossibleComponentPaths(componentName);
+    // Primary method: Comprehensive recursive search (folder-agnostic)
+    const foundFiles = this.comprehensiveRecursiveSearch(componentName);
     
-    const foundFiles = [];
-    for (const filePath of possiblePaths) {
-      if (fs.existsSync(filePath)) {
-        foundFiles.push(filePath);
+    // Fallback: Use old method if recursive search finds nothing
+    if (foundFiles.length === 0) {
+      console.log(`  🔍 Recursive search found no files, trying legacy search...`);
+      const legacyPaths = this.getPossibleComponentPaths(componentName);
+      for (const filePath of legacyPaths) {
+        if (fs.existsSync(filePath)) {
+          foundFiles.push(filePath);
+        }
       }
     }
 
     return [...new Set(foundFiles)]; // Remove duplicates
+  }
+
+  /**
+   * Comprehensive recursive search - folder-agnostic file finding
+   * Searches ALL subdirectories for files matching the component name
+   */
+  comprehensiveRecursiveSearch(componentName) {
+    console.log(`  🔍 Performing comprehensive recursive search for "${componentName}"...`);
+    const foundFiles = [];
+    
+    // Generate all possible filename variations
+    const searchVariations = this.generateFilenameVariations(componentName);
+    console.log(`  📝 Searching for ${searchVariations.length} filename variations`);
+    
+    // Search in all source directories
+    this.detector.getSourceDirectories().forEach(srcDir => {
+      console.log(`  🔎 Searching in: ${path.relative(this.detector.getProjectRoot(), srcDir)}`);
+      foundFiles.push(...this.recursiveFileSearch(srcDir, searchVariations));
+    });
+
+    if (foundFiles.length > 0) {
+      console.log(`  ✅ Found ${foundFiles.length} matching file(s)`);
+      foundFiles.forEach(file => {
+        console.log(`    - ${path.relative(this.detector.getProjectRoot(), file)}`);
+      });
+    } else {
+      console.log(`  ❌ No files found matching "${componentName}"`);
+    }
+
+    return foundFiles;
+  }
+
+  /**
+   * Generate all possible filename variations for a component
+   */
+  generateFilenameVariations(componentName) {
+    const variations = new Set();
+    const extensions = ['.ts', '.js', '.tsx', '.jsx']; // Support multiple file types
+    
+    // Basic variations
+    const baseName = componentName.replace(/^.*?-/, ''); // Remove prefixes
+    const camelCase = baseName.charAt(0).toLowerCase() + baseName.slice(1);
+    const pascalCase = baseName.charAt(0).toUpperCase() + baseName.slice(1);
+    const kebabCase = componentName.toLowerCase().replace(/[^a-z0-9]/gi, '-');
+    const snakeCase = componentName.toLowerCase().replace(/[^a-z0-9]/gi, '_');
+    
+    // Add all combinations
+    const nameVariations = [
+      componentName,           // exact match
+      baseName,               // without prefix
+      camelCase,              // camelCase
+      pascalCase,             // PascalCase  
+      kebabCase,              // kebab-case
+      snakeCase,              // snake_case
+      componentName.replace(/-/g, ''), // remove dashes
+      componentName.replace(/_/g, ''), // remove underscores
+    ];
+    
+    // Apply all extensions to all name variations
+    nameVariations.forEach(name => {
+      extensions.forEach(ext => {
+        variations.add(name + ext);
+      });
+    });
+    
+    return Array.from(variations);
+  }
+
+  /**
+   * Recursively search directory for matching filenames
+   * NO DEPTH LIMIT - searches entire directory tree
+   */
+  recursiveFileSearch(dir, targetFilenames, foundFiles = []) {
+    try {
+      const entries = fs.readdirSync(dir, { withFileTypes: true });
+      
+      for (const entry of entries) {
+        const fullPath = path.join(dir, entry.name);
+        
+        if (entry.isFile()) {
+          // Check if this file matches any of our target filenames
+          if (targetFilenames.includes(entry.name)) {
+            foundFiles.push(fullPath);
+          }
+        } else if (entry.isDirectory() && this.shouldSearchDirectory(entry.name)) {
+          // Recursively search subdirectories (NO DEPTH LIMIT!)
+          this.recursiveFileSearch(fullPath, targetFilenames, foundFiles);
+        }
+      }
+    } catch (error) {
+      // Ignore permission errors or other filesystem issues
+      console.log(`    ⚠️ Skipping directory ${dir}: ${error.message}`);
+    }
+    
+    return foundFiles;
+  }
+
+  /**
+   * Determine if we should search in this directory
+   */
+  shouldSearchDirectory(dirName) {
+    const skipDirectories = [
+      'node_modules',
+      '.git', 
+      '.vscode',
+      'dist',
+      'build',
+      'coverage',
+      '.nyc_output',
+      '.tmp',
+      'tmp'
+    ];
+    
+    return !dirName.startsWith('.') && !skipDirectories.includes(dirName.toLowerCase());
   }
 
   /**

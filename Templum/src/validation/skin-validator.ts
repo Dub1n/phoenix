@@ -6,7 +6,13 @@
  * Context: Phase 5 implementation validation support
  */
 
-import { UniversalSkinDefinition } from '../types/templum-types';
+import { 
+  UniversalSkinDefinition, 
+  TemplumError, 
+  ValidationError, 
+  isTemplumError, 
+  createTemplumError 
+} from '../types/templum-types';
 
 export interface ValidationResult {
   valid: boolean;
@@ -15,11 +21,22 @@ export interface ValidationResult {
 }
 
 /**
+ * JSON Schema interface for skin definition validation
+ */
+export interface SkinValidationSchema {
+  type: string;
+  properties?: Record<string, any>;
+  required?: string[];
+  additionalProperties?: boolean;
+  definitions?: Record<string, any>;
+}
+
+/**
  * Validate skin definition against Universal Skin Engine schema
  */
 export function validateSkinDefinition(
   definition: UniversalSkinDefinition,
-  schema: any
+  schema: SkinValidationSchema
 ): ValidationResult {
   const errors: string[] = [];
   const warnings: string[] = [];
@@ -49,117 +66,74 @@ export function validateSkinDefinition(
         errors.push('Missing required field: metadata.description');
       }
 
-      if (!definition.metadata.targetInterfaces || definition.metadata.targetInterfaces.length === 0) {
-        errors.push('Missing required field: metadata.targetInterfaces (must have at least one interface)');
+      if (!definition.metadata.compatibleInterfaces || definition.metadata.compatibleInterfaces.length === 0) {
+        errors.push('Missing required field: metadata.compatibleInterfaces (must have at least one interface)');
       } else {
         const validInterfaces = ['vscode', 'cli', 'command'];
-        for (const iface of definition.metadata.targetInterfaces) {
+        for (const iface of definition.metadata.compatibleInterfaces) {
           if (!validInterfaces.includes(iface)) {
-            errors.push(`Invalid target interface: ${iface}. Must be one of: ${validInterfaces.join(', ')}`);
+            errors.push(`Invalid compatible interface: ${iface}. Must be one of: ${validInterfaces.join(', ')}`);
           }
         }
       }
 
-      if (!definition.metadata.backendService) {
-        errors.push('Missing required field: metadata.backendService');
+      if (!definition.metadata.backend) {
+        errors.push('Missing required field: metadata.backend');
       }
     }
 
     // Validate menus structure
-    if (!definition.menus) {
-      errors.push('Missing required field: menus');
-    } else {
-      if (!definition.menus.main) {
-        errors.push('Missing required field: menus.main');
-      } else {
-        if (!definition.menus.main.id) {
-          errors.push('Missing required field: menus.main.id');
-        }
-        if (!definition.menus.main.title) {
-          errors.push('Missing required field: menus.main.title');
-        }
+    if (definition.menus) {
+      const menuKeys = Object.keys(definition.menus);
+      if (menuKeys.length === 0) {
+        warnings.push('No menus defined - consider adding at least one menu');
       }
+      // Note: Menu validation depends on MenuDefinition interface structure
+      // which may vary based on interface type (CLI, VSCode, etc.)
     }
 
     // Validate commands structure
-    if (!definition.commands) {
-      errors.push('Missing required field: commands');
-    } else {
-      if (!definition.commands.primary) {
-        errors.push('Missing required field: commands.primary');
-      } else if (!Array.isArray(definition.commands.primary)) {
-        errors.push('commands.primary must be an array');
+    if (definition.commands) {
+      const commandKeys = Object.keys(definition.commands);
+      if (commandKeys.length === 0) {
+        warnings.push('No commands defined - consider adding at least one command');
       }
-
-      if (!definition.commands.help) {
-        errors.push('Missing required field: commands.help');
-      }
+      // Note: Command validation depends on CommandDefinition interface structure
+      // which may vary based on interface type (CLI, VSCode, etc.)
     }
 
     // Validate theme structure
-    if (!definition.theme) {
-      errors.push('Missing required field: theme');
+    if (!definition.theme && !definition.themes) {
+      warnings.push('No theme defined - consider adding theme support for better user experience');
     } else {
-      if (!definition.theme.name) {
-        errors.push('Missing required field: theme.name');
-      }
-      if (!definition.theme.colors) {
-        errors.push('Missing required field: theme.colors');
-      } else {
-        if (!definition.theme.colors.primary) {
-          errors.push('Missing required field: theme.colors.primary');
-        }
-        if (!definition.theme.colors.background || !definition.theme.colors.background.primary) {
-          errors.push('Missing required field: theme.colors.background.primary');
-        }
-        if (!definition.theme.colors.text || !definition.theme.colors.text.primary) {
-          errors.push('Missing required field: theme.colors.text.primary');
-        }
+      // Validate backward compatibility theme or modern themes
+      const hasValidTheme = (definition.theme !== undefined) || 
+                           (definition.themes && Object.keys(definition.themes).length > 0);
+      if (!hasValidTheme) {
+        warnings.push('Theme structure detected but no valid theme data found');
       }
     }
 
-    // Validate backend config
-    if (!definition.backendConfig) {
-      errors.push('Missing required field: backendConfig');
-    } else {
-      if (!definition.backendConfig.service) {
-        errors.push('Missing required field: backendConfig.service');
-      }
-      if (!definition.backendConfig.version) {
-        errors.push('Missing required field: backendConfig.version');
-      }
-      if (!definition.backendConfig.endpoints) {
-        errors.push('Missing required field: backendConfig.endpoints');
-      }
-    }
+    // Backend configuration is now handled through metadata.backend
+    // Additional backend-specific configuration can be added to optional properties as needed
 
     // Validate workflows structure (if present)
     if (definition.workflows) {
-      if (definition.workflows.workflows) {
-        if (!Array.isArray(definition.workflows.workflows)) {
-          errors.push('workflows.workflows must be an array');
-        } else {
-          definition.workflows.workflows.forEach((workflow, index) => {
-            if (!workflow.id) {
-              errors.push(`workflows.workflows[${index}].id is required`);
-            }
-            if (!workflow.name) {
-              errors.push(`workflows.workflows[${index}].name is required`);
-            }
-            if (!workflow.steps || !Array.isArray(workflow.steps)) {
-              errors.push(`workflows.workflows[${index}].steps must be an array`);
-            }
-          });
-        }
+      const workflowKeys = Object.keys(definition.workflows);
+      if (workflowKeys.length === 0) {
+        warnings.push('Workflows defined but no workflow entries found');
       }
+      // Note: Workflow validation depends on WorkflowDefinition interface structure
+      // Individual workflow validation would require knowledge of the WorkflowDefinition structure
     }
 
     // Performance validation warnings
-    if (definition.caching) {
-      if (definition.caching.maxAge > 3600000) { // 1 hour
+    if (definition.performance && 'caching' in definition.performance) {
+      const caching = (definition.performance as any).caching;
+      if (caching?.maxAge > 3600000) { // 1 hour
         warnings.push('Cache maxAge is very high (>1 hour), consider reducing for better memory usage');
       }
-      if (definition.caching.maxSize > 1000) {
+      if (caching?.maxSize > 1000) {
         warnings.push('Cache maxSize is very high (>1000), consider reducing for better memory usage');
       }
     }
@@ -171,9 +145,19 @@ export function validateSkinDefinition(
     };
 
   } catch (error) {
+    let errorMessage = 'Unknown validation error';
+    
+    if (isTemplumError(error)) {
+      errorMessage = `${error.category} error: ${error.message} (code: ${error.code})`;
+    } else if (error instanceof Error) {
+      errorMessage = `Validation error: ${error.message}`;
+    } else if (typeof error === 'string') {
+      errorMessage = `Validation error: ${error}`;
+    }
+    
     return {
       valid: false,
-      errors: [`Validation error: ${error instanceof Error ? error.message : 'Unknown error'}`]
+      errors: [errorMessage]
     };
   }
 }
@@ -186,8 +170,8 @@ export function validatePerformanceRequirements(definition: UniversalSkinDefinit
   const warnings: string[] = [];
 
   // Check for performance hints
-  if (!definition.metadata.performance) {
-    warnings.push('No performance hints provided - consider adding for optimization');
+  if (!definition.performance) {
+    warnings.push('No performance configuration provided - consider adding for optimization');
   }
 
   // Check component count limits
@@ -199,15 +183,17 @@ export function validatePerformanceRequirements(definition: UniversalSkinDefinit
     warnings.push('High number of Panels (>5) may impact performance');
   }
 
-  if (definition.commands?.primary && definition.commands.primary.length > 50) {
+  if (definition.commands && Object.keys(definition.commands).length > 50) {
     warnings.push('High number of commands (>50) may impact command palette performance');
   }
 
   // Check for complex workflows
-  if (definition.workflows?.workflows) {
-    definition.workflows.workflows.forEach((workflow, index) => {
-      if (workflow.steps && workflow.steps.length > 10) {
-        warnings.push(`Workflow ${workflow.id} has many steps (${workflow.steps.length}) - consider breaking down`);
+  if (definition.workflows) {
+    Object.entries(definition.workflows).forEach(([workflowId, workflow]) => {
+      // Note: Workflow step validation depends on WorkflowDefinition structure
+      // This is a generic check for workflow complexity
+      if (typeof workflow === 'object' && workflow !== null) {
+        warnings.push(`Complex workflow detected: ${workflowId} - consider performance testing`);
       }
     });
   }

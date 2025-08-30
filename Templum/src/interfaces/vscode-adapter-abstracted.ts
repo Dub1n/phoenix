@@ -13,7 +13,9 @@ import {
   createTemplumError, 
   isTemplumError,
   InterfaceType,
-  UniversalSkinDefinition
+  UniversalSkinDefinition,
+  StateUpdate,
+  InterfaceAdapterStatus
 } from '../types/templum-types';
 import { 
   ITemplumOrchestrator, 
@@ -572,6 +574,39 @@ export class VSCodeInterfaceAdapter implements IInterfaceAdapter {
    */
   private getErrorHTML(error: string): string {
     return this.getEnhancedErrorHTML(error);
+  }
+
+  /**
+   * Synchronize state update from orchestrator
+   * Sends state updates to the VSCode webview via postMessage
+   */
+  async syncState(stateUpdate: StateUpdate): Promise<void> {
+    try {
+      // Update webview state if view is available
+      if (this.view?.webview) {
+        await this.view.webview.postMessage({
+          type: 'state-update',
+          payload: stateUpdate
+        });
+      }
+      console.log('VSCodeInterfaceAdapter: State synchronized', stateUpdate);
+    } catch (error) {
+      console.error('VSCodeInterfaceAdapter: Failed to sync state', error);
+      throw createTemplumError(`Failed to synchronize state: ${error instanceof Error ? error.message : 'Unknown error'}`, 'STATE_SYNC_FAILED', 'runtime');
+    }
+  }
+
+  /**
+   * Get current adapter status
+   * Returns comprehensive status including webview and orchestrator connection state
+   */
+  getStatus(): InterfaceAdapterStatus {
+    return {
+      active: !!this.view && !!this.orchestrator,
+      webviewReady: !!this.view?.webview,
+      orchestratorConnected: !!this.orchestrator,
+      lastActivity: Date.now()
+    };
   }
 }
 

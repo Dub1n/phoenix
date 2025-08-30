@@ -544,7 +544,8 @@ export class UniversalSkinEngine extends EventEmitter {
       throw new Error(`Skin ${skinId} not found`);
     }
 
-    if (!skin.metadata.supportedInterfaces.includes(interfaceType as any)) {
+    const supportedInterfaces = skin.metadata?.supportedInterfaces || [];
+    if (!supportedInterfaces.includes(interfaceType as any)) {
       throw createTemplumError(`Skin ${skinId} does not support interface ${interfaceType}`, 'InterfaceNotSupported', 'validation');
     }
 
@@ -840,7 +841,7 @@ export class UniversalSkinEngine extends EventEmitter {
     const interfaces = ['vscode', 'cli', 'command', 'web'];
 
     interfaces.forEach(iface => {
-      const supportingSkins = allSkins.filter(s => s.metadata.supportedInterfaces.includes(iface as any));
+      const supportingSkins = allSkins.filter(s => s.metadata?.supportedInterfaces?.includes(iface as any) || false);
       const interfaceResults = renderResults.filter(r => r.interface === iface);
       const avgLoadTime = interfaceResults.length > 0 ?
         interfaceResults.reduce((sum, r) => sum + r.performance.renderTime, 0) / interfaceResults.length : 0;
@@ -1112,7 +1113,8 @@ export class UniversalSkinEngine extends EventEmitter {
     if (!skin.id) errors.push('Skin ID is required');
     if (!skin.name) errors.push('Skin name is required');
     if (!skin.version) errors.push('Skin version is required');
-    if (!skin.metadata.supportedInterfaces.length) errors.push('At least one supported interface is required');
+    const supportedInterfaces = skin.metadata?.supportedInterfaces || [];
+    if (!supportedInterfaces.length) errors.push('At least one supported interface is required');
     if (!Object.keys(skin.themes).length) errors.push('At least one theme is required');
 
     // Validate PCL compatibility
@@ -1495,7 +1497,8 @@ export class UniversalSkinEngine extends EventEmitter {
   }
 
   private async prepareInterfaceConfigurations(skin: UniversalSkinDefinition): Promise<void> {
-    for (const interfaceType of skin.metadata.supportedInterfaces) {
+    const supportedInterfaces = skin.metadata?.supportedInterfaces || [];
+    for (const interfaceType of supportedInterfaces) {
       const interfaceConfig = skin.rendering.targets[interfaceType];
       if (!interfaceConfig) {
         // Create default interface configuration
@@ -1704,7 +1707,7 @@ export class UniversalSkinEngine extends EventEmitter {
 
   private async selectBestSkinForInterface(interfaceType: string, themeName: string): Promise<string> {
     const compatibleSkins = Array.from(this.skins.values())
-      .filter(skin => skin.metadata.supportedInterfaces.includes(interfaceType as any))
+      .filter(skin => skin.metadata?.supportedInterfaces?.includes(interfaceType as any) || false)
       .filter(skin => skin.themes[themeName]);
 
     if (compatibleSkins.length === 0) {
@@ -1753,7 +1756,8 @@ export class UniversalSkinEngine extends EventEmitter {
     let potential = skin.pclCompatibility.reusePercentage;
 
     // Increase potential based on supported interfaces
-    potential += skin.metadata.supportedInterfaces.length * 5; // 5% per interface
+    const supportedInterfaces = skin.metadata?.supportedInterfaces || [];
+    potential += supportedInterfaces.length * 5; // 5% per interface
 
     // Increase potential based on inheritance usage
     if (skin.inheritance.parentSkins.length > 0) potential += 15;
@@ -1928,6 +1932,7 @@ export class UniversalSkinEngine extends EventEmitter {
       name: 'Default Universal Theme',
       version: '1.0.0',
       pclCompatibility: {
+        enabled: true, // Interface alignment with core templum-types
         version: '1.0.0',
         reusePercentage: 70, // 70% reuse potential from Phase 1
         inheritancePatterns: [

@@ -74,7 +74,9 @@ export interface SkinMetadata {
   author?: string;               // Author information
   tags?: string[];               // Categorization tags
   
-  // Compatibility and requirements
+  // Compatibility and requirements - Interface alignment with core templum-types
+  backend?: any;                 // Backend type compatibility with core templum-types
+  compatibleInterfaces?: InterfaceType[]; // Interface alignment with core templum-types
   supportedInterfaces?: InterfaceType[];  // Renamed from targetInterfaces for implementation compatibility
   targetInterfaces?: InterfaceType[];    // Backward compatibility alias for supportedInterfaces
   backendService: string;        // Backend service identifier
@@ -294,14 +296,38 @@ export interface SkinTheme {
   };
 }
 
+// Enhanced Backend Configuration for Generic Connection Factory
+// Supports the full connection specification from TASK-GENERIC-004
 export interface BackendConfig {
+  // Basic identification (backward compatibility)
   service: string;
   version: string;
-  endpoints: Record<string, string>;
+  
+  // Enhanced connection specification
+  protocol: 'ipc' | 'http' | 'websocket' | 'grpc';
+  endpoint: string;
+  
+  // Enhanced authentication options
   authentication?: {
-    type: 'none' | 'api-key' | 'oauth';
+    type: 'none' | 'basic' | 'bearer' | 'api-key' | 'oauth';
+    credentials?: Record<string, string>;
     required?: boolean;
   };
+  
+  // Connection behavior configuration
+  timeout?: number;
+  retries?: number;
+  keepAlive?: boolean;
+  
+  // Service discovery endpoints
+  healthEndpoint?: string;
+  capabilitiesEndpoint?: string;
+  
+  // Protocol-specific options
+  options?: { [key: string]: any };
+  
+  // Legacy support
+  endpoints?: Record<string, string>;
 }
 
 export interface CachingStrategy {
@@ -385,6 +411,7 @@ export interface RenderingContext {
 
 // PCL Compatibility Interface
 export interface PCLCompatibility {
+  enabled: boolean; // Interface alignment with core templum-types
   version: string;
   reusePercentage: number;
   inheritancePatterns: string[];

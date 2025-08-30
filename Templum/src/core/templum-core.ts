@@ -530,6 +530,79 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
     }
   }
 
+  async switchInterface(targetInterface: InterfaceType): Promise<{ success: boolean; message: string }> {
+    try {
+      if (!this.initialized) {
+        return { 
+          success: false, 
+          message: 'Templum Core not initialized' 
+        };
+      }
+
+      // Check if target interface adapter exists
+      const adapter = this.interfaceAdapters.get(targetInterface);
+      if (!adapter) {
+        return { 
+          success: false, 
+          message: `Interface adapter '${targetInterface}' not available` 
+        };
+      }
+
+      // Get current active interfaces for state preservation
+      const currentInterfaces = Array.from(this.activeInterfaces);
+      
+      // Preserve state from current interfaces if state manager available
+      let preservedState = null;
+      if (this.dependencies?.stateManager && currentInterfaces.length > 0) {
+        try {
+          preservedState = await (this.dependencies.stateManager as any).getState?.();
+        } catch (error) {
+          console.warn('Failed to preserve state during interface switch:', error);
+        }
+      }
+
+      // Deactivate current interfaces (but don't remove adapters)
+      this.activeInterfaces.clear();
+
+      // Activate target interface
+      this.activeInterfaces.add(targetInterface);
+
+      // Restore preserved state to new interface if available
+      if (preservedState && this.dependencies?.stateManager) {
+        try {
+          await (this.dependencies.stateManager as any).setState?.(preservedState);
+          console.log(`State preserved and restored during switch to ${targetInterface}`);
+        } catch (error) {
+          console.warn('Failed to restore state after interface switch:', error);
+        }
+      }
+
+      // Emit interface switch event
+      this.emit('interface-switch', {
+        timestamp: Date.now(),
+        fromInterfaces: currentInterfaces,
+        toInterface: targetInterface,
+        statePreserved: !!preservedState
+      });
+
+      console.log(`✅ Interface switched from [${currentInterfaces.join(', ')}] to ${targetInterface}`);
+
+      return { 
+        success: true, 
+        message: `Successfully switched to ${targetInterface} interface` 
+      };
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error(`❌ Interface switch failed: ${errorMessage}`);
+      
+      return { 
+        success: false, 
+        message: `Interface switch failed: ${errorMessage}` 
+      };
+    }
+  }
+
   async shutdown(): Promise<void> {
     if (!this.initialized) {
       return;

@@ -5,7 +5,7 @@
 > **Usage**: Reference when creating new trackers or migrating single-file systems  
 > **Integration**: Designed for seamless fix documentation workflow with planning separation
 
-## 🔄 Two-File System Overview
+## Two-File System Overview
 
 ### System Architecture
 
@@ -28,7 +28,7 @@ The dual-file tracker system separates concerns between **status tracking** and 
 - **Long-term Tracking**: Projects spanning weeks or months
 - **Evidence-based Development**: Requiring comprehensive status documentation
 
-## 📋 Project File Structure
+## Project File Structure
 
 ### Recommended File Organization
 
@@ -68,7 +68,7 @@ Tracker Data ←→ Planning File ←→ Fix Guides ←→ Completed Fixes → T
      Status Updates                                        Evidence & Metrics
 ```
 
-## 🎯 Tracker Data File Templates
+## Tracker Data File Templates
 
 ### 1. Tracker Data Header Template
 
@@ -111,7 +111,7 @@ Tracker Data ←→ Planning File ←→ Fix Guides ←→ Completed Fixes → T
 ```markdown
 ## Component Implementation Status
 
-### 📈 Component Summary
+### Component Summary
 
 | Category | Total | Working | Broken | Missing | Health |
 |----------|-------|---------|--------|---------|--------|
@@ -140,7 +140,7 @@ Tracker Data ←→ Planning File ←→ Fix Guides ←→ Completed Fixes → T
 
 | Component | Location | Status | Verification | Last Verified |
 |-----------|----------|--------|--------------|---------------|
-| [Name] | `path/to/component` | ✅ **Working** | [Evidence of functionality] | [Date] |
+| [Name] | `path/to/component` | x **Working** | [Evidence of functionality] | [Date] |
 ```
 
 **Component Table Guidelines**:
@@ -237,7 +237,7 @@ Tracker Data ←→ Planning File ←→ Fix Guides ←→ Completed Fixes → T
 - **Agent Performance**: [Accuracy of agent claims vs. evidence]
 ```
 
-## 📋 Planning File Templates
+## Planning File Templates
 
 ### 1. Planning File Header Template
 
@@ -255,7 +255,7 @@ Tracker Data ←→ Planning File ←→ Fix Guides ←→ Completed Fixes → T
 ### 2. Immediate Priority Queue Template
 
 ```markdown
-## 🔥 Immediate Priority Queue
+## Immediate Priority Queue
 
 **Start Here** - Ready for immediate implementation:
 
@@ -273,7 +273,7 @@ Tracker Data ←→ Planning File ←→ Fix Guides ←→ Completed Fixes → T
 ### 3. Investigation Queue Template
 
 ```markdown
-## 🔧 Investigation Queue
+## Investigation Queue
 
 **Requires analysis before implementation**:
 
@@ -291,7 +291,7 @@ Tracker Data ←→ Planning File ←→ Fix Guides ←→ Completed Fixes → T
 ### 4. Queue Management Guidelines Template
 
 ```markdown
-## 📋 Queue Management Guidelines
+## Queue Management Guidelines
 
 ### Task Selection Rules
 1. **Start with Immediate Priority Queue** - highest impact, ready to implement
@@ -318,7 +318,7 @@ Tracker Data ←→ Planning File ←→ Fix Guides ←→ Completed Fixes → T
 **Maintenance**: Update after each fix session, add new discoveries from investigation
 ```
 
-## 🚀 Initial File Generation Guide
+## Initial File Generation Guide
 
 ### Step 1: Project Discovery Process
 
@@ -353,7 +353,7 @@ find . -name "*.ts" | wc -l # File counts
 - Ensure **consistent naming** for issues across both files
 - Set up **update protocols** for maintaining synchronization
 
-## 🔄 Integration with Fix Documentation
+## Integration with Fix Documentation
 
 See prompts\documentation\issue-fix-selector.md and files referenced there.
 
@@ -361,7 +361,7 @@ See prompts\documentation\issue-fix-selector.md and files referenced there.
 
 see prompts\documentation\issue-fix-documentation.md or prompts\documentation\quick-fix-guide.md depending on the fix type.
 
-## 🔧 Validation Script Integration
+## Validation Script Integration
 
 **Automated tools available** in `scripts/validation/` for maintaining tracker accuracy:
 
@@ -412,7 +412,7 @@ Evidence: Health Score: XX/100 | Validation: YYYY-MM-DD | Status: [Working/Broke
 [DATE] - [Component]: Fix verified via scripts | Before: X errors | After: Y errors | Verification: PASS/FAIL
 ```
 
-## 🔄 File Synchronization & Maintenance
+## File Synchronization & Maintenance
 
 ### Regular Synchronization Protocol
 
@@ -541,7 +541,7 @@ Evidence: Health Score: XX/100 | Validation: YYYY-MM-DD | Status: [Working/Broke
 - Document effective verification approaches
 - Track complexity estimation improvements
 
-## 🤖 Agent Implementation Guide
+## Agent Implementation Guide
 
 ### For AI Agents: Creating the Two-File System
 
@@ -579,16 +579,16 @@ When given a repository and asked to create tracking systems:
 
 #### Agent Decision Matrix for File Usage
 
-| Situation | Use Tracker Data | Use Planning File |
-|-----------|------------------|-------------------|
-| Recording build status | ✅ Yes | ❌ No |
-| Planning next work session | ❌ No | ✅ Yes |
-| Documenting completed fix | ✅ Yes | ❌ No |
-| Organizing work queues | ❌ No | ✅ Yes |
-| Recording evidence/metrics | ✅ Yes | ❌ No |
-| Setting task priorities | ❌ No | ✅ Yes |
-| Updating success rates | ✅ Yes | ❌ No |
-| Managing dependencies | ❌ No | ✅ Yes |
+| Situation                  | Use Tracker Data | Use Planning File |
+|----------------------------|------------------|-------------------|
+| Recording build status     | Yes              | No                |
+| Planning next work session | No               | Yes               |
+| Documenting completed fix  | Yes              | No                |
+| Organizing work queues     | No               | Yes               |
+| Recording evidence/metrics | Yes              | No                |
+| Setting task priorities    | No               | Yes               |
+| Updating success rates     | Yes              | No                |
+| Managing dependencies      | No               | Yes               |
 
 #### Common Agent Mistakes to Avoid
 

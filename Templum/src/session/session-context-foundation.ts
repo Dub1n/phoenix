@@ -205,7 +205,7 @@ export class SessionContextFoundation extends EventEmitter {
     const expiryTime = new Date(Date.now() - maxAgeMinutes * 60 * 1000);
     let cleanedCount = 0;
 
-    for (const [sessionId, session] of this.sessions) {
+    for (const [sessionId, session] of Array.from(this.sessions.entries())) {
       if (session.lastAccessedAt < expiryTime) {
         this.sessions.delete(sessionId);
         cleanedCount++;

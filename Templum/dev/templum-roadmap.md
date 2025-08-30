@@ -5,7 +5,7 @@
 > **Integration**: Used by agents for task discovery, classification, and roadmap updates  
 > **Task Tracking**: All individual tasks tracked in templum-active-tasks.md (single source of truth)
 
-## 🔄 Task Discovery & Integration Protocol
+## Task Discovery & Integration Protocol
 
 ### Discovery Entry Points
 
@@ -92,10 +92,20 @@ When adding ANY new task, determine phase based on:
 
 For each new task, identify:
 
+- [ ] **Consolidation Check**: Have you searched for existing tasks to consolidate with?
 - [ ] **Prerequisites**: What must complete before this task?
 - [ ] **Unblocks**: What does this task enable?
 - [ ] **Phase Gate Impact**: Does this affect phase completion criteria?
 - [ ] **Existing Pattern**: Can we reuse established implementation patterns?
+
+### Task Creation Protocol
+
+**BEFORE adding new tasks**: Apply consolidation protocol from fix guides
+
+- Complex issues → comprehensive-fix-guide.md Task Discovery Protocols
+- Simple fixes → quick-fix-guide.md Task Discovery Protocols
+
+**Benefits of Consolidation**: ~80% workflow overhead reduction, architectural consistency, comprehensive delivery
 
 ## 🚀 Implementation Strategy
 
@@ -111,14 +121,14 @@ For each new task, identify:
 2. **PCL Patterns**: Configuration management, session handling, adapter patterns  
 3. **Custom Implementation**: Only when proven components don't exist
 
-## 📋 Implementation Phases
+## Implementation Phases
 
-### Phase 1: Foundation ✅ COMPLETE
+### Phase 1: Foundation [x]
 
 **Completion Gate**: Core infrastructure operational  
 **Status**: 2/2 foundation components complete
 
-**✅ Completed Components**:
+**Completed Components**:
 
 - Configuration Management System (PCL Reuse) - 85% time savings
 - Circuit Breaker Implementation (Haruspex Reuse) - specialized configurations
@@ -129,10 +139,10 @@ For each new task, identify:
 - [x] Production resilience and error recovery operational
 - [x] Foundation patterns established for reuse
 
-### Phase 2: Interface Implementation (PHASE COMPLETE ✅)
+### Phase 2: Interface Implementation [x]
 
 **Completion Gate**: Real interfaces functional (not simulated)  
-**Status**: 4/4 priority tasks complete ✅ + Critical Backend Integration complete ✅
+**Status**: 4/4 priority tasks complete + Critical Backend Integration complete
 **Current Focus**: Phase 3 preparation
 
 **Phase 2 Tasks** (Reference only - see templum-active-tasks.md for details):
@@ -157,7 +167,7 @@ For each new task, identify:
 ### Phase 3: Integration & Testing (READY TO START - OPTIMIZED)
 
 **Completion Gate**: <100ms interface switching + Full system integration  
-**Status**: Phase 2 complete ✅ - Phase 3 ready with architectural consolidation complete  
+**Status**: Phase 2 complete - Phase 3 ready with architectural consolidation complete  
 **Task Optimization**: 40→36 tasks (10% reduction through duplicate consolidation)
 
 **Success Criteria**:
@@ -167,7 +177,7 @@ For each new task, identify:
 - [ ] Production deployment ready
 - [ ] All mock dependencies replaced with real implementations
 
-## 🔄 Roadmap Reassessment Protocol
+## Roadmap Reassessment Protocol
 
 ### Automatic Reassessment Triggers
 
@@ -210,7 +220,7 @@ For each new task, identify:
 - When external requirements change
 - When component reuse strategy changes
 
-## 🎯 Success Validation Framework
+## Success Validation Framework
 
 ### Phase Completion Validation
 
@@ -221,7 +231,7 @@ Before marking a phase complete:
 - [ ] No critical blocking issues discovered
 - [ ] Patterns documented in templum-patterns.md
 
-### 🚨 CRITICAL: System Integrity Gates **NEW**
+### CRITICAL: System Integrity Gates
 
 #### Integration-Ready Implementation Standards
 
@@ -244,11 +254,11 @@ Before marking a phase complete:
 
 **Expanded Status Integration with Phases**:
 
-- **completed** ✅: Meets all system integrity criteria
-- **implemented-broken** ⚠️: Feature done but breaks compilation/build
-- **implemented-testing** 🧪: Compiles and builds, needs functional validation
-- **blocked** 🚧: Cannot proceed due to dependencies
-- **analysis-required** 🔍: Needs investigation before implementation
+- **completed**: Meets all system integrity criteria
+- **implemented-broken**: Feature done but breaks compilation/build
+- **implemented-testing**: Compiles and builds, needs functional validation
+- **blocked**: Cannot proceed due to dependencies
+- **analysis-required**: Needs investigation before implementation
 
 ### Roadmap Currency Validation
 
@@ -259,7 +269,7 @@ Monthly check for roadmap accuracy:
 - [ ] Discovery protocols capturing all new work
 - [ ] Agent success rate >95% for using roadmap guidance
 
-## 📊 Integration with Workflow System
+## Integration with Workflow System
 
 ### Fix Guide Integration
 
@@ -269,7 +279,7 @@ Monthly check for roadmap accuracy:
 - During task: Use discovery protocols for new issues found
 - Post-task: Update roadmap if phase status or priorities changed
 
-#### System Integrity Integration with Fix Guides 🆕
+#### System Integrity Integration with Fix Guides
 
 **Fix Guide Compliance Requirements**:
 

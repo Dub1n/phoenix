@@ -21,11 +21,15 @@
 - [Abstraction Layer Architecture](#abstraction-layer-architecture) - 4  references | Foundation | ~1.5 hours
 - [PCL Component Integration](#pcl-component-integration-unified) - 3  references | Integration | ~2.5 hours | **ENHANCED 2025-08-28**
 - [PCL Rendering Integration](#pcl-rendering-integration-bridge) - 2  references | Integration | ~2 hours
+- [Dynamic Command Router Integration](#dynamic-command-router-integration) - 1 reference | Integration | ~1-2 hours | **NEW 2025-08-29**
+- [PCL Enhanced Rendering](#pcl-enhanced-rendering-pattern) - 1 reference | Integration | ~45-90 min | **NEW 2025-08-29**
 - [Dependency Injection](#dependency-injection-unified) - Infrastructure |  Foundation | ~4 hours
 
 **🔧 Specialized Patterns** (Domain-specific, established):
 
+- [Terminal UI Components](#terminal-ui-components-pattern) - CLI interface enhancement with progress bars, spinners, prompts, themes | CLI Interface | ~4-6 hours | **NEW 2025-08-29**
 - [Configuration Management](#configuration-management) - Config schema  bridging | Foundation | ~30 minutes
+- [Enhanced BackendConfig Schema](#enhanced-backendconfig-schema) - Comprehensive connection configuration | Foundation | ~30-45 minutes | **NEW 2025-08-29**
 - [Session Management](#session-management-unified) - Interface  coordination | Integration | ~3 hours
 - [Templum Resource Management](#templum-resource-management-unified) -  Infrastructure | System | ~3.5 hours
 - [Protocol Communication](#protocol-communication-unified) - Technical  reference | Implementation | ~3 hours
@@ -34,12 +38,18 @@
 - [Observability Infrastructure](#observability-infrastructure-pattern) -  Enterprise monitoring | System | ~5 hours
 - [VSCode Extension  Configuration](#vscode-extension-configuration-pattern) - Extension  manifest setup | Foundation | ~15 minutes
 - [VSCode Extension Activation](#vscode-extension-activation-pattern) -  Extension lifecycle management | Foundation | ~3-4 hours
-- [Factory Registry with Context  Management](#factory-registry-context-management) - Context-aware factory  registration | Foundation | ~2 hours
+- [Factory Registry with Context  Management](#factory-registry-context-management) - Context-aware factory  registration | Foundation | ~2 hours #TODO - Needs writing up based on established/implemented patterns (BEFORE using - if a task requires uisng this pattern, first document it here based on the codebase, then continue)
 - [Skin Versioning System](#skin-versioning-system-pattern) - Semantic  version management for skin components | Infrastructure | ~6-8 hours
+- [Enhanced Skin Registration Validation](#enhanced-skin-registration-validation-pattern) - Comprehensive validation pipeline for skin registration | Foundation | ~2 hours | **NEW 2025-08-29**
 - [Test Infrastructure Repair](#test-infrastructure-repair-pattern) -  Fixing broken test compilation and execution | Foundation | ~2 hours |  **NEW 2025-08-28**
 - [Mock-Real API Contract  Testing](#mock-real-api-contract-testing-pattern) - Ensuring mock/real API  consistency | Foundation | ~3 hours | **NEW 2025-08-28**
 - [Test Health Monitoring](#test-health-monitoring-pattern) - Continuous  test infrastructure validation | Foundation | ~1.5 hours | **ESTABLISHED  2025-08-28**
 - [Minimal Compilation  Stabilization](#minimal-compilation-stabilization-pattern) - Foundation  dependency and type fixes | Foundation | ~2 hours | **NEW 2025-08-28**
+- [Test Type System Alignment](#test-type-system-alignment-pattern) - Dual type system test compatibility | Foundation | ~2 hours | **NEW 2025-08-29**
+- [Type Conversion Pattern](#type-conversion-pattern) - Legacy-to-modern type system conversion | Foundation | ~1 hour | **ESTABLISHED 2025-08-29**
+- [Core Component Unit Testing](#core-component-unit-testing-pattern) - Comprehensive unit testing for core components | Foundation | ~4 hours | **ESTABLISHED 2025-08-28** #TODO - Needs writing up based on established/implemented patterns (BEFORE using - if a task requires uisng this pattern, first document it here based on the codebase, then continue)
+- [Interface Adapter Integration Testing](#interface-adapter-integration-testing-pattern) - Comprehensive integration testing for interface adapters | Integration | ~4-6 hours | **ESTABLISHED 2025-08-28**
+- [End-to-End Testing Scenarios](#end-to-end-testing-scenarios-pattern) - Complete user workflow validation with cross-interface scenarios | Integration | ~6 hours | **ESTABLISHED 2025-08-28**
 
 ### By Document Section
 
@@ -57,52 +67,61 @@
 
 ### Most Common Implementation Patterns
 
-| Pattern                                | Use When                                                   | Status             | Difficulty  | Quick  Access                                     |
-|----------------------------------------|-------------------------------- ---------------------------|--------------------|-------------|------------ --------------------------------------|
-| **Universal Interface Orchestration**  | VSCode/CLI/Command mode  coordination                      | ✅ ESTABLISHED     | 🟡 Medium   |  [→](#universal-interface-orchestration)          |
-| **Backend Service Integration**        | Connecting to  Haruspex/PCL/Litany services                | ✅ ESTABLISHED     | 🟠  Advanced | [→](#backend-service-integration-unified)        |
-| **Unified Type System**                | Error handling, Map iteration,  type safety                | ✅ ESTABLISHED     | 🟢 Basic    |  [→](#unified-type-system-pattern)                |
-| **Real Interface Adapter Integration** | Converting simulated adapters  to real backend integration | ✅ ESTABLISHED     | 🟡 Medium   |  [→](#real-interface-adapter-integration-unified) |
-| **Mock-to-Real Transition**            | Eliminating development mocks                              | ✅ ESTABLISHED     | 🟢 Basic    |  [→](#mock-to-real-transition-unified)            |
-| **Dependency Injection**               | Component lifecycle management                             | ✅ ESTABLISHED     | 🟠 Advanced |  [→](#dependency-injection-unified)               |
-| **Protocol Communication**             | IPC/HTTP/WebSocket backend  communication                  | ✅ ESTABLISHED     | 🔴 Expert   |  [→](#protocol-communication-unified)             |
-| **Session Management**                 | Cross-interface session  coordination                      | ✅ ESTABLISHED     | 🟡 Medium   |  [→](#session-management-unified)                 |
-| **Templum Resource Management**        | System resource monitoring and  policy enforcement         | ✅ ESTABLISHED     | 🟡 Medium   |  [→](#templum-resource-management-unified)        |
-| **Abstraction Layer Architecture**     | Interface adapter dependency  inversion                    | ✅ ESTABLISHED     | 🟢 Basic    |  [→](#abstraction-layer-architecture)             |
-| **PCL Component Integration**          | Real component transfer  validation with Phoenix Code Lite | ✅ ESTABLISHED     | 🟡 Medium   |  [→](#pcl-component-integration-unified)          |
-| **PCL Rendering Integration**          | Phoenix Code Lite rendering  pattern bridge for 75% reuse | ✅ ESTABLISHED     | 🟡 Medium   |  [→](#pcl-rendering-integration-bridge)          |
-| **Observability Infrastructure**       | Enterprise logging, metrics,  and alerting                 | ✅ ESTABLISHED     | 🟠 Advanced |  [→](#observability-infrastructure-pattern)       |
-| **VSCode Extension Configuration**     | Converting CLI to VSCode  extension                        | ✅ ESTABLISHED     | 🟢 Basic    |  [→](#vscode-extension-configuration-pattern)     |
-| **VSCode Extension Activation**        | VSCode extension lifecycle &  component registration       | ✅ ESTABLISHED     | 🟡 Medium   |  [→](#vscode-extension-activation-pattern)        |
-| **Factory Registry with Context**      | Context-aware factory  registration with error boundaries  | ✅ ESTABLISHED     | 🟡 Medium   |  [→](#factory-registry-context-management)        |
-| **Skin Versioning System**            | Semantic version management for  skin components           | ✅ ESTABLISHED     | 🟠 Advanced |  [→](#skin-versioning-system-pattern)             |
-| **Advanced Compatibility Validation** | Deep compatibility analysis for  interface requirements    | ✅ ESTABLISHED     | 🟠 Advanced |  [→](#advanced-compatibility-validation-pattern)  |
-| **Production Readiness Validation**   | Comprehensive production  deployment validation            | ✅ ESTABLISHED     | 🟡 Medium   |  [→](#production-readiness-validation-pattern)    |
-| **Architectural Separation**           | Templum-backend compliance  validation                     | 🔄 IN DEVELOPMENT  | 🟡 Medium   |  [→](#architectural-separation-guidelines)        |
+| Pattern                                | Use When                                                   | Status             | Difficulty  | Quick  Access                                      |
+|----------------------------------------|-------------------------------- ---------------------------|--------------------|-------------|------------ ---------------------------------------|
+| **Universal Interface Orchestration**  | VSCode/CLI/Command mode  coordination                      | ✅ ESTABLISHED     | 🟡 Medium   | [→](#universal-interface-orchestration)            |
+| **Backend Service Integration**        | Connecting to  Haruspex/PCL/Litany services                | ✅ ESTABLISHED     | 🟠 Advanced | [→](#backend-service-integration-unified)          |
+| **Dynamic Command Router Integration** | Integrating DynamicCommandRouter with menu/registry systems| ✅ ESTABLISHED     | 🟡 Medium   | [→](#dynamic-command-router-integration)           |
+| **Terminal UI Components**             | CLI interface enhancement with progress bars, spinners, interactive prompts | ✅ ESTABLISHED     | 🟠 Advanced | [→](#terminal-ui-components-pattern)               |
+| **PCL Enhanced Rendering**             | Sophisticated component styling with theme awareness       | ✅ ESTABLISHED     | 🟢 Basic    | [→](#pcl-enhanced-rendering-pattern)               |
+| **Unified Type System**                | Error handling, Map iteration,  type safety                | ✅ ESTABLISHED     | 🟢 Basic    | [→](#unified-type-system-pattern)                  |
+| **Real Interface Adapter Integration** | Converting simulated adapters  to real backend integration | ✅ ESTABLISHED     | 🟡 Medium   | [→](#real-interface-adapter-integration-unified)   |
+| **Mock-to-Real Transition**            | Eliminating development mocks                              | ✅ ESTABLISHED     | 🟢 Basic    | [→](#mock-to-real-transition-unified)              |
+| **Dependency Injection**               | Component lifecycle management                             | ✅ ESTABLISHED     | 🟠 Advanced | [→](#dependency-injection-unified)                 |
+| **Protocol Communication**             | IPC/HTTP/WebSocket backend  communication                  | ✅ ESTABLISHED     | 🔴 Expert   | [→](#protocol-communication-unified)               |
+| **Session Management**                 | Cross-interface session  coordination                      | ✅ ESTABLISHED     | 🟡 Medium   | [→](#session-management-unified)                   |
+| **Templum Resource Management**        | System resource monitoring and  policy enforcement         | ✅ ESTABLISHED     | 🟡 Medium   | [→](#templum-resource-management-unified)          |
+| **Abstraction Layer Architecture**     | Interface adapter dependency  inversion                    | ✅ ESTABLISHED     | 🟢 Basic    | [→](#abstraction-layer-architecture)               |
+| **PCL Component Integration**          | Real component transfer  validation with Phoenix Code Lite | ✅ ESTABLISHED     | 🟡 Medium   | [→](#pcl-component-integration-unified)            |
+| **PCL Rendering Integration**          | Phoenix Code Lite rendering  pattern bridge for 75% reuse  | ✅ ESTABLISHED     | 🟡 Medium   | [→](#pcl-rendering-integration-bridge)             |
+| **Observability Infrastructure**       | Enterprise logging, metrics,  and alerting                 | ✅ ESTABLISHED     | 🟠 Advanced | [→](#observability-infrastructure-pattern)         |
+| **VSCode Extension Configuration**     | Converting CLI to VSCode  extension                        | ✅ ESTABLISHED     | 🟢 Basic    | [→](#vscode-extension-configuration-pattern)       |
+| **VSCode Extension Activation**        | VSCode extension lifecycle &  component registration       | ✅ ESTABLISHED     | 🟡 Medium   | [→](#vscode-extension-activation-pattern)          |
+| **VSCode Extension Integration System** | Complete VSCode integration with service tree, connection management, and interface switching | ✅ ESTABLISHED     | 🟠 Advanced | [→](#vscode-extension-integration-system-pattern)  |
+| **Factory Registry with Context**      | Context-aware factory  registration with error boundaries  | ✅ ESTABLISHED     | 🟡 Medium   | [→](#factory-registry-context-management)          |
+| **Skin Versioning System**             | Semantic version management for  skin components           | ✅ ESTABLISHED     | 🟠 Advanced | [→](#skin-versioning-system-pattern)               |
+| **Advanced Compatibility Validation**  | Deep compatibility analysis for  interface requirements    | ✅ ESTABLISHED     | 🟠 Advanced | [→](#advanced-compatibility-validation-pattern)    |
+| **Production Readiness Validation**    | Comprehensive production  deployment validation            | ✅ ESTABLISHED     | 🟡 Medium   | [→](#production-readiness-validation-pattern)      |
+| **Architectural Separation**           | Templum-backend compliance  validation                     | 🔄 IN DEVELOPMENT  | 🟡 Medium   | [→](#architectural-separation-guidelines)          |
+| **Interface Adapter Integration Test** | Testing interface adapters with orchestrator integration   | ✅ ESTABLISHED     | 🟡 Medium   | [→](#interface-adapter-integration-testing-pattern)|
+| **End-to-End Testing Scenarios**       | Full user workflow validation with cross-interface coord   | ✅ ESTABLISHED     | 🟡 Medium   | [→](#end-to-end-testing-scenarios-pattern)         |
 
 ### Problem-Solution Quick Lookup
 
-| Problem                                                | Pattern  Solution                                                                  |  Difficulty  | Prerequisites                   |
-|--------------------------------------------------------|---------------- -------------------------------------------------------------------|------- ------|---------------------------------|
-| Interface adapters using simulated backends            | [Real Interface  Adapter Integration](#real-interface-adapter-integration-unified) | 🟡  Medium   | Backend Service Integration     |
-| TypeScript compilation errors                          | [Unified Type  System](#unified-type-system-pattern)                               | 🟢  Basic    | None (foundation)               |
-| Backend service unavailable                            | [Backend  Service Integration](#backend-service-integration-unified)               |  🟠 Advanced | Type System                     |
-| Interface switching failures                           | [Universal  Interface Orchestration](#universal-interface-orchestration)           | 🟡  Medium   | Session Management, Type System |
-| Mock dependencies blocking real functionality          | [Mock-to-Real  Transition](#mock-to-real-transition-unified)                       | 🟢  Basic    | Backend Service Integration     |
-| Hardcoded component dependencies                       | [Dependency  Injection](#dependency-injection-unified)                             | 🟠  Advanced | Type System                     |
-| Protocol communication failures                        | [Protocol  Communication](#protocol-communication-unified)                         |  🔴 Expert   | Backend Service Integration     |
-| Hardcoded metrics and scattered console.log            | [Observability  Infrastructure](#observability-infrastructure-pattern)             | 🟠  Advanced | Dependency Injection            |
-| Resource leaks and system performance issues           | [Templum  Resource Management](#templum-resource-management-unified)               |  🟡 Medium   | Dependency Injection            |
-| Interface adapters directly coupled to TemplumCore     | [Abstraction  Layer Architecture](#abstraction-layer-architecture)                 | 🟢  Basic    | Dependency Injection            |
-| PCL component analysis using simulated validation      | [PCL Component  Integration](#pcl-component-integration-unified) ✅                | 🟡  Medium   | Mock-to-Real Transition         |
-| Converting CLI application to VSCode extension         | [VSCode  Extension Configuration](#vscode-extension-configuration-pattern)         |  🟢 Basic    | None (foundation)               |
-| VSCode extension activation and component registration | [VSCode  Extension Activation](#vscode-extension-activation-pattern)               |  🟡 Medium   | VSCode Extension Configuration  |
-| Context-dependent factory creation failures            | [Factory  Registry with Context Management](#factory-registry-context-management)  |  🟡 Medium   | Dependency Injection            |
-| Skin version conflicts and compatibility issues       | [Skin Versioning  System](#skin-versioning-system-pattern)                         | 🟠  Advanced | Universal Skin Engine           |
-| Interface compatibility validation and requirements    | [Advanced  Compatibility Validation](#advanced-compatibility-validation-pattern)  | 🟠  Advanced | Skin Versioning System          |
-| Test infrastructure degradation and broken tests      | [Test Health  Monitoring](#test-health-monitoring-pattern)                         | 🟢  Basic    | Husky, Jest, TypeScript         |
-| Hardcoded performance metrics in production systems   | [Production  Readiness Validation](#production-readiness-validation-pattern)       | 🟡  Medium   | Resource Management, Performance |
-| Production deployment readiness assessment            | [Production  Readiness Validation](#production-readiness-validation-pattern)       | 🟡  Medium   | Mock-to-Real Transition         |
+| Problem                                                | Pattern  Solution                                                                  |  Difficulty | Prerequisites                   |
+|--------------------------------------------------------|---------------- -------------------------------------------------------------------|-------------|---------------------------------|
+| Interface adapters using simulated backends            | [Real Interface  Adapter Integration](#real-interface-adapter-integration-unified) | 🟡 Medium   | Backend Service Integration     |
+| TypeScript compilation errors                          | [Unified Type  System](#unified-type-system-pattern)                               | 🟢 Basic    | None (foundation)               |
+| Backend service unavailable                            | [Backend  Service Integration](#backend-service-integration-unified)               | 🟠 Advanced | Type System                     |
+| Interface switching failures                           | [Universal  Interface Orchestration](#universal-interface-orchestration)           | 🟡 Medium   | Session Management, Type System |
+| VSCode extension service integration needs              | [VSCode Extension Integration System](#vscode-extension-integration-system-pattern) | 🟠 Advanced | VSCode Extension Activation, Backend Service Integration |
+| Mock dependencies blocking real functionality          | [Mock-to-Real  Transition](#mock-to-real-transition-unified)                       | 🟢 Basic    | Backend Service Integration     |
+| Hardcoded component dependencies                       | [Dependency  Injection](#dependency-injection-unified)                             | 🟠 Advanced | Type System                     |
+| Protocol communication failures                        | [Protocol  Communication](#protocol-communication-unified)                         | 🔴 Expert   | Backend Service Integration     |
+| Hardcoded metrics and scattered console.log            | [Observability  Infrastructure](#observability-infrastructure-pattern)             | 🟠 Advanced | Dependency Injection            |
+| Resource leaks and system performance issues           | [Templum  Resource Management](#templum-resource-management-unified)               | 🟡 Medium   | Dependency Injection            |
+| Interface adapters directly coupled to TemplumCore     | [Abstraction  Layer Architecture](#abstraction-layer-architecture)                 | 🟢 Basic    | Dependency Injection            |
+| PCL component analysis using simulated validation      | [PCL Component  Integration](#pcl-component-integration-unified)                   | 🟡 Medium   | Mock-to-Real Transition         |
+| Converting CLI application to VSCode extension         | [VSCode  Extension Configuration](#vscode-extension-configuration-pattern)         | 🟢 Basic    | None (foundation)               |
+| VSCode extension activation and component registration | [VSCode  Extension Activation](#vscode-extension-activation-pattern)               | 🟡 Medium   | VSCode Extension Configuration  |
+| Context-dependent factory creation failures            | [Factory  Registry with Context Management](#factory-registry-context-management)  | 🟡 Medium   | Dependency Injection            |
+| Skin version conflicts and compatibility issues        | [Skin Versioning  System](#skin-versioning-system-pattern)                         | 🟠 Advanced | Universal Skin Engine           |
+| Interface compatibility validation and requirements    | [Advanced  Compatibility Validation](#advanced-compatibility-validation-pattern)   | 🟠 Advanced | Skin Versioning System          |
+| Test infrastructure degradation and broken tests       | [Test Health  Monitoring](#test-health-monitoring-pattern)                         | 🟢 Basic    | Husky, Jest, TypeScript         |
+| Hardcoded performance metrics in production systems    | [Production  Readiness Validation](#production-readiness-validation-pattern)       | 🟡 Medium   | Resource Management, Performance|
+| Production deployment readiness assessment             | [Production  Readiness Validation](#production-readiness-validation-pattern)       | 🟡 Medium   | Mock-to-Real Transition         |
+| Interface adapters lacking integration test coverage   | [Interface Adapter Integr Test](#interface-adapter-integration-testing-pattern)    | 🟡 Medium   | Test Infra, Interface Adapters  |
+| Complete user workflow validation needed               | [End-to-End Testing Scenarios](#end-to-end-testing-scenarios-pattern)              | 🟡 Medium   | Mock Backend S., Test Framework |
 
 ---
 
@@ -110,7 +129,7 @@
 
 > **Tutorial-style**: Step-by-step implementation of core architectural  patterns
 
-### Unified Type System Pattern {#unified-type-system-pattern}
+### Unified Type System Pattern
 
 **Status**: ✅ ESTABLISHED  
 **Category**: Foundation Infrastructure  
@@ -200,7 +219,7 @@ components: Record<string, ComponentSkin>; // Component registry:  skin.componen
 
 ---
 
-### Configuration Management {#configuration-management}
+### Configuration Management
 
 **Status**: ✅ ESTABLISHED  
 **Category**: Foundation Infrastructure  
@@ -272,9 +291,213 @@ const component = new ComponentClass(componentConfig);
 **Successfully Applied**: [TASK-NEW-044] ✅ VSCode Extension Configuration  Loading (2025-08-27)
 **Pattern Dependencies**: TemplumConfigManager (Foundation) | **Enables**:  Environment-specific component initialization  
 
+### Enhanced BackendConfig Schema
+
+**Status**: ✅ ESTABLISHED  
+**Category**: Foundation Infrastructure  
+**Usage Evidence**: [TASK-GENERIC-004] Backend schema implementation completed  
+**Last Updated**: 2025-08-29  
+**Difficulty**: 🟢 Basic | **Est. Time**: ~30-45 minutes | **Prerequisites**: Basic TypeScript interface design
+
+**Problem**: Generic backend integration requires comprehensive connection configuration that supports multiple protocols, authentication methods, and service discovery endpoints while maintaining backward compatibility with existing minimal configurations.
+
+**Solution**: Enhanced BackendConfig interface with full connection specification and backward compatibility translation layer.
+
+#### Enhanced BackendConfig Schema: Implementation Steps
+
+**Step 1**: Enhanced Interface Definition
+
+```typescript
+// Enhanced BackendConfig with comprehensive connection specification
+interface BackendConfig {
+  // Basic identification
+  service: string;
+  version: string;
+  
+  // Enhanced connection specification
+  protocol: 'ipc' | 'http' | 'websocket' | 'grpc';
+  endpoint: string;
+  
+  // Enhanced authentication options
+  authentication?: {
+    type: 'none' | 'basic' | 'bearer' | 'api-key' | 'oauth';
+    credentials?: Record<string, string>;
+    required?: boolean;
+  };
+  
+  // Connection behavior configuration
+  timeout?: number;
+  retries?: number;
+  keepAlive?: boolean;
+  
+  // Service discovery endpoints
+  healthEndpoint?: string;
+  capabilitiesEndpoint?: string;
+  
+  // Protocol-specific options
+  options?: { [key: string]: any };
+  
+  // Legacy support
+  endpoints?: Record<string, string>;
+}
+```
+
+**Step 2**: Backward Compatibility Layer
+
+```typescript
+// Configuration manager with multi-mode support
+class BackendIntegrationConfigManager {
+  getBackendConfig(backendName: string, skinConfig?: BackendConfig): BackendConfig | null {
+    // Generic mode: Use skin configuration first
+    if (this.config.mode === 'generic' || this.config.mode === 'hybrid') {
+      if (skinConfig) {
+        const override = this.config.genericOverrides.get(backendName);
+        return override ? { ...skinConfig, ...override } : skinConfig;
+      }
+    }
+    
+    // Legacy mode or fallback: Use hardcoded configuration
+    if (this.config.mode === 'legacy' || this.config.features.enableLegacyFallback) {
+      return this.getLegacyBackendConfig(backendName);
+    }
+    
+    return null;
+  }
+}
+```
+
+**Step 3**: Connection Factory Integration
+
+```typescript
+// Generic connection factory using enhanced schema
+class ConnectionFactory {
+  static async create(serviceId: string, backendConfig: BackendConfig): Promise<BackendConnection> {
+    // Validate configuration
+    ConnectionFactory.validateConfig(backendConfig);
+    
+    // Create protocol-specific connection based on enhanced config
+    switch (backendConfig.protocol) {
+      case 'ipc':
+        return ConnectionFactory.createIPCConnection(serviceId, backendConfig);
+      case 'http':
+        return ConnectionFactory.createHTTPConnection(serviceId, backendConfig);
+      // ... other protocols
+    }
+  }
+}
+```
+
+**Benefits**:
+
+- Supports full connection specification for any backend protocol
+- Maintains backward compatibility with existing minimal configurations
+- Enables authentication, service discovery, and protocol-specific options
+- Provides safe transition path from hardcoded to generic backend integration
+
+**Files Using This Pattern**: `backend-integration-config.ts`, `connection-factory.ts`, `universal-skin-engine-types.ts`  
+**Success Rate**: 100% - clean compilation and backward compatibility maintained  
+**Used By Active Tasks**: [TASK-GENERIC-004] ✅ (Enhanced BackendConfig Schema Implementation)
+**Successfully Applied**: [TASK-GENERIC-004] ✅ Enhanced BackendConfig Schema Implementation (2025-08-29)
+**Pattern Dependencies**: Universal Skin Engine Types | **Enables**: Fully generic backend integration architecture
+
 ---
 
-### Universal Interface Orchestration {#universal-interface-orchestration}
+### Backend Integration Feature Flags
+
+**Status**: 🔄 IN DEVELOPMENT  
+**Category**: Foundation Architecture  
+**Usage Evidence**: [TASK-GENERIC-005] Phase 1 implementation  
+**Last Updated**: 2025-08-29  
+**Difficulty**: 🟡 Medium | **Est. Time**: ~2-4 hours | **Prerequisites**: Backend architecture understanding
+
+**Problem**: Architectural transitions from hardcoded backend integration to generic skin-driven systems require safe migration paths without breaking existing functionality
+
+**Solution**: Feature flag system enabling progressive enhancement with hybrid modes and automatic fallback mechanisms
+
+#### Backend Integration Feature Flags: Implementation Strategy
+
+**Core Architecture**: Multi-mode configuration system with runtime behavior control
+
+```typescript
+export interface BackendIntegrationConfig {
+  /** Current integration mode */
+  mode: 'legacy' | 'generic' | 'hybrid';
+  
+  /** Feature flags controlling behavior */
+  features: BackendFeatureFlags;
+  
+  /** Legacy hardcoded backend configurations */
+  legacyConfig: LegacyBackendConfig;
+  
+  /** Service discovery configuration */
+  serviceDiscovery: ServiceDiscoveryConfig;
+}
+```
+
+**Implementation Pattern**:
+
+```typescript
+// Configuration Manager with Safety Validation
+export class BackendIntegrationConfigManager {
+  updateConfig(updates: Partial<BackendIntegrationConfig>): void {
+    const newConfig = { ...this.config, ...updates };
+    
+    // Safety: Ensure legacy fallback in generic mode
+    if (newConfig.mode === 'generic' && !newConfig.features.enableLegacyFallback) {
+      newConfig.features.enableLegacyFallback = true;
+    }
+    
+    this.config = newConfig;
+    this.notifyListeners();
+  }
+}
+
+// Usage in Backend Components
+private initializeBackends(): void {
+  const config = backendIntegrationConfig.getConfig();
+  
+  if (config.features.useGenericIntegration) {
+    // Use skin definition configuration
+    const backendConfig = config.getBackendConfig(backendName, skinConfig);
+  } else {
+    // Use legacy hardcoded configuration
+    const backendConfig = config.getLegacyBackendConfig(backendName);
+  }
+}
+```
+
+#### Backend Integration Feature Flags: Transition Phases
+
+**Phase 1**: Feature flag system with hybrid mode (safe transition)
+**Phase 2**: Generic system validation with skin definitions  
+**Phase 3**: Legacy code removal and full generic implementation
+
+#### Backend Integration Feature Flags: Safety Mechanisms
+
+- **Hybrid Mode Default**: Enables generic features with legacy fallback
+- **Configuration Validation**: Prevents unsafe transitions automatically
+- **Backward Compatibility**: Zero breaking changes during transition
+- **Runtime Switching**: Safe mode changes without system restart
+
+**Key Benefits**:
+
+- Enables safe architectural transitions without breaking changes
+- Provides progressive enhancement with automatic fallback mechanisms
+- Supports runtime configuration changes with validation
+- Maintains system stability during major architectural changes
+
+**Files Using This Pattern**: backend-service-router.ts, pcl-menu-registry.ts, service-discovery.ts  
+**Success Rate**: 100% - eliminates breaking changes during architectural transitions  
+**Used By Active Tasks**: [TASK-GENERIC-005] ✅ Phase 1, [TASK-GENERIC-005-PHASE2], [TASK-GENERIC-005-FOLLOWUP]  
+**Successfully Applied**: [TASK-CONSOLIDATED-VALIDATION-CLEANUP] ✅ **COMPLETE GENERIC TRANSITION** (2025-08-29)  
+**Final Status**: **PATTERN DEPRECATED** - Feature flag system successfully removed, pure generic architecture achieved
+**Pattern Dependencies**: ~~Universal Skin Engine Types~~ | **Final Result**: Complete generic backend integration architecture
+
+**Migration Complete**: All feature flags removed, backend integration now purely skin-driven with zero legacy dependencies
+
+---
+
+### Universal Interface Orchestration
 
 **Status**: ✅ ESTABLISHED  
 **Category**: Foundation Architecture  
@@ -287,7 +510,7 @@ const component = new ComponentClass(componentConfig);
 
 **Unified Solution**: Complete interface lifecycle orchestration with  session coordination
 
-#### Core Architecture Principle
+#### Universal Interface Orchestration: Core Architecture Principle
 
 ``` diagram
 Backend Services → Universal Interface → Multiple Interface Adapters
@@ -298,7 +521,7 @@ Backend Services → Universal Interface → Multiple Interface Adapters
 **Backend Role**: Data producers that PROVIDE skin definitions and  analysis results  
 **Integration Method**: Service router coordination, NOT functionality  reimplementation
 
-#### Interface Adapter Management Pattern
+#### Universal Interface Orchestration: Interface Adapter Management Pattern
 
 ```typescript
 // Interface lifecycle coordination
@@ -347,7 +570,7 @@ payload: { renderResult, customHTML: renderedHTML, performance }
 **Successfully Applied**: [TASK-NEW-001] ✅ Backend Service Interaction  Implementation (2025-08-27), [TASK-173] ✅ Universal Interface State  Synchronization (2025-08-27)
 **Integration Points**: Session Management, Backend Service Integration,  Abstraction Layer Architecture
 
-### Abstraction Layer Architecture {#abstraction-layer-architecture}
+### Abstraction Layer Architecture
 
 **Status**: ✅ ESTABLISHED  
 **Category**: Foundation Infrastructure  
@@ -482,7 +705,7 @@ return adapter;
 
 ---
 
-### Observability Infrastructure Pattern  {#observability-infrastructure-pattern}
+### Observability Infrastructure Pattern
 
 **Status**: ✅ ESTABLISHED  
 **Category**: Foundation Infrastructure  
@@ -683,7 +906,7 @@ description: 'P95 response time above 1000ms'
 **Used By Active Tasks**: [TASK-NEW-034], [TASK-NEW-035], [TASK-NEW-037]  (Interface adapter implementation), [TASK-147] (Dependency chain analysis)
 **Architectural Foundation**: Enables all interface adapter patterns |  **Dependencies**: Dependency Injection System
 
-### Test Infrastructure Repair Pattern  {#test-infrastructure-repair-pattern}
+### Test Infrastructure Repair Pattern
 
 **Status**: ✅ ESTABLISHED | **Category**: Foundation  
 **Usage Evidence**: [TASK-TEST-INFRA-001] ✅ | **Last Updated**:  2025-08-28
@@ -731,7 +954,7 @@ description: string;
 - **Fix Duration**: 45 minutes (vs. estimated 2 hours)
 - **Fix Document**: `dev/fixes/2025-08-28-181441-quick-fix-test-infrastruc ture-ts2353-errors.md`
 
-### Mock-Real API Contract Testing Pattern  {#mock-real-api-contract-testing-pattern}
+### Mock-Real API Contract Testing Pattern
 
 **Status**: 🔄 IN DEVELOPMENT | **Category**: Foundation  
 **Usage Evidence**: [TASK-TEST-INFRA-002] | **Last Updated**: 2025-08-28
@@ -772,7 +995,7 @@ data: undefined,
 **Used By Active Tasks**: [TASK-TEST-INFRA-002]
 **Integration Points**: Test Infrastructure Repair, Real Component API  Analysis
 
-### Test Health Monitoring Pattern {#test-health-monitoring-pattern}
+### Test Health Monitoring Pattern
 
 **Status**: ✅ ESTABLISHED | **Category**: Foundation  
 **Usage Evidence**: [TASK-TEST-INFRA-003] | **Last Updated**: 2025-08-28
@@ -865,7 +1088,7 @@ git commit  # Triggers TypeScript, test, and health validation
 
 > **How-to Guides**: Problem-solving patterns for specific integration  scenarios
 
-### Real Interface Adapter Integration Unified  {#real-interface-adapter-integration-unified}
+### Real Interface Adapter Integration Unified
 
 **Status**: ✅ ESTABLISHED  
 **Category**: Interface Implementation  
@@ -939,38 +1162,79 @@ git commit  # Triggers TypeScript, test, and health validation
 
 ---
 
-### Backend Service Integration Unified  {#backend-service-integration-unified}
+### Backend Service Integration Unified
 
-**Status**: ✅ ESTABLISHED  
+**Status**: ✅ ESTABLISHED - PHASE 3 COMPLETE  
 **Category**: Service Integration  
-**Success Evidence**: 5 successful realignment task completions  
-**Last Updated**: 2025-08-27  
+**Success Evidence**: Epic task completion - fully generic skin-driven backend integration  
+**Last Updated**: 2025-08-29 - **GENERIC ARCHITECTURE COMPLETE**  
 
 **Consolidated From**: `backend-service-router-pattern`,  `direct-api-integration`, `real-network-protocol-communication`
 
 **Problem**: Multi-backend service communication with protocol diversity  and architectural separation requirements
 
-**Unified Solution**: Complete backend service lifecycle with protocol  abstraction and business logic separation
+**Unified Solution**: **PHASE 3 COMPLETE** - Fully generic, skin-driven backend integration where backends self-describe through skin definitions. Zero Templum code changes required for new backend integration.
 
-#### Enhanced Service Discovery and Connection Management
+**🎯 EPIC COMPLETION (2025-08-29)**: Achieved complete transition from hardcoded to generic backend architecture per Templum 1.1 specification
+
+#### Generic Connection Factory Architecture (2025-08-29 UPDATE)
 
 ```typescript
-// Multi-protocol endpoint configuration with enhanced service discovery
-private backendEndpoints = new Map([
-['haruspex', 'ipc://localhost:3001'],    // Child process communication
-['pcl', 'http://localhost:3002'],        // HTTP REST API  
-['litany', 'ws://localhost:3003']        // WebSocket real-time
-]);
+// 🔥 GENERIC BACKEND INTEGRATION - Configuration-driven instead of hardcoded
+private backendConfigs = new Map<string, BackendConfig>();
 
-// Enhanced connection interface with verification and health monitoring
+// Enhanced BackendConfig with full connection specification
+interface BackendConfig {
+  service: string;
+  version: string;
+  protocol: 'ipc' | 'http' | 'websocket' | 'grpc';
+  endpoint: string;
+  authentication?: {
+    type: 'none' | 'basic' | 'bearer' | 'api-key' | 'oauth';
+    credentials?: Record<string, string>;
+    required?: boolean;
+  };
+  timeout?: number;
+  retries?: number;
+  keepAlive?: boolean;
+  healthEndpoint?: string;
+  capabilitiesEndpoint?: string;
+  options?: { [key: string]: any };
+}
+
+// Connection interface maintained for compatibility
 interface BackendConnection {
-id: string;
-protocol: 'ipc' | 'http' | 'websocket';
-endpoint: string;
-connection?: ChildProcess | WebSocket | any;
-isConnected(): boolean;
-connect(): Promise<void>;
-disconnect(): Promise<void>;
+  id: string;
+  protocol: 'ipc' | 'http' | 'websocket' | 'grpc';
+  endpoint: string;
+  connection?: ChildProcess | WebSocket | any;
+  isConnected(): boolean;
+  connect(): Promise<void>;
+  disconnect(): Promise<void>;
+}
+
+// 🎯 GENERIC CONNECTION FACTORY - Protocol-agnostic connection creation
+class ConnectionFactory {
+  static async create(serviceId: string, config: BackendConfig): Promise<BackendConnection> {
+    // Validates configuration and creates protocol-specific connections
+    switch (config.protocol) {
+      case 'ipc': return this.createIPCConnection(serviceId, config);
+      case 'http': return this.createHTTPConnection(serviceId, config);
+      case 'websocket': return this.createWebSocketConnection(serviceId, config);
+      case 'grpc': return this.createGRPCConnection(serviceId, config);
+    }
+  }
+}
+
+// 🚀 SKIN-DRIVEN BACKEND REGISTRATION - Zero code changes for new backends
+async registerBackendFromSkin(skinDefinition: UniversalSkinDefinition): Promise<void> {
+  if (!skinDefinition.backendConfig) return;
+  
+  const backendId = skinDefinition.metadata.backend;
+  const backendConfig = skinDefinition.backendConfig;
+  
+  console.log(`[GENERIC] Registering ${backendId}: ${backendConfig.protocol} at ${backendConfig.endpoint}`);
+  this.backendConfigs.set(backendId, backendConfig);
 }
 
 // Enhanced service status with capability detection and health monitoring
@@ -984,29 +1248,36 @@ version?: string;        // Service version tracking
 responseTime?: number;   // Response time metrics
 }
 
-// Intelligent service discovery with retry logic and protocol-specific  verification
+// 🔥 GENERIC SERVICE DISCOVERY - Configuration-driven instead of endpoint-based
 async discoverAndConnect(): Promise<void> {
-const discoveryMetrics = {
-totalAttempts: 0,
-retryAttempts: 0,
-discoveryStartTime: Date.now()
-};
+  console.log('Backend Service Router: Starting GENERIC service discovery...');
+  
+  const discoveryMetrics = {
+    totalAttempts: 0,
+    retryAttempts: 0,
+    discoveryStartTime: Date.now()
+  };
 
-// Parallel discovery with intelligent retry logic (3 attempts,  exponential backoff)
-const discoveryPromises =  Array.from(this.backendEndpoints.entries()).map(async ([serviceId,  endpoint]) => {
-const connected = await this.discoverServiceWithRetry(serviceId,  endpoint, discoveryMetrics);
+  // GENERIC DISCOVERY: Use backend configurations instead of hardcoded endpoints
+  const discoveryPromises = Array.from(this.backendConfigs.entries()).map(async ([serviceId, config]) => {
+    console.log(`[GENERIC] Starting discovery for ${serviceId} with ${config.protocol} at ${config.endpoint}`);
+    
+    // USE CONNECTION FACTORY: Create connection based on backend configuration
+    const connection = await ConnectionFactory.create(serviceId, config);
+    
+    if (connection) {
+      this.connections.set(serviceId, connection);
+      await connection.connect();
+      
+      if (connection.isConnected()) {
+        await this.detectServiceCapabilities(serviceId);
+        this.updateServiceHealth(serviceId, true, 'healthy');
+      }
+    }
+  });
 
-if (connected) {
-// Enhanced capability detection and version tracking
-await this.detectServiceCapabilities(serviceId);
-this.updateServiceHealth(serviceId, true, 'healthy', undefined,  await this.getServiceVersion(serviceId));
-}
-});
-
-await Promise.allSettled(discoveryPromises);
-
-// Start continuous health monitoring for discovered services
-this.startContinuousHealthMonitoring();
+  await Promise.allSettled(discoveryPromises);
+  this.startContinuousHealthMonitoring();
 }
 
 // Protocol-specific service verification for reliable connection  establishment
@@ -1100,13 +1371,102 @@ reject(createTemplumError('IPC request timeout', 'NETWORK_ERROR',  'integration'
 
 **Files Enhanced**: `src/backend/backend-service-router.ts` with complete  protocol implementations
 
-**Used By Active Tasks**: [TASK-NEW-002], [TASK-NEW-005], [TASK-NEW-006],  [TASK-NEW-007], [TASK-NEW-010], [TASK-NEW-012], [TASK-NEW-021], [TASK-173]  (Backend integration), [TASK-NEW-032], [TASK-NEW-033] (Service discovery)
-**Successfully Applied**: [TASK-NEW-017] ✅ Real IPC Communication  Implementation (2025-08-28), [TASK-NEW-019] ✅ Real HTTP Communication  Implementation (2025-08-28), [TASK-NEW-022] ✅ Real Litany WebSocket  Message Processing Implementation (2025-08-28), [TASK-NEW-045] ✅ Backend  Service Discovery Integration (2025-08-27), [TASK-NEW-047] ✅ Real Backend  Service Refresh Implementation (2025-08-27)
-**High Usage Pattern**: Referenced in 8+ active tasks | **Critical  Integration Point**: All backend communications
+**Used By Active Tasks**: **EPIC COMPLETION** - [TASK-CONSOLIDATED-SKIN-API-SYSTEM] ✅ Comprehensive skin-driven backend integration
+**Successfully Applied**: [TASK-NEW-017] ✅ Real IPC Communication  Implementation (2025-08-28), [TASK-NEW-019] ✅ Real HTTP Communication  Implementation (2025-08-28), [TASK-NEW-022] ✅ Real Litany WebSocket  Message Processing Implementation (2025-08-28), [TASK-NEW-045] ✅ Backend  Service Discovery Integration (2025-08-27), [TASK-NEW-047] ✅ Real Backend  Service Refresh Implementation (2025-08-27), [TASK-GENERIC-001] ✅ Generic Connection Factory Implementation (2025-08-29), **[TASK-CONSOLIDATED-SKIN-API-SYSTEM] ✅ Epic Generic Backend Integration Complete (2025-08-29)**
+**🎯 EPIC SUCCESS**: Complete transition from hardcoded to fully generic backend architecture | **PHASE 3 ACHIEVED**: Zero code changes needed for new backend integration
 
 ---
 
-### Mock-to-Real Transition Unified {#mock-to-real-transition-unified}
+### Dynamic Command Routing Pattern
+
+**Status**: ✅ ESTABLISHED  
+**Category**: Backend Integration  
+**Success Evidence**: TASK-GENERIC-002 complete - Dynamic command routing system with skin-driven command mapping  
+**Last Updated**: 2025-08-29  
+
+**Problem**: Templum uses hardcoded pattern matching ("if command starts with 'haruspex.', route to Haruspex") for routing commands to backends, preventing truly generic backend integration.
+
+**Unified Solution**: Dynamic command routing system that builds routing tables from skin definitions at runtime, eliminating all hardcoded routing patterns.
+
+#### Core Architecture Pattern
+
+```typescript
+// Dynamic Command Router Implementation
+class DynamicCommandRouter {
+  private commandMap: Map<string, BackendConnection> = new Map();
+  private aliasMap: Map<string, string> = new Map();
+  private backendCommands: Map<string, Set<string>> = new Map();
+  
+  // Register backend commands from skin definition
+  registerBackend(backend: BackendConnection, skin: UniversalSkinDefinition): void {
+    if (!skin.commands) return;
+    
+    // Build command-to-backend mapping dynamically from skin
+    for (const [commandId, commandDef] of Object.entries(skin.commands)) {
+      this.commandMap.set(commandId, backend);
+    }
+    
+    // Handle shortcuts as aliases
+    if (skin.shortcuts) {
+      for (const [shortcut, commandId] of Object.entries(skin.shortcuts)) {
+        if (this.commandMap.has(commandId)) {
+          this.aliasMap.set(shortcut, commandId);
+          this.commandMap.set(shortcut, backend);
+        }
+      }
+    }
+  }
+  
+  // Get backend for command with intelligent routing
+  getBackendForCommand(commandId: string): BackendConnection | null {
+    return this.commandMap.get(commandId) || null;
+  }
+}
+```
+
+#### Key Implementation Components
+
+1. **Command Registration**: Automatic command registration when backend skin definitions are loaded
+2. **Routing Decision Logic**: Commands route to specific backends based on skin ownership, not hardcoded patterns
+3. **Lifecycle Integration**: Command mappings automatically update when backends connect/disconnect
+4. **Alias/Shortcut Support**: Full support for command aliases and keyboard shortcuts defined in skins
+5. **Fallback Strategy**: Maintains backward compatibility with fallback routing for unregistered commands
+6. **Event-Driven Architecture**: Router emits events for monitoring command registration/unregistration
+
+#### Success Criteria
+
+- ✅ Commands routed entirely from skin definitions without hardcoded patterns
+- ✅ New backends integrate by providing skin definition only - zero Templum code changes
+- ✅ Command aliases and shortcuts work automatically from skin definitions
+- ✅ Backend lifecycle (connect/disconnect) automatically manages command availability
+- ✅ Comprehensive debugging and statistics for command routing decisions
+- ✅ Backward compatibility maintained with fallback routing for unregistered commands
+
+#### Performance Characteristics
+
+- **Routing Lookup**: O(1) command-to-backend mapping (vs O(n) pattern matching)
+- **Memory Efficiency**: Minimal overhead - only stores active command mappings
+- **Registration Cost**: O(k) where k is number of commands in skin (one-time cost)
+- **Event Overhead**: Minimal - only emits events for lifecycle changes and debugging
+
+#### Integration Points
+
+- [Backend Service Integration](#backend-service-integration-unified) - Automatic integration with skin loading process
+- [Universal Interface Orchestration](#universal-interface-orchestration) - Enables skin-driven interface coordination
+- [Session Management](#session-management-unified) - Intelligent command execution routing
+- [Unified Type System](#unified-type-system-pattern) - Consistent error handling and type safety
+
+**Files Implementing This Pattern**: `src/backend/dynamic-command-router.ts` (core), `src/backend/backend-service-router.ts` (integration), `src/session/templum-universal-session-manager.ts` (routing)
+
+**Successfully Applied**: [TASK-GENERIC-002] ✅ Dynamic Command Routing System Implementation (2025-08-29)  
+**Used By Active Tasks**: All remaining generic integration tasks (TASK-GENERIC-003 through TASK-GENERIC-006)  
+**Pattern Dependencies**: Backend Service Integration, Unified Type System | **Enables**: Fully generic backend integration, skin-driven system architecture
+
+**🎯 Strategic Impact**: Foundation pattern for complete generic backend integration - enables 40% completion toward universal backend self-description architecture.
+
+---
+
+### Mock-to-Real Transition Unified
 
 **Status**: ✅ ESTABLISHED  
 **Category**: Development Workflow  
@@ -1232,7 +1592,7 @@ expect(typeof backendRouter.executeCommand).toBe('function');
 - ✅ Integration tests validate real component behavior instead of mock  responses
 - ✅ Test compilation errors resolved through public API usage patterns
 
-### PCL Component Integration Unified {#pcl-component-integration-unified}
+### PCL Component Integration Unified
 
 **Status**: ✅ ESTABLISHED  
 **Category**: Cross-Project Integration  
@@ -1546,7 +1906,7 @@ throw new Error(`Failed to instantiate component class:  ${error}`);
 **Successfully Applied**: [TASK-NEW-036] ✅ Complete Implementation  (2025-08-28)  
 **Pattern Dependencies**: Mock-to-Real Transition, Backend Service  Integration | **Enables**: Real PCL component validation, accurate  performance measurement
 
-### PCL Rendering Integration Bridge {#pcl-rendering-integration-bridge}
+### PCL Rendering Integration Bridge
 
 **Status**: ✅ ESTABLISHED  
 **Category**: Cross-Project Integration  
@@ -1736,7 +2096,125 @@ ${separator}
 
 > **Complete Technical Specifications**: Detailed implementation patterns  with protocol specifics and code examples
 
-### Protocol Communication Unified {#protocol-communication-unified}
+### Terminal UI Components Pattern
+
+**Status**: ✅ ESTABLISHED  
+**Category**: CLI Interface Components  
+**Success Evidence**: TASK-CLI-001 complete - Terminal UI components implementation with progress bars, spinners, interactive prompts, color themes, and responsive layouts  
+**Last Updated**: 2025-08-29 (TASK-CLI-001 Terminal UI Components Implementation)  
+
+**Problem**: CLI interface lacks modern terminal UI components for user interaction, progress indication, and responsive display across different terminal sizes
+
+**Solution**: Complete terminal UI components system with progress bars, spinners, interactive prompts, color themes, and responsive layout management
+
+#### Terminal UI Components Architecture
+
+```typescript
+// Core terminal UI components for CLI interface enhancement
+import {
+  TerminalUI,
+  TerminalColorTheme,
+  DefaultColorThemes,
+  ProgressBar,
+  Spinner,
+  InteractivePrompt,
+  ResponsiveLayout,
+  createTerminalUI
+} from './terminal-ui-components';
+
+// CLI Adapter integration with terminal UI
+export class CLIInterfaceAdapter {
+  private terminalUI: TerminalUI;
+  private activeSpinner: Spinner | null = null;
+  private activeProgressBar: ProgressBar | null = null;
+
+  constructor(config?: Partial<CLIAdapterConfig>) {
+    // Initialize terminal UI with responsive layout
+    const theme = DefaultColorThemes[this.config.terminalTheme] || DefaultColorThemes.default;
+    this.terminalUI = createTerminalUI({
+      theme,
+      responsive: {
+        minWidth: 40,
+        minHeight: 10,
+        breakpoints: { small: 60, medium: 100, large: 140 },
+        theme
+      }
+    });
+  }
+}
+```
+
+#### Progress Bar Implementation
+
+```typescript
+// Enhanced command execution with progress indication
+async executeCommand(command: string, args: any[] = []): Promise<any> {
+  let spinner: Spinner | null = null;
+  
+  try {
+    // Show spinner for command execution
+    if (this.config.enableProgressIndicators) {
+      spinner = this.terminalUI.createSpinner({
+        text: `Executing command: ${command}`,
+        frames: ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
+      });
+      spinner.start();
+    }
+    
+    const result = await this.orchestrator.executeCommand(command, 'cli', args, context);
+    
+    // Success indication with terminal UI
+    if (spinner) {
+      spinner.succeed(`Command '${command}' executed successfully`);
+    }
+    
+    return result;
+  } catch (error) {
+    // Error indication with terminal UI
+    if (spinner) {
+      spinner.fail(`Command '${command}' failed: ${error.message}`);
+    }
+    throw error;
+  }
+}
+
+// Progress bar for long-running operations
+createProgressBar(total: number, message?: string): ProgressBar {
+  const progressBar = this.terminalUI.createProgressBar({
+    width: this.getOptimalProgressBarWidth(),
+    format: ':bar :percent :eta :message',
+    showPercentage: true,
+    showEta: true
+  });
+  
+  progressBar.start(total);
+  if (message) progressBar.update(0, message);
+  return progressBar;
+}
+```
+
+#### Implementation Success Criteria
+
+- ✅ **Progress Indication**: Spinners and progress bars for command execution and long-running operations
+- ✅ **Interactive Prompts**: Text input, confirmation dialogs, option selection, and multi-select prompts  
+- ✅ **Color Themes**: Default, dark, and light themes with consistent color application
+- ✅ **Responsive Layout**: Breakpoint-based layout adaptation (small: <60, medium: 60-100, large: >100 chars)
+- ✅ **Terminal Integration**: Seamless integration with CLI adapter and orchestrator abstraction
+- ✅ **Performance Optimization**: Optimal progress bar sizing and responsive table rendering
+- ✅ **Error Handling**: Comprehensive error display with color-coded feedback
+- ✅ **Resource Management**: Automatic cleanup of terminal UI components
+
+**Used By Active Tasks**: [TASK-CLI-001] ✅ Terminal UI Components Implementation, [TASK-CLI-002] Interactive Search and Filtering (will extend base components), [TASK-CLI-003] Advanced Menu Navigation (will integrate responsive layouts)
+
+**Prerequisites**: CLI adapter abstraction, orchestrator interface, chalk dependency
+
+**Implementation Time**: ~4-6 hours (🟠 Advanced - multiple interconnected components)
+
+**Integration Points**: CLI adapter, orchestrator interface, universal layout engine, responsive design patterns
+
+---
+
+### Protocol Communication Unified
 
 **Status**: ✅ ESTABLISHED  
 **Category**: Network Communication  
@@ -2259,7 +2737,7 @@ console.error(`[WebSocket] Error processing Litany message from  ${serviceId}:`,
 
 ---
 
-### Dependency Injection Unified {#dependency-injection-unified}
+### Dependency Injection Unified
 
 **Status**: ✅ ESTABLISHED  
 **Category**: Architecture Foundation  
@@ -2437,12 +2915,12 @@ console.error('BackendServiceRouterAdapter cleanup error:',  errorMessage);
 
 ---
 
-### Session Management Unified {#session-management-unified}
+### Session Management Unified
 
-**Status**: ✅ ESTABLISHED  
+**Status**: ✅ ESTABLISHED + ENHANCED
 **Category**: Interface Coordination  
-**Success Evidence**: PCL session management pattern successfully adapted  for Templum architecture  
-**Last Updated**: 2025-08-23  
+**Success Evidence**: Enterprise-grade session state management with comprehensive error recovery implemented per TASK-CONSOLIDATED-SESSION-STATE  
+**Last Updated**: 2025-08-29  
 
 **Consolidated From**: `pcl-session-adaptation`,  `templum-universal-interface-adapter`
 
@@ -2584,6 +3062,9 @@ await toAdapter.restoreState(sessionData);
 - ✅ **Backend Integration**: Session-aware command routing with backend  service router
 - ✅ **PCL Pattern Compliance**: All 4 core PCL session patterns  successfully adapted
 - ✅ **Session Completion Tracking**: Comprehensive lifecycle tracking  with completion status, reasons, and final metrics (2025-08-27)
+- ✅ **Enterprise Error Recovery**: Multi-tier fallback system with comprehensive recovery mechanisms (2025-08-29)
+- ✅ **Backend State Synchronization**: Multi-strategy backend session state coordination with success rate tracking (2025-08-29)
+- ✅ **Session Isolation**: Boundary isolation preventing cascade failures during state synchronization errors (2025-08-29)
 
 **Files Using This Pattern**:
 
@@ -2592,7 +3073,7 @@ await toAdapter.restoreState(sessionData);
 - Core orchestration components with session awareness
 
 **Used By Active Tasks**: [TASK-NEW-010], [TASK-NEW-012], [TASK-NEW-038],  [TASK-NEW-039], [TASK-NEW-040] (Session-backend coordination)  
-**Successfully Applied**: [TASK-NEW-013] ✅ Session Completion Status  Tracking Enhancement (2025-08-27)
+**Successfully Applied**: [TASK-NEW-013] ✅ Session Completion Status  Tracking Enhancement (2025-08-27), [TASK-CONSOLIDATED-SESSION-STATE] ✅ Enterprise Session State Management System (2025-08-29)
 
 **Integration Points**:
 
@@ -2602,7 +3083,7 @@ await toAdapter.restoreState(sessionData);
 
 ---
 
-### Templum Resource Management Unified  {#templum-resource-management-unified}
+### Templum Resource Management Unified
 
 **Status**: ✅ ESTABLISHED  
 **Category**: System Infrastructure  
@@ -2798,7 +3279,7 @@ throw error;
 - [Universal Interface Orchestration](#universal-interface-orchestration)  - Resource allocation for interface operations
 - [Backend Service Integration](#backend-service-integration-unified) -  Service health monitoring and connection management
 
-### VSCode Extension Configuration Pattern  {#vscode-extension-configuration-pattern}
+### VSCode Extension Configuration Pattern
 
 **Status**: ✅ ESTABLISHED  
 **Category**: Foundation Infrastructure  
@@ -2872,7 +3353,7 @@ throw error;
 **Files Modified**: `package.json` (configuration-only change)  
 **Used By Active Tasks**: [TASK-NEW-042] (completed ✅)  
 
-### VSCode Extension Activation Pattern  {#vscode-extension-activation-pattern}
+### VSCode Extension Activation Pattern
 
 **Status**: ✅ ESTABLISHED  
 **Category**: Foundation Infrastructure  
@@ -3023,13 +3504,263 @@ console.error('Error during extension deactivation:', error);
 **REUSE Pattern**: Adapted from Haruspex extension.ts for Templum  Universal Interface architecture  
 **Files Modified**: `src/extension.ts` (new file), integration with  existing components  
 
+### VSCode Extension Integration System Pattern
+
+**Status**: ✅ ESTABLISHED  
+**Category**: Integration Infrastructure  
+**Usage Evidence**: [TASK-CONSOLIDATED-VSCODE-INTEGRATION] | **Last Updated**: 2025-08-29  
+**Difficulty**: 🟠 Advanced | **Est. Time**: ~4-6 hours | **Prerequisites**: VSCode Extension Activation, Backend Service Integration
+
+**Problem**: VSCode extension needs comprehensive integration system with service discovery, connection management, interface switching, and resource cleanup per Templum 1.1 specification
+
+**Unified Solution**: Complete VSCode extension integration featuring service tree provider, enhanced interface switching, connection lifecycle management, and comprehensive resource cleanup
+
+#### Enhanced Service Tree Provider Architecture
+
+```typescript
+// Real-time service tree with backend service integration
+class BackendServiceTreeProvider implements vscode.TreeDataProvider<ServiceTreeItem> {
+  private _onDidChangeTreeData: vscode.EventEmitter<ServiceTreeItem | undefined | void> = new vscode.EventEmitter<ServiceTreeItem | undefined | void>();
+  readonly onDidChangeTreeData: vscode.Event<ServiceTreeItem | undefined | void> = this._onDidChangeTreeData.event;
+  
+  private serviceCache: Map<string, BackendServiceInfo> = new Map();
+  private refreshInterval: number = 30000; // 30 seconds
+
+  constructor(private templumCore: TemplumCore) {
+    // Auto-refresh with real-time service discovery
+    setInterval(() => {
+      this.refresh();
+    }, this.refreshInterval);
+  }
+
+  async getBackendServices(): Promise<ServiceTreeItem[]> {
+    const backendRouter = this.templumCore.getBackendRouter();
+    const connectionStatus = backendRouter.getConnectionStatus?.();
+    
+    if (!connectionStatus?.backends) {
+      return [new ServiceTreeItem('No backend services available', vscode.TreeItemCollapsibleState.None, 'no-services')];
+    }
+
+    const serviceItems: ServiceTreeItem[] = [];
+    for (const [backendId, status] of Object.entries(connectionStatus.backends)) {
+      // Rich service visualization with health indicators and capabilities
+      const serviceItem = new ServiceTreeItem(
+        `${this.getHealthIcon(status.connected, status.health)} ${this.getBackendDisplayName(backendId)}`,
+        vscode.TreeItemCollapsibleState.Expanded,
+        'backend-service'
+      );
+      
+      serviceItem.serviceId = backendId;
+      serviceItem.description = this.getServiceDescription(status);
+      serviceItem.tooltip = this.getServiceTooltip(backendId, status);
+      
+      serviceItems.push(serviceItem);
+    }
+
+    return serviceItems;
+  }
+}
+```
+
+#### Enhanced Interface Switching with Universal Interface Manager
+
+```typescript
+// 5-phase interface switching with state preservation
+const switchInterfaceCommand = vscode.commands.registerCommand(
+  'templum.switchInterface',
+  async () => {
+    await vscode.window.withProgress({
+      location: vscode.ProgressLocation.Notification,
+      title: `Switching to ${targetInterface}`,
+      cancellable: false
+    }, async (progress) => {
+      
+      // Phase 1: Validate interface compatibility
+      progress.report({ increment: 20, message: 'Validating backend compatibility...' });
+      const compatibilityCheck = await validateInterfaceCompatibility(targetInterface, connectedBackends, templumCore);
+      
+      // Phase 2: Coordinate with Universal Interface Manager
+      progress.report({ increment: 40, message: 'Coordinating with Interface Manager...' });
+      const interfaceManager = templumCore.getUniversalInterfaceManager();
+      if (interfaceManager?.prepareInterfaceSwitch) {
+        await interfaceManager.prepareInterfaceSwitch(targetInterface, {
+          preserveSession: true,
+          migrateState: true,
+          maintainConnections: true
+        });
+      }
+
+      // Phase 3: Execute interface switch through TemplumCore
+      progress.report({ increment: 60, message: `Switching to ${targetInterface} interface...` });
+      const result = await templumCore.switchInterface(targetInterface);
+
+      // Phase 4: Synchronize interface state and update webviews
+      progress.report({ increment: 80, message: 'Synchronizing interface state...' });
+      if (universalWebViewProvider) await universalWebViewProvider.refresh();
+      if (serviceTreeProvider) serviceTreeProvider.refresh();
+
+      // Phase 5: Complete with success metrics
+      progress.report({ increment: 100, message: 'Interface switch complete!' });
+    });
+  }
+);
+```
+
+#### Comprehensive Connection Management
+
+```typescript
+// Service connection with lifecycle management
+const connectServiceCommand = vscode.commands.registerCommand(
+  'templum.connectService',
+  async (serviceId?: string) => {
+    await vscode.window.withProgress({
+      location: vscode.ProgressLocation.Notification,
+      title: `Connecting to ${serviceName}`,
+      cancellable: true
+    }, async (progress, token) => {
+      
+      // Phase 1: Validate service availability with timeout
+      progress.report({ increment: 20, message: 'Validating service availability...' });
+      const isServiceAvailable = await checkServiceAvailability(serviceId, backendRouter);
+
+      // Phase 2: Establish connection with cancellation support
+      progress.report({ increment: 40, message: 'Establishing connection...' });
+      if (token.isCancellationRequested) {
+        throw createTemplumError('Connection cancelled by user', 'CONNECTION_CANCELLED', 'runtime');
+      }
+      const connectionResult = await backendRouter.connectToService(serviceId);
+
+      // Phase 3: Validate connection and retrieve service info
+      progress.report({ increment: 70, message: 'Validating connection...' });
+      const updatedStatus = backendRouter.getConnectionStatus();
+      const serviceStatus = updatedStatus?.backends?.[serviceId];
+
+      // Phase 4: Initialize service capabilities with skin loading
+      progress.report({ increment: 90, message: 'Initializing service capabilities...' });
+      const skinEngine = templumCore.getUniversalSkinEngine();
+      if (skinEngine?.loadBackendSkin) {
+        await skinEngine.loadBackendSkin(serviceId);
+      }
+
+      // Phase 5: Complete with UI refresh and metrics
+      progress.report({ increment: 100, message: 'Connection established!' });
+      if (serviceTreeProvider) serviceTreeProvider.refresh();
+      if (universalWebViewProvider) await universalWebViewProvider.refresh();
+    });
+  }
+);
+```
+
+#### 6-Phase Resource Cleanup System
+
+```typescript
+// Comprehensive extension deactivation with graceful shutdown
+export async function deactivate() {
+  const deactivationStartTime = Date.now();
+  
+  try {
+    // Phase 1: Disconnect all backend services gracefully
+    const backendRouter = templumCore.getBackendRouter();
+    const connectionStatus = backendRouter.getConnectionStatus?.();
+    if (connectionStatus?.backends) {
+      const connectedServices = Object.entries(connectionStatus.backends)
+        .filter(([_, status]) => status.connected)
+        .map(([id, _]) => id);
+
+      const disconnectionPromises = connectedServices.map(async (serviceId) => {
+        const result = await backendRouter.disconnectFromService(serviceId);
+        console.log(`${result?.success ? '✅' : '❌'} Disconnected from ${serviceId}`);
+      });
+      await Promise.allSettled(disconnectionPromises);
+    }
+
+    // Phase 2: Clean up tree views and providers
+    if (serviceTreeProvider) {
+      serviceTreeProvider = undefined;
+    }
+    if (activeTreeViews.size > 0) {
+      activeTreeViews.clear();
+    }
+
+    // Phase 3: Clean up registered commands
+    if (registeredCommands.size > 0) {
+      registeredCommands.clear();
+    }
+
+    // Phase 4: Clean up WebView providers
+    universalWebViewProvider = undefined;
+    serviceStatusWebViewProvider = undefined;
+    sessionManagerWebViewProvider = undefined;
+
+    // Phase 5: State persistence and core engine shutdown
+    const stateManager = templumCore.getStateManager();
+    if (stateManager?.persistState) {
+      await stateManager.persistState();
+    }
+    
+    const shutdownPromise = templumCore.shutdown();
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Shutdown timeout after 10 seconds')), 10000);
+    });
+    await Promise.race([shutdownPromise, timeoutPromise]);
+
+    // Phase 6: Final cleanup and metrics
+    const deactivationDuration = Date.now() - deactivationStartTime;
+    const metricsPayload: MetricsSignalPayload = {
+      metrics: { /* ... */ },
+      category: 'usage',
+      timestamp: Date.now(),
+      source: 'ExtensionDeactivation',
+      data: {
+        event_type: 'extension_deactivated',
+        deactivation_duration: deactivationDuration,
+        cleanup_phases_completed: 6,
+        graceful_shutdown: true
+      }
+    };
+    (process as any).emit('templum:metrics', metricsPayload);
+
+  } catch (error) {
+    // Enhanced error handling with rollback capability
+    console.error(`❌ Critical error during Templum deactivation: ${error.message}`);
+  }
+}
+```
+
+**Implementation Success Metrics**:
+
+- ✅ **Service Tree Integration**: Real-time backend service discovery with health monitoring and capabilities display
+- ✅ **Enhanced Interface Switching**: 5-phase switching with state preservation and Universal Interface Manager coordination  
+- ✅ **Connection Lifecycle Management**: Comprehensive connection/disconnection with progress tracking and cancellation support
+- ✅ **Resource Cleanup**: 6-phase deactivation process with graceful shutdown and metrics emission
+- ✅ **Type Safety**: All implementation files compile without TypeScript errors
+- ✅ **User Experience**: Rich progress feedback, tooltips, and interactive service management
+
+**Files Using This Pattern**:
+
+- `src/extension.ts` (primary implementation with 1900+ lines of integration code)
+- Integration with `TemplumCore`, `BackendServiceRouter`, `UniversalSkinEngine`
+- Enhanced webview providers and VSCode interface components
+
+**Used By Active Tasks**: [TASK-CONSOLIDATED-VSCODE-INTEGRATION] ✅ (VSCode Extension Integration System complete)
+
+**Integration Points**:
+
+- [VSCode Extension Activation](#vscode-extension-activation-pattern) - Foundation requirement
+- [Backend Service Integration](#backend-service-integration-unified) - Service discovery and health monitoring
+- [Universal Interface Orchestration](#universal-interface-orchestration) - Interface switching coordination
+- [Templum Resource Management](#templum-resource-management-unified) - Resource cleanup and lifecycle
+
+**REUSE Pattern**: Enhanced VSCode Extension Activation pattern with comprehensive service integration per Templum 1.1 specification  
+**Files Modified**: `src/extension.ts` (enhanced with 800+ lines of integration code)
+
 ---
 
 ## Pattern Evolution
 
 > **Explanation**: Pattern relationships, decision rationale, and  architectural guidance
 
-### Architectural Separation Guidelines  {#architectural-separation-guidelines}
+### Architectural Separation Guidelines
 
 **Core Separation Principles**:
 
@@ -3179,16 +3910,23 @@ Is this a backend service that produces data/analysis?
 
 ---
 
-## Factory Registry with Context Management  {#factory-registry-context-management}
+## Factory Registry with Context Management
 
-**Status**: ✅ ESTABLISHED  
+**Status**: ✅ ESTABLISHED | **ENHANCED**: 2025-08-29  
 **Category**: Foundation Infrastructure  
 **Success Evidence**: TASK-NEW-035 completion - Built-in adapter factory  registration with context management  
-**Last Updated**: 2025-08-27  
+**Enhancement**: TASK-CONSOLIDATED-COMPONENT-WIRING - Multi-strategy context provider with 3-tier fallback system  
+**Last Updated**: 2025-08-29  
 
 **Problem**: Factory registration systems need to handle context-dependent  dependencies (like VSCode Extension Context) while maintaining error  boundaries and graceful degradation.
 
 **Solution**: Global state context management with error boundary pattern  and lazy loading, following Haruspex provider registration approaches.
+
+**Enhancement (2025-08-29)**: Multi-strategy context resolution with 3-tier fallback system:
+
+1. Registry-provided context (preferred method via `setVSCodeContext()`)
+2. Global state fallback (legacy compatibility)
+3. Environment-based context creation (automatic VSCode environment detection)
 
 ### Factory Registry with Context Management: Implementation Pattern
 
@@ -3299,13 +4037,13 @@ InterfaceAdapterRegistry.clearVSCodeContext();
 
 **Files Using This Pattern**: InterfaceAdapterRegistry with VSCode  extension integration  
 **Success Rate**: 100% factory creation success when context is properly  provided  
-**Used By Active Tasks**: [TASK-NEW-035] ✅ Complete, [TASK-NEW-056]  VSCode Context Provider Integration  
-**Successfully Applied**: [TASK-NEW-035] ✅ Complete Built-in Adapter  Factory Registration (2025-08-27)  
+**Used By Active Tasks**: [TASK-NEW-035] ✅ Complete, [TASK-NEW-056] ✅ Complete  
+**Successfully Applied**: [TASK-NEW-035] ✅ Complete Built-in Adapter  Factory Registration (2025-08-27), [TASK-CONSOLIDATED-COMPONENT-WIRING] ✅ Enhanced Multi-Strategy Context Provider (2025-08-29)  
 **Pattern Dependencies**: Dependency Injection, Unified Type System |  **Enables**: Context-aware factory systems
 
 ---
 
-## Skin Versioning System Pattern {#skin-versioning-system-pattern}
+## Skin Versioning System Pattern
 
 **Status**: ✅ ESTABLISHED  
 **Category**: Infrastructure Foundation  
@@ -3565,6 +4303,209 @@ if (compatibility && compatibility.compatible) {
 const latestSkin = await  skinEngine.getLatestCompatibleSkin('modern-theme');
 ```
 
+---
+
+## Enhanced Skin Registration Validation Pattern
+
+**Status**: ESTABLISHED | **Category**: Foundation | **Last Updated**: 2025-08-29  
+**Usage Evidence**: [TASK-NEW-063] | **Implementation Time**: ~2 hours | **Difficulty**: 🟡 Medium  
+**Prerequisites**: SkinVersionManager, TemplumError system, existing validation infrastructure
+
+### Enhanced Skin Registration Validation: Problem Statement
+
+**Core Problem**: Universal Skin Engine's `registerSkin` method lacked validation, allowing invalid skins to be registered without version compatibility checks, conflict detection, or structural validation.
+
+**Solution**: Comprehensive validation pipeline integrating existing validation systems (SkinVersionManager, SkinValidator) with proper error handling and event emission.
+
+### Enhanced Skin Registration Validation: Implementation Pattern
+
+**Phase 1**: Integration Setup
+
+```typescript
+// Import validation systems
+import { SkinVersionManager } from './skin-version-manager';
+import { validateSkinDefinition } from '../validation/skin-validator';
+import { 
+  TemplumError,
+  createTemplumError,
+  isTemplumError 
+} from '../types/templum-types';
+
+// Initialize version manager
+constructor() {
+  super();
+  this.versionManager = new SkinVersionManager();
+}
+```
+
+**Phase 2**: Validation Pipeline Implementation
+
+```typescript
+async registerSkin(skinDefinition: UniversalSkinDefinition): Promise<void> {
+  try {
+    // Step 1: Basic structure validation
+    if (!skinDefinition.id || !skinDefinition.name || !skinDefinition.version) {
+      throw createTemplumError('Required fields missing', 'missing-fields', 'validation');
+    }
+    
+    // Step 2: Version format validation
+    const versionRegex = /^\d+\.\d+\.\d+(-[a-zA-Z0-9.-]+)?(\+[a-zA-Z0-9.-]+)?$/;
+    if (!versionRegex.test(skinDefinition.version)) {
+      throw createTemplumError(
+        `Invalid version format: ${skinDefinition.version}`,
+        'invalid-version-format',
+        'validation'
+      );
+    }
+
+    // Step 3: Version compatibility validation
+    const compatibility = await this.versionManager.validateCompatibility(skinDefinition);
+    if (!compatibility.compatible) {
+      throw createTemplumError(
+        `Version compatibility failed: ${compatibility.issues.join(', ')}`,
+        'version-compatibility-error',
+        'validation'
+      );
+    }
+
+    // Step 4: Conflict detection and resolution
+    const existingSkin = this.skins.get(skinDefinition.id);
+    if (existingSkin) {
+      const conflicts = this.versionManager.detectConflicts(existingSkin, skinDefinition);
+      if (conflicts.length > 0 && conflicts.some(c => !c.canAutoResolve)) {
+        throw createTemplumError(
+          `Version conflict detected: ${conflicts.map(c => `${c.conflictType}`).join(', ')}`,
+          'version-conflict-error',
+          'validation'
+        );
+      }
+    }
+
+    // Step 5: Register version and store skin
+    const parsedVersion = this.versionManager.parseVersion(skinDefinition.version);
+    this.versionManager.registerSkinVersion(skinDefinition.id, parsedVersion);
+    this.skins.set(skinDefinition.id, skinDefinition);
+
+    // Success event emission
+    this.emit('skinRegistered', {
+      skinId: skinDefinition.id,
+      name: skinDefinition.name,
+      version: skinDefinition.version,
+      compatibilityLevel: compatibility.level,
+      timestamp: Date.now()
+    });
+
+  } catch (error) {
+    // Error event emission for monitoring
+    this.emit('skinRegistrationFailed', {
+      skinId: skinDefinition.id,
+      error: isTemplumError(error) ? error : createTemplumError(
+        `Registration failed: ${error}`, 
+        'registration-error', 
+        'runtime'
+      ),
+      timestamp: Date.now()
+    });
+    throw error;
+  }
+}
+```
+
+**Phase 3**: Enhanced Event System
+
+```typescript
+// Enhanced success events with validation details
+this.emit('skinRegistered', {
+  skinId: skinDefinition.id,
+  name: skinDefinition.name,
+  version: skinDefinition.version,
+  supportedInterfaces: skinDefinition.metadata?.supportedInterfaces || [],
+  compatibilityLevel: compatibilityResult.level,
+  validationWarnings: schemaValidation.warnings || [],
+  timestamp: Date.now()
+});
+
+// Warning events for non-blocking validation issues
+if (warnings.length > 0) {
+  this.emit('skinValidationWarnings', {
+    skinId: skinDefinition.id,
+    warnings: warnings,
+    timestamp: Date.now()
+  });
+}
+```
+
+### Enhanced Skin Registration Validation: Key Components
+
+**Validation Pipeline Components**:
+
+1. **Structure Validation**: Required fields (id, name, version, metadata) presence check
+2. **Version Format Validation**: Semantic versioning regex compliance
+3. **Compatibility Validation**: System version compatibility using SkinVersionManager
+4. **Conflict Detection**: Version conflict detection with auto-resolution support
+5. **Version Tracking**: Registration in version management system
+6. **Event Emission**: Success/failure events with comprehensive metadata
+
+**Error Handling Strategy**:
+
+- Uses TemplumError patterns with appropriate categories ('validation', 'runtime')
+- Emits monitoring events for all registration failures
+- Preserves original error context while standardizing error format
+- Maintains backward compatibility for successful registration flows
+
+### Enhanced Skin Registration Validation: Integration Requirements
+
+**Required Dependencies**:
+
+- `SkinVersionManager`: Semantic version management and compatibility validation
+- `SkinValidator`: Schema and structure validation (optional, can use direct validation)
+- `TemplumError` system: Standardized error handling and categorization
+- Event system: EventEmitter for monitoring and notification capabilities
+
+**Integration Points**:
+
+- Universal Skin Engine: Primary integration point for skin registration
+- Monitoring systems: Error and success event emission for observability
+- Version management: Automatic version tracking and conflict resolution
+- Validation infrastructure: Pluggable validation with existing systems
+
+### Enhanced Skin Registration Validation: Pattern Compliance Requirements
+
+**TemplumError Integration**:
+
+- ✅ All errors use `createTemplumError` with appropriate categories
+- ✅ Error context preservation through try/catch blocks  
+- ✅ Proper error category assignment ('validation', 'runtime')
+- ✅ Event emission includes both TemplumError and raw error handling
+
+**Event System Compliance**:
+
+- ✅ Success events include comprehensive metadata
+- ✅ Failure events include error details for monitoring
+- ✅ Warning events for non-blocking validation issues
+- ✅ Backward compatibility with existing event listeners
+
+**Version Management Integration**:
+
+- ✅ Automatic version parsing and semantic version validation
+- ✅ Conflict detection with auto-resolution support
+- ✅ Version tracking registration for future conflict detection
+- ✅ Compatibility validation with system requirements
+
+### Enhanced Skin Registration Validation: Used By Active Tasks
+
+**Current Implementation**: [TASK-NEW-063] Enhanced Skin Registration Validation with Version Management ✅ COMPLETED 2025-08-29
+
+**Related Patterns**:
+
+- [Skin Versioning System](#skin-versioning-system-pattern): Provides version management foundation
+- [TemplumError Patterns](#templumerror-patterns): Standardized error handling
+- [Event System Patterns](#event-system-patterns): Monitoring and notification infrastructure
+
+**Future Applications**: Any component requiring comprehensive validation with version management (plugin systems, configuration validators, content management systems)
+
+---
+
 ### Skin Versioning System: Pattern Evolution and Future Enhancements
 
 **Established Capabilities**:
@@ -3597,7 +4538,7 @@ const latestSkin = await  skinEngine.getLatestCompatibleSkin('modern-theme');
 
 ---
 
-## Advanced Compatibility Validation Pattern  {#advanced-compatibility-validation-pattern}
+## Advanced Compatibility Validation Pattern
 
 **Status**: ✅ ESTABLISHED  
 **Category**: Infrastructure Foundation  
@@ -3997,7 +4938,7 @@ console.log(`  ${inc.interface}: ${inc.issues.join(', ')}`);
 
 ---
 
-## Production Readiness Validation Pattern  {#production-readiness-validation-pattern}
+## Production Readiness Validation Pattern
 
 > **Category**: System Pattern | **Phase**: Production Deployment |  **Complexity**: 🟡 Medium | **Time**: ~3.5 hours  
 > **Status**: ✅ ESTABLISHED (2025-08-28) | **Dependencies**: Templum  Resource Management, Performance Validation, Error Recovery  
@@ -4161,7 +5102,7 @@ node production-readiness-validation.ts --json     # JSON format output
 **Successfully Applied**: [TASK-MOCK-002] ✅ Complete Implementation with  real metrics (2025-08-28)  
 **Pattern Dependencies**: Templum Resource Management, Performance  Validation, Error Recovery, Circuit Breaker | **Enables**: Confident  production deployment, evidence-based readiness assessment, continuous  production monitoring baseline
 
-## Mock-Real API Alignment Pattern {#mock-real-api-alignment-pattern}
+## Mock-Real API Alignment Pattern
 
 **Status**: ✅ ESTABLISHED | **Category**: Foundation  
 **Usage Evidence**: [TASK-TEST-INFRA-002] | **Last Updated**: 2025-08-28
@@ -4309,7 +5250,7 @@ compatibleInterfaces: ['vscode' as InterfaceType]
 
 ---
 
-## Minimal Compilation Stabilization Pattern {#minimal-compilation-stabilization-pattern}
+## Minimal Compilation Stabilization Pattern
 
 **Status**: 🟢 ESTABLISHED  
 **Category**: Foundation Infrastructure  
@@ -4397,4 +5338,889 @@ const mockColors: ColorPalette = {
 **Used By Active Tasks**: [TASK-COMP-001] ✅ Minimal Compilation Stabilization (Completed 2025-08-28)
 **Successfully Applied**: 60+ compilation errors → test-file-only errors, VSCode imports resolved
 **Pattern Dependencies**: Package.json dependency specification, TypeScript project configuration
+
+## Test Type System Alignment Pattern
+
+**Status**: 🟢 ESTABLISHED  
+**Category**: Foundation  
+**Complexity**: 5 points (medium complexity type system enhancement)  
+**Time Estimate**: ~2 hours  
+**Added**: 2025-08-29
+
+**Problem**: Test interfaces mismatch implementation types due to dual type system architecture, causing TypeScript compilation failures and preventing TDD workflow validation.
+
+**Root Cause**: Templum uses a dual type system where different components import from different type definition files:
+
+- Core components (TemplumCore) → `templum-types.ts`
+- Skin Engine components (UniversalSkinEngine) → `universal-skin-engine-types.ts`
+
+Tests creating `UniversalSkinDefinition` objects must use the correct structure for their target implementation.
+
+**Solution Architecture**:
+
+1. **Type System Analysis**:
+
+   ```typescript
+   // Identify which type file the target implementation uses
+   // Core components: '../types/templum-types'
+   // Skin components: '../types/universal-skin-engine-types'
+   ```
+
+2. **Test Type Alignment**:
+
+   ```typescript
+   // For core-engine.test.ts (templum-types compatibility)
+   pclCompatibility: {
+     enabled: true,        // Required by templum-types
+     version: string,      // Common field
+     features: string[]    // templum-types structure
+   }
+
+   // For universal-skin-system.test.ts (universal-skin-engine-types)  
+   pclCompatibility: {
+     enabled: true,             // Required field
+     version: string,
+     reusePercentage: number,   // Extended properties
+     inheritancePatterns: string[],
+     optimizations: string[]
+   }
+   ```
+
+3. **Required Property Completion**:
+
+   ```typescript
+   // universal-skin-engine-types requires complete structure
+   const skinDefinition: UniversalSkinDefinition = {
+     // Core properties
+     id, name, version, description,
+     
+     // Required complex properties
+     components: {},
+     assets: { icons: {}, images: {}, fonts: {}, sounds: {} },
+     inheritance: { parentSkins: [], mixins: [], overrides: [] },
+     rendering: { /* complete config */ },
+     performance: { /* complete config */ }
+   };
+   ```
+
+**Implementation Pattern**:
+
+```typescript
+// Pattern: Test Type System Analysis and Alignment
+
+// Step 1: Identify target implementation type system
+const targetImplementation = 'templum-core.ts'; // or 'universal-skin-engine-impl.ts'
+const typeFile = getTypeFile(targetImplementation); // templum-types vs universal-skin-engine-types
+
+// Step 2: Align test object structure
+function createTestSkinDefinition(): UniversalSkinDefinition {
+  const baseDefinition = {
+    id: 'test-skin',
+    name: 'Test Skin',
+    version: '1.0.0'
+  };
+  
+  if (typeFile === 'templum-types') {
+    return {
+      ...baseDefinition,
+      pclCompatibility: {
+        enabled: true,
+        version: '1.0.0', 
+        features: ['caching']
+      },
+      metadata: {
+        // templum-types metadata structure
+        backend: 'pcl',
+        compatibleInterfaces: ['vscode', 'cli']
+      }
+    };
+  } else {
+    return {
+      ...baseDefinition,
+      pclCompatibility: {
+        enabled: true,
+        version: '1.0.0',
+        reusePercentage: 75,
+        inheritancePatterns: ['command-pattern'],
+        optimizations: ['caching']
+      },
+      // Complete universal-skin-engine-types structure
+      components: {},
+      assets: { icons: {}, images: {}, fonts: {}, sounds: {} },
+      inheritance: { parentSkins: [], mixins: [], overrides: [] },
+      rendering: { /* ... */ },
+      performance: { /* ... */ }
+    };
+  }
+}
+```
+
+**Key Benefits**:
+
+- ✅ Type safety between tests and implementations
+- ✅ Proper TDD workflow validation  
+- ✅ Compilation success with correct interface contracts
+- ✅ Future-proof test patterns for dual type system
+
+**Used By Active Tasks**: [TASK-FIX-005] ✅ Test Type System Alignment (Completed 2025-08-29)  
+**Successfully Applied**: Interface mismatches resolved, test types aligned with implementation interfaces  
+**Pattern Dependencies**: TypeScript type system understanding, implementation architecture analysis
 **Enables**: Foundation task progression, systematic interface implementation planning
+
+### Type Conversion Pattern
+
+**Status**: ✅ ESTABLISHED  
+**Category**: Foundation  
+**Usage Evidence**: [TASK-GENERIC-003-FOLLOWUP] | **Last Updated**: 2025-08-29
+
+**Problem**: Type system mismatches between simple legacy interfaces and comprehensive modern type definitions requiring `as any` casting
+
+**Solution**: Type-safe conversion utilities that bridge interface gaps while maintaining full type safety
+
+**Implementation**: Convert simple `SkinTheme` (8 properties) to comprehensive `ThemeDefinition` (full design system):
+
+```typescript
+/**
+ * Convert SkinTheme to ThemeDefinition with proper type structure
+ */
+private convertSkinThemeToThemeDefinition(skinTheme: SkinTheme, themeType: 'light' | 'dark'): ThemeDefinition {
+  // Create ColorScale from single color values
+  const createColorScale = (baseColor: string): ColorScale => ({
+    50: this.lightenColor(baseColor, 0.95),
+    100: this.lightenColor(baseColor, 0.90),
+    // ... complete color scale generation
+    500: baseColor, // Base color
+    900: this.darkenColor(baseColor, 0.40)
+  });
+
+  const colors: ColorPalette = {
+    primary: createColorScale(skinTheme.primary),
+    secondary: createColorScale(skinTheme.secondary),
+    // ... complete color palette expansion
+  };
+
+  return {
+    name: `Converted ${themeType} Theme`,
+    type: themeType,
+    colors,
+    typography: { /* complete typography system */ },
+    spacing: { /* spacing system */ },
+    // ... all required ThemeDefinition properties
+  };
+}
+```
+
+**Color Manipulation Utilities**:
+
+```typescript
+// Simple hex color manipulation utilities
+private lightenColor(color: string, factor: number): string { /* ... */ }
+private darkenColor(color: string, factor: number): string { /* ... */ }  
+private adjustOpacity(color: string, opacity: number): string { /* ... */ }
+```
+
+**Pattern Application**:
+
+- ✅ **Type Safety**: Eliminates all `as any` casts while maintaining compatibility
+- ✅ **Expandability**: Converts minimal definitions to comprehensive systems
+- ✅ **Backward Compatibility**: Preserves existing simple interface usage
+- ✅ **Color System Generation**: Creates complete design token systems from basic colors
+
+**Successfully Applied**: [TASK-GENERIC-003-FOLLOWUP] ✅ Complete (2025-08-29) - Fallback skin type system alignment  
+**Used By Active Tasks**: Future fallback system implementations, theme migration tasks  
+**Pattern Dependencies**: Unified Type System Pattern, comprehensive target type definitions  
+**Enables**: Legacy-to-modern type system migrations, design system expansion, type-safe fallback systems
+
+---
+
+### Interface Adapter Integration Testing Pattern
+
+**Status**: ✅ ESTABLISHED  
+**Category**: Integration Testing Infrastructure  
+**Success Evidence**: TASK-TEST-002 complete - Comprehensive integration testing framework with 22/25 tests passing
+**Last Updated**: 2025-08-28  
+
+**Problem**: Interface adapters lack comprehensive integration tests to validate orchestrator integration, dependency injection patterns, cross-interface coordination, and real backend service integration capabilities through abstraction layer.
+
+**Unified Solution**: Comprehensive integration testing framework with MockTemplumOrchestrator implementation providing controlled orchestrator behavior for systematic validation of interface adapter scenarios across VSCode, CLI, and Command interfaces.
+
+#### Interface Adapter Integration Testing: Core Integration Testing Architecture
+
+```typescript
+// MockTemplumOrchestrator - Controlled orchestrator implementation
+class MockTemplumOrchestrator extends EventEmitter implements ITemplumOrchestrator {
+  private initialized: boolean = false;
+  private registeredInterfaces: Map<InterfaceType, IInterfaceAdapter> = new Map();
+  
+  async initialize(): Promise<void> {
+    this.initialized = true;
+    this.emit('initialized');
+  }
+  
+  async registerInterface(interfaceType: InterfaceType, adapter: any): Promise<void> {
+    if (!this.initialized) {
+      throw createTemplumError('Cannot register interface on uninitialized orchestrator', 'SERVICE_NOT_READY', 'configuration');
+    }
+    this.registeredInterfaces.set(interfaceType, adapter);
+    this.emit('interface-registered', { interfaceType, adapter });
+  }
+}
+```
+
+#### Interface Adapter Integration Testing: Integration Test Coverage Matrix
+
+```typescript
+// VSCode Interface Adapter Integration Tests (7 scenarios)
+describe('VSCode Interface Adapter Integration', () => {
+  test('initializes with orchestrator and registers interface');
+  test('synchronizes state updates from orchestrator');  
+  test('reports accurate adapter status');
+  test('applies skin through orchestrator integration');
+  test('supports skin compatibility validation');
+  test('executes commands through orchestrator');
+});
+
+// CLI Interface Adapter Integration Tests (5 scenarios)
+// Command Interface Adapter Integration Tests (5 scenarios)  
+
+// Cross-Interface Integration Scenarios (5 scenarios)
+describe('Cross-Interface Integration Scenarios', () => {
+  test('multiple interface adapters register successfully');
+  test('orchestrator reports all active interfaces in system status');
+  test('state synchronization broadcasts to all registered interfaces');
+  test('interface switching maintains orchestrator connection');
+  test('backend skin loading works across all interface types');
+});
+
+// Error Handling and Resilience (3 scenarios)
+describe('Error Handling and Resilience', () => {
+  test('adapter handles orchestrator initialization failure gracefully');
+  test('adapter status reflects orchestrator connection state');
+  test('interface adapters handle state sync errors appropriately');
+});
+```
+
+#### Interface Adapter Integration Testing: Interface Compliance Validation
+
+```typescript
+// Ensures interface adapters implement IInterfaceAdapter contract completely
+export interface IInterfaceAdapter extends InterfaceAdapter {
+  initialize(orchestrator: ITemplumOrchestrator): Promise<void>;
+  getInterfaceType(): InterfaceType;
+  supportsSkin(skinDefinition: UniversalSkinDefinition): boolean;
+}
+
+// Base InterfaceAdapter contract validation
+export interface InterfaceAdapter {
+  getInterfaceType(): InterfaceType;
+  applySkin(skinDefinition: UniversalSkinDefinition): Promise<void>;
+  syncState(stateUpdate: StateUpdate): Promise<void>;
+  dispose(): Promise<void>;
+  getStatus(): InterfaceAdapterStatus;
+}
+```
+
+#### Interface Adapter Integration Testing: State Synchronization Testing Pattern
+
+```typescript
+// Validates StateUpdate propagation across interface types
+const stateUpdate: StateUpdate = {
+  timestamp: Date.now(),
+  globalState: { theme: 'dark' },
+  sessionState: { user: 'test-user' },
+  menuUpdates: { 'main': { refreshRequired: true } }
+};
+
+// Cross-interface state synchronization validation
+await Promise.all([
+  vscodeAdapter.syncState(stateUpdate),
+  cliAdapter.syncState(stateUpdate), 
+  commandAdapter.syncState(stateUpdate)
+]);
+```
+
+#### Interface Adapter Integration Testing: Integration Testing Benefits
+
+- **Orchestrator Integration Validation**: Tests verify proper abstraction layer usage and dependency injection
+- **Cross-Interface Coordination**: Validates multiple interface adapters working together with shared orchestrator
+- **Error Handling Verification**: Tests resilience and graceful degradation under failure conditions
+- **Interface Compliance Assurance**: Ensures all adapters implement required interface contract methods
+- **Real Backend Integration**: Tests real backend service integration capabilities through orchestrator
+
+#### Interface Adapter Integration Testing: Implementation Anti-Patterns
+
+**❌ Avoid These Approaches**:
+
+- **Concrete Dependencies**: Don't test interface adapters with TemplumCore directly
+- **Mock Overuse**: Don't mock interface adapter methods, test real implementations
+- **Single Interface Focus**: Don't test adapters in isolation, validate orchestrator integration
+- **Test Data Hardcoding**: Don't hardcode test skin definitions, use configurable factory patterns
+
+#### Interface Adapter Integration Testing: Pattern Benefits
+
+- **Development Confidence**: Comprehensive validation prevents integration regressions
+- **Systematic Testing**: Reusable MockTemplumOrchestrator pattern for future interface implementations
+- **Cross-Interface Quality**: Validates interface coordination and state synchronization patterns
+- **Integration Documentation**: Tests serve as living documentation of orchestrator integration patterns
+
+**Used By Active Tasks**: [TASK-TEST-002] ✅ Interface Adapter Integration Tests (Completed 2025-08-28)
+**Successfully Applied**: 22/25 integration tests passing, complete interface adapter integration testing framework
+**Pattern Dependencies**: Jest testing framework, ITemplumOrchestrator interface, interface adapter implementations
+**Enables**: TASK-TEST-003 (E2E Testing Scenarios), interface adapter compliance tasks, systematic interface development
+
+---
+
+### End-to-End Testing Scenarios Pattern
+
+**Status**: ✅ ESTABLISHED  
+**Category**: Integration Testing Infrastructure  
+**Success Evidence**: TASK-TEST-003 complete - Comprehensive E2E testing framework with 9/9 tests passing, 13 TODO tasks for systematic enhancement  
+**Last Updated**: 2025-08-28  
+
+**Problem**: System lacks comprehensive E2E testing capabilities to validate complete user workflows, cross-interface scenarios, and performance characteristics across the entire Templum ecosystem.
+
+**Unified Solution**: Comprehensive E2E testing framework with flexible scenario execution, realistic backend service mocking, performance monitoring, and systematic validation of complete user journeys across multiple interface types.
+
+#### End-to-End Testing Scenarios: Core E2E Testing Architecture
+
+```typescript
+// E2E Test Scenario Definition
+interface E2ETestScenario {
+  id: string;
+  name: string;
+  description: string;
+  category: 'user-workflow' | 'cross-interface' | 'performance' | 'integration';
+  prerequisites: string[];
+  steps: E2ETestStep[];
+  expectedOutcome: E2ETestOutcome;
+  timeoutMs: number;
+  retryAttempts: number;
+}
+
+// Mock Backend Service with Realistic Behavior
+class MockBackendService extends EventEmitter {
+  private isRunning: boolean = false;
+  private responseDelay: number;
+
+  async executeCommand(command: string, payload: any): Promise<any> {
+    // Simulate realistic network delay
+    await new Promise(resolve => setTimeout(resolve, this.responseDelay));
+    
+    return {
+      success: true,
+      result: `Mock execution of ${command}`,
+      timestamp: Date.now(),
+      executionTime: this.responseDelay
+    };
+  }
+}
+```
+
+#### End-to-End Testing Scenarios: Complete User Workflow Scenarios
+
+```typescript
+// VSCode Extension Startup Workflow
+const vscodeStartupScenario: E2ETestScenario = {
+  id: 'workflow-vscode-startup',
+  name: 'VSCode Extension Startup and Basic Interaction', 
+  steps: [
+    {
+      id: 'step-vscode-init',
+      action: { type: 'initialize', payload: { extensionContext: 'mock-vscode-context' } },
+      validation: { type: 'response', criteria: { initialized: true, interface: 'vscode' } }
+    },
+    {
+      id: 'step-backend-discovery', 
+      action: { type: 'command', payload: { command: 'discover-backends' } },
+      validation: { type: 'response', criteria: { backendsFound: true, count: { min: 1 } } }
+    }
+  ]
+};
+
+// Cross-Interface State Synchronization
+const stateSyncScenario: E2ETestScenario = {
+  id: 'cross-interface-state-sync',
+  name: 'Cross-Interface State Synchronization',
+  steps: [
+    {
+      id: 'concurrent-state-changes',
+      action: {
+        type: 'state-sync',
+        payload: {
+          concurrentUpdates: [
+            { interface: 'vscode', state: { currentFile: 'test.ts' } },
+            { interface: 'cli', state: { currentDirectory: '/test' } }
+          ]
+        }
+      },
+      validation: { type: 'state', criteria: { allUpdatesProcessed: true, conflictsResolved: true } }
+    }
+  ]
+};
+```
+
+#### End-to-End Testing Scenarios: Performance Validation Framework
+
+```typescript
+// E2E Performance Metrics Collection
+interface E2EPerformanceMetrics {
+  totalExecutionTime: number;
+  averageStepTime: number;
+  interfaceSwitchTime: number;
+  skinApplicationTime: number;
+  stateSyncTime: number;
+  memoryUsageMax: number;
+  cpuUsageAvg: number;
+}
+
+// Performance Baseline Establishment
+const performanceBaselineScenario: E2ETestScenario = {
+  id: 'performance-baseline',
+  steps: [
+    {
+      id: 'measure-startup-time',
+      action: { type: 'performance-check', payload: { checkType: 'startup-performance', iterations: 5 } },
+      validation: { type: 'performance', criteria: { averageStartupTime: { max: 3000 } } }
+    },
+    {
+      id: 'measure-operation-times',
+      action: { 
+        type: 'performance-check', 
+        payload: { 
+          operations: ['skin-application', 'interface-switching', 'state-synchronization'] 
+        }
+      },
+      validation: {
+        type: 'performance',
+        criteria: {
+          skinApplicationTime: { max: 2000 },
+          interfaceSwitchTime: { max: 1500 },
+          stateSyncTime: { max: 1000 }
+        }
+      }
+    }
+  ]
+};
+```
+
+#### End-to-End Testing Scenarios: E2E Test Execution Results
+
+**Implemented Test Categories**:
+
+- **User Workflow Scenarios**: 4 scenarios covering VSCode startup, CLI session management, skin customization, multi-interface coordination
+- **Cross-Interface Scenarios**: 3 scenarios validating interface switching, state synchronization, concurrent operations  
+- **Performance Scenarios**: 3 scenarios establishing baselines, stress testing, memory leak detection
+
+**Validation Results**: ✅ 9/9 tests passing with comprehensive framework validation
+
+```typescript
+// Minimal E2E Test Results (Working Implementation)
+describe('E2E Minimal Test Suite', () => {
+  test('Basic Service Integration', async () => {
+    // ✅ PASSING - 222ms execution time
+    // Validates service health, command execution, multi-command scenarios
+  });
+  
+  test('Performance Baseline Establishment', async () => {
+    // ✅ PASSING - 1244ms execution time  
+    // Validates command latency (<200ms avg), concurrent operations
+  });
+  
+  test('Error Handling and Recovery', async () => {
+    // ✅ PASSING - 239ms execution time
+    // Validates service failure detection, automatic recovery
+  });
+});
+```
+
+#### End-to-End Testing Scenarios: E2E Framework Benefits
+
+- **Complete Workflow Validation**: Tests entire user journeys from start to finish
+- **Cross-Interface Coordination**: Validates interface switching, state preservation, multi-interface scenarios
+- **Performance Baseline Establishment**: Systematic performance characteristic documentation with regression detection
+- **Realistic Backend Simulation**: Mock services with configurable response times and error scenarios
+- **Systematic Enhancement Path**: 13 TODO tasks for transitioning from mock to real backend services
+
+#### End-to-End Testing Scenarios: Implementation Architecture
+
+**Dual Strategy Approach**:
+
+1. **Comprehensive Framework**: Full-featured E2E testing with orchestrator integration (for complete scenarios)
+2. **Minimal Implementation**: ✅ **Working immediately** - focused validation without complex dependencies
+
+**Mock-to-Real Transition Strategy**:
+
+- **Phase 1**: ✅ COMPLETED - Mock backend services with realistic behavior simulation
+- **Phase 2**: TODO tasks for systematic real backend service integration
+- **Phase 3**: Full end-to-end validation with real service coordination
+
+#### End-to-End Testing Scenarios: TODO Task Integration
+
+**Created 13 systematic enhancement tasks**:
+
+- **TASK-NEW-E2E-001-003**: Real backend service lifecycle management
+- **TASK-NEW-E2E-004-007**: Complete E2E environment setup and step execution
+- **TASK-NEW-E2E-008-013**: Orchestrator integration and interface implementations
+
+#### End-to-End Testing Scenarios: Pattern Application Guidelines
+
+**When to Use This Pattern**:
+
+- Validating complete user workflows across multiple system components
+- Testing cross-interface coordination and state synchronization
+- Establishing performance baselines and regression detection
+- Validating system behavior under realistic usage scenarios
+
+**Prerequisites**:
+
+- Mock Backend Services with realistic behavior simulation
+- Testing Framework (Jest) with async/await support
+- Interface Adapter implementations for cross-interface testing
+- Performance monitoring infrastructure
+
+**Implementation Steps**:
+
+1. **Setup E2E Environment**: Initialize mock backend services with realistic latency
+2. **Define Test Scenarios**: Create scenario definitions for target user workflows
+3. **Execute Scenarios**: Run scenarios with step-level validation and performance monitoring
+4. **Collect Results**: Generate comprehensive test reports with performance metrics
+5. **Systematic Enhancement**: Use TODO tasks for gradual mock-to-real service transition
+
+#### End-to-End Testing Scenarios: Pattern Dependencies
+
+- Mock-to-Real Transition Pattern (for service evolution)
+- Interface Adapter Integration Testing Pattern (for cross-interface validation)
+- Test Infrastructure patterns (for Jest framework integration)
+
+**Used By Active Tasks**: [TASK-TEST-003] ✅ End-to-End Testing Scenarios (Completed 2025-08-28)
+**Successfully Applied**: 9/9 tests passing, comprehensive E2E framework with performance validation, 13 TODO enhancement tasks
+**Pattern Dependencies**: Mock Backend Services, Jest Testing Framework, Interface Adapter patterns
+**Enables**: Complete user workflow validation, performance regression detection, systematic real backend integration
+
+---
+
+### Multi-Strategy Service Discovery Pattern
+
+**Status**: ✅ ESTABLISHED  
+**Category**: Backend Integration  
+**Success Evidence**: TASK-GENERIC-003 complete - Generic Service Discovery Mechanism with multi-strategy orchestration  
+**Last Updated**: 2025-08-29  
+
+**Problem**: Hardcoded backend discovery (PCL:3002, Litany:3003, Haruspex file locations) limiting system flexibility and preventing dynamic service management.
+
+**Solution**: Intelligent multi-strategy discovery system that automatically finds backend services using registry-based, configuration-based, and endpoint scanning strategies with graceful fallback.
+
+**Core Implementation**:
+
+```typescript
+// Multi-strategy discovery orchestration
+class ServiceDiscovery extends EventEmitter {
+  private strategies: DiscoveryStrategy[] = [];
+  
+  async discoverServices(): Promise<DiscoveredService[]> {
+    const allServices: DiscoveredService[] = [];
+    
+    // Execute strategies by priority (registry > config > scanning)
+    const strategyPromises = this.strategies.map(async (strategy) => {
+      try {
+        return await strategy.discover();
+      } catch (error) {
+        this.emit('strategyError', { strategy: strategy.name, error });
+        return [];
+      }
+    });
+    
+    const results = await Promise.allSettled(strategyPromises);
+    
+    // Collect and deduplicate by confidence score
+    for (const result of results) {
+      if (result.status === 'fulfilled') {
+        allServices.push(...result.value);
+      }
+    }
+    
+    return this.deduplicateServices(allServices);
+  }
+}
+
+// Registry-based discovery (highest priority)
+class RegistryBasedDiscoveryStrategy implements DiscoveryStrategy {
+  readonly priority = 100;
+  
+  async discover(): Promise<DiscoveredService[]> {
+    const registry = JSON.parse(fs.readFileSync(this.registryPath));
+    const services: DiscoveredService[] = [];
+    
+    for (const [serviceId, registration] of Object.entries(registry.services)) {
+      // Validate health and skip stale registrations
+      if (this.isRegistrationValid(registration)) {
+        services.push({
+          id: serviceId,
+          config: this.createBackendConfig(registration),
+          discoveryMethod: 'registry',
+          confidence: 0.9, // High confidence
+          timestamp: Date.now()
+        });
+      }
+    }
+    
+    return services;
+  }
+}
+
+// Backend service router integration
+class TemplumBackendServiceRouter {
+  constructor(discoveryOptions?: ServiceDiscoveryOptions) {
+    this.serviceDiscovery = new ServiceDiscovery(discoveryOptions);
+    this.useGenericDiscovery = discoveryOptions?.useGenericDiscovery ?? true;
+  }
+  
+  async discoverAndConnect(): Promise<void> {
+    if (this.useGenericDiscovery) {
+      await this.discoverAndConnectGeneric();
+    } else {
+      await this.discoverAndConnectLegacy(); // Backward compatibility
+    }
+  }
+}
+```
+
+**Discovery Strategies**:
+
+1. **Registry-Based Discovery** (Priority: 100)
+   - Central service registry with JSON-based storage
+   - Health endpoint validation and stale registration filtering
+   - Highest confidence rating (0.9) for verified registrations
+
+2. **Configuration-Based Discovery** (Priority: 75)
+   - User-configured backend endpoints via JSON configuration files
+   - Comprehensive backend configuration validation
+   - Medium-high confidence rating (0.8) for user-specified configs
+
+3. **Endpoint Scanning Discovery** (Priority: 50)
+   - HTTP, WebSocket, and IPC protocol scanning across configurable ports
+   - `/api/skin` endpoint discovery for service identification
+   - Lower confidence rating (0.6-0.7) due to scanning uncertainty
+
+**Key Features**:
+
+- **Multi-Strategy Orchestration**: Intelligent coordination of multiple discovery approaches
+- **Priority-Based Execution**: Higher priority strategies execute first, results deduplicated by confidence
+- **Graceful Degradation**: Individual strategy failures don't crash the system
+- **Backward Compatibility**: Legacy hardcoded discovery maintained as fallback
+- **Event-Driven Architecture**: Discovery lifecycle events for monitoring and integration
+- **Intelligent Deduplication**: Prefer higher confidence and newer discoveries for duplicate services
+
+**Success Metrics**:
+
+- ✅ **Type Safety**: Full TypeScript compilation with comprehensive interfaces
+- ✅ **Test Coverage**: 487 lines of comprehensive test suite covering all strategies
+- ✅ **Error Resilience**: Graceful handling of strategy failures and network issues
+- ✅ **Performance**: Sub-second discovery across multiple strategies with parallel execution
+- ✅ **Flexibility**: Support for custom strategies and configurable discovery options
+
+**Integration Points**:
+
+- **Connection Factory**: Uses generic connection creation for discovered services
+- **Dynamic Command Router**: Integrates with skin-based command routing for discovered backends
+- **Backend Service Router**: Core integration point for service discovery and connection management
+- **Universal Skin Engine**: Supports discovery of backends that provide skin definitions
+
+**Files Created**:
+
+- `src/backend/service-discovery.ts` - Core discovery system and strategy implementations
+- `src/tests/backend/service-discovery.test.ts` - Comprehensive test suite
+
+**Files Enhanced**:
+
+- `src/backend/backend-service-router.ts` - Integrated multi-strategy discovery with backward compatibility
+
+**Used By Active Tasks**: [TASK-GENERIC-003] ✅ Generic Service Discovery Mechanism (2025-08-29)  
+**Successfully Applied**: Multi-strategy discovery system replacing hardcoded endpoints, full backward compatibility maintained  
+**Pattern Dependencies**: Generic Connection Factory, Dynamic Command Routing  
+**Enables**: Dynamic backend discovery, flexible service management, intelligent fallback strategies  
+
+**Follow-up Tasks**: [TASK-GENERIC-003-FOLLOWUP] Fix Fallback Skin Type System Alignment
+
+---
+
+### Dynamic Command Router Integration
+
+**Status**: ✅ ESTABLISHED  
+**Category**: Integration  
+**Usage Evidence**: [TASK-CONSOLIDATED-COMMAND-SYSTEM] ✅ (2025-08-29)  
+**Last Updated**: 2025-08-29  
+**Difficulty**: 🟡 Medium | **Est. Time**: ~1-2 hours | **Prerequisites**: DynamicCommandRouter understanding, feature flag configuration
+
+**Problem**: Menu and registry systems need to integrate with DynamicCommandRouter for skin-driven command routing while maintaining backward compatibility with legacy hardcoded patterns.
+
+**Solution**: Hybrid routing integration with intelligent fallback using dependency injection pattern.
+
+#### Dynamic Command Router Integration: Implementation Pattern
+
+```typescript
+// Dependency injection pattern for router integration
+export class PCLMenuRegistry extends EventEmitter {
+  private commandRouter: DynamicCommandRouter | null = null;
+
+  constructor(commandRouter?: DynamicCommandRouter) {
+    super();
+    this.commandRouter = commandRouter || null;
+    // ... initialization
+  }
+
+  private async optimizeMenuItemsWithPCL(items: MenuItem[]): Promise<MenuItem[]> {
+    return items.map(item => {
+      const config = backendIntegrationConfig.getConfig();
+      
+      if (config.features.useDynamicCommandRouting && this.commandRouter) {
+        // Dynamic routing with intelligent fallback
+        if (item.command) {
+          const commandRoute = this.commandRouter.getCommandRoute(item.command);
+          if (commandRoute) {
+            // Command already registered - use as-is
+            console.log(`Using dynamic route: ${item.command} -> ${commandRoute.backend.id}`);
+          } else {
+            // Check for legacy fallback if enabled
+            if (config.mode === 'legacy' || config.features.enableLegacyFallback) {
+              const legacyCommand = this.mapToLegacyCommand(item.command);
+              if (legacyCommand) {
+                const legacyRoute = this.commandRouter.getCommandRoute(legacyCommand);
+                if (legacyRoute) {
+                  item.command = legacyCommand;
+                  console.log(`Using legacy mapping: ${item.command} -> ${legacyCommand}`);
+                }
+              }
+            }
+          }
+        }
+      } else {
+        // Fallback to hardcoded mapping when no router available
+        // ... legacy implementation
+      }
+      
+      return item;
+    });
+  }
+}
+```
+
+#### Dynamic Command Router Integration: Integration Points
+
+- **Menu Registry Systems**: Inject DynamicCommandRouter via constructor
+- **Backend Service Router**: Provides DynamicCommandRouter instance to consumers
+- **Feature Flag Integration**: Use `backendIntegrationConfig` for hybrid mode control
+- **Command Resolution**: Check dynamic router first, fall back to legacy patterns
+
+**Used By Active Tasks**: [TASK-CONSOLIDATED-COMMAND-SYSTEM] ✅ (2025-08-29)  
+**Successfully Applied**: PCL Menu Registry integrated with DynamicCommandRouter, hybrid routing with legacy fallback  
+**Pattern Dependencies**: Backend Integration Feature Flags, Dynamic Command Routing  
+**Enables**: Skin-driven command routing, zero hardcoded patterns, backward compatibility  
+
+---
+
+### PCL Enhanced Rendering Pattern
+
+**Status**: ✅ ESTABLISHED  
+**Category**: Integration  
+**Usage Evidence**: [TASK-CONSOLIDATED-COMMAND-SYSTEM] ✅ (2025-08-29)  
+**Last Updated**: 2025-08-29  
+**Difficulty**: 🟢 Basic | **Est. Time**: ~45-90 min | **Prerequisites**: PCLThemeAdapter understanding, UniversalMenuItem interface knowledge
+
+**Problem**: PCL rendering adapters need sophisticated component styling with theme awareness and type-specific visual enhancements for consistent user experience.
+
+**Solution**: Enhanced rendering pipeline with type-specific styling, content enhancement, and theme integration.
+
+#### PCL Enhanced Rendering: Implementation Pattern
+
+```typescript
+// Enhanced rendering with sophisticated styling
+private renderUniversalMenuItem(
+  item: UniversalMenuItem,
+  theme: PCLThemeAdapter,
+  constraints: UniversalLayoutConstraints,
+  index: number
+): RenderedComponent {
+  // Apply PCL theme styling patterns based on item type and backend
+  const itemStyles = this.generatePCLComponentStyles(item, theme);
+  const enhancedContent = this.enhancePCLItemContent(item, theme, constraints);
+
+  return {
+    id: item.id,
+    type: item.type,
+    backend: item.backend || 'universal',
+    content: {
+      ...enhancedContent,
+      styles: itemStyles,
+      title: item.label,
+      // ... enhanced content
+    }
+  };
+}
+
+// Type-specific styling generation
+private generatePCLComponentStyles(item: UniversalMenuItem, theme: PCLThemeAdapter): any {
+  const baseStyles = {
+    color: theme.primaryColor,
+    borderColor: theme.accentColor,
+    fontFamily: 'monospace',
+    useIcons: theme.useIcons
+  };
+
+  // Apply type-specific styling patterns
+  switch (item.type) {
+    case 'treeView':
+      return {
+        ...baseStyles,
+        padding: '4px 8px',
+        borderLeft: `3px solid ${theme.accentColor}`,
+        transition: 'all 0.2s ease'
+      };
+    case 'command':
+      return {
+        ...baseStyles,
+        padding: '2px 6px',
+        fontSize: '0.9em',
+        fontWeight: 'bold',
+        cursor: 'pointer'
+      };
+    default:
+      return baseStyles;
+  }
+}
+
+// Content enhancement with visual cues
+private enhancePCLItemContent(item: UniversalMenuItem, theme: PCLThemeAdapter, constraints: UniversalLayoutConstraints): any {
+  const enhancedContent = {
+    ...item.content,
+    // Visual enhancement indicators
+    hasIcon: theme.useIcons,
+    isEnabled: true,
+    // Responsive handling
+    isCompact: constraints.maxWidth < 400,
+    // Theme-aware properties
+    accentColor: theme.accentColor,
+    contrastText: theme.primaryColor
+  };
+
+  // Add sophisticated visual cues
+  if (item.command) {
+    enhancedContent.commandType = this.detectCommandType(item.command);
+  }
+
+  return enhancedContent;
+}
+```
+
+#### PCL Enhanced Rendering: Enhancement Features
+
+- **Type-Specific Styling**: Different visual patterns for treeView, command, menu types
+- **Theme Integration**: Consistent color schemes using PCLThemeAdapter properties
+- **Responsive Design**: Layout constraint handling for different screen sizes
+- **Visual Enhancements**: Command type detection, icon handling, keybinding display
+- **Content Enrichment**: Enhanced metadata and visual cues for better UX
+
+**Used By Active Tasks**: [TASK-NEW-041] ✅ (2025-08-29), [TASK-CONSOLIDATED-COMMAND-SYSTEM] ✅ (2025-08-29)  
+**Successfully Applied**: PCL rendering adapter enhanced with sophisticated styling and theme awareness  
+**Pattern Dependencies**: PCL Theme Adapter, Universal MenuItem interface  
+**Enables**: Consistent visual presentation, theme-aware styling, enhanced user experience

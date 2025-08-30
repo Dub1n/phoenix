@@ -9,9 +9,9 @@
 
 **If given this selector without specific instructions**, follow this autonomous workflow:
 
-### Step 1: Locate Project Files (ENHANCED)
+### Step 1: Locate Project Files
 
-**Priority Search Order** (Updated for new document structure):
+**Priority Search Order**:
 
 1. **Find Active Tasks Queue**: Look for `*-active-tasks.md` in project `/dev/` folder (PRIMARY TASK SOURCE)
 2. **Find Strategic Roadmap**: Look for `*-roadmap.md` in project `/dev/` folder (TASK CLASSIFICATION GUIDE) *only use if active-tasks in innaccessible or further guidance is needed*
@@ -28,7 +28,7 @@
 
 ### Step 2: Select from Planning Queues
 
-**Primary Selection** (Enhanced with roadmap integration):
+**Primary Selection**:
 
 1. **[!] Priority Override**: User-specified tasks (do this next)
 2. **[n] Sequenced Tasks**: Follow numerical sequence  d
@@ -39,11 +39,10 @@
 
 > !IMPORTANT! If there is one task with [!] and/or at least one with [n] marker(s), you do not need to read the roadmap file as those tasks are the priority with a predefined sequence. Start with [!] if it there, then [n] in ascending order.
 
-**NEW: Task Discovery Integration**:
+**Note**: If discovering new issues during selection process, task creation guidance is provided in the fix guides:
 
-- If discovering new issues during selection: Use roadmap classification guide
-- Add tasks directly to active-tasks.md with appropriate phase assignment
-- Consult roadmap for dependency chains and priority context
+- For complex issues → Use comprehensive-fix-guide.md Task Discovery Protocols
+- For simple fixes → Use quick-fix-guide.md Task Discovery Protocols
 
 **Fallback Selection** (if no planning file):
 
@@ -126,7 +125,7 @@ Each factor: 1-3 points, Total: 3-9 points
 - 2: Some investigation needed
 - 3: Unclear problem or solution
 
-### Step 5: CRITICAL - System Integrity Requirements 🚨 **NEW**
+### Step 5: CRITICAL - System Integrity Requirements
 
 **MANDATORY**: All task implementations must maintain system integrity
 
@@ -134,24 +133,24 @@ Each factor: 1-3 points, Total: 3-9 points
 
 **A task is ONLY considered complete when ALL criteria are met**:
 
-1. ✅ **Core functionality implemented** and working as specified
-2. ✅ **Code compiles without errors** (`npx tsc --noEmit` must pass)  
-3. ✅ **No regression in existing functionality** (previously working features still work)
-4. ✅ **Build process succeeds** (`npm run build` if applicable)
-5. ✅ **Documentation created** (as specified in fix guide)
+1. **Core functionality implemented** and working as specified
+2. **Code compiles without errors** (`npx tsc --noEmit` must pass)  
+3. **No regression in existing functionality** (previously working features still work)
+4. **Build process succeeds** (`npm run build` if applicable)
+5. **Documentation created** (as specified in fix guide)
 
 **If ANY criterion fails**: Task is NOT complete - use expanded status options.
 
-#### Enhanced Task Status System 🆕
+#### Enhanced Task Status System
 
 **Replace simple completed/pending with expanded statuses**:
 
-- **completed** ✅: All system integrity criteria met, fully validated
-- **implemented-broken** ⚠️: Feature logic implemented but compilation/build fails  
-- **implemented-testing** 🧪: Code compiles, feature works, needs validation
-- **blocked** 🚧: Cannot proceed due to dependencies or technical barriers
-- **in-progress** 🔄: Active development work ongoing
-- **analysis-required** 🔍: Needs investigation before implementation approach
+- **completed**: All system integrity criteria met, fully validated
+- **implemented-broken**: Feature logic implemented but compilation/build fails  
+- **implemented-testing**: Code compiles, feature works, needs validation
+- **blocked**: Cannot proceed due to dependencies or technical barriers
+- **in-progress**: Active development work ongoing
+- **analysis-required**: Needs investigation before implementation approach
 
 #### System Integrity Validation - MANDATORY CHECKS
 
@@ -193,7 +192,7 @@ Continue with quick-fix-guide.md
 Continue with comprehensive-fix-guide.md
 ```
 
-## 🔍 Issue Selection Examples
+## Issue Selection Examples
 
 ### Good Candidate Example
 
@@ -231,7 +230,7 @@ Quick Assessment:
 Reason: Insufficient evidence, unclear scope, low feasibility
 ```
 
-## 📋 Enhanced Selection Checklist 🆕
+## Enhanced Selection Checklist
 
 **Before proceeding with any issue**:
 
@@ -245,7 +244,7 @@ Reason: Insufficient evidence, unclear scope, low feasibility
 - [!] *Appropriate guide selected* !IMPORTANT
 - [!] *Appropriate guide ADDED TO CONTEXT* !IMPORTANT
 
-### System Integrity Commitments (New Requirements)
+### System Integrity Commitments
 
 - [ ] **Compilation Responsibility**: Commit to maintaining TypeScript compilation
 - [ ] **Regression Prevention**: Commit to preserving existing functionality  
@@ -260,7 +259,7 @@ Reason: Insufficient evidence, unclear scope, low feasibility
 - [ ] **Functionality Check**: Verify existing functionality works as expected
 - [ ] **Documentation Baseline**: Identify what documentation will be required
 
-## 🛤️ Alternative Entry Points
+## Alternative Entry Points
 
 **If you receive specific instructions**:
 
@@ -279,7 +278,7 @@ Reason: Insufficient evidence, unclear scope, low feasibility
 - If given only a tracker, use this selector's workflow
 - Apply selection criteria to find best candidate issue
 
-## 📊 Reference Files
+## Reference Files
 
 **Scoring Details**: See `shared-components.md` for detailed scoring matrices
 
@@ -294,7 +293,7 @@ Reason: Insufficient evidence, unclear scope, low feasibility
 - Validation scripts in `scripts/validation/` (comprehensive toolset for assessment and verification)
 - Planning files in `project/dev/*-fix-planning.md` for organized task queues
 
-## ⚠️ Important Notes
+## Important Notes
 
 **This selector is optional** - fix guides work independently if you're given them directly.
 

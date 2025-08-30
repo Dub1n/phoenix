@@ -1,5 +1,16 @@
 {
   "permissions": {
+    "allow": [
+        "[Read, Write, Edit, MultiEdit, Glob, TodoWrite, Task]",
+        "Read(C:\\\\Users\\\\gabri\\\\Documents\\\\Infotopology\\\\**)",
+        "Read(C:\\Users\\gabri\\Documents\\Infotopology\\**)",
+        "Agent(C:\\Users\\gabri\\Documents\\Infotopology\\**)",
+        "Bash(C:\\Users\\gabri\\Documents\\Infotopology\\:*)",
+        "Edit(C:\\Users\\gabri\\Documents\\Infotopology\\**)",
+        "Glob(C:\\Users\\gabri\\Documents\\Infotopology\\**)",
+        "Grep(C:\\Users\\gabri\\Documents\\Infotopology\\**)",
+        "LS(C:\\Users\\gabri\\Documents\\Infotopology\\**)"
+    ],
     "deny": [
       "Read(./.env)",
       "Read(./.env.*)",

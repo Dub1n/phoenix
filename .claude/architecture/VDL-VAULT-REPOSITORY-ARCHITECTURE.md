@@ -106,6 +106,7 @@ graph TB
 ### Active Development Projects
 
 #### Phoenix Code Lite (PCL)
+
 - **Purpose**: TDD Workflow Orchestrator for Claude Code SDK
 - **Technology**: TypeScript, Node.js, Jest, Claude Code SDK
 - **Status**: Mature, actively maintained
@@ -118,6 +119,7 @@ graph TB
   - Quality gates and audit logging
 
 #### QMS Infrastructure
+
 - **Purpose**: Medical device software development compliance
 - **Technology**: TypeScript, regulatory frameworks
 - **Status**: Active development, compliance-focused
@@ -130,6 +132,7 @@ graph TB
   - Performance baseline validation
 
 #### Haruspex
+
 - **Purpose**: Enhanced analysis and prediction capabilities
 - **Technology**: To be determined based on requirements
 - **Status**: Early planning/architecture phase
@@ -142,6 +145,7 @@ graph TB
 ### Documentation Systems
 
 #### Phoenix Core Documentation (`docs/Phoenix-Core/`)
+
 - Comprehensive framework documentation
 - Architecture guides and technical references
 - Development roadmaps and phase guides
@@ -149,12 +153,14 @@ graph TB
 - Maintenance and change documentation
 
 #### PCL Technical Documentation (`phoenix-code-lite/docs/`)
+
 - API reference and codebase indices
 - Architecture diagrams and system flows
 - Implementation guides and standards
 - CLI usage documentation
 
 #### QMS Documentation (`Obsidian/QMS/`)
+
 - Regulatory standards and requirements
 - QMS process documentation
 - Medical device development guidelines
@@ -163,12 +169,14 @@ graph TB
 ### Infrastructure & Tooling
 
 #### Scripts (`scripts/`)
+
 - Terminal management and safety tools
 - Automation scripts for development workflows
 - Update and maintenance utilities
 - Cross-platform compatibility tools
 
 #### NoDeRR (`noderr/`)
+
 - Error analysis and architecture verification
 - Project auditing and validation tools
 - Gap analysis and compliance checking
@@ -228,6 +236,7 @@ graph LR
 ### Integration Patterns
 
 #### Data Flow Integration
+
 ```mermaid
 flowchart TD
     UserInput[👤 User Input<br/>CLI or Configuration] --> PCLProcessor[* PCL Processing<br/>TDD Workflow]
@@ -271,18 +280,21 @@ flowchart TD
 ## Development Workflows by Project
 
 ### Phoenix Code Lite Development
+
 1. **TDD Methodology**: Red-Green-Refactor cycle
 2. **Quality Gates**: 90% test coverage, TypeScript strict mode
 3. **Integration**: Claude Code SDK, interactive CLI
 4. **Documentation**: Automated API reference updates
 
 ### QMS Infrastructure Development
+
 1. **Compliance-First**: Regulatory standards validation
 2. **Quality Gates**: 95% test coverage, compliance validation
 3. **Integration**: EN 62304, AAMI TIR45 standards
 4. **Documentation**: Regulatory compliance documentation
 
 ### Cross-Project Development
+
 1. **Impact Assessment**: Analyze cross-project dependencies
 2. **Coordinated Changes**: Sequence changes to minimize disruption
 3. **Integration Testing**: Verify inter-project compatibility
@@ -293,24 +305,28 @@ flowchart TD
 ### Quick Reference by Purpose
 
 #### For TDD Development
+
 - **Primary**: `phoenix-code-lite/src/tdd/`
 - **Tests**: `phoenix-code-lite/tests/integration/tdd-workflow.test.ts`
 - **Documentation**: `docs/Phoenix-Core/04-Technical-Reference/`
 - **Examples**: `docs/Phoenix-Core/05-Examples-and-Templates/`
 
 #### For QMS Compliance
+
 - **Primary**: `phoenix-code-lite/src/preparation/`
 - **Standards**: `Obsidian/QMS/Docs/`
 - **Validation**: `phoenix-code-lite/src/preparation/*-validator.ts`
 - **Documentation**: `docs/PCL-QMS/`
 
 #### For CLI Development
+
 - **Primary**: `phoenix-code-lite/src/cli/`
 - **Interactive**: `phoenix-code-lite/src/cli/interactive/`
 - **Commands**: `phoenix-code-lite/src/cli/commands/`
 - **Testing**: `phoenix-code-lite/tests/integration/cli-interface.test.ts`
 
 #### For Cross-Project Changes
+
 - **Dependencies**: Check `package.json` files across projects
 - **Configurations**: Review `.claude/` folder structure
 - **Standards**: Follow `.claude/standards/` guidelines
@@ -319,6 +335,7 @@ flowchart TD
 ## Integration with Claude Code
 
 ### Claude Code Configuration
+
 - **Location**: `.claude/` folder at repository root
 - **Workflows**: Generalized development workflows
 - **Standards**: Repository-wide coding standards
@@ -326,6 +343,7 @@ flowchart TD
 - **References**: Project-specific quick references
 
 ### AI Development Patterns
+
 - **Phoenix Code Lite**: TDD workflow orchestration
 - **QMS Infrastructure**: Compliance validation automation
 - **Documentation**: Automated documentation generation
@@ -334,6 +352,7 @@ flowchart TD
 ---
 
 **This architecture enables**:
+
 - **Coherent Development**: Consistent patterns across all projects
 - **Regulatory Compliance**: Built-in QMS infrastructure
 - **Quality Assurance**: Comprehensive testing and validation

@@ -527,7 +527,8 @@ export class AlertManager {
       
       return false;
     } catch (error) {
-      this.logger.error(`Failed to evaluate alert rule: ${rule.id}`, error, { rule }, 'AlertManager');
+      const errorObj = error instanceof Error ? error : createTemplumError(String(error), 'ALERT_EVALUATION_ERROR', 'runtime');
+      this.logger.error(`Failed to evaluate alert rule: ${rule.id}`, errorObj, { rule }, 'AlertManager');
       return false;
     }
   }
@@ -657,7 +658,8 @@ export class TemplumObservabilitySystem extends EventEmitter {
       this.logger.info('Templum Observability System shutdown complete', {}, 'TemplumObservabilitySystem');
       
     } catch (error) {
-      this.logger.error('Error during observability system shutdown', error, {}, 'TemplumObservabilitySystem');
+      const errorObj = error instanceof Error ? error : createTemplumError(String(error), 'SHUTDOWN_ERROR', 'runtime');
+      this.logger.error('Error during observability system shutdown', errorObj, {}, 'TemplumObservabilitySystem');
     }
   }
   
@@ -677,7 +679,8 @@ export class TemplumObservabilitySystem extends EventEmitter {
         this.metrics.setGauge('cpu_system_ms', cpuUsage.system / 1000, { unit: 'ms' }, 'SystemMonitor');
         
       } catch (error) {
-        this.logger.error('System monitoring error', error, {}, 'SystemMonitor');
+        const errorObj = error instanceof Error ? error : createTemplumError(String(error), 'MONITORING_ERROR', 'runtime');
+        this.logger.error('System monitoring error', errorObj, {}, 'SystemMonitor');
       }
     }, this.config.metrics.collectionInterval);
   }

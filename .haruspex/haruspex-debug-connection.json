@@ -1,7 +1,7 @@
 {
   "host": "127.0.0.1",
-  "port": 50142,
-  "socketPath": "127.0.0.1:50142",
-  "timestamp": 1756368288029,
+  "port": 62993,
+  "socketPath": "127.0.0.1:62993",
+  "timestamp": 1756550290833,
   "serverVersion": "1.0.0"
 }

@@ -1,0 +1,46 @@
+{
+  "componentName": "templum",
+  "timestamp": "2025-08-28T23:49:16.666Z",
+  "overallStatus": "PENDING",
+  "checks": {
+    "COMPILATION": {
+      "name": "TypeScript Compilation",
+      "status": "PENDING",
+      "details": "",
+      "evidence": []
+    },
+    "TESTS": {
+      "name": "Component Tests",
+      "status": "PENDING",
+      "details": "",
+      "evidence": []
+    },
+    "INTEGRATION": {
+      "name": "Integration Check",
+      "status": "PENDING",
+      "details": "",
+      "evidence": []
+    },
+    "REGRESSION": {
+      "name": "Regression Check",
+      "status": "PENDING",
+      "details": "",
+      "evidence": []
+    },
+    "EXPORTS": {
+      "name": "Export Validation",
+      "status": "PENDING",
+      "details": "",
+      "evidence": []
+    }
+  },
+  "evidence": [],
+  "errors": [
+    "Component templum not found in any expected location"
+  ],
+  "warnings": [],
+  "files": [],
+  "beforeStatus": null,
+  "afterStatus": null,
+  "recommendations": []
+}
