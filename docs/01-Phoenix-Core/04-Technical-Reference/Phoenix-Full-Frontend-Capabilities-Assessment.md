@@ -32,7 +32,6 @@ class PhoenixProgressTracker:
         - Completion percentage
         - Agent activity status
         - Quality metrics updates
-        - Time estimates
         """
         self.update_progress_bar(self.calculate_completion_percentage())
         self.show_active_agents(context.active_agents)

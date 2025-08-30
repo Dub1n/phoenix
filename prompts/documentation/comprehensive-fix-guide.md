@@ -1,9 +1,10 @@
-# Comprehensive Fix Guide - Complex Issue Resolution
+﻿# Comprehensive Fix Guide - Complex Issue Resolution
 
 > **Purpose**: Standalone guide for complex, architectural, and high-impact fixes  
 > **Scope**: Medium to high complexity issues requiring detailed analysis  
 > **Target Time**: 3+ hours, multi-session work acceptable  
 > **Template**: Full comprehensive documentation with impact analysis
+> **Placeholders**: This guide uses generic placeholders like `<project>` - these are passed in via the /pr:task claude code command
 
 ## Autonomous Complex Fix Workflow
 
@@ -63,7 +64,7 @@
 
 **The One-Sentence Test**:
 
-- If you can explain the fix in one sentence ("Update TemplumCore to call real component methods"), it's probably **not architectural complexity**.
+- If you can explain the fix in one sentence ("Update core module to call real component methods"), it's probably **not architectural complexity**.
 - If you need multiple sentences with "however" and "but also" → **Maybe architectural**
 
 #### Second Take Protocol
@@ -113,17 +114,17 @@
 
 #### Pre-Completion Validation Checklist - MANDATORY
 
-**Before marking ANY task as "completed", ALL must pass**:
+**Before marking ANY task as "completed", check applicable gates**:
 
-- [ ] **Build Compilation Gate**: `npx tsc --noEmit` - *SHOULD PASS* for full build
-- [ ] **Component Compilation Gate**: `npx tsc --noEmit --include <path/to/affected/component>` - *MUST PASS* for component(s) within task scope
-- [ ] **Build Verification**: `npm run build` - *SHOULD SUCCEED* for full build
-- [ ] **Component Verification**: `npm run build -- <path/to/affected/component>` - *MUST SUCCEED* for component(s) within task scope
-- [ ] **Validation** 'node C:/Users/gabri/Documents/Infotopology/VDL_Vault/scripts/validation/verify-fix.js <component-name>' - *MUST PASS* for component(s) within task scope
-- [ ] **Lint Check**: `npm run lint` - *SHOULD PASS* (document if exceptions needed)
+- [ ] **Compilation Gate**: (If compilable) Run type/syntax checking - *SHOULD PASS*
+- [ ] **Component Compilation**: (If compilable) Check affected components compile (i.e. `... --include <path/to/affected/component>`) - *MUST PASS*
+- [ ] **Build Verification**: Run project build command - *SHOULD SUCCEED* for full build
+- [ ] **Component Build**: (If applicable) Build affected components (i.e. `... -- <path/to/affected/component>`) - *MUST SUCCEED* for task scope  
+- [ ] **Validation Scripts**: Run project-specific validation/test scripts - *MUST PASS* for task scope (use 'node /VDL_Vault/scripts/validation/verify-fix.js <component-name>' if script present)
+- [ ] **Code Quality**: (If applicable) Run linting/formatting tools (i.e. `npm run lint`) - *SHOULD PASS* (document exceptions)
 - [ ] **Test Regression**: Previously passing tests still pass - *MUST VERIFY*
 - [ ] **Functional Validation**: Core feature works as expected - *MUST VERIFY*
-- [ ] **Integration Check**: No broken dependencies or imports - *MUST VERIFY*
+- [ ] **Dependency Check**: No broken imports/dependencies - *MUST VERIFY*
 
 **If you cannot fix these issues during implementation**:
 
@@ -181,7 +182,7 @@
 
  ```bash
  # Search for related existing tasks
- grep -i "[relevant-keyword|component-name|domain]" templum-active-tasks.md
+ grep -i "[relevant-keyword|component-name|domain]" <project>-active-tasks.md
  ```
 
 **APPEND to Existing Task When**:
@@ -200,17 +201,23 @@
 - Independent implementation possible
 - Different patterns or approaches needed
 
-#### Step 2: Task Creation
+#### Step 2a: Task Creation
+
+If task is not to be consolidated following the consolidation check, create a new task in the appropriate section
+    - If essential prerequesite for any priority or sequenced tasks, mark as priorty ("[!]")
+
+**Example**:
 
 ```markdown
-// TODO: [TASK-NEW-XXX] Brief description
-// Priority: High|Medium|Low | Complexity: 1-10
-// Location: Context where discovered
-// Dependencies: List dependencies
-// Phase: Foundation|Interface|Integration
+- [ ] **<Short_Description>** [TASK_ID]
+  - Priority: <p> | Complexity: <c> | Status: <errors>
+  - Dependencies: <dependencies>
+  - Implementation Approach: <steps>
+  - Location: path/to/file <line_of_TODO_tag>
+  - See: <project>-patterns.md#<relevant_pattern(s)>
 ```
 
-#### Step 3: Consolidation Implementation Template
+#### Step 2b: Task Consolidation
 
 **For Task Appendage**:
 
@@ -219,17 +226,21 @@
 3. Expand "Implementation Approach" with new steps
 4. Update complexity score: `Original + New = Total`
 5. Preserve all useful details from both sources
+6. Include locations of TODO tags in code
+7. If essential prerequesite for any priority or sequenced tasks, mark as priorty ("[!]")
 
 **Example**:
 
 ```markdown
-- [TASK-CONSOLIDATED] **Enhanced Backend Integration System**
-  - **Consolidated From**: TASK-ORIGINAL (12) + TASK-DISCOVERED (8)
-  - **Implementation Approach**:
-    1. Original functionality (steps 1-3)
-    2. NEW: Additional service discovery (step 4)
-    3. Enhanced validation (step 5)
-  - **Complexity**: 20 (12+8)
+- **<short_description>** [TASK_C_<ID>]
+  - Priority: <p> | Complexity: <c1+c2> (<c1>+<c2>) | Status: <errors>
+  - Consolidated From: TASK-ORIGINAL + TASK-DISCOVERED
+  - Implementation Approach:
+    1. Original functionality (step(s) <n-n>)
+    2. NEW: Additional requirements (step(s) <n-n>)
+    3. Enhanced validation (step <n>)
+  - Location: path/to/file <line_of_TODO_tag>
+  - See: <project>-patterns.md#<relevant_pattern(s)>
 ```
 
 **Consolidation Quality Gates**:
@@ -239,9 +250,46 @@
 - [ ] Total complexity reasonable (<50 points)
 - [ ] All implementation details preserved
 
+## Documentation Protocol
+
+### Post-Implementation Documentation
+
+**Documentation Checklist**:
+
+1. **TODO Processing** (Apply Consolidation Protocol Above):
+   - [ ] Search codebase: `grep -r "TODO: \[TASK-" .`
+   - [ ] **Apply consolidation analysis** for each TODO found
+   - [ ] **If consolidatable**: Append using consolidation template above
+   - [ ] **If independent**: Consult `<project>-roadmap.md` for classification and add to active tasks
+   - [ ] **If TODO tags referenced by task** remove from code if they have been completed
+
+2. **Task Status Updates**:
+   - [ ] Update task marker to [x] in `<project>-active-tasks.md`
+   - [ ] Add ONE-LINE entry to `<project>-tracker-data.md` log: `Date | Component | x | fix-document.md`
+   - [ ] Create detailed fix document in `dev/fixes/` folder
+   - [ ] NO duplication: Details ONLY in fix document
+
+3. **Pattern Documentation**:
+   - [ ] Extract reusable patterns to `<project>-patterns.md`
+   - [ ] Update pattern references in active tasks
+   - [ ] Document architectural insights for future use
+
+4. **Chain Completion & Roadmap Update Protocol**:
+   - [ ] Check if task completes entire dependency chain
+   - [ ] If chain complete AND no pending dependencies:
+     - [ ] REMOVE entire chain from `<project>-active-tasks.md`
+     - [ ] Update roadmap phase status if phase complete
+     - [ ] Ensure patterns are preserved in `<project>-patterns.md`
+
+5. **Roadmap Reassessment Check**:
+   - [ ] Were >3 new tasks added to one phase? → Consider phase restructuring
+   - [ ] Did user change task priorities with [!] or [1-9]? → Update roadmap focus
+   - [ ] Is an entire phase now complete? → Update phase status, activate next phase
+   - [ ] Do new tasks change critical dependencies? → Update roadmap dependency chains
+
 ## Comprehensive Fix Documentation Template
 
-**Create file**: `dev/fixes/YYYY-MM-DD-HHMMSS-comprehensive-fix-description.md`
+**Create file**: `dev/fixes/description.md`
 
 ```markdown
 # Comprehensive Fix: {Issue Description}
@@ -288,28 +336,28 @@
 {Changes to config files, environment variables, or setup}
 
 ## Architectural Pattern Compliance
-**Pattern Verification**: 
-- [ ] Map Iteration: All Map operations use Array.from() wrapper
-- [ ] Error Handling: All catch blocks use isTemplumError type guard
-- [ ] Type System: Complete integration with templum-types.ts foundation
-- [ ] Signal Emission: All signals use typed payload interfaces
-- [ ] Interface Alignment: Map/object types align with usage patterns
-- [ ] Async Methods: Follow established error handling patterns
+**Pattern Verification** (check applicable patterns): 
+- [ ] Data Processing: (If applicable) Collection/data operations follow project conventions
+- [ ] Error Handling: All error cases use consistent project-specific patterns
+- [ ] Type System: (If typed language) Integration with project type foundations
+- [ ] Event/Messaging: (If applicable) Events/messages use established patterns
+- [ ] Interface Alignment: Data structures align with established usage patterns
+- [ ] Async Operations: (If applicable) Async operations follow established patterns
 
 **New Patterns Established**: 
 - {List any new patterns created for this comprehensive fix}
 - {Reference existing patterns that were extended or refined}
 
 **Pattern Documentation Updated**:
-- [ ] `templum-patterns.md` - Add new patterns from this fix
-- [ ] `templum-active-tasks.md` - Update pattern references for similar tasks
+- [ ] `<project>-patterns.md` - Add new patterns from this fix
+- [ ] `<project>-active-tasks.md` - Update pattern references for similar tasks
 - [ ] Fix documentation includes complete architecture changes and pattern extraction
 
 ## Verification Results
 
-### Compilation Validation
-- [ ] TypeScript Compilation: ✓/✗ (Error count: before/after)
-- [ ] Linting: ✓/✗ (Warning count: before/after) 
+### Compilation/Build Validation
+- [ ] Language Compilation: (If applicable) ✓/✗ (Error count: before/after)
+- [ ] Code Quality Tools: (If applicable) ✓/✗ (Issue count: before/after) 
 - [ ] Build Process: ✓/✗ (Build time: before/after)
 
 ### Functional Validation  
@@ -371,43 +419,6 @@
 **Review Status**: Pending
 ```
 
-## Documentation Protocol
-
-### Post-Implementation Documentation
-
-**Documentation Checklist**:
-
-1. **TODO Processing** (Apply Consolidation Protocol Above):
-   - [ ] Search codebase: `grep -r "TODO: \[TASK-" .`
-   - [ ] **Apply consolidation analysis** for each TODO found
-   - [ ] **If consolidatable**: Append using consolidation template above
-   - [ ] **If independent**: Consult `templum-roadmap.md` for classification and add to active tasks
-   - [ ] Remove TODO tags after documentation
-
-2. **Task Status Updates**:
-   - [ ] Update task marker to [x] in `templum-active-tasks.md`
-   - [ ] Add ONE-LINE entry to `templum-tracker-data.md` log: `Date | Component | x | fix-document.md`
-   - [ ] Create detailed fix document in `dev/fixes/` folder
-   - [ ] NO duplication: Details ONLY in fix document
-
-3. **Pattern Documentation**:
-   - [ ] Extract reusable patterns to `templum-patterns.md`
-   - [ ] Update pattern references in active tasks
-   - [ ] Document architectural insights for future use
-
-4. **Chain Completion & Roadmap Update Protocol**:
-   - [ ] Check if task completes entire dependency chain
-   - [ ] If chain complete AND no pending dependencies:
-     - [ ] REMOVE entire chain from `templum-active-tasks.md`
-     - [ ] Update roadmap phase status if phase complete
-     - [ ] Ensure patterns are preserved in `templum-patterns.md`
-
-5. **Roadmap Reassessment Check**:
-   - [ ] Were >3 new tasks added to one phase? → Consider phase restructuring
-   - [ ] Did user change task priorities with [!] or [1-9]? → Update roadmap focus
-   - [ ] Is an entire phase now complete? → Update phase status, activate next phase
-   - [ ] Do new tasks change critical dependencies? → Update roadmap dependency chains
-
 ## Architectural Pattern Analysis and Documentation
 
 ### Pattern Consolidation Framework
@@ -419,7 +430,7 @@
 ``` diagram
 Pattern Discovery → Existing Similar Pattern?
 ├── YES → ENHANCE existing (add implementation variation)
-│   └── Update "Used By Active Tasks" + difficulty/time estimates
+│   └── Update "Used By Active Tasks" + difficulty
 └── NO → 3+ Use Cases + Evidence?
     ├── YES → CREATE following enhanced template
     └── NO → DOCUMENT in fix only, don't add to patterns
@@ -442,7 +453,7 @@ Pattern Discovery → Existing Similar Pattern?
 ```markdown
 ## Pattern Consolidation Analysis
 
-**Existing Pattern Search Results**: [List similar patterns found in {project}-patterns.md]
+**Existing Pattern Search Results**: [List similar patterns found in <project>-patterns.md]
 **Consolidation Decision**: [ENHANCE existing | CREATE new | DOCUMENT in fix only]
 **Justification**: [Rationale following consolidation framework]
 **Usage Projection**: [Estimated reuse scenarios - minimum 3 for new patterns]
@@ -473,12 +484,12 @@ Pattern Discovery → Existing Similar Pattern?
 
 **Ensure Consistency with Established Architecture**:
 
-- **Map Iteration**: All Map operations use `Array.from()` pattern
-- **Error Handling**: All catch blocks use `isTemplumError` type guard
-- **Signal Emission**: Proper typed payloads (`ErrorSignalPayload`, `MetricsSignalPayload`)
-- **Type System Integration**: Complete imports from `../types/templum-types.ts`
-- **Interface Alignment**: Map/object types match usage patterns
-- **Async Method Structure**: Established try/catch/error handling patterns
+- **Data Processing**: (If applicable) Collection/data operations follow established patterns
+- **Error Handling**: All error cases use consistent project-specific patterns  
+- **Event/Messaging**: (If applicable) Events/messages follow established patterns
+- **Type System**: (If typed language) Proper integration with project type definitions
+- **Interface Alignment**: Data structures match established usage patterns
+- **Async Operations**: (If applicable) Async operations follow established error handling
 
 #### Step 4: Documentation and Maintenance
 
@@ -502,13 +513,13 @@ Pattern Discovery → Existing Similar Pattern?
 ```markdown
 ## Architectural Pattern Compliance
 
-**Pattern Verification**:
-- [ ] Map Iteration: All Map operations use Array.from() wrapper
-- [ ] Error Handling: All catch blocks use isTemplumError type guard
-- [ ] Type System: Complete integration with templum-types.ts foundation
-- [ ] Signal Emission: All signals use typed payload interfaces
-- [ ] Interface Alignment: Map/object types align with usage patterns
-- [ ] Async Methods: Follow established error handling patterns
+**Pattern Verification** (check applicable patterns):
+- [ ] Data Processing: (If applicable) Collection/data operations follow project conventions
+- [ ] Error Handling: All error cases use consistent project-specific patterns
+- [ ] Type System: (If typed language) Integration with project type foundations
+- [ ] Event/Messaging: (If applicable) Events/messages use established patterns
+- [ ] Interface Alignment: Data structures align with established usage patterns
+- [ ] Async Operations: (If applicable) Async operations follow established patterns
 
 **Pattern Consolidation Compliance**:
 - [ ] **Searched existing patterns** before creating new documentation
@@ -524,7 +535,7 @@ Pattern Discovery → Existing Similar Pattern?
 - [Justification for new patterns: evidence of 3+ use cases, no existing similar pattern]
 
 **Pattern Documentation Updated**:
-- [ ] `{project}-patterns.md` - Enhanced existing or added new following template
+- [ ] `<project>-patterns.md` - Enhanced existing or added new following template
 - [ ] Enhanced Pattern Index - Updated usage frequency and difficulty indicators  
 - [ ] Bidirectional cross-references - Updated "Used By Active Tasks" sections
 - [ ] Fix documentation - Complete architecture changes with consolidation compliance

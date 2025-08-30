@@ -1,4 +1,4 @@
-# Comprehensive Fix: Integration Test Framework Reality Check
+﻿# Comprehensive Fix: Integration Test Framework Reality Check
 
 ## Fix Information
 
@@ -157,7 +157,7 @@ During implementation, identified and tagged integration issues for future resol
 
 2. **Task Status Updates**:
    - [x] Updated task marker to [x] in `templum-active-tasks.md`
-   - [x] Added entry to `templum-tracker-data.md` log: `2025-08-28 | Integration Test Framework | ✅ | 2025-08-28-160014-comprehensive-fix-integration-test-framework-reality-check.md`
+   - [x] Added entry to `templum-tracker-data.md` log: `2025-08-28 | Integration Test Framework | ✅ | integration-test-framework-reality-check.md`
    - [x] Created detailed fix document in `dev/fixes/` folder
    - [x] NO duplication: Details ONLY in fix document
 

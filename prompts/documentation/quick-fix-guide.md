@@ -1,126 +1,51 @@
-# Quick Fix Guide - Low Complexity Issue Resolution
+﻿# Quick Fix Guide - Low Complexity Issue Resolution
 
 > **Purpose**: Standalone guide for simple, quick fixes  
 > **Scope**: Low complexity issues (compilation errors, simple missing implementations)  
 > **Target Time**: <3 hours completion  
 > **Template**: Streamlined Quick Fix documentation only
 
-## ⚡ When to Use This Guide
-
-**Use this guide for issues with**:
-
-- Clear error messages with obvious solutions
-- Single component or <5 files affected  
-- No architectural changes required
-- Complexity score 3-5 points (see `shared-components.md` for scoring)
-
-**Typical Quick Fix scenarios**:
-
-- TypeScript compilation errors
-- Missing import/export statements
-- Simple type definition mismatches  
-- Simple mock-to-real transitions (when real components exist)
-
 ## Autonomous Quick Fix Workflow
 
-### Step 1: Locate Issue (if not specified)
-
-**Priority Task Sources**:
-
-1. **Check Fix Planning Queue**: Look for `*-fix-planning.md` in project `/dev/` folder
-   - Immediate Priority Queue (ready-to-implement tasks)
-   - Verification Queue (validation tasks suitable for quick fixes)
-2. **Fallback to Tracker Data**: Look for `*-tracker-data.md` or legacy tracker files
-3. **Common locations**: `/dev/` folder (preferred), project root, `/docs/`
-
-**Select quick fix candidate from planning queue**:
-
-- Items marked with Low complexity scores (0-7 points)  
-- Verification tasks needing simple validation
-- Small investigation items with clear scope
-
-**Fallback selection from tracker**:
-
-- 🔴 **Broken** components with <10 compilation errors
-- Clear error messages with specific file locations
-- Components marked as ready for simple fixes
-
-### Step 2: Validate Quick Fix Suitability ⚡ **UPDATED**
-
-**Simplicity Check** (Reference comprehensive-fix-guide.md Step 3.5 for details):
-
-**Quick Questions**:
-
-- Can you explain the fix in one sentence? → Quick fix
-- Are you just updating method names or parameters? → Quick fix  
-- Does the real implementation already exist? → Quick fix
-- Is this mock-to-real with working components? → Quick fix (refactoring)
-
-**Escalate to comprehensive if**:
-
-- You need multiple sentences with "however" to explain → Comprehensive
-- Real implementations don't exist → Comprehensive
-- Fundamental design pattern conflicts → Comprehensive
-
-**Quick Checklist**:
-
-- [ ] Error count: <10 compilation errors
-- [ ] Clear error messages: TypeScript/build errors with specific locations
-- [ ] File scope: ≤5 files need modification
-- [ ] No dependencies: Fix doesn't require other components
-- [ ] Time estimate: <3 hours based on error clarity
-
-**If any criteria fail**: Escalate to `comprehensive-fix-guide.md`
-
-### Step 3: Implement Fix
+### Step 1: Implement Fix
 
 1. **Read component files** - Understand the specific errors
 2. **Apply direct fix** - Resolve compilation/import issues
 3. **Verify immediately** - Test compilation and basic functionality
 4. **No complex investigation** - If root cause unclear, escalate
 
-### Step 4: CRITICAL - Working State Principle
-
-#### Definition of "Complete" - MANDATORY ENFORCEMENT
-
-**A task is NEVER complete if**:
-
-- TypeScript compilation fails with new errors in other components, or errors in the new/updated components (`npx tsc --noEmit` should pass for the whole application, must pass for new/updated files - build check just those component(s) after the full build)
-- Tests that previously passed now fail
-- The system is less functional than before the implementation
-- Build process fails (`npm run build` must succeed)
-- Linting introduces critical errors (`npm run lint` should pass)
-
-**If you cannot fix these issues during implementation**:
-
-1. **Document the implementation attempt** in detail
-2. **Mark task as "BLOCKED"** not "COMPLETED"
-3. **Create a structural fix task** for the compilation/build issues
-4. **Clearly explain technical blockers** preventing completion
+### Step 2: Working State Principle
 
 #### Enhanced Task Status Definitions
 
 **Expanded Status Options**:
 
-- **completed**: Fully working, tested, and validated (compilation passes, no regressions)
-- **implemented-broken**: Core logic done but compilation/tests failing (requires structural fix)
-- **implemented-testing**: Compiles but needs functional validation
-- **blocked**: Cannot proceed due to dependencies or technical issues
-- **in-progress**: Active development work ongoing
+- **[x]** 'completed': Fully working, tested, and validated (compilation passes, no regressions)
+- **[B]** 'broken-implemented': Core logic done but compilation/tests failing (requires structural fix)
+- **[T]** 'iplemented-testing':Compiles but needs functional validation
+- **[?]** 'blocked': Cannot proceed due to dependencies or technical issues
+- **[~]** 'in-progress': Active development work ongoing
 
 #### Pre-Completion Validation Checklist - MANDATORY
 
 **Before marking ANY task as "completed", ALL must pass**:
 
-- [ ] **Compilation Gate**: `npx tsc --noEmit` - *MUST PASS* for new/updated components
-- [ ] **Build Verification**: `npm run build` - *MUST SUCCEED*
-- [ ] **Validation** Run 'node C:/Users/gabri/Documents/Infotopology/VDL_Vault/scripts/validation/verify-fix.js <component-name>' for all new or updated components - *MUST PASS* within scope of task
+- [ ] **Build Compilation Gate**: `npx tsc --noEmit` - *SHOULD PASS* for full build
+- [ ] **Component Compilation Gate**: `npx tsc --noEmit --include <path/to/affected/component>` - *MUST PASS* for component(s) within task scope
+- [ ] **Build Verification**: `npm run build` - *SHOULD SUCCEED* for full build
+- [ ] **Component Verification**: `npm run build -- <path/to/affected/component>` - *MUST SUCCEED* for component(s) within task scope
+- [ ] **Validation** 'node C:/Users/gabri/Documents/Infotopology/VDL_Vault/scripts/validation/verify-fix.js <component-name>' - *MUST PASS* for component(s) within task scope
 - [ ] **Lint Check**: `npm run lint` - *SHOULD PASS* (document if exceptions needed)
 - [ ] **Test Regression**: Previously passing tests still pass - *MUST VERIFY*
 - [ ] **Functional Validation**: Core feature works as expected - *MUST VERIFY*
 - [ ] **Integration Check**: No broken dependencies or imports - *MUST VERIFY*
 
-**If ANY item fails**: Mark as "implemented-broken" and create structural fix task.
+**If you cannot fix these issues during implementation**:
+
+1. **Document the implementation attempt** in detail
+2. **Mark task as "[B]"** not "[x]"
+3. **Create a structural fix task** for the compilation/build issues
+4. **Clearly explain technical blockers** preventing completion
 
 #### Emergency Protocol for Broken State
 
@@ -130,162 +55,109 @@
 2. **ASSESS**: Can structural issues be fixed within current session?
    - **YES**: Fix immediately as part of current task
    - **NO**: Mark as "implemented-broken" with clear blockers
-3. **DOCUMENT**: Create detailed fix document explaining:
+3. **DOCUMENT**: Create detailed fix document (see fix-guide for Fix Documentaton Template) explaining:
    - What was successfully implemented (functional aspects)
    - What structural issues remain (compilation, build, test failures)
    - Specific steps needed for structural repair
-4. **TRACK**: Update task status appropriately - never mark broken code as "completed"
+4. **TRACK**: Update task status appropriately - never mark broken code as completed ("[x]")
 
-### Step 5: Validation
+## Task Discovery Protocols - TODO Tags (During implementation)
 
-**Multi-Stage Validation Process**:
-
-#### Stage 1: Pre-Fix Component Assessment
-
-**Before starting the fix** - Use validation scripts to assess current state:
-
-```bash
-# Assess component health and complexity before fixing
-node scripts/validation/validate-component.js <component-name>
-node scripts/validation/estimate-complexity.js <component-name>
+```typescript
+// TODO: [TASK-NEW-XXX] Description | Priority: High/Medium/Low | Phase: Foundation/Interface/Integration
+// Complexity: 1-10 | Location: Context | Dependencies: List
 ```
 
-**When to use these scripts**:
+## Documentation Protocol
 
-- `validate-component.js`: Run before starting any fix to get baseline health status
-- `estimate-complexity.js`: Use to confirm this is appropriate for quick-fix (should score 0-7)
+### Post-Implementation Documentation
 
-#### Stage 2: Compilation Validation
+- [ ] Search for TODO tags: `grep -r "TODO: \[TASK-" .`
+- [ ] **Apply consolidation criteria below** for each TODO
+- [ ] Use `<project>-roadmap.md` for classification if creating new tasks
+- [ ] Update appropriate tasks (consolidated or new) in active-tasks.md
+- [ ] Update active task status to [x] in active tasks queue
+- [ ] Add ONE-LINE entry to `<project>-tracker-data.md` log
+- [ ] Create detailed fix document in `dev/fixes/` folder
+- [ ] Extract reusable patterns to `<project>-patterns.md` - see Patterns Documentation
 
-```bash
-npx tsc --noEmit  # TypeScript compilation
-npm run lint      # Code quality checks
-```
+### Task Documentation
 
-#### Stage 3: Component Validation
-
-```bash
-node scripts/validation/validate-component.js <component-name>
-npm test <component-name>  # Component-specific tests
-```
-
-#### Stage 4: Fix Verification
+#### Step 1: Consolidated Check
 
 ```bash
-npm run build     # Full build process
-npm test          # Full test suite
-node scripts/validation/verify-fix.js <component-name>
+# Search for related existing tasks
+grep -i "[component|domain|functionality]" *-active-tasks.md
 ```
 
-**When to use verification**:
+**APPEND to Existing Task When**:
+    - Same file(s) being modified
+    - Related functional domain
+    - Combined effort <30 points (quick fix limit)
+    - Logical implementation sequence
 
-- `verify-fix.js`: Run after implementing fix to confirm resolution and no regressions
+**CREATE New Task When**:
+    - Different expertise required
+    - No file overlap
+    - Combined complexity >30 points
+    - Independent implementation
 
-#### Stage 5: Evidence Generation
+#### Step 2a: Task Creation
 
-```bash
-# Generate evidence for documentation (optional for quick fixes)
-node scripts/validation/generate-evidence.js <fix-id>
+If task is not to be consolidated following the consolidation check, create a new task in the appropriate section
+    - If essential prerequesite for any priority or sequenced task, mark as priorty ("[!]")
+
+**Example**:
+
+```markdown
+- [ ] **<Short_Description>** [TASK_ID]
+  - Priority: <p> | Complexity: <c> | Status: <errors>
+  - Dependencies: <dependencies>
+  - Implementation Approach: <steps>
+  - Location: path/to/file <line_of_TODO_tag>
+  - See: <project>-patterns.md#<relevant_pattern(s)>
 ```
 
-**When to use evidence generation**:
+#### Step 2b: Task Consolidation
 
-- For tracker updates requiring before/after proof
-- When fix affects multiple components
-- For fixes that will be referenced later
+**For Task Appendage**:
 
-#### Stage 6: System Validation
+1. Update task title: `Original Task → Enhanced [Original + New] System`
+2. Add to "Consolidated From": `+ NEW-DISCOVERY (complexity)`
+3. Expand "Implementation Approach" with new steps
+4. Update complexity score: `Original + New = Total`
+5. Preserve all useful details from both sources
+6. Include locations of TODO tags in code
+7. If essential prerequesite for any priority or sequenced tasks, mark as priorty ("[!]")
 
-- Manual testing of fixed functionality
-- Integration point verification
-- Performance impact assessment
-- No regression confirmation
+**Example**:
 
-### Step 6: Pattern Analysis and Documentation Update
+```markdown
+- **<short_description>** [TASK_C_<ID>]
+  - Priority: <p> | Complexity: <c1+c2> (<c1>+<c2>) | Status: <errors>
+  - Consolidated From: TASK-ORIGINAL + TASK-DISCOVERED
+  - Implementation Approach:
+    1. Original functionality (step(s) <n-n>)
+    2. NEW: Additional requirements (step(s) <n-n>)
+    3. Enhanced validation (step <n>)
+  - Location: path/to/file <line_of_TODO_tag>
+  - See: <project>-patterns.md#<relevant_pattern(s)>
+```
 
-#### 6.1: Pattern Compliance Analysis
+### Status Update
 
-**Before creating fix documentation**, analyze what patterns were established or used:
+- Update task marker: `[ ]` → `[x]` in `templum-active-tasks.md`
+- Tracker log entry: `Date | Component | x | dev/fixes/fix-document.md`
+- NO duplication: Details go ONLY in fix document, not tracker-data.md
 
-1. **Identify Patterns Applied** (if any of these were relevant to your fix):
-   - **Map Iteration Pattern**: Did you need to convert `for (const [key, value] of map)` to `for (const [key, value] of Array.from(map.entries()))`?
-   - **Error Handling Pattern**: Did you apply `isTemplumError` type guard in catch blocks?
-   - **Type System Integration**: Did you use types from `../types/templum-types.ts`?
-   - **Signal Emission Pattern**: Did you use typed signal payloads (`ErrorSignalPayload`, `MetricsSignalPayload`)?
-   - **Interface Property Alignment**: Did you align Map types with Map usage or fix object literal violations?
-   - **Async Method Pattern**: Did you implement async methods following established patterns?
+### Chain Completion & Roadmap Update Protocol
 
-2. **Document Pattern Usage** in your fix documentation:
+- [ ] Check if completed task finishes entire dependency chain
+- [ ] If chain complete AND no other dependencies: REMOVE chain from active tasks
+- [ ] Check if phase complete → Update `templum-roadmap.md` phase status
+- [ ] Check if new tasks affect phase balance → Consider roadmap updates
 
-   ```markdown
-   ## Implementation Patterns Used
-   **Pattern Compliance**: [List which patterns were applied]
-   - Map Iteration: True/False (Applied Array.from() pattern)
-   - Error Handling: True/False (Used isTemplumError type guard)
-   - Type System: True/False (Imported from templum-types.ts)
-   - [Only list patterns that were relevant to this fix]
-   ```
-
-3. **Update Planning Document** if patterns were discovered or refined:
-   - If you found a new pattern or variation, note it in the planning queue
-   - If existing pattern guidance was incomplete, add clarifying notes
-
-**Pattern Sync Frequency**: This analysis ensures all fixes contribute to the evolving architectural knowledge base and prevents future developers from having to rediscover or recreate solutions that have already been established.
-
-#### 6.2: Pattern Documentation Maintenance Guidelines
-
-**CRITICAL**: Follow established pattern consolidation framework to prevent organic document growth and maintain information quality.
-
-**Pattern Addition Rules**:
-
-1. **Before Adding New Patterns**:
-   - [ ] **Check for Existing Patterns**: Search `*-patterns.md` for similar solutions
-   - [ ] **Consolidation Assessment**: Can this be merged with existing patterns?
-   - [ ] **Usage Frequency Test**: Will this pattern be used in 3+ scenarios?
-   - [ ] **Evidence Requirement**: Do you have success evidence from ≥2 applications?
-
-2. **When Adding is Justified** (only if all above criteria met):
-
-   ```markdown
-   ### {Pattern Name}
-   
-   **Status**: IN DEVELOPMENT | **Category**: {Foundation|Integration|Implementation}
-   **Usage Evidence**: [{task-references}] | **Last Updated**: {timestamp}
-   
-   **Problem**: {one-sentence problem description}
-   **Solution**: {concise solution summary}
-   **Implementation**: {essential code example only}
-   **Used By Active Tasks**: [List current references]
-   **Integration Points**: [Related patterns]
-   ```
-
-3. **Pattern Enhancement Rules** (preferred over new patterns):
-   - **Existing Pattern Found**: Add implementation variation to existing pattern
-   - **Similar Pattern Exists**: Consolidate into existing pattern with variations
-   - **Pattern Family**: Add to existing pattern family rather than create new
-
-4. **Pattern Promotion Process**:
-   - IN DEVELOPMENT → ESTABLISHED after 3+ successful applications
-   - Add to Enhanced Pattern Index with usage frequency indicators
-   - Update "Used By Active Tasks" sections
-   - Add difficulty level and time estimates
-
-#### 6.3: Create Fix Documentation and Update Files
-
-1. **Create Fix Document** using Quick Fix template (below) with pattern analysis included
-2. **Update Planning Queue** in `project/dev/*-active-tasks.md`:
-   - Mark task as completed (check off item)
-   - Remove from appropriate queue
-   - Add any new discoveries to investigation queue
-   - Add any tasks that have emerged during this implementation, and their details, to the relevant queue
-   - Add pattern notes to any affected items following consolidation guidelines
-3. **Pattern Documentation Updates** (if applicable):
-   - [ ] **Enhancement Over Addition**: Prefer enhancing existing patterns
-   - [ ] **Consolidation Check**: Merge similar patterns rather than create new ones
-   - [ ] **Usage Tracking**: Update "Used By Active Tasks" sections
-   - [ ] **Index Maintenance**: Update Enhanced Pattern Index if pattern status changes
-
-### Step 7: Update Project Dashboard (Final Step)
+### Update Project Dashboard
 
 **After all implementation, validation, and documentation is complete**:
 
@@ -304,9 +176,9 @@ Update `project/dev/*-tracker-data.md` with:
 - This provides user visibility into project health trends
 - **Note**: Dashboard is for user monitoring only - not part of task selection workflow
 
-## ⚡ Quick Fix Documentation Template
+## Quick Fix Documentation Template
 
-**Create file**: `dev/fixes/YYYY-MM-DD-HHMMSS-quick-fix-description.md`
+**Create file**: `dev/fixes/description.md`
 
 ```markdown
 # Quick Fix: {Issue Description}
@@ -368,75 +240,60 @@ Update `project/dev/*-tracker-data.md` with:
 **Template**: Quick Fix
 ```
 
-## Enhanced Documentation Integration
+## Pattern Documentation
 
-**ENHANCED Documentation Update Checklist**:
+### Pattern Consolidation Framework
 
-1. **Task Discovery Protocols** (Quick Fix Consolidation):
+**Decision Tree**: Pattern Discovery → Existing Similar? **YES** → ENHANCE existing | **NO** → 3+ Use Cases? **YES** → CREATE new | **NO** → Document in fix only
 
-   **MANDATORY: Consolidation First**:
+**Status**: IN DEVELOPMENT (<3 uses) | ESTABLISHED (3+ uses)
+**Categories**: Foundation | Integration | Technical
 
-   ```bash
-   # Search for related existing tasks
-   grep -i "[component|domain|functionality]" *-active-tasks.md
-   ```
+### Pattern Documentation Process
 
-   **Quick Fix Consolidation Criteria**:
+**Required Analysis**:
 
-   **APPEND to Existing Task When**:
-   - Same file(s) being modified
-   - Related functional domain
-   - Combined effort <30 points (quick fix limit)
-   - Logical implementation sequence
+```markdown
+## Pattern Consolidation Analysis
+**Existing Pattern Search**: [Results from <project>-patterns.md]
+**Decision**: [ENHANCE existing | CREATE new | DOCUMENT in fix only]  
+**Usage Projection**: [3+ scenarios required for new patterns]
+```
 
-   **CREATE New Task When**:
-   - Different expertise required
-   - No file overlap
-   - Combined complexity >30 points
-   - Independent implementation
+**Enhanced Pattern Template** (when justified):
 
-   **Discovery Methods**:
+```markdown
+### {Pattern Name}
+**Status**: IN DEVELOPMENT | **Category**: Foundation|Integration|Technical
+**Difficulty**: 🟢🟡🟠🔴 | **Time**: ~X hours
+**Problem**: {one-sentence problem}
+**Solution**: {concise solution}
+**Implementation**: {essential examples}
+```
 
-   **TODO Tags** (During implementation):
+### Pattern Compliance Checklist
 
-   ```typescript
-   // TODO: [TASK-NEW-XXX] Description | Priority: High/Medium/Low | Phase: Foundation/Interface/Integration
-   // Complexity: 1-10 | Location: Context | Dependencies: List
-   ```
+**Architecture Verification**:
 
-   **Direct Addition** (During analysis/reviews):
-   - Check consolidation first (above)
-   - If consolidatable: Update existing task with new scope
-   - If independent: Add to active-tasks.md with roadmap classification
+- [ ] Data Processing: Follow project conventions
+- [ ] Error Handling: Use consistent project patterns  
+- [ ] Type System: Integrate with project type foundations
+- [ ] Interface Alignment: Match established patterns
+- [ ] Async Operations: Follow established error handling
 
-   **Consolidation Template**:
-   1. Expand task title to reflect broader scope
-   2. Add to "Implementation Approach" as additional step  
-   3. Update complexity: Original + New = Total (keep <30 for quick fixes)
-   4. Preserve all implementation details
+**Consolidation Compliance**:
 
-2. **Post-Implementation Documentation**:
-   - [ ] Search for TODO tags: `grep -r "TODO: \[TASK-" .`
-   - [ ] **Apply consolidation criteria above** for each TODO
-   - [ ] Use `templum-roadmap.md` for classification if creating new tasks
-   - [ ] Update appropriate tasks (consolidated or new) in active-tasks.md
-   - [ ] Update task status to [x] in active tasks queue
-   - [ ] Add ONE-LINE entry to `templum-tracker-data.md` log
-   - [ ] Create detailed fix document in `dev/fixes/` folder
-   - [ ] Extract reusable patterns to `templum-patterns.md`
-   - [ ] Remove TODO tags after documenting
+- [ ] Searched existing patterns before creating new
+- [ ] Enhanced existing rather than duplicating
+- [ ] Updated bidirectional references and usage tracking
+- [ ] Applied difficulty classification (🟢🟡🟠🔴)
+- [ ] Maintained reference integrity
 
-3. **Chain Completion & Roadmap Update Protocol** (NEW):
-   - [ ] Check if completed task finishes entire dependency chain
-   - [ ] If chain complete AND no other dependencies: REMOVE chain from active tasks
-   - [ ] Check if phase complete → Update `templum-roadmap.md` phase status
-   - [ ] Check if new tasks affect phase balance → Consider roadmap updates
+**Documentation Updates**:
 
-**Status Update Rules**:
-
-- Update task marker: `[ ]` → `[x]` in `templum-active-tasks.md`
-- Tracker log entry: `Date | Component | x | dev/fixes/fix-document.md`
-- NO duplication: Details go ONLY in fix document, not tracker-data.md
+- [ ] `<project>-patterns.md` - Enhanced/added following template
+- [ ] Pattern index - Updated usage frequency indicators
+- [ ] Cross-references - Updated "Used By Active Tasks"
 
 ## When to Escalate
 
@@ -457,61 +314,6 @@ Update `project/dev/*-tracker-data.md` with:
 3. Note escalation reason in task description
 4. Switch to `comprehensive-fix-guide.md`
 
-## Quick Reference Links
-
-**For detailed scoring**: See `shared-components.md`
-**For complex fixes**: Use `comprehensive-fix-guide.md`  
-**For tracker structure**: See `tracker-template.md`
-
-**Validation scripts** - Essential tools for quick fix workflow:
-
-```bash
-# Pre-fix assessment (run before starting)
-node scripts/validation/validate-component.js <component-name>
-node scripts/validation/estimate-complexity.js <component-name>
-
-# Post-fix verification (run after implementing)
-node scripts/validation/verify-fix.js <component-name>
-
-# Documentation evidence (optional, for complex quick fixes)
-node scripts/validation/generate-evidence.js <fix-id>
-```
-
-**Script Usage Guidelines**:
-
-- **Component Validation**: Always run before starting to establish baseline
-- **Complexity Estimation**: Use to verify quick-fix approach is appropriate (score should be 0-7)
-- **Fix Verification**: Required after implementation to confirm success
-- **Evidence Generation**: Use when tracker requires detailed before/after proof
-
-## Pattern Maintenance Quick Reference
-
-**Pattern Consolidation Checklist** (❗ Before adding ANY pattern content):
-
-- [ ] **Search First**: `grep -r "pattern-name" {project}-patterns.md`
-- [ ] **Enhancement Over Addition**: Can this enhance an existing pattern?
-- [ ] **Usage Test**: Will this be used in 3+ scenarios?
-- [ ] **Evidence Requirement**: Do you have success evidence from ≥2 applications?
-
-**If Pattern Addition Required**:
-
-```markdown
-### {Pattern Name}
-**Status**: IN DEVELOPMENT | **Category**: Foundation|Integration|Implementation  
-**Usage Evidence**: [{current-task-references}] | **Last Updated**: {timestamp}
-**Problem**: {one-sentence description}
-**Solution**: {concise summary}
-**Implementation**: {minimal essential code only}
-**Used By Active Tasks**: [List current references]
-```
-
-**Pattern Enhancement Guidelines**:
-
-- **Existing Pattern**: Add implementation variation to existing pattern
-- **Similar Pattern**: Consolidate into existing pattern with variations section  
-- **Status Updates**: IN DEVELOPMENT → ESTABLISHED after 3+ applications
-- **Cross-References**: Always update "Used By Active Tasks" sections
-
 ## Success Criteria
 
 **A successful quick fix**:
@@ -530,6 +332,12 @@ node scripts/validation/generate-evidence.js <fix-id>
 - Tracker integration complete
 - Documentation follows template
 - **Pattern documentation maintained** (enhancement over addition)
+
+## Quick Reference Links
+
+**For detailed scoring**: See `shared-components.md`
+**For complex fixes**: Use `comprehensive-fix-guide.md`  
+**For tracker structure**: See `tracker-template.md`
 
 ---
 **Template Type**: Quick Fix Guide  

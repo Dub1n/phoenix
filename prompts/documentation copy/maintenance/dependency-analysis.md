@@ -110,7 +110,7 @@ If you receive this dependency analysis prompt, follow this autonomous workflow 
 
 1. **Identify Chain Starts**: Tasks with no dependencies
 2. **Follow Dependency Chains**: Map all paths through dependency network
-3. **Calculate Path Lengths**: Sum complexity/time estimates for each path
+3. **Calculate Path Lengths**: Sum complexities for each path
 4. **Identify Bottlenecks**: Find longest paths and shared dependencies
 5. **Mark Critical Path**: Identify the longest path to project completion
 
@@ -122,7 +122,6 @@ If you receive this dependency analysis prompt, follow this autonomous workflow 
 ### Primary Critical Path
 TASK-088 → TASK-136 → TASK-163 → TASK-173 → TASK-192
 **Total Complexity**: {sum of complexity scores}
-**Estimated Duration**: {sum of time estimates}
 **Blocking Factor**: {number of tasks blocked by this path}
 
 ### Alternative Paths

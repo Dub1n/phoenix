@@ -1,4 +1,4 @@
-# Comprehensive Fix: Advanced Skin Compatibility Checks (TASK-SKIN-002)
+﻿# Comprehensive Fix: Advanced Skin Compatibility Checks (TASK-SKIN-002)
 
 ## Fix Information
 
@@ -189,7 +189,7 @@ During implementation, identified opportunity for enhanced skin validation patte
 
 2. **Task Status Updates**:
    - [x] Update task marker to [x] in `templum-active-tasks.md`
-   - [x] Add ONE-LINE entry to `templum-tracker-data.md` log: `2025-08-28 | Advanced Skin Compatibility Checks | ✅ | 2025-08-28-154103-comprehensive-fix-advanced-skin-compatibility-checks.md`
+   - [x] Add ONE-LINE entry to `templum-tracker-data.md` log: `2025-08-28 | Advanced Skin Compatibility Checks | ✅ | advanced-skin-compatibility-checks.md`
    - [x] Create detailed fix document in `dev/fixes/` folder
    - [x] NO duplication: Details ONLY in fix document
 

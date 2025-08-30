@@ -16,92 +16,35 @@
 - `[>]` migrated / forwarded
 - `[<]` scheduled / rescheduled
 - `[?]` question / blocked
+- `[B]` implemented-broken: core logic done but compilation/tests failing (requires structural fix)
+- `[T]` implemented-testing: compiles but needs functional validation
 
 ## 1.2 Migration - Templum 2.1 Compatible Backend
 
-### Foundation Tasks (Priority Queue)
-
-- [x] **Universal Skin Provider Implementation** [TASK-H-M02] ✅ **COMPLETED**
-  - Priority: 33 | Complexity: 26 | Status: Fully implemented and validated
-  - Pattern: universal-skin-definition-generator (✅ established)
-  - Dependencies: Backend service architecture knowledge (✅ completed)
-  - Description: Create complete Universal Skin Definition with commands, views, menus, themes
-  - Success: Skin definition validates against Templum 1.2 standards (✅ validated)
-  - **Completion**: 2025-08-30 | Fix: `dev/fixes/2025-08-30-103100-comprehensive-fix-universal-skin-provider-implementation.md`
-
-- [x] **Auto-Registration Service Implementation** [TASK-H-M03] ✅ **COMPLETED**
-  - Priority: 31 | Complexity: 22 | Status: Fully implemented and validated
-  - Pattern: templum-auto-registration-enhanced (✅ established)
-  - Dependencies: None (foundation component)
-  - Description: Enhanced auto-registration for ~/.templum/services directory with heartbeat
-  - Success: Haruspex auto-registers and maintains heartbeat with Templum (✅ validated)
-  - **Completion**: 2025-08-30 | Fix: `dev/fixes/2025-08-30-104100-comprehensive-fix-auto-registration-service-implementation.md`
-
-- [x] **Templum Protocol Adapter Implementation** [TASK-H-M04] ✅ **COMPLETED**
-  - Priority: 29 | Complexity: 24 | Status: HTTP-first communication implemented
-  - Pattern: ipc-to-http-protocol-migration (✅ established)
-  - Dependencies: HTTP Gateway, existing IPC system (✅ completed)
-  - Description: Convert existing IPC communication to Templum-compatible HTTP protocol
-  - Success: All commands work via HTTP instead of IPC (✅ validated)
-  - **Completion**: 2025-08-30 | Fix: `dev/fixes/2025-08-30-105902-comprehensive-fix-templum-protocol-adapter-implementation.md`
-
-### Core Refactoring Tasks (Investigation Queue)
-
-- [x] **Backend Service Templum Integration** [TASK-H-M05] ✅ **COMPLETED**
-  - Priority: 27 | Complexity: 30 | Status: Pure backend architecture implemented
-  - Pattern: backend-service-templum-migration (✅ established)
-  - Dependencies: HTTP Gateway, Universal Skin Provider (✅ completed)
-  - Description: Update HaruspexBackendService for 2.1 pure backend architecture
-  - Success: Backend service operates without VSCode dependencies (✅ validated)
-  - **Completion**: 2025-08-30 | Fix: `dev/fixes/2025-08-30-115203-comprehensive-fix-backend-service-templum-integration.md`
-
-- [x] **Core Engine HTTP Migration** [TASK-H-M06] ✅ **COMPLETED**
-  - Priority: 25 | Complexity: 28 | Status: HTTP-first architecture implemented  
-  - Pattern: core-engine-http-first-migration (✅ established)
-  - Dependencies: Backend Service refactoring (✅ completed)
-  - Description: Refactor HaruspexCore for HTTP-first communication with Templum
-  - Success: Core engine provides analysis via HTTP endpoints (✅ validated)
-  - **Completion**: 2025-08-30 | Fix: `dev/fixes/2025-08-30-185830-comprehensive-fix-core-engine-http-first-migration.md`
-
-- [x] **VSCode Extension Decoupling** [TASK-H-M07] ✅ **COMPLETED**
-  - Priority: 23 | Complexity: 32 | Status: Dependency injection architecture implemented
-  - Pattern: vscode-pure-backend-separation (✅ established)
-  - Dependencies: Backend Service migration ✅, Core Engine migration ✅ (both completed)
-  - Description: Extract pure backend functionality from VSCode extension wrapper
-  - Success: Backend runs independently without VSCode runtime (✅ validated)
-  - **Completion**: 2025-08-30 | Fix: `dev/fixes/2025-08-30-143000-comprehensive-fix-vscode-extension-decoupling.md`
-
-- [6] **Command Execution System Templum Compatibility** [TASK-H-M08]
-  - Priority: 21 | Complexity: 20 | Status: Command mapping needed
-  - Pattern: templum-command-mapping-system
-  - Dependencies: Universal Skin Provider, HTTP Gateway
-  - Description: Implement command execution system that maps skin commands to operations
-  - Success: All skin-defined commands execute correctly via /executeCommand
-
 ### Integration Tasks (Architecture Queue)
 
-- [ ] **Health Monitoring Templum Compliance** [TASK-H-M09]
+- [3] **Health Monitoring Templum Compliance** [TASK-H-M09]
   - Priority: 19 | Complexity: 16 | Status: Health endpoints needed
   - Pattern: templum-health-monitoring-integration
   - Dependencies: HTTP Gateway, Diagnostic System
   - Description: Update diagnostics system for Templum health check requirements
   - Success: /health endpoint provides comprehensive system status
 
-- [ ] **Cache Manager HTTP Optimization** [TASK-H-M10]
+- [4] **Cache Manager HTTP Optimization** [TASK-H-M10]
   - Priority: 17 | Complexity: 18 | Status: HTTP caching strategy needed
   - Pattern: http-request-caching-optimization
   - Dependencies: Cache Manager, HTTP Gateway
   - Description: Optimize cache management for HTTP request/response patterns
   - Success: Analysis results cached efficiently for HTTP requests
 
-- [ ] **Model Manager Templum Integration** [TASK-H-M11]
+- [5] **Model Manager Templum Integration** [TASK-H-M11]
   - Priority: 15 | Complexity: 14 | Status: ML model HTTP integration
   - Pattern: ml-model-http-service-integration
   - Dependencies: Prediction Engine, HTTP Gateway
   - Description: Integrate ML model management with HTTP-based prediction requests
   - Success: ML models serve predictions via HTTP endpoints
 
-- [ ] **Configuration System Templum Compatible** [TASK-H-M12]
+- [6] **Configuration System Templum Compatible** [TASK-H-M12]
   - Priority: 13 | Complexity: 12 | Status: Config system modernization
   - Pattern: templum-compatible-configuration
   - Dependencies: Backend Service architecture
@@ -110,28 +53,28 @@
 
 ### Validation Tasks (Verification Queue)
 
-- [ ] **Templum Connection Integration Testing** [TASK-H-M13]
+- [7] **Templum Connection Integration Testing** [TASK-H-M13]
   - Priority: 11 | Complexity: 8 | Status: End-to-end testing needed
   - Pattern: templum-integration-e2e-testing
   - Dependencies: All foundation tasks complete
   - Description: Comprehensive testing of Templum discovery, connection, and command execution
   - Success: Templum successfully discovers, connects, and executes all commands
 
-- [ ] **Universal Skin Definition Validation** [TASK-H-M14]
+- [8] **Universal Skin Definition Validation** [TASK-H-M14]
   - Priority: 9 | Complexity: 6 | Status: Skin compliance testing
   - Pattern: skin-definition-compliance-testing
   - Dependencies: Universal Skin Provider
   - Description: Validate generated skin definition against Templum 1.2 standards
   - Success: Skin definition passes all Templum compatibility tests
 
-- [ ] **HTTP Performance Benchmarking** [TASK-H-M15]
+- [9] **HTTP Performance Benchmarking** [TASK-H-M15]
   - Priority: 7 | Complexity: 10 | Status: Performance validation needed
   - Pattern: http-api-performance-benchmarking
   - Dependencies: HTTP Gateway, all backend components
   - Description: Benchmark HTTP API performance against 2.1 spec requirements
   - Success: <200ms health checks, <2s analysis commands, <5s predictions
 
-- [ ] **Multi-Interface Compatibility Testing** [TASK-H-M16]
+- [10] **Multi-Interface Compatibility Testing** [TASK-H-M16]
   - Priority: 5 | Complexity: 12 | Status: Cross-interface testing needed
   - Pattern: multi-interface-compatibility-validation
   - Dependencies: All migration tasks complete
@@ -147,16 +90,18 @@
 
 ## Priority Queue
 
-- [ ] **Analysis Engine Implementation** [TASK-H-001]
-  - Priority: 32 | Complexity: 25 | Status: Critical missing file
+- [x] **Analysis Engine Implementation** [TASK-H-001] ✅ **COMPLETED**
+  - Priority: 32 | Complexity: 25 | Status: ✅ Production implementation complete
   - Pattern: backend-service-foundation
-  - Dependencies: None (foundation component)
+  - Dependencies: None (foundation component)  
+  - Completed: 2025-08-30 | Implementation: Real AST-based analysis with TypeScript integration
   - See: haruspex-patterns.md#analysis-engine-implementation
 
-- [ ] **Prediction Engine Implementation** [TASK-H-002]
-  - Priority: 30 | Complexity: 23 | Status: Missing ML predictions service
+- [x] **Prediction Engine Implementation** [TASK-H-002] ✅ **COMPLETED**
+  - Priority: 30 | Complexity: 23 | Status: ✅ Production ML-based prediction engine complete
   - Pattern: ml-engine-architecture
-  - Dependencies: Analysis Engine (can start in parallel)
+  - Dependencies: Analysis Engine (can start in parallel) ✅
+  - Completed: 2025-08-30 | Implementation: Complete production ML prediction engine with circuit breaker, cache, and comprehensive diagnostics
   - See: haruspex-patterns.md#prediction-engine-implementation
 
 ## Investigation Queue
@@ -211,15 +156,33 @@
 
 ### Infrastructure Dependencies (Discovered during TASK-H-M01)
 
-- [ ] **Analysis Engine Stub Implementation** [TASK-H-NEW-006] | Found in: haruspex-backend-service.ts:22 | Priority: High
+- [x] **Analysis Engine Stub Implementation** [TASK-H-NEW-006] ✅ **COMPLETED**
   - Complexity: 6 | Dependencies: Core analysis interfaces
   - Phase: Infrastructure | Pattern: backend-service-foundation  
-  - Description: Missing analysis engine implementation referenced by backend service
+  - Completed: 2025-08-30 | Replaced stub with production AST-based analysis engine
+  - Description: ✅ Production analysis engine implementation complete
 
-- [ ] **Prediction Engine Stub Implementation** [TASK-H-NEW-007] | Found in: haruspex-backend-service.ts:23 | Priority: Medium
-  - Complexity: 5 | Dependencies: Analysis engine output types
+- [x] **Prediction Engine Stub Implementation** [TASK-H-NEW-007] ✅ **COMPLETED**
+  - Complexity: 5 | Dependencies: Analysis engine output types ✅
   - Phase: Infrastructure | Pattern: ml-engine-architecture
+  - Completed: 2025-08-30 | Implementation: UPGRADED to full production ML-based prediction engine (see TASK-H-002)
   - Description: Missing prediction engine implementation referenced by backend service
+
+### API Gateway Infrastructure Components (Consolidated during completion)
+
+- [ ] **Comprehensive API Gateway Infrastructure Implementation** [TASK-H-NEW-GATEWAY]
+  - **Consolidated From**: TASK-H-NEW-008 (3) + TASK-H-NEW-009 (4) + TASK-H-NEW-011 (3) + TASK-H-NEW-012 (3) + TASK-H-NEW-013 (4) + TASK-H-NEW-014 (3)
+  - Priority: Medium | Complexity: 20 (3+4+3+3+4+3) | Phase: Interface
+  - Pattern: rest-api-architecture, security-architecture
+  - **Implementation Approach**:
+    1. IPC Server Protocol Implementation (src/api/gateway/protocols/ipc-server.ts)
+    2. WebSocket Server Protocol Implementation (src/api/gateway/protocols/websocket-server.ts)
+    3. Authentication Manager Implementation (src/api/gateway/auth/auth-manager.ts)
+    4. Rate Limiter Implementation (src/api/gateway/middleware/rate-limiter.ts)
+    5. Request Validator Implementation (src/api/gateway/validation/request-validator.ts)
+    6. Response Formatter Implementation (src/api/gateway/formatting/response-formatter.ts)
+  - Dependencies: API contracts, HTTP server foundation, security framework
+  - Description: Complete API Gateway infrastructure with multi-protocol support, security, and request/response handling
 
 ### Cache Management Integration (Discovered during command mapping)
 
@@ -235,7 +198,7 @@
 
 ---
 
-**Task Count**: 13 migration (0 foundation remaining, 2 refactoring, 4 integration, 4 validation), 2 priority, 3 investigation, 3 verification, 2 architecture, 4 discovered (25 total active)  
+**Task Count**: 13 migration (0 foundation remaining, 2 refactoring, 4 integration, 4 validation), 1 priority, 3 investigation, 3 verification, 2 architecture, 3 discovered (23 total active, 2 completed)  
 **Migration Count**: 8 migrated, 1 deprecated, 1 deferred from legacy tasks
 **Completed Infrastructure**: 7 critical implementations resolved ✅ (HTTP Server + Request Router + API Contracts Type System + Universal Skin Provider + Auto-Registration Service + Templum Protocol Adapter + Backend Service Templum Integration)
 **Next Action**: Complete [4] Core Engine HTTP Migration [TASK-H-M06] (Interface phase continuing)

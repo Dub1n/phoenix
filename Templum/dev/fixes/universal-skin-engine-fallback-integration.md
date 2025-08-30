@@ -1,4 +1,4 @@
-# Comprehensive Fix: Universal Skin Engine Fallback System Integration
+﻿# Comprehensive Fix: Universal Skin Engine Fallback System Integration
 
 ## Fix Information
 
@@ -134,7 +134,7 @@ None - implementation uses existing Universal Skin Engine defaults
 
 2. **Task Status Updates**:
    - [x] Update task marker to [x] in templum-active-tasks.md (TASK-NEW-023)
-   - [x] Add ONE-LINE entry to templum-tracker-data.md log: Date | Backend Service Router | ✓ | 2025-08-28-145000-comprehensive-fix-universal-skin-engine-fallback-integration.md
+   - [x] Add ONE-LINE entry to templum-tracker-data.md log: Date | Backend Service Router | ✓ | universal-skin-engine-fallback-integration.md
    - [x] Create detailed fix document in dev/fixes/ folder
    - [x] NO duplication: Details ONLY in fix document
 

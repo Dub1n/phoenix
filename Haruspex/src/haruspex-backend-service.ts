@@ -195,7 +195,7 @@ export class HaruspexBackendService extends EventEmitter {
       this.serviceStatus.components.diagnostics = 'operational';
 
       console.log('Haruspex Backend Service: Starting API gateway...');
-      await this.apiGateway.start(this.coreEngine);
+      await this.apiGateway.start(this.coreEngine, this.cacheManager);
       this.serviceStatus.components.apiGateway = 'operational';
 
       // Register with Templum for service discovery

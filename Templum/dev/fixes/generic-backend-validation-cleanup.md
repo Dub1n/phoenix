@@ -1,4 +1,4 @@
-# Comprehensive Fix: Generic Backend Validation & Legacy Cleanup
+﻿# Comprehensive Fix: Generic Backend Validation & Legacy Cleanup
 
 ## Fix Information
 - **Date**: 2025-08-29-185829
@@ -190,7 +190,7 @@ npx tsc --noEmit --skipLibCheck src/backend/backend-service-router.ts src/backen
 
 2. **Task Status Updates**:
    - [x] Update task marker to [x] in `templum-active-tasks.md`
-   - [x] Add entry to `templum-tracker-data.md`: `2025-08-29 | Backend Integration System | completed | 2025-08-29-185829-comprehensive-fix-generic-backend-validation-cleanup.md`
+   - [x] Add entry to `templum-tracker-data.md`: `2025-08-29 | Backend Integration System | completed | generic-backend-validation-cleanup.md`
    - [x] Create detailed fix document in `dev/fixes/` folder
    - [x] **No duplication**: Details captured in fix document only
 

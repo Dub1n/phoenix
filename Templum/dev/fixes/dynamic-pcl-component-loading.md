@@ -1,4 +1,4 @@
-# Comprehensive Fix: Dynamic PCL Component Loading Implementation
+﻿# Comprehensive Fix: Dynamic PCL Component Loading Implementation
 
 ## Fix Information
 
@@ -157,7 +157,7 @@ During implementation, discovered that PCL components use various constructor pa
 
 2. **Task Status Updates**:
    - [x] Update task marker to [x] in `templum-active-tasks.md`
-   - [x] Add ONE-LINE entry to `templum-tracker-data.md` log: `2025-08-28 | ComponentTransferStrategy | ✅ | 2025-08-28-171551-comprehensive-fix-dynamic-pcl-component-loading.md`
+   - [x] Add ONE-LINE entry to `templum-tracker-data.md` log: `2025-08-28 | ComponentTransferStrategy | ✅ | dynamic-pcl-component-loading.md`
    - [x] Create detailed fix document in `dev/fixes/` folder
    - [x] NO duplication: Details ONLY in fix document
 

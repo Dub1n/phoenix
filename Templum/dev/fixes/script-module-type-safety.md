@@ -1,4 +1,4 @@
-# Comprehensive Fix: Script Module Type Safety
+﻿# Comprehensive Fix: Script Module Type Safety
 
 ## Fix Information
 - **Date**: 2025-08-29-000507
@@ -114,7 +114,7 @@ None - changes are purely at the source code level.
 
 2. **Task Status Updates**:
    - [x] Update task marker to [x] in `templum-active-tasks.md`
-   - [x] Add ONE-LINE entry to `templum-tracker-data.md` log: `2025-08-29 | Script Modules | ✅ | 2025-08-29-000507-comprehensive-fix-script-module-type-safety.md`
+   - [x] Add ONE-LINE entry to `templum-tracker-data.md` log: `2025-08-29 | Script Modules | ✅ | script-module-type-safety.md`
    - [x] Create detailed fix document in `dev/fixes/` folder
    - [x] NO duplication: Details ONLY in fix document
 

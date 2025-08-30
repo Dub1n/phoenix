@@ -13,11 +13,10 @@
  * - Assess uncertainty level based on error clarity
  * - Calculate complexity score: (Files × 1) + (Dependencies × 2) + (Uncertainty × 3)
  * - Recommend template: quick-fix-guide.md (0-7) or comprehensive-fix-guide.md (8+)
- * - Suggest time estimate based on complexity level
  * - Output in format compatible with tracker updates
  * 
  * Input: Issue ID or component name from tracker
- * Output: Complexity assessment with numerical score, template recommendation, and time estimate
+ * Output: Complexity assessment with numerical score and template recommendation
  */
 
 import fs from 'fs';
@@ -463,7 +462,6 @@ class ComplexityEstimator {
     
     console.log(`\nComplexity Score: ${this.estimation.totalScore} (${this.estimation.complexityLevel})`);
     console.log(`Template: ${this.estimation.template}`);
-    console.log(`Time Estimate: ${this.estimation.timeEstimate}`);
     console.log(`Timestamp: ${this.estimation.timestamp}`);
     
     console.log(`\nFiles Affected: ${this.estimation.filesAffected.length} (Score: ${this.estimation.filesScore})`);

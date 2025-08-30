@@ -1,4 +1,4 @@
-# Quick Fix Guide - Low Complexity Issue Resolution
+﻿# Quick Fix Guide - Low Complexity Issue Resolution
 
 > **Purpose**: Standalone guide for simple, quick fixes  
 > **Scope**: Low complexity issues (compilation errors, simple missing implementations)  
@@ -68,7 +68,6 @@
 - [ ] Clear error messages: TypeScript/build errors with specific locations
 - [ ] File scope: ≤5 files need modification
 - [ ] No dependencies: Fix doesn't require other components
-- [ ] Time estimate: <3 hours based on error clarity
 
 **If any criteria fail**: Escalate to `comprehensive-fix-guide.md`
 
@@ -268,7 +267,7 @@ node scripts/validation/generate-evidence.js <fix-id>
    - 🔄 IN DEVELOPMENT → ✅ ESTABLISHED after 3+ successful applications
    - Add to Enhanced Pattern Index with usage frequency indicators
    - Update "Used By Active Tasks" sections
-   - Add difficulty level and time estimates
+   - Add difficulty level
 
 #### 6.3: Create Fix Documentation and Update Files
 
@@ -306,7 +305,7 @@ Update `project/dev/*-tracker-data.md` with:
 
 ## ⚡ Quick Fix Documentation Template
 
-**Create file**: `dev/fixes/YYYY-MM-DD-HHMMSS-quick-fix-description.md`
+**Create file**: `dev/fixes/description.md`
 
 ```markdown
 # Quick Fix: {Issue Description}

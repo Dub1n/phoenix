@@ -271,7 +271,7 @@ node scripts/validation/estimate-complexity.js <issue-id-or-component>
 ```
 
 **Use when**: Before selecting fix approach, during pre-assessment  
-**Output**: Complexity score (0-35), template recommendation, time estimate
+**Output**: Complexity score (0-35), template recommendation
 
 ### Fix Verification
 
@@ -315,7 +315,6 @@ node scripts/validation/generate-evidence.js <fix-id>
 
 - Fix success rate: Target >80%
 - First-attempt success: Target >70%
-- Time estimate accuracy: Target within 25%
 - Template completion rate: Target >90%
 
 **Quality KPIs**:

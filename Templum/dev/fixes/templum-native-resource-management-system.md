@@ -1,4 +1,4 @@
-# Comprehensive Fix: Templum-Native Resource Management System
+﻿# Comprehensive Fix: Templum-Native Resource Management System
 
 ## Fix Information
 
@@ -183,7 +183,7 @@ TemplumCore → TemplumAdapterRegistry → ResourceManagerAdapter → TemplumRes
 
 2. **Task Status Updates**:
    - [x] Update task marker to [x] in `templum-active-tasks.md`
-   - [x] Add entry to `templum-tracker-data.md`: `2025-08-27 | Resource Management System | ✅ | 2025-08-27-124427-comprehensive-fix-templum-native-resource-management-system.md`
+   - [x] Add entry to `templum-tracker-data.md`: `2025-08-27 | Resource Management System | ✅ | templum-native-resource-management-system.md`
    - [x] Detailed fix document created in `dev/fixes/` folder
 
 3. **Pattern Documentation**:

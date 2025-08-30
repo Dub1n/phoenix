@@ -45,8 +45,13 @@ foreach ($file in $comprehensiveFiles) {
         
         if (-not $WhatIf) {
             if (Test-Path $oldPath) {
-                Rename-Item -Path $oldPath -NewName $newName
-                Write-Host "  Renamed: $oldPath -> $newName" -ForegroundColor Green
+                $destinationPath = Join-Path (Split-Path $oldPath -Parent) $newName
+                if (Test-Path $destinationPath) {
+                    Write-Host "  Skipped (exists): $oldPath -> $newName" -ForegroundColor Yellow
+                } else {
+                    Rename-Item -Path $oldPath -NewName $newName
+                    Write-Host "  Renamed: $oldPath -> $newName" -ForegroundColor Green
+                }
             }
         }
     }
@@ -74,8 +79,13 @@ foreach ($file in $quickFixFiles) {
         
         if (-not $WhatIf) {
             if (Test-Path $oldPath) {
-                Rename-Item -Path $oldPath -NewName $newName
-                Write-Host "  Renamed: $oldPath -> $newName" -ForegroundColor Green
+                $destinationPath = Join-Path (Split-Path $oldPath -Parent) $newName
+                if (Test-Path $destinationPath) {
+                    Write-Host "  Skipped (exists): $oldPath -> $newName" -ForegroundColor Yellow
+                } else {
+                    Rename-Item -Path $oldPath -NewName $newName
+                    Write-Host "  Renamed: $oldPath -> $newName" -ForegroundColor Green
+                }
             }
         }
     }

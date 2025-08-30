@@ -38,7 +38,7 @@ Agents following this method will chain together subtasks to complete complex ob
    * Maintain a hierarchical ID (e.g., `1.2.3`) for parent–child relationships.
 
 5. **Estimability**
-   * Attach a rough complexity score or time estimate to prioritize scheduling and load balancing.
+   * Attach a rough complexity score to prioritize scheduling and load balancing.
 
 ---
 

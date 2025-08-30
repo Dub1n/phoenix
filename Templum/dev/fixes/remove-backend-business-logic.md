@@ -1,4 +1,4 @@
-# Comprehensive Fix: Remove Backend Business Logic from Service Router
+﻿# Comprehensive Fix: Remove Backend Business Logic from Service Router
 
 ## Fix Information
 
@@ -181,7 +181,7 @@ None - Maintains existing backend endpoint configuration structure
 
 2. **Task Status Updates**:
    - [x] Task TASK-REMEDIATE-001 completed successfully  
-   - [x] Create detailed fix document: `2025-08-23-150050-comprehensive-fix-remove-backend-business-logic.md`
+   - [x] Create detailed fix document: `remove-backend-business-logic.md`
    - [ ] Update task marker to [x] in `templum-active-tasks.md`
    - [ ] Add completion entry to `templum-tracker-data.md` log
 

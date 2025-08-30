@@ -267,7 +267,6 @@ Tracker Data ←→ Planning File ←→ Fix Guides ←→ Completed Fixes → T
   - **Evidence**: [Specific evidence of current state]
   - **Next Action**: [Clear actionable next step]
   - **Dependencies**: [None/List dependencies]
-  - **Time Estimate**: [Realistic time estimate]
 ```
 
 ### 3. Investigation Queue Template
@@ -285,7 +284,6 @@ Tracker Data ←→ Planning File ←→ Fix Guides ←→ Completed Fixes → T
   - **Evidence**: [What evidence exists]
   - **Next Action**: [Analysis steps needed]
   - **Dependencies**: [What's needed to proceed]
-  - **Time Estimate**: [Investigation time + implementation estimate]
 ```
 
 ### 4. Queue Management Guidelines Template
@@ -301,7 +299,6 @@ Tracker Data ←→ Planning File ←→ Fix Guides ←→ Completed Fixes → T
 
 ### Queue Updates Protocol
 - [ ] **Mark tasks in progress** when starting work
-- [ ] **Update time estimates** based on actual experience  
 - [ ] **Move completed items** to appropriate tracker sections
 - [ ] **Add new discoveries** from investigation work
 - [ ] **Update dependencies** as architecture evolves
@@ -442,7 +439,6 @@ Evidence: Health Score: XX/100 | Validation: YYYY-MM-DD | Status: [Working/Broke
 #### Planning File Maintenance
 
 - [ ] Review queue priorities based on latest tracker data
-- [ ] Update time estimates based on completed work
 - [ ] Reorganize queues if priorities have shifted
 - [ ] Add new investigation tasks from recent discoveries
 
@@ -492,7 +488,7 @@ Evidence: Health Score: XX/100 | Validation: YYYY-MM-DD | Status: [Working/Broke
 1. **Document evidence** in tracker data
 2. **Add to appropriate queue** in planning file
 3. **Calculate priority/complexity scores** using standard formulas
-4. **Set dependencies** and time estimates
+4. **Set dependencies**
 5. **Update both files' "Last Updated" dates
 
 ### Quality Standards
@@ -611,7 +607,7 @@ The Haruspex project provides excellent examples:
 #### Planning Example (`haruspex-fix-planning.md`)
 
 - **Action Focus**: Task queues, next actions, work organization  
-- **Forward-Looking**: Priority analysis, dependency mapping, time estimates
+- **Forward-Looking**: Priority analysis, dependency mapping
 - **Work Coordination**: Queue management, task selection rules, integration protocols
 
 ### Integration Success Patterns

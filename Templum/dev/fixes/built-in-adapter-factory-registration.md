@@ -1,4 +1,4 @@
-# Comprehensive Fix: Complete Built-in Adapter Factory Registration
+﻿# Comprehensive Fix: Complete Built-in Adapter Factory Registration
 
 ## Fix Information
 
@@ -166,7 +166,7 @@ Implement Haruspex-style provider registration with proper context management, e
 
 2. **Task Status Updates**:
    - [x] Update task marker to [x] in `templum-active-tasks.md` for TASK-NEW-035
-   - [x] Add ONE-LINE entry to `templum-tracker-data.md` log: `2025-08-27 | InterfaceAdapterRegistry | ✓ | 2025-08-27-230121-comprehensive-fix-built-in-adapter-factory-registration.md`
+   - [x] Add ONE-LINE entry to `templum-tracker-data.md` log: `2025-08-27 | InterfaceAdapterRegistry | ✓ | built-in-adapter-factory-registration.md`
    - [x] Create detailed fix document in `dev/fixes/` folder
    - [x] NO duplication: Details maintained in this comprehensive fix document
 
