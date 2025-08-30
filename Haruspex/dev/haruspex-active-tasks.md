@@ -88,22 +88,6 @@
 **Breaking Changes**: IPC → HTTP, VSCode dependency removal, skin-driven interface definitions
 **Validation Priority**: Foundation tasks must complete before integration testing
 
-## Priority Queue
-
-- [x] **Analysis Engine Implementation** [TASK-H-001] ✅ **COMPLETED**
-  - Priority: 32 | Complexity: 25 | Status: ✅ Production implementation complete
-  - Pattern: backend-service-foundation
-  - Dependencies: None (foundation component)  
-  - Completed: 2025-08-30 | Implementation: Real AST-based analysis with TypeScript integration
-  - See: haruspex-patterns.md#analysis-engine-implementation
-
-- [x] **Prediction Engine Implementation** [TASK-H-002] ✅ **COMPLETED**
-  - Priority: 30 | Complexity: 23 | Status: ✅ Production ML-based prediction engine complete
-  - Pattern: ml-engine-architecture
-  - Dependencies: Analysis Engine (can start in parallel) ✅
-  - Completed: 2025-08-30 | Implementation: Complete production ML prediction engine with circuit breaker, cache, and comprehensive diagnostics
-  - See: haruspex-patterns.md#prediction-engine-implementation
-
 ## Investigation Queue
 
 - [ ] **Backend Service Dependency Resolution** [TASK-H-004]

@@ -19,7 +19,6 @@ Circuit Breaker Implementation (Haruspex Reuse - RESILIENCE WIN)
 - **Priority Score**: 25 (Critical)
 - **Status**: ✅ Ready for Direct Copy - Production-ready error recovery
 - **Source Component**: `Haruspex/src/core/circuit-breaker.ts`
-- **Time Estimate**: 2 days (vs 1.5 weeks from scratch)
 - **Immediate Value**: Production resilience, graceful degradation
 
 ### Root Cause Analysis

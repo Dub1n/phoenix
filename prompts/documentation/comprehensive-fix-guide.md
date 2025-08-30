@@ -469,15 +469,42 @@ Pattern Discovery → Existing Similar Pattern?
 ```markdown
 ### {Pattern Name}
 
-**Status**: IN DEVELOPMENT | **Category**: Foundation|Integration|Technical  
-**Usage Evidence**: [{task-references}] | **Last Updated**: {timestamp}
-**Difficulty**: 🟢🟡🟠🔴 | **Est. Time**: ~X hours | **Prerequisites**: [dependencies]
+**Status**: IN DEVELOPMENT | ESTABLISHED | DEPRECATED
+**Category**: Foundation | Integration | Technical | System
+**Last Updated**: {timestamp}
+**Difficulty**: 🟢 Basic | 🟡 Medium | 🟠 Advanced | 🔴 Expert
+**Est. Time**: ~X hours
+**Prerequisites**: [List of required patterns/knowledge]
 
-**Problem**: {one-sentence problem description}
-**Solution**: {concise solution summary}  
-**Implementation**: {essential code examples - optimize for scannability}
-**Used By Active Tasks**: [{current-references}]
-**Integration Points**: [{related-patterns}]
+**Problem**: {One-sentence problem description}
+**Solution**: {Concise solution summary}
+
+#### Implementation Steps
+
+{Step-by-step implementation guide with code examples - optimize for scannability}
+
+#### Success Metrics
+- {Quantifiable improvements, e.g., "Compilation errors: 58 → 0"}
+- {Performance metrics, test coverage, etc.}
+
+#### Anti-Patterns
+- ❌ {Common mistake to avoid}
+- ❌ {Another pitfall}
+
+#### Validation Checklist
+- [ ] {Verification step 1}
+- [ ] {Verification step 2}
+
+#### Implementation Feedback
+<!-- Autonomous agents append feedback here when applying pattern -->
+- **[DATE] - [TASK-ID]**: {What worked/didn't work, adjustments made}
+- **[DATE] - [TASK-ID]**: {Additional insights from implementation}
+
+#### Pattern Metadata
+**Used By Active Tasks**: [TASK-001], [TASK-002]
+**Successfully Applied**: [TASK-COMPLETE-001] ✅ {Context} ({Date})
+**Integration Points**: [related-pattern-1], [related-pattern-2]
+**Files Using This Pattern**: {List of files}
 ```
 
 #### Step 3: Pattern Compliance Verification
@@ -490,6 +517,38 @@ Pattern Discovery → Existing Similar Pattern?
 - **Type System**: (If typed language) Proper integration with project type definitions
 - **Interface Alignment**: Data structures match established usage patterns
 - **Async Operations**: (If applicable) Async operations follow established error handling
+
+#### Step 3a: Pattern Application Feedback
+
+**When Applying Existing Patterns**:
+
+If you used an existing pattern from `<project>-patterns.md`, document the implementation experience:
+
+1. **Navigate to the pattern's "Implementation Feedback" section**
+2. **Add a new entry with format**:
+   ```
+   - **[DATE] - [TASK-ID]**: {Brief description of:
+     - Any adjustments needed for this specific case
+     - Unexpected issues encountered
+     - Success metrics achieved
+     - Time taken vs. estimate}
+   ```
+3. **If pattern required significant modification**:
+   - Consider if this warrants pattern enhancement (3+ similar modifications)
+   - Document variation in feedback for future consolidation
+
+**Feedback Examples**:
+```
+- **2025-08-30 - [TASK-H-001]**: Applied successfully, but needed async wrapper for HTTP context. Actual time: 2.5h (est. 2h)
+- **2025-08-30 - [TASK-T-045]**: Pattern worked but Map iteration needed additional null checks in TypeScript strict mode
+- **2025-08-30 - [TASK-H-003]**: Pattern failed in backend service context due to VSCode dependencies. Created backend-specific variant.
+```
+
+**Benefits of Implementation Feedback**:
+- Helps future agents learn from past implementations
+- Identifies when patterns need enhancement or consolidation
+- Creates evidence for pattern effectiveness and time estimates
+- Enables self-improving documentation through autonomous updates
 
 #### Step 4: Documentation and Maintenance
 
