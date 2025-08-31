@@ -257,6 +257,7 @@ export class ConnectionFactory {
    - **Limited ports**: Pre-configured port ranges
 
 **Enhanced Auto-Registration Flow**:
+
 ```typescript
 // Backend auto-registers on startup (ANY PORT!)
 Backend starts → Creates ~/.templum/services/backend-{pid}.json
@@ -266,6 +267,7 @@ Cleanup      → Auto-removal when backend process exits
 ```
 
 **Implementation Architecture**:
+
 ```typescript
 export class ServiceDiscovery extends EventEmitter {
   private strategies: DiscoveryStrategy[] = [
@@ -280,6 +282,7 @@ export class ServiceDiscovery extends EventEmitter {
 ```
 
 **Key Improvements**:
+
 - ✅ **Zero Port Limitations**: Backends work on any available port
 - ✅ **Instant Discovery**: Real-time detection of new backends  
 - ✅ **Auto-Cleanup**: Dead processes automatically removed
