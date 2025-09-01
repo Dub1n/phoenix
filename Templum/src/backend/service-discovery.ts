@@ -342,21 +342,56 @@ export class RegistryBasedDiscoveryStrategy implements DiscoveryStrategy {
   /**
    * Enhanced discovery from services directory
    * Each .json file represents a self-registered backend service
+   * 
+   * TODO: NEEDS PROPER IMPLEMENTATION - This is a temporary workaround
+   * Should properly resolve to user's home directory ~/.templum/services/
+   * Currently searches both project directory and parent directory fallback
    */
   private async discoverFromServicesDirectory(): Promise<DiscoveredService[]> {
     const services: DiscoveredService[] = [];
 
     try {
+      // Check primary services directory
       if (!this.options.servicesDir || !fs.existsSync(this.options.servicesDir)) {
         console.log(`[REGISTRY_DISCOVERY] Services directory not found: ${this.options.servicesDir}`);
+        
+        // FIXED: Check VDL_Vault root .templum/services directory (shared multi-repo location)
+        // Navigate up from Templum project to VDL_Vault root
+        const vdlVaultTemplumDir = path.join(process.cwd(), '..', '.templum', 'services');
+        if (fs.existsSync(vdlVaultTemplumDir)) {
+          console.log(`[REGISTRY_DISCOVERY] Using VDL_Vault shared directory: ${vdlVaultTemplumDir}`);
+          const vdlServices = await this.discoverFromDirectory(vdlVaultTemplumDir);
+          services.push(...vdlServices);
+        } else {
+          console.log(`[REGISTRY_DISCOVERY] VDL_Vault shared directory not found: ${vdlVaultTemplumDir}`);
+        }
+        
         return services;
       }
 
-      const serviceFiles = fs.readdirSync(this.options.servicesDir)
-        .filter(file => file.endsWith('.json'))
-        .map(file => path.join(this.options.servicesDir!, file));
+      // Use primary services directory
+      const primaryServices = await this.discoverFromDirectory(this.options.servicesDir);
+      services.push(...primaryServices);
+      
+    } catch (error) {
+      console.warn(`[REGISTRY_DISCOVERY] Services directory discovery failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
 
-      console.log(`[REGISTRY_DISCOVERY] Scanning ${serviceFiles.length} service files in directory`);
+    return services;
+  }
+
+  /**
+   * Helper method to discover services from any directory
+   */
+  private async discoverFromDirectory(servicesDir: string): Promise<DiscoveredService[]> {
+    const services: DiscoveredService[] = [];
+    
+    try {
+      const serviceFiles = fs.readdirSync(servicesDir)
+        .filter(file => file.endsWith('.json'))
+        .map(file => path.join(servicesDir, file));
+
+      console.log(`[REGISTRY_DISCOVERY] Scanning ${serviceFiles.length} service files in ${servicesDir}`);
 
       for (const filePath of serviceFiles) {
         try {
@@ -410,7 +445,7 @@ export class RegistryBasedDiscoveryStrategy implements DiscoveryStrategy {
         }
       }
     } catch (error) {
-      console.warn(`[REGISTRY_DISCOVERY] Services directory discovery failed: ${error instanceof Error ? error.message : String(error)}`);
+      console.warn(`[REGISTRY_DISCOVERY] Directory discovery failed for ${servicesDir}: ${error instanceof Error ? error.message : String(error)}`);
     }
 
     return services;
@@ -643,7 +678,7 @@ export class EndpointScanningDiscoveryStrategy implements DiscoveryStrategy {
           }));
         });
 
-        ws.on('message', (data) => {
+        ws.on('message', (data: any) => {
           clearTimeout(timeout);
           try {
             const response = JSON.parse(data.toString());

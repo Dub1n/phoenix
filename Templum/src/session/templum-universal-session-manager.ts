@@ -26,6 +26,7 @@ import {
 // Import real component implementations
 import { SessionContextFoundation, SessionContext } from './session-context-foundation';
 import { TemplumBackendServiceRouter } from '../backend/backend-service-router';
+import { ITemplumOrchestrator } from '../interfaces/templum-orchestrator-interface';
 
 // Interface state synchronization types
 export interface InterfaceStateData {
@@ -131,6 +132,7 @@ export class TemplumUniversalSessionManager extends EventEmitter {
 
   constructor(
     config: Partial<TemplumConfiguration> = {},
+    orchestrator?: ITemplumOrchestrator,
     backendServiceRouter?: TemplumBackendServiceRouter
   ) {
     super();
@@ -149,7 +151,7 @@ export class TemplumUniversalSessionManager extends EventEmitter {
 
     // Initialize foundation components
     this.sessionFoundation = new SessionContextFoundation();
-    this.backendServiceRouter = backendServiceRouter || new TemplumBackendServiceRouter();
+    this.backendServiceRouter = backendServiceRouter || new TemplumBackendServiceRouter(orchestrator);
 
     this.setupEventListeners();
   }
@@ -1032,7 +1034,8 @@ export class TemplumUniversalSessionManager extends EventEmitter {
   private async coordinateBackendState(transferData: InterfaceStateTransferData): Promise<void> {
     try {
       // Notify backend services of interface switch for state consistency
-      for (const backendId of transferData.activeBackends) {
+      if (transferData.activeBackends) {
+        for (const backendId of transferData.activeBackends) {
         try {
           await this.backendServiceRouter.executeCommand(
             backendId, 
@@ -1045,6 +1048,7 @@ export class TemplumUniversalSessionManager extends EventEmitter {
           const errorMessage = error instanceof Error ? error.message : 'Unknown error';
           console.warn(`Failed to notify ${backendId} backend of interface switch:`, errorMessage);
           // Continue with other backends - non-critical error
+        }
         }
       }
       
@@ -1904,7 +1908,8 @@ export class TemplumUniversalSessionManager extends EventEmitter {
     }> = [];
     
     try {
-      for (const backendId of transferData.activeBackends) {
+      if (transferData.activeBackends) {
+        for (const backendId of transferData.activeBackends) {
         console.log(`Synchronizing session state with backend: ${backendId}`);
         
         try {
@@ -1925,6 +1930,7 @@ export class TemplumUniversalSessionManager extends EventEmitter {
           });
           
           // Continue with other backends - don't let one failure stop the entire process
+        }
         }
       }
       

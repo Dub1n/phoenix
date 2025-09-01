@@ -10,8 +10,8 @@ import * as chalk from 'chalk';
 import * as readline from 'readline';
 import { EventEmitter } from 'events';
 
-// TODO: [TASK-CLI-002] Interactive Search and Filtering implementation will extend these base components
-// TODO: [TASK-CLI-003] Advanced Menu Navigation will integrate with these responsive layout components
+// Interactive Search and Filtering components - TASK-CLI-002 implementation
+// Advanced Menu Navigation integration - TASK-CLI-003 compatibility maintained
 
 /**
  * Color Theme System for Terminal UI
@@ -722,6 +722,17 @@ export class TerminalUI extends EventEmitter {
     return prompt;
   }
 
+  createInteractiveSearch(config?: Partial<InteractiveSearchConfig>): InteractiveSearch {
+    const search = new InteractiveSearch({
+      theme: this.theme,
+      ...config
+    });
+    
+    // Note: InteractiveSearch manages its own lifecycle, no need to track in activeComponents
+    
+    return search;
+  }
+
   getLayout(): ResponsiveLayout {
     return this.layout;
   }
@@ -762,6 +773,525 @@ export class TerminalUI extends EventEmitter {
     process.on('SIGTERM', async () => {
       await this.cleanup();
     });
+  }
+}
+
+/**
+ * Interactive Search and Filtering Component - TASK-CLI-002 Implementation
+ */
+export interface SearchableItem {
+  id: string;
+  title: string;
+  description?: string;
+  category: string;
+  tags?: string[];
+  data: any;
+}
+
+export interface SearchResult extends SearchableItem {
+  score: number;
+  highlightedTitle: string;
+  matchedFields: string[];
+}
+
+export interface InteractiveSearchConfig {
+  theme: TerminalColorTheme;
+  placeholder: string;
+  minSearchLength: number;
+  maxResults: number;
+  enableFuzzySearch: boolean;
+  enableCategoryFilter: boolean;
+  categories?: string[];
+  keyBindings?: {
+    search: string;
+    filter: string;
+    navigate: string[];
+    select: string;
+    cancel: string;
+  };
+}
+
+export class InteractiveSearch extends EventEmitter {
+  private config: InteractiveSearchConfig;
+  private items: SearchableItem[] = [];
+  private filteredItems: SearchResult[] = [];
+  private currentQuery = '';
+  private activeCategory: string | null = null;
+  private selectedIndex = 0;
+  private isActive = false;
+  private rl: readline.Interface | null = null;
+  private layout: ResponsiveLayout;
+
+  constructor(config: Partial<InteractiveSearchConfig> = {}) {
+    super();
+    
+    this.config = {
+      theme: DefaultColorThemes.default,
+      placeholder: 'Search... (type to filter, tab for categories, ↑↓ to navigate, enter to select)',
+      minSearchLength: 1,
+      maxResults: 10,
+      enableFuzzySearch: true,
+      enableCategoryFilter: true,
+      keyBindings: {
+        search: 'type',
+        filter: 'tab',
+        navigate: ['up', 'down'],
+        select: 'return',
+        cancel: 'escape'
+      },
+      ...config
+    };
+
+    this.layout = new ResponsiveLayout({
+      minWidth: 40,
+      minHeight: 10,
+      theme: this.config.theme
+    });
+  }
+
+  setItems(items: SearchableItem[]): void {
+    this.items = items;
+    this.filteredItems = [];
+    this.currentQuery = '';
+    this.selectedIndex = 0;
+    
+    // Extract categories if not provided
+    if (this.config.enableCategoryFilter && !this.config.categories) {
+      this.config.categories = Array.from(new Set(items.map(item => item.category)));
+    }
+    
+    this.emit('itemsUpdated', items.length);
+  }
+
+  async start(): Promise<SearchResult | null> {
+    if (this.isActive) {
+      throw new Error('Interactive search is already active');
+    }
+
+    return new Promise((resolve, reject) => {
+      this.isActive = true;
+      this.filteredItems = this.items.map(item => ({
+        ...item,
+        score: 1.0,
+        highlightedTitle: item.title,
+        matchedFields: ['title']
+      }));
+      
+      this.setupReadline();
+      this.render();
+      
+      // Set up event handlers
+      const onComplete = (result: SearchResult | null) => {
+        this.cleanup();
+        resolve(result);
+      };
+
+      const onError = (error: Error) => {
+        this.cleanup();
+        reject(error);
+      };
+
+      this.once('complete', onComplete);
+      this.once('cancel', () => onComplete(null));
+      this.once('error', onError);
+
+      // Handle keyboard input
+      this.setupKeyboardHandlers();
+    });
+  }
+
+  stop(): void {
+    if (this.isActive) {
+      this.emit('cancel');
+    }
+  }
+
+  private setupReadline(): void {
+    this.rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout,
+      terminal: true
+    });
+
+    // Enable keypress events
+    if (process.stdin.setRawMode) {
+      process.stdin.setRawMode(true);
+    }
+  }
+
+  private setupKeyboardHandlers(): void {
+    if (!process.stdin.on) return;
+
+    process.stdin.on('keypress', (chunk, key) => {
+      if (!this.isActive || !key) return;
+
+      try {
+        this.handleKeypress(chunk, key);
+      } catch (error) {
+        this.emit('error', error);
+      }
+    });
+  }
+
+  private handleKeypress(chunk: any, key: any): void {
+    if (key.ctrl && key.name === 'c') {
+      this.emit('cancel');
+      return;
+    }
+
+    switch (key.name) {
+      case 'escape':
+        this.emit('cancel');
+        break;
+      
+      case 'return':
+      case 'enter':
+        if (this.filteredItems.length > 0 && this.selectedIndex < this.filteredItems.length) {
+          this.emit('complete', this.filteredItems[this.selectedIndex]);
+        } else {
+          this.emit('cancel');
+        }
+        break;
+      
+      case 'up':
+        this.selectedIndex = Math.max(0, this.selectedIndex - 1);
+        this.render();
+        break;
+      
+      case 'down':
+        this.selectedIndex = Math.min(this.filteredItems.length - 1, this.selectedIndex + 1);
+        this.render();
+        break;
+      
+      case 'tab':
+        if (this.config.enableCategoryFilter) {
+          this.cycleCategoryFilter();
+        }
+        break;
+      
+      case 'backspace':
+        if (this.currentQuery.length > 0) {
+          this.currentQuery = this.currentQuery.slice(0, -1);
+          this.updateSearch();
+        }
+        break;
+      
+      default:
+        // Handle character input
+        if (key.sequence && key.sequence.length === 1 && !key.ctrl && !key.meta) {
+          const char = key.sequence;
+          if (char.match(/[a-zA-Z0-9\s\-_\.]/)) {
+            this.currentQuery += char;
+            this.updateSearch();
+          }
+        }
+        break;
+    }
+  }
+
+  private cycleCategoryFilter(): void {
+    if (!this.config.categories || this.config.categories.length === 0) return;
+
+    const categories = ['All', ...this.config.categories];
+    const currentIndex = this.activeCategory 
+      ? categories.indexOf(this.activeCategory) 
+      : 0;
+    
+    const nextIndex = (currentIndex + 1) % categories.length;
+    this.activeCategory = categories[nextIndex] === 'All' ? null : categories[nextIndex];
+    
+    this.updateSearch();
+  }
+
+  private updateSearch(): void {
+    let results = this.items;
+
+    // Apply category filter first
+    if (this.activeCategory) {
+      results = results.filter(item => item.category === this.activeCategory);
+    }
+
+    // Apply search query
+    if (this.currentQuery.length >= this.config.minSearchLength) {
+      results = this.config.enableFuzzySearch 
+        ? this.performFuzzySearch(results, this.currentQuery)
+        : this.performExactSearch(results, this.currentQuery);
+    }
+
+    // Convert to SearchResults and limit
+    this.filteredItems = results
+      .slice(0, this.config.maxResults)
+      .map(item => {
+        if ('score' in item) {
+          return item as SearchResult;
+        }
+        return {
+          ...item,
+          score: 1.0,
+          highlightedTitle: this.highlightMatch(item.title, this.currentQuery),
+          matchedFields: ['title']
+        };
+      });
+
+    // Reset selection if needed
+    this.selectedIndex = Math.min(this.selectedIndex, this.filteredItems.length - 1);
+    if (this.selectedIndex < 0) this.selectedIndex = 0;
+
+    this.render();
+    this.emit('searchUpdated', this.currentQuery, this.filteredItems.length);
+  }
+
+  private performFuzzySearch(items: SearchableItem[], query: string): SearchResult[] {
+    const queryLower = query.toLowerCase();
+    const results: SearchResult[] = [];
+
+    for (const item of items) {
+      const score = this.calculateFuzzyScore(item, queryLower);
+      if (score > 0) {
+        results.push({
+          ...item,
+          score,
+          highlightedTitle: this.highlightMatch(item.title, query),
+          matchedFields: this.getMatchedFields(item, queryLower)
+        });
+      }
+    }
+
+    return results.sort((a, b) => b.score - a.score);
+  }
+
+  private performExactSearch(items: SearchableItem[], query: string): SearchResult[] {
+    const queryLower = query.toLowerCase();
+    return items
+      .filter(item => 
+        item.title.toLowerCase().includes(queryLower) ||
+        item.description?.toLowerCase().includes(queryLower) ||
+        item.tags?.some(tag => tag.toLowerCase().includes(queryLower))
+      )
+      .map(item => ({
+        ...item,
+        score: 1.0,
+        highlightedTitle: this.highlightMatch(item.title, query),
+        matchedFields: this.getMatchedFields(item, queryLower)
+      }));
+  }
+
+  private calculateFuzzyScore(item: SearchableItem, query: string): number {
+    let score = 0;
+    const titleLower = item.title.toLowerCase();
+    const descLower = item.description?.toLowerCase() || '';
+    
+    // Exact title match gets highest score
+    if (titleLower.includes(query)) {
+      score += 100;
+      if (titleLower.startsWith(query)) score += 50;
+      if (titleLower === query) score += 100;
+    }
+    
+    // Description match
+    if (descLower.includes(query)) {
+      score += 20;
+    }
+    
+    // Tag matches
+    if (item.tags) {
+      for (const tag of item.tags) {
+        if (tag.toLowerCase().includes(query)) {
+          score += 30;
+        }
+      }
+    }
+    
+    // Fuzzy character matching for titles
+    const fuzzyScore = this.calculateCharacterScore(titleLower, query);
+    score += fuzzyScore;
+    
+    return score;
+  }
+
+  private calculateCharacterScore(text: string, query: string): number {
+    let score = 0;
+    let queryIndex = 0;
+    
+    for (let i = 0; i < text.length && queryIndex < query.length; i++) {
+      if (text[i] === query[queryIndex]) {
+        score += query.length - queryIndex;
+        queryIndex++;
+      }
+    }
+    
+    // Bonus for matching all characters
+    if (queryIndex === query.length) {
+      score += 10;
+    }
+    
+    return score;
+  }
+
+  private getMatchedFields(item: SearchableItem, query: string): string[] {
+    const fields: string[] = [];
+    
+    if (item.title.toLowerCase().includes(query)) fields.push('title');
+    if (item.description?.toLowerCase().includes(query)) fields.push('description');
+    if (item.tags?.some(tag => tag.toLowerCase().includes(query))) fields.push('tags');
+    
+    return fields;
+  }
+
+  private highlightMatch(text: string, query: string): string {
+    if (!query) return text;
+    
+    const regex = new RegExp(`(${this.escapeRegExp(query)})`, 'gi');
+    return text.replace(regex, this.config.theme.accent('$1'));
+  }
+
+  private escapeRegExp(string: string): string {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  private render(): void {
+    if (!this.isActive) return;
+
+    // Clear screen and move to top
+    console.clear();
+
+    const dimensions = this.layout.getDimensions();
+    const breakpoint = this.layout.getCurrentBreakpoint();
+    
+    // Render header
+    this.renderHeader(breakpoint);
+    
+    // Render search input
+    this.renderSearchInput(breakpoint);
+    
+    // Render category filter if enabled
+    if (this.config.enableCategoryFilter && this.config.categories) {
+      this.renderCategoryFilter(breakpoint);
+    }
+    
+    // Render results
+    this.renderResults(breakpoint, dimensions);
+    
+    // Render footer with help
+    this.renderFooter(breakpoint);
+  }
+
+  private renderHeader(breakpoint: 'small' | 'medium' | 'large'): void {
+    const title = this.config.theme.primary('🔍 Interactive Search');
+    const subtitle = this.config.theme.muted(`${this.filteredItems.length} results`);
+    
+    if (breakpoint === 'small') {
+      console.log(`${title}\n${subtitle}`);
+    } else {
+      console.log(`${title} - ${subtitle}`);
+    }
+    console.log(this.config.theme.muted('─'.repeat(Math.min(60, process.stdout.columns || 80))));
+  }
+
+  private renderSearchInput(breakpoint: 'small' | 'medium' | 'large'): void {
+    const prompt = this.config.theme.accent('Search: ');
+    const query = this.currentQuery || this.config.theme.muted('(type to search)');
+    const cursor = this.isActive ? this.config.theme.primary('|') : '';
+    
+    console.log(`${prompt}${query}${cursor}`);
+    console.log('');
+  }
+
+  private renderCategoryFilter(breakpoint: 'small' | 'medium' | 'large'): void {
+    if (!this.config.categories) return;
+    
+    const prefix = this.config.theme.muted('Filter: ');
+    const activeCategory = this.activeCategory || 'All';
+    const categories = ['All', ...this.config.categories];
+    
+    if (breakpoint === 'small') {
+      console.log(`${prefix}${this.config.theme.info(activeCategory)} (tab to change)`);
+    } else {
+      const categoryList = categories.map(cat => 
+        cat === activeCategory 
+          ? this.config.theme.accent(`[${cat}]`)
+          : this.config.theme.muted(cat)
+      ).join(' ');
+      console.log(`${prefix}${categoryList}`);
+    }
+    console.log('');
+  }
+
+  private renderResults(breakpoint: 'small' | 'medium' | 'large', dimensions: TerminalDimensions): void {
+    if (this.filteredItems.length === 0) {
+      console.log(this.config.theme.warning('No results found'));
+      return;
+    }
+
+    const maxDisplayResults = Math.min(
+      this.filteredItems.length,
+      Math.max(5, dimensions.height - 10)
+    );
+
+    for (let i = 0; i < maxDisplayResults; i++) {
+      const item = this.filteredItems[i];
+      const isSelected = i === this.selectedIndex;
+      
+      this.renderResultItem(item, isSelected, breakpoint);
+    }
+
+    if (this.filteredItems.length > maxDisplayResults) {
+      const remaining = this.filteredItems.length - maxDisplayResults;
+      console.log(this.config.theme.muted(`... and ${remaining} more results`));
+    }
+  }
+
+  private renderResultItem(result: SearchResult, isSelected: boolean, breakpoint: 'small' | 'medium' | 'large'): void {
+    const indicator = isSelected ? '❯' : ' ';
+    const theme = isSelected ? this.config.theme.accent : this.config.theme.primary;
+    
+    if (breakpoint === 'small') {
+      // Compact format for small screens
+      console.log(`${this.config.theme.primary(indicator)} ${theme(result.highlightedTitle)}`);
+      if (result.description) {
+        console.log(`  ${this.config.theme.muted(result.description.substring(0, 50))}${result.description.length > 50 ? '...' : ''}`);
+      }
+    } else {
+      // Full format for larger screens
+      const category = this.config.theme.muted(`[${result.category}]`);
+      const score = this.config.enableFuzzySearch ? 
+        this.config.theme.muted(` (${result.score.toFixed(1)})`) : '';
+      
+      console.log(`${this.config.theme.primary(indicator)} ${theme(result.highlightedTitle)} ${category}${score}`);
+      
+      if (result.description) {
+        const desc = breakpoint === 'medium' 
+          ? result.description.substring(0, 80) + (result.description.length > 80 ? '...' : '')
+          : result.description;
+        console.log(`  ${this.config.theme.muted(desc)}`);
+      }
+    }
+    
+    console.log('');
+  }
+
+  private renderFooter(breakpoint: 'small' | 'medium' | 'large'): void {
+    const help = breakpoint === 'small' 
+      ? 'ESC: cancel | ENTER: select | ↑↓: navigate'
+      : 'ESC: cancel | ENTER: select | ↑↓: navigate | TAB: filter | Type: search';
+    
+    console.log(this.config.theme.muted('─'.repeat(Math.min(60, process.stdout.columns || 80))));
+    console.log(this.config.theme.muted(help));
+  }
+
+  private cleanup(): void {
+    this.isActive = false;
+    
+    if (process.stdin.setRawMode) {
+      process.stdin.setRawMode(false);
+    }
+    
+    if (this.rl) {
+      this.rl.close();
+      this.rl = null;
+    }
+    
+    process.stdin.removeAllListeners('keypress');
   }
 }
 

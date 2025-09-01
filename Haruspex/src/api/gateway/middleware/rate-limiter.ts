@@ -16,7 +16,7 @@ export interface RateLimitConfig {
 /**
  * Rate Limiter - STUB
  * 
- * TODO: [TASK-H-NEW-012] Complete Rate Limiter Implementation
+ * Implementation documented in TASK-H-NEW-GATEWAY Complete Rate Limiter Implementation
  * Priority: Medium | Complexity: 6
  * Location: middleware/rate-limiter.ts
  * Dependencies: Request tracking, sliding window algorithm

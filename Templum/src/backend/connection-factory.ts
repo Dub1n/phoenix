@@ -20,7 +20,8 @@ import { BackendConfig } from '../types/universal-skin-engine-types';
 // Connection interface from backend-service-router.ts
 export interface BackendConnection {
   id: string;
-  protocol: 'ipc' | 'http' | 'websocket' | 'grpc';
+  // Note: gRPC support deferred to future implementation
+  protocol: 'ipc' | 'http' | 'websocket';
   endpoint: string;
   connection?: ChildProcess | WebSocket.WebSocket | any;
   isConnected(): boolean;
@@ -55,11 +56,9 @@ export class ConnectionFactory {
         return ConnectionFactory.createHTTPConnection(serviceId, backendConfig);
       case 'websocket':
         return ConnectionFactory.createWebSocketConnection(serviceId, backendConfig);
-      case 'grpc':
-        return ConnectionFactory.createGRPCConnection(serviceId, backendConfig);
       default:
         throw createTemplumError(
-          `Unsupported protocol: ${backendConfig.protocol}`, 
+          `Unsupported protocol: ${backendConfig.protocol} (Note: gRPC support deferred to future implementation)`, 
           'PROTOCOL_ERROR', 
           'integration'
         );
@@ -316,20 +315,8 @@ export class ConnectionFactory {
     };
   }
 
-  /**
-   * Create GRPC connection (future implementation)
-   * Uses enhanced BackendConfig for GRPC services
-   */
-  private static createGRPCConnection(
-    _serviceId: string, 
-    _config: BackendConfig
-  ): BackendConnection {
-    throw createTemplumError(
-      'GRPC connections not yet implemented', 
-      'NOT_IMPLEMENTED', 
-      'integration'
-    );
-  }
+  // Note: gRPC support deferred to future implementation
+  // createGRPCConnection method removed to prevent confusion
 
   /**
    * Perform WebSocket handshake with service-specific protocol

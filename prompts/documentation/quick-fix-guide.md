@@ -9,10 +9,11 @@
 
 ### Step 1: Implement Fix
 
-1. **Read component files** - Understand the specific errors
-2. **Apply direct fix** - Resolve compilation/import issues
-3. **Verify immediately** - Test compilation and basic functionality
-4. **No complex investigation** - If root cause unclear, escalate
+1. **Search for patterns** - Find relevant information from the patterns doc
+2. **Read component files** - Understand the specific errors
+3. **Apply direct fix** - Resolve compilation/import issues
+4. **Verify immediately** - Test compilation and basic functionality
+5. **No complex investigation** - If root cause unclear, escalate
 
 ### Step 2: Working State Principle
 

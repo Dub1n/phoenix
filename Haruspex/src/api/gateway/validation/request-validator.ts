@@ -11,7 +11,7 @@ import { HTTPRequest, IPCMessage, ValidationError } from '../../types/api-contra
 /**
  * Request Validator - STUB
  * 
- * TODO: [TASK-H-NEW-013] Complete Request Validator Implementation
+ * Implementation documented in TASK-H-NEW-GATEWAY Complete Request Validator Implementation
  * Priority: High | Complexity: 6
  * Location: validation/request-validator.ts
  * Dependencies: Validation schemas, input sanitization

@@ -26,6 +26,7 @@ import { CacheManager } from './cache/cache-manager';
 import { SkinProvider } from './skin/skin-provider';
 import { TemplumRegistrationService } from './integration/templum-registration-service';
 import { createBackendDependencies, createDefaultBackendConfig, validateBackendEnvironment } from './core/backend-dependencies';
+import { TemplumConfigurationManager } from './config/templum-configuration-manager';
 
 export interface ServiceStatus {
   status: 'starting' | 'healthy' | 'degraded' | 'critical' | 'stopping' | 'stopped';
@@ -92,6 +93,7 @@ export class HaruspexBackendService extends EventEmitter {
   private cacheManager: CacheManager;
   private skinProvider: SkinProvider;
   private templumRegistration?: TemplumRegistrationService;
+  private configurationManager: TemplumConfigurationManager;
 
   private serviceStatus: ServiceStatus;
   private activeAnalyses: Map<string, any> = new Map();
@@ -142,6 +144,14 @@ export class HaruspexBackendService extends EventEmitter {
     this.cacheManager = new CacheManager();
     this.skinProvider = new SkinProvider();
 
+    // Initialize Templum-compatible configuration manager
+    this.configurationManager = new TemplumConfigurationManager(config, {
+      configPath: process.env.HARUSPEX_CONFIG_PATH,
+      autoSave: true,
+      validationEnabled: true,
+      backupEnabled: true
+    });
+
     // Initialize service status
     this.serviceStatus = this.initializeServiceStatus();
 
@@ -165,6 +175,10 @@ export class HaruspexBackendService extends EventEmitter {
       // Initialize backend environment
       console.log('Haruspex Backend Service: Validating backend environment...');
       await validateBackendEnvironment();
+
+      // Initialize Templum configuration manager
+      console.log('Haruspex Backend Service: Loading Templum-compatible configuration...');
+      await this.configurationManager.loadConfiguration();
 
       // Initialize components in dependency order
       console.log('Haruspex Backend Service: Initializing cache manager...');
@@ -194,8 +208,8 @@ export class HaruspexBackendService extends EventEmitter {
       await this.diagnosticSystem.startMonitoring();
       this.serviceStatus.components.diagnostics = 'operational';
 
-      console.log('Haruspex Backend Service: Starting API gateway...');
-      await this.apiGateway.start(this.coreEngine, this.cacheManager);
+      console.log('Haruspex Backend Service: Starting API gateway with configuration manager...');
+      await this.apiGateway.start(this.coreEngine, this.cacheManager, this.diagnosticSystem, this.configurationManager);
       this.serviceStatus.components.apiGateway = 'operational';
 
       // Register with Templum for service discovery
@@ -540,6 +554,10 @@ export class HaruspexBackendService extends EventEmitter {
 
       await this.cacheManager.shutdown();
       this.serviceStatus.components.cache = 'offline';
+
+      // Dispose configuration manager resources
+      this.configurationManager.dispose();
+      console.log('Haruspex Backend Service: Configuration manager disposed');
 
       this.serviceStatus.status = 'stopped';
       console.log('Haruspex Backend Service: Shutdown complete');

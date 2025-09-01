@@ -20,6 +20,7 @@ import {
   PanelDefinition,
   CommandDefinition
 } from './types/templum-types';
+import { BackendCapabilityProfile } from './backend/backend-service-router';
 
 // Global extension state
 let templumCore: TemplumCore | undefined;
@@ -145,14 +146,36 @@ class BackendServiceTreeProvider implements vscode.TreeDataProvider<ServiceTreeI
 
     const details: ServiceTreeItem[] = [];
 
-    // Add health status
-    const healthItem = new ServiceTreeItem(
-      `Health: ${serviceInfo.health}`,
-      vscode.TreeItemCollapsibleState.None,
-      'service-health'
-    );
-    healthItem.iconPath = new vscode.ThemeIcon(this.getHealthThemeIcon(serviceInfo.health));
-    details.push(healthItem);
+    // Get backend capability profile for conditional display
+    const backendRouter = this.templumCore.getBackendRouter();
+    const capabilityProfile: BackendCapabilityProfile | undefined = (backendRouter as any)?.getBackendCapabilityProfile?.(serviceId);
+
+    // Add backend type indicator based on skin definition quality
+    if (capabilityProfile?.skinDefinitionQuality) {
+      const qualityLabels = {
+        'complete': '🟢 Full Backend',
+        'partial': '🟡 Partial Backend', 
+        'minimal': '🟠 Minimal Backend'
+      };
+      const backendTypeItem = new ServiceTreeItem(
+        qualityLabels[capabilityProfile.skinDefinitionQuality] || '⚪ Unknown Backend',
+        vscode.TreeItemCollapsibleState.None,
+        'backend-type'
+      );
+      backendTypeItem.iconPath = new vscode.ThemeIcon('server-environment');
+      details.push(backendTypeItem);
+    }
+
+    // Add health status - only if backend has health endpoint
+    if (capabilityProfile?.hasHealthEndpoint) {
+      const healthItem = new ServiceTreeItem(
+        `Health: ${serviceInfo.health}`,
+        vscode.TreeItemCollapsibleState.None,
+        'service-health'
+      );
+      healthItem.iconPath = new vscode.ThemeIcon(this.getHealthThemeIcon(serviceInfo.health));
+      details.push(healthItem);
+    }
 
     // Add response time if available
     if (serviceInfo.responseTime !== undefined) {
@@ -165,8 +188,8 @@ class BackendServiceTreeProvider implements vscode.TreeDataProvider<ServiceTreeI
       details.push(responseItem);
     }
 
-    // Add version if available
-    if (serviceInfo.version) {
+    // Add version - only if backend has version endpoint and version is available
+    if (capabilityProfile?.hasVersionEndpoint && serviceInfo.version) {
       const versionItem = new ServiceTreeItem(
         `Version: ${serviceInfo.version}`,
         vscode.TreeItemCollapsibleState.None,
@@ -176,8 +199,8 @@ class BackendServiceTreeProvider implements vscode.TreeDataProvider<ServiceTreeI
       details.push(versionItem);
     }
 
-    // Add capabilities
-    if (serviceInfo.capabilities && serviceInfo.capabilities.length > 0) {
+    // Add capabilities - only if backend has capabilities endpoint and capabilities are available
+    if (capabilityProfile?.hasCapabilitiesEndpoint && serviceInfo.capabilities && serviceInfo.capabilities.length > 0) {
       const capabilitiesItem = new ServiceTreeItem(
         'Capabilities',
         vscode.TreeItemCollapsibleState.Expanded,
@@ -700,7 +723,7 @@ async function registerCommands(context: vscode.ExtensionContext, engineReady: b
                   // Phase 1: Validate interface compatibility with connected backends
                   progress.report({ increment: 20, message: 'Validating backend compatibility...' });
                   
-                  const compatibilityCheck = await this.validateInterfaceCompatibility(
+                  const compatibilityCheck = await (switchInterfaceCommand as any).validateInterfaceCompatibility(
                     choice.value, 
                     connectedBackends,
                     templumCore
@@ -729,9 +752,17 @@ async function registerCommands(context: vscode.ExtensionContext, engineReady: b
                   // Phase 3: Execute interface switch through TemplumCore
                   progress.report({ increment: 60, message: `Switching to ${choice.value} interface...` });
                   
+                  if (!templumCore) {
+                    throw createTemplumError(
+                      'TemplumCore is not available for interface switch',
+                      'TEMPLUM_CORE_UNAVAILABLE',
+                      'runtime'
+                    );
+                  }
+                  
                   const result = await templumCore.switchInterface(choice.value);
                   
-                  if (!result.success) {
+                  if (!result?.success) {
                     throw createTemplumError(
                       `Interface switch failed: ${result.message}`,
                       'INTERFACE_SWITCH_ERROR',
@@ -884,7 +915,9 @@ async function registerCommands(context: vscode.ExtensionContext, engineReady: b
               progress.report({ increment: 70, message: 'Updating service tree...' });
               
               // Refresh the tree provider
-              serviceTreeProvider.refresh();
+              if (serviceTreeProvider) {
+                serviceTreeProvider.refresh();
+              }
 
               progress.report({ increment: 100, message: 'Service tree updated!' });
             }
@@ -1047,7 +1080,7 @@ async function registerCommands(context: vscode.ExtensionContext, engineReady: b
                 
                 // Try to load service capabilities or skin definition
                 try {
-                  const skinEngine = templumCore.getUniversalSkinEngine();
+                  const skinEngine = templumCore?.getUniversalSkinEngine();
                   if ((skinEngine as any)?.loadBackendSkin) {
                     await (skinEngine as any).loadBackendSkin(targetServiceId!);
                   }

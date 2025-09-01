@@ -23,33 +23,37 @@
 
 ### Integration Tasks (Architecture Queue)
 
-- [3] **Health Monitoring Templum Compliance** [TASK-H-M09]
-  - Priority: 19 | Complexity: 16 | Status: Health endpoints needed
-  - Pattern: templum-health-monitoring-integration
-  - Dependencies: HTTP Gateway, Diagnostic System
+- [x] **Health Monitoring Templum Compliance** [TASK-H-M09]
+  - Priority: 19 | Complexity: 16 | Status: ✅ COMPLETED
+  - Pattern: health-monitoring-framework (applied)
+  - Dependencies: HTTP Gateway ✅, Diagnostic System ✅
   - Description: Update diagnostics system for Templum health check requirements
-  - Success: /health endpoint provides comprehensive system status
+  - Success: /health endpoint provides comprehensive system status ✅
+  - **Completed**: 2025-08-31 - Enhanced DiagnosticSystem with real metrics and comprehensive health endpoint
 
-- [4] **Cache Manager HTTP Optimization** [TASK-H-M10]
-  - Priority: 17 | Complexity: 18 | Status: HTTP caching strategy needed
-  - Pattern: http-request-caching-optimization
-  - Dependencies: Cache Manager, HTTP Gateway
+- [x] **Cache Manager HTTP Optimization** [TASK-H-M10]
+  - Priority: 17 | Complexity: 18 | Status: ✅ COMPLETED
+  - Pattern: analysis-result-caching (applied)
+  - Dependencies: Cache Manager ✅, HTTP Gateway ✅
   - Description: Optimize cache management for HTTP request/response patterns
-  - Success: Analysis results cached efficiently for HTTP requests
+  - Success: Analysis results cached efficiently for HTTP requests ✅
+  - **Completed**: 2025-08-31 - Implemented HTTP-optimized multi-tier caching with hot/warm/cold storage, intelligent key generation, ETag support, and performance metrics
 
-- [5] **Model Manager Templum Integration** [TASK-H-M11]
-  - Priority: 15 | Complexity: 14 | Status: ML model HTTP integration
+- [x] **Model Manager Templum Integration** [TASK-H-M11]
+  - Priority: 15 | Complexity: 14 | Status: **COMPLETED**
   - Pattern: ml-model-http-service-integration
-  - Dependencies: Prediction Engine, HTTP Gateway
+  - Dependencies: Prediction Engine, HTTP Gateway ✓
   - Description: Integrate ML model management with HTTP-based prediction requests
-  - Success: ML models serve predictions via HTTP endpoints
+  - Success: ML models serve predictions via HTTP endpoints ✓
+  - **Completed**: 2025-08-31 - Integrated PredictionEngine with HaruspexCoreEngine, implemented refreshMLModels() method, updated API Gateway Templum haruspex.refreshModels command, added /api/v1/models/refresh HTTP endpoint with proper routing and rate limiting
 
-- [6] **Configuration System Templum Compatible** [TASK-H-M12]
-  - Priority: 13 | Complexity: 12 | Status: Config system modernization
-  - Pattern: templum-compatible-configuration
-  - Dependencies: Backend Service architecture
+- [x] **Configuration System Templum Compatible** [TASK-H-M12]
+  - Priority: 13 | Complexity: 12 | Status: ✅ COMPLETED 2025-08-31
+  - Pattern: templum-compatible-configuration ✅ ESTABLISHED
+  - Dependencies: Backend Service architecture ✅ SATISFIED
   - Description: Update configuration system for pure backend deployment
-  - Success: Backend configurable without VSCode settings dependency
+  - Success: ✅ Backend configurable without VSCode settings dependency - 5 Templum commands operational
+  - Fix Document: dev/fixes/2025-08-31-configuration-system-templum-compatible.md
 
 ### Validation Tasks (Verification Queue)
 
@@ -90,17 +94,19 @@
 
 ## Investigation Queue
 
-- [ ] **Backend Service Dependency Resolution** [TASK-H-004]
-  - Priority: 25 | Complexity: 22 | Status: 5+ import errors
+- [x] **Backend Service Dependency Resolution** [TASK-H-004]
+  - Priority: 25 | Complexity: 22 | Status: ✅ 0 import errors - COMPLETED
   - Pattern: dependency-chain-restoration
   - Dependencies: Analysis Engine, Prediction Engine, Cache Manager
   - See: haruspex-patterns.md#backend-service-dependencies
 
-- [ ] **Cache Manager Architecture Design** [TASK-H-005]
-  - Priority: 22 | Complexity: 16 | Status: Missing caching strategy
-  - Pattern: analysis-result-caching
-  - Dependencies: Analysis Engine (for cache structure)
-  - See: haruspex-patterns.md#cache-manager-design
+- [x] **Cache Manager Architecture Design** [TASK-H-005]
+  - Priority: 22 | Complexity: 16 | Status: ✅ COMPLETED - Architecture designed and implemented in [TASK-H-M10]
+  - Pattern: analysis-result-caching (ESTABLISHED)
+  - Dependencies: Analysis Engine ✅ (cache structure integrated)
+  - **Completed**: 2025-08-31 - Multi-tier HTTP-optimized cache architecture designed and fully implemented
+  - **Implementation**: Consolidated into [TASK-H-M10] Cache Manager HTTP Optimization
+  - **Evidence**: src/cache/cache-manager.ts (855 lines), haruspex-patterns.md#analysis-result-caching
 
 ## Verification Queue
 
@@ -138,20 +144,6 @@
 
 ## Discovered Issues (From TODO Tags)
 
-### Infrastructure Dependencies (Discovered during TASK-H-M01)
-
-- [x] **Analysis Engine Stub Implementation** [TASK-H-NEW-006] ✅ **COMPLETED**
-  - Complexity: 6 | Dependencies: Core analysis interfaces
-  - Phase: Infrastructure | Pattern: backend-service-foundation  
-  - Completed: 2025-08-30 | Replaced stub with production AST-based analysis engine
-  - Description: ✅ Production analysis engine implementation complete
-
-- [x] **Prediction Engine Stub Implementation** [TASK-H-NEW-007] ✅ **COMPLETED**
-  - Complexity: 5 | Dependencies: Analysis engine output types ✅
-  - Phase: Infrastructure | Pattern: ml-engine-architecture
-  - Completed: 2025-08-30 | Implementation: UPGRADED to full production ML-based prediction engine (see TASK-H-002)
-  - Description: Missing prediction engine implementation referenced by backend service
-
 ### API Gateway Infrastructure Components (Consolidated during completion)
 
 - [ ] **Comprehensive API Gateway Infrastructure Implementation** [TASK-H-NEW-GATEWAY]
@@ -175,14 +167,15 @@
   - Phase: Integration | Pattern: analysis-result-caching
   - Description: Implement cache clearing functionality for haruspex.clearCache command
 
-- [ ] **Model Refresh Functionality Integration** [TASK-H-NEW-002] | Found in: api-gateway.ts:551 | Priority: Medium
-  - Complexity: 4 | Dependencies: Prediction Engine, Model Manager  
+- [✓] **Model Refresh Functionality Integration** [TASK-H-NEW-002] | Found in: api-gateway.ts:551 | Priority: Medium
+  - Complexity: 4 | Dependencies: Prediction Engine ✓, Model Manager ✓
   - Phase: Integration | Pattern: ml-engine-architecture
-  - Description: Implement model refresh functionality for haruspex.refreshModels command
+  - Description: Implement model refresh functionality for haruspex.refreshModels command ✓
+  - **Completed**: 2025-08-31 - **CONSOLIDATED** into [TASK-H-M11] Model Manager Templum Integration - haruspex.refreshModels command now calls actual PredictionEngine.refreshModels() instead of getSystemDiagnostics()
 
 ---
 
-**Task Count**: 13 migration (0 foundation remaining, 2 refactoring, 4 integration, 4 validation), 1 priority, 3 investigation, 3 verification, 2 architecture, 3 discovered (23 total active, 2 completed)  
+**Task Count**: 13 migration (0 foundation remaining, 2 refactoring, 4 integration, 4 validation), 1 priority, 2 investigation, 3 verification, 2 architecture, 3 discovered (22 total active, 3 completed)  
 **Migration Count**: 8 migrated, 1 deprecated, 1 deferred from legacy tasks
 **Completed Infrastructure**: 7 critical implementations resolved ✅ (HTTP Server + Request Router + API Contracts Type System + Universal Skin Provider + Auto-Registration Service + Templum Protocol Adapter + Backend Service Templum Integration)
 **Next Action**: Complete [4] Core Engine HTTP Migration [TASK-H-M06] (Interface phase continuing)

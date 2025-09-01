@@ -10,8 +10,11 @@
  * Generated: 2025-08-21
  */
 
-import chalk from 'chalk';
+import * as chalk from 'chalk';
 import { InterfaceType } from '../types/templum-types';
+
+// Re-export InterfaceType for other modules
+export { InterfaceType };
 
 // Extended interfaces for multi-interface support
 export interface UniversalSkinMenuDefinition extends PCLSkinMenuDefinition {

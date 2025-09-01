@@ -71,6 +71,7 @@ class MockTemplumOrchestrator extends EventEmitter implements ITemplumOrchestrat
         version: '1.0.0',
         description: `Mock skin for testing ${backendId}`,
         backend: 'haruspex' as any,
+        backendService: 'haruspex-service',
         compatibleInterfaces: ['vscode', 'cli', 'command']
       },
       theme: {
@@ -218,6 +219,7 @@ describe('Interface Adapter Integration Tests', () => {
           name: 'Test Skin',
           version: '1.0.0',
           backend: 'haruspex',
+          backendService: 'haruspex-service',
           compatibleInterfaces: ['vscode']
         },
         theme: {
@@ -281,6 +283,7 @@ describe('Interface Adapter Integration Tests', () => {
           name: 'Compatible Skin',
           version: '1.0.0',
           backend: 'haruspex',
+          backendService: 'haruspex-service',
           compatibleInterfaces: ['vscode', 'cli']
         },
         theme: {
@@ -408,6 +411,7 @@ describe('Interface Adapter Integration Tests', () => {
           name: 'CLI Test Skin', 
           version: '1.0.0',
           backend: 'pcl',
+          backendService: 'pcl-service',
           compatibleInterfaces: ['cli']
         },
         theme: {

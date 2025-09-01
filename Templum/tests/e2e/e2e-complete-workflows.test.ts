@@ -149,7 +149,11 @@ class MockE2EOrchestrator extends EventEmitter implements ITemplumOrchestrator {
           heapUsed: process.memoryUsage().heapUsed,
           rss: process.memoryUsage().rss
         },
-        cpu: { user: 5, system: 5 }
+        cpu: { user: 5, system: 5 },
+        interfaces: {
+          vscode: { responseTime: 50, lastActivity: Date.now() },
+          cli: { responseTime: 30, lastActivity: Date.now() }
+        }
       }
     };
   }

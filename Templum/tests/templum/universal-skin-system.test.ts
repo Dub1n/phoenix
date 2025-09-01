@@ -167,6 +167,7 @@ describe('Phase 5: Universal Skin System Cross-Interface Consistency', () => {
             {
               id: 'haruspex.analyzeCode',
               name: 'analyze',
+              title: 'Analyze Code',
               description: 'Analyze code patterns and complexity',
               category: 'Haruspex',
               parameters: [
@@ -194,11 +195,12 @@ describe('Phase 5: Universal Skin System Cross-Interface Consistency', () => {
             {
               id: 'full-analysis',
               name: 'Complete Analysis Workflow',
+              title: 'Complete Analysis Workflow',
               description: 'Run full analysis pipeline',
               steps: [
-                { command: 'haruspex.analyzeCode', waitForCompletion: true },
-                { command: 'haruspex.generatePredictions', waitForCompletion: true },
-                { command: 'haruspex.showResults', waitForCompletion: false }
+                { id: 'step-1', command: 'haruspex.analyzeCode', waitForCompletion: true },
+                { id: 'step-2', command: 'haruspex.generatePredictions', waitForCompletion: true },
+                { id: 'step-3', command: 'haruspex.showResults', waitForCompletion: false }
               ]
             }
           ]
@@ -234,6 +236,12 @@ describe('Phase 5: Universal Skin System Cross-Interface Consistency', () => {
               secondary: '#6C757D',
               disabled: '#ADB5BD',
               inverse: '#FFFFFF'
+            },
+            border: {
+              primary: '#DEE2E6',
+              secondary: '#ADB5BD',
+              focus: '#007ACC',
+              error: '#DC3545'
             }
           },
           typography: {
@@ -590,12 +598,17 @@ function createTestPerformanceHints(): any {
 
 function createTestPCLSkinDefinition(): UniversalSkinDefinition {
   return {
+    id: 'pcl-tdd-workflow',
+    name: 'PCL TDD Workflow Skin',
+    version: '1.0.0',
     metadata: {
       id: 'pcl-tdd-workflow',
       name: 'PCL TDD Workflow Skin',
       version: '1.0.0',
       description: 'Phoenix Code Lite TDD workflow interface',
+      backend: 'pcl',
       targetInterfaces: ['vscode', 'cli', 'command'],
+      compatibleInterfaces: ['vscode', 'cli', 'command'],
       backendService: 'pcl',
       minimumVersion: '2.0.0',
       features: createTestFeatureMatrix(),
@@ -637,6 +650,7 @@ function createTestPCLSkinDefinition(): UniversalSkinDefinition {
         {
           id: 'pcl.startTDD',
           name: 'start-tdd',
+          title: 'Start TDD',
           description: 'Start TDD workflow',
           category: 'PCL'
         }
@@ -656,11 +670,12 @@ function createTestPCLSkinDefinition(): UniversalSkinDefinition {
         {
           id: 'red-green-refactor',
           name: 'Red-Green-Refactor Cycle',
+          title: 'Red-Green-Refactor Cycle',
           description: 'Standard TDD cycle',
           steps: [
-            { command: 'pcl.writeTest', waitForCompletion: true },
-            { command: 'pcl.runTest', waitForCompletion: true },
-            { command: 'pcl.implementCode', waitForCompletion: true }
+            { id: 'write-test', command: 'pcl.writeTest', waitForCompletion: true },
+            { id: 'run-test', command: 'pcl.runTest', waitForCompletion: true },
+            { id: 'implement-code', command: 'pcl.implementCode', waitForCompletion: true }
           ]
         }
       ]
@@ -704,6 +719,8 @@ function createTestPCLSkinDefinition(): UniversalSkinDefinition {
     backendConfig: {
       service: 'pcl',
       version: '2.0.0',
+      protocol: 'http',
+      endpoint: 'http://localhost:3000',
       endpoints: {
         workflow: '/api/workflow',
         health: '/health'
@@ -769,6 +786,7 @@ function createTestHaruspexSkinDefinition(): UniversalSkinDefinition {
         {
           id: 'haruspex.analyze',
           name: 'analyze',
+          title: 'Analyze',
           description: 'Analyze code patterns',
           category: 'Haruspex'
         }
@@ -788,9 +806,10 @@ function createTestHaruspexSkinDefinition(): UniversalSkinDefinition {
         {
           id: 'full-analysis',
           name: 'Complete Analysis',
+          title: 'Complete Analysis',
           description: 'Run full code analysis',
           steps: [
-            { command: 'haruspex.analyze', waitForCompletion: true }
+            { id: 'analyze-step', command: 'haruspex.analyze', waitForCompletion: true }
           ]
         }
       ]
@@ -834,6 +853,8 @@ function createTestHaruspexSkinDefinition(): UniversalSkinDefinition {
     backendConfig: {
       service: 'haruspex',
       version: '2.0.0',
+      protocol: 'http',
+      endpoint: 'http://localhost:3000',
       endpoints: {
         analyze: '/api/analyze',
         health: '/health'
@@ -929,6 +950,8 @@ function createBaseSkinDefinition(): UniversalSkinDefinition {
     backendConfig: {
       service: 'base',
       version: '1.0.0',
+      protocol: 'http',
+      endpoint: 'http://localhost:3000',
       endpoints: {}
     },
     caching: {
@@ -984,6 +1007,7 @@ function createChildSkinDefinition(parentId: string): UniversalSkinDefinition {
         {
           id: 'child.action',
           name: 'action',
+          title: 'Action',
           description: 'Child-specific action',
           category: 'Child'
         }
@@ -1035,6 +1059,8 @@ function createChildSkinDefinition(parentId: string): UniversalSkinDefinition {
     backendConfig: {
       service: 'child',
       version: '1.0.0',
+      protocol: 'http',
+      endpoint: 'http://localhost:3000',
       endpoints: {}
     },
     caching: {

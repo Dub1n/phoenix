@@ -131,6 +131,11 @@ class BackendFileMonitorAdapter implements IFileMonitor {
     return this.impl.eventNames();
   }
 
+  // EventEmitter alias methods
+  addListener(event: string, listener: (...args: any[]) => void) {
+    return this.on(event, listener);
+  }
+
   // IFileMonitor methods
   async startMonitoring(): Promise<void> {
     return this.impl.startMonitoring();

@@ -12,6 +12,7 @@ import {
   SkinRenderResult, 
   RenderingContext, 
   InterfaceType,
+  BackendType,
   RenderedComponent,
   ThemeDefinition,
   ColorPalette,
@@ -291,14 +292,14 @@ export class UniversalSkinEngine extends EventEmitter {
         action: result.action,
         conflicts: result.conflicts?.length || 0,
         migrations: result.migrations?.length || 0,
-        pclReusePercentage: optimizedSkin.pclCompatibility.reusePercentage,
+        pclReusePercentage: optimizedSkin.pclCompatibility?.reusePercentage ?? 0,
         supportedInterfaces: optimizedSkin.metadata.supportedInterfaces,
         timestamp: Date.now()
       });
 
       console.log(
         `Universal Skin Engine: ${result.action === 'registered' ? 'Registered' : 'Updated'} ` +
-        `${optimizedSkin.name} v${optimizedSkin.version} with ${optimizedSkin.pclCompatibility.reusePercentage}% PCL reuse`
+        `${optimizedSkin.name} v${optimizedSkin.version} with ${optimizedSkin.pclCompatibility?.reusePercentage ?? 0}% PCL reuse`
       );
 
       return result;
@@ -432,35 +433,242 @@ export class UniversalSkinEngine extends EventEmitter {
         interface: interfaceType
       } as ErrorSignalPayload);
       
-      // TODO: [TASK-NEW-040] Fallback to basic rendering when PCL integration fails
-      // Priority: Medium | Complexity: 6
-      // Dependencies: Basic component rendering patterns, error recovery system
-      // Phase: Integration
-      
-      return {
-        success: false,
-        interface: interfaceType,
-        metadata: {
-          skinId: skin.id,
-          backendService: skin.metadata.backendService,
-          error: errorMessage,
-          pclIntegration: false
-        },
-        components: [],
-        performance: {
-          renderTime: Date.now() - startTime,
-          cacheHit: false,
-          outputSize: 0
-        },
-        customization: {
-          analysisMode: context.preferences?.analysisMode || 'standard'
-        },
-        inheritance: {
-          parentSkin: skin.metadata.parentSkin,
-          applied: false
-        }
-      };
+      // TASK-NEW-040: Implement fallback rendering using Error Recovery Pattern
+      return await this.fallbackRender(skin, interfaceType, context, startTime, errorMessage);
     }
+  }
+
+  /**
+   * TASK-NEW-040: Error Recovery Pattern - Fallback rendering when PCL integration fails
+   */
+  private async fallbackRender(
+    skin: UniversalSkinDefinition,
+    interfaceType: string,
+    context: RenderingContext,
+    startTime: number,
+    originalError: string
+  ): Promise<SkinRenderResult> {
+    try {
+      // Classify error type for appropriate fallback strategy
+      const errorType = this.classifyIntegrationError(originalError);
+      
+      if (errorType === 'recoverable') {
+        // Attempt fallback using basic rendering engine (renderSkin method)
+        const fallbackResult = await this.renderWithBasicEngine(skin, interfaceType, context, startTime);
+        
+        // Mark as fallback in metadata
+        fallbackResult.metadata.fallbackUsed = true;
+        fallbackResult.metadata.fallbackReason = 'pcl-integration-failure';
+        fallbackResult.metadata.originalError = originalError;
+        
+        // Emit fallback usage metrics
+        this.emit('fallback:used', {
+          component: 'UniversalSkinEngine',
+          fallbackType: 'basic-rendering',
+          originalError,
+          success: true,
+          timestamp: Date.now()
+        });
+        
+        console.log(`Universal Skin Engine: Fallback rendering successful for ${skin.id} on ${interfaceType}`);
+        return fallbackResult;
+        
+      } else {
+        // Complete failure - return structured error response with minimal functionality
+        return this.createMinimalResponse(skin, interfaceType, context, startTime, originalError);
+      }
+      
+    } catch (fallbackError) {
+      // Even fallback failed - return minimal response
+      const fallbackErrorMessage = isTemplumError(fallbackError) ? fallbackError.message : String(fallbackError);
+      
+      this.emit('fallback:failed', {
+        component: 'UniversalSkinEngine',
+        fallbackType: 'basic-rendering',
+        originalError,
+        fallbackError: fallbackErrorMessage,
+        timestamp: Date.now()
+      });
+      
+      console.warn(`Universal Skin Engine: Fallback rendering also failed for ${skin.id}:`, fallbackErrorMessage);
+      return this.createMinimalResponse(skin, interfaceType, context, startTime, `${originalError} | Fallback: ${fallbackErrorMessage}`);
+    }
+  }
+
+  /**
+   * TASK-NEW-040: Classify integration errors to determine recovery strategy
+   */
+  private classifyIntegrationError(errorMessage: string): 'recoverable' | 'non-recoverable' {
+    // Classify common PCL integration errors
+    const recoverablePatterns = [
+      'connection', 'timeout', 'network', 'unavailable', 'adapter',
+      'pcl', 'rendering', 'failed to render', 'integration'
+    ];
+    
+    const nonRecoverablePatterns = [
+      'invalid skin', 'missing theme', 'malformed', 'syntax error',
+      'compilation', 'missing interface', 'incompatible version'
+    ];
+    
+    const errorLower = errorMessage.toLowerCase();
+    
+    // Check for non-recoverable patterns first
+    for (const pattern of nonRecoverablePatterns) {
+      if (errorLower.includes(pattern)) {
+        return 'non-recoverable';
+      }
+    }
+    
+    // Check for recoverable patterns or default to recoverable for integration issues
+    for (const pattern of recoverablePatterns) {
+      if (errorLower.includes(pattern)) {
+        return 'recoverable';
+      }
+    }
+    
+    // Default to recoverable for unknown errors to attempt fallback
+    return 'recoverable';
+  }
+
+  /**
+   * TASK-NEW-040: Render using basic engine (fallback from PCL integration)
+   */
+  private async renderWithBasicEngine(
+    skin: UniversalSkinDefinition,
+    interfaceType: string,
+    context: RenderingContext,
+    startTime: number
+  ): Promise<SkinRenderResult> {
+    // Use the existing renderSkin logic but bypass PCL integration
+    // This provides basic rendering without PCL adapter dependencies
+    
+    const supportedInterfaces = skin.metadata?.supportedInterfaces || [];
+    if (!supportedInterfaces.includes(interfaceType as any)) {
+      throw createTemplumError(`Skin ${skin.id} does not support interface ${interfaceType}`, 'InterfaceNotSupported', 'validation');
+    }
+
+    if (!skin.themes) {
+      throw createTemplumError(`No themes available in skin ${skin.id}`, 'ThemesNotFound', 'validation');
+    }
+    
+    const theme = skin.themes[context.theme];
+    if (!theme) {
+      // Fallback to first available theme
+      const availableThemes = Object.keys(skin.themes);
+      if (availableThemes.length === 0) {
+        throw createTemplumError(`No themes found in skin ${skin.id}`, 'ThemeNotFound', 'validation');
+      }
+      context.theme = availableThemes[0];
+    }
+
+    // Get interface-specific renderer (basic rendering)
+    const renderer = await this.getRenderer(skin, interfaceType);
+    
+    // Apply PCL-Skins inheritance patterns
+    const inheritedSkin = await this.applyInheritanceChain(skin, skin.themes[context.theme]);
+    
+    // Render components with interface adaptations
+    const renderOutput = await this.renderWithAdaptations(
+      inheritedSkin,
+      skin.themes[context.theme],
+      interfaceType,
+      renderer
+    );
+
+    // Apply basic performance optimizations
+    const performanceConfig: SkinPerformanceConfig = skin.performance || {
+      loadingStrategy: 'lazy',
+      cachingPolicy: 'memory',
+      compressionLevel: 5,
+      criticalPath: [],
+      metrics: {
+        targetLoadTime: 100,
+        maxMemoryUsage: 256,
+        renderBudget: 16
+      }
+    };
+    
+    const optimizedOutput = await this.applyRenderingOptimizations(
+      renderOutput,
+      performanceConfig
+    );
+
+    // Validate rendering result
+    const validation = await this.validateRenderResult(optimizedOutput, skin, interfaceType);
+
+    const result: SkinRenderResult = {
+      skinId: skin.id,
+      interface: interfaceType,
+      theme: context.theme,
+      success: true,
+      metadata: {
+        skinId: skin.id,
+        backendService: skin.metadata.backendService,
+        pclIntegration: false, // Explicitly mark as non-PCL
+        fallbackUsed: false, // Will be set by caller
+        reusePercentage: 0 // No PCL reuse in fallback
+      },
+      components: [],
+      output: optimizedOutput,
+      performance: {
+        renderTime: Date.now() - startTime,
+        outputSize: this.calculateOutputSize(optimizedOutput),
+        cacheHit: false
+      },
+      customization: {
+        analysisMode: context.preferences?.analysisMode || 'standard'
+      },
+      inheritance: {
+        parentSkin: skin.metadata.parentSkin,
+        applied: !!skin.metadata.parentSkin
+      },
+      validation
+    };
+
+    return result;
+  }
+
+  /**
+   * TASK-NEW-040: Create minimal response when all rendering attempts fail
+   */
+  private createMinimalResponse(
+    skin: UniversalSkinDefinition,
+    interfaceType: string,
+    context: RenderingContext,
+    startTime: number,
+    errorMessage: string
+  ): SkinRenderResult {
+    return {
+      success: false,
+      interface: interfaceType,
+      metadata: {
+        skinId: skin.id,
+        backendService: skin.metadata.backendService,
+        error: errorMessage,
+        pclIntegration: false,
+        fallbackUsed: false,
+        fallbackFailed: true
+      },
+      components: [],
+      performance: {
+        renderTime: Date.now() - startTime,
+        cacheHit: false,
+        outputSize: 0
+      },
+      customization: {
+        analysisMode: context.preferences?.analysisMode || 'standard'
+      },
+      inheritance: {
+        parentSkin: skin.metadata.parentSkin,
+        applied: false
+      },
+      // Provide minimal content for basic functionality
+      renderedContent: {
+        html: `<div class="templum-fallback">Skin rendering unavailable: ${errorMessage}</div>`,
+        cli: `[TEMPLUM] Skin rendering unavailable: ${errorMessage}`,
+        layout: { type: 'minimal', error: true }
+      }
+    };
   }
 
   /**
@@ -549,6 +757,9 @@ export class UniversalSkinEngine extends EventEmitter {
       throw createTemplumError(`Skin ${skinId} does not support interface ${interfaceType}`, 'InterfaceNotSupported', 'validation');
     }
 
+    if (!skin.themes) {
+      throw createTemplumError(`No themes available in skin ${skinId}`, 'ThemesNotFound', 'validation');
+    }
     const theme = skin.themes[themeName];
     if (!theme) {
       throw createTemplumError(`Theme ${themeName} not found in skin ${skinId}`, 'ThemeNotFound', 'validation');
@@ -581,10 +792,22 @@ export class UniversalSkinEngine extends EventEmitter {
         options
       );
 
-      // Apply performance optimizations
+      // Apply performance optimizations with proper null safety
+      const performanceConfig: SkinPerformanceConfig = skin.performance || {
+        loadingStrategy: 'lazy',
+        cachingPolicy: 'memory',
+        compressionLevel: 5,
+        criticalPath: [],
+        metrics: {
+          targetLoadTime: 100,
+          maxMemoryUsage: 256,
+          renderBudget: 16
+        }
+      };
+      
       const optimizedOutput = await this.applyRenderingOptimizations(
         renderOutput,
-        skin.performance,
+        performanceConfig,
         options
       );
 
@@ -720,7 +943,7 @@ export class UniversalSkinEngine extends EventEmitter {
       throw createTemplumError(`Base skin ${baseSkinId} not found`, 'SkinNotFound', 'validation');
     }
 
-    const baseTheme = baseSkin.themes[baseThemeName];
+    const baseTheme = baseSkin.themes?.[baseThemeName];
     if (!baseTheme) {
       throw createTemplumError(`Base theme ${baseThemeName} not found`, 'ThemeNotFound', 'validation');
     }
@@ -729,8 +952,9 @@ export class UniversalSkinEngine extends EventEmitter {
     const variantTheme = await this.createInheritedTheme(baseTheme, customizations);
     
     // Add variant to base skin
+    if (!baseSkin.themes) baseSkin.themes = {};
     baseSkin.themes[variantName] = variantTheme;
-    baseSkin.themes[baseThemeName].variants = baseSkin.themes[baseThemeName].variants || {};
+    if (!baseSkin.themes[baseThemeName].variants) baseSkin.themes[baseThemeName].variants = {};
     baseSkin.themes[baseThemeName].variants[variantName] = customizations;
 
     this.emit('themeVariantCreated', {
@@ -832,9 +1056,9 @@ export class UniversalSkinEngine extends EventEmitter {
     const totalOutputSize = renderResults.reduce((sum, result) => sum + result.performance.outputSize, 0);
 
     // Calculate PCL integration metrics
-    const skinsWithPCLSupport = allSkins.filter(s => s.pclCompatibility.reusePercentage > 0).length;
+    const skinsWithPCLSupport = allSkins.filter(s => (s.pclCompatibility?.reusePercentage ?? 0) > 0).length;
     const avgReusePercentage = allSkins.length > 0 ?
-      allSkins.reduce((sum, skin) => sum + skin.pclCompatibility.reusePercentage, 0) / allSkins.length : 0;
+      allSkins.reduce((sum, skin) => sum + (skin.pclCompatibility?.reusePercentage ?? 0), 0) / allSkins.length : 0;
 
     // Calculate interface support metrics
     const interfaceSupport: Record<string, any> = {};
@@ -1115,17 +1339,19 @@ export class UniversalSkinEngine extends EventEmitter {
     if (!skin.version) errors.push('Skin version is required');
     const supportedInterfaces = skin.metadata?.supportedInterfaces || [];
     if (!supportedInterfaces.length) errors.push('At least one supported interface is required');
-    if (!Object.keys(skin.themes).length) errors.push('At least one theme is required');
+    if (!skin.themes || !Object.keys(skin.themes).length) errors.push('At least one theme is required');
 
     // Validate PCL compatibility
-    if (skin.pclCompatibility.reusePercentage < 0 || skin.pclCompatibility.reusePercentage > 100) {
+    if (skin.pclCompatibility && (skin.pclCompatibility.reusePercentage < 0 || skin.pclCompatibility.reusePercentage > 100)) {
       errors.push('PCL reuse percentage must be between 0 and 100');
     }
 
     // Validate themes
-    for (const [themeName, theme] of Object.entries(skin.themes)) {
-      if (!theme.colors) errors.push(`Theme ${themeName} missing color palette`);
-      if (!theme.typography) errors.push(`Theme ${themeName} missing typography configuration`);
+    if (skin.themes) {
+      for (const [themeName, theme] of Object.entries(skin.themes)) {
+        if (!theme.colors) errors.push(`Theme ${themeName} missing color palette`);
+        if (!theme.typography) errors.push(`Theme ${themeName} missing typography configuration`);
+      }
     }
 
     return { valid: errors.length === 0, errors };
@@ -1384,24 +1610,48 @@ export class UniversalSkinEngine extends EventEmitter {
     if (false) { // Disabled legacy PCL integration
       const pclOptimizations = null; // await this.pclSkinIntegration.analyzeSkinOptimizations(skin);
       
-      optimized.pclCompatibility.reusePercentage = Math.max(
-        skin.pclCompatibility.reusePercentage,
-        (pclOptimizations as any)?.potentialReuse || 0
-      );
-      
-      optimized.pclCompatibility.inheritancePatterns = [
-        ...skin.pclCompatibility.inheritancePatterns,
-        ...((pclOptimizations as any)?.recommendedPatterns || [])
-      ];
-      
-      optimized.pclCompatibility.optimizations = [
-        ...skin.pclCompatibility.optimizations,
-        ...((pclOptimizations as any)?.availableOptimizations || [])
-      ];
+      if (optimized.pclCompatibility && skin.pclCompatibility) {
+        const optimizedCompat = optimized.pclCompatibility;
+        const skinCompat = skin.pclCompatibility;
+        
+        if (optimizedCompat && skinCompat) {
+          if (optimizedCompat.reusePercentage !== undefined) {
+            optimizedCompat.reusePercentage = Math.max(
+              skinCompat.reusePercentage ?? 0,
+              (pclOptimizations as any)?.potentialReuse || 0
+            );
+          }
+          
+          if (optimizedCompat.inheritancePatterns && skinCompat.inheritancePatterns !== undefined) {
+            optimizedCompat.inheritancePatterns = [
+              ...(skinCompat.inheritancePatterns ?? []),
+              ...((pclOptimizations as any)?.recommendedPatterns || [])
+            ];
+          }
+          
+          if (optimizedCompat.optimizations && skinCompat.optimizations !== undefined) {
+            optimizedCompat.optimizations = [
+              ...(skinCompat.optimizations ?? []),
+              ...((pclOptimizations as any)?.availableOptimizations || [])
+            ];
+          }
+        }
+      }
     }
 
     // Apply performance optimizations
-    optimized.performance = this.optimizeSkinPerformance(skin.performance);
+    // Type system alignment handled by TASK-TYPE-002 - SkinPerformanceConfig conflicts
+    optimized.performance = this.optimizeSkinPerformance(skin.performance || {
+      loadingStrategy: 'lazy' as const,
+      cachingPolicy: 'memory' as const,
+      compressionLevel: 5,
+      criticalPath: [],
+      metrics: {
+        targetLoadTime: 100,
+        maxMemoryUsage: 256,
+        renderBudget: 16
+      }
+    });
 
     return optimized;
   }
@@ -1428,6 +1678,8 @@ export class UniversalSkinEngine extends EventEmitter {
 
   private async setupSkinInheritance(skin: UniversalSkinDefinition): Promise<void> {
     // Setup inheritance chain with parent skins
+    if (!skin.inheritance?.parentSkins) return;
+    
     for (const parentSkinId of skin.inheritance.parentSkins) {
       const parentSkin = this.skins.get(parentSkinId);
       if (parentSkin) {
@@ -1439,27 +1691,38 @@ export class UniversalSkinEngine extends EventEmitter {
 
   private async applyParentInheritance(childSkin: UniversalSkinDefinition, parentSkin: UniversalSkinDefinition): Promise<void> {
     // Merge themes with child overriding parent
-    for (const [themeName, parentTheme] of Object.entries(parentSkin.themes)) {
-      if (!childSkin.themes[themeName]) {
-        childSkin.themes[themeName] = { ...parentTheme };
-      } else {
-        // Merge theme properties
-        childSkin.themes[themeName] = this.mergeThemes(parentTheme, childSkin.themes[themeName]);
+    if (parentSkin.themes) {
+      if (!childSkin.themes) childSkin.themes = {};
+      for (const [themeName, parentTheme] of Object.entries(parentSkin.themes)) {
+        if (!childSkin.themes[themeName]) {
+          childSkin.themes[themeName] = { ...parentTheme };
+        } else {
+          // Merge theme properties
+          childSkin.themes[themeName] = this.mergeThemes(parentTheme, childSkin.themes[themeName]);
+        }
       }
     }
 
     // Merge components with child overriding parent
-    for (const [componentName, parentComponent] of Object.entries(parentSkin.components)) {
-      if (!childSkin.components[componentName]) {
-        childSkin.components[componentName] = { ...parentComponent };
-      } else {
-        // Merge component properties
-        childSkin.components[componentName] = this.mergeComponents(parentComponent, childSkin.components[componentName]);
+    if (parentSkin.components) {
+      if (!childSkin.components) childSkin.components = {};
+      for (const [componentName, parentComponent] of Object.entries(parentSkin.components)) {
+        if (!childSkin.components[componentName]) {
+          childSkin.components[componentName] = { ...parentComponent };
+        } else {
+          // Merge component properties
+          childSkin.components[componentName] = this.mergeComponents(parentComponent, childSkin.components[componentName]);
+        }
       }
     }
 
-    // Merge assets
-    childSkin.assets = this.mergeAssets(parentSkin.assets, childSkin.assets);
+    // Merge assets (with null safety)
+    if (parentSkin.assets || childSkin.assets) {
+      childSkin.assets = this.mergeAssets(
+        parentSkin.assets || {}, 
+        childSkin.assets || {}
+      );
+    }
   }
 
   private mergeThemes(parentTheme: ThemeDefinition, childTheme: ThemeDefinition): ThemeDefinition {
@@ -1499,9 +1762,13 @@ export class UniversalSkinEngine extends EventEmitter {
   private async prepareInterfaceConfigurations(skin: UniversalSkinDefinition): Promise<void> {
     const supportedInterfaces = skin.metadata?.supportedInterfaces || [];
     for (const interfaceType of supportedInterfaces) {
-      const interfaceConfig = skin.rendering.targets[interfaceType];
+      const interfaceConfig = skin.rendering?.targets?.[interfaceType];
       if (!interfaceConfig) {
         // Create default interface configuration
+        if (!skin.rendering?.targets) {
+          skin.rendering = skin.rendering || { targets: {} };
+          skin.rendering.targets = skin.rendering.targets || {};
+        }
         skin.rendering.targets[interfaceType] = this.createDefaultInterfaceConfig(interfaceType);
       }
     }
@@ -1552,7 +1819,10 @@ export class UniversalSkinEngine extends EventEmitter {
   }
 
   private async getRenderer(skin: UniversalSkinDefinition, interfaceType: string): Promise<any> {
-    const interfaceConfig = skin.rendering.targets[interfaceType];
+    const interfaceConfig = skin.rendering?.targets?.[interfaceType];
+    if (!interfaceConfig) {
+      throw createTemplumError(`No interface config found for ${interfaceType}`, 'MissingInterfaceConfig', 'configuration');
+    }
     const rendererName = interfaceConfig.renderer;
     
     let renderer = this.renderingEngines.get(rendererName);
@@ -1580,7 +1850,7 @@ export class UniversalSkinEngine extends EventEmitter {
     let inheritedSkin = { skin, theme };
 
     // Apply base theme if specified
-    if (skin.inheritance.baseTheme) {
+    if (skin.inheritance?.baseTheme && skin.themes) {
       const baseTheme = skin.themes[skin.inheritance.baseTheme];
       if (baseTheme) {
         inheritedSkin.theme = this.mergeThemes(baseTheme, theme);
@@ -1588,16 +1858,20 @@ export class UniversalSkinEngine extends EventEmitter {
     }
 
     // Apply mixins
-    for (const mixinId of skin.inheritance.mixins) {
-      const mixin = await this.getMixin(mixinId);
-      if (mixin) {
-        inheritedSkin = await this.applyMixin(inheritedSkin, mixin);
+    if (skin.inheritance?.mixins) {
+      for (const mixinId of skin.inheritance.mixins) {
+        const mixin = await this.getMixin(mixinId);
+        if (mixin) {
+          inheritedSkin = await this.applyMixin(inheritedSkin, mixin);
+        }
       }
     }
 
     // Apply overrides
-    for (const override of skin.inheritance.overrides) {
-      inheritedSkin = this.applyOverride(inheritedSkin, override);
+    if (skin.inheritance?.overrides) {
+      for (const override of skin.inheritance.overrides) {
+        inheritedSkin = this.applyOverride(inheritedSkin, override);
+      }
     }
 
     return inheritedSkin;
@@ -1655,7 +1929,7 @@ export class UniversalSkinEngine extends EventEmitter {
 
     // Validate output size
     const outputSize = this.calculateOutputSize(output);
-    const maxSize = skin.rendering.targets[interfaceType]?.constraints.maxFileSize || 1024 * 1024;
+    const maxSize = skin.rendering?.targets?.[interfaceType]?.constraints?.maxFileSize ?? 1024 * 1024;
     
     if (outputSize > maxSize) {
       errors.push(`Output size ${outputSize} bytes exceeds maximum ${maxSize} bytes`);
@@ -1664,7 +1938,7 @@ export class UniversalSkinEngine extends EventEmitter {
     }
 
     // Validate feature support
-    const supportedFeatures = skin.rendering.targets[interfaceType]?.constraints.supportedFeatures || [];
+    const supportedFeatures = skin.rendering?.targets?.[interfaceType]?.constraints?.supportedFeatures ?? [];
     const usedFeatures = this.extractUsedFeatures(output);
     
     for (const feature of usedFeatures) {
@@ -1708,7 +1982,7 @@ export class UniversalSkinEngine extends EventEmitter {
   private async selectBestSkinForInterface(interfaceType: string, themeName: string): Promise<string> {
     const compatibleSkins = Array.from(this.skins.values())
       .filter(skin => skin.metadata?.supportedInterfaces?.includes(interfaceType as any) || false)
-      .filter(skin => skin.themes[themeName]);
+      .filter(skin => skin.themes?.[themeName]);
 
     if (compatibleSkins.length === 0) {
       throw createTemplumError(`No compatible skins found for interface ${interfaceType} with theme ${themeName}`, 'NoCompatibleSkins', 'validation');
@@ -1716,7 +1990,7 @@ export class UniversalSkinEngine extends EventEmitter {
 
     // Select skin with highest PCL reuse percentage
     const bestSkin = compatibleSkins.reduce((best, current) => 
-      current.pclCompatibility.reusePercentage > best.pclCompatibility.reusePercentage ? current : best
+      (current.pclCompatibility?.reusePercentage ?? 0) > (best.pclCompatibility?.reusePercentage ?? 0) ? current : best
     );
 
     return bestSkin.id;
@@ -1743,7 +2017,7 @@ export class UniversalSkinEngine extends EventEmitter {
     improvementPotential: number;
     missingPatterns: string[];
   } {
-    const currentReuse = skin.pclCompatibility.reusePercentage;
+    const currentReuse = skin.pclCompatibility?.reusePercentage ?? 0;
     const potentialReuse = this.calculatePotentialPCLReuse(skin);
     const improvementPotential = potentialReuse - currentReuse;
     const missingPatterns = this.identifyMissingPCLPatterns(skin);
@@ -1753,18 +2027,18 @@ export class UniversalSkinEngine extends EventEmitter {
 
   private calculatePotentialPCLReuse(skin: UniversalSkinDefinition): number {
     // Calculate potential PCL reuse based on skin characteristics
-    let potential = skin.pclCompatibility.reusePercentage;
+    let potential = skin.pclCompatibility?.reusePercentage ?? 0;
 
     // Increase potential based on supported interfaces
     const supportedInterfaces = skin.metadata?.supportedInterfaces || [];
     potential += supportedInterfaces.length * 5; // 5% per interface
 
     // Increase potential based on inheritance usage
-    if (skin.inheritance.parentSkins.length > 0) potential += 15;
-    if (skin.inheritance.mixins.length > 0) potential += 10;
+    if ((skin.inheritance?.parentSkins?.length ?? 0) > 0) potential += 15;
+    if ((skin.inheritance?.mixins?.length ?? 0) > 0) potential += 10;
 
     // Increase potential based on component reusability
-    const reusableComponents = Object.values(skin.components).filter(c => c.pclMapping.reuseLevel !== 'low').length;
+    const reusableComponents = skin.components ? Object.values(skin.components).filter(c => c.pclMapping?.reuseLevel !== 'low').length : 0;
     potential += reusableComponents * 3; // 3% per reusable component
 
     return Math.min(100, potential);
@@ -1780,7 +2054,7 @@ export class UniversalSkinEngine extends EventEmitter {
       'multi-interface-support'
     ];
 
-    const currentPatterns = skin.pclCompatibility.inheritancePatterns;
+    const currentPatterns = skin.pclCompatibility?.inheritancePatterns ?? [];
     return allPCLPatterns.filter(pattern => !currentPatterns.includes(pattern));
   }
 
@@ -1790,7 +2064,7 @@ export class UniversalSkinEngine extends EventEmitter {
     suggestedBase: string;
   } {
     // Analyze for redundant theme/component definitions
-    const themeCount = Object.keys(skin.themes).length;
+    const themeCount = Object.keys(skin.themes ?? {}).length;
     const redundantDefinitions = themeCount > 3 ? (themeCount - 3) * 10 : 0;
     const opportunity = redundantDefinitions > 0 ? 25 : 0;
     const suggestedBase = this.suggestBaseTheme(skin);
@@ -1800,7 +2074,7 @@ export class UniversalSkinEngine extends EventEmitter {
 
   private suggestBaseTheme(skin: UniversalSkinDefinition): string {
     // Find the most common theme properties to suggest as base
-    const themeNames = Object.keys(skin.themes);
+    const themeNames = Object.keys(skin.themes ?? {});
     return themeNames.length > 0 ? themeNames[0] : 'default-light';
   }
 
@@ -1815,12 +2089,12 @@ export class UniversalSkinEngine extends EventEmitter {
     let optimizedSize = currentSize;
 
     // Estimate optimization potential
-    if (skin.performance.compressionLevel < 9) {
+    if ((skin.performance?.compressionLevel ?? 0) < 9) {
       techniques.push('increase-compression');
       optimizedSize *= 0.8;
     }
 
-    if (skin.performance.loadingStrategy !== 'lazy') {
+    if ((skin.performance?.loadingStrategy ?? 'eager') !== 'lazy') {
       techniques.push('lazy-loading');
       optimizedSize *= 0.9;
     }
@@ -1835,7 +2109,7 @@ export class UniversalSkinEngine extends EventEmitter {
     
     for (const [engineName] of Array.from(this.renderingEngines.entries())) {
       const skinsUsingEngine = Array.from(this.skins.values())
-        .filter(skin => Object.values(skin.rendering.targets).some(target => target.renderer === engineName));
+        .filter(skin => Object.values(skin.rendering?.targets ?? {}).some(target => target.renderer === engineName));
       stats[engineName] = skinsUsingEngine.length;
     }
 
@@ -1947,11 +2221,16 @@ export class UniversalSkinEngine extends EventEmitter {
         ]
       },
       metadata: {
+        id: 'default-universal',
+        name: 'Default Universal Theme',
+        version: '1.0.0',
+        backend: 'pcl' as BackendType,
+        backendService: 'templum-default',
+        compatibleInterfaces: ['vscode', 'cli', 'command'],
         description: 'Default universal theme with PCL integration',
         author: 'Templum System',
         tags: ['default', 'universal', 'pcl-compatible'],
         supportedInterfaces: ['vscode', 'cli', 'command'],
-        backendService: 'templum-default',
         dependencies: []
       },
       inheritance: {

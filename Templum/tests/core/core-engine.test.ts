@@ -293,6 +293,7 @@ function createMockSkinDefinition(): UniversalSkinDefinition {
       id: 'test-skin',
       name: 'Test Skin',
       backend: 'pcl',
+      backendService: 'pcl-service',
       version: '1.0.0',
       description: 'Test skin for core engine',
       compatibleInterfaces: ['vscode', 'cli', 'command']

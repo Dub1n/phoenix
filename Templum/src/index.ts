@@ -8,6 +8,7 @@
 
 import { TemplumCore } from './core/templum-core';
 import { TemplumConfiguration } from './types/templum-types';
+import { CLIInterfaceAdapter } from './interfaces/cli-adapter-abstracted';
 
 /**
  * Main entry point for Templum Universal Interface Orchestrator
@@ -41,6 +42,41 @@ export async function main(): Promise<void> {
     console.log(`📊 Supported interfaces: ${templumCore.getSupportedInterfaces().join(', ')}`);
     console.log(`🎨 Loaded skins: ${systemStatus.coreEngine.loadedSkins.length}`);
     console.log(`🔗 Active interfaces: ${systemStatus.coreEngine.activeInterfaces.length}`);
+
+    // TASK-ACTIVATION-001: CLI Interface Activation After Skin Loading
+    // Activate CLI interface if skins are loaded
+    if (systemStatus.coreEngine.loadedSkins.length > 0) {
+      console.log('🔧 Activating CLI interface...');
+      
+      try {
+        // Create abstracted CLI adapter with configuration
+        const cliAdapter = new CLIInterfaceAdapter({
+          enableInteractiveMode: true,
+          enableKeyboardShortcuts: true,
+          enableColorOutput: true,
+          enableProgressIndicators: true,
+          clearScreenOnRender: true,
+          maxHistorySize: 50,
+          terminalTheme: 'dark',
+          enableResponsiveLayout: true
+        });
+        
+        // Initialize CLI adapter with orchestrator - this automatically registers the interface
+        await cliAdapter.initialize(templumCore);
+        
+        console.log('✅ CLI interface activated successfully');
+        console.log('🚀 Starting interactive CLI session...');
+        
+        // Start interactive CLI session  
+        await cliAdapter.startInteractiveSession('main');
+        
+      } catch (interfaceError) {
+        console.error('❌ Failed to activate CLI interface:', interfaceError);
+        console.log('🔄 Continuing without CLI interface activation...');
+      }
+    } else {
+      console.log('⚠️  No skins loaded - CLI interface activation deferred');
+    }
 
     // Setup graceful shutdown
     process.on('SIGINT', async () => {

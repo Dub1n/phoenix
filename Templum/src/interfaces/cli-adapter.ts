@@ -12,13 +12,20 @@
  */
 
 import { EventEmitter } from 'events';
-import readline from 'readline';
+import * as readline from 'readline';
 import { UniversalCommandRegistry } from '../commands/universal-command-registry';
 import { UniversalMenuRegistry } from '../menus/universal-menu-registry';
 import { SessionContextFoundation } from '../session/session-context-foundation';
 import { UniversalLayoutEngine } from '../rendering/universal-layout-engine';
 import { ITemplumOrchestrator } from './templum-orchestrator-interface';
 import { InterfaceType, createTemplumError, isTemplumError } from '../types/templum-types';
+import { 
+  createTerminalUI, 
+  InteractiveSearch, 
+  SearchableItem, 
+  SearchResult,
+  DefaultColorThemes 
+} from './terminal-ui-components';
 
 export interface CLIAdapter {
   type: 'cli';
@@ -46,6 +53,8 @@ export interface CLIInputContext {
   currentMenu?: string;
   navigationHistory?: string[];
   sessionId?: string;
+  searchResult?: boolean;
+  shortcut?: string;
 }
 
 export interface CLIInputResult {
@@ -76,6 +85,14 @@ export interface CLIAdapterConfig {
   clearScreenOnRender: boolean;
   maxHistorySize: number;
   inputTimeout?: number;
+  enableInteractiveSearch: boolean;
+  searchConfig?: {
+    fuzzySearch: boolean;
+    categoryFilter: boolean;
+    maxResults: number;
+    minSearchLength: number;
+  };
+  terminalTheme?: 'default' | 'dark' | 'light';
 }
 
 /**
@@ -98,6 +115,8 @@ export class CLIInterfaceAdapter extends EventEmitter implements CLIAdapter {
   private navigationHistory: string[] = [];
   private keyboardShortcuts = new Map<string, string>();
   private isInteractiveMode = false;
+  private terminalUI: any; // TerminalUI instance
+  private searchableItems: SearchableItem[] = [];
 
   constructor(
     commandRegistry: UniversalCommandRegistry,
@@ -120,8 +139,28 @@ export class CLIInterfaceAdapter extends EventEmitter implements CLIAdapter {
       clearScreenOnRender: true,
       maxHistorySize: 50,
       inputTimeout: 30000, // 30 seconds
+      enableInteractiveSearch: true,
+      searchConfig: {
+        fuzzySearch: true,
+        categoryFilter: true,
+        maxResults: 10,
+        minSearchLength: 1
+      },
+      terminalTheme: 'default',
       ...config
     };
+
+    // Initialize Terminal UI with theme support
+    const theme = DefaultColorThemes[this.config.terminalTheme || 'default'] || DefaultColorThemes.default;
+    this.terminalUI = createTerminalUI({
+      theme,
+      responsive: {
+        minWidth: 40,
+        minHeight: 10,
+        breakpoints: { small: 60, medium: 100, large: 140 },
+        theme
+      }
+    });
   }
 
   /**
@@ -338,6 +377,14 @@ export class CLIInterfaceAdapter extends EventEmitter implements CLIAdapter {
       { key: 's', command: 'status', description: 'Show system status' }
     ];
 
+    // Add interactive search shortcut if enabled
+    if (this.config.enableInteractiveSearch) {
+      defaultShortcuts.push(
+        { key: 'f', command: 'search', description: 'Interactive search' },
+        { key: '/', command: 'search', description: 'Interactive search' }
+      );
+    }
+
     for (const shortcut of defaultShortcuts) {
       this.keyboardShortcuts.set(shortcut.key, shortcut.command);
     }
@@ -390,6 +437,12 @@ export class CLIInterfaceAdapter extends EventEmitter implements CLIAdapter {
       this.displayBackendStatus();
     } else if (input === 'refresh') {
       await this.renderCurrentMenu();
+    } else if (input === 'search' || input === 'f' || input === '/') {
+      if (this.config.enableInteractiveSearch) {
+        await this.launchInteractiveSearch();
+      } else {
+        console.log('Interactive search is disabled');
+      }
     } else if (/^\d+$/.test(input)) {
       // Numeric menu selection
       await this.handleMenuSelection({
@@ -673,11 +726,247 @@ export class CLIInterfaceAdapter extends EventEmitter implements CLIAdapter {
     }
   }
 
+  /**
+   * Launch interactive search interface - TASK-CLI-002 implementation
+   */
+  private async launchInteractiveSearch(): Promise<void> {
+    if (!this.config.enableInteractiveSearch) {
+      console.log('Interactive search is disabled');
+      return;
+    }
+
+    try {
+      // Build searchable items from current context
+      await this.buildSearchableItems();
+
+      if (this.searchableItems.length === 0) {
+        console.log('No searchable items available');
+        return;
+      }
+
+      // Create and configure interactive search
+      const search = this.terminalUI.createInteractiveSearch({
+        theme: DefaultColorThemes[this.config.terminalTheme || 'default'] || DefaultColorThemes.default,
+        placeholder: 'Search menus and commands... (type to filter, tab for categories)',
+        enableFuzzySearch: this.config.searchConfig?.fuzzySearch ?? true,
+        enableCategoryFilter: this.config.searchConfig?.categoryFilter ?? true,
+        maxResults: this.config.searchConfig?.maxResults ?? 10,
+        minSearchLength: this.config.searchConfig?.minSearchLength ?? 1
+      });
+
+      // Set searchable items and start search
+      search.setItems(this.searchableItems);
+      
+      // Launch interactive search
+      const result = await search.start();
+      
+      if (result) {
+        await this.handleSearchResult(result);
+      }
+
+      // Return to interactive session
+      if (this.isInteractiveMode) {
+        await this.renderCurrentMenu();
+        this.readlineInterface?.prompt();
+      }
+
+    } catch (error) {
+      console.error('Failed to launch interactive search:', error);
+      
+      if (this.isInteractiveMode) {
+        this.readlineInterface?.prompt();
+      }
+    }
+  }
+
+  /**
+   * Build searchable items from menus and commands
+   */
+  private async buildSearchableItems(): Promise<void> {
+    this.searchableItems = [];
+    
+    try {
+      // Add basic commands that are always available
+      const basicCommands = [
+        { name: 'help', description: 'Show help information' },
+        { name: 'status', description: 'Show system status' },
+        { name: 'refresh', description: 'Refresh current view' },
+        { name: 'back', description: 'Go to previous menu' },
+        { name: 'quit', description: 'Exit application' }
+      ];
+
+      for (const cmd of basicCommands) {
+        this.searchableItems.push({
+          id: `command:${cmd.name}`,
+          title: cmd.name,
+          description: cmd.description,
+          category: 'Commands',
+          tags: ['basic', 'navigation'],
+          data: {
+            type: 'command',
+            command: cmd.name,
+            info: { description: cmd.description }
+          }
+        });
+      }
+
+      // Get menu items from current and available menus
+      const availableMenus = this.menuRegistry.getAvailableMenuIds('cli');
+      
+      for (const menuId of availableMenus) {
+        try {
+          const menu = await this.menuRegistry.getMenu(menuId, 'cli');
+          
+          // Add menu as searchable item
+          this.searchableItems.push({
+            id: `menu:${menuId}`,
+            title: menu.title || menuId,
+            description: `Navigate to ${menu.title || menuId} menu`,
+            category: 'Menus',
+            tags: ['menu', 'navigation'],
+            data: {
+              type: 'menu',
+              menuId: menuId,
+              menu: menu
+            }
+          });
+
+          // Add individual menu items
+          if (menu.sections) {
+            for (const section of menu.sections) {
+              if (section.items) {
+                for (const item of section.items) {
+                  this.searchableItems.push({
+                    id: `menu-item:${menuId}:${item.id || item.label}`,
+                    title: item.label,
+                    description: item.description || `${item.action?.type}: ${item.action?.target}`,
+                    category: `Menu: ${menu.title || menuId}`,
+                    tags: ['menu-item', menuId],
+                    data: {
+                      type: 'menu-item',
+                      menuId: menuId,
+                      item: item,
+                      section: section.id || 'section'
+                    }
+                  });
+                }
+              }
+            }
+          }
+        } catch (error) {
+          console.warn(`Failed to load menu '${menuId}' for search:`, error);
+        }
+      }
+
+      // Add keyboard shortcuts as searchable items
+      for (const [key, command] of Array.from(this.keyboardShortcuts.entries())) {
+        this.searchableItems.push({
+          id: `shortcut:${key}`,
+          title: `${key} (shortcut)`,
+          description: `Keyboard shortcut for: ${command}`,
+          category: 'Shortcuts',
+          tags: ['shortcut', 'keyboard', command],
+          data: {
+            type: 'shortcut',
+            key: key,
+            command: command
+          }
+        });
+      }
+
+      // Add backend services if orchestrator is available
+      if (this.orchestrator?.isInitialized()) {
+        try {
+          const systemStatus = this.orchestrator.getSystemStatus();
+          const backends = systemStatus.coreEngine?.backendConnections?.backends || {};
+          
+          for (const [serviceId, status] of Object.entries(backends)) {
+            this.searchableItems.push({
+              id: `backend:${serviceId}`,
+              title: `${serviceId} (backend)`,
+              description: `Backend service: ${status.connected ? 'Connected' : 'Disconnected'} - ${status.health || 'Unknown'}`,
+              category: 'Backend Services',
+              tags: ['backend', 'service', status.connected ? 'connected' : 'disconnected'],
+              data: {
+                type: 'backend',
+                serviceId: serviceId,
+                status: status
+              }
+            });
+          }
+        } catch (error) {
+          console.warn('Failed to load backend services for search:', error);
+        }
+      }
+
+    } catch (error) {
+      console.error('Failed to build searchable items:', error);
+      this.searchableItems = [];
+    }
+  }
+
+  /**
+   * Handle the selected search result
+   */
+  private async handleSearchResult(result: SearchResult): Promise<void> {
+    try {
+      console.log(`\nSelected: ${result.title}`);
+      
+      switch (result.data.type) {
+        case 'command':
+          await this.handleCommandInput({
+            type: 'command',
+            value: result.data.command,
+            context: { 
+              currentMenu: this.currentMenu,
+              searchResult: true
+            }
+          });
+          break;
+
+        case 'menu':
+          await this.navigateToMenu(result.data.menuId);
+          break;
+
+        case 'menu-item':
+          await this.executeMenuItemAction(result.data.item);
+          break;
+
+        case 'shortcut':
+          await this.handleCommandInput({
+            type: 'command',
+            value: result.data.command,
+            context: { 
+              currentMenu: this.currentMenu,
+              shortcut: result.data.key
+            }
+          });
+          break;
+
+        case 'backend':
+          console.log(`Backend service: ${result.data.serviceId}`);
+          console.log(`Status: ${result.data.status.connected ? 'Connected' : 'Disconnected'}`);
+          console.log(`Health: ${result.data.status.health || 'Unknown'}`);
+          if (result.data.status.capabilities) {
+            console.log(`Capabilities: ${result.data.status.capabilities.join(', ')}`);
+          }
+          break;
+
+        default:
+          console.log(`Unknown search result type: ${result.data.type}`);
+          break;
+      }
+
+    } catch (error) {
+      console.error(`Failed to handle search result:`, error);
+    }
+  }
+
   private displayKeyboardShortcuts(): void {
     if (this.keyboardShortcuts.size === 0) return;
 
     console.log('\nKeyboard Shortcuts:');
-    for (const [key, command] of this.keyboardShortcuts) {
+    for (const [key, command] of Array.from(this.keyboardShortcuts.entries())) {
       console.log(`  ${key} - ${command}`);
     }
     console.log();
@@ -692,13 +981,28 @@ export class CLIInterfaceAdapter extends EventEmitter implements CLIAdapter {
     console.log('  refresh  - Refresh current menu');
     console.log('  status   - Show backend service status');
     console.log('  quit     - Exit application');
+    
+    if (this.config.enableInteractiveSearch) {
+      console.log('  search   - Launch interactive search (also: f, /)');
+    }
+    
     console.log('\nNavigation:');
     console.log('  1-9      - Select menu item by number');
     console.log('  command  - Execute any backend command');
     
+    if (this.config.enableInteractiveSearch) {
+      console.log('\nInteractive Search:');
+      console.log('  f or /   - Launch search interface');
+      console.log('  ESC      - Cancel search');
+      console.log('  ↑↓       - Navigate results');
+      console.log('  TAB      - Cycle category filters');
+      console.log('  ENTER    - Select item');
+      console.log('  Type     - Filter results in real-time');
+    }
+    
     if (this.keyboardShortcuts.size > 0) {
       console.log('\nShortcuts:');
-      for (const [key, command] of this.keyboardShortcuts) {
+      for (const [key, command] of Array.from(this.keyboardShortcuts.entries())) {
         console.log(`  ${key}       - ${command}`);
       }
     }

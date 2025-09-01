@@ -6,9 +6,30 @@
  * description: [Comprehensive type definitions for Templum universal interface orchestrator]
  * ---*/
 
-// Core interface types
-export type InterfaceType = 'vscode' | 'cli' | 'command';
-export type BackendType = 'pcl' | 'litany' | 'haruspex';
+// Migration Note (2025-09-01): Core types moved to universal-skin-definition.ts
+// Import and re-export for backward compatibility
+import { 
+  UniversalSkinDefinition,
+  BackendType,
+  InterfaceType,
+  PCLCompatibility,
+  SkinAssets,
+  SkinInheritance,
+  RenderingConfiguration,
+  SkinPerformanceConfig
+} from './universal-skin-definition';
+
+// Re-export imported types for backward compatibility
+export { 
+  UniversalSkinDefinition,
+  BackendType,
+  InterfaceType,
+  PCLCompatibility,
+  SkinAssets,
+  SkinInheritance,
+  RenderingConfiguration,
+  SkinPerformanceConfig
+};
 
 // Configuration interfaces
 export interface TemplumConfiguration {
@@ -20,67 +41,6 @@ export interface TemplumConfiguration {
     enabled: boolean;
     interval: number;
   };
-}
-
-// Universal Skin Definition - Aligned with real implementation API
-export interface UniversalSkinDefinition {
-  // Core identification - moved from metadata to root level to match real implementation
-  id: string;
-  name: string;
-  version: string;
-  description?: string;
-  
-  // PCL compatibility features - required by real implementation
-  pclCompatibility?: PCLCompatibility;
-  
-  // Core metadata (backward compatibility - includes id/name for existing code)
-  metadata: {
-    id: string;
-    name: string;
-    version: string;
-    description?: string;
-    backend: BackendType;
-    compatibleInterfaces: InterfaceType[];
-    author?: string;
-    tags?: string[];
-  };
-
-  // VSCode Visual Interface Definitions
-  views?: {
-    treeViews?: TreeViewDefinition[];
-    panels?: PanelDefinition[];
-    statusBar?: StatusBarDefinition[];
-  };
-
-  // CLI Interactive Menu Definitions
-  menus?: {
-    [menuId: string]: MenuDefinition;
-  };
-
-  // Command Interface Definitions
-  commands?: {
-    [commandId: string]: CommandDefinition;
-  };
-
-  // Cross-Interface Features
-  workflows?: {
-    [workflowId: string]: WorkflowDefinition;
-  };
-
-  shortcuts?: {
-    [keybinding: string]: string;
-  };
-
-  // Theme support - changed from singular 'theme' to plural 'themes' to match real implementation
-  themes?: Record<string, SkinTheme>;
-  theme?: SkinTheme; // Backward compatibility
-  
-  // Additional properties needed by real implementation
-  components?: Record<string, any>;
-  assets?: SkinAssets;
-  inheritance?: SkinInheritance;
-  rendering?: RenderingConfiguration;
-  performance?: SkinPerformanceConfig;
 }
 
 // Interface adapter base contract
@@ -481,34 +441,5 @@ export interface ErrorSignalPayload extends SignalPayload {
   severity: 'low' | 'medium' | 'high' | 'critical';
 }
 
-// Additional type definitions for Universal Skin Engine API alignment
-export interface PCLCompatibility {
-  enabled: boolean;
-  version?: string;
-  features?: string[];
-}
-
-export interface SkinAssets {
-  icons?: Record<string, string>;
-  images?: Record<string, string>;
-  fonts?: Record<string, string>;
-  sounds?: Record<string, string>;
-}
-
-export interface SkinInheritance {
-  parent?: string;
-  mixins?: string[];
-  overrides?: Record<string, any>;
-}
-
-export interface RenderingConfiguration {
-  mode?: 'standard' | 'optimized' | 'compatibility';
-  caching?: boolean;
-  lazyLoading?: boolean;
-}
-
-export interface SkinPerformanceConfig {
-  enableOptimization?: boolean;
-  cacheTimeout?: number;
-  maxConcurrentRenders?: number;
-}
+// Migration Note (2025-09-01): Supporting types moved to universal-skin-definition.ts
+// These types are now imported from the unified definition file above

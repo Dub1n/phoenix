@@ -285,16 +285,19 @@ export class ComponentTransferCoordinator extends EventEmitter {
   }
 
   private setupStateManagerIntegration(): void {
-    // Listen for state manager events
-    this.stateManager.on('performance-threshold-exceeded', (data: any) => {
-      this.emit('performanceThresholdExceeded', data);
-    });
+    // Only setup integration if stateManager is available
+    if (this.stateManager && typeof this.stateManager.on === 'function') {
+      // Listen for state manager events
+      this.stateManager.on('performance-threshold-exceeded', (data: any) => {
+        this.emit('performanceThresholdExceeded', data);
+      });
 
-    this.stateManager.on('state-changed', (data: any) => {
-      if (data.change.source === 'component-transfer-coordinator') {
-        this.emit('stateChangeConfirmed', data);
-      }
-    });
+      this.stateManager.on('state-changed', (data: any) => {
+        if (data.change.source === 'component-transfer-coordinator') {
+          this.emit('stateChangeConfirmed', data);
+        }
+      });
+    }
   }
 
   private async processTransferQueue(): Promise<void> {

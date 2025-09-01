@@ -42,6 +42,8 @@ import {
   backendIntegrationConfig,
   BackendIntegrationConfig 
 } from './backend-integration-config';
+import { ITemplumOrchestrator } from '../interfaces/templum-orchestrator-interface';
+// Migration Note (2025-09-01): TemplumSkinDefinition alias no longer needed with unified types
 
 // IPC Protocol Types (Based on Haruspex IPC Protocol)
 export type IPCMessageType = 
@@ -84,6 +86,9 @@ export interface BackendServiceRouter {
   loadBackendSkin(backendId: string): Promise<UniversalSkinDefinition | null>;
   executeCommand(backendId: string, command: string, args?: any[]): Promise<any>;
   isServiceAvailable(backendId: string): Promise<boolean>;
+  // TASK-NEW-050: Service Connection Management APIs
+  connectToService(serviceId: string): Promise<{ success: boolean; message: string; responseTime?: number }>;
+  disconnectFromService(serviceId: string): Promise<{ success: boolean; message: string }>;
 }
 
 export interface BackendConnectionStatus {
@@ -100,6 +105,33 @@ export interface BackendStatus {
   capabilities?: string[];
   version?: string;
   responseTime?: number;
+  // TASK-SKIN-005: Connection stability tracking for minimal backends
+  connectionStability?: {
+    successfulConnections: number;
+    totalConnectionAttempts: number;
+    stabilityPercentage: number;
+    lastConnectionAttempt: number;
+    connectionHistory: Array<{
+      timestamp: number;
+      success: boolean;
+      responseTime?: number;
+    }>;
+  };
+}
+
+// TASK-SKIN-004B: Backend Capability Profile Detection
+export interface BackendCapabilityProfile {
+  backendId: string;
+  hasHealthEndpoint: boolean;
+  hasCapabilitiesEndpoint: boolean;
+  hasVersionEndpoint: boolean;
+  skinDefinitionQuality: 'complete' | 'partial' | 'minimal';
+  endpointAvailability: {
+    health: boolean;
+    capabilities: boolean;
+    version: boolean;
+  };
+  detectionTimestamp: number;
 }
 
 
@@ -113,10 +145,12 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
   private connections: Map<string, BackendConnection> = new Map();
   private serviceHealth: Map<string, BackendStatus> = new Map();
   private backendConfigs: Map<string, BackendConfig> = new Map();
+  private backendCapabilityProfiles: Map<string, BackendCapabilityProfile> = new Map(); // TASK-SKIN-004B
   private universalSkinEngine: UniversalSkinEngine;
   private commandRouter: DynamicCommandRouter;
   private serviceDiscovery: ServiceDiscovery;
   private useGenericDiscovery: boolean;
+  private orchestrator?: ITemplumOrchestrator;
   
   // ENHANCED: Background health monitoring and recovery system
   private healthMonitorInterval: NodeJS.Timeout | null = null;
@@ -124,12 +158,16 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
   private recoveryAttempts: Map<string, number> = new Map();
   private maxRecoveryAttempts: number = 3;
 
-  constructor(discoveryOptions?: ServiceDiscoveryOptions & { 
-    useGenericDiscovery?: boolean;
-    healthCheckInterval?: number;
-    maxRecoveryAttempts?: number;
-  }) {
+  constructor(
+    orchestrator?: ITemplumOrchestrator,
+    discoveryOptions?: ServiceDiscoveryOptions & { 
+      useGenericDiscovery?: boolean;
+      healthCheckInterval?: number;
+      maxRecoveryAttempts?: number;
+    }
+  ) {
     super();
+    this.orchestrator = orchestrator;
     this.universalSkinEngine = new UniversalSkinEngine();
     this.commandRouter = new DynamicCommandRouter();
     this.serviceDiscovery = new ServiceDiscovery(discoveryOptions);
@@ -148,6 +186,15 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
     
     // ENHANCED: Start background health monitoring
     this.startHealthMonitoring();
+  }
+
+  /**
+   * Set the TemplumCore orchestrator reference for skin loading integration
+   * Following Backend Service Integration Unified pattern
+   */
+  setOrchestrator(orchestrator: ITemplumOrchestrator): void {
+    this.orchestrator = orchestrator;
+    console.log('[BACKEND_SERVICE_ROUTER] TemplumCore orchestrator reference set for skin loading');
   }
 
   /**
@@ -242,7 +289,8 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
   }
 
   /**
-   * ENHANCED: Perform comprehensive health check on all connections
+   * TASK-SKIN-005: Perform conditional health check based on backend capability profiles
+   * Only performs health checks on backends that have health endpoints
    */
   private async performHealthCheck(): Promise<void> {
     const connections = Array.from(this.connections.entries());
@@ -251,50 +299,89 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
       return; // No connections to check yet
     }
     
-    console.log(`[HEALTH_MONITOR] Performing health check on ${connections.length} connections`);
+    console.log(`[HEALTH_MONITOR] Performing conditional health check on ${connections.length} connections`);
     
     for (const [backendId, connection] of connections) {
       try {
+        const capabilityProfile = this.backendCapabilityProfiles.get(backendId);
         const startTime = Date.now();
-        const isConnected = connection.isConnected();
-        const responseTime = Date.now() - startTime;
         
-        const currentHealth = this.serviceHealth.get(backendId);
-        const newHealth: BackendStatus = {
-          connected: isConnected,
-          health: isConnected ? 'healthy' : 'unhealthy',
-          lastCheck: Date.now(),
-          responseTime,
-          capabilities: currentHealth?.capabilities,
-          version: currentHealth?.version,
-          lastError: undefined
-        };
-        
-        // If connection is unhealthy, attempt recovery
-        if (!isConnected) {
-          await this.attemptConnectionRecovery(backendId, connection);
+        if (capabilityProfile?.hasHealthEndpoint) {
+          // Tier 1: Health-enabled backends - perform actual health check
+          const isHealthy = await this.performActualHealthCheck(backendId, connection);
+          const responseTime = Date.now() - startTime;
+          
+          this.updateServiceHealth(
+            backendId, 
+            isHealthy, 
+            isHealthy ? 'healthy' : 'unhealthy', 
+            isHealthy ? undefined : 'Health check failed',
+            undefined,
+            responseTime
+          );
+          
+          console.log(`[HEALTH_MONITOR] Tier 1 (Health-enabled) ${backendId}: ${isHealthy ? 'healthy' : 'unhealthy'} (${responseTime}ms)`);
         } else {
-          // Reset recovery attempts on successful health check
-          this.recoveryAttempts.delete(backendId);
+          // Tier 2: Minimal backends - use connection stability instead of health checks
+          const isConnected = connection.isConnected();
+          const responseTime = Date.now() - startTime;
+          
+          // For minimal backends, consider them "healthy" if they're connected
+          // Their actual ranking will be determined by connection stability in prioritization
+          this.updateServiceHealth(
+            backendId, 
+            isConnected, 
+            isConnected ? 'healthy' : 'unhealthy',
+            isConnected ? undefined : 'Connection lost',
+            undefined,
+            responseTime
+          );
+          
+          console.log(`[HEALTH_MONITOR] Tier 2 (Minimal) ${backendId}: ${isConnected ? 'connected' : 'disconnected'} (stability: ${this.getConnectionStability(backendId).toFixed(1)}%)`);
         }
-        
-        this.serviceHealth.set(backendId, newHealth);
-        this.emit('healthUpdate', { backendId, status: newHealth });
-        
       } catch (error) {
-        const errorHealth: BackendStatus = {
-          connected: false,
-          health: 'error',
-          lastCheck: Date.now(),
-          lastError: error instanceof Error ? error.message : String(error)
-        };
-        
-        this.serviceHealth.set(backendId, errorHealth);
-        this.emit('healthError', { backendId, error: errorHealth.lastError });
-        
-        console.warn(`[HEALTH_MONITOR] Health check failed for ${backendId}:`, error);
+        this.updateServiceHealth(backendId, false, 'error', `Health check error: ${error}`);
+        console.error(`[HEALTH_MONITOR] Error checking ${backendId}:`, error);
       }
     }
+  }
+
+  /**
+   * TASK-SKIN-005: Perform actual health endpoint check for health-enabled backends
+   */
+  private async performActualHealthCheck(backendId: string, connection: BackendConnection): Promise<boolean> {
+    try {
+      // Try to perform actual health check based on connection type
+      if (connection.protocol === 'http') {
+        const config = this.backendConfigs.get(backendId);
+        if (config?.healthEndpoint) {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 5000);
+          
+          const response = await fetch(`${config.endpoint}${config.healthEndpoint}`, {
+            method: 'GET',
+            signal: controller.signal
+          });
+          
+          clearTimeout(timeoutId);
+          return response.ok;
+        }
+      }
+      
+      // For other protocols or if no specific health endpoint, check if connection is alive
+      return connection.isConnected();
+    } catch (error) {
+      console.warn(`[HEALTH_CHECK] Health endpoint check failed for ${backendId}:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * Legacy method - updated for compatibility
+   */
+  private async performHealthChecks(): Promise<void> {
+    // Delegate to the new conditional health check method
+    return this.performHealthCheck();
   }
 
   /**
@@ -378,6 +465,22 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
   }
 
   /**
+   * TASK-SKIN-004B: Get backend capability profile for prioritization decisions
+   * Used by two-tier prioritization system (TASK-SKIN-005)
+   */
+  getBackendCapabilityProfile(backendId: string): BackendCapabilityProfile | undefined {
+    return this.backendCapabilityProfiles.get(backendId);
+  }
+
+  /**
+   * TASK-SKIN-004B: Get all backend capability profiles
+   * Used for system-wide capability analysis and prioritization
+   */
+  getAllBackendCapabilityProfiles(): Map<string, BackendCapabilityProfile> {
+    return new Map(this.backendCapabilityProfiles);
+  }
+
+  /**
    * GENERIC BACKEND INTEGRATION: Register backend via skin definition
    * This is the target architecture - backends self-describe through skin definitions
    */
@@ -397,6 +500,11 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
     // Store the backend configuration
     this.backendConfigs.set(backendId, backendConfig);
 
+    // TASK-SKIN-004B: Detect and store backend capability profile during registration
+    const capabilityProfile = this.detectBackendCapabilityProfile(backendId, skinDefinition);
+    this.backendCapabilityProfiles.set(backendId, capabilityProfile);
+    console.log(`[CAPABILITY_PROFILE] Detected profile for ${backendId}: ${capabilityProfile.skinDefinitionQuality} (health:${capabilityProfile.hasHealthEndpoint}, caps:${capabilityProfile.hasCapabilitiesEndpoint}, ver:${capabilityProfile.hasVersionEndpoint})`);
+
     // Initialize service health for new backend
     this.serviceHealth.set(backendId, {
       connected: false,
@@ -405,9 +513,63 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
       capabilities: []
     });
 
+    // TASK-SKIN-005: Initialize connection stability tracking for new backend
+    this.initializeConnectionStability(backendId);
+
     console.log(`[GENERIC] Backend ${backendId} registered successfully with generic system`);
   }
 
+  /**
+   * TASK-SKIN-004B: Detect backend capability profile from skin definition
+   * Determines which endpoints are available and calculates skin definition quality
+   */
+  private detectBackendCapabilityProfile(backendId: string, skinDefinition: UniversalSkinDefinition): BackendCapabilityProfile {
+    const backendConfig = skinDefinition.backendConfig!;
+    
+    // Detect endpoint availability from skin definition
+    const hasHealthEndpoint = !!backendConfig.healthEndpoint;
+    const hasCapabilitiesEndpoint = !!backendConfig.capabilitiesEndpoint;
+    // Note: Version endpoint detection based on TASK-SKIN-006 - version comes from metadata primarily
+    const hasVersionEndpoint = false; // Will be implemented in TASK-SKIN-006 if needed
+    const hasVersionInMetadata = !!skinDefinition.metadata?.version;
+    
+    // Calculate skin definition quality based on completeness
+    let skinDefinitionQuality: 'complete' | 'partial' | 'minimal';
+    
+    // Complete: Has comprehensive backend integration capabilities
+    const hasComprehensiveMetadata = !!(skinDefinition.metadata?.version && skinDefinition.metadata?.description);
+    const hasDirectCapabilities = !!(backendConfig.capabilities && backendConfig.capabilities.length > 0);
+    const hasVersionInfo = hasVersionEndpoint || hasVersionInMetadata;
+    
+    if ((hasHealthEndpoint && hasCapabilitiesEndpoint && hasVersionInfo) || 
+        (hasDirectCapabilities && hasComprehensiveMetadata && (hasHealthEndpoint || hasCapabilitiesEndpoint))) {
+      skinDefinitionQuality = 'complete';
+    }
+    // Partial: Has some endpoints OR has capabilities defined OR has version info
+    else if (hasHealthEndpoint || hasCapabilitiesEndpoint || hasVersionInfo || hasDirectCapabilities) {
+      skinDefinitionQuality = 'partial';
+    }
+    // Minimal: Basic skin definition with minimal backend integration
+    else {
+      skinDefinitionQuality = 'minimal';
+    }
+    
+    const capabilityProfile: BackendCapabilityProfile = {
+      backendId,
+      hasHealthEndpoint,
+      hasCapabilitiesEndpoint,
+      hasVersionEndpoint: hasVersionInfo, // Includes both endpoint and metadata-based version detection
+      skinDefinitionQuality,
+      endpointAvailability: {
+        health: hasHealthEndpoint,
+        capabilities: hasCapabilitiesEndpoint,
+        version: hasVersionInfo
+      },
+      detectionTimestamp: Date.now()
+    };
+    
+    return capabilityProfile;
+  }
 
   async discoverAndConnect(): Promise<void> {
     const startTime = Date.now();
@@ -780,27 +942,44 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
   }
 
   /**
-   * Query service capabilities via API
+   * Query service capabilities - skin definition as single source of truth
+   * TASK-SKIN-004: Extract capabilities from skin definition first, API fallback only if explicitly configured
    */
   private async queryServiceCapabilities(serviceId: string, connection: BackendConnection): Promise<string[]> {
-    try {
-      // Attempt to call capabilities endpoint
-      const response = await this.callBackendServiceAPI(connection, 'getCapabilities', {});
-      
-      if (response && response.capabilities && Array.isArray(response.capabilities)) {
-        return response.capabilities;
-      }
-    } catch (error) {
-      // Capabilities API not available - use defaults
+    // STEP 1: Check capabilities from skin definition (single source of truth)
+    const backendConfig = this.backendConfigs.get(serviceId);
+    if (backendConfig?.capabilities && Array.isArray(backendConfig.capabilities) && backendConfig.capabilities.length > 0) {
+      console.log(`[SKIN-CAPABILITIES] Using capabilities from skin definition for ${serviceId}:`, backendConfig.capabilities);
+      return backendConfig.capabilities;
     }
     
-    // Return default capabilities based on service type
+    // STEP 2: Only call API if explicitly specified in skin definition
+    if (backendConfig?.capabilitiesEndpoint) {
+      try {
+        console.log(`[API-CAPABILITIES] Calling explicit capabilitiesEndpoint for ${serviceId}: ${backendConfig.capabilitiesEndpoint}`);
+        const response = await this.callBackendServiceAPI(connection, 'getCapabilities', {});
+        
+        if (response && response.capabilities && Array.isArray(response.capabilities)) {
+          console.log(`[API-CAPABILITIES] Retrieved capabilities from endpoint for ${serviceId}:`, response.capabilities);
+          return response.capabilities;
+        }
+      } catch (error) {
+        console.warn(`[API-CAPABILITIES] Failed to query capabilities endpoint for ${serviceId}:`, error);
+      }
+    }
+    
+    // STEP 3: Return default capabilities as final fallback
     const defaultCapabilities = this.serviceHealth.get(serviceId)?.capabilities || [];
+    console.log(`[FALLBACK-CAPABILITIES] Using default capabilities for ${serviceId}:`, defaultCapabilities);
     return defaultCapabilities;
   }
 
   /**
    * Get service version information
+   * TASK-SKIN-006: Implements hierarchical version extraction:
+   * 1. Primary: skinDefinition.metadata.version  
+   * 2. Secondary: backendConfig.versionEndpoint if specified
+   * 3. Fallback: no version display
    */
   private async getServiceVersion(serviceId: string): Promise<string | undefined> {
     try {
@@ -809,17 +988,36 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
         return undefined;
       }
 
-      // Query version from service
-      const response = await this.callBackendServiceAPI(connection, 'getVersion', {});
-      
-      if (response && response.version) {
-        console.log(`Backend Service Router: ${serviceId} version: ${response.version}`);
-        return response.version;
+      // TASK-SKIN-006: Primary - Try to get version from skin definition metadata
+      try {
+        const skinDefinition = await this.loadBackendSkin(serviceId);
+        if (skinDefinition?.metadata?.version) {
+          console.log(`[SKIN-VERSION] ${serviceId} version from skin metadata: ${skinDefinition.metadata.version}`);
+          return skinDefinition.metadata.version;
+        }
+      } catch (skinError) {
+        console.debug(`[SKIN-VERSION] Could not load skin for ${serviceId}:`, skinError);
+        // Continue to secondary method
+      }
+
+      // TASK-SKIN-006: Secondary - Use version endpoint if specified in backend config endpoints
+      const backendConfig = this.backendConfigs.get(serviceId);
+      if (backendConfig?.endpoints?.version) {
+        console.log(`[SKIN-VERSION] ${serviceId} has version endpoint, querying: ${backendConfig.endpoints.version}`);
+        const response = await this.callBackendServiceAPI(connection, 'getVersion', {});
+        
+        if (response && response.version) {
+          console.log(`[SKIN-VERSION] ${serviceId} version from endpoint: ${response.version}`);
+          return response.version;
+        }
       }
     } catch (error) {
-      // Version API not available - no version info
+      console.debug(`[SKIN-VERSION] Version query failed for ${serviceId}:`, error);
+      // Continue to fallback
     }
     
+    // TASK-SKIN-006: Fallback - Return undefined for no version display
+    console.debug(`[SKIN-VERSION] No version information available for ${serviceId}`);
     return undefined;
   }
 
@@ -839,27 +1037,8 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
     }, 30000); // Check every 30 seconds
   }
 
-  /**
-   * Perform health checks on all connected services
-   */
-  private async performHealthChecks(): Promise<void> {
-    for (const [serviceId, connection] of Array.from(this.connections.entries())) {
-      try {
-        if (connection.isConnected()) {
-          // Service is still connected - verify it's responsive
-          const responsive = await this.verifyServiceConnection(serviceId, connection);
-          this.updateServiceHealth(serviceId, responsive, responsive ? 'healthy' : 'unhealthy');
-        } else {
-          // Connection lost - mark as unhealthy
-          this.updateServiceHealth(serviceId, false, 'unhealthy', 'Connection lost');
-        }
-      } catch (error) {
-        this.updateServiceHealth(serviceId, false, 'error', `Health check failed: ${error}`);
-      }
-    }
-  }
 
-  private updateServiceHealth(serviceId: string, connected: boolean, health: 'healthy' | 'unhealthy' | 'error', error?: string, version?: string): void {
+  private updateServiceHealth(serviceId: string, connected: boolean, health: 'healthy' | 'unhealthy' | 'error', error?: string, version?: string, responseTime?: number): void {
     const status = this.serviceHealth.get(serviceId);
     if (status) {
       status.connected = connected;
@@ -869,6 +1048,83 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
       if (version) {
         status.version = version;
       }
+      if (responseTime) {
+        status.responseTime = responseTime;
+      }
+      
+      // TASK-SKIN-005: Update connection stability for minimal backends
+      this.updateConnectionStability(serviceId, connected, responseTime);
+    }
+  }
+
+  /**
+   * TASK-SKIN-005: Update connection stability tracking for minimal backends
+   * Tracks connection success/failure history for two-tier prioritization system
+   */
+  private updateConnectionStability(serviceId: string, connectionSuccessful: boolean, responseTime?: number): void {
+    const status = this.serviceHealth.get(serviceId);
+    if (!status) return;
+
+    // Initialize connection stability if not present
+    if (!status.connectionStability) {
+      status.connectionStability = {
+        successfulConnections: 0,
+        totalConnectionAttempts: 0,
+        stabilityPercentage: 0,
+        lastConnectionAttempt: Date.now(),
+        connectionHistory: []
+      };
+    }
+
+    const stability = status.connectionStability;
+    stability.totalConnectionAttempts++;
+    stability.lastConnectionAttempt = Date.now();
+
+    if (connectionSuccessful) {
+      stability.successfulConnections++;
+    }
+
+    // Add to connection history (keep last 50 attempts)
+    stability.connectionHistory.push({
+      timestamp: Date.now(),
+      success: connectionSuccessful,
+      responseTime
+    });
+
+    // Keep only last 50 connection attempts to prevent memory bloat
+    if (stability.connectionHistory.length > 50) {
+      stability.connectionHistory.shift();
+    }
+
+    // Calculate stability percentage
+    stability.stabilityPercentage = (stability.successfulConnections / stability.totalConnectionAttempts) * 100;
+
+    console.log(`[CONNECTION_STABILITY] ${serviceId} stability: ${stability.stabilityPercentage.toFixed(1)}% (${stability.successfulConnections}/${stability.totalConnectionAttempts})`);
+  }
+
+  /**
+   * TASK-SKIN-005: Get connection stability percentage for a backend
+   * Used by two-tier prioritization system for minimal backends
+   */
+  getConnectionStability(serviceId: string): number {
+    const status = this.serviceHealth.get(serviceId);
+    return status?.connectionStability?.stabilityPercentage || 0;
+  }
+
+  /**
+   * TASK-SKIN-005: Initialize connection stability tracking for a new backend
+   * Called during backend registration from skin definition
+   */
+  private initializeConnectionStability(serviceId: string): void {
+    const status = this.serviceHealth.get(serviceId);
+    if (status && !status.connectionStability) {
+      status.connectionStability = {
+        successfulConnections: 0,
+        totalConnectionAttempts: 0,
+        stabilityPercentage: 0,
+        lastConnectionAttempt: Date.now(),
+        connectionHistory: []
+      };
     }
   }
 
@@ -1391,7 +1647,7 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
 
   /**
    * Call backend service via HTTP protocol (PCL)
-   * Enhanced implementation for real PCL service communication
+   * Enhanced implementation for real PCL service communication with fallback endpoints
    */
   private async callHTTPService(connection: BackendConnection, apiMethod: string, payload: any): Promise<any> {
     console.log(`[HTTP] Calling ${apiMethod} on real ${connection.id} PCL service`);
@@ -1401,68 +1657,12 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
         throw createTemplumError(`HTTP connection to ${connection.id} is not available`, 'HTTP_CONNECTION_UNAVAILABLE', 'integration');
       }
 
-      // Real PCL HTTP API Implementation - Complete
+      // Real PCL HTTP API Implementation - Complete with Fault-Tolerant Fallbacks
       // Using fetch() API with proper endpoint mapping, error handling, and timeouts
       // Supports multiple API methods: getSkinDefinition, executeCommand, getCapabilities, getVersion
+      // ENHANCEMENT: Fallback endpoints for minimal backends (TASK-API-001)
       
-      // Map API methods to real PCL HTTP endpoints
-      let endpoint: string;
-      let method = 'GET';
-      let requestPayload: any = payload;
-
-      switch (apiMethod) {
-        case 'getSkinDefinition':
-          endpoint = `${connection.endpoint}/api/skins/${payload?.skinId || 'default'}`;
-          method = 'GET';
-          break;
-        case 'executeCommand':
-          endpoint = `${connection.endpoint}/api/commands/execute`;
-          method = 'POST';
-          break;
-        case 'getCapabilities':
-          endpoint = `${connection.endpoint}/api/capabilities`;
-          method = 'GET';
-          break;
-        case 'getVersion':
-          endpoint = `${connection.endpoint}/api/version`;
-          method = 'GET';
-          break;
-        default:
-          endpoint = `${connection.endpoint}/api/${apiMethod}`;
-          method = 'POST';
-      }
-
-      console.log(`[HTTP] Real ${connection.id} PCL API call: ${method} ${endpoint}`);
-
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000);
-
-      try {
-        const response = await fetch(endpoint, {
-          method,
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          },
-          body: method !== 'GET' ? JSON.stringify(requestPayload) : undefined,
-          signal: controller.signal
-        });
-
-        clearTimeout(timeoutId);
-
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status} ${response.statusText}`);
-        }
-
-        const responseData = await response.json();
-        console.log(`[HTTP] Real ${connection.id} PCL service response:`, { method: apiMethod, status: response.status });
-
-        return responseData;
-
-      } catch (fetchError) {
-        clearTimeout(timeoutId);
-        throw fetchError;
-      }
+      return await this.tryHTTPEndpointsWithFallback(connection, apiMethod, payload);
       
     } catch (error) {
       const errorMsg = isTemplumError(error) ? error.message : `HTTP call failed: ${error}`;
@@ -1478,6 +1678,175 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
         'integration',
         { protocol: 'http', service: connection.id, method: apiMethod, endpoint: connection.endpoint }
       );
+    }
+  }
+
+  /**
+   * Try HTTP endpoints with fault-tolerant fallbacks for minimal backends
+   * TASK-API-001: Backend API Endpoint Standardization
+   */
+  private async tryHTTPEndpointsWithFallback(connection: BackendConnection, apiMethod: string, payload: any): Promise<any> {
+    const endpointAttempts = this.getEndpointAttempts(connection, apiMethod, payload);
+    
+    let lastError: Error | null = null;
+    
+    for (const attempt of endpointAttempts) {
+      try {
+        console.log(`[HTTP] Trying ${connection.id} endpoint: ${attempt.method} ${attempt.endpoint}`);
+        
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+        try {
+          const response = await fetch(attempt.endpoint, {
+            method: attempt.method,
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            },
+            body: attempt.method !== 'GET' ? JSON.stringify(attempt.payload) : undefined,
+            signal: controller.signal
+          });
+
+          clearTimeout(timeoutId);
+
+          if (response.ok) {
+            const responseData = await response.json();
+            console.log(`[HTTP] SUCCESS ${connection.id} endpoint: ${attempt.method} ${attempt.endpoint}`);
+            
+            // Handle response transformation if needed
+            return attempt.transformResponse ? attempt.transformResponse(responseData) : responseData;
+          } else {
+            throw new Error(`HTTP ${response.status} ${response.statusText}`);
+          }
+
+        } catch (fetchError) {
+          clearTimeout(timeoutId);
+          throw fetchError;
+        }
+        
+      } catch (error) {
+        console.warn(`[HTTP] Failed ${connection.id} endpoint: ${attempt.endpoint} - ${error}`);
+        lastError = error as Error;
+        continue;
+      }
+    }
+    
+    // If all attempts failed, check if we should provide a graceful fallback
+    if (this.shouldProvideGracefulFallback(apiMethod)) {
+      return this.getGracefulFallbackResponse(connection, apiMethod, payload);
+    }
+    
+    throw lastError || new Error(`All HTTP endpoints failed for ${apiMethod}`);
+  }
+
+  /**
+   * Get ordered list of endpoints to try for each API method
+   */
+  private getEndpointAttempts(connection: BackendConnection, apiMethod: string, payload: any): Array<{
+    endpoint: string;
+    method: string;
+    payload?: any;
+    transformResponse?: (data: any) => any;
+  }> {
+    const baseUrl = connection.endpoint;
+    
+    switch (apiMethod) {
+      case 'getSkinDefinition':
+        return [
+          // Standard PCL endpoint
+          {
+            endpoint: `${baseUrl}/api/skins/${payload?.skinId || 'default'}`,
+            method: 'GET'
+          },
+          // Minimal backend fallback
+          {
+            endpoint: `${baseUrl}/getSkinDefinition`,
+            method: 'GET'
+          }
+        ];
+        
+      case 'getCapabilities':
+        return [
+          // Standard PCL endpoint
+          {
+            endpoint: `${baseUrl}/api/capabilities`,
+            method: 'GET'
+          }
+        ];
+        
+      case 'getVersion':
+        return [
+          // Standard PCL endpoint
+          {
+            endpoint: `${baseUrl}/api/version`,
+            method: 'GET'
+          },
+          // Try root endpoint and extract version
+          {
+            endpoint: `${baseUrl}/`,
+            method: 'GET',
+            transformResponse: (data) => data.version ? { version: data.version } : null
+          }
+        ];
+        
+      case 'executeCommand':
+        return [
+          // Standard PCL endpoint
+          {
+            endpoint: `${baseUrl}/api/commands/execute`,
+            method: 'POST',
+            payload: payload
+          },
+          // Minimal backend fallback
+          {
+            endpoint: `${baseUrl}/executeCommand`,
+            method: 'POST',
+            payload: payload
+          }
+        ];
+        
+      default:
+        return [
+          {
+            endpoint: `${baseUrl}/api/${apiMethod}`,
+            method: 'POST',
+            payload: payload
+          }
+        ];
+    }
+  }
+
+  /**
+   * Check if graceful fallback should be provided for failed API methods
+   */
+  private shouldProvideGracefulFallback(apiMethod: string): boolean {
+    return ['getCapabilities', 'getVersion'].includes(apiMethod);
+  }
+
+  /**
+   * Provide graceful fallback responses for non-critical endpoints
+   */
+  private getGracefulFallbackResponse(connection: BackendConnection, apiMethod: string, payload: any): any {
+    switch (apiMethod) {
+      case 'getCapabilities':
+        console.log(`[FALLBACK] Providing default capabilities for ${connection.id}`);
+        return {
+          capabilities: ['getSkinDefinition', 'executeCommand', 'health'],
+          source: 'templum-fallback',
+          note: 'Default capabilities provided - backend does not expose /api/capabilities endpoint'
+        };
+        
+      case 'getVersion':
+        console.log(`[FALLBACK] Providing default version for ${connection.id}`);
+        return {
+          version: 'unknown',
+          source: 'templum-fallback',
+          note: 'Version not available - backend does not expose /api/version endpoint'
+        };
+        
+      default:
+        return null;
     }
   }
 
@@ -1653,6 +2022,25 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
       if (response && response.skinDefinition) {
         console.log(`Successfully loaded skin definition from ${backendId}`);
         
+        // TASK-SKIN-004: Update stored backend config with capabilities from skin definition
+        if (response.skinDefinition.backendConfig) {
+          const currentConfig = this.backendConfigs.get(backendId);
+          if (currentConfig) {
+            // Merge capabilities from skin definition into stored config
+            if (response.skinDefinition.backendConfig.capabilities) {
+              currentConfig.capabilities = response.skinDefinition.backendConfig.capabilities;
+              console.log(`[SKIN-CAPABILITIES] Updated stored capabilities for ${backendId}:`, currentConfig.capabilities);
+            }
+            // Update other backendConfig fields if needed
+            Object.assign(currentConfig, response.skinDefinition.backendConfig);
+            this.backendConfigs.set(backendId, currentConfig);
+          } else {
+            // Store the entire backend config if none exists
+            this.backendConfigs.set(backendId, response.skinDefinition.backendConfig);
+            console.log(`[SKIN-CAPABILITIES] Stored new backend config for ${backendId}:`, response.skinDefinition.backendConfig.capabilities);
+          }
+        }
+        
         // DYNAMIC COMMAND ROUTING: Register backend commands with command router
         try {
           this.commandRouter.registerBackend(connection, response.skinDefinition);
@@ -1660,6 +2048,19 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
         } catch (routerError) {
           console.warn(`[DYNAMIC_COMMAND_ROUTER] Failed to register commands for ${backendId}:`, routerError);
           // Don't fail the skin loading due to command router issues
+        }
+        
+        // TEMPLUM CORE INTEGRATION: Load skin into Templum Core for interface activation
+        try {
+          if (this.orchestrator) {
+            await this.orchestrator.loadSkin(response.skinDefinition);
+            console.log(`[TEMPLUM_CORE] Successfully loaded skin from ${backendId} into Templum Core`);
+          } else {
+            console.warn(`[TEMPLUM_CORE] No orchestrator available - skin loaded into command router only`);
+          }
+        } catch (coreError) {
+          console.warn(`[TEMPLUM_CORE] Failed to load skin into Templum Core for ${backendId}:`, coreError);
+          // Don't fail the entire skin loading process due to core loading issues
         }
         
         return response.skinDefinition;
@@ -1674,6 +2075,16 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
             console.log(`[DYNAMIC_COMMAND_ROUTER] Registered fallback commands for backend: ${backendId}`);
           } catch (routerError) {
             console.warn(`[DYNAMIC_COMMAND_ROUTER] Failed to register fallback commands for ${backendId}:`, routerError);
+          }
+          
+          // TEMPLUM CORE INTEGRATION: Load fallback skin into Templum Core
+          try {
+            if (this.orchestrator) {
+              await this.orchestrator.loadSkin(fallbackSkin);
+              console.log(`[TEMPLUM_CORE] Successfully loaded fallback skin from ${backendId} into Templum Core`);
+            }
+          } catch (coreError) {
+            console.warn(`[TEMPLUM_CORE] Failed to load fallback skin into Templum Core for ${backendId}:`, coreError);
           }
         }
         
@@ -2207,6 +2618,135 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
   async isServiceAvailable(backendId: string): Promise<boolean> {
     const status = this.serviceHealth.get(backendId);
     return status?.connected === true && status?.health === 'healthy';
+  }
+
+  /**
+   * TASK-NEW-050: Connect to specific backend service
+   * Public API for individual service connection management
+   * Following backend-service-integration-unified pattern
+   */
+  async connectToService(serviceId: string): Promise<{ success: boolean; message: string; responseTime?: number }> {
+    const startTime = Date.now();
+    
+    try {
+      console.log(`[SERVICE_CONNECTION] Attempting to connect to service: ${serviceId}`);
+      
+      // Check if service is already connected
+      const currentStatus = this.serviceHealth.get(serviceId);
+      if (currentStatus?.connected && currentStatus?.health === 'healthy') {
+        return {
+          success: true,
+          message: `Service ${serviceId} is already connected and healthy`,
+          responseTime: Date.now() - startTime
+        };
+      }
+      
+      // Get backend configuration for the service
+      const backendConfig = this.backendConfigs.get(serviceId);
+      if (!backendConfig) {
+        return {
+          success: false,
+          message: `Service ${serviceId} configuration not found. Service must be registered first.`
+        };
+      }
+      
+      // Attempt connection using generic connection approach
+      const connected = await this.connectToServiceGeneric(serviceId, backendConfig, { retryAttempts: 0 });
+      
+      if (connected) {
+        // Detect service capabilities and update health status
+        await this.detectServiceCapabilities(serviceId);
+        this.updateServiceHealth(serviceId, true, 'healthy', undefined, await this.getServiceVersion(serviceId));
+        
+        // Load backend skin if orchestrator is available
+        if (this.orchestrator) {
+          try {
+            const skinDefinition = await this.loadBackendSkin(serviceId);
+            if (skinDefinition) {
+              await this.orchestrator.loadSkin(skinDefinition);
+            }
+          } catch (skinError) {
+            console.warn(`[SERVICE_CONNECTION] Skin loading failed for ${serviceId}:`, skinError);
+            // Continue - connection successful even if skin loading failed
+          }
+        }
+        
+        const responseTime = Date.now() - startTime;
+        console.log(`[SERVICE_CONNECTION] Successfully connected to ${serviceId} in ${responseTime}ms`);
+        
+        return {
+          success: true,
+          message: `Successfully connected to ${serviceId}`,
+          responseTime
+        };
+      } else {
+        this.updateServiceHealth(serviceId, false, 'unhealthy', `Connection attempt failed for ${serviceId}`);
+        return {
+          success: false,
+          message: `Failed to establish connection to ${serviceId}`
+        };
+      }
+      
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown connection error';
+      this.updateServiceHealth(serviceId, false, 'error', errorMessage);
+      console.error(`[SERVICE_CONNECTION] Connection error for ${serviceId}:`, error);
+      
+      return {
+        success: false,
+        message: `Connection failed: ${errorMessage}`
+      };
+    }
+  }
+
+  /**
+   * TASK-NEW-050: Disconnect from specific backend service
+   * Public API for individual service disconnection management
+   * Following backend-service-integration-unified pattern
+   */
+  async disconnectFromService(serviceId: string): Promise<{ success: boolean; message: string }> {
+    try {
+      console.log(`[SERVICE_DISCONNECTION] Attempting to disconnect from service: ${serviceId}`);
+      
+      // Check if service is connected
+      const connection = this.connections.get(serviceId);
+      if (!connection) {
+        return {
+          success: true,
+          message: `Service ${serviceId} is not connected`
+        };
+      }
+      
+      // Perform disconnection
+      try {
+        await connection.disconnect();
+        console.log(`[SERVICE_DISCONNECTION] Successfully disconnected from ${serviceId}`);
+      } catch (disconnectionError) {
+        console.warn(`[SERVICE_DISCONNECTION] Warning during disconnection from ${serviceId}:`, disconnectionError);
+        // Continue with cleanup even if disconnect had issues
+      }
+      
+      // Clean up connection and health status
+      this.connections.delete(serviceId);
+      this.updateServiceHealth(serviceId, false, 'unhealthy', `Disconnected from ${serviceId}`);
+      this.recoveryAttempts.delete(serviceId);
+      
+      console.log(`[SERVICE_DISCONNECTION] Successfully disconnected and cleaned up ${serviceId}`);
+      
+      return {
+        success: true,
+        message: `Successfully disconnected from ${serviceId}`
+      };
+      
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown disconnection error';
+      console.error(`[SERVICE_DISCONNECTION] Disconnection error for ${serviceId}:`, error);
+      
+      return {
+        success: false,
+        message: `Disconnection failed: ${errorMessage}`
+      };
+    }
   }
 
   /**

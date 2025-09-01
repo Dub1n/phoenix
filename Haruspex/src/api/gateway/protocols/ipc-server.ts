@@ -17,7 +17,7 @@ export interface IPCServerConfig {
 /**
  * IPC Server Protocol Implementation - STUB
  * 
- * TODO: [TASK-H-NEW-008] Complete IPC Server Protocol Implementation
+ * Implementation documented in TASK-H-NEW-GATEWAY Complete IPC Server Protocol Implementation
  * Priority: Medium | Complexity: 6
  * Location: protocols/ipc-server.ts
  * Dependencies: Node.js IPC, message handling

@@ -193,7 +193,7 @@ export class UniversalSkinEngine extends EventEmitter {
       
       if (interfaceType === 'cli' && skin.menus?.main) {
         components.push({
-          id: skin.menus.main.id,
+          id: skin.menus.main.id || 'main-menu',
           type: 'menu',
           backend: skin.metadata.backendService,
           content: skin.menus.main
@@ -203,7 +203,7 @@ export class UniversalSkinEngine extends EventEmitter {
       if (interfaceType === 'command' && skin.commands?.primary) {
         skin.commands.primary.forEach(command => {
           components.push({
-            id: command.id,
+            id: command.id || `command-${Math.random().toString(36).substr(2, 9)}`,
             type: 'command',
             backend: skin.metadata.backendService,
             content: command

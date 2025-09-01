@@ -131,8 +131,8 @@ export class PCLRenderingAdapter {
       if (interfaceType === 'cli' && skin.menus?.main) {
         const mainMenu = skin.menus.main;
         menuItems.push({
-          id: mainMenu.id,
-          label: mainMenu.title || mainMenu.id,
+          id: mainMenu.id || 'main',
+          label: mainMenu.title || mainMenu.id || 'Main Menu',
           description: mainMenu.description,
           type: 'submenu',
           items: mainMenu.items?.map(item => ({
@@ -151,8 +151,8 @@ export class PCLRenderingAdapter {
       if (interfaceType === 'command' && skin.commands?.primary) {
         skin.commands.primary.forEach(command => {
           menuItems.push({
-            id: command.id,
-            label: command.title || command.id,
+            id: command.id || 'command',
+            label: command.title || command.id || 'Command',
             description: command.description,
             type: 'command',
             command: command.command,

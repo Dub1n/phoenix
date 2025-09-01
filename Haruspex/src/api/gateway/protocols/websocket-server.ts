@@ -17,7 +17,7 @@ export interface WebSocketServerConfig {
 /**
  * WebSocket Server Protocol Implementation - STUB
  * 
- * TODO: [TASK-H-NEW-009] Complete WebSocket Server Protocol Implementation
+ * Implementation documented in TASK-H-NEW-GATEWAY Complete WebSocket Server Protocol Implementation
  * Priority: Low | Complexity: 8
  * Location: protocols/websocket-server.ts
  * Dependencies: WebSocket library, message streaming

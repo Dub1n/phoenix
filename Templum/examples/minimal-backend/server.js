@@ -42,10 +42,15 @@ app.use((req, res, next) => {
  * This follows the UniversalSkinDefinition schema from Templum 1.2
  */
 const SKIN_DEFINITION = {
-  id: "minimal-example",
-  name: "Minimal Example Backend",
-  version: "1.0.0",
-  description: "A minimal backend demonstrating Templum integration",
+  // Metadata structure expected by TemplumCore
+  metadata: {
+    id: "minimal-example",
+    name: "Minimal Example Backend", 
+    version: "1.0.0",
+    description: "A minimal backend demonstrating Templum integration",
+    compatibleInterfaces: ["cli", "vscode", "command"],
+    backend: "minimal-example"
+  },
   
   // Backend configuration for Templum's connection factory
   backendConfig: {
@@ -234,8 +239,10 @@ app.get('/', (req, res) => {
  */
 function autoRegisterService() {
   try {
-    // Create services directory if it doesn't exist
-    const servicesDir = path.join(os.homedir(), '.templum', 'services');
+    // Create services directory in VDL_Vault root (multi-repo shared location)
+    // Navigate up from examples/minimal-backend to VDL_Vault root
+    const vdlVaultRoot = path.join(__dirname, '..', '..', '..');
+    const servicesDir = path.join(vdlVaultRoot, '.templum', 'services');
     if (!fs.existsSync(servicesDir)) {
       fs.mkdirSync(servicesDir, { recursive: true });
     }

@@ -85,7 +85,8 @@ Implemented comprehensive VSCode extension activation following proven Haruspex 
 // Dependencies: Backend Service Router, service discovery protocols
 // Phase: Interface
 
-// TODO: [TASK-NEW-046] VSCode Service Tree Provider Implementation
+// [COMPLETED] TASK-NEW-046: VSCode Service Tree Provider Implementation - 2025-09-01
+// Implementation: BackendCapabilityProfile conditional display in service tree
 // Priority: Medium | Complexity: 8 | Location: extension.ts activation  
 // Dependencies: Backend service discovery, TreeDataProvider interface
 // Phase: Interface
@@ -105,12 +106,12 @@ Implemented comprehensive VSCode extension activation following proven Haruspex 
 // Dependencies: Service tree provider, backend service discovery
 // Phase: Interface
 
-// TODO: [TASK-NEW-050] Service Connection Implementation  
-// Priority: High | Complexity: 8 | Location: extension.ts commands
+// COMPLETED: [TASK-NEW-050] Service Connection Implementation - 2025-09-01
+// Priority: High | Complexity: 8 | Location: extension.ts commands  
 // Dependencies: Backend service router, connection management
 // Phase: Interface
 
-// TODO: [TASK-NEW-051] Service Disconnection Implementation
+// VERIFIED-COMPLETE: [TASK-NEW-051] Service Disconnection Implementation - 2025-09-01
 // Priority: Medium | Complexity: 6 | Location: extension.ts commands  
 // Dependencies: Backend service router, connection management
 // Phase: Interface

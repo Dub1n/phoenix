@@ -8,59 +8,91 @@
  */
 
 // ============================================================================
-// Core Types and Enums
+// Core Types and Enums - Now imported from unified definition
 // ============================================================================
 
-export type InterfaceType = 'vscode' | 'cli' | 'command';
-export type ComponentState = 'idle' | 'loading' | 'active' | 'error' | 'disabled';
-export type CacheStrategy = 'lru' | 'lfu' | 'ttl';
-export type ConflictResolutionStrategy = 'last-writer-wins' | 'merge-compatible' | 'user-intervention';
-
 // ============================================================================
-// Universal Skin Definition Interfaces
+// Universal Skin Definition - Unified Import
 // ============================================================================
 
-/**
- * Complete skin definition for multi-interface rendering
- * Single definition supports VSCode, CLI, and Command interfaces
- */
-export interface UniversalSkinDefinition {
-  // Core identification - aligned with implementation
-  id: string;
-  name: string;
-  description?: string;
-  version: string;
-  
-  // PCL compatibility features
-  pclCompatibility: PCLCompatibility;
-  
-  // Core metadata and identification
-  metadata: SkinMetadata;
-  
-  // Interface-specific definitions
-  views?: SkinViews;           // VSCode TreeViews, panels
-  menus?: SkinMenus;           // CLI menu structures  
-  commands?: SkinCommands;     // Command-line commands
-  workflows?: SkinWorkflows;   // Multi-step automation
-  
-  // Cross-interface features
-  shortcuts?: Record<string, string>;
-  themes: Record<string, ThemeDefinition>; // Multiple themes support
-  components: Record<string, ComponentSkin>;
-  assets: SkinAssets;
-  
-  // Backend and inheritance
-  backendConfig?: BackendConfig;
-  inheritance: SkinInheritance;
-  
-  // Rendering and performance
-  rendering: RenderingConfiguration;
-  performance: SkinPerformanceConfig;
-  
-  // Validation
-  caching?: CachingStrategy;
-  validation?: ValidationRules;
-}
+// Migration Note (2025-09-01): Core UniversalSkinDefinition moved to universal-skin-definition.ts
+// This maintains backward compatibility while using the unified definition
+
+// Direct imports for types used within this file (fixes TS2304 errors)
+import type {
+  UniversalSkinDefinition,
+  InterfaceType,
+  ConflictResolutionStrategy,
+  FeatureMatrix,
+  PerformanceHints
+} from './universal-skin-definition';
+export { 
+  UniversalSkinDefinition,
+  InterfaceType,
+  BackendType,
+  ComponentState,
+  CacheStrategy,
+  ConflictResolutionStrategy,
+  PCLCompatibility,
+  SkinAssets,
+  SkinInheritance,
+  RenderingConfiguration,
+  SkinPerformanceConfig,
+  CachingStrategy,
+  ValidationRules,
+  BackendConfig,
+  PerformanceHints,
+  // Theme and component definitions
+  ThemeDefinition,
+  ColorPalette,
+  ColorScale,
+  Typography,
+  SpacingSystem,
+  BorderSystem,
+  ShadowSystem,
+  AnimationSystem,
+  ComponentSkin,
+  ComponentVariant,
+  ResponsiveConfig,
+  AccessibilityConfig,
+  // Asset definitions  
+  IconAssetDefinition,
+  IconDefinition,
+  ImageDefinition,
+  FontDefinition,
+  SoundDefinition,
+  // UI component definitions
+  SkinViews,
+  TreeViewDefinition,
+  PanelDefinition,
+  StatusBarDefinition,
+  DecorationDefinition,
+  SkinMenus,
+  MenuDefinition,
+  MenuItemDefinition,
+  ContextMenuDefinition,
+  SkinCommands,
+  CommandDefinition,
+  ParameterDefinition,
+  HelpDefinition,
+  HelpSection,
+  CompletionDefinition,
+  SkinWorkflows,
+  WorkflowDefinition,
+  WorkflowStepDefinition,
+  WorkflowTemplate,
+  // Legacy theme support
+  SkinTheme,
+  // Feature matrix definitions
+  FeatureMatrix,
+  VSCodeFeatures,
+  CLIFeatures,
+  CommandFeatures,
+  SharedFeatures,
+  // Rendering configuration
+  InterfaceRenderingConfig,
+  SkinOverride
+} from './universal-skin-definition';
 
 /**
  * Skin metadata with compatibility and requirements
@@ -91,264 +123,11 @@ export interface SkinMetadata {
   parentSkin?: string;           // Parent skin for inheritance
 }
 
-/**
- * Feature availability matrix per interface type
- */
-export interface FeatureMatrix {
-  vscode: VSCodeFeatures;
-  cli: CLIFeatures;
-  command: CommandFeatures;
-  shared: SharedFeatures;
-}
-
-export interface VSCodeFeatures {
-  treeViews: boolean;
-  panels: boolean;
-  statusBar: boolean;
-  decorations: boolean;
-  commands: boolean;
-  contextMenus: boolean;
-}
-
-export interface CLIFeatures {
-  interactiveMenus: boolean;
-  keyboardNavigation: boolean;
-  progressIndicators: boolean;
-  inputValidation: boolean;
-  sessionManagement: boolean;
-}
-
-export interface CommandFeatures {
-  flagParsing: boolean;
-  pipeSupport: boolean;
-  completions: boolean;
-  helpGeneration: boolean;
-  aliasSupport: boolean;
-}
-
-export interface SharedFeatures {
-  workflows: boolean;
-  theming: boolean;
-  caching: boolean;
-  stateSync: boolean;
-  errorHandling: boolean;
-}
+// Feature interfaces now imported from unified definition
 
 // ============================================================================
-// Skin Component Interfaces
+// Skin Component Interfaces - Now imported from unified definition
 // ============================================================================
-
-export interface SkinViews {
-  treeViews?: TreeViewDefinition[];
-  panels?: PanelDefinition[];
-  statusBar?: StatusBarDefinition[];
-  decorations?: DecorationDefinition[];
-}
-
-export interface TreeViewDefinition {
-  id: string;
-  name: string;
-  title?: string;
-  description?: string;
-  icon?: string;
-  dataProvider: string;
-  refreshCommand?: string;
-}
-
-export interface PanelDefinition {
-  id: string;
-  name: string;
-  type: 'webview' | 'tree' | 'form';
-  showOnStartup?: boolean;
-  retainContextWhenHidden?: boolean;
-}
-
-export interface StatusBarDefinition {
-  id: string;
-  text: string;
-  command?: string;
-  tooltip?: string;
-  priority?: number;
-}
-
-export interface DecorationDefinition {
-  id: string;
-  type: 'line' | 'range' | 'gutter';
-  color?: string;
-  backgroundColor?: string;
-}
-
-export interface SkinMenus {
-  main: MenuDefinition;
-  submenus?: Record<string, MenuDefinition>;
-  contexts?: ContextMenuDefinition[];
-}
-
-export interface MenuDefinition {
-  id: string;
-  title: string;
-  description?: string;
-  items: MenuItemDefinition[];
-}
-
-export interface MenuItemDefinition {
-  id: string;
-  label: string;
-  description?: string;
-  command?: string;
-  shortcut?: string;
-  submenu?: string;
-  type?: 'command' | 'submenu' | 'separator';
-}
-
-export interface ContextMenuDefinition {
-  id: string;
-  when: string;
-  items: MenuItemDefinition[];
-}
-
-export interface SkinCommands {
-  primary: CommandDefinition[];
-  aliases?: Record<string, string>;
-  help: HelpDefinition;
-  completions?: CompletionDefinition[];
-}
-
-export interface CommandDefinition {
-  id: string;
-  name: string;
-  title?: string;
-  description: string;
-  command?: string;
-  category?: string;
-  parameters?: ParameterDefinition[];
-}
-
-export interface ParameterDefinition {
-  name: string;
-  type: 'string' | 'number' | 'boolean' | 'array';
-  required?: boolean;
-  description?: string;
-  default?: any;
-}
-
-export interface HelpDefinition {
-  format: 'markdown' | 'text';
-  sections: HelpSection[];
-}
-
-export interface HelpSection {
-  title: string;
-  content: string;
-}
-
-export interface CompletionDefinition {
-  command: string;
-  completions: string[];
-}
-
-export interface SkinWorkflows {
-  workflows?: WorkflowDefinition[];
-  templates?: WorkflowTemplate[];
-}
-
-export interface WorkflowDefinition {
-  id: string;
-  name: string;
-  description: string;
-  steps: WorkflowStep[];
-}
-
-export interface WorkflowStep {
-  command: string;
-  waitForCompletion?: boolean;
-  parameters?: Record<string, any>;
-}
-
-export interface WorkflowTemplate {
-  id: string;
-  name: string;
-  description: string;
-  parameters: ParameterDefinition[];
-  workflow: WorkflowDefinition;
-}
-
-export interface SkinTheme {
-  name: string;
-  colors: {
-    primary: string;
-    secondary?: string;
-    success?: string;
-    warning?: string;
-    error?: string;
-    background: {
-      primary: string;
-      secondary?: string;
-    };
-    text: {
-      primary: string;
-      secondary?: string;
-    };
-  };
-  typography?: {
-    fontFamily?: string;
-    fontSize?: Record<string, string>;
-  };
-}
-
-// Enhanced Backend Configuration for Generic Connection Factory
-// Supports the full connection specification from TASK-GENERIC-004
-export interface BackendConfig {
-  // Basic identification (backward compatibility)
-  service: string;
-  version: string;
-  
-  // Enhanced connection specification
-  protocol: 'ipc' | 'http' | 'websocket' | 'grpc';
-  endpoint: string;
-  
-  // Enhanced authentication options
-  authentication?: {
-    type: 'none' | 'basic' | 'bearer' | 'api-key' | 'oauth';
-    credentials?: Record<string, string>;
-    required?: boolean;
-  };
-  
-  // Connection behavior configuration
-  timeout?: number;
-  retries?: number;
-  keepAlive?: boolean;
-  
-  // Service discovery endpoints
-  healthEndpoint?: string;
-  capabilitiesEndpoint?: string;
-  
-  // Protocol-specific options
-  options?: { [key: string]: any };
-  
-  // Legacy support
-  endpoints?: Record<string, string>;
-}
-
-export interface CachingStrategy {
-  strategy: CacheStrategy;
-  maxAge: number;
-  maxSize: number;
-}
-
-export interface ValidationRules {
-  schema: string;
-  strictMode?: boolean;
-  validateOnLoad?: boolean;
-}
-
-export interface PerformanceHints {
-  loadingStrategy?: 'eager' | 'lazy' | 'progressive';
-  cacheStrategy?: CacheStrategy;
-  preloadComponents?: string[];
-  criticalPath?: string[];
-  renderingHints?: Record<string, any>;
-}
 
 // ============================================================================
 // Rendering and Engine Interfaces
@@ -365,6 +144,11 @@ export interface SkinRenderResult {
     pclIntegration?: boolean;
     reusePercentage?: number;
     error?: string;
+    // TASK-NEW-040: Fallback rendering metadata
+    fallbackUsed?: boolean;
+    fallbackReason?: string;
+    originalError?: string;
+    fallbackFailed?: boolean;
   };
   components: RenderedComponent[];
   performance: {
@@ -409,224 +193,7 @@ export interface RenderingContext {
 // Additional Required Interfaces for Implementation
 // ============================================================================
 
-// PCL Compatibility Interface
-export interface PCLCompatibility {
-  enabled: boolean; // Interface alignment with core templum-types
-  version: string;
-  reusePercentage: number;
-  inheritancePatterns: string[];
-  optimizations: string[];
-}
-
-// Theme Definition (expanded from SkinTheme)
-export interface ThemeDefinition {
-  name: string;
-  type: 'light' | 'dark' | 'high-contrast' | 'custom';
-  colors: ColorPalette;
-  typography: Typography;
-  spacing: SpacingSystem;
-  borders: BorderSystem;
-  shadows: ShadowSystem;
-  animations: AnimationSystem;
-  customProperties: Record<string, any>;
-  variants?: Record<string, Partial<ThemeDefinition>>;
-}
-
-export interface ColorPalette {
-  primary: ColorScale;
-  secondary: ColorScale;
-  accent: ColorScale;
-  neutral: ColorScale;
-  semantic: {
-    success: ColorScale;
-    warning: ColorScale;
-    error: ColorScale;
-    info: ColorScale;
-  };
-  text: {
-    primary: string;
-    secondary: string;
-    disabled: string;
-    inverse: string;
-  };
-  background: {
-    primary: string;
-    secondary: string;
-    tertiary: string;
-    overlay: string;
-  };
-  border: {
-    primary: string;
-    secondary: string;
-    focus: string;
-    error: string;
-  };
-}
-
-export interface ColorScale {
-  50: string; 100: string; 200: string; 300: string; 400: string;
-  500: string; // Base color
-  600: string; 700: string; 800: string; 900: string;
-}
-
-export interface Typography {
-  fontFamilies: {
-    primary: string;
-    secondary: string;
-    monospace: string;
-  };
-  fontSizes: Record<string, string>;
-  fontWeights: Record<string, number>;
-  lineHeights: Record<string, number>;
-  letterSpacing: Record<string, string>;
-}
-
-export interface SpacingSystem {
-  unit: number; // Base spacing unit in pixels
-  scale: Record<string, number>; // Multipliers for the base unit
-}
-
-export interface BorderSystem {
-  radii: Record<string, string>;
-  widths: Record<string, string>;
-  styles: Record<string, string>;
-}
-
-export interface ShadowSystem {
-  elevations: Record<string, string>;
-  colors: Record<string, string>;
-}
-
-export interface AnimationSystem {
-  durations: Record<string, string>;
-  easings: Record<string, string>;
-  transitions: Record<string, string>;
-}
-
-// Component and Asset Interfaces
-export interface ComponentSkin {
-  name: string;
-  type: 'container' | 'input' | 'display' | 'navigation' | 'feedback' | 'overlay';
-  variants: Record<string, ComponentVariant>;
-  states: Record<string, ComponentState>;
-  responsive: ResponsiveConfig;
-  accessibility: AccessibilityConfig;
-  pclMapping: {
-    pclComponent?: string;
-    reuseLevel: 'high' | 'medium' | 'low';
-    adaptationRequired: boolean;
-  };
-}
-
-export interface ComponentVariant {
-  styles: Record<string, any>;
-  tokens: Record<string, string>;
-  modifiers: Record<string, any>;
-}
-
-export interface ResponsiveConfig {
-  breakpoints: Record<string, string>;
-  adaptiveStyles: Record<string, Record<string, any>>;
-  fluidScaling: boolean;
-}
-
-export interface AccessibilityConfig {
-  focusStyles: Record<string, any>;
-  highContrastMode: Record<string, any>;
-  screenReaderSupport: {
-    ariaLabels: Record<string, string>;
-    descriptions: Record<string, string>;
-  };
-  keyboardNavigation: {
-    tabOrder: number;
-    shortcuts: Record<string, string>;
-  };
-}
-
-export interface SkinAssets {
-  icons: Record<string, IconDefinition>;
-  images: Record<string, ImageDefinition>;
-  fonts: Record<string, FontDefinition>;
-  sounds: Record<string, SoundDefinition>;
-}
-
-export interface IconDefinition {
-  source: string;
-  format: 'svg' | 'font' | 'png' | 'webp';
-  variants: Record<string, string>;
-  sizing: Record<string, string>;
-}
-
-export interface ImageDefinition {
-  source: string;
-  format: 'png' | 'jpg' | 'webp' | 'svg';
-  variants: Record<string, string>;
-  responsive: boolean;
-}
-
-export interface FontDefinition {
-  family: string;
-  source: string;
-  weights: number[];
-  formats: string[];
-}
-
-export interface SoundDefinition {
-  source: string;
-  format: 'mp3' | 'wav' | 'ogg';
-  variants: Record<string, string>;
-}
-
-// Inheritance and Configuration
-export interface SkinInheritance {
-  parentSkins: string[];
-  baseTheme?: string;
-  mixins: string[];
-  overrides: SkinOverride[];
-}
-
-export interface SkinOverride {
-  target: string; // CSS selector or component path
-  property: string;
-  value: any;
-  condition?: string;
-  priority: 'low' | 'medium' | 'high';
-}
-
-export interface RenderingConfiguration {
-  engine: 'css' | 'styled-components' | 'emotion' | 'tailwind' | 'css-in-js';
-  output: 'css' | 'js' | 'json' | 'tokens';
-  optimizations: {
-    treeshaking: boolean;
-    minification: boolean;
-    caching: boolean;
-    lazyLoading: boolean;
-  };
-  targets: Record<string, InterfaceRenderingConfig>;
-}
-
-export interface InterfaceRenderingConfig {
-  interface: 'vscode' | 'cli' | 'command' | 'web';
-  renderer: string;
-  adaptations: Record<string, any>;
-  constraints: {
-    colorDepth: number;
-    maxFileSize: number;
-    supportedFeatures: string[];
-  };
-}
-
-export interface SkinPerformanceConfig {
-  loadingStrategy: 'eager' | 'lazy' | 'progressive';
-  cachingPolicy: 'memory' | 'disk' | 'hybrid';
-  compressionLevel: number; // 1-9
-  criticalPath: string[];
-  metrics: {
-    targetLoadTime: number; // ms
-    maxMemoryUsage: number; // MB
-    renderBudget: number; // ms per frame
-  };
-}
+// Theme and Asset Interfaces - Now imported from unified definition
 
 // ============================================================================
 // Universal Skin Engine Interface

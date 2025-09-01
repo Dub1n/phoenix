@@ -26,11 +26,16 @@ const mockConnectionFactory = ConnectionFactory as jest.Mocked<typeof Connection
  * Mock backend skin definitions for comprehensive testing
  */
 const createMockPCLSkinDefinition = (): UniversalSkinDefinition => ({
+  id: 'pcl-test-skin',
+  name: 'Phoenix Code Lite Test Skin',
+  version: '1.0.0',
   metadata: {
     name: 'Phoenix Code Lite',
     version: '1.0.0',
     description: 'TDD Workflow Orchestrator',
     author: 'Claude Code',
+    backendService: 'pcl',
+    compatibleInterfaces: ['vscode', 'cli'],
     compatibility: {
       templum: '^1.0.0',
       vscode: '^1.60.0'
@@ -63,6 +68,7 @@ const createMockPCLSkinDefinition = (): UniversalSkinDefinition => ({
     treeViews: [
       {
         id: 'pcl.analysisResults',
+        name: 'Analysis Results',
         title: 'Analysis Results',
         dataProvider: 'getAnalysisTreeData'
       }
@@ -71,11 +77,16 @@ const createMockPCLSkinDefinition = (): UniversalSkinDefinition => ({
 });
 
 const createMockHaruspexSkinDefinition = (): UniversalSkinDefinition => ({
+  id: 'haruspex-test-skin',
+  name: 'Haruspex Analysis Engine Test Skin',
+  version: '2.0.0',
   metadata: {
     name: 'Haruspex Analysis Engine',
     version: '2.0.0',
     description: 'Advanced Code Analysis and Prediction System',
     author: 'Haruspex Team',
+    backendService: 'haruspex',
+    compatibleInterfaces: ['vscode', 'cli'],
     compatibility: {
       templum: '^1.0.0',
       vscode: '^1.60.0'
@@ -164,14 +175,23 @@ const createMockLitanySkinDefinition = (): UniversalSkinDefinition => ({
 class MockBackendConnection {
   public connected = false;
   public skinDefinition: UniversalSkinDefinition;
+  public id: string;
+  public protocol: 'ipc' | 'http' | 'websocket';
+  public endpoint: string;
 
   constructor(skinDefinition: UniversalSkinDefinition) {
     this.skinDefinition = skinDefinition;
+    this.id = skinDefinition.id;
+    this.protocol = skinDefinition.backendConfig?.protocol || 'http';
+    this.endpoint = skinDefinition.backendConfig?.endpoint || 'http://localhost:3000';
   }
 
-  async connect(): Promise<boolean> {
+  isConnected(): boolean {
+    return this.connected;
+  }
+
+  async connect(): Promise<void> {
     this.connected = true;
-    return true;
   }
 
   async disconnect(): Promise<void> {

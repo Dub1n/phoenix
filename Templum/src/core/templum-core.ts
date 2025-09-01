@@ -38,6 +38,7 @@ import {
 import { IObservabilityService } from '../observability/observability-adapter';
 import { ITemplumOrchestrator } from '../interfaces/templum-orchestrator-interface';
 import { TemplumAdapterRegistry } from './adapter-registry';
+import { UniversalInterfaceManager } from './universal-interface-manager';
 
 export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
   private config: TemplumConfiguration;
@@ -49,6 +50,9 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
   // Dependency injection - components provided through registry
   private dependencies!: ITemplumCoreDependencies;
   private adapterRegistry: TemplumAdapterRegistry;
+  
+  // Universal Interface Manager - TASK-NEW-048: Interface Switching Implementation
+  private universalInterfaceManager!: UniversalInterfaceManager;
 
   constructor(
     config: Partial<TemplumConfiguration> = {},
@@ -113,8 +117,17 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
         dependenciesAvailable: Object.keys(this.dependencies) 
       });
       
+      // Initialize Universal Interface Manager - TASK-NEW-048
+      this.universalInterfaceManager = new UniversalInterfaceManager(this.dependencies);
+      console.log('Universal Interface Manager initialized successfully');
+      
       // Initialize backend service router with enhanced error handling (Haruspex pattern)
       try {
+        // Set orchestrator reference for skin loading integration
+        if (this.dependencies.backendServiceRouter && 'setOrchestrator' in this.dependencies.backendServiceRouter) {
+          (this.dependencies.backendServiceRouter as any).setOrchestrator(this);
+        }
+        
         this.logInfo('Starting backend service router discovery...');
         await this.dependencies.backendServiceRouter.discoverAndConnect();
         
@@ -166,6 +179,29 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
       this.initialized = true;
       this.emit('initialized', { timestamp: Date.now() });
       
+      // Load skins from connected backends after initialization is complete
+      try {
+        const connectionStatus = this.dependencies.backendServiceRouter.getConnectionStatus?.() || { backends: {} };
+        for (const [backendId, status] of Object.entries(connectionStatus.backends)) {
+          const backendStatus = status as BackendStatus;
+          if (backendStatus.connected && backendStatus.health === 'healthy') {
+            try {
+              this.logInfo(`Loading skin from backend ${backendId}...`);
+              await this.loadBackendSkin(backendId);
+              this.logInfo(`Successfully loaded skin from backend ${backendId}`);
+            } catch (skinError) {
+              this.logWarn(`Failed to load skin from backend ${backendId}`, { 
+                error: skinError instanceof Error ? skinError.message : String(skinError)
+              });
+            }
+          }
+        }
+      } catch (skinLoadError) {
+        this.logWarn('Failed to load skins from backends after initialization', {
+          error: skinLoadError instanceof Error ? skinLoadError.message : String(skinLoadError)
+        });
+      }
+      
       console.log('Templum Core Engine: Initialization complete with dependency injection');
     } catch (error) {
       const errorMessage = isTemplumError(error) ? error.message : (error instanceof Error ? error.message : 'Unknown error');
@@ -205,6 +241,11 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
     // Store adapter
     this.interfaceAdapters.set(interfaceType, adapter);
     this.activeInterfaces.add(interfaceType);
+    
+    // Register adapter with Universal Interface Manager - TASK-NEW-048
+    if (this.universalInterfaceManager) {
+      this.universalInterfaceManager.registerInterfaceAdapter(interfaceType, adapter);
+    }
     
     // Apply all loaded skins to new interface
     for (const skin of Array.from(this.loadedSkins.values())) {
@@ -276,22 +317,18 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
       // Attempt real backend command execution through backend service router
       if (this.dependencies.backendServiceRouter) {
         try {
-          // Get available backends and select the best one for command execution
+          // TASK-SKIN-005: Two-tier backend prioritization system
           const systemStatus = this.getSystemStatus();
-          const healthyBackends = Object.entries(systemStatus.coreEngine.backendConnections.backends)
-            .filter(([_, status]) => status.connected && status.health === 'healthy')
-            .sort((a, b) => {
-              // Prioritize by capabilities and response time
-              const aCaps = a[1].capabilities?.length || 0;
-              const bCaps = b[1].capabilities?.length || 0;
-              const aTime = a[1].responseTime || 1000;
-              const bTime = b[1].responseTime || 1000;
-              return (bCaps - aCaps) + (aTime - bTime) * 0.1;
-            });
+          const availableBackends = Object.entries(systemStatus.coreEngine.backendConnections.backends)
+            .filter(([_, status]) => status.connected) // Only require connection, not health
+            .map(([backendId, status]) => ({ backendId, status }));
+
+          // Get the prioritized backends using the two-tier system
+          const prioritizedBackends = this.prioritizeBackendsTwoTier(availableBackends);
           
-          if (healthyBackends.length > 0) {
+          if (prioritizedBackends.length > 0) {
             // Select the best backend for command execution
-            selectedBackend = healthyBackends[0][0];
+            selectedBackend = prioritizedBackends[0].backendId;
             console.log(`TemplumCore: Routing command '${command}' to ${selectedBackend} backend...`);
             
             // Execute command through real backend service
@@ -539,58 +576,42 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
         };
       }
 
-      // Check if target interface adapter exists
-      const adapter = this.interfaceAdapters.get(targetInterface);
-      if (!adapter) {
-        return { 
-          success: false, 
-          message: `Interface adapter '${targetInterface}' not available` 
-        };
+      // Enhanced implementation using Universal Interface Manager - TASK-NEW-048
+      if (!this.universalInterfaceManager) {
+        // Fallback to basic implementation if Universal Interface Manager not available
+        return this.basicSwitchInterface(targetInterface);
       }
 
-      // Get current active interfaces for state preservation
+      // Get current active interfaces for tracking
       const currentInterfaces = Array.from(this.activeInterfaces);
       
-      // Preserve state from current interfaces if state manager available
-      let preservedState = null;
-      if (this.dependencies?.stateManager && currentInterfaces.length > 0) {
-        try {
-          preservedState = await (this.dependencies.stateManager as any).getState?.();
-        } catch (error) {
-          console.warn('Failed to preserve state during interface switch:', error);
-        }
-      }
-
-      // Deactivate current interfaces (but don't remove adapters)
-      this.activeInterfaces.clear();
-
-      // Activate target interface
-      this.activeInterfaces.add(targetInterface);
-
-      // Restore preserved state to new interface if available
-      if (preservedState && this.dependencies?.stateManager) {
-        try {
-          await (this.dependencies.stateManager as any).setState?.(preservedState);
-          console.log(`State preserved and restored during switch to ${targetInterface}`);
-        } catch (error) {
-          console.warn('Failed to restore state after interface switch:', error);
-        }
-      }
-
-      // Emit interface switch event
-      this.emit('interface-switch', {
-        timestamp: Date.now(),
-        fromInterfaces: currentInterfaces,
-        toInterface: targetInterface,
-        statePreserved: !!preservedState
+      // Use Universal Interface Manager for coordinated interface switching
+      const result = await this.universalInterfaceManager.executeInterfaceSwitch(targetInterface, {
+        preserveSession: true,
+        migrateState: true,
+        maintainConnections: true,
+        performanceMetrics: true
       });
 
-      console.log(`✅ Interface switched from [${currentInterfaces.join(', ')}] to ${targetInterface}`);
+      if (result.success) {
+        // Update TemplumCore's active interfaces to match the switch
+        this.activeInterfaces.clear();
+        this.activeInterfaces.add(targetInterface);
 
-      return { 
-        success: true, 
-        message: `Successfully switched to ${targetInterface} interface` 
-      };
+        // Emit enhanced interface switch event
+        this.emit('interface-switch', {
+          timestamp: Date.now(),
+          fromInterfaces: currentInterfaces,
+          toInterface: targetInterface,
+          statePreserved: true,
+          switchTime: result.switchTime,
+          orchestrated: true
+        });
+
+        console.log(`✅ Interface switched via Universal Interface Manager: [${currentInterfaces.join(', ')}] → ${targetInterface} (${result.switchTime}ms)`);
+      }
+
+      return result;
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -601,6 +622,66 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
         message: `Interface switch failed: ${errorMessage}` 
       };
     }
+  }
+
+  /**
+   * Basic interface switching fallback implementation
+   * Used when Universal Interface Manager is not available
+   */
+  private async basicSwitchInterface(targetInterface: InterfaceType): Promise<{ success: boolean; message: string }> {
+    // Check if target interface adapter exists
+    const adapter = this.interfaceAdapters.get(targetInterface);
+    if (!adapter) {
+      return { 
+        success: false, 
+        message: `Interface adapter '${targetInterface}' not available` 
+      };
+    }
+
+    // Get current active interfaces for state preservation
+    const currentInterfaces = Array.from(this.activeInterfaces);
+    
+    // Preserve state from current interfaces if state manager available
+    let preservedState = null;
+    if (this.dependencies?.stateManager && currentInterfaces.length > 0) {
+      try {
+        preservedState = await (this.dependencies.stateManager as any).getState?.();
+      } catch (error) {
+        console.warn('Failed to preserve state during interface switch:', error);
+      }
+    }
+
+    // Deactivate current interfaces (but don't remove adapters)
+    this.activeInterfaces.clear();
+
+    // Activate target interface
+    this.activeInterfaces.add(targetInterface);
+
+    // Restore preserved state to new interface if available
+    if (preservedState && this.dependencies?.stateManager) {
+      try {
+        await (this.dependencies.stateManager as any).setState?.(preservedState);
+        console.log(`State preserved and restored during switch to ${targetInterface}`);
+      } catch (error) {
+        console.warn('Failed to restore state after interface switch:', error);
+      }
+    }
+
+    // Emit interface switch event
+    this.emit('interface-switch', {
+      timestamp: Date.now(),
+      fromInterfaces: currentInterfaces,
+      toInterface: targetInterface,
+      statePreserved: !!preservedState,
+      orchestrated: false
+    });
+
+    console.log(`✅ Interface switched (basic): [${currentInterfaces.join(', ')}] → ${targetInterface}`);
+
+    return { 
+      success: true, 
+      message: `Successfully switched to ${targetInterface} interface (basic mode)` 
+    };
   }
 
   async shutdown(): Promise<void> {
@@ -711,6 +792,89 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
   }
 
   /**
+   * TASK-SKIN-005: Two-tier backend prioritization system
+   * Implements fair comparison between health-enabled and minimal backends
+   */
+  private prioritizeBackendsTwoTier(backends: Array<{ backendId: string, status: any }>): Array<{ backendId: string, score: number, tier: 'health-enabled' | 'minimal' }> {
+    if (!this.dependencies?.backendServiceRouter) {
+      return []; // No backend router available
+    }
+
+    const prioritizedBackends: Array<{ backendId: string, score: number, tier: 'health-enabled' | 'minimal' }> = [];
+
+    for (const { backendId, status } of backends) {
+      // Get backend capability profile to determine tier
+      const capabilityProfile = (this.dependencies.backendServiceRouter as any).getBackendCapabilityProfile?.(backendId);
+      
+      if (capabilityProfile?.hasHealthEndpoint) {
+        // Tier 1: Health-enabled backends
+        // Formula: (health_factor * 100) + (capabilities_count * 10) + (response_time_factor * 5) + (version_factor * 2)
+        
+        const healthFactor = status.health === 'healthy' ? 1 : status.health === 'unhealthy' ? 0.5 : 0;
+        const capabilitiesCount = status.capabilities?.length || 0;
+        const responseTimeFactor = status.responseTime ? Math.max(0, (1000 - status.responseTime) / 1000) : 0.5; // Normalize response time (lower is better)
+        const versionFactor = status.version ? 1 : 0;
+
+        const score = (healthFactor * 100) + (capabilitiesCount * 10) + (responseTimeFactor * 5) + (versionFactor * 2);
+        
+        prioritizedBackends.push({
+          backendId,
+          score,
+          tier: 'health-enabled'
+        });
+
+        console.log(`[TIER1_SCORING] ${backendId}: health=${healthFactor}, caps=${capabilitiesCount}, time=${responseTimeFactor.toFixed(2)}, ver=${versionFactor} → ${score.toFixed(1)}`);
+        
+      } else {
+        // Tier 2: Minimal backends  
+        // Formula: (connection_stability * 80) + (skin_completeness * 15) + (command_count * 5)
+        
+        const connectionStability = (this.dependencies.backendServiceRouter as any).getConnectionStability?.(backendId) || 0;
+        const skinCompleteness = this.calculateSkinCompleteness(capabilityProfile?.skinDefinitionQuality || 'minimal');
+        const commandCount = status.capabilities?.length || 0;
+
+        const score = (connectionStability * 0.8) + (skinCompleteness * 15) + (commandCount * 5);
+        
+        prioritizedBackends.push({
+          backendId,
+          score,
+          tier: 'minimal'
+        });
+
+        console.log(`[TIER2_SCORING] ${backendId}: stability=${connectionStability.toFixed(1)}%, completeness=${skinCompleteness}, commands=${commandCount} → ${score.toFixed(1)}`);
+      }
+    }
+
+    // Sort by score (descending) with tier preference (health-enabled backends get slight boost)
+    prioritizedBackends.sort((a, b) => {
+      // Apply cross-tier comparison: Tier 1 scores are inherently higher due to formula design
+      // But we ensure fair comparison by normalizing scores within reasonable ranges
+      const aAdjustedScore = a.tier === 'health-enabled' ? a.score : a.score + 50; // Slight boost for tier 2 to ensure fair comparison
+      const bAdjustedScore = b.tier === 'health-enabled' ? b.score : b.score + 50;
+      return bAdjustedScore - aAdjustedScore;
+    });
+
+    if (prioritizedBackends.length > 0) {
+      const winner = prioritizedBackends[0];
+      console.log(`[BACKEND_SELECTION] Selected ${winner.backendId} (${winner.tier}) with score ${winner.score.toFixed(1)}`);
+    }
+
+    return prioritizedBackends;
+  }
+
+  /**
+   * TASK-SKIN-005: Calculate skin completeness score for minimal backends
+   */
+  private calculateSkinCompleteness(quality: string): number {
+    switch (quality) {
+      case 'complete': return 10;
+      case 'partial': return 6;
+      case 'minimal': return 3;
+      default: return 1;
+    }
+  }
+
+  /**
    * Get the backend service router for WebView provider integration
    * Uses dependency injection to provide backend service router
    */
@@ -730,6 +894,17 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
       throw createTemplumError('Universal Skin Engine not initialized', 'SERVICE_NOT_READY', 'configuration');
     }
     return this.dependencies.skinEngine;
+  }
+
+  /**
+   * Get Universal Interface Manager instance for interface switching coordination
+   * TASK-NEW-048: Interface Switching Implementation
+   */
+  getUniversalInterfaceManager(): UniversalInterfaceManager {
+    if (!this.universalInterfaceManager) {
+      throw createTemplumError('Universal Interface Manager not initialized', 'SERVICE_NOT_READY', 'configuration');
+    }
+    return this.universalInterfaceManager;
   }
 
   // Enhanced skin caching system - TASK-NEW-009 implementation

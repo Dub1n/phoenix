@@ -22,7 +22,8 @@ import {
   ConfigurationBasedDiscoveryStrategy, 
   EndpointScanningDiscoveryStrategy,
   DiscoveredService,
-  ServiceRegistry
+  ServiceRegistry,
+  DiscoveryStrategy
 } from '../../backend/service-discovery';
 
 // Mock file system operations
@@ -69,7 +70,7 @@ describe('ServiceDiscovery', () => {
         return filePath.toString().includes('service-registry.json');
       });
 
-      mockFs.readFileSync.mockImplementation((filePath) => {
+      (mockFs.readFileSync as any).mockImplementation((filePath: fs.PathOrFileDescriptor) => {
         if (filePath.toString().includes('service-registry.json')) {
           const registry: ServiceRegistry = {
             services: {
@@ -175,10 +176,10 @@ describe('ServiceDiscovery', () => {
     });
 
     it('should handle strategy failures gracefully', async () => {
-      const failingStrategy = {
+      const failingStrategy: DiscoveryStrategy = {
         name: 'failing-strategy',
         priority: 100,
-        discover: jest.fn().mockRejectedValue(new Error('Strategy failed'))
+        discover: jest.fn().mockRejectedValue(new Error('Strategy failed')) as jest.MockedFunction<() => Promise<DiscoveredService[]>>
       };
 
       serviceDiscovery.addStrategy(failingStrategy);
@@ -520,7 +521,7 @@ describe('ServiceDiscovery', () => {
 
   describe('ServiceDiscovery Integration', () => {
     it('should provide access to discovered services', async () => {
-      const mockStrategy = {
+      const mockStrategy: DiscoveryStrategy = {
         name: 'mock-strategy',
         priority: 100,
         discover: jest.fn().mockResolvedValue([
@@ -540,7 +541,7 @@ describe('ServiceDiscovery', () => {
             confidence: 0.8,
             timestamp: Date.now()
           } as DiscoveredService
-        ])
+        ]) as () => Promise<DiscoveredService[]>
       };
 
       serviceDiscovery.addStrategy(mockStrategy);
@@ -559,10 +560,10 @@ describe('ServiceDiscovery', () => {
     });
 
     it('should allow adding and removing strategies', () => {
-      const customStrategy = {
+      const customStrategy: DiscoveryStrategy = {
         name: 'custom-strategy',
         priority: 50,
-        discover: jest.fn().mockResolvedValue([])
+        discover: jest.fn().mockResolvedValue([]) as () => Promise<DiscoveredService[]>
       };
 
       serviceDiscovery.addStrategy(customStrategy);
@@ -571,10 +572,10 @@ describe('ServiceDiscovery', () => {
     });
 
     it('should emit discovery events', async () => {
-      const mockStrategy = {
+      const mockStrategy: DiscoveryStrategy = {
         name: 'event-test-strategy',
         priority: 100,
-        discover: jest.fn().mockResolvedValue([])
+        discover: jest.fn().mockResolvedValue([]) as () => Promise<DiscoveredService[]>
       };
 
       serviceDiscovery.addStrategy(mockStrategy);
@@ -597,10 +598,10 @@ describe('ServiceDiscovery', () => {
 
   describe('Error Handling and Edge Cases', () => {
     it('should handle empty discovery results', async () => {
-      const emptyStrategy = {
+      const emptyStrategy: DiscoveryStrategy = {
         name: 'empty-strategy',
         priority: 100,
-        discover: jest.fn().mockResolvedValue([])
+        discover: jest.fn().mockResolvedValue([]) as () => Promise<DiscoveredService[]>
       };
 
       serviceDiscovery.addStrategy(emptyStrategy);
@@ -610,13 +611,13 @@ describe('ServiceDiscovery', () => {
     });
 
     it('should handle strategy errors without crashing', async () => {
-      const errorStrategy = {
+      const errorStrategy: DiscoveryStrategy = {
         name: 'error-strategy',
         priority: 100,
-        discover: jest.fn().mockRejectedValue(new Error('Strategy error'))
+        discover: jest.fn().mockRejectedValue(new Error('Strategy error')) as jest.MockedFunction<() => Promise<DiscoveredService[]>>
       };
 
-      const workingStrategy = {
+      const workingStrategy: DiscoveryStrategy = {
         name: 'working-strategy',
         priority: 90,
         discover: jest.fn().mockResolvedValue([
@@ -636,7 +637,7 @@ describe('ServiceDiscovery', () => {
             confidence: 0.8,
             timestamp: Date.now()
           } as DiscoveredService
-        ])
+        ]) as () => Promise<DiscoveredService[]>
       };
 
       serviceDiscovery.addStrategy(errorStrategy);
@@ -653,16 +654,16 @@ describe('ServiceDiscovery', () => {
     });
 
     it('should sort strategies by priority', () => {
-      const lowPriorityStrategy = {
+      const lowPriorityStrategy: DiscoveryStrategy = {
         name: 'low-priority',
         priority: 10,
-        discover: jest.fn()
+        discover: jest.fn() as () => Promise<DiscoveredService[]>
       };
 
-      const highPriorityStrategy = {
+      const highPriorityStrategy: DiscoveryStrategy = {
         name: 'high-priority', 
         priority: 100,
-        discover: jest.fn()
+        discover: jest.fn() as () => Promise<DiscoveredService[]>
       };
 
       serviceDiscovery.addStrategy(lowPriorityStrategy);

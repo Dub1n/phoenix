@@ -97,7 +97,6 @@ export class BackendFileMonitor extends EventEmitter {
       
       // Configure chokidar options
       const watchOptions: chokidar.WatchOptions = {
-        recursive: this.config.recursive,
         ignored: this.config.excludePatterns || [
           '**/node_modules/**',
           '**/.git/**',

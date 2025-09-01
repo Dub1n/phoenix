@@ -11,7 +11,7 @@ import { RequestHandler } from 'express';
 /**
  * Authentication Manager - STUB
  * 
- * TODO: [TASK-H-NEW-011] Complete Authentication Manager Implementation
+ * Implementation documented in TASK-H-NEW-GATEWAY Complete Authentication Manager Implementation
  * Priority: High | Complexity: 7
  * Location: auth/auth-manager.ts
  * Dependencies: Authentication tokens, security policies

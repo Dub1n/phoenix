@@ -17,17 +17,21 @@
    - Understand why the issue exists
    - Identify all symptoms vs. underlying cause
 
-2. **Solution Architecture**:
+2. **Pattern Analysis**:
+   - Search (grep) the project's pattern document for relevant information
+
+3. **Solution Architecture**:
+   - Take any existing pattern(s) into account
    - Design the fix at a high level
    - Consider alternative approaches
    - Plan for minimal disruption to existing functionality
 
-3. **Incremental Implementation**:
+4. **Incremental Implementation**:
    - Break work into logical phases
    - Implement with frequent validation checkpoints
    - Maintain working state between changes
 
-4. **Comprehensive Testing**:
+5. **Comprehensive Testing**:
    - Unit tests for modified components
    - Integration tests for affected interactions
    - Regression tests to prevent unintended breaks
@@ -261,7 +265,7 @@ If task is not to be consolidated following the consolidation check, create a ne
    - [ ] **Apply consolidation analysis** for each TODO found
    - [ ] **If consolidatable**: Append using consolidation template above
    - [ ] **If independent**: Consult `<project>-roadmap.md` for classification and add to active tasks
-   - [ ] **If TODO tags referenced by task** remove from code if they have been completed
+   - [ ] **If TODO tags referenced by task** remove if the task has been completed, not just if they are referenced in a task
 
 2. **Task Status Updates**:
    - [ ] Update task marker to [x] in `<project>-active-tasks.md`
@@ -526,25 +530,29 @@ If you used an existing pattern from `<project>-patterns.md`, document the imple
 
 1. **Navigate to the pattern's "Implementation Feedback" section**
 2. **Add a new entry with format**:
-   ```
+
+   ``` markdown
    - **[DATE] - [TASK-ID]**: {Brief description of:
      - Any adjustments needed for this specific case
      - Unexpected issues encountered
      - Success metrics achieved
      - Time taken vs. estimate}
    ```
+
 3. **If pattern required significant modification**:
    - Consider if this warrants pattern enhancement (3+ similar modifications)
    - Document variation in feedback for future consolidation
 
 **Feedback Examples**:
-```
+
+``` markdown
 - **2025-08-30 - [TASK-H-001]**: Applied successfully, but needed async wrapper for HTTP context. Actual time: 2.5h (est. 2h)
 - **2025-08-30 - [TASK-T-045]**: Pattern worked but Map iteration needed additional null checks in TypeScript strict mode
 - **2025-08-30 - [TASK-H-003]**: Pattern failed in backend service context due to VSCode dependencies. Created backend-specific variant.
 ```
 
 **Benefits of Implementation Feedback**:
+
 - Helps future agents learn from past implementations
 - Identifies when patterns need enhancement or consolidation
 - Creates evidence for pattern effectiveness and time estimates

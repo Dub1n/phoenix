@@ -14,6 +14,7 @@
     "sourceMap": true,
     "moduleResolution": "node",
     "allowJs": true,
+    "downlevelIteration": true,
     "types": ["jest", "node"]
   },
   "include": ["src/**/*", "tests/**/*"],
