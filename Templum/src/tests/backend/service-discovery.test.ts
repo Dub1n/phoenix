@@ -176,10 +176,11 @@ describe('ServiceDiscovery', () => {
     });
 
     it('should handle strategy failures gracefully', async () => {
+      const mockDiscover = (jest.fn() as any).mockRejectedValue(new Error('Strategy failed'));
       const failingStrategy: DiscoveryStrategy = {
         name: 'failing-strategy',
         priority: 100,
-        discover: jest.fn().mockRejectedValue(new Error('Strategy failed')) as jest.MockedFunction<() => Promise<DiscoveredService[]>>
+        discover: mockDiscover
       };
 
       serviceDiscovery.addStrategy(failingStrategy);
@@ -417,7 +418,7 @@ describe('ServiceDiscovery', () => {
           setTimeout(() => {
             const mockResponse = {
               statusCode: 200,
-              on: jest.fn((event, callback) => {
+              on: jest.fn((event: string, callback: (data?: any) => void) => {
                 if (event === 'data') {
                   callback(JSON.stringify({
                     service: 'pcl',
@@ -434,7 +435,7 @@ describe('ServiceDiscovery', () => {
         } else {
           // Simulate connection failure for other ports
           setTimeout(() => {
-            mockRequest.on.mock.calls.find(call => call[0] === 'error')?.[1]?.(new Error('Connection failed'));
+            mockRequest.on.mock.calls.find((call: any[]) => call[0] === 'error')?.[1]?.(new Error('Connection failed'));
           }, 10);
         }
         return mockRequest;
@@ -461,10 +462,10 @@ describe('ServiceDiscovery', () => {
 
       // Simulate WebSocket connection and response
       setTimeout(() => {
-        const openHandler = mockWs.on.mock.calls.find(call => call[0] === 'open')?.[1];
+        const openHandler = mockWs.on.mock.calls.find((call: any[]) => call[0] === 'open')?.[1] as Function;
         if (openHandler) openHandler();
 
-        const messageHandler = mockWs.on.mock.calls.find(call => call[0] === 'message')?.[1];
+        const messageHandler = mockWs.on.mock.calls.find((call: any[]) => call[0] === 'message')?.[1] as Function;
         if (messageHandler) {
           messageHandler(Buffer.from(JSON.stringify({
             type: 'skin_definition_response',
@@ -507,7 +508,7 @@ describe('ServiceDiscovery', () => {
 
       mockHttp.get.mockImplementation((url: any, callback: any) => {
         setTimeout(() => {
-          const errorHandler = mockRequest.on.mock.calls.find(call => call[0] === 'error')?.[1];
+          const errorHandler = mockRequest.on.mock.calls.find((call: any[]) => call[0] === 'error')?.[1];
           if (errorHandler) errorHandler(new Error('Network error'));
         }, 10);
         return mockRequest;
@@ -521,27 +522,28 @@ describe('ServiceDiscovery', () => {
 
   describe('ServiceDiscovery Integration', () => {
     it('should provide access to discovered services', async () => {
+      const mockDiscover = (jest.fn() as any).mockResolvedValue([
+        {
+          id: 'test-service',
+          config: {
+            service: 'test-service',
+            version: '1.0.0',
+            protocol: 'http',
+            endpoint: 'http://localhost:3000',
+            timeout: 5000,
+            retries: 2,
+            keepAlive: true,
+            authentication: { type: 'none' }
+          },
+          discoveryMethod: 'configuration',
+          confidence: 0.8,
+          timestamp: Date.now()
+        } as DiscoveredService
+      ]);
       const mockStrategy: DiscoveryStrategy = {
         name: 'mock-strategy',
         priority: 100,
-        discover: jest.fn().mockResolvedValue([
-          {
-            id: 'test-service',
-            config: {
-              service: 'test-service',
-              version: '1.0.0',
-              protocol: 'http',
-              endpoint: 'http://localhost:3000',
-              timeout: 5000,
-              retries: 2,
-              keepAlive: true,
-              authentication: { type: 'none' }
-            },
-            discoveryMethod: 'configuration',
-            confidence: 0.8,
-            timestamp: Date.now()
-          } as DiscoveredService
-        ]) as () => Promise<DiscoveredService[]>
+        discover: mockDiscover
       };
 
       serviceDiscovery.addStrategy(mockStrategy);
@@ -560,10 +562,11 @@ describe('ServiceDiscovery', () => {
     });
 
     it('should allow adding and removing strategies', () => {
+      const mockDiscover = (jest.fn() as any).mockResolvedValue([]);
       const customStrategy: DiscoveryStrategy = {
         name: 'custom-strategy',
         priority: 50,
-        discover: jest.fn().mockResolvedValue([]) as () => Promise<DiscoveredService[]>
+        discover: mockDiscover
       };
 
       serviceDiscovery.addStrategy(customStrategy);
@@ -572,10 +575,11 @@ describe('ServiceDiscovery', () => {
     });
 
     it('should emit discovery events', async () => {
+      const mockDiscover = (jest.fn() as any).mockResolvedValue([]);
       const mockStrategy: DiscoveryStrategy = {
         name: 'event-test-strategy',
         priority: 100,
-        discover: jest.fn().mockResolvedValue([]) as () => Promise<DiscoveredService[]>
+        discover: mockDiscover
       };
 
       serviceDiscovery.addStrategy(mockStrategy);
@@ -598,10 +602,11 @@ describe('ServiceDiscovery', () => {
 
   describe('Error Handling and Edge Cases', () => {
     it('should handle empty discovery results', async () => {
+      const mockDiscover = (jest.fn() as any).mockResolvedValue([]);
       const emptyStrategy: DiscoveryStrategy = {
         name: 'empty-strategy',
         priority: 100,
-        discover: jest.fn().mockResolvedValue([]) as () => Promise<DiscoveredService[]>
+        discover: mockDiscover
       };
 
       serviceDiscovery.addStrategy(emptyStrategy);
@@ -611,33 +616,35 @@ describe('ServiceDiscovery', () => {
     });
 
     it('should handle strategy errors without crashing', async () => {
+      const mockDiscoverError = (jest.fn() as any).mockRejectedValue(new Error('Strategy error'));
       const errorStrategy: DiscoveryStrategy = {
         name: 'error-strategy',
         priority: 100,
-        discover: jest.fn().mockRejectedValue(new Error('Strategy error')) as jest.MockedFunction<() => Promise<DiscoveredService[]>>
+        discover: mockDiscoverError
       };
 
+      const mockDiscoverWorking = (jest.fn() as any).mockResolvedValue([
+        {
+          id: 'working-service',
+          config: {
+            service: 'working-service',
+            version: '1.0.0',
+            protocol: 'http',
+            endpoint: 'http://localhost:3000',
+            timeout: 5000,
+            retries: 2,
+            keepAlive: true,
+            authentication: { type: 'none' }
+          },
+          discoveryMethod: 'configuration',
+          confidence: 0.8,
+          timestamp: Date.now()
+        } as DiscoveredService
+      ]);
       const workingStrategy: DiscoveryStrategy = {
         name: 'working-strategy',
         priority: 90,
-        discover: jest.fn().mockResolvedValue([
-          {
-            id: 'working-service',
-            config: {
-              service: 'working-service',
-              version: '1.0.0',
-              protocol: 'http',
-              endpoint: 'http://localhost:3000',
-              timeout: 5000,
-              retries: 2,
-              keepAlive: true,
-              authentication: { type: 'none' }
-            },
-            discoveryMethod: 'configuration',
-            confidence: 0.8,
-            timestamp: Date.now()
-          } as DiscoveredService
-        ]) as () => Promise<DiscoveredService[]>
+        discover: mockDiscoverWorking
       };
 
       serviceDiscovery.addStrategy(errorStrategy);

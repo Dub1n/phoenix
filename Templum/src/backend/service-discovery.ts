@@ -14,7 +14,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as http from 'http';
 import * as https from 'https';
-import * as WebSocket from 'ws';
+import { WebSocket } from 'ws';
 import * as net from 'net';
 import { BackendConfig } from '../types/universal-skin-engine-types';
 import { backendIntegrationConfig } from './backend-integration-config';

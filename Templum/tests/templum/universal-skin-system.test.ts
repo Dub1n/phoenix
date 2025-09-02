@@ -116,8 +116,10 @@ describe('Phase 5: Universal Skin System Cross-Interface Consistency', () => {
           name: 'Haruspex Analysis Skin',
           version: '1.0.0',
           description: 'Test skin for Haruspex analysis features',
-          targetInterfaces: ['vscode', 'cli', 'command'],
+          backend: 'haruspex',
           backendService: 'haruspex',
+          compatibleInterfaces: ['vscode', 'cli', 'command'],
+          targetInterfaces: ['vscode', 'cli', 'command'],
           minimumVersion: '2.0.0',
           features: createTestFeatureMatrix(),
           performance: createTestPerformanceHints()
@@ -215,33 +217,34 @@ describe('Phase 5: Universal Skin System Cross-Interface Consistency', () => {
             name: 'Haruspex Default',
             type: 'light',
             colors: {
-            primary: { 50: '#E3F2FD', 100: '#BBDEFB', 200: '#90CAF9', 300: '#64B5F6', 400: '#42A5F5', 500: '#007ACC', 600: '#1E88E5', 700: '#1976D2', 800: '#1565C0', 900: '#0D47A1' },
-            secondary: { 50: '#F8F9FA', 100: '#E9ECEF', 200: '#DEE2E6', 300: '#CED4DA', 400: '#ADB5BD', 500: '#6C757D', 600: '#5A6268', 700: '#495057', 800: '#343A40', 900: '#212529' },
-            accent: { 50: '#F1F8E9', 100: '#DCEDC8', 200: '#C5E1A5', 300: '#AED581', 400: '#9CCC65', 500: '#28A745', 600: '#689F38', 700: '#558B2F', 800: '#33691E', 900: '#1B5E20' },
-            neutral: { 50: '#FAFAFA', 100: '#F5F5F5', 200: '#EEEEEE', 300: '#E0E0E0', 400: '#BDBDBD', 500: '#9E9E9E', 600: '#757575', 700: '#616161', 800: '#424242', 900: '#212121' },
-            semantic: {
-              success: { 50: '#F1F8E9', 100: '#DCEDC8', 200: '#C5E1A5', 300: '#AED581', 400: '#9CCC65', 500: '#28A745', 600: '#689F38', 700: '#558B2F', 800: '#33691E', 900: '#1B5E20' },
-              warning: { 50: '#FFFDE7', 100: '#FFF9C4', 200: '#FFF59D', 300: '#FFF176', 400: '#FFEE58', 500: '#FFC107', 600: '#FDD835', 700: '#F9A825', 800: '#F57F17', 900: '#FF8F00' },
-              error: { 50: '#FFEBEE', 100: '#FFCDD2', 200: '#EF9A9A', 300: '#E57373', 400: '#EF5350', 500: '#DC3545', 600: '#E53935', 700: '#D32F2F', 800: '#C62828', 900: '#B71C1C' },
-              info: { 50: '#E3F2FD', 100: '#BBDEFB', 200: '#90CAF9', 300: '#64B5F6', 400: '#42A5F5', 500: '#2196F3', 600: '#1E88E5', 700: '#1976D2', 800: '#1565C0', 900: '#0D47A1' }
-            },
-            background: {
-              primary: '#FFFFFF',
-              secondary: '#F8F9FA',
-              tertiary: '#E9ECEF',
-              overlay: 'rgba(0, 0, 0, 0.5)'
-            },
-            text: {
-              primary: '#212529',
-              secondary: '#6C757D',
-              disabled: '#ADB5BD',
-              inverse: '#FFFFFF'
-            },
-            border: {
-              primary: '#DEE2E6',
-              secondary: '#ADB5BD',
-              focus: '#007ACC',
-              error: '#DC3545'
+              primary: { 50: '#E3F2FD', 100: '#BBDEFB', 200: '#90CAF9', 300: '#64B5F6', 400: '#42A5F5', 500: '#007ACC', 600: '#1E88E5', 700: '#1976D2', 800: '#1565C0', 900: '#0D47A1' },
+              secondary: { 50: '#F8F9FA', 100: '#E9ECEF', 200: '#DEE2E6', 300: '#CED4DA', 400: '#ADB5BD', 500: '#6C757D', 600: '#5A6268', 700: '#495057', 800: '#343A40', 900: '#212529' },
+              accent: { 50: '#F1F8E9', 100: '#DCEDC8', 200: '#C5E1A5', 300: '#AED581', 400: '#9CCC65', 500: '#28A745', 600: '#689F38', 700: '#558B2F', 800: '#33691E', 900: '#1B5E20' },
+              neutral: { 50: '#FAFAFA', 100: '#F5F5F5', 200: '#EEEEEE', 300: '#E0E0E0', 400: '#BDBDBD', 500: '#9E9E9E', 600: '#757575', 700: '#616161', 800: '#424242', 900: '#212121' },
+              semantic: {
+                success: { 50: '#F1F8E9', 100: '#DCEDC8', 200: '#C5E1A5', 300: '#AED581', 400: '#9CCC65', 500: '#28A745', 600: '#689F38', 700: '#558B2F', 800: '#33691E', 900: '#1B5E20' },
+                warning: { 50: '#FFFDE7', 100: '#FFF9C4', 200: '#FFF59D', 300: '#FFF176', 400: '#FFEE58', 500: '#FFC107', 600: '#FDD835', 700: '#F9A825', 800: '#F57F17', 900: '#FF8F00' },
+                error: { 50: '#FFEBEE', 100: '#FFCDD2', 200: '#EF9A9A', 300: '#E57373', 400: '#EF5350', 500: '#DC3545', 600: '#E53935', 700: '#D32F2F', 800: '#C62828', 900: '#B71C1C' },
+                info: { 50: '#E3F2FD', 100: '#BBDEFB', 200: '#90CAF9', 300: '#64B5F6', 400: '#42A5F5', 500: '#2196F3', 600: '#1E88E5', 700: '#1976D2', 800: '#1565C0', 900: '#0D47A1' }
+              },
+              background: {
+                primary: '#FFFFFF',
+                secondary: '#F8F9FA',
+                tertiary: '#E9ECEF',
+                overlay: 'rgba(0, 0, 0, 0.5)'
+              },
+              text: {
+                primary: '#212529',
+                secondary: '#6C757D',
+                disabled: '#ADB5BD',
+                inverse: '#FFFFFF'
+              },
+              border: {
+                primary: '#DEE2E6',
+                secondary: '#ADB5BD',
+                focus: '#007ACC',
+                error: '#DC3545'
+              }
             }
           },
           typography: {
@@ -270,32 +273,7 @@ describe('Phase 5: Universal Skin System Cross-Interface Consistency', () => {
             transitions: { default: 'all 300ms ease' }
           },
           customProperties: {}
-          },
-          typography: {
-            fontFamilies: {
-              primary: 'Segoe UI, sans-serif',
-              secondary: 'Arial, sans-serif',
-              monospace: 'Monaco, monospace'
-            },
-            fontSizes: {
-              small: '12px',
-              medium: '14px',
-              large: '16px'
-            },
-            fontWeights: {
-              normal: 400,
-              bold: 700
-            },
-            lineHeights: {
-              normal: 1.5,
-              tight: 1.2
-            },
-            letterSpacing: {
-              normal: '0px',
-              wide: '0.1em'
-            }
-          }
-        },
+        } as any,
         backendConfig: {
           protocol: 'http',
           endpoint: 'http://localhost:3000',
@@ -684,6 +662,7 @@ function createTestPCLSkinDefinition(): UniversalSkinDefinition {
     themes: {
       'default': {
         name: 'PCL Default',
+        type: 'light',
         colors: {
           primary: { 50: '#E3F2FD', 100: '#BBDEFB', 200: '#90CAF9', 300: '#64B5F6', 400: '#42A5F5', 500: '#007ACC', 600: '#1E88E5', 700: '#1976D2', 800: '#1565C0', 900: '#0D47A1' },
           secondary: { 50: '#F8F9FA', 100: '#E9ECEF', 200: '#DEE2E6', 300: '#CED4DA', 400: '#ADB5BD', 500: '#6C757D', 600: '#5A6268', 700: '#495057', 800: '#343A40', 900: '#212529' },
@@ -713,7 +692,19 @@ function createTestPCLSkinDefinition(): UniversalSkinDefinition {
             focus: '#007ACC',
             error: '#DC3545'
           }
-        }
+        },
+        typography: {
+          fontFamilies: { primary: 'Segoe UI, sans-serif', secondary: 'Arial, sans-serif', monospace: 'Monaco, monospace' },
+          fontSizes: { small: '12px', medium: '14px', large: '16px' },
+          fontWeights: { normal: 400, bold: 700 },
+          lineHeights: { normal: 1.5, tight: 1.2 },
+          letterSpacing: { normal: '0px', wide: '0.1em' }
+        },
+        spacing: { unit: 8, scale: { xs: 0.5, sm: 1, md: 2, lg: 3, xl: 4 } },
+        borders: { radii: { sm: '4px', md: '8px', lg: '12px' }, widths: { thin: '1px', medium: '2px', thick: '4px' }, styles: { solid: 'solid', dashed: 'dashed' } },
+        shadows: { elevations: { low: '0 2px 4px rgba(0,0,0,0.1)', medium: '0 4px 8px rgba(0,0,0,0.15)', high: '0 8px 16px rgba(0,0,0,0.2)' }, colors: { default: 'rgba(0,0,0,0.1)' } },
+        animations: { durations: { fast: '150ms', normal: '300ms', slow: '500ms' }, easings: { ease: 'ease', easeIn: 'ease-in', easeOut: 'ease-out' }, transitions: { default: 'all 300ms ease' } },
+        customProperties: {}
       }
     },
     backendConfig: {
@@ -739,13 +730,18 @@ function createTestPCLSkinDefinition(): UniversalSkinDefinition {
 
 function createTestHaruspexSkinDefinition(): UniversalSkinDefinition {
   return {
+    id: 'haruspex-analysis',
+    name: 'Haruspex Analysis Skin',
+    version: '1.0.0',
     metadata: {
       id: 'haruspex-analysis',
       name: 'Haruspex Analysis Skin',
       version: '1.0.0',
       description: 'Haruspex code analysis and prediction interface',
-      targetInterfaces: ['vscode', 'cli', 'command'],
+      backend: 'haruspex',
       backendService: 'haruspex',
+      compatibleInterfaces: ['vscode', 'cli', 'command'],
+      targetInterfaces: ['vscode', 'cli', 'command'],
       minimumVersion: '2.0.0',
       features: createTestFeatureMatrix(),
       performance: createTestPerformanceHints()
@@ -818,6 +814,7 @@ function createTestHaruspexSkinDefinition(): UniversalSkinDefinition {
     themes: {
       'default': {
         name: 'Haruspex Default',
+        type: 'light',
         colors: {
           primary: { 50: '#F1F8E9', 100: '#DCEDC8', 200: '#C5E1A5', 300: '#AED581', 400: '#9CCC65', 500: '#28A745', 600: '#689F38', 700: '#558B2F', 800: '#33691E', 900: '#1B5E20' },
           secondary: { 50: '#F8F9FA', 100: '#E9ECEF', 200: '#DEE2E6', 300: '#CED4DA', 400: '#ADB5BD', 500: '#6C757D', 600: '#5A6268', 700: '#495057', 800: '#343A40', 900: '#212529' },
@@ -847,7 +844,19 @@ function createTestHaruspexSkinDefinition(): UniversalSkinDefinition {
             focus: '#28A745',
             error: '#DC3545'
           }
-        }
+        },
+        typography: {
+          fontFamilies: { primary: 'Segoe UI, sans-serif', secondary: 'Arial, sans-serif', monospace: 'Monaco, monospace' },
+          fontSizes: { small: '12px', medium: '14px', large: '16px' },
+          fontWeights: { normal: 400, bold: 700 },
+          lineHeights: { normal: 1.5, tight: 1.2 },
+          letterSpacing: { normal: '0px', wide: '0.1em' }
+        },
+        spacing: { unit: 8, scale: { xs: 0.5, sm: 1, md: 2, lg: 3, xl: 4 } },
+        borders: { radii: { sm: '4px', md: '8px', lg: '12px' }, widths: { thin: '1px', medium: '2px', thick: '4px' }, styles: { solid: 'solid', dashed: 'dashed' } },
+        shadows: { elevations: { low: '0 2px 4px rgba(0,0,0,0.1)', medium: '0 4px 8px rgba(0,0,0,0.15)', high: '0 8px 16px rgba(0,0,0,0.2)' }, colors: { default: 'rgba(0,0,0,0.1)' } },
+        animations: { durations: { fast: '150ms', normal: '300ms', slow: '500ms' }, easings: { ease: 'ease', easeIn: 'ease-in', easeOut: 'ease-out' }, transitions: { default: 'all 300ms ease' } },
+        customProperties: {}
       }
     },
     backendConfig: {
@@ -873,13 +882,18 @@ function createTestHaruspexSkinDefinition(): UniversalSkinDefinition {
 
 function createBaseSkinDefinition(): UniversalSkinDefinition {
   return {
+    id: 'base-skin',
+    name: 'Base Skin',
+    version: '1.0.0',
     metadata: {
       id: 'base-skin',
       name: 'Base Skin',
       version: '1.0.0',
       description: 'Base skin for inheritance',
-      targetInterfaces: ['vscode', 'cli'],
+      backend: 'pcl',
       backendService: 'base',
+      compatibleInterfaces: ['vscode', 'cli'],
+      targetInterfaces: ['vscode', 'cli'],
       minimumVersion: '1.0.0',
       features: createTestFeatureMatrix(),
       performance: createTestPerformanceHints()
@@ -915,6 +929,7 @@ function createBaseSkinDefinition(): UniversalSkinDefinition {
     themes: {
       'default': {
         name: 'Base Theme',
+        type: 'light',
         colors: {
           primary: { 50: '#F5F5F5', 100: '#E0E0E0', 200: '#BDBDBD', 300: '#9E9E9E', 400: '#757575', 500: '#000000', 600: '#424242', 700: '#303030', 800: '#212121', 900: '#000000' },
           secondary: { 50: '#F8F9FA', 100: '#E9ECEF', 200: '#DEE2E6', 300: '#CED4DA', 400: '#ADB5BD', 500: '#6C757D', 600: '#5A6268', 700: '#495057', 800: '#343A40', 900: '#212529' },
@@ -944,7 +959,19 @@ function createBaseSkinDefinition(): UniversalSkinDefinition {
             focus: '#007ACC',
             error: '#DC3545'
           }
-        }
+        },
+        typography: {
+          fontFamilies: { primary: 'Segoe UI, sans-serif', secondary: 'Arial, sans-serif', monospace: 'Monaco, monospace' },
+          fontSizes: { small: '12px', medium: '14px', large: '16px' },
+          fontWeights: { normal: 400, bold: 700 },
+          lineHeights: { normal: 1.5, tight: 1.2 },
+          letterSpacing: { normal: '0px', wide: '0.1em' }
+        },
+        spacing: { unit: 8, scale: { xs: 0.5, sm: 1, md: 2, lg: 3, xl: 4 } },
+        borders: { radii: { sm: '4px', md: '8px', lg: '12px' }, widths: { thin: '1px', medium: '2px', thick: '4px' }, styles: { solid: 'solid', dashed: 'dashed' } },
+        shadows: { elevations: { low: '0 2px 4px rgba(0,0,0,0.1)', medium: '0 4px 8px rgba(0,0,0,0.15)', high: '0 8px 16px rgba(0,0,0,0.2)' }, colors: { default: 'rgba(0,0,0,0.1)' } },
+        animations: { durations: { fast: '150ms', normal: '300ms', slow: '500ms' }, easings: { ease: 'ease', easeIn: 'ease-in', easeOut: 'ease-out' }, transitions: { default: 'all 300ms ease' } },
+        customProperties: {}
       }
     },
     backendConfig: {
@@ -967,13 +994,18 @@ function createBaseSkinDefinition(): UniversalSkinDefinition {
 
 function createChildSkinDefinition(parentId: string): UniversalSkinDefinition {
   return {
+    id: 'child-skin',
+    name: 'Child Skin',
+    version: '1.0.0',
     metadata: {
       id: 'child-skin',
       name: 'Child Skin',
       version: '1.0.0',
       description: 'Child skin inheriting from base',
-      targetInterfaces: ['vscode', 'cli'],
+      backend: 'pcl',
       backendService: 'child',
+      compatibleInterfaces: ['vscode', 'cli'],
+      targetInterfaces: ['vscode', 'cli'],
       minimumVersion: '1.0.0',
       features: createTestFeatureMatrix(),
       performance: createTestPerformanceHints(),
@@ -1024,6 +1056,7 @@ function createChildSkinDefinition(parentId: string): UniversalSkinDefinition {
     themes: {
       'default': {
         name: 'Child Theme',
+        type: 'light',
         colors: {
           primary: { 50: '#E3F2FD', 100: '#BBDEFB', 200: '#90CAF9', 300: '#64B5F6', 400: '#42A5F5', 500: '#007ACC', 600: '#1E88E5', 700: '#1976D2', 800: '#1565C0', 900: '#0D47A1' },
           secondary: { 50: '#F8F9FA', 100: '#E9ECEF', 200: '#DEE2E6', 300: '#CED4DA', 400: '#ADB5BD', 500: '#6C757D', 600: '#5A6268', 700: '#495057', 800: '#343A40', 900: '#212529' },
@@ -1053,7 +1086,19 @@ function createChildSkinDefinition(parentId: string): UniversalSkinDefinition {
             focus: '#007ACC',
             error: '#DC3545'
           }
-        }
+        },
+        typography: {
+          fontFamilies: { primary: 'Segoe UI, sans-serif', secondary: 'Arial, sans-serif', monospace: 'Monaco, monospace' },
+          fontSizes: { small: '12px', medium: '14px', large: '16px' },
+          fontWeights: { normal: 400, bold: 700 },
+          lineHeights: { normal: 1.5, tight: 1.2 },
+          letterSpacing: { normal: '0px', wide: '0.1em' }
+        },
+        spacing: { unit: 8, scale: { xs: 0.5, sm: 1, md: 2, lg: 3, xl: 4 } },
+        borders: { radii: { sm: '4px', md: '8px', lg: '12px' }, widths: { thin: '1px', medium: '2px', thick: '4px' }, styles: { solid: 'solid', dashed: 'dashed' } },
+        shadows: { elevations: { low: '0 2px 4px rgba(0,0,0,0.1)', medium: '0 4px 8px rgba(0,0,0,0.15)', high: '0 8px 16px rgba(0,0,0,0.2)' }, colors: { default: 'rgba(0,0,0,0.1)' } },
+        animations: { durations: { fast: '150ms', normal: '300ms', slow: '500ms' }, easings: { ease: 'ease', easeIn: 'ease-in', easeOut: 'ease-out' }, transitions: { default: 'all 300ms ease' } },
+        customProperties: {}
       }
     },
     backendConfig: {

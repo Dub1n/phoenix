@@ -112,7 +112,7 @@ describe('ConnectionFactory', () => {
       const config: BackendConfig = {
         service: 'test',
         version: '1.0.0',
-        protocol: 'grpc',
+        protocol: 'grpc' as any,
         endpoint: 'grpc://localhost:3000'
       };
 

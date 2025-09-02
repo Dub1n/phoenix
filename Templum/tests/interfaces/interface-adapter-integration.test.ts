@@ -87,6 +87,9 @@ class MockTemplumOrchestrator extends EventEmitter implements ITemplumOrchestrat
       pclCompatibility: {
         enabled: true,
         version: '1.0.0',
+        reusePercentage: 75,
+        inheritancePatterns: ['command-pattern'],
+        optimizations: ['lazy-loading'],
         features: []
       }
     };
@@ -235,6 +238,9 @@ describe('Interface Adapter Integration Tests', () => {
         pclCompatibility: {
           enabled: true,
           version: '1.0.0',
+          reusePercentage: 75,
+          inheritancePatterns: ['command-pattern'],
+          optimizations: ['lazy-loading'],
           features: []
         }
       };
@@ -299,6 +305,9 @@ describe('Interface Adapter Integration Tests', () => {
         pclCompatibility: {
           enabled: true,
           version: '1.0.0',
+          reusePercentage: 75,
+          inheritancePatterns: ['command-pattern'],
+          optimizations: ['lazy-loading'],
           features: []
         }
       };
@@ -427,6 +436,9 @@ describe('Interface Adapter Integration Tests', () => {
         pclCompatibility: {
           enabled: true,
           version: '1.0.0',
+          reusePercentage: 75,
+          inheritancePatterns: ['command-pattern'],
+          optimizations: ['lazy-loading'],
           features: []
         }
       };

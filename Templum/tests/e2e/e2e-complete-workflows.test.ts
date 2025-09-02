@@ -121,7 +121,7 @@ class MockE2EOrchestrator extends EventEmitter implements ITemplumOrchestrator {
             name: key,
             type: 'mock',
             status: 'connected'
-          }))
+          })) as any
         }
       },
       stateManager: { 
@@ -130,7 +130,7 @@ class MockE2EOrchestrator extends EventEmitter implements ITemplumOrchestrator {
           lastModified: Date.now(),
           backendStates: Array.from(this.backendServices.keys())
         },
-        sessionState: { lastUpdate: Date.now(), activeSession: true },
+        sessionState: { lastUpdate: Date.now(), activeSession: true } as any,
         subscribers: 1,
         historySize: 10,
         persistence: null

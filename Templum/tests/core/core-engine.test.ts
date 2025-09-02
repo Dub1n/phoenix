@@ -287,6 +287,9 @@ function createMockSkinDefinition(): UniversalSkinDefinition {
     pclCompatibility: {
       enabled: true,
       version: '1.0.0',
+      reusePercentage: 75,
+      inheritancePatterns: ['command-pattern'],
+      optimizations: ['caching', 'lazy-loading'],
       features: ['caching', 'lazy-loading']
     },
     metadata: {

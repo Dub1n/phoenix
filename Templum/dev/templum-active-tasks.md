@@ -1,11 +1,10 @@
 # Templum 1.0 Active Tasks Queue
 
-> **Purpose**: Dependency-optimized task queue with priority markers and single-occurrence rule  
-> **Created**: 2025-08-23  
-> **Updated**: 2025-09-01 - Dependency analysis optimization applied  
-> **Integration**: Used by issue-fix-selector.md, quick-fix-guide.md, comprehensive-fix-guide.md  
-> **Architecture**: See templum-patterns.md for implementation patterns  
-> **Dependency Analysis**: Optimized sequence based on critical path analysis and blocked chain resolution
+> **Purpose**: Dependency-optimized task queue with priority markers and single-occurrence rule
+> **Created**: 2025-08-23
+> **Updated**: 2025-09-01 - Dependency analysis optimization applied
+> **Integration**: Used by issue-fix-selector.md, quick-fix-guide.md, comprehensive-fix-guide.md
+> **Architecture**: See templum-patterns.md for implementation patterns
 
 ## Task Selection Markers
 
@@ -25,32 +24,6 @@
 
 **Post-TASK-COMP-004 Analysis**: Core blocking errors eliminated ✅, remaining errors categorized into manageable parallel tracks
 
-- [x] [TASK-COMP-004A] **Property Access Errors (TS2339)** | Priority: High | Complexity: 6 | **COMPLETED**
-  - Pattern: unified-type-system-pattern, minimal-compilation-stabilization-pattern | Dependencies: TASK-COMP-004 Phase 1-4 ✅
-  - Root Cause: Multiple TypeScript errors - null safety (TS18048), interface compliance (TS2739/TS2741)
-  - Files: src/skin/universal-skin-engine.ts, tests/templum/universal-skin-system.test.ts, src/extension.ts
-  - Implementation: Applied comprehensive null safety patterns, fixed interface compliance, eliminated critical syntax errors
-  - **STATUS**: 2025-09-01 | **FIX DOCUMENT**: dev/fixes/2025-09-01-181906-property-access-errors-resolution.md
-  - **MAJOR ACHIEVEMENT**: Critical high-priority compilation errors resolved, Jest syntax errors eliminated ✅
-  - **ERROR CATEGORY**: TypeScript compilation errors - HIGH PRIORITY ISSUES RESOLVED
-
-- [ ] [TASK-COMP-005] **Test Interface Compliance Resolution** | Priority: Medium | Complexity: 8 | **READY**
-  - Pattern: mock-real-api-alignment-pattern, test-interface-compliance | See: templum-patterns.md#testing-patterns
-  - Dependencies: TASK-COMP-004A ✅ (Core null safety patterns established)
-  - Root Cause: Test mock objects missing required properties from interfaces (~80 errors across test files)
-  - Files: tests/templum/universal-skin-system.test.ts, tests/interfaces/*.test.ts, src/tests/backend/*.test.ts
-  - Implementation: Complete test mock objects with proper interface compliance, apply PCLCompatibility patterns
-  - **CATEGORY**: Test infrastructure type alignment (TS2739, TS2741, TS2353)
-  - **PARALLEL READY**: Independent from production code, can execute alongside other tracks
-
-- [ ] [TASK-COMP-006] **WebSocket Constructor & Type System Resolution** | Priority: Medium | Complexity: 4 | **READY**
-  - Pattern: nodejs-type-system-alignment | Dependencies: None (isolated issue)
-  - Root Cause: WebSocket constructor type issues and variable scoping conflicts (~10 errors)
-  - Files: src/backend/service-discovery.ts, src/tests/backend/comprehensive-backend-validation.test.ts
-  - Implementation: Fix WebSocket type imports, resolve variable scoping issues in test files
-  - **CATEGORY**: Node.js/type system integration (TS2351, TS7022, TS2448)
-  - **PARALLEL READY**: Isolated fixes, minimal system impact
-
 - [1] [TASK-CLI-003] **Advanced Menu Navigation System** | Priority: High | Complexity: 10 | **READY**
   - Pattern: advanced-menu-navigation | See: templum-patterns.md#cli-interface-patterns
   - Dependencies: TASK-CLI-002 ✅ SATISFIED (Interactive search system complete 2025-08-31)
@@ -59,7 +32,7 @@
   - **UNBLOCKING OPPORTUNITY**: Can proceed in parallel with compilation fixes
 
 - [2] [TASK-NEW-046] **VSCode Service Tree Provider Validation** | Found in: extension.ts:228 | Priority: HIGH | Complexity: 2 | **VALIDATION READY** 🚀
-  - Pattern: vscode-tree-provider | Dependencies: Backend service discovery, TreeDataProvider interface ✅ 
+  - Pattern: vscode-tree-provider | Dependencies: Backend service discovery, TreeDataProvider interface ✅
   - Dependencies: TASK-COMP-004 ✅ RESOLVED (Compilation health restored), TASK-SESSION-001 completion, TASK-SKIN-005 (Two-tier prioritization system)
   - Phase: Interface → Integration transition
   - SKIN ARCHITECTURE IMPACT: Tree view must use BackendCapabilityProfile for conditional display of health/version/capability info
@@ -114,7 +87,37 @@
   - **DEPENDENCY CHAIN**: TASK-COMP-004 → TASK-NEW-046 → TASK-NEW-049
   - **ESTIMATED START**: After TASK-NEW-046 validation complete
 
-### Track C: Component Configuration (Lower Priority)
+### Track C: Compilation Stabilization (Parallel Ready)
+
+- [x] [TASK-COMP-005] **Enhanced Test Interface Compliance System** | Priority: Medium | Complexity: 8 | **COMPLETED** ✅
+  - **Consolidated From**: Test Interface Compliance (4) + Generic Backend Integration Test Fixes (4) = 8
+  - Pattern: test-type-system-alignment + minimal-compilation-stabilization-advanced | See: templum-patterns.md
+  - Dependencies: None (isolated compilation fixes)
+  - **Implementation Approach**:
+    1. Apply Test Type System Alignment Pattern to `generic-backend-integration.test.ts` (45 errors)
+    2. Fix BackendServiceRouter interface mismatches (TS2339: 22 errors)
+    3. Resolve command definition type conflicts (TS2322: 12 errors)
+    4. Fix skin metadata property issues (TS2353: 16 errors)
+    5. Add proper null safety and parameter typing (TS2345, TS7006)
+  - **Files**: `src/tests/backend/generic-backend-integration.test.ts`, minor fixes in other test files
+  - **ERROR RESOLUTION**: 45 errors in primary file, ~45 total remaining errors project-wide
+  - **CATEGORY**: Test interface compliance, Jest mock typing, null safety
+  - **PARALLEL EXECUTION**: Can run alongside all other development tracks
+  - **SUCCESS METRIC**: Project compilation error count reduced to <10 total errors
+
+- [x] [TASK-COMP-007] **Minor Compilation Cleanup** | Priority: Low | Complexity: 3 | **COMPLETED** ✅
+  - Pattern: minimal-compilation-stabilization-basic | See: templum-patterns.md
+  - Dependencies: None (isolated fixes)
+  - **Implementation Approach**:
+    1. Fix remaining Jest mock typing issues (TS2345: 1 error in comprehensive-backend-validation.test.ts)
+    2. Resolve scattered null safety issues (TS18046, TS7006: <10 errors)
+    3. Fix minor interface compatibility issues (TS2559, TS2740, TS2349: <5 errors)
+  - **Files**: Various test files with single-digit error counts
+  - **ERROR RESOLUTION**: ~45 minor scattered errors project-wide
+  - **CATEGORY**: Jest typing, null safety, minor interface issues
+  - **SUCCESS METRIC**: Achieve full project compilation (0 errors)
+
+### Track D: Component Configuration (Lower Priority)
 
 - [ ] [TASK-ENT-003] **Admin Dashboards and Monitoring** | Priority: Medium | Complexity: 18 | **PARALLEL**
   - Pattern: admin-dashboards | See: templum-patterns.md#admin-dashboard-patterns
@@ -139,6 +142,18 @@
 ## LOWER PRIORITY QUEUE (Deferred Tasks)
 
 ### Component Validation Tasks
+
+- [ ] [TASK-QUALITY-001] **ESLint Code Quality Resolution** | Priority: Medium | Complexity: 8 | **DEFERRED**
+  - Pattern: eslint-quality-improvement | See: templum-patterns.md#code-quality-patterns
+  - Dependencies: TypeScript compilation success ✅ (TASK-COMP-007 complete)
+  - **Implementation Approach**:
+    1. Address unused variable/import issues (356 errors: no-unused-vars)
+    2. Resolve explicit `any` type usage (2,424 warnings: no-explicit-any)
+    3. Remove development console statements (no-console warnings)
+    4. Fix non-null assertion usage (no-non-null-assertion warnings)
+  - **Phase**: Integration | **Discovery**: Post-TASK-COMP-007 compilation validation
+  - **Scope**: Project-wide code quality - 2,780 total ESLint issues across all source files
+  - **DEFERRAL REASON**: Code quality improvement, not blocking functionality, can be addressed systematically
 
 - [ ] [TASK-NEW-025] **Enhanced State Manager Configuration Validation** | Priority: Low | Complexity: 4 | **DEFERRED**
   - Pattern: enhanced-state-manager-configuration | See: templum-patterns.md#state-manager-configuration
@@ -282,7 +297,7 @@
 - **Track A (Performance)**: TASK-PERF-004 → TASK-PERF-003
 - **Track B (Enterprise)**: TASK-ENT-001, TASK-ENT-002 (independent development)  
 - **Track C (Components)**: TASK-ENT-003 (dashboard development)
-- **Track D (Compilation)**: TASK-COMP-005 (test interface compliance) + TASK-COMP-006 (websocket/type fixes) - **PARALLEL READY**
+- **Track D (Compilation)**: TASK-COMP-005 (enhanced test interface compliance system) + remaining minor compilation fixes - **PARALLEL READY**
 
 ### Dependent Integration (Week 3-4)
 

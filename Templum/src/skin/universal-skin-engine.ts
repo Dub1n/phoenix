@@ -1615,23 +1615,23 @@ export class UniversalSkinEngine extends EventEmitter {
         const skinCompat = skin.pclCompatibility;
         
         if (optimizedCompat && skinCompat) {
-          if (optimizedCompat.reusePercentage !== undefined) {
-            optimizedCompat.reusePercentage = Math.max(
-              skinCompat.reusePercentage ?? 0,
+          if (optimizedCompat!.reusePercentage !== undefined) {
+            optimizedCompat!.reusePercentage = Math.max(
+              skinCompat!.reusePercentage ?? 0,
               (pclOptimizations as any)?.potentialReuse || 0
             );
           }
           
-          if (optimizedCompat.inheritancePatterns && skinCompat.inheritancePatterns !== undefined) {
-            optimizedCompat.inheritancePatterns = [
-              ...(skinCompat.inheritancePatterns ?? []),
+          if (optimizedCompat!.inheritancePatterns && skinCompat!.inheritancePatterns !== undefined) {
+            optimizedCompat!.inheritancePatterns = [
+              ...(skinCompat!.inheritancePatterns ?? []),
               ...((pclOptimizations as any)?.recommendedPatterns || [])
             ];
           }
           
-          if (optimizedCompat.optimizations && skinCompat.optimizations !== undefined) {
-            optimizedCompat.optimizations = [
-              ...(skinCompat.optimizations ?? []),
+          if (optimizedCompat!.optimizations && skinCompat!.optimizations !== undefined) {
+            optimizedCompat!.optimizations = [
+              ...(skinCompat!.optimizations ?? []),
               ...((pclOptimizations as any)?.availableOptimizations || [])
             ];
           }

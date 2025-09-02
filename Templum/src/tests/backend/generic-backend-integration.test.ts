@@ -10,11 +10,11 @@
  */
 
 import { jest } from '@jest/globals';
-import { BackendServiceRouter } from '../../backend/backend-service-router';
+import { TemplumBackendServiceRouter, BackendServiceRouter } from '../../backend/backend-service-router';
 import { ConnectionFactory } from '../../backend/connection-factory';
 import { DynamicCommandRouter } from '../../backend/dynamic-command-router';
 import { backendIntegrationConfig } from '../../backend/backend-integration-config';
-import { UniversalSkinDefinition, BackendConfig } from '../../types/universal-skin-engine-types';
+import { UniversalSkinDefinition, BackendConfig, BackendType, InterfaceType } from '../../types/universal-skin-engine-types';
 
 // Mock dependencies
 jest.mock('../../backend/connection-factory');
@@ -30,16 +30,14 @@ const createMockPCLSkinDefinition = (): UniversalSkinDefinition => ({
   name: 'Phoenix Code Lite Test Skin',
   version: '1.0.0',
   metadata: {
+    id: 'pcl-test-skin',
     name: 'Phoenix Code Lite',
     version: '1.0.0',
-    description: 'TDD Workflow Orchestrator',
-    author: 'Claude Code',
+    backend: 'pcl' as BackendType,
     backendService: 'pcl',
-    compatibleInterfaces: ['vscode', 'cli'],
-    compatibility: {
-      templum: '^1.0.0',
-      vscode: '^1.60.0'
-    }
+    compatibleInterfaces: ['vscode', 'cli'] as InterfaceType[],
+    description: 'TDD Workflow Orchestrator',
+    author: 'Claude Code'
   },
   backendConfig: {
     service: 'pcl',
@@ -55,11 +53,13 @@ const createMockPCLSkinDefinition = (): UniversalSkinDefinition => ({
   commands: {
     'pcl.analyze': {
       title: 'Analyze Code',
+      description: 'Perform comprehensive code analysis',
       handler: 'analyzeCode',
       shortcuts: ['analyze']
     },
     'pcl.test': {
       title: 'Run Tests',
+      description: 'Execute test suite',
       handler: 'runTests',
       shortcuts: ['test']
     }
@@ -81,16 +81,14 @@ const createMockHaruspexSkinDefinition = (): UniversalSkinDefinition => ({
   name: 'Haruspex Analysis Engine Test Skin',
   version: '2.0.0',
   metadata: {
+    id: 'haruspex-test-skin',
     name: 'Haruspex Analysis Engine',
     version: '2.0.0',
-    description: 'Advanced Code Analysis and Prediction System',
-    author: 'Haruspex Team',
+    backend: 'haruspex' as BackendType,
     backendService: 'haruspex',
-    compatibleInterfaces: ['vscode', 'cli'],
-    compatibility: {
-      templum: '^1.0.0',
-      vscode: '^1.60.0'
-    }
+    compatibleInterfaces: ['vscode', 'cli'] as InterfaceType[],
+    description: 'Advanced Code Analysis and Prediction System',
+    author: 'Haruspex Team'
   },
   backendConfig: {
     service: 'haruspex',
@@ -104,11 +102,13 @@ const createMockHaruspexSkinDefinition = (): UniversalSkinDefinition => ({
   commands: {
     'haruspex.analyzeProject': {
       title: 'Analyze Entire Project',
+      description: 'Perform deep analysis of entire project structure',
       handler: 'analyzeProject',
       shortcuts: ['deep-analyze']
     },
     'haruspex.predict': {
       title: 'Predict Issues',
+      description: 'Predict potential code issues and vulnerabilities',
       handler: 'predictIssues',
       shortcuts: ['predict']
     }
@@ -117,7 +117,7 @@ const createMockHaruspexSkinDefinition = (): UniversalSkinDefinition => ({
     panels: [
       {
         id: 'haruspex.dashboard',
-        title: 'Analysis Dashboard',
+        name: 'Analysis Dashboard',
         type: 'webview'
       }
     ]
@@ -125,15 +125,18 @@ const createMockHaruspexSkinDefinition = (): UniversalSkinDefinition => ({
 });
 
 const createMockLitanySkinDefinition = (): UniversalSkinDefinition => ({
+  id: 'litany-test-skin',
+  name: 'Litany Orchestration System Test Skin',
+  version: '1.0.0',
   metadata: {
+    id: 'litany-test-skin',
     name: 'Litany Orchestration System',  
     version: '1.0.0',
+    backend: 'litany' as BackendType,
+    backendService: 'litany',
+    compatibleInterfaces: ['vscode', 'cli'] as InterfaceType[],
     description: 'Workflow and Task Orchestration',
-    author: 'Litany Team',
-    compatibility: {
-      templum: '^1.0.0',
-      vscode: '^1.60.0'
-    }
+    author: 'Litany Team'
   },
   backendConfig: {
     service: 'litany',
@@ -148,11 +151,13 @@ const createMockLitanySkinDefinition = (): UniversalSkinDefinition => ({
   commands: {
     'litany.orchestrate': {
       title: 'Orchestrate Workflow',
+      description: 'Coordinate and manage complex workflow execution',
       handler: 'orchestrateWorkflow',
       shortcuts: ['orchestrate']
     },
     'litany.monitor': {
       title: 'Monitor Tasks',
+      description: 'Monitor task execution and status',
       handler: 'monitorTasks',
       shortcuts: ['monitor']
     }
@@ -161,7 +166,7 @@ const createMockLitanySkinDefinition = (): UniversalSkinDefinition => ({
     statusBar: [
       {
         id: 'litany.status',
-        title: 'Workflow Status',
+        text: 'Workflow Status',
         alignment: 'left',
         priority: 100
       }
@@ -207,7 +212,7 @@ class MockBackendConnection {
   }
 
   async getCapabilities(): Promise<string[]> {
-    return Object.keys(this.skinDefinition.commands);
+    return Object.keys(this.skinDefinition.commands || {});
   }
 
   async getVersion(): Promise<string> {
@@ -216,7 +221,7 @@ class MockBackendConnection {
 }
 
 describe('Generic Backend Integration System', () => {
-  let backendRouter: BackendServiceRouter;
+  let backendRouter: TemplumBackendServiceRouter;
   let commandRouter: DynamicCommandRouter;
   
   beforeEach(() => {
@@ -226,11 +231,27 @@ describe('Generic Backend Integration System', () => {
     backendIntegrationConfig.setMode('generic');
     
     commandRouter = new DynamicCommandRouter();
-    backendRouter = new BackendServiceRouter(commandRouter);
+    
+    // Create mock orchestrator for TemplumBackendServiceRouter constructor
+    const mockOrchestrator = {
+      isInitialized: () => true,
+      getSupportedInterfaces: () => ['vscode', 'cli'],
+      registerInterface: jest.fn(),
+      loadSkin: jest.fn(),
+      getCurrentSkin: jest.fn(),
+      getRegisteredSkins: jest.fn(),
+      executeCommand: jest.fn(),
+      getStatus: jest.fn(),
+      dispose: jest.fn()
+    } as any;
+    
+    backendRouter = new TemplumBackendServiceRouter(mockOrchestrator);
   });
 
-  afterEach(() => {
-    backendRouter?.shutdown();
+  afterEach(async () => {
+    if (backendRouter && typeof backendRouter.dispose === 'function') {
+      await backendRouter.dispose();
+    }
   });
 
   describe('Skin-Driven Backend Registration', () => {
@@ -242,10 +263,10 @@ describe('Generic Backend Integration System', () => {
       mockConnectionFactory.create.mockResolvedValue(mockConnection);
 
       // Register backend using skin definition only
-      await backendRouter.registerBackendWithSkin('pcl', pclSkin);
+      await backendRouter.registerBackendFromSkin(pclSkin);
 
       // Verify backend was registered correctly
-      const configs = backendRouter.getBackendConfigs();
+      const configs = backendRouter.getBackendConfigs ? backendRouter.getBackendConfigs() : {};
       expect(configs.pcl).toBeDefined();
       expect(configs.pcl.service).toBe('pcl');
       expect(configs.pcl.protocol).toBe('http');
@@ -258,9 +279,9 @@ describe('Generic Backend Integration System', () => {
       
       mockConnectionFactory.create.mockResolvedValue(mockConnection);
 
-      await backendRouter.registerBackendWithSkin('haruspex', haruspexSkin);
+      await backendRouter.registerBackendFromSkin(haruspexSkin);
 
-      const configs = backendRouter.getBackendConfigs();
+      const configs = backendRouter.getBackendConfigs ? backendRouter.getBackendConfigs() : {};
       expect(configs.haruspex).toBeDefined();
       expect(configs.haruspex.service).toBe('haruspex');
       expect(configs.haruspex.protocol).toBe('ipc');
@@ -273,9 +294,9 @@ describe('Generic Backend Integration System', () => {
       
       mockConnectionFactory.create.mockResolvedValue(mockConnection);
 
-      await backendRouter.registerBackendWithSkin('litany', litanySkin);
+      await backendRouter.registerBackendFromSkin(litanySkin);
 
-      const configs = backendRouter.getBackendConfigs();
+      const configs = backendRouter.getBackendConfigs ? backendRouter.getBackendConfigs() : {};
       expect(configs.litany).toBeDefined();  
       expect(configs.litany.service).toBe('litany');
       expect(configs.litany.protocol).toBe('websocket');
@@ -299,9 +320,9 @@ describe('Generic Backend Integration System', () => {
         .mockResolvedValueOnce(mockLitanyConnection);
 
       // Register all backends
-      await backendRouter.registerBackendWithSkin('pcl', pclSkin);
-      await backendRouter.registerBackendWithSkin('haruspex', haruspexSkin);  
-      await backendRouter.registerBackendWithSkin('litany', litanySkin);
+      await backendRouter.registerBackendFromSkin(pclSkin);
+      await backendRouter.registerBackendFromSkin(haruspexSkin);  
+      await backendRouter.registerBackendFromSkin(litanySkin);
 
       // Verify command routing is built correctly
       expect(commandRouter.getCommandRoute('pcl.analyze')).toBeDefined();
@@ -329,12 +350,18 @@ describe('Generic Backend Integration System', () => {
     test('handles command routing for backends with overlapping command prefixes', async () => {
       // Test edge case where commands might have similar prefixes
       const customSkin: UniversalSkinDefinition = {
+        id: 'custom-test-skin',
+        name: 'Custom Backend Test Skin',
+        version: '1.0.0',
         metadata: {
+          id: 'custom-test-skin',
           name: 'Custom Backend',
           version: '1.0.0',
+          backend: 'pcl' as BackendType,
+          backendService: 'custom',
+          compatibleInterfaces: ['vscode'] as InterfaceType[],
           description: 'Test backend',
-          author: 'Test',
-          compatibility: { templum: '^1.0.0' }
+          author: 'Test'
         },
         backendConfig: {
           service: 'custom',
@@ -348,6 +375,7 @@ describe('Generic Backend Integration System', () => {
         commands: {
           'pcl.advanced.analyze': {  // Similar to pcl.analyze but more specific
             title: 'Advanced PCL Analysis',
+            description: 'Advanced PCL analysis with enhanced capabilities',
             handler: 'advancedAnalyze',
             shortcuts: ['advanced']
           }
@@ -358,7 +386,7 @@ describe('Generic Backend Integration System', () => {
       const mockConnection = new MockBackendConnection(customSkin);
       mockConnectionFactory.create.mockResolvedValue(mockConnection);
 
-      await backendRouter.registerBackendWithSkin('custom', customSkin);
+      await backendRouter.registerBackendFromSkin(customSkin);
 
       const route = commandRouter.getCommandRoute('pcl.advanced.analyze');
       expect(route?.backend.id).toBe('custom');
@@ -378,17 +406,24 @@ describe('Generic Backend Integration System', () => {
       };
 
       const testSkin: UniversalSkinDefinition = {
+        id: 'test-service-skin',
+        name: 'Test Service Skin',
+        version: '1.0.0',
         metadata: {
+          id: 'test-service-skin',
           name: 'Test Service',
           version: '1.0.0',
+          backend: 'pcl' as BackendType,
+          backendService: 'test-service',
+          compatibleInterfaces: ['vscode'] as InterfaceType[],
           description: 'Test backend service',
-          author: 'Test Team',
-          compatibility: { templum: '^1.0.0' }
+          author: 'Test Team'
         },
         backendConfig: testBackendConfig,
         commands: {
           'test.command': {
             title: 'Test Command',
+            description: 'Test command for validation',
             handler: 'testHandler',
             shortcuts: ['test']
           }
@@ -399,7 +434,7 @@ describe('Generic Backend Integration System', () => {
       const mockConnection = new MockBackendConnection(testSkin);
       mockConnectionFactory.create.mockResolvedValue(mockConnection);
 
-      await backendRouter.registerBackendWithSkin('test-service', testSkin);
+      await backendRouter.registerBackendFromSkin(testSkin);
 
       // Verify ConnectionFactory was called with skin config
       expect(mockConnectionFactory.create).toHaveBeenCalledWith(
@@ -413,12 +448,18 @@ describe('Generic Backend Integration System', () => {
       
       for (const protocol of protocols) {
         const skin: UniversalSkinDefinition = {
+          id: `test-${protocol}-skin`,
+          name: `${protocol.toUpperCase()} Service Test Skin`,
+          version: '1.0.0',
           metadata: {
+            id: `test-${protocol}-skin`,
             name: `${protocol.toUpperCase()} Service`,
             version: '1.0.0',
+            backend: 'pcl' as BackendType,
+            backendService: `test-${protocol}`,
+            compatibleInterfaces: ['vscode'] as InterfaceType[],
             description: `Test ${protocol} service`,
-            author: 'Test Team',
-            compatibility: { templum: '^1.0.0' }
+            author: 'Test Team'
           },
           backendConfig: {
             service: `test-${protocol}`,
@@ -432,6 +473,7 @@ describe('Generic Backend Integration System', () => {
           commands: {
             [`${protocol}.test`]: {
               title: `Test ${protocol.toUpperCase()}`,
+              description: `Test ${protocol.toUpperCase()} protocol functionality`,
               handler: 'testHandler',
               shortcuts: ['test']
             }
@@ -442,7 +484,7 @@ describe('Generic Backend Integration System', () => {
         const mockConnection = new MockBackendConnection(skin);
         mockConnectionFactory.create.mockResolvedValue(mockConnection);
 
-        await backendRouter.registerBackendWithSkin(`test-${protocol}`, skin);
+        await backendRouter.registerBackendFromSkin(skin);
 
         expect(mockConnectionFactory.create).toHaveBeenCalledWith(
           `test-${protocol}`,
@@ -503,11 +545,11 @@ describe('Generic Backend Integration System', () => {
       for (const { id, skin } of allSkins) {
         const mockConnection = new MockBackendConnection(skin);
         mockConnectionFactory.create.mockResolvedValue(mockConnection);
-        await backendRouter.registerBackendWithSkin(id, skin);
+        await backendRouter.registerBackendFromSkin(skin);
       }
 
       // Verify all backends are registered and operational
-      const configs = backendRouter.getBackendConfigs();
+      const configs = backendRouter.getBackendConfigs ? backendRouter.getBackendConfigs() : {};
       expect(Object.keys(configs)).toHaveLength(3);
       expect(configs.pcl).toBeDefined();
       expect(configs.haruspex).toBeDefined();
@@ -536,14 +578,14 @@ describe('Generic Backend Integration System', () => {
         .mockResolvedValueOnce(mockPclConnection)
         .mockRejectedValueOnce(new Error('Haruspex connection failed'));
 
-      await backendRouter.registerBackendWithSkin('pcl', pclSkin);
+      await backendRouter.registerBackendFromSkin(pclSkin);
       
       // This should not throw, just log the error
-      await expect(backendRouter.registerBackendWithSkin('haruspex', haruspexSkin))
+      await expect(backendRouter.registerBackendFromSkin(haruspexSkin))
         .rejects.toThrow('Haruspex connection failed');
 
       // PCL should still be operational
-      const configs = backendRouter.getBackendConfigs();
+      const configs = backendRouter.getBackendConfigs ? backendRouter.getBackendConfigs() : {};
       expect(configs.pcl).toBeDefined();
       expect(configs.haruspex).toBeUndefined();
       expect(commandRouter.getCommandRoute('pcl.analyze')).toBeDefined();
@@ -582,7 +624,7 @@ describe('Generic Backend Integration System', () => {
       
       expect(discoveryCompleted).toBe(true);
       // Should have no backends registered due to connection failures
-      expect(Object.keys(backendRouter.getBackendConfigs())).toHaveLength(0);
+      expect(Object.keys(backendRouter.getBackendConfigs ? backendRouter.getBackendConfigs() : {})).toHaveLength(0);
     });
   });
 
@@ -590,12 +632,18 @@ describe('Generic Backend Integration System', () => {
     test('validates that new backend integration requires zero Templum code changes', async () => {
       // Create a completely new backend type not previously known to Templum
       const newBackendSkin: UniversalSkinDefinition = {
+        id: 'new-service-skin',
+        name: 'Brand New Service Skin',
+        version: '1.0.0',
         metadata: {
+          id: 'new-service-skin',
           name: 'Brand New Service',
           version: '1.0.0',
+          backend: 'pcl' as BackendType,
+          backendService: 'new-service',
+          compatibleInterfaces: ['vscode'] as InterfaceType[],
           description: 'A completely new backend service type',
-          author: 'New Team',
-          compatibility: { templum: '^1.0.0' }
+          author: 'New Team'
         },
         backendConfig: {
           service: 'new-service',
@@ -612,11 +660,13 @@ describe('Generic Backend Integration System', () => {
         commands: {
           'new.uniqueCommand': {
             title: 'Unique New Command',
+            description: 'Execute unique functionality for new service',
             handler: 'uniqueHandler',
             shortcuts: ['unique']
           },
           'new.anotherCommand': {
             title: 'Another New Command', 
+            description: 'Another command for new service functionality',
             handler: 'anotherHandler',
             shortcuts: ['another']
           }
@@ -625,7 +675,7 @@ describe('Generic Backend Integration System', () => {
           panels: [
             {
               id: 'new.customPanel',
-              title: 'Custom New Panel',
+              name: 'Custom New Panel',
               type: 'webview'
             }
           ]
@@ -636,10 +686,10 @@ describe('Generic Backend Integration System', () => {
       mockConnectionFactory.create.mockResolvedValue(mockConnection);
 
       // This should work with zero changes to Templum code
-      await backendRouter.registerBackendWithSkin('new-service', newBackendSkin);
+      await backendRouter.registerBackendFromSkin(newBackendSkin);
 
       // Verify integration works exactly like existing backends
-      const configs = backendRouter.getBackendConfigs();
+      const configs = backendRouter.getBackendConfigs ? backendRouter.getBackendConfigs() : {};
       expect(configs['new-service']).toBeDefined();
       expect(configs['new-service'].endpoint).toBe('http://new-service:9999');
       expect(configs['new-service'].authentication?.credentials?.token).toBe('new-service-token');
