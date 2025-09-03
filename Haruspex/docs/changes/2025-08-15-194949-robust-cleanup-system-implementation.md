@@ -2,7 +2,7 @@
 
 ## Change Information
 
-- **Date**: 2025-08-15 19:49:49 (Generated with: `powershell "Get-Date -Format 'yyyy-MM-dd-HHmmss'"`)
+- **Date**: 2025-08-15 19:49:49 (Generated with: `powershell "Get-Date -Format 'yyyy-MM-dd-HHmm'"`)
 - **Type**: Feature
 - **Severity**: High
 - **Components**: Extension lifecycle, Process management, File cleanup, Command registration, Resource management
@@ -285,6 +285,6 @@ The cleanup system acts as a foundation layer that other Haruspex components dep
 - **Existing Haruspex Components**: Transparent integration without breaking changes
 
 ---
-**Generated**: 2025-08-15-194949 using `powershell "Get-Date -Format 'yyyy-MM-dd-HHmmss'"` command
+**Generated**: 2025-08-15-194949 using `powershell "Get-Date -Format 'yyyy-MM-dd-HHmm'"` command
 **Author**: Claude Code AI Assistant
 **Review Status**: Completed

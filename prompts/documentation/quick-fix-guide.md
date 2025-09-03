@@ -42,7 +42,7 @@
 1. **Mark Status**: Update task to [~] or [B] based on compilation state
 2. **Create TODO Tags**: Add any issues discovered during implementation  
 3. **Run Validation**: Execute `/pr:validate` for comprehensive testing
-4. **Do Not Mark Complete**: Never mark [x] at this stage
+4. **DO NOT MARK COMPLETE**: NEVER mark [x] at this stage
 
 **Next Phase**: Run `/pr:validate` to test functionality and collect evidence
 

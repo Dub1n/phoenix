@@ -95,7 +95,7 @@ Detailed results are saved to:
 
 ``` filesystem
 <Project>/dev/validation-results/
-├── YYYY-MM-DDTHHMMSS-{component}-validation.json
+├── YYYY-MM-DDTHHmm-{component}-validation.json
 └── ...
 ```
 

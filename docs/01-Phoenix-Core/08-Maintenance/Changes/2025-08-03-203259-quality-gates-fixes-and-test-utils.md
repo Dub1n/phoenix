@@ -2,7 +2,7 @@
 
 ## Change Information
 
-- **Date**: 2025-08-03 20:32:59 (Generated with: `Get-Date -Format "yyyy-MM-dd-HHmmss"`)
+- **Date**: 2025-08-03 20:32:59 (Generated with: `Get-Date -Format "yyyy-MM-dd-HHmm"`)
 - **Type**: Bug Fix
 - **Severity**: Medium
 - **Components**: Quality Gates, Test Infrastructure, CLI Integration, Process Exit Handling
@@ -197,6 +197,6 @@ Quality gate validation failures were preventing proper TDD workflow execution. 
 - Process exit handling improvements benefit CI/CD stability
 
 ---
-**Generated**: 2025-08-03-203259 using `Get-Date -Format "yyyy-MM-dd-HHmmss"` command
+**Generated**: 2025-08-03-203259 using `Get-Date -Format "yyyy-MM-dd-HHmm"` command
 **Author**: Claude Code Agent
 **Review Status**: Pending

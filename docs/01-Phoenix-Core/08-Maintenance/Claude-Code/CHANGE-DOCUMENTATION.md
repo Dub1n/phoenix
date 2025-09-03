@@ -11,7 +11,7 @@ Every change to Phoenix Code Lite **must be documented** with a structured chang
 All changes require a new file in `docs\Phoenix\08-Maintenance\Changes` following the naming convention:
 
 ``` text
-YYYY-MM-DD-HHMMSS-{brief-description}.md
+YYYY-MM-DD-HHmm-{brief-description}.md
 ```
 
 ### Automatic Timestamping
@@ -20,7 +20,7 @@ YYYY-MM-DD-HHMMSS-{brief-description}.md
 
 ``` bash
 # Get current timestamp
-Get-Date -Format "yyyy-MM-dd-HHmmss"
+Get-Date -Format "yyyy-MM-dd-HHmm"
 
 # Example filename
 2024-08-02-143022-fix-version-command.md
@@ -285,7 +285,7 @@ Phoenix-Reorg/08-Maintenance/Changes/
 
 ### Naming Conventions
 
-- **Date Format**: YYYY-MM-DD-HHMMSS (24-hour format)
+- **Date Format**: YYYY-MM-DD-HHmm (24-hour format)
 - **Description**: Brief, hyphenated description (max 50 characters)
 - **No Spaces**: Use hyphens instead of spaces
 - **Descriptive**: Name should indicate the type of change

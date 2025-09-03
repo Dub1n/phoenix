@@ -103,7 +103,7 @@ function Set-TerminalState {
 
 # Generate unique terminal identifier
 function New-TerminalId {
-    return "term_$(Get-Date -Format 'yyyyMMdd_HHmmss')_$([System.Guid]::NewGuid().ToString('N')[0..7] -join '')"
+    return "term_$(Get-Date -Format 'yyyyMMdd_HHmm')_$([System.Guid]::NewGuid().ToString('N')[0..7] -join '')"
 }
 
 # Check if process is still running

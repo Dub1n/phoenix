@@ -2,7 +2,7 @@
 
 ## Change Information
 
-- **Date**: 2025-08-06 19:52:51 (Generated with: `Get-Date -Format "yyyy-MM-dd-HHmmss"`)
+- **Date**: 2025-08-06 19:52
 - **Type**: Refactor
 - **Severity**: Medium
 - **Components**: CLI display system, menu rendering, UI utilities
@@ -73,7 +73,7 @@ Created a centralized display utility system that provides consistent UI formatt
 ### Solutions Applied
 
 1. **Re-applied menu-system.ts changes** - Successfully updated the file on second attempt
-2. **Used PowerShell date command** - `Get-Date -Format "yyyy-MM-dd-HHmmss"` instead of Unix date
+2. **Used PowerShell date command** - `Get-Date -Format "yyyy-MM-dd-HHmm"` instead of Unix date
 
 ### Lessons Learned
 
@@ -175,6 +175,6 @@ Created a centralized display utility system that provides consistent UI formatt
 - Backward compatible with existing functionality
 
 ---
-**Generated**: 2025-08-06 19:52:51 using `Get-Date -Format "yyyy-MM-dd-HHmmss"` command
+**Generated**: 2025-08-06 19:52:51 using `Get-Date -Format "yyyy-MM-dd-HHmm"` command
 **Author**: Claude Code Agent
 **Review Status**: Pending

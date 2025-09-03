@@ -64,7 +64,7 @@ If ANY of these fail, Templum is NOT working. Do not proceed with other tasks.
 
 ---
 
-## 📋 Prerequisites & Setup Verification
+## Prerequisites & Setup Verification
 
 ### Required Dependencies
 

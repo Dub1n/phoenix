@@ -19,7 +19,7 @@
    - Identify all symptoms vs. underlying cause
 
 2. **Pattern Analysis**:
-   - Search (grep) the project's pattern document for relevant information
+   - **FIND PATTERNS**: Search/grep until you have exhausted the pattern document for relevant pattern information
 
 3. **Solution Architecture**:
    - Take any existing pattern(s) into account

@@ -1,5 +1,5 @@
 ---
-date: [Use: Bash(powershell "Get-Date -Format 'yyyy-MM-dd-HHmmss'")]
+date: [Use: Bash(powershell "Get-Date -Format 'yyyy-MM-dd-HHmm'")]
 TASK-ID: [TASK-ID from active tasks]
 source: [project-active-tasks.md]
 fix_type: comprehensive

@@ -173,7 +173,7 @@ The VDL_Vault repository is a comprehensive ecosystem for medical device softwar
 
 #### ⊛ File Creation Guidelines
 
-- **Project Context**: Always include appropriate file header stubs with timestamps (`Get-Date -Format "yyyy-MM-dd-HHmmss"`)
+- **Project Context**: Always include appropriate file header stubs with timestamps (`Get-Date -Format "yyyy-MM-dd-HHmm"`)
 - **Minimal Creation**: Create files only when absolutely necessary for the goal
 - **Edit First**: Prefer editing existing files over creating new ones
 - **Documentation**: Only create documentation files when explicitly requested

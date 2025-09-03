@@ -2,7 +2,7 @@
 
 ## Change Information
 
-- **Date**: 2025-08-15 18:34:07 (Generated with: `powershell "Get-Date -Format 'yyyy-MM-dd-HHmmss'"`)
+- **Date**: 2025-08-15 18:34:07 (Generated with: `powershell "Get-Date -Format 'yyyy-MM-dd-HHmm'"`)
 - **Type**: Bug Fix
 - **Severity**: Medium
 - **Components**: Debug Manager, Extension Activation, Command Registration System
@@ -352,6 +352,6 @@ Extension Activation
 - Extension context and subscriptions managed consistently
 
 ---
-**Generated**: 2025-08-15-183407 using `powershell "Get-Date -Format 'yyyy-MM-dd-HHmmss'"` command  
+**Generated**: 2025-08-15-183407 using `powershell "Get-Date -Format 'yyyy-MM-dd-HHmm'"` command  
 **Author**: Claude (AI Assistant) in collaboration with user  
 **Review Status**: Complete - Ready for development testing and validation

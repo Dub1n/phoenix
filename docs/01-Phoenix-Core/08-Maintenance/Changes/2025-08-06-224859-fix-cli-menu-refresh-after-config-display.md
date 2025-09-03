@@ -2,7 +2,7 @@
 
 ## Change Information
 
-- **Date**: 2025-08-06 22:48:59 (Generated with: `powershell -Command "Get-Date -Format 'yyyy-MM-dd-HHmmss'"`)
+- **Date**: 2025-08-06 22:48:59 (Generated with: `powershell -Command "Get-Date -Format 'yyyy-MM-dd-HHmm'"`)
 - **Type**: Bug Fix
 - **Severity**: Medium
 - **Components**: CLI Session Management, Menu System, Enhanced Commands
@@ -167,6 +167,6 @@ The CLI menu system wasn't properly refreshing the display after executing actio
 - The changes are backward compatible and don't affect existing functionality
 
 ---
-**Generated**: 2025-08-06-224859 using `powershell -Command "Get-Date -Format 'yyyy-MM-dd-HHmmss'"` command
+**Generated**: 2025-08-06-224859 using `powershell -Command "Get-Date -Format 'yyyy-MM-dd-HHmm'"` command
 **Author**: Claude Code Agent
 **Review Status**: Pending

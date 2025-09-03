@@ -2,7 +2,7 @@
 
 ## Change Information
 
-- **Date**: 2025-08-06 20:55:44 (Generated with: `Get-Date -Format "yyyy-MM-dd-HHmmss"`)
+- **Date**: 2025-08-06 20:55:44 (Generated with: `Get-Date -Format "yyyy-MM-dd-HHmm"`)
 - **Type**: Enhancement
 - **Severity**: Medium
 - **Components**: CLI Layout System, Menu Rendering, Configuration Management
@@ -182,6 +182,6 @@ The CLI system had conflicting configuration sources and architectural violation
 - Backward compatible for all user-facing functionality
 
 ---
-**Generated**: 2025-08-06 20:55:44 using `Get-Date -Format "yyyy-MM-dd-HHmmss"` command (2 hours earlier)
+**Generated**: 2025-08-06 20:55:44 using `Get-Date -Format "yyyy-MM-dd-HHmm"` command (2 hours earlier)
 **Author**: Claude Code Agent  
 **Review Status**: Completed

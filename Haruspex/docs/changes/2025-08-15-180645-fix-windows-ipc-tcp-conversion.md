@@ -2,7 +2,7 @@
 
 ## Change Information
 
-- **Date**: 2025-08-15 18:06:45 (Generated with: `powershell "Get-Date -Format 'yyyy-MM-dd-HHmmss'"`)
+- **Date**: 2025-08-15 18:06:45 (Generated with: `powershell "Get-Date -Format 'yyyy-MM-dd-HHmm'"`)
 - **Type**: Bug Fix
 - **Severity**: High
 - **Components**: IPC System, Agent Debugging Integration, Extension Activation
@@ -337,6 +337,6 @@ External Process (CLI Tools)
 - Agent debugging capabilities fully preserved
 
 ---
-**Generated**: 2025-08-15-180645 using `powershell "Get-Date -Format 'yyyy-MM-dd-HHmmss'"` command  
+**Generated**: 2025-08-15-180645 using `powershell "Get-Date -Format 'yyyy-MM-dd-HHmm'"` command  
 **Author**: Claude (AI Assistant) in collaboration with user  
 **Review Status**: Complete - Ready for testing and validation

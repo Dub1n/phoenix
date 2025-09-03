@@ -2,7 +2,7 @@
 
 ## Change Information
 
-- **Date**: 2025-08-06 20:59:25 (Generated with: `Get-Date -Format "yyyy-MM-dd-HHmmss"`)
+- **Date**: 2025-08-06 20:59:25 (Generated with: `Get-Date -Format "yyyy-MM-dd-HHmm"`)
 - **Type**: Enhancement
 - **Severity**: Medium
 - **Components**: CLI Menu System, Unified Layout Engine, Testing Infrastructure
@@ -184,6 +184,6 @@ The CLI menu system had hardcoded numbers in both JSON menu definitions and the 
 **Build Process**: Standard TypeScript compilation and testing process applies.
 
 ---
-**Generated**: 2025-08-06 20:59:25 using `Get-Date -Format "yyyy-MM-dd-HHmmss"` command  
+**Generated**: 2025-08-06 20:59:25 using `Get-Date -Format "yyyy-MM-dd-HHmm"` command  
 **Author**: Claude Code Agent  
 **Review Status**: Pending

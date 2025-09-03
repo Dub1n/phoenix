@@ -587,7 +587,7 @@ Add entry to Implementation Tracker "Lessons Learned" section:
 **File Location**: Fix documents go in `<Project>/dev/fixes` following the naming convention:
 
 ``` text
-YYYY-MM-DD-HHMMSS-{issue-fix-description}.md
+YYYY-MM-DD-HHmm-{issue-fix-description}.md
 ```
 
 ### Template Selection Criteria
@@ -683,7 +683,7 @@ Choose the appropriate template based on your Pre-Implementation Verification:
 ``` bash
 # Get current timestamp (adapt for your system)
 # Windows PowerShell (include the "powershell", use it as it is written here):
-powershell "Get-Date -Format 'yyyy-MM-dd-HHmmss'"
+powershell "Get-Date -Format 'yyyy-MM-dd-HHmm'"
 
 # Unix/Linux/macOS:
 date "+%Y-%m-%d-%H%M%S"
@@ -932,8 +932,8 @@ Fix Document: "Component Status: Working, Build Errors: 0"
 
 **Step 1: Create Fix Document**:
 
-1. Use timestamp: `powershell "Get-Date -Format 'yyyy-MM-dd-HHmmss'"` or `date "+%Y-%m-%d-%H%M%S"`
-2. Create file in `<project>/dev/fixes/YYYY-MM-DD-HHMMSS-issue-fix-description.md`
+1. Use timestamp: `powershell "Get-Date -Format 'yyyy-MM-dd-HHmm'"` or `date "+%Y-%m-%d-%H%M%S"`
+2. Create file in `<project>/dev/fixes/YYYY-MM-DD-HHmm-issue-fix-description.md`
 3. Use the template above with all sections completed
 4. Reference specific Implementation Tracker sections
 
@@ -1167,7 +1167,7 @@ Before finalizing change documentation:
 
 ### Naming Conventions
 
-- **Date Format**: YYYY-MM-DD-HHMMSS (24-hour format)
+- **Date Format**: YYYY-MM-DD-HHmm (24-hour format)
 - **Description**: Brief, hyphenated fix description (max 50 characters)
 - **No Spaces**: Use hyphens instead of spaces
 - **Issue-Focused**: Name should indicate the specific issue resolved
@@ -1198,7 +1198,7 @@ Before finalizing change documentation:
 date "+%Y-%m-%d-%H%M%S"
 
 # Windows PowerShell:
-Get-Date -Format "yyyy-MM-dd-HHmmss"
+Get-Date -Format "yyyy-MM-dd-HHmm"
 
 # Bad - using memory or estimates
 # "around 2:30 PM" or "sometime this afternoon"

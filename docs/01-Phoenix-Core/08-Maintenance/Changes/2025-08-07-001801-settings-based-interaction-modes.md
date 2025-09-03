@@ -1,7 +1,7 @@
 # Change Documentation: Settings-Based Interaction Modes Implementation
 
 ## Change Information
-- **Date**: 2025-08-07 00:18:01 (Generated with: `Get-Date -Format "yyyy-MM-dd-HHmmss"`)
+- **Date**: 2025-08-07 00:18:01 (Generated with: `Get-Date -Format "yyyy-MM-dd-HHmm"`)
 - **Type**: Feature
 - **Severity**: Medium
 - **Components**: CLI System, Settings Management, Menu System, Type Definitions
@@ -188,6 +188,6 @@ Users can now configure their interaction preferences once and have them persist
 - Type system updates ensure compatibility across all components
 
 ---
-**Generated**: 2025-08-07 00:18:01 using `Get-Date -Format "yyyy-MM-dd-HHmmss"` command
+**Generated**: 2025-08-07 00:18:01 using `Get-Date -Format "yyyy-MM-dd-HHmm"` command
 **Author**: Claude Code Agent
 **Review Status**: Pending 

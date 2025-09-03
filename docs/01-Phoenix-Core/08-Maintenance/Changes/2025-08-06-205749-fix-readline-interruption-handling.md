@@ -2,7 +2,7 @@
 
 ## Change Information
 
-- **Date**: 2025-08-06 20:57:49 (Generated with: `Get-Date -Format "yyyy-MM-dd-HHmmss"`)
+- **Date**: 2025-08-06 20:57
 - **Type**: Bug Fix
 - **Severity**: High
 - **Components**: CLI Session Management, User Experience
@@ -179,6 +179,6 @@ The CLI had two critical issues with readline interface management:
 - No configuration changes required
 
 ---
-**Generated**: 2025-08-06-205749 using `Get-Date -Format "yyyy-MM-dd-HHmmss"` command
+**Generated**: 2025-08-06-205749 using `Get-Date -Format "yyyy-MM-dd-HHmm"` command
 **Author**: Claude Code Agent
 **Review Status**: Approved

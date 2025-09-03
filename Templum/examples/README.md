@@ -101,47 +101,47 @@ curl -X POST http://localhost:7823/executeCommand \
 
 This minimal implementation demonstrates the **Enhanced Templum 1.2 Discovery Architecture**:
 
-```
-┌─────────────────────────────────────────────┐
-│            Templum Core                     │
-│  Enhanced Service Discovery                 │
-│  • Auto-Registration Detection             │
-│  • Directory Watching                      │
-│  • Process Validation                      │
-└─────────────────┬───────────────────────────┘
+``` diagram
+┌───────────────────────────────────────────┐
+│            Templum Core                   │
+│  Enhanced Service Discovery               │
+│  • Auto-Registration Detection            │
+│  • Directory Watching                     │
+│  • Process Validation                     │
+└─────────────────┬─────────────────────────┘
                   │ Instant Discovery
                   │ Any Port Support
-┌─────────────────▼───────────────────────────┐
-│    Auto-Registration System                │
-│  ~/.templum/services/backend-{pid}.json    │
-│  • Process ID tracking                     │
-│  • Port specification                      │
-│  • Auto-cleanup on exit                    │
-└─────────────────┬───────────────────────────┘
+┌─────────────────▼─────────────────────────┐
+│        Auto-Registration System           │
+│  ~/.templum/services/backend-{pid}.json   │
+│  • Process ID tracking                    │
+│  • Port specification                     │
+│  • Auto-cleanup on exit                   │
+└─────────────────┬─────────────────────────┘
                   │ Service Definition
                   │
-┌─────────────────▼───────────────────────────┐
-│         Minimal Backend                     │
-│  • Skin Definition (self-describing)       │
-│  • Command Execution (any port)            │
-│  • Health Monitoring                       │
-│  • Auto-Registration                       │
-└─────────────────────────────────────────────┘
+┌─────────────────▼─────────────────────────┐
+│           Minimal Backend                 │
+│  • Skin Definition (self-describing)      │
+│  • Command Execution (any port)           │
+│  • Health Monitoring                      │
+│  • Auto-Registration                      │
+└───────────────────────────────────────────┘
 ```
 
 ### Enhanced Discovery Benefits
 
 **Traditional Port Scanning**:
 
-```
-Templum → Scans [3001, 3002, 3003...] → Limited ports ❌
+``` log
+Templum → Scans [3001, 3002, 3003...] → Limited ports [F]
 ```
 
 **Enhanced Auto-Registration**:
 
-```
-Backend → Creates service file → Templum detects instantly ✅
-Any port → Process validation → Auto-cleanup → Zero config ✅
+``` log
+Backend → Creates service file → Templum detects instantly [x]
+Any port → Process validation → Auto-cleanup → Zero config [x]
 ```
 
 ## Key Features Demonstrated

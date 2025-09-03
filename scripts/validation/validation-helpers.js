@@ -746,7 +746,7 @@ export class EvidenceGenerator {
    */
   generateWindowsTimestamp() {
     try {
-      return execSync('powershell "Get-Date -Format \'yyyy-MM-dd-HHmmss\'"', { encoding: 'utf8' }).trim();
+      return execSync('powershell "Get-Date -Format \'yyyy-MM-dd-HHmm\'"', { encoding: 'utf8' }).trim();
     } catch (error) {
       // Fallback to JavaScript date formatting
       const now = new Date();

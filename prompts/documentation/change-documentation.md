@@ -11,7 +11,7 @@ Every change to any project **must be documented** with a structured change log 
 All changes require a new file in `<Project>/docs/changes` following the naming convention:
 
 ``` text
-YYYY-MM-DD-HHMMSS-{brief-description}.md
+YYYY-MM-DD-HHmm-{brief-description}.md
 ```
 
 ### Automatic Timestamping
@@ -21,7 +21,7 @@ YYYY-MM-DD-HHMMSS-{brief-description}.md
 ``` bash
 # Get current timestamp (adapt for your system)
 # Windows PowerShell (include the "powershell", use it as it is written here):
-powershell "Get-Date -Format 'yyyy-MM-dd-HHmmss'"
+powershell "Get-Date -Format 'yyyy-MM-dd-HHmm'"
 
 # Unix/Linux/macOS:
 date "+%Y-%m-%d-%H%M%S"
@@ -333,7 +333,7 @@ Before finalizing change documentation:
 
 ### Naming Conventions
 
-- **Date Format**: YYYY-MM-DD-HHMMSS (24-hour format)
+- **Date Format**: YYYY-MM-DD-HHmm (24-hour format)
 - **Description**: Brief, hyphenated description (max 50 characters)
 - **No Spaces**: Use hyphens instead of spaces
 - **Descriptive**: Name should indicate the type of change
@@ -361,7 +361,7 @@ Before finalizing change documentation:
 date "+%Y-%m-%d-%H%M%S"
 
 # Windows PowerShell:
-Get-Date -Format "yyyy-MM-dd-HHmmss"
+Get-Date -Format "yyyy-MM-dd-HHmm"
 
 # Bad - using memory or estimates
 # "around 2:30 PM" or "sometime this afternoon"

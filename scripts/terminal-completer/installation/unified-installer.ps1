@@ -37,7 +37,7 @@ $config = @{
     parentPath = $projectRoot
     cursorRulesPath = Join-Path $projectRoot ".cursor" "rules"
     vscodeSettingsPath = Join-Path $projectRoot ".vscode" "settings.json"
-    backupSuffix = ".backup.$(Get-Date -Format 'yyyyMMdd-HHmmss')"
+    backupSuffix = ".backup.$(Get-Date -Format 'yyyyMMdd-HHmm')"
 }
 
 # Ensure paths are absolute and valid

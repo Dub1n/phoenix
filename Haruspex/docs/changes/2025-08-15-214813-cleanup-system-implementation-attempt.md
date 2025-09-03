@@ -2,7 +2,7 @@
 
 ## Change Information
 
-- **Date**: 2025-08-15 21:48:13 (Generated with: `powershell "Get-Date -Format 'yyyy-MM-dd-HHmmss'"`)
+- **Date**: 2025-08-15 21:48:13 (Generated with: `powershell "Get-Date -Format 'yyyy-MM-dd-HHmm'"`)
 - **Type**: Enhancement (Failed Implementation)
 - **Severity**: Critical (Build Breaking)
 - **Components**: Core cleanup system, Process Manager, File Cleanup, Command Manager, Orchestrator
@@ -216,7 +216,7 @@ This change documentation serves as the primary record of what went wrong and wh
 
 ---
 
-**Generated**: 2025-08-15-214813 using `powershell "Get-Date -Format 'yyyy-MM-dd-HHmmss'"` command  
+**Generated**: 2025-08-15-214813 using `powershell "Get-Date -Format 'yyyy-MM-dd-HHmm'"` command  
 **Author**: Claude Code SuperClaude Framework  
 **Review Status**: **CRITICAL - REQUIRES IMMEDIATE ATTENTION**
 

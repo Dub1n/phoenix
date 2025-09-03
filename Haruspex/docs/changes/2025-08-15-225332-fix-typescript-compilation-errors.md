@@ -2,7 +2,7 @@
 
 ## Change Information
 
-- **Date**: 2025-08-15 22:53:32 (Generated with: `powershell "Get-Date -Format 'yyyy-MM-dd-HHmmss'"`)
+- **Date**: 2025-08-15 22:53:32 (Generated with: `powershell "Get-Date -Format 'yyyy-MM-dd-HHmm'"`)
 - **Type**: Bug Fix
 - **Severity**: High
 - **Components**: Haruspex Process Manager, Test Files, Configuration Schemas
@@ -157,6 +157,6 @@ This change enables continued development of the Haruspex cleanup system. Future
 No special deployment considerations. Changes are backward compatible and maintain all existing functionality while fixing compilation issues.
 
 ---
-**Generated**: 2025-08-15-225332 using `powershell "Get-Date -Format 'yyyy-MM-dd-HHmmss'"` command  
+**Generated**: 2025-08-15-225332 using `powershell "Get-Date -Format 'yyyy-MM-dd-HHmm'"` command  
 **Author**: Claude Code AI Assistant  
 **Review Status**: Completed
