@@ -10,8 +10,7 @@ import { EventEmitter } from 'events';
 import { performance } from 'perf_hooks';
 import { 
   Signals, 
-  TemplumError, 
-  IntegrationError, 
+  // Unused imports removed: TemplumError, IntegrationError
   isTemplumError, 
   createTemplumError,
   MetricsSignalPayload 
@@ -259,7 +258,7 @@ export class ComponentTransferCoordinator extends EventEmitter {
     this.activeTransfers.get(transferId)!.status = 'completed';
   }
 
-  private async measureComponentPerformance(componentId: string): Promise<{
+  private async measureComponentPerformance(_componentId: string): Promise<{
     responseTime: number;
     memoryUsage: number;
     cpuUsage: number;
@@ -592,7 +591,7 @@ export class ValidationFramework extends EventEmitter {
     this.emit('baselineSet', { componentId, baseline });
   }
 
-  private async measureCurrentPerformance(componentId: string, operation: string): Promise<{
+  private async measureCurrentPerformance(_componentId: string, _operation: string): Promise<{
     responseTime: number;
     memoryUsage: number;
     cpuUsage: number;
@@ -791,7 +790,7 @@ export class BackendFallbackManager extends EventEmitter {
     this.emit('fallbackStrategyRegistered', { componentId, strategy });
   }
 
-  private async executeStrategy(strategy: any, componentId: string, fallbackType: string): Promise<boolean> {
+  private async executeStrategy(strategy: any, componentId: string, _fallbackType: string): Promise<boolean> {
     switch (strategy.type) {
       case 'direct':
         return this.executeDirectFallback(componentId, strategy);
@@ -1192,7 +1191,7 @@ export class PCLBackendIntegrator extends EventEmitter {
     }
   }
 
-  private selectOptimalBackend(command: PCLBackendCommand): string {
+  private selectOptimalBackend(_command: PCLBackendCommand): string {
     // Select backend based on PCL compatibility and performance
     const candidates = Array.from(this.backendConnections.values())
       .filter(conn => conn.healthStatus.connected)
@@ -1275,7 +1274,7 @@ export class PCLBackendIntegrator extends EventEmitter {
   private async performHealthChecks(): Promise<void> {
     let healthyCount = 0;
     
-    for (const [backendId, connection] of Array.from(this.backendConnections.entries())) {
+    for (const [_backendId, connection] of Array.from(this.backendConnections.entries())) {
       try {
         const startTime = performance.now();
         
@@ -1290,7 +1289,7 @@ export class PCLBackendIntegrator extends EventEmitter {
 
         if (healthy) healthyCount++;
 
-      } catch (error) {
+      } catch (_error) {
         connection.healthStatus.connected = false;
         connection.healthStatus.errorRate++;
       }
@@ -1306,7 +1305,7 @@ export class PCLBackendIntegrator extends EventEmitter {
       try {
         await connection.instance.ping();
         return true;
-      } catch (error) {
+      } catch (_error) {
         return false;
       }
     }

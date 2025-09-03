@@ -55,10 +55,8 @@ export class DynamicCommandRouter extends EventEmitter {
   }
 
   private setupEventHandlers(): void {
-    // TODO: [TASK-NEW-064] Enhanced Command Router Event Handling
-    // Priority: Low | Complexity: 3
-    // Location: Dynamic command routing system integration
-    // Dependencies: Event system integration patterns
+    // [TASK-NEW-064] Enhanced Command Router Event Handling - See templum-active-tasks.md
+    // Implementation: Enhanced event handling for command router system
     // Phase: Integration
     // Implementation: Add event handlers for backend connection/disconnection lifecycle management
   }
@@ -81,7 +79,7 @@ export class DynamicCommandRouter extends EventEmitter {
       let aliasCount = 0;
 
       // Register commands from templum-types.ts structure: { [commandId: string]: CommandDefinition }
-      for (const [commandId, commandDef] of Object.entries(skin.commands)) {
+      for (const [commandId, _commandDef] of Object.entries(skin.commands)) {
         // Check for duplicate commands across backends
         if (this.commandMap.has(commandId)) {
           const existingBackend = this.commandMap.get(commandId)!;

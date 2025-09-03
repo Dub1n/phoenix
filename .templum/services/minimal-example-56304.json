@@ -1,0 +1,16 @@
+{
+  "id": "minimal-example",
+  "name": "Minimal Example Backend",
+  "version": "1.0.0",
+  "pid": 56304,
+  "endpoint": "http://localhost:3001",
+  "protocol": "http",
+  "health": "http://localhost:3001/health",
+  "capabilities": [
+    "getSkinDefinition",
+    "executeCommand",
+    "health"
+  ],
+  "started": 1756888798316,
+  "port": 3001
+}

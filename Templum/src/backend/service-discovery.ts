@@ -1,24 +1,29 @@
 /**
- * @fileoverview Generic Service Discovery System
+ * @fileoverview Generic Service Discovery System with File System Watching
  * @author Claude Code Implementation
  * @created 2025-08-29
+ * @updated 2025-09-03 - TASK-CLI-015: Added dynamic file system watching
  * 
  * Multi-strategy service discovery system that replaces hardcoded backend discovery
  * with registry-based, endpoint scanning, and configuration-based discovery strategies.
+ * Enhanced with real-time file system watching for dynamic backend discovery.
  * 
  * TASK: TASK-GENERIC-003 - Generic Service Discovery Mechanism
+ * TASK: TASK-CLI-015 - File System Watching for Dynamic Backend Discovery
  */
 
 import { EventEmitter } from 'events';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as http from 'http';
-import * as https from 'https';
+import * as chokidar from 'chokidar';
+// Unused import removed: https
 import { WebSocket } from 'ws';
 import * as net from 'net';
 import { BackendConfig } from '../types/universal-skin-engine-types';
 import { backendIntegrationConfig } from './backend-integration-config';
-import { createTemplumError, isTemplumError } from '../types/templum-types';
+import { createTemplumError } from '../types/templum-types';
+// Unused import removed: isTemplumError
 
 export interface DiscoveredService {
   id: string;
@@ -54,6 +59,8 @@ export interface ServiceDiscoveryOptions {
   enableRegistryDiscovery?: boolean;
   enableEndpointScanning?: boolean;
   enableConfigurationDiscovery?: boolean;
+  enableFileWatching?: boolean; // NEW: Enable file system watching for dynamic discovery
+  enableHealthChecks?: boolean; // NEW: Enable health endpoint validation (default: true)
   registryPath?: string;
   scanPorts?: number[];
   scanHosts?: string[];
@@ -70,6 +77,7 @@ export class ServiceDiscovery extends EventEmitter {
   private strategies: DiscoveryStrategy[] = [];
   private discoveredServices: Map<string, DiscoveredService> = new Map();
   private options: Required<ServiceDiscoveryOptions>;
+  private fileWatcher?: chokidar.FSWatcher; // NEW: File system watcher instance
 
   constructor(options: ServiceDiscoveryOptions = {}) {
     super();
@@ -79,6 +87,8 @@ export class ServiceDiscovery extends EventEmitter {
       enableRegistryDiscovery: options.enableRegistryDiscovery ?? true,
       enableEndpointScanning: options.enableEndpointScanning ?? true,
       enableConfigurationDiscovery: options.enableConfigurationDiscovery ?? true,
+      enableFileWatching: options.enableFileWatching ?? true, // NEW: Enable file watching by default
+      enableHealthChecks: options.enableHealthChecks ?? true, // NEW: Enable health checks by default
       registryPath: options.registryPath || path.join(process.cwd(), '.templum', 'service-registry.json'),
       // PHASE 1: Use configurable port scanning from feature flag system
       scanPorts: options.scanPorts || backendIntegrationConfig.getConfig().serviceDiscovery.scanPorts,
@@ -89,6 +99,7 @@ export class ServiceDiscovery extends EventEmitter {
     };
 
     this.initializeDefaultStrategies();
+    this.initializeFileWatching(); // NEW: Initialize file system watching
   }
 
   /**
@@ -245,6 +256,224 @@ export class ServiceDiscovery extends EventEmitter {
     this.strategies = this.strategies.filter(s => s.name !== name);
     return this.strategies.length < initialLength;
   }
+
+  /**
+   * Initialize file system watching for dynamic service discovery
+   * NEW: TASK-CLI-015 implementation
+   */
+  private initializeFileWatching(): void {
+    if (!this.options.enableFileWatching) {
+      return;
+    }
+
+    // Determine directories to watch
+    const watchPaths: string[] = [];
+    
+    // Watch services directory from registry path
+    const registryDir = path.dirname(this.options.registryPath);
+    const servicesDir = path.join(registryDir, 'services');
+    watchPaths.push(servicesDir);
+    
+    // Create services directory if it doesn't exist
+    if (!fs.existsSync(servicesDir)) {
+      console.log(`[FILE_WATCHER] Creating services directory: ${servicesDir}`);
+      fs.mkdirSync(servicesDir, { recursive: true });
+    }
+
+    // Watch VDL_Vault shared services directory
+    const vdlVaultServicesDir = path.resolve(process.cwd(), '..', '.templum', 'services');
+    watchPaths.push(vdlVaultServicesDir);
+    
+    // Create VDL_Vault services directory if it doesn't exist
+    if (!fs.existsSync(vdlVaultServicesDir)) {
+      console.log(`[FILE_WATCHER] Creating VDL_Vault services directory: ${vdlVaultServicesDir}`);
+      fs.mkdirSync(vdlVaultServicesDir, { recursive: true });
+    }
+
+    console.log(`[FILE_WATCHER] Watching directories: ${watchPaths.join(', ')}`);
+
+    // Initialize chokidar watcher
+    this.fileWatcher = chokidar.watch(watchPaths, {
+      ignored: /(^|[\/\\])\../, // Ignore dotfiles
+      persistent: true,
+      ignoreInitial: true, // Don't trigger on existing files
+      depth: 1 // Only watch direct children
+    });
+
+    // Handle file addition (new backend services)
+    this.fileWatcher.on('add', async (filePath: string) => {
+      if (filePath.endsWith('.json')) {
+        console.log(`[FILE_WATCHER] New service file detected: ${filePath}`);
+        await this.handleServiceFileChange(filePath, 'add');
+      }
+    });
+
+    // Handle file changes (service updates)
+    this.fileWatcher.on('change', async (filePath: string) => {
+      if (filePath.endsWith('.json')) {
+        console.log(`[FILE_WATCHER] Service file changed: ${filePath}`);
+        await this.handleServiceFileChange(filePath, 'change');
+      }
+    });
+
+    // Handle file removal (service shutdown)
+    this.fileWatcher.on('unlink', (filePath: string) => {
+      if (filePath.endsWith('.json')) {
+        console.log(`[FILE_WATCHER] Service file removed: ${filePath}`);
+        this.handleServiceFileRemoval(filePath);
+      }
+    });
+
+    // Handle watcher errors
+    this.fileWatcher.on('error', (error) => {
+      console.error('[FILE_WATCHER] File watching error:', error);
+      this.emit('watcherError', error);
+    });
+
+    console.log('[FILE_WATCHER] Dynamic service discovery initialized');
+  }
+
+  /**
+   * Handle service file changes (add/update)
+   * NEW: TASK-CLI-015 implementation
+   */
+  private async handleServiceFileChange(filePath: string, eventType: 'add' | 'change'): Promise<void> {
+    try {
+      const serviceData = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+      
+      // Validate required fields
+      if (!serviceData.id || !serviceData.endpoint) {
+        console.warn(`[FILE_WATCHER] Invalid service file ${filePath}: missing id or endpoint`);
+        return;
+      }
+
+      // Check if process is still running (if pid provided)
+      if (serviceData.pid && !this.isProcessRunning(serviceData.pid)) {
+        console.log(`[FILE_WATCHER] Process ${serviceData.pid} not running, ignoring stale service file`);
+        return;
+      }
+
+      // Validate health endpoint if available and health checks are enabled
+      const healthEndpoint = serviceData.health || `${serviceData.endpoint}/health`;
+      if (this.options.enableHealthChecks) {
+        const isHealthy = await this.validateServiceHealth(healthEndpoint);
+        if (!isHealthy) {
+          console.log(`[FILE_WATCHER] Service ${serviceData.id} failed health check`);
+          return;
+        }
+      }
+
+      const config: BackendConfig = {
+        service: serviceData.id,
+        version: serviceData.version || '1.0.0',
+        protocol: serviceData.protocol || 'http',
+        endpoint: serviceData.endpoint,
+        timeout: this.options.timeout,
+        retries: 2,
+        keepAlive: true,
+        authentication: serviceData.authentication || { type: 'none' },
+        healthEndpoint: healthEndpoint
+      };
+
+      const discoveredService: DiscoveredService = {
+        id: serviceData.id,
+        config,
+        discoveryMethod: 'registry',
+        confidence: 0.95, // Very high confidence for file-based discovery
+        timestamp: Date.now()
+      };
+
+      // Update internal cache
+      this.discoveredServices.set(serviceData.id, discoveredService);
+
+      // Emit discovery event
+      console.log(`[FILE_WATCHER] Service ${eventType}: ${serviceData.id} (PID: ${serviceData.pid})`);
+      this.emit('serviceDiscovered', {
+        service: discoveredService,
+        eventType,
+        filePath
+      });
+
+    } catch (error) {
+      console.warn(`[FILE_WATCHER] Failed to process service file ${filePath}:`, error);
+    }
+  }
+
+  /**
+   * Handle service file removal
+   * NEW: TASK-CLI-015 implementation
+   */
+  private handleServiceFileRemoval(filePath: string): void {
+    // Extract service ID from file path or try to find matching service
+    const fileName = path.basename(filePath, '.json');
+    
+    // Find service by matching file path or service ID
+    let removedServiceId: string | null = null;
+    for (const [serviceId] of Array.from(this.discoveredServices.entries())) {
+      if (serviceId === fileName || serviceId.includes(fileName)) {
+        removedServiceId = serviceId;
+        break;
+      }
+    }
+
+    if (removedServiceId) {
+      this.discoveredServices.delete(removedServiceId);
+      console.log(`[FILE_WATCHER] Service removed: ${removedServiceId}`);
+      
+      this.emit('serviceRemoved', {
+        serviceId: removedServiceId,
+        filePath
+      });
+    }
+  }
+
+  /**
+   * Check if a process ID is still running
+   * NEW: Helper method for file watching validation
+   */
+  private isProcessRunning(pid: number): boolean {
+    try {
+      // process.kill with signal 0 checks if process exists without killing it
+      process.kill(pid, 0);
+      return true;
+    } catch (_error) {
+      return false;
+    }
+  }
+
+  /**
+   * Validate service health endpoint
+   * NEW: Helper method for file watching validation  
+   */
+  private async validateServiceHealth(healthEndpoint?: string): Promise<boolean> {
+    if (!healthEndpoint) return true; // No health check specified
+
+    return new Promise((resolve) => {
+      const timeout = setTimeout(() => resolve(false), this.options.timeout);
+      
+      const request = http.get(healthEndpoint, (res) => {
+        clearTimeout(timeout);
+        resolve(res.statusCode === 200);
+      });
+
+      request.on('error', () => {
+        clearTimeout(timeout);
+        resolve(false);
+      });
+    });
+  }
+
+  /**
+   * Cleanup file watcher and resources
+   * NEW: Proper resource cleanup for file watching
+   */
+  async close(): Promise<void> {
+    if (this.fileWatcher) {
+      console.log('[FILE_WATCHER] Closing file system watcher');
+      await this.fileWatcher.close();
+      this.fileWatcher = undefined;
+    }
+  }
 }
 
 /**
@@ -357,7 +586,7 @@ export class RegistryBasedDiscoveryStrategy implements DiscoveryStrategy {
         
         // FIXED: Check VDL_Vault root .templum/services directory (shared multi-repo location)
         // Navigate up from Templum project to VDL_Vault root
-        const vdlVaultTemplumDir = path.join(process.cwd(), '..', '.templum', 'services');
+        const vdlVaultTemplumDir = path.resolve(process.cwd(), '..', '.templum', 'services');
         if (fs.existsSync(vdlVaultTemplumDir)) {
           console.log(`[REGISTRY_DISCOVERY] Using VDL_Vault shared directory: ${vdlVaultTemplumDir}`);
           const vdlServices = await this.discoverFromDirectory(vdlVaultTemplumDir);
@@ -459,7 +688,7 @@ export class RegistryBasedDiscoveryStrategy implements DiscoveryStrategy {
       // process.kill with signal 0 checks if process exists without killing it
       process.kill(pid, 0);
       return true;
-    } catch (error) {
+    } catch (_error) {
       return false;
     }
   }
@@ -647,7 +876,7 @@ export class EndpointScanningDiscoveryStrategy implements DiscoveryStrategy {
                 });
                 return;
               }
-            } catch (error) {
+            } catch (_error) {
               // Invalid skin definition
             }
           });
@@ -707,7 +936,7 @@ export class EndpointScanningDiscoveryStrategy implements DiscoveryStrategy {
               ws.close();
               return;
             }
-          } catch (error) {
+          } catch (_error) {
             // Invalid response
           }
           
@@ -720,7 +949,7 @@ export class EndpointScanningDiscoveryStrategy implements DiscoveryStrategy {
           resolve(null);
         });
 
-      } catch (error) {
+      } catch (_error) {
         clearTimeout(timeout);
         resolve(null);
       }
@@ -780,7 +1009,7 @@ export class EndpointScanningDiscoveryStrategy implements DiscoveryStrategy {
                 socket.destroy();
                 return;
               }
-            } catch (error) {
+            } catch (_error) {
               // Invalid response, continue listening
             }
           }

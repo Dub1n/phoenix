@@ -10,7 +10,7 @@
  * Generated: 2025-08-21
  */
 
-import * as chalk from 'chalk';
+import chalk from 'chalk';
 import { InterfaceType } from '../types/templum-types';
 
 // Re-export InterfaceType for other modules

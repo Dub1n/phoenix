@@ -8,8 +8,8 @@
  */
 
 import { EventEmitter } from 'events';
-import { spawn, ChildProcess } from 'child_process';
-import { createServer } from 'http';
+import { ChildProcess } from 'child_process';
+// Unused imports removed: spawn, createServer
 import * as WebSocket from 'ws';
 import * as net from 'net';
 import * as fs from 'fs';
@@ -37,11 +37,8 @@ import { UniversalSkinEngine } from '../skin/universal-skin-engine';
 import { ConnectionFactory, BackendConnection } from './connection-factory';
 import { DynamicCommandRouter } from './dynamic-command-router';
 import { ServiceDiscovery, ServiceDiscoveryOptions } from './service-discovery';
-import { 
-  BackendIntegrationConfigManager, 
-  backendIntegrationConfig,
-  BackendIntegrationConfig 
-} from './backend-integration-config';
+// Unused import removed: backendIntegrationConfig
+// Available via require('./backend-integration-config') if needed in future
 import { ITemplumOrchestrator } from '../interfaces/templum-orchestrator-interface';
 // Migration Note (2025-09-01): TemplumSkinDefinition alias no longer needed with unified types
 
@@ -224,8 +221,7 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
    * PHASE 3 COMPLETE: No hardcoded configurations - fully skin-driven approach
    */
   private initializeGenericBackendSystem(): void {
-    const config = backendIntegrationConfig.getConfig();
-    
+    // Configuration available via backendIntegrationConfig.getConfig() if needed
     console.log('[GENERIC_INTEGRATION] Initializing skin-driven backend system');
     
     // GENERIC ARCHITECTURE: No pre-configured backends
@@ -490,7 +486,7 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
       return;
     }
 
-    // Handle both skin definition formats safely
+    // Handle both skin definition formats safely  
     const backendId = skinDefinition.metadata?.backend || skinDefinition.metadata?.backendService || 'unknown-backend';
     const backendConfig = skinDefinition.backendConfig;
 
@@ -572,7 +568,7 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
   }
 
   async discoverAndConnect(): Promise<void> {
-    const startTime = Date.now();
+    const _startTime = Date.now();
 
     // GENERIC SYSTEM: Always use skin-driven discovery
     console.log('[GENERIC_INTEGRATION] Starting skin-driven backend discovery');
@@ -853,7 +849,7 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
         });
       }
       return false;
-    } catch (error) {
+    } catch (_error) {
       return false;
     }
   }
@@ -875,7 +871,7 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
       
       clearTimeout(timeoutId);
       return response.ok || response.status === 404; // 404 acceptable - service running but endpoint may not exist
-    } catch (error) {
+    } catch (_error) {
       // HTTP service may not have status endpoint yet - connection test was sufficient
       return true;
     }
@@ -899,7 +895,7 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
                 ws.off('message', messageHandler);
                 resolve(true);
               }
-            } catch (parseError) {
+            } catch (_parseError) {
               // Ignore parse errors during verification
             }
           };
@@ -909,7 +905,7 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
         });
       }
       return false;
-    } catch (error) {
+    } catch (_error) {
       return false;
     }
   }
@@ -1445,7 +1441,7 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
             ws.off('message', handshakeHandler);
             reject(new Error(`Litany service handshake failed: ${response.error || 'Unknown error'}`));
           }
-        } catch (parseError) {
+        } catch (_parseError) {
           // Ignore parse errors during handshake - continue listening
         }
       };
@@ -1827,7 +1823,7 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
   /**
    * Provide graceful fallback responses for non-critical endpoints
    */
-  private getGracefulFallbackResponse(connection: BackendConnection, apiMethod: string, payload: any): any {
+  private getGracefulFallbackResponse(connection: BackendConnection, apiMethod: string, _payload: any): any {
     switch (apiMethod) {
       case 'getCapabilities':
         console.log(`[FALLBACK] Providing default capabilities for ${connection.id}`);
@@ -2890,7 +2886,7 @@ class HaruspexIPCClient {
       this.isConnected = false;
       
       // Reject all pending requests
-      for (const [requestId, request] of Array.from(this.pendingRequests.entries())) {
+      for (const [_requestId, request] of Array.from(this.pendingRequests.entries())) {
         clearTimeout(request.timeout);
         request.reject(new Error('Connection closed'));
       }

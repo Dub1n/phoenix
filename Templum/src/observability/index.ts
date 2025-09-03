@@ -7,10 +7,11 @@
 - ---*/
 
 // Import types for local use in helper functions
-import { 
-  TemplumObservabilitySystem,
-  type ObservabilityConfig
+import {
+    TemplumObservabilitySystem,
+    type ObservabilityConfig
 } from './templum-observability-system';
+
 
 // Core observability system - Re-export all types and classes
 export {

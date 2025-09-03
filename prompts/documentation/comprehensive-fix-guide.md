@@ -14,6 +14,7 @@
 
 1. **Root Cause Analysis**:
    - Trace the problem to its source
+   - If any [TASK-ID] or TODO markers referenced in task, search codebase for this task's [TASK-ID]
    - Understand why the issue exists
    - Identify all symptoms vs. underlying cause
 
@@ -104,69 +105,36 @@
    - **Recommended Action**: [Architecture review/Expert consultation with evidence]
    ```
 
-### Step 3: CRITICAL - Working State Principle
+### Step 3: Implementation Completion
 
-#### Enhanced Task Status Definitions
+#### Task Status for Implementation Phase
 
-**Expanded Status Options**:
+**Implementation Status Options**:
 
-- **[x]** 'completed': Fully working, tested, and validated (compilation passes, no regressions)
-- **[B]** 'broken-implemented': Core logic done but compilation/tests failing (requires structural fix)
-- **[T]** 'iplemented-testing':Compiles but needs functional validation
+- **[~]** 'in-progress': Active development work ongoing  
+- **[B]** 'broken-implemented': Core logic done but compilation/tests failing
 - **[?]** 'blocked': Cannot proceed due to dependencies or technical issues
-- **[~]** 'in-progress': Active development work ongoing
 
-#### Pre-Completion Validation Checklist - MANDATORY
+#### Basic Implementation Verification
 
-**Before marking ANY task as "completed", check applicable gates**:
+**Before completing implementation, verify**:
 
-- [ ] **Compilation Gate**: (If compilable) Run type/syntax checking - *SHOULD PASS*
-- [ ] **Component Compilation**: (If compilable) Check affected components compile (i.e. `... --include <path/to/affected/component>`) - *MUST PASS*
-- [ ] **Build Verification**: Run project build command - *SHOULD SUCCEED* for full build
-- [ ] **Component Build**: (If applicable) Build affected components (i.e. `... -- <path/to/affected/component>`) - *MUST SUCCEED* for task scope  
-- [ ] **Validation Scripts**: Run project-specific validation/test scripts - *MUST PASS* for task scope (use 'node /VDL_Vault/scripts/validation/verify-fix.js <component-name>' if script present)
-- [ ] **Code Quality**: (If applicable) Run linting/formatting tools (i.e. `npm run lint`) - *SHOULD PASS* (document exceptions)
-- [ ] **Test Regression**: Previously passing tests still pass - *MUST VERIFY*
-- [ ] **Functional Validation**: Core feature works as expected - *MUST VERIFY*
-- [ ] **Dependency Check**: No broken imports/dependencies - *MUST VERIFY*
+- [ ] **Build Compilation**: Basic compilation check passes
+- [ ] **Component Compilation**: Affected components compile without errors
+- [ ] **No Major Regressions**: Existing functionality not obviously broken
+- [ ] **TODO Tags Created**: All discovered issues tagged for later processing
+- [ ] **Architecture Validation**: Changes align with system architecture
 
-**If you cannot fix these issues during implementation**:
+#### Implementation Completion
 
-1. **Document the implementation attempt** in detail
-2. **Mark task as "[B]"** not "[x]"
-3. **Create a structural fix task** for the compilation/build issues
-4. **Clearly explain technical blockers** preventing completion
+**When implementation is complete**:
 
-#### Emergency Protocol for Broken State
+1. **Mark Status**: Update task to [~] or [B] based on compilation state
+2. **Create TODO Tags**: Add any issues discovered during implementation  
+3. **Run Validation**: Execute `/pr:validate` for comprehensive testing
+4. **Do Not Mark Complete**: Never mark [x] at this stage
 
-**If implementation leaves system in broken state**:
-
-1. **IMMEDIATE**: Document current state and specific errors
-2. **ASSESS**: Can structural issues be fixed within current session?
-   - **YES**: Fix immediately as part of current task
-   - **NO**: Mark as "implemented-broken" with clear blockers
-3. **DOCUMENT**: Create detailed fix document (see fix-guide for Fix Documentaton Template) explaining:
-   - What was successfully implemented (functional aspects)
-   - What structural issues remain (compilation, build, test failures)
-   - Specific steps needed for structural repair
-4. **TRACK**: Update task status appropriately - never mark broken code as completed ("[x]")
-
-### Step 4: Validation and Verification
-
-#### Evidence requirements
-
-- Before/after state for all affected components
-- Compilation error reduction metrics
-- Test coverage and pass rate improvements
-- Integration validation results
-
-#### System Integration Validation
-
-- Manual testing of all fixed functionality
-- Cross-component integration verification
-- Performance impact assessment across system
-- Regression testing of related functionality
-- Architecture validation for structural changes
+**Next Phase**: Run `/pr:validate` to test functionality and collect evidence
 
 ## Task Discovery Protocols
 
@@ -254,408 +222,42 @@ If task is not to be consolidated following the consolidation check, create a ne
 - [ ] Total complexity reasonable (<50 points)
 - [ ] All implementation details preserved
 
-## Documentation Protocol
+#### Step 3: TODO relabel
 
-### Post-Implementation Documentation
+If any TODO tags were added during implementation and now are referenced in a task, replace the TODO tag(s) in the marker(s) with the [TASK-ID] of the task that references it.
 
-**Documentation Checklist**:
+## Post-Implementation Workflow
 
-1. **TODO Processing** (Apply Consolidation Protocol Above):
-   - [ ] Search codebase: `grep -r "TODO: \[TASK-" .`
-   - [ ] **Apply consolidation analysis** for each TODO found
-   - [ ] **If consolidatable**: Append using consolidation template above
-   - [ ] **If independent**: Consult `<project>-roadmap.md` for classification and add to active tasks
-   - [ ] **If TODO tags referenced by task** remove if the task has been completed, not just if they are referenced in a task
+**Implementation Complete**: Run `/pr:validate` for comprehensive testing and evidence collection.
 
-2. **Task Status Updates**:
-   - [ ] Update task marker to [x] in `<project>-active-tasks.md`
-   - [ ] Add ONE-LINE entry to `<project>-tracker-data.md` log: `Date | Component | x | fix-document.md`
-   - [ ] Create detailed fix document in `dev/fixes/` folder
-   - [ ] NO duplication: Details ONLY in fix document
+**Validation Complete**: Run `/pr:document` for pattern documentation and project tracking.
 
-3. **Pattern Documentation**:
-   - [ ] Extract reusable patterns to `<project>-patterns.md`
-   - [ ] Update pattern references in active tasks
-   - [ ] Document architectural insights for future use
+**Documentation and validation are handled in separate phases to ensure quality and completeness.**
 
-4. **Chain Completion & Roadmap Update Protocol**:
-   - [ ] Check if task completes entire dependency chain
-   - [ ] If chain complete AND no pending dependencies:
-     - [ ] REMOVE entire chain from `<project>-active-tasks.md`
-     - [ ] Update roadmap phase status if phase complete
-     - [ ] Ensure patterns are preserved in `<project>-patterns.md`
+## Success Criteria for Comprehensive Implementation
 
-5. **Roadmap Reassessment Check**:
-   - [ ] Were >3 new tasks added to one phase? → Consider phase restructuring
-   - [ ] Did user change task priorities with [!] or [1-9]? → Update roadmap focus
-   - [ ] Is an entire phase now complete? → Update phase status, activate next phase
-   - [ ] Do new tasks change critical dependencies? → Update roadmap dependency chains
+**A successful comprehensive implementation must achieve**:
 
-## Comprehensive Fix Documentation Template
+- Resolves all identified compilation and build errors within task scope
+- Addresses root cause, not just symptoms
+- Maintains system stability and doesn't introduce regressions
+- Follows established architectural patterns
+- Creates comprehensive TODO tags for discovered issues
+- Prepares system for validation phase
 
-**Create file**: `dev/fixes/description.md`
+**Quality standards for complex implementations**:
 
-```markdown
-# Comprehensive Fix: {Issue Description}
+- **Architectural Integrity**: Changes align with existing system architecture and patterns
+- **Code Quality**: Follows project conventions and best practices
+- **Maintainability**: Future developers can understand and extend the implementation
+- **Proper Scope**: Implementation stays within defined task boundaries
 
-## Fix Information
-- **Date**: {Use: Bash(date "+%Y-%m-%d-%H%M%S")}
-- **Issue Source**: Implementation Tracker: {tracker-file-name}
-- **Issue Category**: [Critical Missing Component|Broken Component|Architecture|Integration]
-- **Severity**: [Critical|High|Medium] 
-- **Components Fixed**: {List all components that moved from broken to working}
-- **Complexity Score**: {From shared-components.md scoring} 
+**Implementation Readiness**:
 
-## Issue Analysis
-
-### Original Issue from Implementation Tracker
-{Copy exact issue description with evidence}
-
-### Root Cause Analysis
-{Detailed explanation of underlying problem and why it occurred}
-
-### Impact Assessment  
-- **User Impact**: {How this affects end users}
-- **System Impact**: {Effects on other components/functionality}
-- **Performance Impact**: {Resource usage, speed implications}
-- **Integration Impact**: {Effects on external systems/APIs}
-
-### Solution Strategy
-{High-level approach taken to resolve the issue}
-
-## Implementation Details
-
-### Files Modified
-{Comprehensive list of all changes with explanations}
-- `path/to/file1.ts` - {Detailed description of changes and rationale}
-- `path/to/file2.ts` - {Detailed description of changes and rationale}
-
-### Architecture Changes
-{Any structural or design pattern changes made}
-
-### New Dependencies
-{Any new packages, modules, or external dependencies added}
-
-### Configuration Changes
-{Changes to config files, environment variables, or setup}
-
-## Architectural Pattern Compliance
-**Pattern Verification** (check applicable patterns): 
-- [ ] Data Processing: (If applicable) Collection/data operations follow project conventions
-- [ ] Error Handling: All error cases use consistent project-specific patterns
-- [ ] Type System: (If typed language) Integration with project type foundations
-- [ ] Event/Messaging: (If applicable) Events/messages use established patterns
-- [ ] Interface Alignment: Data structures align with established usage patterns
-- [ ] Async Operations: (If applicable) Async operations follow established patterns
-
-**New Patterns Established**: 
-- {List any new patterns created for this comprehensive fix}
-- {Reference existing patterns that were extended or refined}
-
-**Pattern Documentation Updated**:
-- [ ] `<project>-patterns.md` - Add new patterns from this fix
-- [ ] `<project>-active-tasks.md` - Update pattern references for similar tasks
-- [ ] Fix documentation includes complete architecture changes and pattern extraction
-
-## Verification Results
-
-### Compilation/Build Validation
-- [ ] Language Compilation: (If applicable) ✓/✗ (Error count: before/after)
-- [ ] Code Quality Tools: (If applicable) ✓/✗ (Issue count: before/after) 
-- [ ] Build Process: ✓/✗ (Build time: before/after)
-
-### Functional Validation  
-- [ ] Component Tests: ✓/✗ ({X}/{Y} tests passing)
-- [ ] Integration Tests: ✓/✗ ({X}/{Y} tests passing)
-- [ ] Manual Testing: ✓/✗ (Key functionality verified)
-
-### System Validation
-- [ ] No Regressions: ✓/✗ (Related functionality still works)
-- [ ] Performance: ✓/✗ (No significant degradation)
-- [ ] Security: ✓/✗ (No new vulnerabilities introduced)
-
-## Lessons Learned
-
-### What Worked Well
-
-{Approaches, techniques, or decisions that were effective}
-
-### Challenges Encountered  
-
-{Problems faced during implementation and how they were resolved}
-
-### Future Improvements
-
-{Suggestions for preventing similar issues or improving fix process}
-
-### Recommendations
-
-{Advice for future fixes of similar components or issue types}
-
-## Quality Assurance
-
-### Code Review Checklist
-
-- [ ] All changes follow project coding standards
-- [ ] Error handling is comprehensive and appropriate
-- [ ] Documentation is updated for public interfaces
-- [ ] No hardcoded values or magic numbers introduced
-
-### Testing Checklist  
-
-- [ ] All existing tests pass
-- [ ] New tests added for new functionality
-- [ ] Edge cases are covered by tests
-- [ ] Integration points are tested
-
-### Documentation Checklist
-
-- [ ] README updates (if applicable)
-- [ ] API documentation updates (if applicable)  
-- [ ] Architecture documentation updates (if applicable)
-- [ ] Deployment notes (if applicable)
-
----
-**Generated**: {timestamp}
-**Template**: Comprehensive Fix  
-**Fix Duration**: {Actual time spent}
-**Complexity Score**: {Final assessed complexity}
-**Review Status**: Pending
-```
-
-## Architectural Pattern Analysis and Documentation
-
-### Pattern Consolidation Framework
-
-**CRITICAL**: Comprehensive fixes often establish significant patterns. Follow consolidation framework to prevent document bloat while preserving all insights.
-
-#### Pattern Consolidation Decision Tree
-
-``` diagram
-Pattern Discovery → Existing Similar Pattern?
-├── YES → ENHANCE existing (add implementation variation)
-│   └── Update "Used By Active Tasks" + difficulty
-└── NO → 3+ Use Cases + Evidence?
-    ├── YES → CREATE following enhanced template
-    └── NO → DOCUMENT in fix only, don't add to patterns
-```
-
-### Pattern Analysis and Documentation Workflow
-
-#### Step 1: Architecture Pattern Assessment
-
-**Identify Architectural Patterns Established or Refined**:
-
-1. **Type System Changes**: Error hierarchy extensions, signal types, type guards
-2. **Integration Patterns**: Component initialization, communication patterns, error handling
-3. **Implementation Patterns**: Map iteration, async structure, interface alignment
-
-#### Step 2: Pattern Documentation Requirements
-
-**Pattern Analysis Phase**:
-
-```markdown
-## Pattern Consolidation Analysis
-
-**Existing Pattern Search Results**: [List similar patterns found in <project>-patterns.md]
-**Consolidation Decision**: [ENHANCE existing | CREATE new | DOCUMENT in fix only]
-**Justification**: [Rationale following consolidation framework]
-**Usage Projection**: [Estimated reuse scenarios - minimum 3 for new patterns]
-```
-
-**Pattern Status Management**:
-
-- **IN DEVELOPMENT**: New patterns with <3 applications
-- **ESTABLISHED**: Patterns with 3+ successful applications and evidence
-
-**Enhanced Pattern Template** (when creation justified):
-
-```markdown
-### {Pattern Name}
-
-**Status**: IN DEVELOPMENT | ESTABLISHED | DEPRECATED
-**Category**: Foundation | Integration | Technical | System
-**Last Updated**: {timestamp}
-**Difficulty**: 🟢 Basic | 🟡 Medium | 🟠 Advanced | 🔴 Expert
-**Est. Time**: ~X hours
-**Prerequisites**: [List of required patterns/knowledge]
-
-**Problem**: {One-sentence problem description}
-**Solution**: {Concise solution summary}
-
-#### Implementation Steps
-
-{Step-by-step implementation guide with code examples - optimize for scannability}
-
-#### Success Metrics
-- {Quantifiable improvements, e.g., "Compilation errors: 58 → 0"}
-- {Performance metrics, test coverage, etc.}
-
-#### Anti-Patterns
-- ❌ {Common mistake to avoid}
-- ❌ {Another pitfall}
-
-#### Validation Checklist
-- [ ] {Verification step 1}
-- [ ] {Verification step 2}
-
-#### Implementation Feedback
-<!-- Autonomous agents append feedback here when applying pattern -->
-- **[DATE] - [TASK-ID]**: {What worked/didn't work, adjustments made}
-- **[DATE] - [TASK-ID]**: {Additional insights from implementation}
-
-#### Pattern Metadata
-**Used By Active Tasks**: [TASK-001], [TASK-002]
-**Successfully Applied**: [TASK-COMPLETE-001] ✅ {Context} ({Date})
-**Integration Points**: [related-pattern-1], [related-pattern-2]
-**Files Using This Pattern**: {List of files}
-```
-
-#### Step 3: Pattern Compliance Verification
-
-**Ensure Consistency with Established Architecture**:
-
-- **Data Processing**: (If applicable) Collection/data operations follow established patterns
-- **Error Handling**: All error cases use consistent project-specific patterns  
-- **Event/Messaging**: (If applicable) Events/messages follow established patterns
-- **Type System**: (If typed language) Proper integration with project type definitions
-- **Interface Alignment**: Data structures match established usage patterns
-- **Async Operations**: (If applicable) Async operations follow established error handling
-
-#### Step 3a: Pattern Application Feedback
-
-**When Applying Existing Patterns**:
-
-If you used an existing pattern from `<project>-patterns.md`, document the implementation experience:
-
-1. **Navigate to the pattern's "Implementation Feedback" section**
-2. **Add a new entry with format**:
-
-   ``` markdown
-   - **[DATE] - [TASK-ID]**: {Brief description of:
-     - Any adjustments needed for this specific case
-     - Unexpected issues encountered
-     - Success metrics achieved
-     - Time taken vs. estimate}
-   ```
-
-3. **If pattern required significant modification**:
-   - Consider if this warrants pattern enhancement (3+ similar modifications)
-   - Document variation in feedback for future consolidation
-
-**Feedback Examples**:
-
-``` markdown
-- **2025-08-30 - [TASK-H-001]**: Applied successfully, but needed async wrapper for HTTP context. Actual time: 2.5h (est. 2h)
-- **2025-08-30 - [TASK-T-045]**: Pattern worked but Map iteration needed additional null checks in TypeScript strict mode
-- **2025-08-30 - [TASK-H-003]**: Pattern failed in backend service context due to VSCode dependencies. Created backend-specific variant.
-```
-
-**Benefits of Implementation Feedback**:
-
-- Helps future agents learn from past implementations
-- Identifies when patterns need enhancement or consolidation
-- Creates evidence for pattern effectiveness and time estimates
-- Enables self-improving documentation through autonomous updates
-
-#### Step 4: Documentation and Maintenance
-
-**Pattern Maintenance Tasks**:
-
-- [ ] **Content Optimization**: Follow consolidation density guidelines
-- [ ] **Reference Integrity**: Validate all cross-references and markdown links
-- [ ] **Usage Tracking**: Update pattern statistics from active task analysis
-- [ ] **Bidirectional Cross-References**: Update "Used By Active Tasks" sections
-- [ ] **Enhanced Pattern Index**: Update usage frequency indicators
-- [ ] **Difficulty Classification**: Add appropriate 🟢🟡🟠🔴 indicators
-
-**Enhanced Index Maintenance**:
-
-- **Usage Frequency**: [High] [Medium] [Specialized] indicators based on task references
-- **Difficulty Classification**: 🟢 Basic (1-2h), 🟡 Medium (2-4h), 🟠 Advanced (4-6h), 🔴 Expert (6+h)
-- **Content Density**: Preserve all information, optimize for scannability
-
-### Pattern Compliance Checklist for Fix Documentation
-
-```markdown
-## Architectural Pattern Compliance
-
-**Pattern Verification** (check applicable patterns):
-- [ ] Data Processing: (If applicable) Collection/data operations follow project conventions
-- [ ] Error Handling: All error cases use consistent project-specific patterns
-- [ ] Type System: (If typed language) Integration with project type foundations
-- [ ] Event/Messaging: (If applicable) Events/messages use established patterns
-- [ ] Interface Alignment: Data structures align with established usage patterns
-- [ ] Async Operations: (If applicable) Async operations follow established patterns
-
-**Pattern Consolidation Compliance**:
-- [ ] **Searched existing patterns** before creating new documentation
-- [ ] **Enhanced existing patterns** rather than duplicating solutions
-- [ ] **Updated bidirectional references** ("Used By Active Tasks" sections)
-- [ ] **Maintained Enhanced Pattern Index** with usage frequency indicators
-- [ ] **Applied difficulty classification** (🟢🟡🟠🔴) to new/enhanced patterns
-- [ ] **Updated cross-references** maintaining reference integrity
-
-**New Patterns Established** ([ENHANCED] Enhanced, [NEW] New):
-- [List patterns with status indicators and consolidation rationale]
-- [Reference existing patterns extended/refined with specific enhancements]
-- [Justification for new patterns: evidence of 3+ use cases, no existing similar pattern]
-
-**Pattern Documentation Updated**:
-- [ ] `<project>-patterns.md` - Enhanced existing or added new following template
-- [ ] Enhanced Pattern Index - Updated usage frequency and difficulty indicators  
-- [ ] Bidirectional cross-references - Updated "Used By Active Tasks" sections
-- [ ] Fix documentation - Complete architecture changes with consolidation compliance
-```
-
-**Pattern Consolidation Impact**: Following the consolidation framework ensures information quality, navigation efficiency, knowledge preservation, future accessibility, and reference integrity while preventing document degradation through organic growth.
-
-## Implementation Tracker Integration
-
-**Comprehensive tracker updates required**:
-
-### 5. Planning Queue Updates
-
-Update `<Project>/dev/<project>-active-tasks.md`:
-
-- **Mark task completed** (check off completed items - "[x]")
-- **Add new discoveries** to relevant queues based on findings during implementation
-- **Update dependency information** for remaining tasks
-- **Add architectural insights** to Architecture Queue if applicable
-
-## Final Step: Update Project Dashboard - **ONLY IF THE `--tracker` FLAG WAS ENABLED IN THE PROMPT COMMAND**
-
-**After all implementation, validation, and documentation is complete**:
-
-Update `<Project>/dev/<project>-tracker-data.md` with:
-
-- [ ] **Fix History Log**: Add entry with comprehensive fix details
-- [ ] **Component Implementation Status**: Update all affected components
-- [ ] **Fix Success Metrics**: Update success rates and time metrics  
-- [ ] **Evidence Archive**: Add key validation results if significant
-- [ ] **Build Status**: Update compilation error counts
-- [ ] **Quick Status Dashboard**: Update overall health indicators
-- [ ] **Lessons Learned**:Iinsights for future reference
-
-Fix Issues Log Entry:
-
-``` markdown
-### [DATE] - Comprehensive Fix: [Component Name]
-- **Fix Type**: [Architecture/Integration/Critical Implementation]
-- **Components Affected**: [List]
-- **Error Reduction**: [Before count] → [After count] 
-- **Verification**: [Compilation ✓] [Tests ✓] [Integration ✓]
-- **Documentation**: [Link to fix document]
-- **Complexity**: [Score] - [Time taken]
-```
-
-**Dashboard Update Guidelines**:
-
-- Only update after fix is fully complete and validated
-- Keep updates concise - detailed information stays in fix documents
-- Focus on health metrics and status changes
-- This provides user visibility into project health trends
-- **Note**: Dashboard is for user monitoring only - not part of task selection workflow
+- Code compiles without errors in task scope
+- No obvious functionality regressions
+- All discovered issues properly tagged for later processing
+- System ready for comprehensive testing via `/pr:validate`
 
 ## Reference Integration
 

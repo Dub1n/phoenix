@@ -10,8 +10,8 @@
 
 ### Quick Stats
 
-- **Total Patterns**: 27+ (23 established, 4 in development, 1 deprecated)
-- **Last Updated**: 2025-09-01 (Compilation Stabilization Pattern enhanced with advanced techniques)
+- **Total Patterns**: 29+ (23 established, 6 in development, 1 deprecated)
+- **Last Updated**: 2025-09-02 (CLI Process Separation Pattern added)
 - **Most Used**: Backend Service Integration (8+ implementations)
 - **Recently Updated**: Terminal UI Components (2025-08-31) - Interactive Search added
 
@@ -37,6 +37,8 @@
 - [Circuit Breaker Resilience](#circuit-breaker-resilience-pattern) - Error recovery and failure isolation for critical operations | Foundation | ~2-3 hours | **NEW 2025-08-23**
 - [Error Recovery](#error-recovery-pattern) - Component-level operational fallback and graceful degradation | Foundation | ~2-3 hours | **NEW 2025-09-01**
 - [Terminal UI Components](#terminal-ui-components-pattern) - CLI interface enhancement with interactive search, progress bars, spinners, prompts, themes | CLI Interface | ~4-6 hours | **ENHANCED 2025-08-31** (Interactive Search added)
+- [Terminal State Management](#terminal-state-management-pattern) - Preventing CLI freezing from nested inquirer sessions and terminal state corruption | CLI Interface | ~1-2 hours | **NEW 2025-09-02**
+- [CLI Process Separation](#cli-process-separation-pattern) - Service-CLI architectural separation with IPC discovery for headless deployment | Architecture | ~4-6 hours | **NEW 2025-09-02**
 - [Configuration Management](#configuration-management) - Config schema  bridging | Foundation | ~30 minutes
 - [Enhanced BackendConfig Schema](#enhanced-backendconfig-schema) - Comprehensive connection configuration | Foundation | ~30-45 minutes | **NEW 2025-08-29**
 - [Session Management](#session-management-unified) - Interface  coordination | Integration | ~3 hours
@@ -52,6 +54,7 @@
 - [Skin Versioning System](#skin-versioning-system-pattern) - Semantic  version management for skin components | Infrastructure | ~6-8 hours
 - [Enhanced Skin Registration Validation](#enhanced-skin-registration-validation-pattern) - Comprehensive validation pipeline for skin registration | Foundation | ~2 hours | **NEW 2025-08-29**
 - [Test Infrastructure Repair](#test-infrastructure-repair-pattern) -  Fixing broken test compilation and execution | Foundation | ~2 hours |  **NEW 2025-08-28**
+- [Library Module Interop Resolution](#library-module-interop-resolution-pattern) - TypeScript library ESModuleInterop compatibility resolution | Foundation | ~2-3 hours | **NEW 2025-09-02**
 - [Mock-Real API Contract  Testing](#mock-real-api-contract-testing-pattern) - Ensuring mock/real API  consistency | Foundation | ~3 hours | **NEW 2025-08-28**
 - [Test Health Monitoring](#test-health-monitoring-pattern) - Continuous  test infrastructure validation | Foundation | ~1.5 hours | **ESTABLISHED  2025-08-28**
 - [Minimal Compilation  Stabilization](#minimal-compilation-stabilization-pattern) - Foundation  dependency and type fixes | Foundation | ~2-6 hours | **ENHANCED 2025-09-01** (Advanced techniques added)
@@ -85,6 +88,8 @@
 | **Circuit Breaker Resilience**         | Error recovery and failure isolation for critical operations | ✅ ESTABLISHED     | 🟡 Medium   | [→](#circuit-breaker-resilience-pattern)           |
 | **Dynamic Command Router Integration** | Integrating DynamicCommandRouter with menu/registry systems| ✅ ESTABLISHED     | 🟡 Medium   | [→](#dynamic-command-router-integration)           |
 | **Terminal UI Components**             | CLI interface enhancement with interactive search, progress bars, spinners, interactive prompts | ✅ ESTABLISHED     | 🟠 Advanced | [→](#terminal-ui-components-pattern)               |
+| **Terminal State Management**          | Preventing CLI freezing from nested inquirer sessions and terminal state corruption            | 🔶 IN DEVELOPMENT  | 🟢 Basic    | [→](#terminal-state-management-pattern)            |
+| **CLI Process Separation**             | Service-CLI architectural separation with IPC discovery for headless deployment                 | 🔶 IN DEVELOPMENT  | 🟠 Advanced | [→](#cli-process-separation-pattern)               |
 | **PCL Enhanced Rendering**             | Sophisticated component styling with theme awareness       | ✅ ESTABLISHED     | 🟢 Basic    | [→](#pcl-enhanced-rendering-pattern)               |
 | **Unified Type System**                | Error handling, Map iteration,  type safety                | ✅ ESTABLISHED     | 🟢 Basic    | [→](#unified-type-system-pattern)                  |
 | **Real Interface Adapter Integration** | Converting simulated adapters  to real backend integration | ✅ ESTABLISHED     | 🟡 Medium   | [→](#real-interface-adapter-integration-unified)   |
@@ -142,6 +147,101 @@
 ## Foundation Patterns
 
 > **Tutorial-style**: Step-by-step implementation of core architectural  patterns
+
+### TypeScript Configuration Optimization
+
+**Status**: ✅ ESTABLISHED  
+**Category**: Foundation  
+**Last Updated**: 2025-09-02  
+**Difficulty**: 🟢 Basic  
+**Est. Time**: ~1 hour  
+**Prerequisites**: Basic TypeScript knowledge, existing tsconfig.json  
+
+**Problem**: Optimize TypeScript configuration for enhanced library compatibility and build performance without breaking existing compilation.
+
+**Solution**: Systematic upgrade of TypeScript configuration with modern settings, enhanced module resolution, and performance optimizations.
+
+#### TypeScript Configuration Optimization: Implementation Steps
+
+**Step 1**: Baseline Assessment
+
+```bash
+# Verify current compilation state
+npx tsc --noEmit
+npm run build
+```
+
+**Step 2**: Enhanced Configuration
+
+```json
+{
+  "compilerOptions": {
+    // Modern Module Resolution
+    "moduleResolution": "node",           // Enhanced resolution
+    "esModuleInterop": true,              // ES module compatibility  
+    "allowSyntheticDefaultImports": true, // Import flexibility
+    
+    // Enhanced Type Safety
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    
+    // Performance Optimizations
+    "incremental": true,                  // Faster rebuilds
+    "tsBuildInfoFile": "./.tsbuildinfo",
+    "importHelpers": true,
+    
+    // Developer Experience
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "useDefineForClassFields": true
+  }
+}
+```
+
+**Step 3**: Compatibility Validation
+
+```bash
+# Clear build cache if needed
+rm -f .tsbuildinfo
+
+# Test compilation
+npx tsc --noEmit
+npm run build
+```
+
+#### TypeScript Configuration Optimization: Success Metrics
+
+- ✅ Clean compilation with 0 errors
+- ⚡ Incremental compilation enabled for performance
+- 📦 Enhanced library compatibility and module resolution
+- 🛠️ Improved IDE integration with metadata
+
+#### TypeScript Configuration Optimization: Anti-Patterns
+
+- ❌ Enabling `isolatedModules: true` without updating export patterns
+- ❌ Using `"moduleResolution": "Node16"` with `"module": "commonjs"`
+- ❌ Ignoring TypeScript build cache when configuration changes
+
+#### TypeScript Configuration Optimization: Validation Checklist
+
+- [ ] Compilation passes: `npx tsc --noEmit`
+- [ ] Build succeeds: `npm run build`
+- [ ] No regression in existing functionality
+- [ ] Enhanced module resolution working
+- [ ] Incremental builds enabled
+
+#### TypeScript Configuration Optimization: Implementation Feedback
+
+- **2025-09-02 - [TASK-COMP-009]**: Successfully applied pattern. Key insight: Clear `.tsbuildinfo` cache after major configuration changes to prevent stale error reports. Added comprehensive strict checking and performance optimizations. Pattern ready for reuse.
+
+#### TypeScript Configuration Optimization: Pattern Metadata
+
+**Used By Active Tasks**: [TASK-COMP-009] ✅ (2025-09-02)  
+**Successfully Applied**: [TASK-COMP-009] ✅ Configuration optimization with performance enhancements (2025-09-02)  
+**Files Using This Pattern**: tsconfig.json
 
 ### Unified Type System Pattern
 
@@ -1345,12 +1445,14 @@ private trackFallbackUsage(fallbackType: string, success: boolean, duration: num
 
 - **2025-09-01 - [TASK-NEW-040]**: Applied to PCL integration fallback rendering in Universal Skin Engine. Successfully implemented fallback from PCL-based rendering to basic rendering engine when PCL adapter failures occur. Pattern provided excellent framework for structured error recovery with performance monitoring. Multi-level fallback approach (PCL → Basic Engine → Minimal Response) ensures system availability during various failure scenarios. Error classification logic effectively distinguishes recoverable vs non-recoverable errors. Event emission for fallback tracking enables proper observability. Actual time: 2.5h (est. 2-3h). Key enhancement: Pattern scales well for component-level graceful degradation scenarios.
 
+- **2025-09-02 - [TASK-CLI-010]**: Applied to CLI-to-Core IPC communication with comprehensive fallback system. Multi-tier error handling implemented: Primary (file-based IPC) → Fallback (local execution with clear context). Pattern's error classification helped distinguish IPC communication failures from command execution failures. Timeout handling (5s) with graceful cleanup worked well. Pattern guided comprehensive error context preservation for user feedback. Actual time: 1h (est. 2-3h). Enhancement: Pattern scales effectively for cross-process communication scenarios.
+
 #### Error Recovery Pattern: Pattern Metadata
 
-**Used By Active Tasks**: [TASK-NEW-040] ✅ COMPLETED (2025-09-01)
-**Successfully Applied**: Universal Skin Engine PCL Integration Fallback (2025-09-01)
+**Used By Active Tasks**: [TASK-NEW-040] ✅ COMPLETED (2025-09-01), [TASK-CLI-010] ✅ COMPLETED (2025-09-02)
+**Successfully Applied**: Universal Skin Engine PCL Integration Fallback (2025-09-01), CLI-to-Core IPC Communication Error Recovery (2025-09-02)
 **Integration Points**: Circuit Breaker Resilience Pattern, TemplumError Integration, Performance Monitoring
-**Files Using This Pattern**: src/skin/universal-skin-engine.ts, src/types/universal-skin-engine-types.ts
+**Files Using This Pattern**: src/skin/universal-skin-engine.ts, src/types/universal-skin-engine-types.ts, src/cli-entry.ts, src/core/templum-core.ts
 
 ---
 
@@ -1838,10 +1940,29 @@ async discoverAndConnect(): Promise<void> {
 
 **Verification Insights**: The pattern's emphasis on comprehensive integration meant that when the connection implementation (TASK-NEW-050) was added, the disconnection implementation was already calling the proper interfaces. This demonstrates excellent architectural consistency where VSCode extension integration anticipated the backend service router API structure.
 
+##### CLI Local Command Processing Enhancement
+
+**2025-09-03 - [TASK-CLI-014]**: Applied pattern to implement CLI automatic skin loading and local command processing.
+
+**Issue**: CLI was forwarding all commands via IPC to Templum Core service instead of processing local commands (load, help, status) locally, and not automatically loading backend skins during initialization.
+
+**Implementation**:
+
+- Added automatic skin loading to CLI initialization using existing `loadInitialContent()` method
+- Implemented local command detection in orchestrator proxy with `isLocalCLICommand()` method
+- Added `processLocalCommand()` method to CLI adapter for local command processing
+- Extended type system with `handleLocally` property for proper command routing
+
+**Result**: Time: ~90 minutes (est. 2-3 hours). Successfully resolved user's primary issue. CLI now automatically discovers and loads backend skins on startup, and processes local commands locally without IPC forwarding.
+
+**Pattern Effectiveness**: ✅ Pattern's backend service integration approach worked excellently for CLI-service separation. The orchestrator abstraction made it straightforward to add local command detection without disrupting existing IPC communication patterns.
+
+**Implementation Insights**: The pattern's emphasis on protocol abstraction allowed clean separation between local CLI processing and remote service communication. The existing `loadInitialContent()` method already implemented automatic skin discovery, just needed to be called during initialization.
+
 #### Backend Service Integration Unified: Pattern Metadata
 
 **Used By Active Tasks**: [TASK-CONSOLIDATED-SKIN-API-SYSTEM]
-**Successfully Applied**: [TASK-NEW-017] ✅ Real IPC Communication Implementation (2025-08-28), [TASK-NEW-019] ✅ Real HTTP Communication Implementation (2025-08-28), [TASK-NEW-022] ✅ Real Litany WebSocket Message Processing Implementation (2025-08-28), [TASK-CONSOLIDATED-SKIN-API-SYSTEM] ✅ Epic Generic Backend Integration Complete (2025-08-29), [TASK-SKIN-007] ✅ Comprehensive Testing and Validation Complete (2025-09-01), [TASK-SESSION-001] ✅ SessionManager Orchestrator Integration (2025-09-01), [TASK-NEW-050] T Public Service Connection APIs Implementation (2025-09-01), [TASK-NEW-051] ✅ Service Disconnection Implementation Verification (2025-09-01)
+**Successfully Applied**: [TASK-NEW-017] ✅ Real IPC Communication Implementation (2025-08-28), [TASK-NEW-019] ✅ Real HTTP Communication Implementation (2025-08-28), [TASK-NEW-022] ✅ Real Litany WebSocket Message Processing Implementation (2025-08-28), [TASK-CONSOLIDATED-SKIN-API-SYSTEM] ✅ Epic Generic Backend Integration Complete (2025-08-29), [TASK-SKIN-007] ✅ Comprehensive Testing and Validation Complete (2025-09-01), [TASK-SESSION-001] ✅ SessionManager Orchestrator Integration (2025-09-01), [TASK-NEW-050] T Public Service Connection APIs Implementation (2025-09-01), [TASK-NEW-051] ✅ Service Disconnection Implementation Verification (2025-09-01), [TASK-CLI-014] ✅ CLI Automatic Skin Loading During Initialization (2025-09-03)
 **Integration Points**: Enhanced BackendConfig Schema, Universal Interface Orchestration, Protocol Communication
 **Files Using This Pattern**: src/backend/backend-service-router.ts, src/session/templum-universal-session-manager.ts
 
@@ -2919,8 +3040,13 @@ import {
   Spinner,
   InteractivePrompt,
   ResponsiveLayout,
-  createTerminalUI
+  createTerminalUI,
+  createDefaultTerminalUI,        // Enhanced: Centralized factory
+  DEFAULT_TERMINAL_UI_CONFIG      // Enhanced: Centralized configuration
 } from './terminal-ui-components';
+
+// Enhanced: Import using default import syntax for chalk 4.1.2 compatibility
+import chalk from 'chalk';
 
 // CLI Adapter integration with terminal UI
 export class CLIInterfaceAdapter {
@@ -2929,18 +3055,33 @@ export class CLIInterfaceAdapter {
   private activeProgressBar: ProgressBar | null = null;
 
   constructor(config?: Partial<CLIAdapterConfig>) {
-    // Initialize terminal UI with responsive layout
-    const theme = DefaultColorThemes[this.config.terminalTheme] || DefaultColorThemes.default;
-    this.terminalUI = createTerminalUI({
-      theme,
-      responsive: {
-        minWidth: 40,
-        minHeight: 10,
-        breakpoints: { small: 60, medium: 100, large: 140 },
-        theme
-      }
-    });
+    // Enhanced: Initialize terminal UI with centralized defaults
+    // This prevents theme corruption and eliminates code duplication
+    this.terminalUI = createDefaultTerminalUI(this.config.terminalTheme);
   }
+}
+
+// Enhanced: Centralized configuration available for reuse
+export const DEFAULT_TERMINAL_UI_CONFIG = {
+  responsive: {
+    minWidth: 40,
+    minHeight: 10,
+    breakpoints: {
+      small: 60,
+      medium: 100,
+      large: 140
+    },
+    theme: DefaultColorThemes.default
+  }
+};
+
+// Enhanced: Factory function with proper theme handling
+export function createDefaultTerminalUI(themeName: keyof typeof DefaultColorThemes = 'default'): TerminalUI {
+  const theme = DefaultColorThemes[themeName] || DefaultColorThemes.default;
+  return createTerminalUI({
+    theme,
+    responsive: DEFAULT_TERMINAL_UI_CONFIG.responsive
+  });
 }
 ```
 
@@ -3003,7 +3144,10 @@ createProgressBar(total: number, message?: string): ProgressBar {
 
 #### Terminal UI Components Pattern: Anti-Patterns
 
-- ❌ [Anti-Patterns]
+- ❌ **Theme Corruption**: Using `import * as chalk from 'chalk';` instead of `import chalk from 'chalk';` causes theme.primary to be undefined
+- ❌ **Configuration Duplication**: Hardcoding responsive breakpoints in each CLI adapter instead of using centralized config
+- ❌ **Passing Skin Themes to Terminal Components**: Never pass skin themes to terminal UI components - they must use DefaultColorThemes
+- ❌ **Direct Theme Assignment**: Avoid passing theme in responsive config object, let ResponsiveLayout use its safe defaults
 
 #### Terminal UI Components Pattern: Validation Checklist
 
@@ -3019,12 +3163,217 @@ createProgressBar(total: number, message?: string): ProgressBar {
 #### Terminal UI Components Pattern: Implementation Feedback
 <!-- Autonomous agents append feedback here when applying pattern -->
 
+- **2025-09-02 - Theme Corruption Fix & Configuration Centralization**: Enhanced pattern to fix critical theme corruption issue and eliminate configuration duplication:
+  - **Root Cause Identified**: `import * as chalk from 'chalk';` caused `chalk.white` to be undefined, leading to "theme.primary is not a function" errors
+  - **Solution Applied**: Changed to `import chalk from 'chalk';` (default import) following established pattern in other working files
+  - **Architecture Improvement**: Created `DEFAULT_TERMINAL_UI_CONFIG` constant and `createDefaultTerminalUI()` factory function
+  - **Code Duplication Eliminated**: Both CLI adapters now use centralized configuration instead of hardcoded breakpoints
+  - **DRY Principles Applied**: Single source of truth for Terminal UI configuration following proper separation of concerns
+  - **Success Metrics**: CLI now starts successfully without theme errors, "🚀 Templum is ready!" message displays properly
+  - **Time Taken**: ~2 hours (investigation + implementation + testing)
+  - **Files Enhanced**: `terminal-ui-components.ts`, `cli-adapter-abstracted.ts`, `cli-adapter.ts`
+
+- **2025-09-02 - TASK-CLI-007: Complete Interactive Menu Navigation System**: Successfully applied Terminal UI Components Pattern for comprehensive interactive CLI implementation:
+  - **Pattern Application**: Used inquirer library for arrow key navigation, integrated with existing terminal UI components
+  - **Architecture Enhancement**: Created InteractiveMenuRenderer class following pattern's abstraction principles
+  - **Dynamic Integration**: Real-time backend service discovery populating menu items with visual status indicators (✅/⚠️)
+  - **Session Management**: Implemented command history tracking and navigation context preservation as specified in pattern
+  - **Import Consistency**: Applied established chalk import pattern (`import * as chalk from 'chalk'`) for consistency
+  - **Menu Hierarchy**: Successfully implemented Main → Services/Commands/Settings navigation with breadcrumb display
+  - **Error Handling**: Added TTY detection for setRawMode compatibility in automated environments
+  - **Success Metrics**: Full interactive experience achieved - arrow key navigation, Enter/ESC functionality, real command execution
+  - **Time Taken**: ~4 hours (matching complexity estimate), pattern accelerated development significantly
+  - **Integration Points**: Seamless integration with ITemplumOrchestrator interface and existing HTTP service connection
+  - **Quality Result**: TypeScript compilation passes, manual testing successful, all quality gates met
+
+- **2025-09-02 - TASK-CLI-012: Complete Chalk Import Standardization**: Applied chalk import standardization aspect of the pattern to achieve 100% consistency across all CLI components:
+  - **Issue Resolved**: Final remaining file (terminal-ui-components.ts) was using namespace import `import * as chalk from 'chalk';` while all other files used default import
+  - **Pattern Compliance**: Changed to `import chalk from 'chalk';` following pattern's established chalk 4.1.2 compatibility guidance
+  - **Consistency Achievement**: All chalk imports now use standardized default import pattern project-wide
+  - **Validation Success**: TypeScript compilation passes, build process succeeds, no runtime errors introduced
+  - **Implementation Efficiency**: Simple but critical fix - took ~30 minutes vs estimated 2 hours (task was simpler than initially assessed)
+  - **Maintainability Impact**: Eliminates developer confusion about correct chalk import pattern and prevents potential runtime compatibility issues
+  - **Quality Gates Met**: All chalk imports consistent, no compilation errors, terminal UI functionality preserved
+
 #### Terminal UI Components Pattern: Pattern Metadata
 
-**Used By Active Tasks**: [TASK-CLI-001], [TASK-CLI-002]
-**Successfully Applied**: [TASK-CLI-001] ✅ Terminal UI Components Implementation (2025-08-29), [TASK-CLI-002] ✅ Interactive Search and Filtering Implementation (2025-08-31)
+**Used By Active Tasks**: [TASK-CLI-001], [TASK-CLI-002], [TASK-CLI-007], [TASK-CLI-012]
+**Successfully Applied**: [TASK-CLI-001] ✅ Terminal UI Components Implementation (2025-08-29), [TASK-CLI-002] ✅ Interactive Search and Filtering Implementation (2025-08-31), [TASK-CLI-007] ✅ Interactive Menu Navigation System (2025-09-02), [TASK-CLI-012] ✅ Chalk Import Standardization (2025-09-02)
 **Integration Points**: CLI Interface Adapter, Abstraction Layer Architecture, Universal Layout Engine
 **Files Using This Pattern**: terminal-ui-components, CLI Interface Adapter
+
+---
+
+### CLI Process Separation Pattern
+
+**Status**: IN DEVELOPMENT
+**Category**: Architecture
+**Last Updated**: 2025-09-02
+**Difficulty**: 🟠 Advanced
+**Est. Time**: ~4-6 hours
+**Prerequisites**: Service Discovery, IPC Communication, Process Management
+
+**Problem**: Monolithic service-CLI architecture prevents proper headless deployment, containerization, and multi-terminal CLI access patterns.
+
+**Solution**: Architectural separation of service and CLI into independent processes with IPC-based service discovery for flexible deployment and access.
+
+#### CLI Process Separation Pattern: Implementation Steps
+
+**Step 1**: Headless Service Conversion
+
+```typescript
+// src/index.ts - Convert from monolithic to headless service
+export async function main(): Promise<void> {
+  // Initialize core service without CLI
+  const templumCore = new TemplumCore(config);
+  await templumCore.initialize();
+  
+  // REMOVED: CLI activation - now runs headless
+  console.log('🔧 Running in headless service mode...');
+  console.log('💡 Use "templum" command to access CLI interface');
+  
+  // Register service for CLI discovery
+  await templumCore.registerForCliDiscovery();
+  
+  // Keep service running without CLI
+  process.stdin.resume();
+}
+```
+
+**Step 2**: Service Registry Implementation
+
+```typescript
+// Add to TemplumCore class
+async registerForCliDiscovery(): Promise<void> {
+  const serviceRegistryPath = process.env.HOME || process.env.USERPROFILE;
+  const templumDir = path.join(serviceRegistryPath!, '.templum');
+  const servicesDir = path.join(templumDir, 'services');
+  
+  // Create service registry entry
+  const serviceEntry = {
+    id: 'templum-core',
+    service: 'templum',
+    protocol: 'ipc' as const,
+    endpoint: `ipc://templum-core-${process.pid}`,
+    capabilities: this.getSupportedInterfaces(),
+    pid: process.pid,
+    registrationTime: Date.now()
+  };
+  
+  // Write registry file with cleanup handlers
+  const serviceFilePath = path.join(servicesDir, `templum-core-${process.pid}.json`);
+  fs.writeFileSync(serviceFilePath, JSON.stringify(serviceEntry, null, 2));
+  
+  // Setup process cleanup
+  process.on('exit', () => cleanupServiceEntry(serviceFilePath));
+}
+```
+
+**Step 3**: Separate CLI Entry Point
+
+```typescript
+// src/cli-entry.ts - New standalone CLI process
+class TemplumCliDiscovery {
+  async discoverServices(): Promise<ServiceRegistryEntry[]> {
+    const servicesDir = path.join(userHome, '.templum', 'services');
+    const serviceFiles = fs.readdirSync(servicesDir)
+      .filter(file => file.startsWith('templum-core-'));
+    
+    const activeServices: ServiceRegistryEntry[] = [];
+    for (const serviceFile of serviceFiles) {
+      const serviceEntry = JSON.parse(fs.readFileSync(serviceFilePath, 'utf8'));
+      
+      // Validate process still running
+      if (this.isProcessRunning(serviceEntry.pid)) {
+        activeServices.push(serviceEntry);
+      } else {
+        // Cleanup stale entries
+        fs.unlinkSync(serviceFilePath);
+      }
+    }
+    return activeServices.sort((a, b) => b.registrationTime - a.registrationTime);
+  }
+  
+  private isProcessRunning(pid: number): boolean {
+    try {
+      process.kill(pid, 0); // Signal 0 = existence check
+      return true;
+    } catch {
+      return false;
+    }
+  }
+}
+
+async function main(): Promise<void> {
+  const discovery = new TemplumCliDiscovery();
+  const serviceEntry = await discovery.getBestService();
+  
+  if (!serviceEntry) {
+    console.error('❌ No running Templum service found');
+    console.log('💡 Please start Templum service first:');
+    console.log('   node dist/src/index.js');
+    process.exit(1);
+  }
+  
+  // Connect to service and initialize CLI
+  const remoteAdapter = new RemoteTemplumAdapter(serviceEntry);
+  await remoteAdapter.initializeCLI();
+}
+```
+
+**Step 4**: Package Configuration
+
+```json
+// package.json updates
+{
+  "bin": {
+    "templum": "./dist/src/cli-entry.js"  // Point to CLI entry
+  },
+  "scripts": {
+    "start:service": "node dist/src/index.js",     // Headless service
+    "start:cli": "node dist/src/cli-entry.js"      // Standalone CLI
+  }
+}
+```
+
+#### CLI Process Separation Pattern: Success Metrics
+
+- Service runs headless without CLI interface ✓
+- CLI accessible globally via `templum` command ✓  
+- Service discovery works across process boundaries ✓
+- Process cleanup prevents stale registry entries ✓
+- Multi-terminal CLI access supported ✓
+- Headless deployment patterns enabled ✓
+
+#### CLI Process Separation Pattern: Anti-Patterns
+
+- ❌ **Registry Pollution**: Not cleaning up stale service registry entries on process exit
+- ❌ **Process Validation Skip**: Trusting registry entries without validating process existence  
+- ❌ **Single Point Discovery**: Using only one discovery method without fallback strategies
+- ❌ **Hard-coded Paths**: Using fixed paths instead of environment-aware registry locations
+
+#### CLI Process Separation Pattern: Validation Checklist
+
+- [ ] Service Discovery: Registry creation, process validation, stale cleanup working
+- [ ] Process Separation: Service runs independently, CLI connects via discovery
+- [ ] Global Command: `templum` command accessible from any terminal
+- [ ] Multi-Terminal: Multiple CLI instances can connect to single service
+- [ ] Error Handling: Graceful handling of service not found, connection failures
+- [ ] Resource Cleanup: Proper cleanup of registry entries and process handlers
+
+#### CLI Process Separation Pattern: Implementation Feedback
+<!-- Autonomous agents append feedback here when applying pattern -->
+
+- **2025-09-02 - TASK-CLI-004**: Applied successfully for Templum. Process discovery and cleanup worked perfectly. Pattern reduced from 6h estimate to 4h actual due to leveraging existing service discovery infrastructure. Required minor TypeScript fixes for mock orchestrator interface.
+- **2025-09-02 - TASK-CLI-005**: Enhanced mock orchestrator proxy implementation. Added missing isInitialized(), loadBackendSkin(), getUniversalSkinEngine() methods and proper backend connection structure. Pattern extension took 1.5h to complete CLI initialization functionality.
+- **2025-09-02 - TASK-CLI-010**: Applied service discovery integration aspect for IPC communication. Leveraged existing service registry with PID validation and process health checking. Pattern's service discovery component provided robust foundation for CLI-to-Core communication. Used established `ServiceRegistryEntry` structure and `isProcessRunning()` validation. Actual integration time: 0.5h (service discovery portion). Key insight: Pattern's service registry design scales well for real IPC communication scenarios.
+
+#### CLI Process Separation Pattern: Pattern Metadata
+
+**Used By Active Tasks**: [TASK-CLI-004], [TASK-CLI-005], [TASK-CLI-010]
+**Successfully Applied**: [TASK-CLI-004] ✅ CLI Process Separation Implementation (2025-09-02), [TASK-CLI-005] ✅ CLI Initialization Error Resolution (2025-09-02), [TASK-CLI-010] ✅ CLI-to-Core IPC Communication (2025-09-02)
+**Integration Points**: Service Discovery, IPC Communication, Process Management, Terminal UI Components
+**Files Using This Pattern**: src/index.ts, src/cli-entry.ts, src/core/templum-core.ts, package.json
 
 ---
 
@@ -3072,12 +3421,14 @@ Each pattern provides service-specific enhancements, error handling, and integra
 #### Protocol Communication Overview: Implementation Feedback
 <!-- Autonomous agents append feedback here when applying pattern -->
 
+- **2025-09-02 - [TASK-CLI-010]**: Applied file-based IPC variant for CLI-to-Core communication successfully. Used temporary file exchange pattern with 5-second timeout and cleanup. Required extending pattern for process-independent IPC (CLI/Core run separately vs parent-child). Pattern worked well - actual time: 3h (est. 4-6h). File-based approach more reliable than Node.js child_process IPC for independent processes.
+
 #### Protocol Communication Overview: Pattern Metadata
 
-**Used By Active Tasks**: [TASK-163]
-**Successfully Applied**: [TASK-163] ✅ Backend Service Protocol Communication (2025-08-27)
+**Used By Active Tasks**: [TASK-163], [TASK-CLI-010]
+**Successfully Applied**: [TASK-163] ✅ Backend Service Protocol Communication (2025-08-27), [TASK-CLI-010] ✅ CLI-to-Core IPC Communication (2025-09-02)
 **Integration Points**: Backend Service Integration, Universal Interface Orchestration, Unified Type System
-**Files Using This Pattern**: backend-service-router.ts
+**Files Using This Pattern**: backend-service-router.ts, cli-entry.ts, templum-core.ts
 
 ---
 
@@ -3209,12 +3560,14 @@ throw createTemplumError(`Failed to establish real IPC connection  to ${serviceI
 #### IPC Protocol Communication Pattern: Implementation Feedback
 <!-- Autonomous agents append feedback here when applying pattern -->
 
+- **2025-09-02 - [TASK-CLI-013]**: Applied file-based IPC variant for CLI command execution scoping fix. Pattern guidance was essential for fixing method scoping issue - moved sendIPCCommand from TemplumCliDiscovery to RemoteTemplumAdapter for proper proxy access. Used established temporary file exchange pattern with 5-second timeout and cleanup. Pattern's error handling structure helped maintain fallback execution when IPC communication fails. Actual time: 1.5h (est. 2-4h). Key insight: Pattern's method organization guidance prevented similar scoping issues in future IPC implementations.
+
 #### IPC Protocol Communication Pattern: Pattern Metadata
 
-**Used By Active Tasks**: [TASK-163]
-**Successfully Applied**: [TASK-163] ✅ Haruspex IPC Protocol Integration (2025-08-27)
-**Integration Points**: Backend Service Integration, Haruspex Service
-**Files Using This Pattern**: backend-service-router.ts (IPC-specific sections)
+**Used By Active Tasks**: [TASK-163], [TASK-CLI-013]
+**Successfully Applied**: [TASK-163] ✅ Haruspex IPC Protocol Integration (2025-08-27), [TASK-CLI-013] ✅ CLI IPC Command Execution Scoping Fix (2025-09-02)
+**Integration Points**: Backend Service Integration, Haruspex Service, CLI-to-Core Communication
+**Files Using This Pattern**: backend-service-router.ts (IPC-specific sections), cli-entry.ts (RemoteTemplumAdapter class)
 
 ---
 
@@ -7403,7 +7756,7 @@ private adjustOpacity(color: string, opacity: number): string { /* ... */ }
 **Problem**: WebSocket constructors, Node.js module imports, and variable scoping conflicts in Node.js environments
 **Solution**: Proper import syntax, variable naming conventions, and Node.js type system integration
 
-#### Problem Statement
+#### Node.js Type System Alignment Pattern: Problem Statement
 
 Node.js environments present specific TypeScript integration challenges:
 
@@ -7411,7 +7764,7 @@ Node.js environments present specific TypeScript integration challenges:
 - Variable scoping conflicts with global Node.js objects (process, Buffer, etc.)
 - TypeScript compilation errors specific to Node.js type definitions
 
-#### Solution Approach
+#### Node.js Type System Alignment Pattern: Solution Approach
 
 **Core Techniques**:
 
@@ -7419,9 +7772,9 @@ Node.js environments present specific TypeScript integration challenges:
 2. **Variable Scoping**: Avoid naming conflicts with Node.js globals
 3. **Type Definition Integration**: Ensure proper Node.js type system alignment
 
-#### Implementation Steps
+#### Node.js Type System Alignment Pattern: Implementation Steps
 
-**Step 1: Fix Constructor Imports**
+**Step 1:** Fix Constructor Imports
 
 ```typescript
 // ❌ Problematic: Namespace import for constructors
@@ -7431,7 +7784,7 @@ import * as WebSocket from 'ws';
 import { WebSocket } from 'ws';
 ```
 
-**Step 2: Resolve Variable Scoping Conflicts**
+**Step 2**: Resolve Variable Scoping Conflicts
 
 ```typescript
 // ❌ Problematic: Conflicts with Node.js global
@@ -7441,7 +7794,7 @@ const process = spawn('node', args);
 const childProcess = spawn('node', args);
 ```
 
-**Step 3: Variable Reference Consistency**
+**Step 3**: Variable Reference Consistency
 
 ```typescript
 // ❌ Problematic: Inconsistent variable references
@@ -7453,14 +7806,14 @@ const testInstances = getInstances();
 for (const instance of testInstances) { // Correct variable name
 ```
 
-#### Success Metrics
+#### Node.js Type System Alignment Pattern: Success Metrics
 
 - **TypeScript Compilation**: All target error types resolved (TS2351, TS7022, TS2448)
 - **Constructor Access**: WebSocket and other Node.js constructors work properly
 - **Variable Scoping**: No conflicts with Node.js global objects
 - **Import Consistency**: Proper module import patterns established
 
-#### Anti-Patterns
+#### Node.js Type System Alignment Pattern: Anti-Patterns
 
 **Avoid**:
 
@@ -7469,7 +7822,7 @@ for (const instance of testInstances) { // Correct variable name
 - Inconsistent variable naming within same scope
 - Mixing import styles within same module
 
-#### Validation Checklist
+#### Node.js Type System Alignment Pattern: Validation Checklist
 
 **Before Implementation**:
 
@@ -7484,12 +7837,12 @@ for (const instance of testInstances) { // Correct variable name
 - [ ] No variable scoping conflicts remain
 - [ ] Import patterns consistent across module
 
-#### Implementation Feedback
+#### Node.js Type System Alignment Pattern: Implementation Feedback
 <!-- Autonomous agents append feedback here when applying pattern -->
 
 - **2025-09-01 - [TASK-COMP-006]**: **FIRST SUCCESSFUL APPLICATION** - Fixed WebSocket constructor import (TS2351), resolved process variable conflict (TS2448), corrected variable scoping inconsistency (TS7022). Pattern worked perfectly for Node.js type system integration issues. Actual time: 30min (est. 30min). All target error types resolved with clean, maintainable code.
 
-#### Pattern Metadata
+#### Node.js Type System Alignment Pattern: Pattern Metadata
 
 **Used By Active Tasks**: [TASK-COMP-006]
 **Successfully Applied**: [TASK-COMP-006] ✅ WebSocket constructor & variable scoping resolution (2025-09-01)
@@ -8046,10 +8399,17 @@ class TemplumBackendServiceRouter {
 #### Multi-Strategy Service Discovery Pattern: Implementation Feedback
 <!-- Autonomous agents append feedback here when applying pattern -->
 
+- **2025-09-03 - [TASK-CLI-015]**: Enhanced pattern with robust file watching capabilities and configurable health checks. Key insights:
+  - **Directory Management Challenge**: Pattern needed proactive directory creation for file watching - implemented automatic directory initialization
+  - **Health Check Flexibility**: Added `enableHealthChecks` configuration option for testing scenarios while maintaining production validation
+  - **Event System Integration**: File watcher events (add/change/remove) integrate seamlessly with existing EventEmitter architecture
+  - **Performance Impact**: Sub-second event detection with zero performance degradation to existing discovery strategies
+  - **Time**: 4 hours (diagnostic + fix + validation) vs. estimated 4 hours - accurate complexity assessment
+
 #### Multi-Strategy Service Discovery Pattern: Pattern Metadata
 
-**Used By Active Tasks**: [TASK-GENERIC-003]
-**Successfully Applied**: [TASK-GENERIC-003] ✅ Generic Service Discovery Mechanism (2025-08-29)
+**Used By Active Tasks**: [TASK-GENERIC-003], [TASK-CLI-015]
+**Successfully Applied**: [TASK-GENERIC-003] ✅ Generic Service Discovery Mechanism (2025-08-29), [TASK-CLI-015] ✅ File System Watching Enhancement (2025-09-03)
 **Integration Points**: Connection Factory, Dynamic Command Router, Backend Service Router, Universal Skin Engine
 **Files Using This Pattern**: src/backend/service-discovery.ts, src/tests/backend/service-discovery.test.ts, src/backend/backend-service-router.ts
 
@@ -8264,7 +8624,7 @@ Is this a backend service that produces data/analysis?
 └── NO → Is this a foundational development pattern?
     ├── YES → Consider PCL pattern adaptation 
     │   └── Focus on patterns, not complete components
-    │
+    │X
     └── NO → Implement Templum-native solution
         └── Follow established Templum architectural patterns
 ```
@@ -8379,6 +8739,209 @@ Is this a backend service that produces data/analysis?
 3. **Cross-Reference Updates**: Maintain accurate bidirectional links to  task documents
 4. **Enhancement Reviews**: Semi-annual navigation and usability  improvements
 5. **Consolidation Review**: Annual review for new consolidation  opportunities
+
+### Library Module Interop Resolution Pattern
+
+**Status**: IN DEVELOPMENT | **Category**: Foundation  
+**Difficulty**: 🟡 | **Time**: ~2-3 hours
+
+#### Problem Statement
+
+Third-party TypeScript library packages can introduce compilation conflicts due to ESModuleInterop configuration mismatches, causing TS1259 errors that prevent full project compilation and block testing workflows.
+
+#### Solution Strategy
+
+Systematic library compatibility resolution through configuration optimization, dependency analysis, and targeted compatibility fixes that maintain type safety while resolving import conflicts.
+
+#### Library Module Interop Resolution: Implementation Steps
+
+```typescript
+// 1. Identify Library Import Conflicts
+// Check specific error patterns:
+// TS1259: Module can only be default-imported using 'esModuleInterop' flag
+
+// 2. Analyze Current Configuration
+// Review tsconfig.json settings:
+{
+  "compilerOptions": {
+    "esModuleInterop": true,           // Should enable compatibility
+    "allowSyntheticDefaultImports": true,
+    "moduleResolution": "node"
+  }
+}
+
+// 3. Library-Specific Resolution Strategies
+// Strategy A: Configuration Optimization
+{
+  "compilerOptions": {
+    "skipLibCheck": true,              // Skip library type checking
+    "moduleResolution": "bundler"      // Modern resolution strategy
+  }
+}
+
+// Strategy B: Library Version Alignment
+// Check for updated library versions with better TypeScript compatibility
+
+// Strategy C: Targeted Type Resolution
+// Create custom type declarations for problematic library imports
+
+// 4. Validation Testing
+// Ensure fix doesn't break source code compilation:
+// - Source files: npx tsc --noEmit src/**/*.ts
+// - Test files: npx tsc --noEmit tests/**/*.ts  
+// - Extension files: npx tsc --noEmit src/extension.ts
+```
+
+#### Library Module Interop Resolution: Implementation Validation
+
+```bash
+# Pre-fix validation
+npx tsc --noEmit  # Should show specific TS1259 errors
+
+# Post-fix validation  
+npx tsc --noEmit                    # Should pass cleanly
+npx tsc --noEmit --skipLibCheck     # Should pass (baseline)
+npm run build                       # Should complete successfully
+npm test                            # Should execute without compilation blocks
+```
+
+#### Library Module Interop Resolution: Success Criteria
+
+- **Primary**: Full TypeScript compilation passes without TS1259 errors
+- **Secondary**: Source code type safety remains intact
+- **Tertiary**: Testing and validation workflows unblocked
+
+#### Library Module Interop Resolution: Integration Points
+
+- **TypeScript Configuration**: tsconfig.json optimization
+- **Package Management**: package.json dependency alignment
+- **Build Pipeline**: npm scripts and precommit hooks
+- **Testing Infrastructure**: Jest configuration and test execution
+
+#### Library Module Interop Resolution: Implementation Feedback
+
+- **2025-09-02 - [TASK-COMP-008]**: Successfully resolved 37+ TS1259 ESModuleInterop errors from Zod v4 library. Applied systematic approach: 1) Attempted tsconfig optimization (failed), 2) Version upgrade to 4.1.5 (issue persisted), 3) skipLibCheck configuration (worked but suboptimal), 4) **FINAL SOLUTION: Downgrade to Zod v3.25.76**. Pattern evolution - discovered issue was **only** v4 locale files (unused in our project). Zod v3 downgrade provided cleaner solution: zero functionality loss, no workarounds needed, addresses root cause. Actual time: 1.5h total (est. 2-3h). Key insight: For Zod v4 CommonJS projects, v3.25.x avoids locale packaging issues entirely while maintaining full schema validation functionality.
+
+#### Library Module Interop Resolution: Pattern Metadata
+
+**Used By Active Tasks**: [TASK-COMP-008] ✅ COMPLETED (2025-09-02)
+**Successfully Applied**: [TASK-COMP-008] ✅ Zod v4 ESModuleInterop Resolution (2025-09-02)
+**Projected Usage**: Library upgrade scenarios, new dependency integration, TypeScript version upgrades, Zod v4 compatibility issues
+**Files Using This Pattern**: tsconfig.json, package.json, problematic library imports
+**Integration Points**: Build pipeline, testing infrastructure, development workflow
+
+### Terminal State Management Pattern
+
+**Status**: 🔶 IN DEVELOPMENT | **Category**: Technical
+**Difficulty**: 🟢 Basic | **Time**: ~1-2 hours
+**Problem**: Terminal state corruption when nesting `inquirer` prompt sessions causes complete CLI freezing where even Ctrl+C becomes unresponsive.
+**Solution**: Use compatible input handling that cooperates with main inquirer session rather than creating nested prompt conflicts.
+
+#### Terminal State Management Pattern: Prerequisites
+
+- CLI Interface using `inquirer` for menu navigation
+- "Press Enter to continue" prompts or similar input requirements
+- Terminal-based user interaction workflows
+
+#### Terminal State Management Pattern: Implementation Steps
+
+**Step 1**: Identify Nested Inquirer Conflicts
+
+```typescript
+// ❌ PROBLEMATIC: This creates nested inquirer sessions
+private async waitForKeypress(): Promise<void> {
+  const inquirer = await import('inquirer');
+  await inquirer.default.prompt([...]); // While main menu inquirer is active!
+}
+```
+
+**Step 2**: Implement Compatible Input Handling
+
+```typescript
+// ✅ COMPATIBLE: Simple stdin listener that cooperates with inquirer
+private async waitForKeypress(): Promise<void> {
+  return new Promise((resolve) => {
+    const stdin = process.stdin;
+    
+    if (stdin.isTTY) {
+      // Use simple listener without changing terminal modes
+      stdin.resume();
+      const listener = () => {
+        stdin.removeListener('data', listener);
+        stdin.pause();
+        resolve();
+      };
+      stdin.once('data', listener);
+    } else {
+      // Non-TTY fallback for automated environments
+      setTimeout(() => resolve(), 1000);
+    }
+  });
+}
+```
+
+**Step 3**: Proper Cleanup and Error Handling
+
+```typescript
+// Ensure proper event listener cleanup
+const listener = () => {
+  stdin.removeListener('data', listener); // Critical: Remove listener
+  stdin.pause();                          // Critical: Pause stdin
+  resolve();
+};
+stdin.once('data', listener);
+```
+
+#### Terminal State Management Pattern: Root Cause Analysis
+
+**Common Symptoms**:
+
+- CLI completely freezes after command execution
+- "Press Enter to continue" prompts become unresponsive
+- Ctrl+C stops working, requiring terminal restart
+- Menu appears but accepts no input
+
+**Technical Flow of Problem**:
+
+1. Main menu uses `inquirer.prompt()` for navigation ✅
+2. User executes command (e.g., "List Connected Services") ✅
+3. Command completes and shows "Press Enter to continue..." ✅
+4. **CRITICAL ERROR**: `waitForKeypress()` tries to create another `inquirer.prompt()` ❌
+5. Two inquirer sessions fight for terminal control → complete freeze ❌
+
+#### Terminal State Management Pattern: Success Metrics
+
+- CLI navigation works without freezing ✓
+- "Press Enter to continue" prompts work correctly ✓
+- Ctrl+C remains responsive throughout interaction ✓
+- Menu returns work properly after command execution ✓
+- Multiple navigation cycles work without terminal corruption ✓
+
+#### Terminal State Management Pattern: Anti-Patterns
+
+- ❌ **Nested Inquirer Sessions**: Never create `inquirer.prompt()` while another inquirer session is active
+- ❌ **Direct setRawMode**: Avoid `process.stdin.setRawMode()` when using inquirer-based systems
+- ❌ **Missing Event Cleanup**: Always remove event listeners to prevent memory leaks
+- ❌ **TTY Assumptions**: Always handle non-TTY environments for testing compatibility
+
+#### Terminal State Management Pattern: Validation Checklist
+
+- [ ] Input Compatibility: Simple stdin listeners that don't conflict with inquirer
+- [ ] Event Cleanup: Proper listener removal and stdin pause operations
+- [ ] Non-TTY Support: Automated fallbacks for testing and CI environments
+- [ ] Freeze Prevention: No nested inquirer prompt sessions
+
+#### Terminal State Management Pattern: Implementation Feedback
+
+- **2025-09-02 - [TASK-CLI-009]**: Successfully resolved complete CLI freezing issue in Templum. Root cause was nested inquirer sessions in `waitForKeypress()` method. Applied pattern to both `cli-adapter-abstracted.ts` and `interactive-menu-renderer.ts`. Automated testing confirmed fix works correctly: menu navigation → command execution → "Press Enter" → return to menu without freezing. Pattern prevented terminal state corruption and maintained Ctrl+C responsiveness. Actual time: 2h (est. 1-2h). Pattern application successful on first attempt.
+
+#### Terminal State Management Pattern: Pattern Metadata
+
+**Used By Active Tasks**: [TASK-CLI-009] ✅ COMPLETED (2025-09-02)
+**Successfully Applied**: [TASK-CLI-009] ✅ CLI UI Freeze After Service List Navigation (2025-09-02)
+**Projected Usage**: CLI applications using inquirer, terminal-based user interfaces, command execution workflows with continuation prompts
+**Files Using This Pattern**: cli-adapter-abstracted.ts, interactive-menu-renderer.ts
+**Integration Points**: Terminal UI Components, CLI Process Separation, Interactive Menu Systems
 
 **Pattern Consolidation Guide Compliance**: [x] FULL COMPLIANCE
 

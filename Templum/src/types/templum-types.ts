@@ -69,6 +69,7 @@ export interface CommandResult {
   timestamp?: number;
   executionTime?: number;
   context?: CommandContext;
+  handleLocally?: boolean; // TASK-CLI-014: Indicates command should be processed locally by CLI adapter
   metadata?: {
     backendId?: string;
     routing?: string;

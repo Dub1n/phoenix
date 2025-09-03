@@ -24,7 +24,7 @@ const os = require('os');
 const app = express();
 
 // Use any available port - the enhanced discovery system will find us!
-const port = process.env.PORT || 3001;
+const port = process.env.PORT || 3004;
 
 // Enable JSON parsing
 app.use(express.json());

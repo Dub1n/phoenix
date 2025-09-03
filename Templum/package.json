@@ -9,7 +9,7 @@
     "vscode": "^1.74.0"
   },
   "bin": {
-    "templum": "./dist/src/index.js"
+    "templum": "./dist/src/cli-entry.js"
   },
   "activationEvents": [
     "onStartupFinished"
@@ -97,6 +97,8 @@
     "test:watch": "jest --watch",
     "lint": "eslint src tests",
     "start": "node dist/src/index.js",
+    "start:service": "node dist/src/index.js",
+    "start:cli": "node dist/src/cli-entry.js",
     "prepublishOnly": "npm run build",
     "phase6-validation": "npm run build && node dist/src/scripts/run-phase6-integration-validation.js run",
     "phase6-health": "npm run build && node dist/src/scripts/run-phase6-integration-validation.js health",
@@ -127,13 +129,14 @@
     "@types/uuid": "^10.0.0",
     "boxen": "^8.0.1",
     "chalk": "^4.1.2",
+    "chokidar": "^4.0.3",
     "cli-table3": "^0.6.5",
     "commander": "^13.1.0",
     "inquirer": "^12.9.0",
     "ora": "^5.4.1",
     "uuid": "^11.1.0",
     "ws": "^8.16.0",
-    "zod": "^4.0.14"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@eslint/js": "^9.34.0",

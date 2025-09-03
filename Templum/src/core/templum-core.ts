@@ -7,6 +7,7 @@
  * ---*/
 
 import { EventEmitter } from 'events';
+import * as path from 'path';
 import { 
   InterfaceType, 
   InterfaceAdapter, 
@@ -179,6 +180,9 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
       this.initialized = true;
       this.emit('initialized', { timestamp: Date.now() });
       
+      // Start IPC command monitoring for CLI communication
+      this.startIPCCommandMonitoring();
+      
       // Load skins from connected backends after initialization is complete
       try {
         const connectionStatus = this.dependencies.backendServiceRouter.getConnectionStatus?.() || { backends: {} };
@@ -222,6 +226,15 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
 
   getSupportedInterfaces(): InterfaceType[] {
     return ['vscode', 'cli', 'command'];
+  }
+
+  /**
+   * TASK-CLI-006: Get HTTP port for service registration
+   * Returns the HTTP port that Templum service should listen on
+   */
+  private getHttpPort(): number {
+    // For now, use a default port - in full implementation this would be configurable
+    return process.env.TEMPLUM_HTTP_PORT ? parseInt(process.env.TEMPLUM_HTTP_PORT) : 3000;
   }
 
   isInitialized(): boolean {
@@ -563,6 +576,84 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
         `Backend service refresh failed: ${errorMessage}`,
         'BACKEND_REFRESH_FAILED',
         'integration'
+      );
+    }
+  }
+
+  /**
+   * TASK-CLI-004: Register Templum service for CLI discovery
+   * Creates registry entry for separate CLI process to discover and connect
+   */
+  async registerForCliDiscovery(): Promise<void> {
+    if (!this.initialized) {
+      throw createTemplumError(
+        'Cannot register for CLI discovery: Templum core not initialized',
+        'CORE_NOT_INITIALIZED',
+        'runtime'
+      );
+    }
+
+    try {
+      console.log('🔧 Registering Templum service for CLI discovery...');
+      
+      // Create service registry entry for CLI discovery
+      const serviceRegistryPath = process.env.HOME || process.env.USERPROFILE;
+      const templumDir = path.join(serviceRegistryPath!, '.templum');
+      const servicesDir = path.join(templumDir, 'services');
+      
+      // Ensure directories exist
+      if (!require('fs').existsSync(templumDir)) {
+        require('fs').mkdirSync(templumDir, { recursive: true });
+      }
+      if (!require('fs').existsSync(servicesDir)) {
+        require('fs').mkdirSync(servicesDir, { recursive: true });
+      }
+      
+      // TASK-CLI-006: IPC-to-HTTP Transition - Register as IPC with HTTP readiness flag  
+      const serviceEntry = {
+        id: 'templum-core',
+        service: 'templum',
+        version: '1.0.0',
+        protocol: 'ipc' as const,
+        endpoint: `ipc://templum-core-${process.pid}`,
+        httpEndpoint: `http://localhost:${this.getHttpPort()}`, // Future HTTP transition
+        health: '/health',
+        capabilities: this.getSupportedInterfaces(),
+        pid: process.pid,
+        registrationTime: Date.now(),
+        lastSeen: Date.now()
+      };
+      
+      // Write service registry file
+      const serviceFilePath = path.join(servicesDir, `templum-core-${process.pid}.json`);
+      require('fs').writeFileSync(serviceFilePath, JSON.stringify(serviceEntry, null, 2));
+      
+      console.log(`✅ Service registered for CLI discovery at: ${serviceFilePath}`);
+      
+      // Setup cleanup on process exit
+      const cleanupServiceEntry = () => {
+        try {
+          if (require('fs').existsSync(serviceFilePath)) {
+            require('fs').unlinkSync(serviceFilePath);
+            console.log('🧹 Service registry entry cleaned up');
+          }
+        } catch (error) {
+          console.warn('⚠️  Failed to clean up service registry entry:', error);
+        }
+      };
+      
+      process.on('exit', cleanupServiceEntry);
+      process.on('SIGINT', cleanupServiceEntry);
+      process.on('SIGTERM', cleanupServiceEntry);
+      
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error('❌ Failed to register for CLI discovery:', errorMessage);
+      
+      throw createTemplumError(
+        `Service registration for CLI discovery failed: ${errorMessage}`,
+        'CLI_REGISTRATION_FAILED',
+        'configuration'
       );
     }
   }
@@ -1495,6 +1586,128 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
       }
       if (interfaceType) {
         this.dependencies.observabilityService.setInterfaceType(interfaceType);
+      }
+    }
+  }
+
+  /**
+   * Start monitoring for IPC commands from CLI
+   * Implements file-based IPC communication for CLI-to-Core commands
+   */
+  private startIPCCommandMonitoring(): void {
+    if (!this.initialized) {
+      return;
+    }
+
+    console.log('TemplumCore: Starting IPC command monitoring for CLI communication');
+
+    const tempDir = require('os').tmpdir();
+    const fs = require('fs');
+    const path = require('path');
+
+    // Monitor temp directory for CLI command files
+    const checkForIPCRequests = () => {
+      try {
+        const files = fs.readdirSync(tempDir);
+        const requestFiles = files.filter((file: string) => 
+          file.startsWith('templum-cli-') && file.endsWith('-request.json')
+        );
+
+        for (const requestFile of requestFiles) {
+          const requestPath = path.join(tempDir, requestFile);
+          
+          try {
+            const requestData = fs.readFileSync(requestPath, 'utf8');
+            const request = JSON.parse(requestData);
+            
+            // Process the IPC command request
+            this.processIPCCommandRequest(request, requestPath);
+            
+          } catch (error) {
+            console.warn(`TemplumCore: Failed to process IPC request ${requestFile}:`, error);
+            // Clean up malformed request file
+            try {
+              fs.unlinkSync(requestPath);
+            } catch (cleanupError) {
+              // Ignore cleanup errors
+            }
+          }
+        }
+        
+      } catch (error) {
+        // Continue monitoring even if directory scan fails
+      }
+      
+      // Schedule next check
+      setTimeout(checkForIPCRequests, 100);
+    };
+
+    // Start monitoring
+    setTimeout(checkForIPCRequests, 100);
+  }
+
+  /**
+   * Process individual IPC command request from CLI
+   */
+  private async processIPCCommandRequest(request: any, requestPath: string): Promise<void> {
+    const fs = require('fs');
+    
+    try {
+      // Validate request structure
+      if (!request.type || request.type !== 'executeCommand' || !request.data) {
+        throw new Error('Invalid IPC request structure');
+      }
+
+      const { command, sourceInterface, args, context } = request.data;
+      
+      console.log(`TemplumCore: Processing IPC command '${command}' from CLI (PID: ${request.clientPid})`);
+
+      // Execute the command using the real executeCommand method
+      const result = await this.executeCommand(
+        command,
+        sourceInterface || 'cli',
+        args || [],
+        context || {}
+      );
+
+      // Write response to the specified response file
+      const response = {
+        success: true,
+        result,
+        requestId: request.requestId,
+        timestamp: Date.now()
+      };
+
+      if (request.responseFile) {
+        fs.writeFileSync(request.responseFile, JSON.stringify(response));
+      }
+
+      console.log(`TemplumCore: IPC command '${command}' executed successfully`);
+      
+    } catch (error) {
+      console.error(`TemplumCore: IPC command execution failed:`, error);
+      
+      // Write error response
+      const errorResponse = {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+        requestId: request.requestId,
+        timestamp: Date.now()
+      };
+
+      try {
+        if (request.responseFile) {
+          fs.writeFileSync(request.responseFile, JSON.stringify(errorResponse));
+        }
+      } catch (writeError) {
+        console.error('TemplumCore: Failed to write error response:', writeError);
+      }
+    } finally {
+      // Clean up request file
+      try {
+        fs.unlinkSync(requestPath);
+      } catch (cleanupError) {
+        console.warn('TemplumCore: Failed to cleanup request file:', cleanupError);
       }
     }
   }

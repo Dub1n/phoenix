@@ -32,8 +32,14 @@ import {
   Spinner,
   InteractivePrompt,
   ResponsiveLayout,
-  createTerminalUI
+  createTerminalUI,
+  createDefaultTerminalUI
 } from './terminal-ui-components';
+import chalk from 'chalk';
+import { 
+  InteractiveMenuRenderer, 
+  MenuInteractionResult 
+} from './interactive-menu-renderer';
 
 /**
  * CLI Input Types (Interface-specific)
@@ -89,6 +95,8 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
   private terminalUI: TerminalUI;
   private activeSpinner: Spinner | null = null;
   private activeProgressBar: ProgressBar | null = null;
+  private interactiveMenuRenderer: InteractiveMenuRenderer | null = null;
+  private interactionMode: 'menu' | 'command' = 'menu';
 
   constructor(config?: Partial<CLIAdapterConfig>) {
     super();
@@ -106,21 +114,8 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
       ...config
     };
 
-    // Initialize terminal UI with theme
-    const theme = DefaultColorThemes[this.config.terminalTheme] || DefaultColorThemes.default;
-    this.terminalUI = createTerminalUI({
-      theme,
-      responsive: {
-        minWidth: 40,
-        minHeight: 10,
-        breakpoints: {
-          small: 60,
-          medium: 100,
-          large: 140
-        },
-        theme
-      }
-    });
+    // Initialize terminal UI with centralized defaults
+    this.terminalUI = createDefaultTerminalUI(this.config.terminalTheme);
   }
 
   /**
@@ -206,6 +201,7 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
     };
   }
 
+
   /**
    * Apply skin definition using orchestrator abstraction
    */
@@ -216,6 +212,8 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
     }
 
     try {
+      // Note: Terminal theme should remain as DefaultColorThemes per established pattern
+      // Skin themes are for content rendering, not terminal UI components
       // Use orchestrator's skin engine through abstraction
       const skinEngine = this.orchestrator.getUniversalSkinEngine();
       
@@ -292,7 +290,26 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
         }
       );
 
-      // Stop spinner and show success
+      // TASK-CLI-014: Check if orchestrator indicates command should be handled locally
+      if (result && result.handleLocally === true) {
+        // Process command locally instead of forwarding to service
+        console.log(`[CLI] Processing command '${command}' locally`);
+        
+        if (spinner) {
+          spinner.info(`Processing '${command}' locally`);
+        }
+        
+        // Handle local command processing
+        const localResult = await this.processLocalCommand(command, args);
+        
+        if (spinner) {
+          spinner.succeed(`Command '${command}' processed locally`);
+        }
+        
+        return localResult;
+      }
+
+      // Stop spinner and show success for remote commands
       if (spinner) {
         spinner.succeed(`Command '${command}' executed successfully`);
       }
@@ -315,7 +332,77 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
   }
 
   /**
-   * Start interactive CLI session
+   * TASK-CLI-014: Process local CLI commands that should not be forwarded to Templum Core
+   * @private
+   */
+  private async processLocalCommand(command: string, args: any[] = []): Promise<any> {
+    const cmd = command.trim().toLowerCase();
+    
+    try {
+      // Handle different types of local commands
+      if (cmd === 'help') {
+        await this.displayHelp();
+        return { success: true, message: 'Help displayed', command };
+        
+      } else if (cmd === 'refresh') {
+        await this.loadInitialContent();
+        return { success: true, message: 'CLI content refreshed', command };
+        
+      } else if (cmd === 'status') {
+        await this.displayAvailableBackends();
+        return { success: true, message: 'Backend status displayed', command };
+        
+      } else if (cmd === 'back') {
+        // Navigate back in menu history
+        if (this.navigationHistory.length > 0) {
+          this.currentMenu = this.navigationHistory.pop() || 'main';
+          await this.loadInitialContent();
+        }
+        return { success: true, message: 'Navigated back', command };
+        
+      } else if (cmd === 'home') {
+        // Navigate to main menu
+        this.currentMenu = 'main';
+        this.navigationHistory = [];
+        await this.loadInitialContent();
+        return { success: true, message: 'Navigated to main menu', command };
+        
+      } else if (cmd.startsWith('load ')) {
+        // Load specific backend skin
+        const backendId = cmd.substring(5).trim();
+        await this.loadSpecificBackendSkin(backendId);
+        return { success: true, message: `Attempted to load skin from ${backendId}`, command };
+        
+      } else if (/^\d+$/.test(cmd)) {
+        // Handle numeric menu selection
+        await this.handleInput({
+          type: 'menu_selection',
+          value: cmd,
+          context: { currentMenu: this.currentMenu }
+        });
+        return { success: true, message: `Menu selection: ${cmd}`, command };
+        
+      } else if (cmd === 'quit' || cmd === 'exit') {
+        // Handle exit commands
+        console.log('👋 Goodbye!');
+        process.exit(0);
+        
+      } else {
+        // Unknown local command
+        console.log(`❌ Unknown local command: ${command}`);
+        console.log('💡 Type "help" to see available commands');
+        return { success: false, message: `Unknown local command: ${command}`, command };
+      }
+      
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error(`❌ Local command processing failed: ${errorMessage}`);
+      return { success: false, error: errorMessage, command };
+    }
+  }
+
+  /**
+   * Start interactive CLI session with visual menu navigation
    */
   async startInteractiveSession(initialMenu = 'main'): Promise<void> {
     if (!this.config.enableInteractiveMode) {
@@ -331,20 +418,321 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
       this.currentMenu = initialMenu;
       this.navigationHistory = [];
 
-      // Setup readline interface
-      await this.setupReadlineInterface();
+      // Initialize interactive menu renderer
+      this.interactiveMenuRenderer = new InteractiveMenuRenderer(this.orchestrator);
 
-      // Load and display initial content
+      // Show welcome message
+      console.log(chalk.green('✅ Connected to Templum service successfully'));
+      console.log(chalk.blue('🚀 Starting Templum interactive session...'));
+      console.log(chalk.gray('Use arrow keys to navigate, Enter to select, Ctrl+C to exit'));
+      console.log(chalk.gray('═'.repeat(60)));
+
+      // TASK-CLI-014: Add automatic skin discovery and loading during initialization
+      console.log(chalk.blue('🔍 Discovering and loading backend skins...'));
       await this.loadInitialContent();
+      console.log(chalk.gray('═'.repeat(60)));
 
       this.emit('interactiveSessionStarted', { menu: initialMenu, timestamp: Date.now() });
-      
-      console.log('CLIInterfaceAdapter: Interactive session started with orchestrator integration');
+
+      // Start interactive menu loop
+      await this.runInteractiveMenuLoop();
       
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw createTemplumError(`Failed to start interactive session: ${errorMessage}`, 'SESSION_START_ERROR', 'runtime');
     }
+  }
+
+  /**
+   * Run interactive menu loop with navigation and command execution
+   */
+  private async runInteractiveMenuLoop(): Promise<void> {
+    if (!this.interactiveMenuRenderer) {
+      throw createTemplumError('Interactive menu renderer not initialized', 'INTERNAL_ERROR', 'runtime');
+    }
+
+    let sessionRunning = true;
+    const sessionHistory: string[] = [];
+
+    try {
+      while (sessionRunning && this.isInteractiveMode) {
+        try {
+          const result: MenuInteractionResult = await this.interactiveMenuRenderer.displayMenu();
+          
+          // Record interaction in session history
+          sessionHistory.push(`${new Date().toISOString()}: ${result.action} - ${result.target || result.command || 'unknown'}`);
+          
+          switch (result.action) {
+            case 'navigate':
+            case 'back':
+              // Navigation is handled by the menu renderer
+              break;
+              
+            case 'execute':
+              if (result.command) {
+                await this.executeMenuCommand(result.command, result.data);
+                
+                // Pause briefly to show result before returning to menu
+                console.log(chalk.gray('\nPress Enter to continue...'));
+                await this.waitForKeypress();
+              }
+              break;
+              
+            case 'help':
+              // Help is displayed by the menu renderer, just wait for user
+              await this.waitForKeypress();
+              break;
+              
+            case 'quit':
+              sessionRunning = false;
+              break;
+          }
+          
+        } catch (error) {
+          if ((error as any).isTtyError === false || (error as any).name === 'ExitPromptError') {
+            // User pressed Ctrl+C
+            sessionRunning = false;
+          } else {
+            console.error(chalk.red('Menu interaction error:'), error);
+            console.log(chalk.gray('Press Enter to continue...'));
+            await this.waitForKeypress();
+          }
+        }
+      }
+      
+    } finally {
+      // Store session history for potential debugging
+      this.navigationHistory = sessionHistory;
+      
+      console.log(chalk.yellow('\n🛑 Interactive session ended'));
+      console.log(chalk.gray(`Session history: ${sessionHistory.length} interactions recorded`));
+    }
+  }
+
+  /**
+   * Execute command from menu selection
+   */
+  private async executeMenuCommand(command: string, data?: any): Promise<void> {
+    try {
+      console.log(chalk.blue(`\n⚡ Executing: ${command}`));
+      
+      const [namespace, action, ...args] = command.split(':');
+      
+      switch (namespace) {
+        case 'system':
+          await this.handleSystemCommand(action, args, data);
+          break;
+          
+        case 'services':
+          await this.handleServicesCommand(action, args, data);
+          break;
+          
+        case 'backend':
+          await this.handleBackendCommand(action, args, data);
+          break;
+          
+        case 'command':
+          await this.handleCommandExecution(action, args, data);
+          break;
+          
+        case 'settings':
+          await this.handleSettingsCommand(action, args, data);
+          break;
+          
+        case 'execute':
+          // Execute command on specific backend
+          if (args.length > 0) {
+            const backendId = args[0];
+            const commandToExecute = await this.promptForCommand(`Enter command for ${backendId}:`);
+            if (commandToExecute.trim()) {
+              const result = await this.orchestrator.executeCommand(
+                commandToExecute, 
+                'cli', 
+                [], 
+                { backendId, source: 'interactive-menu' }
+              );
+              this.displayCommandResult(result);
+            }
+          }
+          break;
+          
+        default:
+          console.log(chalk.yellow(`Unknown command namespace: ${namespace}`));
+      }
+      
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error(chalk.red(`Command execution failed: ${errorMessage}`));
+    }
+  }
+
+  /**
+   * Handle system commands
+   */
+  private async handleSystemCommand(action: string, args: string[], data?: any): Promise<void> {
+    switch (action) {
+      case 'status':
+        const systemStatus = this.orchestrator.getSystemStatus();
+        console.log(chalk.green('\n📊 System Status:'));
+        console.log(`  Initialized: ${systemStatus.coreEngine.initialized ? '✅' : '❌'}`);
+        console.log(`  Active Interfaces: ${systemStatus.activeInterfaces?.join(', ') || 'None'}`);
+        
+        if (systemStatus.coreEngine?.backendConnections?.backends) {
+          const backends = Object.entries(systemStatus.coreEngine.backendConnections.backends);
+          console.log(`  Connected Backends: ${backends.length}`);
+          
+          if (backends.length > 0) {
+            this.displayBackendStatus({ backends: systemStatus.coreEngine.backendConnections.backends });
+          }
+        }
+        break;
+        
+      default:
+        console.log(chalk.yellow(`Unknown system command: ${action}`));
+    }
+  }
+
+  /**
+   * Handle services commands
+   */
+  private async handleServicesCommand(action: string, args: string[], data?: any): Promise<void> {
+    switch (action) {
+      case 'list':
+        const systemStatus = this.orchestrator.getSystemStatus();
+        if (systemStatus.coreEngine?.backendConnections?.backends) {
+          this.displayBackendStatus({ backends: systemStatus.coreEngine.backendConnections.backends });
+        } else {
+          console.log(chalk.yellow('No backend services found'));
+        }
+        break;
+        
+      case 'refresh':
+        console.log(chalk.blue('🔄 Refreshing backend services...'));
+        await this.orchestrator.refreshBackendServices();
+        console.log(chalk.green('✅ Backend services refreshed'));
+        break;
+        
+      default:
+        console.log(chalk.yellow(`Unknown services command: ${action}`));
+    }
+  }
+
+  /**
+   * Handle backend-specific commands
+   */
+  private async handleBackendCommand(action: string, args: string[], data?: any): Promise<void> {
+    if (action === 'info' && args.length > 0) {
+      const backendId = args[0];
+      const systemStatus = this.orchestrator.getSystemStatus();
+      
+      const backends = systemStatus.coreEngine?.backendConnections?.backends;
+      if (backends) {
+        // Find the backend in the typed structure
+        const backendEntry = Object.entries(backends).find(([key]) => key === backendId);
+        if (backendEntry) {
+          const [key, backend] = backendEntry;
+          console.log(chalk.green(`\n📋 Backend Info: ${backendId}`));
+          console.log(`  Connected: ${backend.connected ? '✅' : '❌'}`);
+          console.log(`  Health: ${backend.health || 'Unknown'}`);
+          console.log(`  Last Check: ${new Date(backend.lastCheck).toISOString()}`);
+          
+          if (backend.capabilities) {
+            console.log(`  Capabilities: ${backend.capabilities.join(', ')}`);
+          }
+          
+          if (backend.version) {
+            console.log(`  Version: ${backend.version}`);
+          }
+          
+          if (backend.responseTime) {
+            console.log(`  Response Time: ${backend.responseTime}ms`);
+          }
+        } else {
+          console.log(chalk.yellow(`Backend not found: ${backendId}`));
+        }
+      } else {
+        console.log(chalk.yellow(`Backend not found: ${backendId}`));
+      }
+    } else {
+      console.log(chalk.yellow(`Unknown backend command: ${action}`));
+    }
+  }
+
+  /**
+   * Handle command execution
+   */
+  private async handleCommandExecution(action: string, args: string[], data?: any): Promise<void> {
+    if (action === 'custom') {
+      const command = await this.promptForCommand('Enter command to execute:');
+      if (command.trim()) {
+        const result = await this.orchestrator.executeCommand(
+          command, 
+          'cli', 
+          [], 
+          { source: 'interactive-menu-custom' }
+        );
+        this.displayCommandResult(result);
+      }
+    }
+  }
+
+  /**
+   * Handle settings commands
+   */
+  private async handleSettingsCommand(action: string, args: string[], data?: any): Promise<void> {
+    switch (action) {
+      case 'toggle-mode':
+        console.log(chalk.blue('🔀 Switching to command mode...'));
+        this.interactionMode = 'command';
+        
+        // Switch to command mode (would need additional implementation)
+        console.log(chalk.yellow('Command mode not yet implemented - staying in menu mode'));
+        break;
+        
+      default:
+        console.log(chalk.yellow(`Unknown settings command: ${action}`));
+    }
+  }
+
+  /**
+   * Wait for user keypress without conflicting with main inquirer session
+   * TASK-CLI-009: Fixed nested inquirer calls causing terminal state corruption
+   */
+  private async waitForKeypress(): Promise<void> {
+    return new Promise((resolve) => {
+      const stdin = process.stdin;
+      
+      // Check if we're in a TTY environment
+      if (stdin.isTTY) {
+        // Use a simple one-time listener without changing terminal modes
+        // This avoids conflicts with the main inquirer session
+        stdin.resume();
+        const listener = () => {
+          stdin.removeListener('data', listener);
+          stdin.pause();
+          resolve();
+        };
+        stdin.once('data', listener);
+      } else {
+        // Non-TTY environment (automated testing, etc.)
+        setTimeout(() => resolve(), 1000);
+      }
+    });
+  }
+
+  /**
+   * Prompt for custom command input
+   */
+  private async promptForCommand(message: string): Promise<string> {
+    const inquirer = await import('inquirer');
+    const { command } = await inquirer.default.prompt([
+      {
+        type: 'input',
+        name: 'command',
+        message: message
+      }
+    ]);
+    return command;
   }
 
   /**
@@ -651,6 +1039,10 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
       this.displayBackendStatus(systemStatus.coreEngine.backendConnections);
     } else if (input === 'refresh') {
       await this.loadInitialContent();
+    } else if (input.startsWith('load ')) {
+      // Manual backend skin loading
+      const backendId = input.substring(5).trim();
+      await this.loadSpecificBackendSkin(backendId);
     } else if (/^\d+$/.test(input)) {
       // Numeric menu selection
       await this.handleInput({
@@ -788,7 +1180,18 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
     const theme = this.terminalUI.getTheme();
     const layout = this.terminalUI.getLayout();
     
-    console.log(theme.primary('\n🌐 Backend Service Status:'));
+    // Safety check: ensure theme has proper functions before using
+    const isThemeValid = theme && 
+      typeof theme.primary === 'function' &&
+      typeof theme.info === 'function' &&
+      typeof theme.success === 'function' &&
+      typeof theme.warning === 'function';
+    
+    if (!isThemeValid) {
+      console.log('\n🌐 Backend Service Status:');
+    } else {
+      console.log(theme.primary('\n🌐 Backend Service Status:'));
+    }
     
     // Create table data for responsive display
     const tableData = Object.entries(backendConnections.backends).map(([serviceId, status]) => {
@@ -827,7 +1230,13 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
     const totalCount = Object.keys(backendConnections.backends).length;
     const healthyCount = Object.values(backendConnections.backends).filter((b: any) => b.health === 'healthy').length;
     
-    console.log(theme.info(`Connected: ${connectedCount}/${totalCount} | Healthy: ${healthyCount}/${connectedCount} | Status: ${healthyCount > 0 ? theme.success('Operational') : theme.warning('Discovery Mode')}`));
+    // Use theme functions only if theme is valid, otherwise use plain text
+    if (isThemeValid) {
+      console.log(theme.info(`Connected: ${connectedCount}/${totalCount} | Healthy: ${healthyCount}/${connectedCount} | Status: ${healthyCount > 0 ? theme.success('Operational') : theme.warning('Discovery Mode')}`));
+    } else {
+      const statusText = healthyCount > 0 ? 'Operational' : 'Discovery Mode';
+      console.log(`Connected: ${connectedCount}/${totalCount} | Healthy: ${healthyCount}/${connectedCount} | Status: ${statusText}`);
+    }
     console.log();
   }
 
@@ -857,6 +1266,7 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
     console.log('  home     - Go to main menu');
     console.log('  refresh  - Refresh current view');
     console.log('  status   - Show backend service status');
+    console.log('  load <id>- Load backend skin (e.g., load pcl, load minimal-example)');
     console.log('  quit     - Exit application');
     console.log('\nNavigation:');
     console.log('  1-9      - Select menu item by number');
@@ -977,6 +1387,73 @@ Timestamp: ${new Date().toISOString()}
 Using abstraction layer with real backend integration.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     `;
+  }
+
+  /**
+   * Load a specific backend's skin definition manually
+   * @private
+   */
+  private async loadSpecificBackendSkin(backendId: string): Promise<void> {
+    if (!backendId) {
+      console.log('❌ Please specify a backend ID (e.g., load pcl, load minimal-example)');
+      return;
+    }
+
+    try {
+      console.log(`🔄 Loading skin from backend: ${backendId}`);
+      
+      // Attempt to load the backend skin via orchestrator
+      const skinDefinition = await this.orchestrator.loadBackendSkin(backendId);
+      
+      if (skinDefinition) {
+        console.log(`✅ Successfully loaded skin: ${skinDefinition.name || backendId}`);
+        console.log(`   Version: ${skinDefinition.version}`);
+        console.log(`   ID: ${skinDefinition.id}`);
+        
+        // Refresh the CLI content to show the new skin
+        await this.loadInitialContent();
+        console.log(`📋 Interface updated with ${skinDefinition.name || backendId} skin definition`);
+        
+      } else {
+        console.log(`❌ Could not load skin from backend: ${backendId}`);
+        console.log('💡 Check if backend is running and accessible');
+        
+        // Show available backends
+        await this.displayAvailableBackends();
+      }
+      
+    } catch (error) {
+      console.error(`❌ Failed to load skin from ${backendId}:`, error instanceof Error ? error.message : 'Unknown error');
+      console.log('💡 Use "status" command to check backend connectivity');
+    }
+  }
+
+  /**
+   * Display available backends for user reference  
+   * @private
+   */
+  private async displayAvailableBackends(): Promise<void> {
+    try {
+      const systemStatus = this.orchestrator.getSystemStatus();
+      const backends = systemStatus.coreEngine?.backendConnections?.backends || {};
+      
+      if (Object.keys(backends).length === 0) {
+        console.log('📡 No backends currently connected');
+        return;
+      }
+      
+      console.log('\n📡 Available backends:');
+      for (const [serviceId, status] of Object.entries(backends)) {
+        const statusIcon = status.connected 
+          ? (status.health === 'healthy' ? '🟢' : '🟡') 
+          : '🔴';
+        console.log(`  ${statusIcon} ${serviceId} - ${status.connected ? 'connected' : 'disconnected'}`);
+      }
+      console.log('\n💡 Try: load <backend-id>');
+      
+    } catch (error) {
+      console.log('⚠️ Failed to get backend status');
+    }
   }
 }
 

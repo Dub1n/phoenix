@@ -12,7 +12,7 @@
 
 All code stubs follow this standardized format based on the pattern from `src/index.ts`:
 
-```
+``` yaml
 /**---
  * title: [Descriptive Title - Module/Component Name]
  * tags: [Functional-Tag, Category-Tag, Framework-Tag, Purpose-Tag]  

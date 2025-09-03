@@ -1,22 +1,74 @@
 {
   "compilerOptions": {
+    // Target and Module Configuration
     "target": "ES2020",
     "module": "commonjs",
     "lib": ["ES2020", "DOM"],
     "outDir": "./dist",
+    
+    // Strict Type Checking (Enhanced)
     "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": false,
+    
+    // Module Resolution (Optimized)
+    "moduleResolution": "node",
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-    "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
+    "allowJs": true,
+    "forceConsistentCasingInFileNames": true,
+    
+    // Library Compatibility (Enhanced)
+    "skipLibCheck": false,
+    "skipDefaultLibCheck": false,
+    "isolatedModules": false,
+    "verbatimModuleSyntax": false,
+    
+    // Code Generation
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "moduleResolution": "node",
-    "allowJs": true,
+    "removeComments": false,
+    "importHelpers": true,
     "downlevelIteration": true,
-    "types": ["jest", "node"]
+    
+    // Performance Optimizations
+    "incremental": true,
+    "composite": false,
+    "tsBuildInfoFile": "./.tsbuildinfo",
+    
+    // Advanced Options
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "useDefineForClassFields": true,
+    "exactOptionalPropertyTypes": false,
+    
+    // Type Roots and Types
+    "types": ["jest", "node", "vscode"],
+    "typeRoots": ["node_modules/@types", "src/types"]
   },
-  "include": ["src/**/*", "tests/**/*"],
-  "exclude": ["node_modules", "dist"]
+  "include": [
+    "src/**/*",
+    "tests/**/*",
+    "*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.spec.ts",
+    "**/*.test.ts",
+    "coverage"
+  ],
+  "ts-node": {
+    "esm": false,
+    "compilerOptions": {
+      "moduleResolution": "node",
+      "allowSyntheticDefaultImports": true
+    }
+  }
 }

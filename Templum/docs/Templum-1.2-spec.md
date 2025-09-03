@@ -6,11 +6,11 @@ requires: [vscode_api, nodejs_runtime, typescript, backend_services, observabili
 
 # Templum 1.2 — Generic Universal Interface Orchestrator
 
-**Date:** 2025-08-29  
+**Date:** 2025-09-02  
 **Version:** 1.2
-**Architecture Type:** Generic Backend Integration Platform
-**Context:** Complete Transition from Hardcoded to Fully Generic Architecture
-**Implementation Status:** Production Ready - Zero Backend Knowledge Architecture
+**Architecture Type:** Generic Backend Integration Platform with CLI Process Separation
+**Context:** Complete Transition to Headless Service + Standalone CLI Architecture
+**Implementation Status:** Production Ready - Zero Backend Knowledge Architecture + Process Separation
 
 ---
 
@@ -31,7 +31,7 @@ The defining characteristic of Templum 1.2 is its **skin-driven backend architec
 
 ### Production Readiness
 
-Templum 1.2 delivers enterprise-grade capabilities including dependency injection, observability infrastructure, resource management, error recovery, and comprehensive monitoring. The system simultaneously supports all three interface modalities (VSCode Extension, CLI, Command-line) with shared state management and cross-interface synchronization.
+Templum 1.2 delivers enterprise-grade capabilities including dependency injection, observability infrastructure, resource management, error recovery, and comprehensive monitoring. The system supports all three interface modalities (VSCode Extension, CLI, Command-line) with **CLI process separation** enabling headless service deployment and multi-terminal CLI access, plus shared state management and cross-interface synchronization.
 
 ## Core Architecture: Generic Backend Integration Platform
 
@@ -44,7 +44,8 @@ Templum 1.2's architecture is built around the principle of **backend agnosticis
 3. **Dynamic Discovery**: Multiple strategies for finding and connecting to backend services
 4. **Automatic Routing**: Command routing based on skin-defined command mappings
 5. **Interface Neutrality**: Single backend integration supports all interface types (VSCode, CLI, Command)
-6. **Enterprise Scalability**: Production-grade monitoring, error recovery, and resource management
+6. **Process Separation**: CLI operates independently with service discovery for headless deployment
+7. **Enterprise Scalability**: Production-grade monitoring, error recovery, and resource management
 
 ### Generic Backend Integration Flow
 
@@ -431,27 +432,75 @@ export class VSCodeAdapter extends BaseInterfaceAdapter {
 
 ### CLI Interactive Interface Implementation
 
-The CLI adapter provides rich interactive menus and navigation based on skin definitions:
+**NEW in 1.2**: The CLI now operates as a **separate process** with **service discovery** for enhanced deployment patterns and multi-terminal access.
 
-**Key Features:**
+#### CLI Process Separation Architecture
 
-- **Interactive Menus**: Built from skin `menus` definitions
-- **Keyboard Navigation**: Full keyboard-driven interface
-- **Progress Indicators**: Real-time operation feedback
-- **Session Management**: Persistent CLI sessions with state
+The CLI adapter implements a **headless service + standalone CLI** pattern:
+
+**Headless Service** (`npm run start:service`):
+- Runs without CLI interface for container/production deployment
+- Registers in service discovery registry (`~/.templum/services/`)
+- Maintains all core functionality and backend connections
+- Supports multiple concurrent CLI connections
+
+**Standalone CLI** (`templum` command globally):
+- Discovers running Templum service via registry scanning
+- Connects via IPC for command execution and state synchronization
+- Provides rich interactive interface with service discovery feedback
+- Accessible from any terminal session
 
 ```typescript
-export class CLIAdapter extends BaseInterfaceAdapter {
-  async renderSkinComponent(skin: UniversalSkinDefinition, component: string): Promise<void> {
-    if (skin.menus) {
-      this.renderInteractiveMenu(skin.menus, skin.themes);
-    }
-  }
+// Service Registration (Headless Mode)
+async registerForCliDiscovery(): Promise<void> {
+  const serviceEntry = {
+    id: 'templum-core',
+    protocol: 'ipc' as const,
+    endpoint: `ipc://templum-core-${process.pid}`,
+    capabilities: this.getSupportedInterfaces(),
+    pid: process.pid,
+    registrationTime: Date.now()
+  };
   
-  private async renderInteractiveMenu(menus: SkinMenus, themes: Record<string, ThemeDefinition>): Promise<void> {
-    // Create terminal-based interactive menu from skin definition
+  const serviceFilePath = path.join(servicesDir, `templum-core-${process.pid}.json`);
+  fs.writeFileSync(serviceFilePath, JSON.stringify(serviceEntry, null, 2));
+}
+
+// CLI Discovery and Connection
+class TemplumCliDiscovery {
+  async discoverServices(): Promise<ServiceRegistryEntry[]> {
+    const activeServices = [];
+    for (const serviceFile of serviceFiles) {
+      const serviceEntry = JSON.parse(fs.readFileSync(serviceFilePath, 'utf8'));
+      if (this.isProcessRunning(serviceEntry.pid)) {
+        activeServices.push(serviceEntry);
+      }
+    }
+    return activeServices.sort((a, b) => b.registrationTime - a.registrationTime);
   }
 }
+```
+
+#### CLI Interface Features
+
+- **Interactive Menus**: Built from skin `menus` definitions
+- **Service Discovery**: Automatic discovery of running Templum services
+- **Multi-Terminal Support**: CLI accessible from any terminal
+- **Process Validation**: Automatic cleanup of stale service entries
+- **IPC Communication**: Efficient command execution via service connection
+- **Session Management**: Persistent CLI sessions with cross-process state
+
+#### Usage Patterns
+
+```bash
+# Start headless service (production/container deployment)
+npm run start:service
+
+# Access CLI from any terminal
+templum
+
+# Or use npm scripts for development
+npm run start:cli
 ```
 
 ### Command-Line Interface Implementation
@@ -664,14 +713,16 @@ Enterprise_Scalability_Features:
 ```yaml
 Production_Features:
   vscode_extension: "Complete VSCode extension with proper resource disposal"
-  cli_deployment: "Node.js CLI with enhanced terminal interface"
+  headless_service: "Service runs without CLI for container deployment"
+  cli_separation: "Standalone CLI with service discovery and multi-terminal access"
   enterprise_config: "Centralized configuration with dependency injection"
   monitoring_integration: "Production observability with structured logging"
   resource_management: "Memory leak prevention for long-running processes"
 
 Installation_Targets:
   vscode_marketplace: "Ready for VSCode Marketplace deployment"
-  npm_package: "Available as NPM package for CLI usage"
+  npm_package: "Available as NPM package with global 'templum' command"
+  container_deployment: "Headless service ideal for Docker/Kubernetes deployment"
   enterprise_deployment: "Supports enterprise configuration management"
   skin_ecosystem: "Ready for skin marketplace integration"
 

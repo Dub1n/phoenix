@@ -14,13 +14,15 @@
 import { EventEmitter } from 'events';
 import * as readline from 'readline';
 import { UniversalCommandRegistry } from '../commands/universal-command-registry';
-import { UniversalMenuRegistry } from '../menus/universal-menu-registry';
+import { UniversalMenuRegistry, LoadedSkin, UniversalMenuDefinition, MenuAction } from '../menus/universal-menu-registry';
 import { SessionContextFoundation } from '../session/session-context-foundation';
 import { UniversalLayoutEngine } from '../rendering/universal-layout-engine';
 import { ITemplumOrchestrator } from './templum-orchestrator-interface';
 import { InterfaceType, createTemplumError, isTemplumError } from '../types/templum-types';
+import { UniversalSkinDefinition } from '../types/universal-skin-definition';
 import { 
   createTerminalUI, 
+  createDefaultTerminalUI,
   InteractiveSearch, 
   SearchableItem, 
   SearchResult,
@@ -150,17 +152,8 @@ export class CLIInterfaceAdapter extends EventEmitter implements CLIAdapter {
       ...config
     };
 
-    // Initialize Terminal UI with theme support
-    const theme = DefaultColorThemes[this.config.terminalTheme || 'default'] || DefaultColorThemes.default;
-    this.terminalUI = createTerminalUI({
-      theme,
-      responsive: {
-        minWidth: 40,
-        minHeight: 10,
-        breakpoints: { small: 60, medium: 100, large: 140 },
-        theme
-      }
-    });
+    // Initialize Terminal UI with centralized defaults
+    this.terminalUI = createDefaultTerminalUI(this.config.terminalTheme || 'default');
   }
 
   /**
@@ -450,6 +443,10 @@ export class CLIInterfaceAdapter extends EventEmitter implements CLIAdapter {
         value: input,
         context: { currentMenu: this.currentMenu }
       });
+    } else if (input.startsWith('load ')) {
+      // Manual backend skin loading
+      const backendId = input.substring(5).trim();
+      await this.loadSpecificBackendSkin(backendId);
     } else {
       // Command execution
       await this.handleCommandInput({
@@ -962,6 +959,172 @@ export class CLIInterfaceAdapter extends EventEmitter implements CLIAdapter {
     }
   }
 
+  /**
+   * Load a specific backend's skin definition and switch to its interface
+   * @private
+   */
+  private async loadSpecificBackendSkin(backendId: string): Promise<void> {
+    if (!backendId) {
+      console.log('❌ Please specify a backend ID (e.g., load pcl, load minimal-example)');
+      return;
+    }
+
+    try {
+      console.log(`🔄 Loading skin from backend: ${backendId}`);
+      
+      // Check if orchestrator is available
+      if (!this.orchestrator?.isInitialized()) {
+        console.log('❌ Orchestrator not available - cannot load backend skins');
+        return;
+      }
+
+      // Attempt to load the backend skin
+      const skinDefinition = await this.orchestrator.loadBackendSkin(backendId);
+      
+      if (skinDefinition) {
+        // Load skin into menu registry
+        await this.loadSkinIntoMenuRegistry(backendId, skinDefinition);
+        
+        // Switch to the main menu of this backend if available
+        const backendMainMenu = `${backendId}.main`;
+        const availableMenus = this.menuRegistry.getAvailableMenuIds('cli');
+        
+        if (availableMenus.includes(backendMainMenu)) {
+          this.currentMenu = backendMainMenu;
+          await this.renderCurrentMenu();
+          console.log(`✅ Switched to ${skinDefinition.name || backendId} interface`);
+        } else if (availableMenus.includes('main')) {
+          // Fallback to generic main menu with backend loaded
+          await this.renderCurrentMenu();
+          console.log(`✅ Loaded ${skinDefinition.name || backendId} skin (using generic menu)`);
+        } else {
+          console.log(`✅ Loaded ${skinDefinition.name || backendId} skin definition`);
+        }
+        
+        // Update searchable items to include new backend
+        await this.buildSearchableItems();
+        
+      } else {
+        console.log(`❌ Could not load skin from backend: ${backendId}`);
+        console.log('💡 Check if backend is running and accessible');
+        
+        // Show available backends for reference
+        await this.displayAvailableBackends();
+      }
+      
+    } catch (error) {
+      console.error(`❌ Failed to load skin from ${backendId}:`, error);
+      console.log('💡 Use "status" command to check backend connectivity');
+    }
+  }
+
+  /**
+   * Load a skin definition into the menu registry
+   * @private
+   */
+  private async loadSkinIntoMenuRegistry(serviceId: string, skin: UniversalSkinDefinition): Promise<void> {
+    if (!skin.menus) {
+      console.log(`⚠️ Backend ${serviceId} has no menu definitions`);
+      return;
+    }
+    
+    // Convert SkinMenus to Record<string, UniversalMenuDefinition>
+    const convertedMenus: Record<string, UniversalMenuDefinition> = {};
+    
+    // Helper function to convert skin MenuDefinition to UniversalMenuDefinition
+    const convertMenuDefinition = (menuDef: any, menuId: string): UniversalMenuDefinition => {
+      // Convert items array to sections array format
+      const sections = [{
+        id: 'main',
+        heading: menuDef.subtitle || 'Options',
+        items: (menuDef.items || []).map((item: any) => ({
+          id: item.id,
+          label: item.label,
+          description: item.description,
+          action: item.action ? { type: 'command', target: item.action } : { type: 'command', target: item.command || '' },
+          enabled: true
+        }))
+      }];
+      
+      return {
+        id: menuDef.id || menuId,
+        title: menuDef.title,
+        subtitle: menuDef.subtitle,
+        sections: sections,
+        backendId: serviceId,
+        interfaceSupport: ['cli'],
+        crossInterfaceSync: false
+      };
+    };
+
+    // Handle main menu
+    if (skin.menus.main) {
+      convertedMenus.main = convertMenuDefinition(skin.menus.main, 'main');
+    }
+    
+    // Handle submenus
+    if (skin.menus.submenus) {
+      for (const [menuId, menuDef] of Object.entries(skin.menus.submenus)) {
+        if (menuDef && typeof menuDef === 'object' && 'title' in menuDef) {
+          convertedMenus[menuId] = convertMenuDefinition(menuDef, menuId);
+        }
+      }
+    }
+    
+    // Convert skin menus to LoadedSkin format
+    const loadedSkin: LoadedSkin = {
+      metadata: {
+        name: serviceId,
+        displayName: skin.name || serviceId,
+        version: skin.version || '1.0.0',
+        supportedInterfaces: ['cli']
+      },
+      menus: convertedMenus,
+      // Skip theme conversion for now to avoid type issues
+      config: {
+        defaultInterface: 'cli'
+      }
+    };
+    
+    // Load skin into menu registry
+    await this.menuRegistry.loadSkin(loadedSkin);
+    const menuCount = Object.keys(convertedMenus).length;
+    console.log(`📋 Loaded ${menuCount} menu(s) from ${skin.name || serviceId}`);
+  }
+
+  /**
+   * Display available backends for user reference
+   * @private
+   */
+  private async displayAvailableBackends(): Promise<void> {
+    if (!this.orchestrator?.isInitialized()) {
+      console.log('Cannot check available backends - orchestrator not initialized');
+      return;
+    }
+
+    try {
+      const systemStatus = this.orchestrator.getSystemStatus();
+      const backends = systemStatus.coreEngine?.backendConnections?.backends || {};
+      
+      if (Object.keys(backends).length === 0) {
+        console.log('No backends currently connected');
+        return;
+      }
+      
+      console.log('\n📡 Available backends:');
+      for (const [serviceId, status] of Object.entries(backends)) {
+        const statusIcon = status.connected 
+          ? (status.health === 'healthy' ? '🟢' : '🟡') 
+          : '🔴';
+        console.log(`  ${statusIcon} ${serviceId} - ${status.connected ? 'connected' : 'disconnected'}`);
+      }
+      console.log('\n💡 Try: load <backend-id>');
+      
+    } catch (error) {
+      console.log('Failed to get backend status');
+    }
+  }
+
   private displayKeyboardShortcuts(): void {
     if (this.keyboardShortcuts.size === 0) return;
 
@@ -980,6 +1143,7 @@ export class CLIInterfaceAdapter extends EventEmitter implements CLIAdapter {
     console.log('  home     - Go to main menu');
     console.log('  refresh  - Refresh current menu');
     console.log('  status   - Show backend service status');
+    console.log('  load <id>- Load backend skin (e.g., load pcl, load minimal-example)');
     console.log('  quit     - Exit application');
     
     if (this.config.enableInteractiveSearch) {

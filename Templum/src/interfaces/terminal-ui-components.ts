@@ -6,7 +6,7 @@
  * description: [Terminal UI components for progress indication, user interaction, and responsive layouts]
  * ---*/
 
-import * as chalk from 'chalk';
+import chalk from 'chalk';
 import * as readline from 'readline';
 import { EventEmitter } from 'events';
 
@@ -56,7 +56,7 @@ export const DefaultColorThemes: Record<string, TerminalColorTheme> = {
     primary: chalk.black,
     secondary: chalk.blue,
     success: chalk.green,
-    warning: chalk.rgb(184, 134, 11), // Custom yellow for light theme
+    warning: chalk.yellow, // Custom yellow for light theme
     error: chalk.red,
     info: chalk.blue,
     accent: chalk.magenta,
@@ -689,7 +689,7 @@ export class TerminalUI extends EventEmitter {
 
   createProgressBar(config?: Partial<ProgressBarConfig>): ProgressBar {
     const progressBar = new ProgressBar({
-      theme: this.theme,
+      theme: this.getTheme(),
       ...config
     });
     
@@ -701,7 +701,7 @@ export class TerminalUI extends EventEmitter {
 
   createSpinner(config?: Partial<SpinnerConfig>): Spinner {
     const spinner = new Spinner({
-      theme: this.theme,
+      theme: this.getTheme(),
       ...config
     });
     
@@ -713,7 +713,7 @@ export class TerminalUI extends EventEmitter {
 
   createPrompt(config?: Partial<PromptConfig>): InteractivePrompt {
     const prompt = new InteractivePrompt({
-      theme: this.theme,
+      theme: this.getTheme(),
       ...config
     });
     
@@ -724,7 +724,7 @@ export class TerminalUI extends EventEmitter {
 
   createInteractiveSearch(config?: Partial<InteractiveSearchConfig>): InteractiveSearch {
     const search = new InteractiveSearch({
-      theme: this.theme,
+      theme: this.getTheme(),
       ...config
     });
     
@@ -743,6 +743,18 @@ export class TerminalUI extends EventEmitter {
   }
 
   getTheme(): TerminalColorTheme {
+    // Safety check: ensure theme has proper chalk functions
+    const requiredFunctions = ['primary', 'secondary', 'success', 'warning', 'error', 'info', 'accent', 'muted'];
+    const isThemeValid = requiredFunctions.every(fn => typeof this.theme[fn as keyof TerminalColorTheme] === 'function');
+    
+    if (!isThemeValid) {
+      console.warn('[TerminalUI] Theme corrupted, restoring default theme');
+      this.theme = DefaultColorThemes.default;
+      
+      // Clear active components since they have corrupted themes
+      // They will be recreated with the correct theme when needed
+      this.activeComponents.clear();
+    }
     return this.theme;
   }
 
@@ -844,8 +856,8 @@ export class InteractiveSearch extends EventEmitter {
 
     this.layout = new ResponsiveLayout({
       minWidth: 40,
-      minHeight: 10,
-      theme: this.config.theme
+      minHeight: 10
+      // Let ResponsiveLayout use its safe DefaultColorThemes.default
     });
   }
 
@@ -1293,6 +1305,33 @@ export class InteractiveSearch extends EventEmitter {
     
     process.stdin.removeAllListeners('keypress');
   }
+}
+
+/**
+ * Default Terminal UI configuration
+ */
+export const DEFAULT_TERMINAL_UI_CONFIG = {
+  responsive: {
+    minWidth: 40,
+    minHeight: 10,
+    breakpoints: {
+      small: 60,
+      medium: 100,
+      large: 140
+    },
+    theme: DefaultColorThemes.default
+  }
+};
+
+/**
+ * Factory function for creating terminal UI instance with centralized defaults
+ */
+export function createDefaultTerminalUI(themeName: keyof typeof DefaultColorThemes = 'default'): TerminalUI {
+  const theme = DefaultColorThemes[themeName] || DefaultColorThemes.default;
+  return createTerminalUI({
+    theme,
+    responsive: DEFAULT_TERMINAL_UI_CONFIG.responsive
+  });
 }
 
 /**
