@@ -34,7 +34,7 @@ Use this exact template for all change documentation:
 # Change Documentation: {Brief Description}
 
 ## Change Information
-- **Date**: {YYYY-MM-DD HH:MM:SS} (Generated with: `date`)
+- **Date**: {YYYY-MM-DD HH:MM} (Generated with: `date`)
 - **Type**: {Bug Fix|Feature|Enhancement|Refactor|Security|Documentation}
 - **Severity**: {Critical|High|Medium|Low}
 - **Components**: {List affected components/files}
@@ -309,7 +309,7 @@ Phoenix-Reorg/08-Maintenance/Changes/
 
 ```bash
 # Good - generates actual current time
-date "+%Y-%m-%d-%H%M%S"
+date "+%Y-%m-%d-%H%M"
 
 # Bad - using memory or estimates
 # "around 2:30 PM" or "sometime this afternoon"

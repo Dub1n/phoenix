@@ -8,12 +8,13 @@
 - **Severity**: High
 - **Components Fixed**: Connection Factory, Backend Service Router, IPC Client
 - **Complexity Score**: 30 (22 + 8 consolidated from TASK-GENERIC-004)
+- **TASK-ID**: TASK-CON-SYS
 
 ## Issue Analysis
 
 ### Original Issue from Implementation Tracker
 
-**TASK-CONSOLIDATED-CONNECTION-SYSTEM** - Generic Connection & Discovery System (Complexity: 22)
+**TASK-CON-SYS** - Generic Connection & Discovery System (Complexity: 22)
 
 - **Epic Goal**: Replace hardcoded connection paths with configurable backend discovery per Templum 1.1 spec
 - **Consolidated From**: TASK-GENERIC-005-IPC-PATH (6) + TASK-GENERIC-005-WORKSPACE-DETECTION (4) + TASK-NEW-005 (15) + TASK-NEW-032 (6) + TASK-NEW-033 (8) + **TASK-GENERIC-004 (8)**
@@ -129,7 +130,7 @@ Enhanced the connection system with configurable paths, generic workspace detect
 
 **Task Consolidation Successfully Applied**:
 
-- **TASK-GENERIC-004** (Enhanced BackendConfig Schema) successfully consolidated into **TASK-CONSOLIDATED-CONNECTION-SYSTEM**
+- **TASK-GENERIC-004** (Enhanced BackendConfig Schema) successfully consolidated into **TASK-CON-SYS**
 - **Combined Complexity**: 30 points (within <50 threshold for consolidation)
 - **Logical Implementation Sequence**: BackendConfig schema enhancements directly enable configurable connection system
 - **File Overlap**: Both tasks modified connection-factory.ts and backend-service-router.ts (>70% overlap achieved)
@@ -152,7 +153,7 @@ Enhanced the connection system with configurable paths, generic workspace detect
 
 **Task Status Updates**:
 
-- ✅ **Status**: TASK-CONSOLIDATED-CONNECTION-SYSTEM marked as **implemented-testing** (compiles but needs functional validation)
+- ✅ **Status**: TASK-CON-SYS marked as **implemented-testing** (compiles but needs functional validation)
 - ✅ **Tracker Update**: One-line entry added to templum-tracker-data.md
 - ✅ **Fix Document**: Comprehensive fix document created with full implementation details
 - ✅ **Consolidation Success**: Single comprehensive fix document instead of multiple scattered documents
@@ -167,7 +168,7 @@ Enhanced the connection system with configurable paths, generic workspace detect
 
 ### What Worked Well
 
-- **Task Consolidation**: Merging TASK-GENERIC-004 into TASK-CONSOLIDATED-CONNECTION-SYSTEM created cohesive implementation
+- **Task Consolidation**: Merging TASK-GENERIC-004 into TASK-CON-SYS created cohesive implementation
 - **Backward Compatibility**: Default fallbacks ensure existing configurations continue working
 - **Event-Driven Architecture**: Health monitoring events enable comprehensive system observability
 - **Configuration-Driven Design**: BackendConfig options provide flexibility without breaking existing code

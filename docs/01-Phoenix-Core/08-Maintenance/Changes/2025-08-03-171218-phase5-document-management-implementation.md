@@ -2,7 +2,7 @@
 
 ## Change Information
 
-- **Date**: 2025-08-03 17:12:18 (Generated with: `date "+%Y-%m-%d-%H%M%S"`)
+- **Date**: 2025-08-03 17:12:18 (Generated with: `date "+%Y-%m-%d-%H%M"`)
 - **Type**: Feature
 - **Severity**: Medium
 - **Components**: Document Management System, Configuration Templates, CLI Integration
@@ -272,6 +272,6 @@ Verified functionality through direct API calls and checked:
 - Existing configurations remain compatible
 
 ---
-**Generated**: 2025-08-03 17:12:18 using `date "+%Y-%m-%d-%H%M%S"` command
+**Generated**: 2025-08-03 17:12:18 using `date "+%Y-%m-%d-%H%M"` command
 **Author**: Claude Code Agent
 **Review Status**: Pending

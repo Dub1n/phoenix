@@ -24,10 +24,10 @@ YYYY-MM-DD-HHmm-{brief-description}.md
 powershell "Get-Date -Format 'yyyy-MM-dd-HHmm'"
 
 # Unix/Linux/macOS:
-date "+%Y-%m-%d-%H%M%S"
+date "+%Y-%m-%d-%H%M"
 
 # Example filename
-2024-08-02-143022-fix-version-command.md
+2024-08-02-1430-fix-version-command.md
 ```
 
 ## ⋇ Change Document Template
@@ -39,7 +39,7 @@ Use this exact template for all change documentation:
 
 ## Change Information
 
-- **Date**: {YYYY-MM-DD HH:MM:SS} (Generated with: `date` or equivalent)
+- **Date**: {YYYY-MM-DD HH:MM} (Generated with: `date` or equivalent)
 - **Type**: {Bug Fix|Feature|Enhancement|Refactor|Security|Documentation}
 - **Severity**: {Critical|High|Medium|Low}
 - **Components**: {List affected components/files}
@@ -358,7 +358,7 @@ Before finalizing change documentation:
 ```bash
 # Good - generates actual current time
 # Unix/Linux/macOS:
-date "+%Y-%m-%d-%H%M%S"
+date "+%Y-%m-%d-%H%M"
 
 # Windows PowerShell:
 Get-Date -Format "yyyy-MM-dd-HHmm"

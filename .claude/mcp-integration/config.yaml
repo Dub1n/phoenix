@@ -1,0 +1,22 @@
+# Repo-Agnostic MCP Server Configuration
+# Generated for TASK-MCP-INT-001: Pty-MCP-Server Installation and Configuration
+# Created: 2025-09-05
+# Location: .claude/mcp-integration/ (cross-project reusable)
+# Purpose: Configure pty-mcp-server for general CLI interaction
+
+logDir: "./logs/mcp-channel"
+logLevel: "Info"
+toolsDir: "./tools/templum"
+prompts:
+  # Templum CLI prompts
+  - "] templum$"
+  - "? Select option:"
+  - "templum>"
+  - "Enter command:"
+  - "Continue? (y/n):"
+  # Generic CLI prompts (extensible for other projects)
+  - "$ "
+  - "> "
+  - "# "
+  - "Press any key to continue..."
+  - "Do you want to continue? (y/n)"

@@ -1200,7 +1200,7 @@ export class InteractiveSearch extends EventEmitter {
     console.log(this.config.theme.muted('─'.repeat(Math.min(60, process.stdout.columns || 80))));
   }
 
-  private renderSearchInput(breakpoint: 'small' | 'medium' | 'large'): void {
+  private renderSearchInput(_breakpoint: 'small' | 'medium' | 'large'): void {
     const prompt = this.config.theme.accent('Search: ');
     const query = this.currentQuery || this.config.theme.muted('(type to search)');
     const cursor = this.isActive ? this.config.theme.primary('|') : '';

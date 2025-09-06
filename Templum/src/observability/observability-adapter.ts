@@ -6,7 +6,7 @@
 - description: [Adapter implementing observability service interface for dependency injection integration with existing Templum architecture]        
 - ---*/
 
-import { EventEmitter } from 'events';
+
 import { 
   TemplumObservabilitySystem, 
   ObservabilityConfig,

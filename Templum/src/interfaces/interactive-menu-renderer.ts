@@ -9,7 +9,6 @@
 import inquirer from 'inquirer';
 import chalk from 'chalk';
 import { ITemplumOrchestrator } from './templum-orchestrator-interface';
-import { UniversalSkinDefinition } from '../types/templum-types';
 
 /**
  * Menu item definition for interactive display

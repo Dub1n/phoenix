@@ -305,7 +305,7 @@ export class VSCodeInterfaceAdapter extends EventEmitter implements VSCodeAdapte
   /**
    * Register a VSCode command
    */
-  private async registerCommand(command: string, handler: (...args: any[]) => any): Promise<void> {
+  private async registerCommand(command: string, _handler: (...args: any[]) => any): Promise<void> {
     if (this.registeredCommands.has(command)) return;
 
     // In real VSCode extension, this would use vscode.commands.registerCommand

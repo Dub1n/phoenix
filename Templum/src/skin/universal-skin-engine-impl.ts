@@ -11,17 +11,16 @@ import {
   UniversalSkinDefinition, 
   SkinRenderResult, 
   RenderingContext, 
-  InterfaceType,
+
   RenderedComponent 
 } from '../types/universal-skin-engine-types';
 import {
-  TemplumError,
-  ValidationError,
+
+
   isTemplumError,
   createTemplumError,
-  UniversalSkinDefinition as TemplumSkinDefinition
+  UniversalSkinDefinition as _TemplumSkinDefinition
 } from '../types/templum-types';
-import { validateSkinDefinition, ValidationResult } from '../validation/skin-validator';
 import { SkinVersionManager } from './skin-version-manager';
 
 export class UniversalSkinEngine extends EventEmitter {
@@ -241,7 +240,7 @@ export class UniversalSkinEngine extends EventEmitter {
       
       return result;
       
-    } catch (error) {
+    } catch (_error) {
       return {
         success: false,
         interface: interfaceType,
@@ -291,7 +290,7 @@ export class UniversalSkinEngine extends EventEmitter {
         preservedState: preserveState,
         switchTime
       };
-    } catch (error) {
+    } catch (_error) {
       return {
         success: false,
         preservedState: false,

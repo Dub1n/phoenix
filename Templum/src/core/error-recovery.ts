@@ -7,7 +7,6 @@
  * ---*/
 
 import { 
-  TemplumError, 
   isTemplumError, 
   createTemplumError, 
   Signals, 
@@ -146,7 +145,7 @@ export class TemplumCircuitBreaker {
     }
   }
 
-  private handleOperationSuccess(operationType: string): void {
+  private handleOperationSuccess(_operationType: string): void {
     if (this.state === 'HALF_OPEN') {
       this.successCount++;
       // If we have enough successful operations in HALF_OPEN, close the circuit

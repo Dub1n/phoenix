@@ -9,9 +9,7 @@
 import { EventEmitter } from 'events';
 import { performance } from 'perf_hooks';
 import { 
-  TemplumError, 
-  isTemplumError, 
-  createTemplumError 
+  isTemplumError
 } from '../types/templum-types';
 
 // Performance baseline definitions from Phase 1 requirements
@@ -317,7 +315,7 @@ export class ComponentBaselineManager extends EventEmitter {
 
     // Collect 10 samples over 2 seconds for baseline
     for (let i = 0; i < 10; i++) {
-      const startTime = performance.now();
+      const _startTime = performance.now();
       
       // Measure actual system response time
       const responseTimeStart = performance.now();
@@ -407,9 +405,9 @@ export class ComponentBaselineManager extends EventEmitter {
   private async simulateInterfaceSwitch(): Promise<void> {
     // Simulate interface switching overhead with small computation
     const iterations = Math.floor(Math.random() * 1000) + 500;
-    let sum = 0;
+    let _sum = 0;
     for (let i = 0; i < iterations; i++) {
-      sum += Math.sqrt(i);
+      _sum += Math.sqrt(i);
     }
   }
 

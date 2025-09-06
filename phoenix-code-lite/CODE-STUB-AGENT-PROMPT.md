@@ -153,12 +153,14 @@ Before implementing stubs, consult these Noderr specification files for accurate
 - **Clear Descriptions**: 1-2 sentences explaining purpose and system role
 
 ### Technical Requirements  
+
 - **Preserve Functionality**: Never modify existing code logic or imports
 - **Maintain Formatting**: Preserve existing code style and formatting
 - **Comment Standards**: Use exact `/**---` and `---*/` delimiters
 - **Timestamp Integration**: Include creation timestamp where appropriate
 
 #### Team Preferences Update (2025-08-12)
+
 - Prefer omitting inline "Created ..." timestamps inside stub descriptions. Track timing in change docs instead (see `docs/Phoenix-Core/08-Maintenance/Changes/`).
 
 ---
@@ -285,6 +287,7 @@ Upon completion, provide:
 "Read through the CODE-STUB-INVENTORY.md file systematically. For each file listed, implement or update the code stub using the appropriate template from the inventory. Follow the phase-based priority order (HIGH → MEDIUM → LOW). Ensure 100% template compliance and accuracy. Reference Noderr specifications where available. Preserve all existing functionality. Report progress and issues as you work through each file."
 
 ### Next Targets for the Next Developer
+
 - Phase 1 – CLI Advanced: `src/cli/enhanced-wizard.ts`, `src/cli/interactive.ts`
 - Phase 1 – CLI Architecture: `src/cli/factories/command-factory.ts`, `src/cli/adapters/claude-client-adapter.ts`, `src/cli/adapters/config-manager-adapter.ts`, `src/cli/adapters/audit-logger-adapter.ts`
 - Phase 1 – CLI Examples: `src/cli/menu-migration-example.ts`

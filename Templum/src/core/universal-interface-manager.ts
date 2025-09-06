@@ -10,15 +10,10 @@ import { EventEmitter } from 'events';
 import {
   InterfaceType,
   InterfaceAdapter,
-  UniversalSkinDefinition,
   StateUpdate,
-  TemplumError,
-  createTemplumError,
-  isTemplumError
+  createTemplumError
 } from '../types/templum-types';
 import {
-  ISkinEngine,
-  IStateManager,
   ITemplumCoreDependencies
 } from '../interfaces/core-component-interfaces';
 
@@ -172,7 +167,7 @@ export class UniversalInterfaceManager extends EventEmitter {
           if (!skinEngineSupport.compatible) {
             compatibilityIssues.push(`Skin engine compatibility issue: ${skinEngineSupport.reason}`);
           }
-        } catch (error) {
+        } catch (_error) {
           compatibilityIssues.push('Skin engine validation failed');
         }
       }
@@ -468,7 +463,7 @@ export class UniversalInterfaceManager extends EventEmitter {
           if (!hasSessionContext) {
             warnings.push('No active session context available for preservation');
           }
-        } catch (error) {
+        } catch (_error) {
           warnings.push('Failed to validate session context');
         }
       }
@@ -522,7 +517,7 @@ export class UniversalInterfaceManager extends EventEmitter {
               unhealthyAdapters.push(interfaceType);
             }
           }
-        } catch (error) {
+        } catch (_error) {
           warnings.push(`Health check failed for ${interfaceType} adapter`);
         }
       }
@@ -531,7 +526,7 @@ export class UniversalInterfaceManager extends EventEmitter {
         warnings.push(`Unhealthy interface adapters detected: ${unhealthyAdapters.join(', ')}`);
       }
 
-    } catch (error) {
+    } catch (_error) {
       warnings.push('System resource validation failed');
     }
 
@@ -609,7 +604,7 @@ export class UniversalInterfaceManager extends EventEmitter {
             fallbackInterface: previousInterface,
             message: `Recovered by falling back to ${previousInterface} interface`
           };
-        } catch (fallbackError) {
+        } catch (_fallbackError) {
           return {
             recovered: false,
             message: `Failed to recover: ${error.message}. Fallback also failed.`

@@ -471,7 +471,7 @@ export class UniversalSkinRenderer extends EventEmitter {
     try {
       const menu = await this.menuRegistry.getMenu(menuId, interfaceType);
       return this.adaptMenuForInterface(menu, interfaceType);
-    } catch (error) {
+    } catch (_error) {
       // Fallback to built-in definitions
       return this.getBuiltInMenuDefinitionForInterface(skinId, menuId, interfaceType);
     }
@@ -643,7 +643,7 @@ export class UniversalSkinRenderer extends EventEmitter {
   private getBuiltInMenuDefinitionForInterface(
     skinId: string,
     menuId: string,
-    interfaceType: InterfaceType
+    _interfaceType: InterfaceType
   ): UniversalSkinMenuDefinition | null {
     // Extended built-in definitions with interface support
     const definitions: Record<string, Record<string, UniversalSkinMenuDefinition>> = {
@@ -760,7 +760,7 @@ export class UniversalSkinRenderer extends EventEmitter {
 
   private setupEventHandlers(): void {
     // Listen for menu registry changes
-    this.menuRegistry.on('menusLoaded', (sources) => {
+    this.menuRegistry.on('menusLoaded', (_sources) => {
       this.clearCacheForInterface(); // Clear all cache on menu updates
     });
 

@@ -327,7 +327,7 @@ export class PCLMenuRegistry extends EventEmitter {
     this.interfaceAdapters.set(interfaceType, adapter);
     
     // Update existing menus to include this interface if compatible
-    for (const [menuId, menu] of this.menuDefinitions) {
+    for (const [_menuId, menu] of this.menuDefinitions) {
       if (menu.compatibility.interfaces.includes(interfaceType as any)) {
         await this.registerMenuWithInterface(menu, interfaceType, adapter);
       }
@@ -576,7 +576,7 @@ export class PCLMenuRegistry extends EventEmitter {
 
     // Flatten back with proper grouping
     const grouped: MenuItem[] = [];
-    Object.entries(groups).forEach(([groupName, groupItems]) => {
+    Object.entries(groups).forEach(([_groupName, groupItems]) => {
       grouped.push(...groupItems.sort((a, b) => (a.order || 0) - (b.order || 0)));
     });
 
@@ -593,7 +593,7 @@ export class PCLMenuRegistry extends EventEmitter {
     }));
   }
 
-  private async applyThemeAdaptations(structure: MenuStructure, interfaceType: string, themes: string[]): Promise<MenuStructure> {
+  private async applyThemeAdaptations(structure: MenuStructure, _interfaceType: string, _themes: string[]): Promise<MenuStructure> {
     // Apply theme-specific adaptations (placeholder for theme engine integration)
     return structure;
   }

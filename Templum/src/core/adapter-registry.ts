@@ -16,14 +16,12 @@ import {
   ITemplumCoreDependencies,
   IDependencyInjectionConfig,
   IComponentFactory,
-  ValidationLevel,
   ComponentValidationStatus,
   DependencyWiringStatus,
   ValidationReport
 } from '../interfaces/core-component-interfaces';
 import { IObservabilityService } from '../observability/observability-adapter';
 import { 
-  TemplumError,
   isTemplumError,
   createTemplumError,
   ErrorSignalPayload
@@ -78,7 +76,7 @@ export class SkinEngineAdapter implements ISkinEngine {
     return skinDefinition?.metadata?.id != null;
   }
 
-  generateSkinHTML(renderResult: any, skinDefinition: any): string {
+  generateSkinHTML(renderResult: any, _skinDefinition: any): string {
     // Convert SkinRenderResult to HTML format for WebView rendering
     try {
       if (renderResult && renderResult.components && Array.isArray(renderResult.components)) {
@@ -140,7 +138,7 @@ export class StateManagerAdapter implements IStateManager {
     this.stateManager = stateManager;
   }
 
-  async initialize(config?: any): Promise<void> {
+  async initialize(_config?: any): Promise<void> {
     await this.stateManager.initialize();
   }
 
@@ -257,7 +255,7 @@ export class BackendRouterAdapter implements IBackendRouter {
     this.backendRouter = backendRouter;
   }
 
-  initialize(dependencies: any): void {
+  initialize(_dependencies: any): void {
     // PCL Backend Integrator initialized with dependencies in constructor
     console.log('BackendRouterAdapter: Initialized with dependencies');
   }
@@ -486,7 +484,7 @@ export class TemplumComponentFactory implements IComponentFactory {
     this.registry = registry;
   }
 
-  createSkinEngine(config?: any): ISkinEngine {
+  createSkinEngine(_config?: any): ISkinEngine {
     const skinEngine = new UniversalSkinEngine();
     return new SkinEngineAdapter(skinEngine);
   }
@@ -560,7 +558,7 @@ export class TemplumComponentFactory implements IComponentFactory {
     }
   }
 
-  createBackendServiceRouter(config?: any): IBackendServiceRouter {
+  createBackendServiceRouter(_config?: any): IBackendServiceRouter {
     const backendServiceRouter = new TemplumBackendServiceRouter();
     return new BackendServiceRouterAdapter(backendServiceRouter);
   }

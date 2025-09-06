@@ -12,7 +12,7 @@ import {
   MockBackendService,
   E2ETestScenario,
   E2ETestOutcome
-} from '../../src/tests/e2e/e2e-test-framework';
+} from '../../src/testing/e2e-test-framework';
 import { E2EScenarioLibrary } from '../../src/tests/e2e/e2e-scenarios';
 import { 
   InterfaceType, 

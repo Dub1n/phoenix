@@ -153,10 +153,11 @@ app.get('/health', (req, res) => {
 /**
  * Skin definition endpoint - tells Templum how to integrate
  * This is called by Templum's service discovery system
+ * FIXED: Wrap skin definition in expected response format for Templum
  */
 app.get('/getSkinDefinition', (req, res) => {
   console.log('Serving skin definition to Templum');
-  res.json(SKIN_DEFINITION);
+  res.json({ skinDefinition: SKIN_DEFINITION });
 });
 
 /**

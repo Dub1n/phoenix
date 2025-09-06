@@ -6,7 +6,7 @@
  * Tests the fully generic backend integration architecture where backends self-describe
  * through skin definitions and Templum requires zero backend-specific code changes.
  * 
- * TASK: TASK-CONSOLIDATED-VALIDATION-CLEANUP - Generic Backend Validation & Legacy Cleanup
+ * TASK: TASK-CLEAN-001 - Generic Backend Validation & Legacy Cleanup
  */
 
 import { jest } from '@jest/globals';

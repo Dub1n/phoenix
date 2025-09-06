@@ -77,6 +77,7 @@ export async function main(): Promise<void> {
 // Export the main classes for library usage
 export { TemplumCore } from './core/templum-core';
 export * from './types/templum-types';
+export * from './agents';
 
 // Run if called directly
 if (require.main === module) {

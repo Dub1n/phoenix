@@ -94,7 +94,7 @@ class TemplumCliDiscovery {
       // On Windows and Unix, sending signal 0 checks if process exists
       process.kill(pid, 0);
       return true;
-    } catch (error) {
+    } catch (_error) {
       return false;
     }
   }
@@ -134,7 +134,7 @@ class RemoteTemplumAdapter {
     return new Promise((resolve, reject) => {
       try {
         // Import child_process to communicate with the running service
-        const { spawn } = require('child_process');
+        const { spawn: _spawn } = require('child_process');
         
         // Create a temporary communication channel
         // For now, use a simple file-based IPC mechanism as a fallback
@@ -146,15 +146,20 @@ class RemoteTemplumAdapter {
         const responseFile = require('path').join(tempDir, `templum-${requestId}-response.json`);
         
         // Write the request to a temporary file
-        require('fs').writeFileSync(requestFile, JSON.stringify({
-          ...message,
+        // Fix: Preserve message structure instead of spreading to avoid flattening type/data
+        const ipcRequest = {
+          type: message.type,
+          data: message.data,
           requestId,
           responseFile,
           clientPid: process.pid
-        }));
+        };
+        
+        require('fs').writeFileSync(requestFile, JSON.stringify(ipcRequest));
 
-        // Set up a timeout
+        // Set up a timeout with proper cleanup
         const timeout = setTimeout(() => {
+          this.safeCleanupTempFiles(requestFile, responseFile);
           reject(new Error(`IPC timeout after 5000ms for PID ${pid}`));
         }, 5000);
 
@@ -167,13 +172,8 @@ class RemoteTemplumAdapter {
               const responseData = require('fs').readFileSync(responseFile, 'utf8');
               const response = JSON.parse(responseData);
               
-              // Cleanup temp files
-              try {
-                require('fs').unlinkSync(requestFile);
-                require('fs').unlinkSync(responseFile);
-              } catch (cleanupError) {
-                console.warn('Warning: Failed to cleanup temp files:', cleanupError);
-              }
+              // Cleanup temp files safely
+              this.safeCleanupTempFiles(requestFile, responseFile);
               
               if (response.success) {
                 resolve(response.result);
@@ -186,6 +186,7 @@ class RemoteTemplumAdapter {
             }
           } catch (error) {
             clearTimeout(timeout);
+            this.safeCleanupTempFiles(requestFile, responseFile);
             reject(error);
           }
         };
@@ -197,6 +198,38 @@ class RemoteTemplumAdapter {
         reject(new Error(`Failed to initiate IPC communication: ${error}`));
       }
     });
+  }
+
+  /**
+   * Safely cleanup temporary IPC files with proper error handling
+   * Prevents ENOENT errors when files don't exist or were already cleaned up
+   */
+  private safeCleanupTempFiles(requestFile: string, responseFile: string): void {
+    const fs = require('fs');
+    
+    // Clean up request file
+    try {
+      if (fs.existsSync(requestFile)) {
+        fs.unlinkSync(requestFile);
+      }
+    } catch (error) {
+      // Only warn if the error is not "file not found"
+      if ((error as any).code !== 'ENOENT') {
+        console.warn(`Warning: Failed to cleanup request file ${requestFile}:`, error);
+      }
+    }
+    
+    // Clean up response file  
+    try {
+      if (fs.existsSync(responseFile)) {
+        fs.unlinkSync(responseFile);
+      }
+    } catch (error) {
+      // Only warn if the error is not "file not found"
+      if ((error as any).code !== 'ENOENT') {
+        console.warn(`Warning: Failed to cleanup response file ${responseFile}:`, error);
+      }
+    }
   }
 
   /**
@@ -227,6 +260,11 @@ class RemoteTemplumAdapter {
       
       await cliAdapter.initialize(serviceOrchestrator);
       
+      // Refresh system status cache after initialization
+      if (serviceOrchestrator.refreshSystemStatus) {
+        await serviceOrchestrator.refreshSystemStatus();
+      }
+      
       console.log(chalk.green('✅ Connected to Templum service successfully'));
       console.log(chalk.blue('🚀 Starting Templum CLI session...'));
       console.log(chalk.gray('═'.repeat(60)));
@@ -250,6 +288,29 @@ class RemoteTemplumAdapter {
     const serviceProtocol = this.serviceEntry.protocol;
     const serviceEntry = this.serviceEntry; // Capture in closure
     const sendIPCCommand = this.sendIPCCommand.bind(this); // Bind method to correct context
+    
+    // Cache system status for synchronous access
+    let cachedSystemStatus: any = {
+      initialized: true,
+      activeInterfaces: serviceEntry.capabilities || ['cli'],
+      coreEngine: {
+        loadedSkins: [],
+        activeInterfaces: serviceEntry.capabilities || ['cli'],
+        backendConnections: { 
+          backends: {},
+          totalConnections: 0,
+          healthyConnections: 0
+        }
+      },
+      serviceInfo: {
+        protocol: serviceProtocol,
+        endpoint: serviceEndpoint,
+        pid: serviceEntry.pid,
+        registrationTime: serviceEntry.registrationTime,
+        note: "Initial cached status"
+      },
+      timestamp: Date.now()
+    };
     
     console.log(chalk.blue(`[${serviceProtocol.toUpperCase()}] Creating orchestrator proxy for ${serviceEndpoint}`));
     
@@ -388,32 +449,38 @@ class RemoteTemplumAdapter {
       },
 
       getSystemStatus() {
-        console.log(chalk.blue(`[${serviceProtocol.toUpperCase()}] Getting system status...`));
+        // Return cached system status synchronously (matches interface contract)
+        return cachedSystemStatus;
+      },
+      
+      // Background method to update cached system status via IPC
+      async refreshSystemStatus() {
+        console.log(chalk.blue(`[${serviceProtocol.toUpperCase()}] Refreshing system status...`));
         
-        // For the IPC-to-HTTP transition, provide service status information
-        // TODO: In full implementation, this would make IPC/HTTP call to get real status
-        return {
-          initialized: true,
-          activeInterfaces: serviceEntry.capabilities || ['cli'],
-          coreEngine: {
-            loadedSkins: [], // Would be populated from real service call
-            activeInterfaces: serviceEntry.capabilities || ['cli'],
-            backendConnections: { 
-              backends: {} // Would be populated from real service call - no hardcoded values
+        try {
+          // TASK-DIAG-001: Implement real IPC communication for system status
+          const ipcMessage = {
+            type: 'getSystemStatus',
+            data: {
+              timestamp: Date.now()
             }
-          },
-          serviceInfo: {
-            protocol: serviceProtocol,
-            endpoint: serviceEndpoint,
-            pid: serviceEntry.pid,
-            registrationTime: serviceEntry.registrationTime,
-            implementationNote: "IPC-to-HTTP transition: Service status from registry, full service integration pending"
-          },
-          timestamp: Date.now()
-        };
+          };
+
+          const realStatus = await sendIPCCommand(serviceEntry.pid, ipcMessage);
+          console.log(chalk.green(`[${serviceProtocol.toUpperCase()}] System status updated from service`));
+          
+          // Update cached status
+          cachedSystemStatus = realStatus;
+          return realStatus;
+          
+        } catch (error) {
+          console.warn(chalk.yellow(`[${serviceProtocol.toUpperCase()}] IPC system status refresh failed: ${error}`));
+          // Keep existing cached status on failure
+          return cachedSystemStatus;
+        }
       },
 
-      async loadSkin(skinDefinition: any) { 
+      async loadSkin(_skinDefinition: any) { 
         console.log(chalk.blue(`[${serviceProtocol.toUpperCase()}] Loading skin...`));
         // IPC-to-HTTP transition: Architecture implemented, service integration pending
         return { 
@@ -425,18 +492,39 @@ class RemoteTemplumAdapter {
 
       async loadBackendSkin(backendId: string) { 
         console.log(chalk.blue(`[${serviceProtocol.toUpperCase()}] Loading skin from backend: ${backendId}`));
-        // IPC-to-HTTP transition: Architecture implemented, service integration pending
-        return {
-          id: `transitional-skin-${backendId}`,
-          name: `Transitional Skin for ${backendId}`,
-          version: '1.0.0',
-          implementationNote: "IPC-to-HTTP transition: Skin definition forwarding pending"
-        };
+        
+        try {
+          // TASK-DIAG-001: Implement real IPC communication for backend skin loading
+          const ipcMessage = {
+            type: 'loadBackendSkin',
+            data: {
+              backendId,
+              timestamp: Date.now()
+            }
+          };
+
+          const skinDefinition = await sendIPCCommand(serviceEntry.pid, ipcMessage);
+          console.log(chalk.green(`[${serviceProtocol.toUpperCase()}] Real backend skin loaded: ${skinDefinition?.name || backendId}`));
+          
+          return skinDefinition;
+          
+        } catch (error) {
+          console.warn(chalk.yellow(`[${serviceProtocol.toUpperCase()}] IPC skin loading failed, using fallback: ${error}`));
+          
+          // Fallback to transitional skin if IPC fails
+          return {
+            id: `fallback-skin-${backendId}`,
+            name: `Fallback Skin for ${backendId}`,
+            version: '1.0.0',
+            fallbackReason: "IPC communication failed for skin loading",
+            implementationNote: "IPC failed - using minimal fallback skin definition"
+          };
+        }
       },
 
       getUniversalSkinEngine() {
         return {
-          applySkin: async (skinDefinition: any, context: any) => {
+          applySkin: async (skinDefinition: any, _context: any) => {
             console.log(chalk.blue(`[${serviceProtocol.toUpperCase()}] Applying skin: ${skinDefinition.name || skinDefinition.id}`));
             // IPC-to-HTTP transition: Architecture implemented, service integration pending
             return {
@@ -449,13 +537,13 @@ class RemoteTemplumAdapter {
         };
       },
 
-      async registerInterface(interfaceType: string, adapter: any) { 
+      async registerInterface(interfaceType: string, _adapter: any) { 
         console.log(chalk.blue(`[${serviceProtocol.toUpperCase()}] Registering interface: ${interfaceType}`));
         // IPC-to-HTTP transition: Architecture implemented, service integration pending
         return { success: true, message: "Interface registration forwarded to service" };
       },
 
-      async synchronizeInterfaceStates(result: any) { 
+      async synchronizeInterfaceStates(_result: any) { 
         console.log(chalk.blue(`[${serviceProtocol.toUpperCase()}] Synchronizing interface states...`));
         // IPC-to-HTTP transition: Architecture implemented, service integration pending
         return { success: true, message: "State synchronization forwarded to service" };

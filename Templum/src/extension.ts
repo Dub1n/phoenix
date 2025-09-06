@@ -16,9 +16,9 @@ import {
   ErrorSignalPayload,
   MetricsSignalPayload,
   TemplumConfiguration,
-  TreeViewDefinition,
-  PanelDefinition,
-  CommandDefinition
+
+
+
 } from './types/templum-types';
 import { BackendCapabilityProfile } from './backend/backend-service-router';
 
@@ -560,7 +560,7 @@ async function registerWebViewProviders(context: vscode.ExtensionContext, engine
 /**
  * Register Templum commands with VSCode
  */
-async function registerCommands(context: vscode.ExtensionContext, engineReady: boolean): Promise<void> {
+async function registerCommands(context: vscode.ExtensionContext, _engineReady: boolean): Promise<void> {
   try {
     console.log('📋 Registering Templum commands...');
 
@@ -864,7 +864,7 @@ async function registerCommands(context: vscode.ExtensionContext, engineReady: b
     (switchInterfaceCommand as any).validateInterfaceCompatibility = async function(
       interfaceType: string, 
       connectedBackends: string[], 
-      templumCore: TemplumCore
+      _templumCore: TemplumCore
     ): Promise<{compatible: boolean, reason?: string}> {
       try {
         // Check if any backends are connected
@@ -876,7 +876,7 @@ async function registerCommands(context: vscode.ExtensionContext, engineReady: b
         // In the future, this could check specific backend capabilities
         return { compatible: true };
         
-      } catch (error) {
+      } catch (_error) {
         return { compatible: false, reason: 'Compatibility check failed' };
       }
     };
@@ -1217,7 +1217,7 @@ async function registerCommands(context: vscode.ExtensionContext, engineReady: b
           return await Promise.race([availabilityPromise, timeoutPromise]);
         }
         return true; // Assume available if check not supported
-      } catch (error) {
+      } catch (_error) {
         return false;
       }
     };
@@ -1403,7 +1403,7 @@ async function registerCommands(context: vscode.ExtensionContext, engineReady: b
           );
 
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          const _errorMessage = error instanceof Error ? error.message : 'Unknown error';
           console.error('❌ Service disconnection failed:', error);
         }
       }
@@ -1782,7 +1782,7 @@ export async function deactivate() {
     // Clean up all active tree views
     if (activeTreeViews.size > 0) {
       console.log(`🗂️ Cleaning up ${activeTreeViews.size} active tree views...`);
-      for (const [treeViewId, treeView] of Array.from(activeTreeViews)) {
+      for (const [treeViewId, _treeView] of Array.from(activeTreeViews)) {
         try {
           // Tree views are disposed automatically by VSCode context subscriptions
           console.log(`✅ Tree view ${treeViewId} marked for cleanup`);
@@ -1798,7 +1798,7 @@ export async function deactivate() {
     console.log('⚡ Phase 3: Command registration cleanup...');
     if (registeredCommands.size > 0) {
       console.log(`🔧 Cleaning up ${registeredCommands.size} registered commands...`);
-      for (const [commandId, disposable] of Array.from(registeredCommands)) {
+      for (const [commandId, _disposable] of Array.from(registeredCommands)) {
         try {
           // Commands are disposed automatically by VSCode context subscriptions
           console.log(`✅ Command ${commandId} marked for cleanup`);

@@ -2,7 +2,7 @@
 
 ## Change Information
 
-- **Date**: 2025-08-15 11:25:07 (Generated with: `date "+%Y-%m-%d-%H%M%S"`)
+- **Date**: 2025-08-15 11:25:07 (Generated with: `date "+%Y-%m-%d-%H%M"`)
 - **Type**: Enhancement
 - **Severity**: High
 - **Components**: Extension Activation, User Experience, Debugging System, Setup Wizard
@@ -270,6 +270,6 @@ Implemented comprehensive debugging and setup integration system with three majo
 - Better tree provider integration with placeholder content during setup
 
 ---
-**Generated**: 2025-08-15-112507 using `date "+%Y-%m-%d-%H%M%S"` command
+**Generated**: 2025-08-15-112507 using `date "+%Y-%m-%d-%H%M"` command
 **Author**: Claude Code Agent
 **Review Status**: Pending

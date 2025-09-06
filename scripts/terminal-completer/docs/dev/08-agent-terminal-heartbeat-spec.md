@@ -76,7 +76,7 @@ function Invoke-AgentCommand {
     $result = Invoke-Expression $Command
     
     # Show immediate completion
-    Write-Host "[✓ Done] $(Get-Date -Format 'HH:mm:ss')" -ForegroundColor Green
+    Write-Host "[✓ Done] $(Get-Date -Format 'HH:MM')" -ForegroundColor Green
     
     return $result
 }
@@ -103,7 +103,7 @@ function Start-OptimizedHeartbeat {
 **Implementation Details**:
 
 - **1-second delay** added after ALL command execution
-- **Heartbeat message**: `# Agent terminal active - HH:mm:ss`
+- **Heartbeat message**: `# Agent terminal active - HH:MM`
 - **Universal coverage**: Works for any command, not just npm/node
 - **Simple timing**: Prevents commands from completing too quickly for agents to detect
 
@@ -123,7 +123,7 @@ function Start-OptimizedHeartbeat {
 Start-Sleep -Milliseconds 300
 
 $currentPath = Get-Location
-$timestamp = Get-Date -Format 'HH:mm:ss'
+$timestamp = Get-Date -Format 'HH:MM'
 $heartbeatCommands = @(
     @{cmd="echo # Agent heartbeat $timestamp"; output="# Agent heartbeat $timestamp"},
     @{cmd="echo # Terminal ready"; output="# Terminal ready"},
@@ -161,7 +161,7 @@ function Update-AgentStatus {
     param([string]$Status)
     
     # Clear line and show status
-    Write-Host "`r[Agent: $Status] $(Get-Date -Format 'HH:mm:ss')" -NoNewline -ForegroundColor Yellow
+    Write-Host "`r[Agent: $Status] $(Get-Date -Format 'HH:MM')" -NoNewline -ForegroundColor Yellow
 }
 ```
 
@@ -365,7 +365,7 @@ function Test-IsAgentTerminal {
 
 1. **Universal Heartbeat System**
    - ✓ 1-second delay after ALL commands
-   - ✓ Heartbeat message: `# Agent terminal active - HH:mm:ss`
+   - ✓ Heartbeat message: `# Agent terminal active - HH:MM`
    - ✓ Integrated into `agent-terminal-init.ps1`
    - ✓ Clean, minimal output
 

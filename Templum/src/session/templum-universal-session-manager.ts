@@ -15,12 +15,12 @@ import {
   CommandResult,
   TemplumConfiguration,
   BackendType,
-  TemplumError,
+
   isTemplumError,
   createTemplumError,
-  Signals,
+
   ErrorSignalPayload,
-  MetricsSignalPayload
+
 } from '../types/templum-types';
 
 // Import real component implementations
@@ -530,7 +530,7 @@ export class TemplumUniversalSessionManager extends EventEmitter {
         );
       }
 
-      const commandContext: CommandContext = {
+      const _commandContext: CommandContext = {
         sessionId: this.currentSessionId,
         activeInterface: this.activeInterfaceType,
         availableBackends: Array.from(this.activeBackends),
@@ -2019,7 +2019,7 @@ export class TemplumUniversalSessionManager extends EventEmitter {
           method: 'dedicated-session-sync'
         };
         
-      } catch (dedicatedError) {
+      } catch (_dedicatedError) {
         console.log(`Backend ${backendId} doesn't support dedicated session sync, trying state persistence`);
         
         // Strategy 2: Use state persistence commands
@@ -2032,7 +2032,7 @@ export class TemplumUniversalSessionManager extends EventEmitter {
             method: 'state-persistence'
           };
           
-        } catch (persistError) {
+        } catch (_persistError) {
           console.log(`Backend ${backendId} state persistence failed, trying basic sync`);
           
           // Strategy 3: Basic synchronization using standard commands
@@ -2145,7 +2145,7 @@ export class TemplumUniversalSessionManager extends EventEmitter {
     
     try {
       // Basic sync approach: Just inform backend of interface switch
-      const basicSyncData = {
+      const _basicSyncData = {
         event: 'interface_switch',
         sessionId: transferData.sessionId,
         fromInterface: transferData.fromInterface,
@@ -2172,7 +2172,7 @@ export class TemplumUniversalSessionManager extends EventEmitter {
         
         console.log(`Active session ID synchronized with backend ${backendId}`);
         
-      } catch (sessionIdError) {
+      } catch (_sessionIdError) {
         console.log(`Backend ${backendId} doesn't support active session sync - continuing with basic sync`);
       }
       

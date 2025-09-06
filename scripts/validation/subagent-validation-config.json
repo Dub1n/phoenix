@@ -1,0 +1,58 @@
+{
+  "subagent": {
+    "version": "1.0",
+    "description": "Configuration-driven validation for subagent workflow infrastructure",
+    "requiredDirectories": [
+      ".claude/handoff",
+      ".claude/handoff/input",
+      ".claude/handoff/output",
+      ".claude/handoff/archive",
+      ".claude/agents",
+      ".claude/agents/interfaces",
+      ".claude/agents/utils"
+    ],
+    "requiredFiles": {
+      "critical": [
+        ".claude/agents/interfaces/handoff-types.ts"
+      ],
+      "standard": [
+        ".claude/agents/utils/file-naming.ts",
+        ".claude/agents/utils/validation.ts",
+        ".claude/agents/utils/error-handling.ts",
+        ".claude/agents/utils/file-manager.ts"
+      ],
+      "optional": [
+        ".claude/agents/utils/cleanup.ts",
+        ".claude/agents/utils/audit-logger.ts",
+        ".claude/agents/utils/test-utilities.ts"
+      ]
+    },
+    "thresholds": {
+      "criticalFiles": "100%",
+      "standardFiles": "75%",
+      "optionalFiles": "0%"
+    },
+    "validation": {
+      "enableSchemaValidation": true,
+      "enableErrorScenarios": true,
+      "enablePerformanceTesting": false,
+      "timeout": 30000
+    },
+    "errorScenarios": {
+      "malformedJson": true,
+      "concurrentAccess": true,
+      "permissionErrors": true,
+      "resourceExhaustion": false
+    },
+    "schemas": {
+      "handoffInput": {
+        "required": ["project", "task_id", "workflow_phase", "context", "execution_parameters"],
+        "optional": ["priority", "dependencies", "metadata"]
+      },
+      "handoffOutput": {
+        "required": ["task_id", "status", "confidence", "execution_time_ms", "results", "next_action", "metadata"],
+        "optional": ["warnings", "debug_info"]
+      }
+    }
+  }
+}

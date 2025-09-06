@@ -12,9 +12,9 @@ import {
   VersionCompatibilityRule,
   VersionConflict,
   MigrationStrategy,
-  MigrationStep,
-  SkinRegistrationRequest,
-  SkinRegistrationResult,
+
+
+
   SkinVersionQuery,
   SkinVersionInfo,
   ISkinVersionManager,
@@ -30,16 +30,16 @@ import {
   CrossInterfaceCompatibilityResult,
   InterfaceCapabilityMatrix,
   AssetRequirements,
-  PerformanceConstraints,
+
   InterfaceType
 } from '../types/universal-skin-engine-types';
 import {
-  TemplumError,
+
   isTemplumError,
   createTemplumError,
-  Signals,
-  ErrorSignalPayload,
-  MetricsSignalPayload
+
+
+
 } from '../types/templum-types';
 
 /**
@@ -222,7 +222,7 @@ export class SkinVersionManager implements ISkinVersionManager {
       let overallCompatible = true;
 
       // Check basic version compatibility
-      const versionComparison = this.compareVersions(skinVersion, systemSemver);
+      const _versionComparison = this.compareVersions(skinVersion, systemSemver);
       
       // Major version differences indicate breaking changes
       if (skinVersion.major > systemSemver.major) {
@@ -303,7 +303,7 @@ export class SkinVersionManager implements ISkinVersionManager {
     try {
       // Get all versions for the requested skin
       const skinVersions = Array.from(availableVersions.entries())
-        .filter(([id, skin]) => skin.id === query.skinId)
+        .filter(([_id, skin]) => skin.id === query.skinId)
         .map(([id, skin]) => ({ id, skin, version: this.parseVersion(skin.version) }))
         .sort((a, b) => this.compareVersions(b.version, a.version)); // Sort descending (latest first)
 
@@ -788,7 +788,7 @@ export class SkinVersionManager implements ISkinVersionManager {
   private createDefaultMigrationStrategy(fromVersion: string, toVersion: string): MigrationStrategy {
     const fromSemver = this.parseVersion(fromVersion);
     const toSemver = this.parseVersion(toVersion);
-    const comparison = this.compareVersions(fromSemver, toSemver);
+    const _comparison = this.compareVersions(fromSemver, toSemver);
 
     let riskLevel: 'low' | 'medium' | 'high' = 'low';
     let strategy: 'automatic' | 'guided' | 'manual' | 'fallback' = 'automatic';
@@ -1041,7 +1041,7 @@ export class SkinVersionManager implements ISkinVersionManager {
   private async validateStructuralCompatibility(
     skin: UniversalSkinDefinition,
     targetInterface: InterfaceType,
-    options: Required<AdvancedCompatibilityOptions>
+    _options: Required<AdvancedCompatibilityOptions>
   ): Promise<StructuralCompatibilityResult> {
     const requirements = this.interfaceRequirements.get(targetInterface);
     if (!requirements) {
@@ -1091,7 +1091,7 @@ export class SkinVersionManager implements ISkinVersionManager {
   private async validateFeatureCompatibility(
     skin: UniversalSkinDefinition,
     targetInterface: InterfaceType,
-    options: Required<AdvancedCompatibilityOptions>
+    _options: Required<AdvancedCompatibilityOptions>
   ): Promise<FeatureCompatibilityResult> {
     const interfaceCapabilities = this.interfaceCapabilityMatrix[targetInterface];
     if (!interfaceCapabilities) {
@@ -1145,7 +1145,7 @@ export class SkinVersionManager implements ISkinVersionManager {
   private async validateAssetCompatibility(
     skin: UniversalSkinDefinition,
     targetInterface: InterfaceType,
-    options: Required<AdvancedCompatibilityOptions>
+    _options: Required<AdvancedCompatibilityOptions>
   ): Promise<AssetCompatibilityResult> {
     const requirements = this.interfaceRequirements.get(targetInterface);
     if (!requirements) {
@@ -1202,7 +1202,7 @@ export class SkinVersionManager implements ISkinVersionManager {
   private async validatePerformanceCompatibility(
     skin: UniversalSkinDefinition,
     targetInterface: InterfaceType,
-    options: Required<AdvancedCompatibilityOptions>
+    _options: Required<AdvancedCompatibilityOptions>
   ): Promise<PerformanceCompatibilityResult> {
     const requirements = this.interfaceRequirements.get(targetInterface);
     if (!requirements) {
@@ -1445,7 +1445,7 @@ export class SkinVersionManager implements ISkinVersionManager {
     }
   }
 
-  private isComponentValid(skin: UniversalSkinDefinition, component: string, targetInterface: InterfaceType): boolean {
+  private isComponentValid(skin: UniversalSkinDefinition, component: string, _targetInterface: InterfaceType): boolean {
     // Simplified validation - in a real implementation, this would be more comprehensive
     switch (component) {
       case 'views':
@@ -1461,7 +1461,7 @@ export class SkinVersionManager implements ISkinVersionManager {
     }
   }
 
-  private getComponentValidationIssues(skin: UniversalSkinDefinition, component: string, targetInterface: InterfaceType): string[] {
+  private getComponentValidationIssues(skin: UniversalSkinDefinition, component: string, _targetInterface: InterfaceType): string[] {
     const issues: string[] = [];
     
     switch (component) {
@@ -1526,7 +1526,7 @@ export class SkinVersionManager implements ISkinVersionManager {
     return limitations[feature]?.[targetInterface] || [];
   }
 
-  private validateAsset(asset: any, requirements: AssetRequirements, assetType: string): string[] {
+  private validateAsset(asset: any, _requirements: AssetRequirements, _assetType: string): string[] {
     const issues: string[] = [];
     
     // This is a simplified validation - real implementation would check file existence, format, etc.

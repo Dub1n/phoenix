@@ -600,7 +600,7 @@ export class UniversalLayoutEngine {
 
   // Interface-specific helper methods
   private prepareTreeViewData(skinDefinition: UniversalSkinMenuDefinition | PCLSkinMenuDefinition): any[] {
-    return skinDefinition.items.map((item, index) => ({
+    return skinDefinition.items.map((item, _index) => ({
       id: item.id,
       label: item.label,
       description: item.description,
@@ -615,7 +615,7 @@ export class UniversalLayoutEngine {
 
   private prepareWebViewHtml(skinDefinition: UniversalSkinMenuDefinition | PCLSkinMenuDefinition): string {
     // Generate basic HTML structure for WebView
-    const theme = this.resolveTheme(skinDefinition.theme);
+    const _theme = this.resolveTheme(skinDefinition.theme);
     return `
       <html>
         <head>
@@ -656,7 +656,7 @@ export class UniversalLayoutEngine {
       }));
   }
 
-  private prepareIconMapping(skinDefinition: UniversalSkinMenuDefinition | PCLSkinMenuDefinition, iconSize?: string): Record<string, string> {
+  private prepareIconMapping(skinDefinition: UniversalSkinMenuDefinition | PCLSkinMenuDefinition, _iconSize?: string): Record<string, string> {
     const icons: Record<string, string> = {};
     
     for (const item of skinDefinition.items) {
@@ -682,7 +682,7 @@ export class UniversalLayoutEngine {
     return shortcuts;
   }
 
-  private prepareProgressIndicators(skinDefinition: UniversalSkinMenuDefinition | PCLSkinMenuDefinition): any {
+  private prepareProgressIndicators(_skinDefinition: UniversalSkinMenuDefinition | PCLSkinMenuDefinition): any {
     return {
       enabled: true,
       style: 'spinner',
@@ -696,7 +696,7 @@ export class UniversalLayoutEngine {
       .map(item => item.command!);
   }
 
-  private adaptThemeForVSCode(theme: ResolvedTheme): any {
+  private adaptThemeForVSCode(_theme: ResolvedTheme): any {
     return {
       titleColor: '#007ACC',
       itemColor: '#CCCCCC',
@@ -715,7 +715,7 @@ export class UniversalLayoutEngine {
     }, null, 2);
   }
 
-  private renderAsTable(skinDefinition: UniversalSkinMenuDefinition | PCLSkinMenuDefinition, layout: UniversalCalculatedLayout): string {
+  private renderAsTable(skinDefinition: UniversalSkinMenuDefinition | PCLSkinMenuDefinition, _layout: UniversalCalculatedLayout): string {
     let table = `┌─────┬──────────────┬──────────────┬──────────────┐\n`;
     table += `│ ID  │ Label        │ Description  │ Type         │\n`;
     table += `├─────┼──────────────┼──────────────┼──────────────┤\n`;
@@ -732,7 +732,7 @@ export class UniversalLayoutEngine {
     return table;
   }
 
-  private renderAsText(skinDefinition: UniversalSkinMenuDefinition | PCLSkinMenuDefinition, layout: UniversalCalculatedLayout): string {
+  private renderAsText(skinDefinition: UniversalSkinMenuDefinition | PCLSkinMenuDefinition, _layout: UniversalCalculatedLayout): string {
     let output = `${skinDefinition.title}\n`;
     if (skinDefinition.subtitle) {
       output += `${skinDefinition.subtitle}\n`;

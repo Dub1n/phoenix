@@ -7,12 +7,8 @@
  * ---*/
 
 import { 
-  E2ETestScenario, 
-  E2ETestStep, 
-  E2ETestAction, 
-  E2EStepValidation 
-} from './e2e-test-framework';
-import { InterfaceType } from '../../types/templum-types';
+  E2ETestScenario 
+} from '../../testing/e2e-test-framework';
 
 // E2E Scenario Library
 export class E2EScenarioLibrary {

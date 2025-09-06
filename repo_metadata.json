@@ -25039,8 +25039,8 @@
       "size": 9270
     },
     {
-      "path": "fixes\\2025-08-28-150428-enhanced-fallback-coordination-universal-skin-engine.md",
-      "name": "2025-08-28-150428-enhanced-fallback-coordination-universal-skin-engine.md",
+      "path": "fixes\\2025-08-28-150428-enhanced-fallback-universal-skin-engine.md",
+      "name": "2025-08-28-150428-enhanced-fallback-universal-skin-engine.md",
       "created": 1756389922.3251674,
       "modified": 1756407411.332332,
       "size": 10158
@@ -25382,8 +25382,8 @@
       "size": 12350
     },
     {
-      "path": "fixes\\2025-09-01-131501-comprehensive-fix-performance-claims-validation-task-201.md",
-      "name": "2025-09-01-131501-comprehensive-fix-performance-claims-validation-task-201.md",
+      "path": "fixes\\2025-09-01-131501-fix-performance-claims-validation-task-201.md",
+      "name": "2025-09-01-131501-fix-performance-claims-validation-task-201.md",
       "created": 1756728966.071734,
       "modified": 1756806924.236177,
       "size": 12238
@@ -25487,8 +25487,8 @@
       "size": 9370
     },
     {
-      "path": "fixes\\2025-09-01-vscode-tree-provider-backend-capability-profile-implementation.md",
-      "name": "2025-09-01-vscode-tree-provider-backend-capability-profile-implementation.md",
+      "path": "fixes\\2025-09-01-vscode-tree-backend-capability-profile.md",
+      "name": "2025-09-01-vscode-tree-backend-capability-profile.md",
       "created": 1756728299.9439938,
       "modified": 1756728299.9439938,
       "size": 10438

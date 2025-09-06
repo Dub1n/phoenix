@@ -9,12 +9,9 @@
 import { EventEmitter } from 'events';
 import * as readline from 'readline';
 import { 
-  ErrorSignalPayload, 
-  MetricsSignalPayload,
   createTemplumError, 
   isTemplumError,
   InterfaceType,
-  CommandContext,
   CommandResult,
   UniversalSkinDefinition,
   StateUpdate,
@@ -26,13 +23,11 @@ import {
 } from './templum-orchestrator-interface';
 import {
   TerminalUI,
-  TerminalColorTheme,
   DefaultColorThemes,
   ProgressBar,
   Spinner,
   InteractivePrompt,
   ResponsiveLayout,
-  createTerminalUI,
   createDefaultTerminalUI
 } from './terminal-ui-components';
 import chalk from 'chalk';
@@ -335,7 +330,7 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
    * TASK-CLI-014: Process local CLI commands that should not be forwarded to Templum Core
    * @private
    */
-  private async processLocalCommand(command: string, args: any[] = []): Promise<any> {
+  private async processLocalCommand(command: string, _args: any[] = []): Promise<any> {
     const cmd = command.trim().toLowerCase();
     
     try {
@@ -569,7 +564,7 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
   /**
    * Handle system commands
    */
-  private async handleSystemCommand(action: string, args: string[], data?: any): Promise<void> {
+  private async handleSystemCommand(action: string, _args: string[], _data?: any): Promise<void> {
     switch (action) {
       case 'status':
         const systemStatus = this.orchestrator.getSystemStatus();
@@ -595,7 +590,7 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
   /**
    * Handle services commands
    */
-  private async handleServicesCommand(action: string, args: string[], data?: any): Promise<void> {
+  private async handleServicesCommand(action: string, _args: string[], _data?: any): Promise<void> {
     switch (action) {
       case 'list':
         const systemStatus = this.orchestrator.getSystemStatus();
@@ -620,7 +615,7 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
   /**
    * Handle backend-specific commands
    */
-  private async handleBackendCommand(action: string, args: string[], data?: any): Promise<void> {
+  private async handleBackendCommand(action: string, args: string[], _data?: any): Promise<void> {
     if (action === 'info' && args.length > 0) {
       const backendId = args[0];
       const systemStatus = this.orchestrator.getSystemStatus();
@@ -630,7 +625,7 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
         // Find the backend in the typed structure
         const backendEntry = Object.entries(backends).find(([key]) => key === backendId);
         if (backendEntry) {
-          const [key, backend] = backendEntry;
+          const [_key, backend] = backendEntry;
           console.log(chalk.green(`\n📋 Backend Info: ${backendId}`));
           console.log(`  Connected: ${backend.connected ? '✅' : '❌'}`);
           console.log(`  Health: ${backend.health || 'Unknown'}`);
@@ -661,7 +656,7 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
   /**
    * Handle command execution
    */
-  private async handleCommandExecution(action: string, args: string[], data?: any): Promise<void> {
+  private async handleCommandExecution(action: string, _args: string[], _data?: any): Promise<void> {
     if (action === 'custom') {
       const command = await this.promptForCommand('Enter command to execute:');
       if (command.trim()) {
@@ -679,7 +674,7 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
   /**
    * Handle settings commands
    */
-  private async handleSettingsCommand(action: string, args: string[], data?: any): Promise<void> {
+  private async handleSettingsCommand(action: string, _args: string[], _data?: any): Promise<void> {
     switch (action) {
       case 'toggle-mode':
         console.log(chalk.blue('🔀 Switching to command mode...'));
@@ -919,13 +914,13 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
       
       // Get system status with real backend connection information
       const systemStatus = this.orchestrator.getSystemStatus();
-      const backendConnections = systemStatus.coreEngine.backendConnections;
+      const backendConnections = systemStatus.coreEngine?.backendConnections || { backends: {}, totalConnections: 0, healthyConnections: 0 };
       
       // Display backend status
       this.displayBackendStatus(backendConnections);
       
       // Prioritize healthy backends for skin loading
-      const healthyBackends = Object.entries(backendConnections.backends)
+      const healthyBackends = Object.entries(backendConnections.backends || {})
         .filter(([_, status]) => status.connected && status.health === 'healthy')
         .sort((a, b) => {
           const aTime = a[1].responseTime || 1000;
@@ -1036,7 +1031,7 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
       this.displayHelp();
     } else if (input === 'status') {
       const systemStatus = this.orchestrator.getSystemStatus();
-      this.displayBackendStatus(systemStatus.coreEngine.backendConnections);
+      this.displayBackendStatus(systemStatus.coreEngine?.backendConnections || { backends: {}, totalConnections: 0, healthyConnections: 0 });
     } else if (input === 'refresh') {
       await this.loadInitialContent();
     } else if (input.startsWith('load ')) {
@@ -1451,7 +1446,7 @@ Using abstraction layer with real backend integration.
       }
       console.log('\n💡 Try: load <backend-id>');
       
-    } catch (error) {
+    } catch (_error) {
       console.log('⚠️ Failed to get backend status');
     }
   }

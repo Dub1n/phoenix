@@ -108,7 +108,7 @@
     "test:health": "node scripts/test-health-monitor.js",
     "test:health-status": "node scripts/test-health-monitor.js status",
     "coverage:reality-check": "node scripts/coverage-reality-check.js",
-    "prepare": "husky install || true",
+    "prepare": "cd .. && husky install Templum/.husky || true",
     "precommit": "npm run check:types && npm run check:tests && npm run test:health"
   },
   "keywords": [
@@ -147,12 +147,16 @@
     "@types/ws": "^8.5.10",
     "@vscode/test-electron": "^2.3.0",
     "eslint": "^9.32.0",
+    "eslint-formatter-compact": "^8.40.0",
     "husky": "^8.0.3",
     "jest": "^30.0.5",
     "prettier": "^3.6.2",
-    "ts-jest": "^29.4.0",
+    "ts-jest": "^29.4.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.41.0"
+  },
+  "overrides": {
+    "glob": "^10.0.0"
   }
 }

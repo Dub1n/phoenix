@@ -523,7 +523,7 @@ export class RollbackCriteria extends EventEmitter {
     return { valid: errors.length === 0, errors };
   }
 
-  private getRelevantCriteria(componentId: string, interfaceType: string): RollbackCriterion[] {
+  private getRelevantCriteria(_componentId: string, _interfaceType: string): RollbackCriterion[] {
     // For now, return all criteria. In real implementation, would filter by component/interface
     return Array.from(this.criteria.values());
   }
@@ -531,7 +531,7 @@ export class RollbackCriteria extends EventEmitter {
   private async evaluateCriterion(
     criterion: RollbackCriterion,
     metrics: Record<string, any>,
-    context?: any
+    _context?: any
   ): Promise<{ triggered: boolean; value: any }> {
     const metricValue = this.extractMetricValue(metrics, criterion.condition.metric);
     
@@ -904,7 +904,7 @@ export class RollbackCriteria extends EventEmitter {
     console.log(`Executing validation phase for ${execution.componentId}`);
   }
 
-  private async executeCleanupPhase(execution: RollbackExecution, phase: RollbackPhase): Promise<void> {
+  private async executeCleanupPhase(execution: RollbackExecution, _phase: RollbackPhase): Promise<void> {
     // Simulate cleanup
     await new Promise(resolve => setTimeout(resolve, 1000));
     console.log(`Executing cleanup phase for ${execution.componentId}`);
@@ -927,9 +927,9 @@ export class RollbackCriteria extends EventEmitter {
   }
 
   private async checkDurationRequirement(
-    criterion: RollbackCriterion,
-    currentValue: any,
-    duration: number
+    _criterion: RollbackCriterion,
+    _currentValue: any,
+    _duration: number
   ): Promise<boolean> {
     // Simplified implementation - in real system would check historical data
     return true; // Assume duration requirement is met
@@ -955,7 +955,7 @@ export class RollbackCriteria extends EventEmitter {
   }
 
   // Placeholder methods for external integrations
-  private async getBaselinePerformance(componentId: string): Promise<Record<string, any>> {
+  private async getBaselinePerformance(_componentId: string): Promise<Record<string, any>> {
     return { responseTime: 100, memoryUsage: 150, cpuUsage: 20 };
   }
 
@@ -963,15 +963,15 @@ export class RollbackCriteria extends EventEmitter {
     return { overall: 'healthy', score: 85 };
   }
 
-  private async getActiveUserSessions(componentId: string): Promise<number> {
+  private async getActiveUserSessions(_componentId: string): Promise<number> {
     return 0; // Placeholder
   }
 
-  private async getCriticalProcesses(componentId: string): Promise<string[]> {
+  private async getCriticalProcesses(_componentId: string): Promise<string[]> {
     return []; // Placeholder
   }
 
-  private async getSystemDependencies(componentId: string): Promise<string[]> {
+  private async getSystemDependencies(_componentId: string): Promise<string[]> {
     return []; // Placeholder
   }
 
@@ -979,11 +979,11 @@ export class RollbackCriteria extends EventEmitter {
     return { timestamp: Date.now(), componentId };
   }
 
-  private async validateRollbackExecution(execution: RollbackExecution): Promise<any> {
+  private async validateRollbackExecution(_execution: RollbackExecution): Promise<any> {
     return { validated: true, timestamp: Date.now() };
   }
 
-  private calculatePerformanceRecovery(execution: RollbackExecution): number {
+  private calculatePerformanceRecovery(_execution: RollbackExecution): number {
     // Simulate performance recovery calculation
     return Math.floor(Math.random() * 40) + 60; // 60-100% recovery
   }
@@ -1005,7 +1005,7 @@ export class RollbackCriteria extends EventEmitter {
     return groups;
   }
 
-  private calculateAverageDecisionTime(decisions: RollbackDecision[]): number {
+  private calculateAverageDecisionTime(_decisions: RollbackDecision[]): number {
     // Placeholder - would calculate from actual decision timing data
     return 1500; // 1.5 seconds average
   }
@@ -1018,7 +1018,7 @@ export class RollbackCriteria extends EventEmitter {
     return totalTime / completedExecutions.length;
   }
 
-  private calculateFalsePositiveRate(decisions: RollbackDecision[]): number {
+  private calculateFalsePositiveRate(_decisions: RollbackDecision[]): number {
     // Placeholder - would calculate based on retrospective analysis
     return 5; // 5% false positive rate
   }

@@ -7,34 +7,34 @@
  * manages backend service connections following Templum 1.0 specification.
  */
 
-import { EventEmitter } from 'events';
 import { ChildProcess } from 'child_process';
+import { EventEmitter } from 'events';
 // Unused imports removed: spawn, createServer
-import * as WebSocket from 'ws';
-import * as net from 'net';
 import * as fs from 'fs';
+import * as net from 'net';
 import * as path from 'path';
-import { 
-  createTemplumError, 
-  isTemplumError,
-  BackendType,
-  InterfaceType,
-  SkinTheme
-} from '../types/templum-types';
-import { 
-  BackendConfig, 
-  UniversalSkinDefinition, 
-  ThemeDefinition,
-  ColorPalette,
-  ColorScale,
-  ComponentSkin,
-  SkinAssets,
-  SkinInheritance,
-  RenderingConfiguration,
-  SkinPerformanceConfig
-} from '../types/universal-skin-engine-types';
+import * as WebSocket from 'ws';
 import { UniversalSkinEngine } from '../skin/universal-skin-engine';
-import { ConnectionFactory, BackendConnection } from './connection-factory';
+import {
+    BackendType,
+    createTemplumError,
+    InterfaceType,
+    isTemplumError,
+    SkinTheme
+} from '../types/templum-types';
+import {
+    BackendConfig,
+    ColorPalette,
+    ColorScale,
+    ComponentSkin,
+    RenderingConfiguration,
+    SkinAssets,
+    SkinInheritance,
+    SkinPerformanceConfig,
+    ThemeDefinition,
+    UniversalSkinDefinition
+} from '../types/universal-skin-engine-types';
+import { BackendConnection, ConnectionFactory } from './connection-factory';
 import { DynamicCommandRouter } from './dynamic-command-router';
 import { ServiceDiscovery, ServiceDiscoveryOptions } from './service-discovery';
 // Unused import removed: backendIntegrationConfig
@@ -50,9 +50,43 @@ export type IPCMessageType =
   | 'executeCommand' | 'command_response'
   | 'getCapabilities' | 'capabilities_response'
   | 'getVersion' | 'version_response'
-  | 'shutdown' | 'error';
+  | 'shutdown' | 'error'
+  // Litany WebSocket message types
+  | 'skin_definition_updated' | 'context_sync_notification'
+  | 'analysis_complete' | 'service_status' | 'error_notification';
 
-export interface IPCMessage<T = any> {
+// Backend Service Communication Types
+export interface BackendServicePayload {
+  [key: string]: unknown;
+}
+
+export interface BackendApiPayload extends BackendServicePayload {
+  skinId?: string;
+  command?: string;
+  args?: unknown[];
+}
+
+export interface BackendEventPayload extends BackendServicePayload {
+  backendId: string;
+  commandCount?: number;
+  aliasCount?: number;
+  commandsRemoved?: number;
+  aliasesRemoved?: number;
+}
+
+export interface SkinDefinitionResponse {
+  skinDefinition?: object;
+  error?: string;
+  status?: string;
+}
+
+export interface CommandExecutionResponse {
+  result?: unknown;
+  error?: string;
+  executionTime?: number;
+}
+
+export interface IPCMessage<T extends BackendServicePayload = BackendServicePayload> {
   id: string;
   type: IPCMessageType;
   method?: string;
@@ -61,13 +95,58 @@ export interface IPCMessage<T = any> {
   requestId?: string;
 }
 
-export interface IPCResponse<T = any> extends IPCMessage<T> {
+export interface IPCResponse<T extends BackendServicePayload = BackendServicePayload> extends IPCMessage<T> {
   requestId: string;
   success: boolean;
   error?: string;
   data?: T;
   service?: string;
 }
+
+// Specialized IPC Message Interfaces for different communication patterns
+export interface IPCNotificationMessage<T extends BackendServicePayload = BackendServicePayload> extends IPCMessage<T> {
+  data?: T;
+}
+
+// Litany WebSocket Notification Interfaces
+export interface SkinDefinitionUpdateMessage extends IPCNotificationMessage {
+  type: 'skin_definition_updated';
+  skinId: string;
+  skinDefinition: unknown;
+}
+
+export interface ContextSyncNotificationMessage extends IPCNotificationMessage {
+  type: 'context_sync_notification';
+  contextId: string;
+  data?: {
+    syncStatus: string;
+    [key: string]: unknown;
+  };
+}
+
+export interface AnalysisCompleteMessage extends IPCNotificationMessage {
+  type: 'analysis_complete';
+  analysisId: string;
+  results: unknown;
+}
+
+export interface ServiceStatusMessage extends IPCNotificationMessage {
+  type: 'service_status';
+  status: string;
+}
+
+export interface ErrorNotificationMessage extends IPCNotificationMessage {
+  type: 'error_notification';
+  error: string;
+}
+
+// Union type for all specialized Litany WebSocket message types  
+export type LitanyWebSocketMessage = 
+  | SkinDefinitionUpdateMessage
+  | ContextSyncNotificationMessage  
+  | AnalysisCompleteMessage
+  | ServiceStatusMessage
+  | ErrorNotificationMessage;
 
 interface HaruspexConnectionInfo {
   host: string;
@@ -81,7 +160,7 @@ export interface BackendServiceRouter {
   discoverAndConnect(): Promise<void>;
   getConnectionStatus(): BackendConnectionStatus;
   loadBackendSkin(backendId: string): Promise<UniversalSkinDefinition | null>;
-  executeCommand(backendId: string, command: string, args?: any[]): Promise<any>;
+  executeCommand(backendId: string, command: string, args?: unknown[]): Promise<CommandExecutionResponse>;
   isServiceAvailable(backendId: string): Promise<boolean>;
   // TASK-NEW-050: Service Connection Management APIs
   connectToService(serviceId: string): Promise<{ success: boolean; message: string; responseTime?: number }>;
@@ -443,11 +522,11 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
     });
 
     // Forward command router events for debugging/monitoring
-    this.commandRouter.on('backendRegistered', (event: any) => {
+    this.commandRouter.on('backendRegistered', (event: BackendEventPayload) => {
       console.log(`[DYNAMIC_COMMAND_ROUTER] Commands registered for ${event.backendId}: ${event.commandCount} commands, ${event.aliasCount} aliases`);
     });
 
-    this.commandRouter.on('backendUnregistered', (event: any) => {
+    this.commandRouter.on('backendUnregistered', (event: BackendEventPayload) => {
       console.log(`[DYNAMIC_COMMAND_ROUTER] Commands unregistered for ${event.backendId}: ${event.commandsRemoved} commands, ${event.aliasesRemoved} aliases`);
     });
   }
@@ -836,8 +915,9 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
         return new Promise<boolean>((resolve) => {
           const timeout = setTimeout(() => resolve(false), 2000);
           
-          const pingHandler = (message: any) => {
-            if (message.type === 'pong' || message.success) {
+          const pingHandler = (message: IPCMessage | IPCResponse) => {
+            // Fixed: Using proper interface types for message.success property access
+            if (message.type === 'pong' || (message as IPCResponse).success) {
               clearTimeout(timeout);
               childProcess.off('message', pingHandler);
               resolve(true);
@@ -889,8 +969,8 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
           
           const messageHandler = (data: WebSocket.RawData) => {
             try {
-              const message = JSON.parse(data.toString());
-              if (message.type === 'pong' || message.success) {
+              const message = JSON.parse(data.toString()) as IPCMessage | IPCResponse;
+              if (message.type === 'pong' || (message as IPCResponse).success) {
                 clearTimeout(timeout);
                 ws.off('message', messageHandler);
                 resolve(true);
@@ -1002,9 +1082,9 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
         console.log(`[SKIN-VERSION] ${serviceId} has version endpoint, querying: ${backendConfig.endpoints.version}`);
         const response = await this.callBackendServiceAPI(connection, 'getVersion', {});
         
-        if (response && response.version) {
-          console.log(`[SKIN-VERSION] ${serviceId} version from endpoint: ${response.version}`);
-          return response.version;
+        if (response && (response as { version?: string }).version) {
+          console.log(`[SKIN-VERSION] ${serviceId} version from endpoint: ${(response as { version?: string }).version}`);
+          return (response as { version?: string }).version!
         }
       }
     } catch (error) {
@@ -1464,11 +1544,11 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
    * Handles notifications, events, and status updates from Litany service
    * Real implementation for context management and skin definition notifications
    */
-  private processLitanyWebSocketMessage(serviceId: string, message: any): void {
+  private processLitanyWebSocketMessage(serviceId: string, message: LitanyWebSocketMessage | IPCMessage): void {
     console.log(`[WebSocket] Processing Litany message from ${serviceId}:`, { 
       type: message.type, 
       method: message.method,
-      hasData: !!message.data 
+      hasData: !!(message as IPCNotificationMessage).data 
     });
 
     try {
@@ -1476,37 +1556,42 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
       switch (message.type) {
         case 'skin_definition_updated':
           // Handle real-time skin definition updates
-          console.log(`[WebSocket] Litany ${serviceId} skin definition updated:`, message.skinId);
-          if (message.skinDefinition) {
+          const skinUpdateMsg = message as SkinDefinitionUpdateMessage;
+          console.log(`[WebSocket] Litany ${serviceId} skin definition updated:`, skinUpdateMsg.skinId);
+          if (skinUpdateMsg.skinDefinition) {
             // Emit signal for UI updates - other components can listen for skin changes
-            console.log(`[WebSocket] Broadcasting skin definition update for ${message.skinId}`);
+            console.log(`[WebSocket] Broadcasting skin definition update for ${skinUpdateMsg.skinId}`);
           }
           break;
 
         case 'context_sync_notification':
           // Handle context synchronization notifications from Litany
-          console.log(`[WebSocket] Litany ${serviceId} context sync notification:`, message.contextId);
-          if (message.data?.syncStatus) {
-            console.log(`[WebSocket] Context sync ${message.data.syncStatus} for ${message.contextId}`);
+          const contextSyncMsg = message as ContextSyncNotificationMessage;
+          console.log(`[WebSocket] Litany ${serviceId} context sync notification:`, contextSyncMsg.contextId);
+          if (contextSyncMsg.data?.syncStatus) {
+            console.log(`[WebSocket] Context sync ${contextSyncMsg.data.syncStatus} for ${contextSyncMsg.contextId}`);
           }
           break;
 
         case 'analysis_complete':
           // Handle completed analysis notifications
-          console.log(`[WebSocket] Litany ${serviceId} analysis completed:`, message.analysisId);
-          if (message.results) {
-            console.log(`[WebSocket] Analysis results available for ${message.analysisId}`);
+          const analysisCompleteMsg = message as AnalysisCompleteMessage;
+          console.log(`[WebSocket] Litany ${serviceId} analysis completed:`, analysisCompleteMsg.analysisId);
+          if (analysisCompleteMsg.results) {
+            console.log(`[WebSocket] Analysis results available for ${analysisCompleteMsg.analysisId}`);
           }
           break;
 
         case 'service_status':
           // Handle service status updates
-          console.log(`[WebSocket] Litany ${serviceId} status update:`, message.status);
+          const serviceStatusMsg = message as ServiceStatusMessage;
+          console.log(`[WebSocket] Litany ${serviceId} status update:`, serviceStatusMsg.status);
           break;
 
         case 'error_notification':
           // Handle error notifications from Litany service
-          console.warn(`[WebSocket] Litany ${serviceId} error notification:`, message.error);
+          const errorNotificationMsg = message as ErrorNotificationMessage;
+          console.warn(`[WebSocket] Litany ${serviceId} error notification:`, errorNotificationMsg.error);
           break;
 
         default:
@@ -1525,7 +1610,7 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
    * Generic backend service API caller with protocol routing
    * Routes API calls to appropriate protocol-specific handlers
    */
-  private async callBackendServiceAPI(connection: BackendConnection, apiMethod: string, payload: any): Promise<any> {
+  private async callBackendServiceAPI(connection: BackendConnection, apiMethod: string, payload: BackendServicePayload): Promise<BackendServicePayload> {
     try {
       console.log(`Calling ${apiMethod} on ${connection.id} via ${connection.protocol}...`);
       
@@ -1556,7 +1641,7 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
    * Call backend service via IPC protocol (Haruspex)
    * Real IPC implementation using HaruspexIPCClient
    */
-  private async callIPCService(connection: BackendConnection, apiMethod: string, payload: any): Promise<any> {
+  private async callIPCService(connection: BackendConnection, apiMethod: string, payload: BackendServicePayload): Promise<BackendServicePayload> {
     console.log(`[IPC] Calling ${apiMethod} on ${connection.id}`);
     
     try {
@@ -1599,7 +1684,11 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
         // Handle skin definition responses with graceful fallback
         if (apiMethod === 'getSkinDefinition' && !response) {
           console.log(`[ARCHITECTURAL SEPARATION] ${connection.id} skin definition not available, using graceful fallback`);
-          return null; // Universal Skin Engine will handle fallback
+          return { 
+            fallback: true, 
+            message: 'Skin definition not available from IPC backend',
+            source: 'templum-ipc-fallback' 
+          };
         }
         
         // Handle different response formats
@@ -1645,7 +1734,7 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
    * Call backend service via HTTP protocol (PCL)
    * Enhanced implementation for real PCL service communication with fallback endpoints
    */
-  private async callHTTPService(connection: BackendConnection, apiMethod: string, payload: any): Promise<any> {
+  private async callHTTPService(connection: BackendConnection, apiMethod: string, payload: BackendServicePayload): Promise<BackendServicePayload> {
     console.log(`[HTTP] Calling ${apiMethod} on real ${connection.id} PCL service`);
     
     try {
@@ -1681,7 +1770,7 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
    * Try HTTP endpoints with fault-tolerant fallbacks for minimal backends
    * TASK-API-001: Backend API Endpoint Standardization
    */
-  private async tryHTTPEndpointsWithFallback(connection: BackendConnection, apiMethod: string, payload: any): Promise<any> {
+  private async tryHTTPEndpointsWithFallback(connection: BackendConnection, apiMethod: string, payload: BackendServicePayload): Promise<BackendServicePayload> {
     const endpointAttempts = this.getEndpointAttempts(connection, apiMethod, payload);
     
     let lastError: Error | null = null;
@@ -1711,7 +1800,10 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
             console.log(`[HTTP] SUCCESS ${connection.id} endpoint: ${attempt.method} ${attempt.endpoint}`);
             
             // Handle response transformation if needed
-            return attempt.transformResponse ? attempt.transformResponse(responseData) : responseData;
+            const result = attempt.transformResponse 
+              ? attempt.transformResponse(responseData as BackendServicePayload) 
+              : responseData;
+            return result as BackendServicePayload;
           } else {
             throw new Error(`HTTP ${response.status} ${response.statusText}`);
           }
@@ -1739,11 +1831,11 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
   /**
    * Get ordered list of endpoints to try for each API method
    */
-  private getEndpointAttempts(connection: BackendConnection, apiMethod: string, payload: any): Array<{
+  private getEndpointAttempts(connection: BackendConnection, apiMethod: string, payload: BackendApiPayload): Array<{
     endpoint: string;
     method: string;
-    payload?: any;
-    transformResponse?: (data: any) => any;
+    payload?: BackendApiPayload;
+    transformResponse?: (data: unknown) => unknown;
   }> {
     const baseUrl = connection.endpoint;
     
@@ -1782,7 +1874,8 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
           {
             endpoint: `${baseUrl}/`,
             method: 'GET',
-            transformResponse: (data) => data.version ? { version: data.version } : null
+            transformResponse: (data: unknown) => 
+              (data as { version?: string }).version ? { version: (data as { version?: string }).version } : null
           }
         ];
         
@@ -1823,7 +1916,7 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
   /**
    * Provide graceful fallback responses for non-critical endpoints
    */
-  private getGracefulFallbackResponse(connection: BackendConnection, apiMethod: string, _payload: any): any {
+  private getGracefulFallbackResponse(connection: BackendConnection, apiMethod: string, _payload: BackendServicePayload): BackendServicePayload {
     switch (apiMethod) {
       case 'getCapabilities':
         console.log(`[FALLBACK] Providing default capabilities for ${connection.id}`);
@@ -1842,7 +1935,11 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
         };
         
       default:
-        return null;
+        return {
+          fallback: true,
+          message: `No fallback available for ${apiMethod}`,
+          source: 'templum-fallback-default'
+        };
     }
   }
 
@@ -1850,7 +1947,7 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
    * Call backend service via WebSocket protocol (Litany)
    * Enhanced implementation for real Litany service communication
    */
-  private async callWebSocketService(connection: BackendConnection, apiMethod: string, payload: any): Promise<any> {
+  private async callWebSocketService(connection: BackendConnection, apiMethod: string, payload: BackendServicePayload): Promise<BackendServicePayload> {
     console.log(`[WebSocket] Calling ${apiMethod} on real ${connection.id} Litany service`);
     
     try {
@@ -2015,31 +2112,33 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
 
       const response = await this.callBackendServiceAPI(connection, 'getSkinDefinition', skinDefinitionRequest);
       
-      if (response && response.skinDefinition) {
+      if (response && (response as { skinDefinition?: UniversalSkinDefinition }).skinDefinition) {
         console.log(`Successfully loaded skin definition from ${backendId}`);
         
+        const skinResponse = response as { skinDefinition: UniversalSkinDefinition };
+        
         // TASK-SKIN-004: Update stored backend config with capabilities from skin definition
-        if (response.skinDefinition.backendConfig) {
+        if (skinResponse.skinDefinition.backendConfig) {
           const currentConfig = this.backendConfigs.get(backendId);
           if (currentConfig) {
             // Merge capabilities from skin definition into stored config
-            if (response.skinDefinition.backendConfig.capabilities) {
-              currentConfig.capabilities = response.skinDefinition.backendConfig.capabilities;
+            if (skinResponse.skinDefinition.backendConfig.capabilities) {
+              currentConfig.capabilities = skinResponse.skinDefinition.backendConfig.capabilities;
               console.log(`[SKIN-CAPABILITIES] Updated stored capabilities for ${backendId}:`, currentConfig.capabilities);
             }
             // Update other backendConfig fields if needed
-            Object.assign(currentConfig, response.skinDefinition.backendConfig);
+            Object.assign(currentConfig, skinResponse.skinDefinition.backendConfig);
             this.backendConfigs.set(backendId, currentConfig);
           } else {
             // Store the entire backend config if none exists
-            this.backendConfigs.set(backendId, response.skinDefinition.backendConfig);
-            console.log(`[SKIN-CAPABILITIES] Stored new backend config for ${backendId}:`, response.skinDefinition.backendConfig.capabilities);
+            this.backendConfigs.set(backendId, skinResponse.skinDefinition.backendConfig);
+            console.log(`[SKIN-CAPABILITIES] Stored new backend config for ${backendId}:`, skinResponse.skinDefinition.backendConfig.capabilities);
           }
         }
         
         // DYNAMIC COMMAND ROUTING: Register backend commands with command router
         try {
-          this.commandRouter.registerBackend(connection, response.skinDefinition);
+          this.commandRouter.registerBackend(connection, skinResponse.skinDefinition);
           console.log(`[DYNAMIC_COMMAND_ROUTER] Registered commands for backend: ${backendId}`);
         } catch (routerError) {
           console.warn(`[DYNAMIC_COMMAND_ROUTER] Failed to register commands for ${backendId}:`, routerError);
@@ -2049,7 +2148,7 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
         // TEMPLUM CORE INTEGRATION: Load skin into Templum Core for interface activation
         try {
           if (this.orchestrator) {
-            await this.orchestrator.loadSkin(response.skinDefinition);
+            await this.orchestrator.loadSkin(skinResponse.skinDefinition);
             console.log(`[TEMPLUM_CORE] Successfully loaded skin from ${backendId} into Templum Core`);
           } else {
             console.warn(`[TEMPLUM_CORE] No orchestrator available - skin loaded into command router only`);
@@ -2059,7 +2158,7 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
           // Don't fail the entire skin loading process due to core loading issues
         }
         
-        return response.skinDefinition;
+        return skinResponse.skinDefinition;
       } else {
         console.log(`No skin definition available from ${backendId} - using Universal Skin Engine fallback`);
         const fallbackSkin = await this.getUniversalSkinEngineFallback(backendId);
@@ -2067,7 +2166,7 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
         // Register fallback skin commands if available
         if (fallbackSkin) {
           try {
-            this.commandRouter.registerBackend(connection, fallbackSkin as any);
+            this.commandRouter.registerBackend(connection, fallbackSkin as UniversalSkinDefinition);
             console.log(`[DYNAMIC_COMMAND_ROUTER] Registered fallback commands for backend: ${backendId}`);
           } catch (routerError) {
             console.warn(`[DYNAMIC_COMMAND_ROUTER] Failed to register fallback commands for ${backendId}:`, routerError);
@@ -2095,7 +2194,7 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
       const connection = this.connections.get(backendId);
       if (fallbackSkin && connection) {
         try {
-          this.commandRouter.registerBackend(connection, fallbackSkin as any);
+          this.commandRouter.registerBackend(connection, fallbackSkin as UniversalSkinDefinition);
           console.log(`[DYNAMIC_COMMAND_ROUTER] Registered fallback commands for backend: ${backendId} (error recovery)`);
         } catch (routerError) {
           console.warn(`[DYNAMIC_COMMAND_ROUTER] Failed to register fallback commands for ${backendId}:`, routerError);
@@ -2186,7 +2285,7 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
             ...templateSkin.metadata,
             id: fallbackSkinId,
             name: `Enhanced Fallback for ${backendId}`,
-            backend: backendId.toLowerCase() as any,
+            backend: backendId.toLowerCase() as BackendType,
             backendService: backendId.toLowerCase(),
             description: `Intelligent fallback derived from ${templateSkin.metadata.backend} patterns`,
             author: 'Templum Universal Skin Engine',
@@ -2584,7 +2683,7 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
     }
   }
 
-  async executeCommand(backendId: string, command: string, args?: any[]): Promise<any> {
+  async executeCommand(backendId: string, command: string, args?: unknown[]): Promise<BackendServicePayload> {
     try {
       const connection = this.connections.get(backendId);
       if (!connection || !connection.isConnected()) {
@@ -2801,8 +2900,8 @@ class HaruspexIPCClient {
     private socket: net.Socket | undefined;
     private isConnected = false;
     private pendingRequests = new Map<string, {
-      resolve: (value: any) => void;
-      reject: (reason: any) => void;
+      resolve: (value: unknown) => void;
+      reject: (reason: Error) => void;
       timeout: NodeJS.Timeout;
     }>();
     private messageBuffer = '';
@@ -2893,7 +2992,11 @@ class HaruspexIPCClient {
       this.pendingRequests.clear();
     }
 
-    async sendRequest<T = any>(type: IPCMessageType, payload?: any, method?: string): Promise<T> {
+    async sendRequest<T extends BackendServicePayload = BackendServicePayload>(
+      type: IPCMessageType, 
+      payload?: BackendServicePayload, 
+      method?: string
+    ): Promise<T> {
       if (!this.isConnected || !this.socket) {
         throw new Error('Not connected to Haruspex service');
       }
@@ -2914,7 +3017,11 @@ class HaruspexIPCClient {
           reject(new Error(`Request timeout for ${type}`));
         }, 30000);
 
-        this.pendingRequests.set(requestId, { resolve, reject, timeout });
+        this.pendingRequests.set(requestId, { 
+          resolve: resolve as (value: unknown) => void, 
+          reject, 
+          timeout 
+        });
 
         const messageStr = JSON.stringify(message) + '\n';
         this.socket!.write(messageStr);

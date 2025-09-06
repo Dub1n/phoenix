@@ -271,7 +271,7 @@ If task is not to be consolidated following the consolidation check, create a ne
 **Example**:
 
 ```markdown
-- [ ] **<Short_Description>** [TASK_ID]
+- [ ] **<Short_Description>** [TASK-ID]
   - Priority: <p> | Complexity: <c> | Status: <errors>
   - Dependencies: <dependencies>
   - Implementation Approach: <steps>

@@ -16,12 +16,9 @@ import {
   CommandResult, 
   TemplumConfiguration,
   TemplumSystemStatus,
-  StateUpdate,
   StateManagerStatus,
-  TemplumError,
   isTemplumError,
   createTemplumError,
-  Signals,
   ErrorSignalPayload
 } from '../types/templum-types';
 import { BackendStatus } from '../backend/backend-service-router';
@@ -29,14 +26,11 @@ import { BackendStatus } from '../backend/backend-service-router';
 // Import dependency injection interfaces and registry
 import { 
   ISkinEngine,
-  IStateManager,
-  IBackendRouter,
   IBackendServiceRouter,
   IResourceManager,
   ITemplumCoreDependencies,
   IDependencyInjectionConfig
 } from '../interfaces/core-component-interfaces';
-import { IObservabilityService } from '../observability/observability-adapter';
 import { ITemplumOrchestrator } from '../interfaces/templum-orchestrator-interface';
 import { TemplumAdapterRegistry } from './adapter-registry';
 import { UniversalInterfaceManager } from './universal-interface-manager';
@@ -165,7 +159,7 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
         });
         
       } catch (backendError) {
-        const errorMessage = isTemplumError(backendError) ? backendError.message : 
+        const _errorMessage = isTemplumError(backendError) ? backendError.message : 
           (backendError instanceof Error ? backendError.message : 'Unknown backend initialization error');
         
         this.logError('Backend service router initialization failed');
@@ -210,7 +204,7 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
     } catch (error) {
       const errorMessage = isTemplumError(error) ? error.message : (error instanceof Error ? error.message : 'Unknown error');
       
-      const errorPayload: ErrorSignalPayload = {
+      const _errorPayload: ErrorSignalPayload = {
         timestamp: Date.now(),
         source: 'TemplumCoreInitialization',
         error: createTemplumError(errorMessage, 'INITIALIZATION_ERROR', 'configuration'),
@@ -312,7 +306,7 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
     command: string,
     sourceInterface: InterfaceType,
     args: any[] = [],
-    context: CommandContext = {}
+    _context: CommandContext = {}
   ): Promise<CommandResult> {
     if (!this.initialized) {
       throw new Error('Templum Core Engine must be initialized before executing commands');
@@ -431,7 +425,7 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
     } catch (error) {
       const errorMessage = isTemplumError(error) ? error.message : (error instanceof Error ? error.message : 'Unknown error');
       
-      const errorPayload: ErrorSignalPayload = {
+      const _errorPayload: ErrorSignalPayload = {
         timestamp: Date.now(),
         source: `CommandExecution:${command}`,
         error: createTemplumError(errorMessage, 'COMMAND_EXECUTION_ERROR', 'runtime'),
@@ -470,7 +464,7 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
 
   async synchronizeInterfaceStates(result: any): Promise<void> {
     // State synchronization using dependency injection
-    for (const [interfaceType, adapter] of Array.from(this.interfaceAdapters.entries())) {
+    for (const [interfaceType, _adapter] of Array.from(this.interfaceAdapters.entries())) {
       try {
         // Use injected state manager for synchronization
         if (this.dependencies?.stateManager?.syncState) {
@@ -1628,13 +1622,13 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
             // Clean up malformed request file
             try {
               fs.unlinkSync(requestPath);
-            } catch (cleanupError) {
+            } catch (_cleanupError) {
               // Ignore cleanup errors
             }
           }
         }
         
-      } catch (error) {
+      } catch (_error) {
         // Continue monitoring even if directory scan fails
       }
       
@@ -1654,21 +1648,50 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
     
     try {
       // Validate request structure
-      if (!request.type || request.type !== 'executeCommand' || !request.data) {
-        throw new Error('Invalid IPC request structure');
+      if (!request.type || !request.data) {
+        throw new Error('Invalid IPC request structure - missing type or data');
       }
 
-      const { command, sourceInterface, args, context } = request.data;
-      
-      console.log(`TemplumCore: Processing IPC command '${command}' from CLI (PID: ${request.clientPid})`);
+      let result: any;
 
-      // Execute the command using the real executeCommand method
-      const result = await this.executeCommand(
-        command,
-        sourceInterface || 'cli',
-        args || [],
-        context || {}
-      );
+      // Handle different IPC message types
+      switch (request.type) {
+        case 'executeCommand': {
+          const { command, sourceInterface, args, context } = request.data;
+          console.log(`TemplumCore: Processing IPC command '${command}' from CLI (PID: ${request.clientPid})`);
+          
+          // Execute the command using the real executeCommand method
+          result = await this.executeCommand(
+            command,
+            sourceInterface || 'cli',
+            args || [],
+            context || {}
+          );
+          break;
+        }
+
+        case 'getSystemStatus': {
+          console.log(`TemplumCore: Processing IPC getSystemStatus from CLI (PID: ${request.clientPid})`);
+          result = this.getSystemStatus();
+          break;
+        }
+
+        case 'loadBackendSkin': {
+          const { backendId } = request.data;
+          console.log(`TemplumCore: Processing IPC loadBackendSkin for '${backendId}' from CLI (PID: ${request.clientPid})`);
+          
+          // Use the real loadBackendSkin method through backend service router
+          if (this.dependencies?.backendServiceRouter) {
+            result = await this.dependencies.backendServiceRouter.loadBackendSkin(backendId);
+          } else {
+            result = null; // No backend service router available
+          }
+          break;
+        }
+
+        default:
+          throw new Error(`Unsupported IPC message type: ${request.type}`);
+      }
 
       // Write response to the specified response file
       const response = {
@@ -1682,7 +1705,7 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
         fs.writeFileSync(request.responseFile, JSON.stringify(response));
       }
 
-      console.log(`TemplumCore: IPC command '${command}' executed successfully`);
+      console.log(`TemplumCore: IPC request '${request.type}' processed successfully`);
       
     } catch (error) {
       console.error(`TemplumCore: IPC command execution failed:`, error);

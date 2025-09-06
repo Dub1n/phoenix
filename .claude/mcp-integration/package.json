@@ -1,0 +1,46 @@
+{
+  "name": "@claude/mcp-integration",
+  "version": "1.0.0",
+  "description": "Repo-agnostic MCP integration for pty-mcp-server CLI interaction",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "install-pty-server": "echo 'Install pty-mcp-server: cabal install pty-mcp-server OR download pre-built binary'",
+    "validate-config": "node -e \"console.log('Validating config...'); require('fs').readFileSync('./config.yaml', 'utf8'); console.log('Config valid')\"",
+    "validate-tools": "node -e \"console.log('Validating tools...'); JSON.parse(require('fs').readFileSync('./tools-list.json', 'utf8')); console.log('Tools valid')\""
+  },
+  "devDependencies": {
+    "@types/node": "^24.1.0",
+    "typescript": "^5.8.3",
+    "ts-node": "^10.9.2",
+    "jest": "^30.0.5",
+    "ts-jest": "^29.4.1",
+    "@types/jest": "^30.0.0"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "testMatch": ["**/tests/**/*.test.ts"]
+  },
+  "keywords": [
+    "mcp",
+    "cli",
+    "pty",
+    "agent",
+    "claude",
+    "repo-agnostic"
+  ],
+  "author": "Claude Code",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/anthropics/claude-code"
+  },
+  "files": [
+    "config.yaml",
+    "tools-list.json",
+    "tests/",
+    "README.md"
+  ]
+}

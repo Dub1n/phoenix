@@ -8,7 +8,7 @@
 
 import { EventEmitter } from 'events';
 import { performance } from 'perf_hooks';
-import { TemplumError, isTemplumError, Signals, ErrorSignalPayload } from '../types/templum-types';
+import {TemplumError, isTemplumError, ErrorSignalPayload} from '../types/templum-types';
 
 // Core interfaces for IPC-based state coordination
 export interface IPCStateMessage {

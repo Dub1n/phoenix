@@ -185,7 +185,7 @@ When changes affect multiple projects:
 
 ```bash
 # Generate timestamp for change document
-timestamp=$(date "+%Y-%m-%d-%H%M%S")
+timestamp=$(date "+%Y-%m-%d-%H%M")
 project="phoenix-code-lite"  # or "qms", "haruspex", "docs", etc.
 filename="$timestamp-{brief-description}-$project.md"
 

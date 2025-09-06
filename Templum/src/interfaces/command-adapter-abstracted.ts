@@ -9,7 +9,6 @@
 import { EventEmitter } from 'events';
 import { 
   ErrorSignalPayload, 
-  MetricsSignalPayload,
   createTemplumError, 
   isTemplumError,
   InterfaceType,
@@ -105,7 +104,7 @@ export class CommandInterfaceAdapter extends EventEmitter implements IInterfaceA
     return 'command';
   }
 
-  supportsSkin(skinDefinition: UniversalSkinDefinition): boolean {
+  supportsSkin(_skinDefinition: UniversalSkinDefinition): boolean {
     // Command interface supports all skins as it's programmatic
     return true;
   }
@@ -113,7 +112,7 @@ export class CommandInterfaceAdapter extends EventEmitter implements IInterfaceA
   /**
    * Apply skin configuration (command interface specific handling)
    */
-  async applySkin(skinDefinition: UniversalSkinDefinition): Promise<void> {
+  async applySkin(_skinDefinition: UniversalSkinDefinition): Promise<void> {
     try {
       console.log('CommandInterfaceAdapter: Applying skin');
       

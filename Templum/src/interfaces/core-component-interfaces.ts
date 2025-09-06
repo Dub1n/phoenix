@@ -8,19 +8,15 @@
 
 import { 
   UniversalSkinDefinition, 
-  TemplumConfiguration,
   StateUpdate,
   CommandResult,
-  InterfaceType,
-  BackendType,
-  TemplumError
+  InterfaceType
 } from '../types/templum-types';
 
 // Resource management interfaces
 import { 
   ResourcePolicy,
   ResourceUsage,
-  ResourceHandle,
   ResourceAllocationRequest,
   ResourceManagerStatus,
   ServiceHealth

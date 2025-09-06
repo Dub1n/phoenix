@@ -11,13 +11,11 @@ import { performance } from 'perf_hooks';
 import * as os from 'os';
 import * as fs from 'fs/promises';
 import { 
-  TemplumError, 
   isTemplumError, 
   createTemplumError,
-  ErrorSignalPayload,
-  MetricsSignalPayload
+  ErrorSignalPayload
 } from '../types/templum-types';
-import { TemplumResourceManager, ResourceUsage, ServiceHealth } from '../core/templum-resource-manager';
+import {TemplumResourceManager, ResourceUsage} from '../core/templum-resource-manager';
 import { PerformanceValidator, PerformanceMetrics } from './performance-validation';
 
 // ============================================================================
@@ -139,7 +137,7 @@ export class RealSystemMetricsCollector {
    * Collect real system metrics (not hardcoded)
    */
   async collectRealMetrics(): Promise<RealSystemMetrics> {
-    const startTime = performance.now();
+    const _startTime = performance.now();
     
     // System information
     const platform = os.platform();
@@ -172,7 +170,7 @@ export class RealSystemMetricsCollector {
     // Network connectivity
     const networkStatus = await this.checkNetworkConnectivity();
 
-    const endTime = performance.now();
+    const _endTime = performance.now();
     
     return {
       system: {
@@ -233,7 +231,7 @@ export class RealSystemMetricsCollector {
         freeGB: Math.round(free / 1024 / 1024 / 1024 * 10) / 10,
         usagePercent: Math.round((used / total) * 100)
       };
-    } catch (error: any) {
+    } catch (_error: any) {
       // Fallback for systems without statfs
       return {
         totalGB: 0,
@@ -259,7 +257,7 @@ export class RealSystemMetricsCollector {
         connectivityStatus: 'CONNECTED',
         latencyMs: Math.round(latency)
       };
-    } catch (error: any) {
+    } catch (_error: any) {
       return {
         connectivityStatus: 'OFFLINE'
       };
@@ -277,7 +275,7 @@ export class ResourcePolicyValidator {
     private metricsCollector: RealSystemMetricsCollector
   ) {}
 
-  async validateResourcePolicies(config: ProductionReadinessConfig): Promise<ProductionReadinessCategory> {
+  async validateResourcePolicies(_config: ProductionReadinessConfig): Promise<ProductionReadinessCategory> {
     const checks: ReadinessCheck[] = [];
     let totalScore = 0;
     let maxScore = 0;
@@ -732,7 +730,7 @@ export class RealPerformanceValidator {
       // Simulate typical system operation
       await new Promise(resolve => {
         // File system operation
-        require('fs').readdir(process.cwd(), (err: any, files: any) => {
+        require('fs').readdir(process.cwd(), (_err: any, _files: any) => {
           resolve(true);
         });
       });

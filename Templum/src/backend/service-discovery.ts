@@ -572,35 +572,31 @@ export class RegistryBasedDiscoveryStrategy implements DiscoveryStrategy {
    * Enhanced discovery from services directory
    * Each .json file represents a self-registered backend service
    * 
-   * TODO: NEEDS PROPER IMPLEMENTATION - This is a temporary workaround
-   * Should properly resolve to user's home directory ~/.templum/services/
-   * Currently searches both project directory and parent directory fallback
+   * FIXED: Always scan both primary and VDL_Vault services directories
+   * This ensures service discovery works regardless of which directories exist
    */
   private async discoverFromServicesDirectory(): Promise<DiscoveredService[]> {
     const services: DiscoveredService[] = [];
 
     try {
-      // Check primary services directory
-      if (!this.options.servicesDir || !fs.existsSync(this.options.servicesDir)) {
-        console.log(`[REGISTRY_DISCOVERY] Services directory not found: ${this.options.servicesDir}`);
-        
-        // FIXED: Check VDL_Vault root .templum/services directory (shared multi-repo location)
-        // Navigate up from Templum project to VDL_Vault root
-        const vdlVaultTemplumDir = path.resolve(process.cwd(), '..', '.templum', 'services');
-        if (fs.existsSync(vdlVaultTemplumDir)) {
-          console.log(`[REGISTRY_DISCOVERY] Using VDL_Vault shared directory: ${vdlVaultTemplumDir}`);
-          const vdlServices = await this.discoverFromDirectory(vdlVaultTemplumDir);
-          services.push(...vdlServices);
-        } else {
-          console.log(`[REGISTRY_DISCOVERY] VDL_Vault shared directory not found: ${vdlVaultTemplumDir}`);
-        }
-        
-        return services;
+      // Always scan primary services directory if it exists
+      if (this.options.servicesDir && fs.existsSync(this.options.servicesDir)) {
+        console.log(`[REGISTRY_DISCOVERY] Scanning primary services directory: ${this.options.servicesDir}`);
+        const primaryServices = await this.discoverFromDirectory(this.options.servicesDir);
+        services.push(...primaryServices);
+      } else if (this.options.servicesDir) {
+        console.log(`[REGISTRY_DISCOVERY] Primary services directory not found: ${this.options.servicesDir}`);
       }
 
-      // Use primary services directory
-      const primaryServices = await this.discoverFromDirectory(this.options.servicesDir);
-      services.push(...primaryServices);
+      // Always scan VDL_Vault root .templum/services directory (shared multi-repo location)
+      const vdlVaultTemplumDir = path.resolve(process.cwd(), '..', '.templum', 'services');
+      if (fs.existsSync(vdlVaultTemplumDir)) {
+        console.log(`[REGISTRY_DISCOVERY] Scanning VDL_Vault shared directory: ${vdlVaultTemplumDir}`);
+        const vdlServices = await this.discoverFromDirectory(vdlVaultTemplumDir);
+        services.push(...vdlServices);
+      } else {
+        console.log(`[REGISTRY_DISCOVERY] VDL_Vault shared directory not found: ${vdlVaultTemplumDir}`);
+      }
       
     } catch (error) {
       console.warn(`[REGISTRY_DISCOVERY] Services directory discovery failed: ${error instanceof Error ? error.message : String(error)}`);
@@ -780,12 +776,13 @@ export class ConfigurationBasedDiscoveryStrategy implements DiscoveryStrategy {
     return services;
   }
 
-  private validateBackendConfig(config: any): boolean {
-    return config &&
-           typeof config.service === 'string' &&
-           typeof config.protocol === 'string' &&
-           typeof config.endpoint === 'string' &&
-           ['http', 'websocket', 'ipc'].includes(config.protocol);
+  private validateBackendConfig(config: unknown): config is BackendConfig {
+    return typeof config === 'object' &&
+           config !== null &&
+           typeof (config as any).service === 'string' &&
+           typeof (config as any).protocol === 'string' &&
+           typeof (config as any).endpoint === 'string' &&
+           ['http', 'websocket', 'ipc'].includes((config as any).protocol);
   }
 }
 
@@ -907,7 +904,7 @@ export class EndpointScanningDiscoveryStrategy implements DiscoveryStrategy {
           }));
         });
 
-        ws.on('message', (data: any) => {
+        ws.on('message', (data: Buffer) => {
           clearTimeout(timeout);
           try {
             const response = JSON.parse(data.toString());

@@ -726,7 +726,7 @@ export class PCLCommandRegistry extends EventEmitter {
     return JSON.stringify(keyData);
   }
 
-  private async routeCommand(command: CommandDefinition, context: CommandExecutionContext): Promise<any> {
+  private async routeCommand(command: CommandDefinition, _context: CommandExecutionContext): Promise<any> {
     const backendName = command.pclMapping.backendIntegration.primaryBackend;
     const backend = this.backendConnections.get(backendName);
 
@@ -754,8 +754,8 @@ export class PCLCommandRegistry extends EventEmitter {
     command: CommandDefinition,
     backend: any,
     args: any[],
-    context: CommandExecutionContext,
-    executionId: string
+    _context: CommandExecutionContext,
+    _executionId: string
   ): Promise<any> {
     const startTime = Date.now();
     const startMemory = process.memoryUsage().heapUsed;
@@ -1071,7 +1071,7 @@ export class PCLCommandRegistry extends EventEmitter {
     return (efficientCommands / commands.length) * 100;
   }
 
-  private async setupBackendCommandRouting(backendName: string, backendInstance: any): Promise<void> {
+  private async setupBackendCommandRouting(backendName: string, _backendInstance: any): Promise<void> {
     // Setup command routing patterns for the backend
     console.log(`PCL Command Registry: Setting up command routing for backend ${backendName}`);
   }
@@ -1135,19 +1135,19 @@ export class PCLCommandRegistry extends EventEmitter {
   private initializeRoutingStrategies(): void {
     // Initialize routing strategies
     this.routingStrategies.set('single', {
-      setup: async (command: CommandDefinition) => { /* Single backend routing */ }
+      setup: async (_command: CommandDefinition) => { /* Single backend routing */ }
     });
     
     this.routingStrategies.set('round-robin', {
-      setup: async (command: CommandDefinition) => { /* Round-robin routing */ }
+      setup: async (_command: CommandDefinition) => { /* Round-robin routing */ }
     });
     
     this.routingStrategies.set('load-balanced', {
-      setup: async (command: CommandDefinition) => { /* Load-balanced routing */ }
+      setup: async (_command: CommandDefinition) => { /* Load-balanced routing */ }
     });
     
     this.routingStrategies.set('priority', {
-      setup: async (command: CommandDefinition) => { /* Priority-based routing */ }
+      setup: async (_command: CommandDefinition) => { /* Priority-based routing */ }
     });
   }
 

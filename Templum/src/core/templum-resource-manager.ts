@@ -8,13 +8,11 @@
 
 import { EventEmitter } from 'events';
 import { 
-  TemplumError,
   isTemplumError,
   createTemplumError,
   ErrorSignalPayload,
   MetricsSignalPayload,
-  BackendType,
-  InterfaceType
+  BackendType
 } from '../types/templum-types';
 
 // ============================================================================

@@ -38,7 +38,8 @@
     "downlevelIteration": true,
     
     // Performance Optimizations
-    "incremental": true,
+    "incremental": false,
+    // Issues with incremental mean it is now set to false
     "composite": false,
     "tsBuildInfoFile": "./.tsbuildinfo",
     

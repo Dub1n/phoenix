@@ -687,19 +687,19 @@ export class UniversalCommandRegistry extends EventEmitter {
         id: 'analyze',
         name: 'Analyze Code',
         description: 'Analyze codebase for patterns and issues',
-        handler: async (context) => ({ success: true, message: 'Analysis complete' })
+        handler: async (_context) => ({ success: true, message: 'Analysis complete' })
       },
       {
         id: 'generate',
         name: 'Generate Code',
         description: 'Generate code based on templates',
-        handler: async (context) => ({ success: true, message: 'Code generated' })
+        handler: async (_context) => ({ success: true, message: 'Code generated' })
       },
       {
         id: 'status',
         name: 'Get Status',
         description: 'Get current PCL status',
-        handler: async (context) => ({ 
+        handler: async (_context) => ({ 
           success: true, 
           message: 'PCL is operational',
           data: { version: '2.0.0', status: 'healthy' }
@@ -714,13 +714,13 @@ export class UniversalCommandRegistry extends EventEmitter {
         id: 'predict',
         name: 'Predict Outcomes',
         description: 'Predict analysis outcomes',
-        handler: async (context) => ({ success: true, message: 'Prediction complete' })
+        handler: async (_context) => ({ success: true, message: 'Prediction complete' })
       },
       {
         id: 'enhance',
         name: 'Enhance Analysis',
         description: 'Enhance existing analysis',
-        handler: async (context) => ({ success: true, message: 'Analysis enhanced' })
+        handler: async (_context) => ({ success: true, message: 'Analysis enhanced' })
       }
     ];
   }

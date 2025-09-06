@@ -403,7 +403,7 @@ export class TemplumUniversalWebViewProvider implements vscode.WebviewViewProvid
           </div>
         </div>
       `;
-    } catch (error) {
+    } catch (_error) {
       // Return safe fallback HTML
       return `
         <div class="backend-skin-container error">
@@ -611,7 +611,7 @@ export class TemplumUniversalWebViewProvider implements vscode.WebviewViewProvid
       
       return await Promise.race([healthCheckPromise, timeoutPromise]);
       
-    } catch (error) {
+    } catch (_error) {
       // Health check failed - service is not available
       return false;
     }

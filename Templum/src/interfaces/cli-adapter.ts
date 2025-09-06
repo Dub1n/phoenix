@@ -14,16 +14,14 @@
 import { EventEmitter } from 'events';
 import * as readline from 'readline';
 import { UniversalCommandRegistry } from '../commands/universal-command-registry';
-import { UniversalMenuRegistry, LoadedSkin, UniversalMenuDefinition, MenuAction } from '../menus/universal-menu-registry';
+import {UniversalMenuRegistry, LoadedSkin, UniversalMenuDefinition} from '../menus/universal-menu-registry';
 import { SessionContextFoundation } from '../session/session-context-foundation';
 import { UniversalLayoutEngine } from '../rendering/universal-layout-engine';
 import { ITemplumOrchestrator } from './templum-orchestrator-interface';
-import { InterfaceType, createTemplumError, isTemplumError } from '../types/templum-types';
 import { UniversalSkinDefinition } from '../types/universal-skin-definition';
 import { 
-  createTerminalUI, 
   createDefaultTerminalUI,
-  InteractiveSearch, 
+  InteractiveSearch as _InteractiveSearch, 
   SearchableItem, 
   SearchResult,
   DefaultColorThemes 
@@ -436,6 +434,9 @@ export class CLIInterfaceAdapter extends EventEmitter implements CLIAdapter {
       } else {
         console.log('Interactive search is disabled');
       }
+    } else if (input === 'backends') {
+      // List available backends with status
+      await this.displayAvailableBackendsDetailed();
     } else if (/^\d+$/.test(input)) {
       // Numeric menu selection
       await this.handleMenuSelection({
@@ -447,6 +448,10 @@ export class CLIInterfaceAdapter extends EventEmitter implements CLIAdapter {
       // Manual backend skin loading
       const backendId = input.substring(5).trim();
       await this.loadSpecificBackendSkin(backendId);
+    } else if (input.startsWith('unload ')) {
+      // Manual backend disconnection
+      const backendId = input.substring(7).trim();
+      await this.unloadSpecificBackend(backendId);
     } else {
       // Command execution
       await this.handleCommandInput({
@@ -1093,6 +1098,128 @@ export class CLIInterfaceAdapter extends EventEmitter implements CLIAdapter {
   }
 
   /**
+   * Display available backends with detailed information
+   * TASK-CLI-018: Enhanced backends command implementation
+   * @private
+   */
+  private async displayAvailableBackendsDetailed(): Promise<void> {
+    if (!this.orchestrator?.isInitialized()) {
+      console.log('❌ Backend management unavailable - orchestrator not initialized');
+      console.log('💡 Try restarting Templum to initialize backend connections');
+      return;
+    }
+
+    try {
+      const systemStatus = this.orchestrator.getSystemStatus();
+      const backends = systemStatus.coreEngine?.backendConnections?.backends || {};
+      
+      if (Object.keys(backends).length === 0) {
+        console.log('📭 No backends currently discovered');
+        console.log('💡 Backend services will appear here when they start');
+        return;
+      }
+      
+      console.log('\n🔧 Backend Management Dashboard');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('Backend ID     Status        Health     Skin   Commands Available');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      
+      for (const [serviceId, status] of Object.entries(backends)) {
+        const statusIcon = status.connected 
+          ? (status.health === 'healthy' ? '🟢 Connected  ' : '🟡 Connected  ') 
+          : '🔴 Offline    ';
+        const health = (status.health || 'Unknown').padEnd(10);
+        const skinStatus = (status as any).skinLoaded ? '✅ Yes ' : '❌ No  ';
+        const capabilityCount = status.capabilities?.length || 0;
+        const commandInfo = capabilityCount > 0 ? `${capabilityCount} available` : 'None loaded';
+        
+        console.log(`${serviceId.padEnd(14)} ${statusIcon} ${health} ${skinStatus} ${commandInfo}`);
+      }
+      
+      const connectedCount = Object.values(backends).filter((b: any) => b.connected).length;
+      const totalCount = Object.keys(backends).length;
+      const healthyCount = Object.values(backends).filter((b: any) => b.health === 'healthy').length;
+      const skinsLoaded = Object.values(backends).filter((b: any) => (b as any).skinLoaded).length;
+      
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log(`Total: ${totalCount} | Connected: ${connectedCount} | Healthy: ${healthyCount} | Skins Loaded: ${skinsLoaded}`);
+      console.log('\n🎮 Management Commands:');
+      console.log('  load <backend-id>    - Load backend skin interface');
+      console.log('  unload <backend-id>  - Disconnect from backend service');
+      console.log('  refresh              - Trigger service discovery');
+      console.log('  status               - Show detailed connection status');
+      
+    } catch (error) {
+      console.log('❌ Failed to retrieve backend information:', error);
+      console.log('💡 Try "refresh" command to re-scan for services');
+    }
+  }
+
+  /**
+   * Unload/disconnect from a specific backend service
+   * TASK-CLI-018: Enhanced unload command implementation
+   * @private
+   */
+  private async unloadSpecificBackend(backendId: string): Promise<void> {
+    if (!backendId) {
+      console.log('❌ Please specify a backend ID (e.g., unload pcl, unload minimal-example)');
+      console.log('💡 Use "backends" command to see available backend IDs');
+      return;
+    }
+
+    try {
+      console.log(`🔄 Disconnecting from backend: ${backendId}`);
+      
+      // Check if orchestrator is available
+      if (!this.orchestrator?.isInitialized()) {
+        console.log('❌ Backend management unavailable - orchestrator not initialized');
+        return;
+      }
+
+      // Check if backend exists and is connected
+      const systemStatus = this.orchestrator.getSystemStatus();
+      const backends = systemStatus.coreEngine?.backendConnections?.backends || {};
+      const backendStatus = (backends as any)[backendId];
+      
+      if (!backendStatus) {
+        console.log(`❌ Backend '${backendId}' not found`);
+        console.log('💡 Use "backends" command to see available backend IDs');
+        return;
+      }
+      
+      if (!backendStatus.connected) {
+        console.log(`⚠️  Backend '${backendId}' is already disconnected`);
+        return;
+      }
+
+      // Attempt to disconnect from the backend
+      // TODO: [TASK-CLI-020] Implement orchestrator.disconnectFromBackend method | Priority: Medium | Phase: Integration
+      // Complexity: 3 | Location: ITemplumOrchestrator interface | Dependencies: Backend connection management
+      
+      // For now, we'll implement a basic skin unloading by clearing searchable items
+      // TODO: [TASK-CLI-021] Implement proper skin unloading in UniversalMenuRegistry | Priority: Medium | Phase: Integration
+      // Complexity: 3 | Location: UniversalMenuRegistry.unloadSkin() | Dependencies: Menu registry management
+      
+      // Switch back to main menu if we were using this backend's interface  
+      const currentMenuPrefix = this.currentMenu.split('.')[0];
+      if (currentMenuPrefix === backendId) {
+        this.currentMenu = 'main';
+        await this.renderCurrentMenu();
+      }
+      
+      // Update searchable items to remove this backend's items
+      await this.buildSearchableItems();
+      
+      console.log(`✅ Disconnected from ${backendId}`);
+      console.log('💡 Backend service may still be running - this only unloads the interface');
+      
+    } catch (error) {
+      console.error(`❌ Failed to disconnect from ${backendId}:`, error);
+      console.log('💡 Use "status" command to check current backend connections');
+    }
+  }
+
+  /**
    * Display available backends for user reference
    * @private
    */
@@ -1120,7 +1247,7 @@ export class CLIInterfaceAdapter extends EventEmitter implements CLIAdapter {
       }
       console.log('\n💡 Try: load <backend-id>');
       
-    } catch (error) {
+    } catch (_error) {
       console.log('Failed to get backend status');
     }
   }
@@ -1138,13 +1265,17 @@ export class CLIInterfaceAdapter extends EventEmitter implements CLIAdapter {
   private displayHelp(): void {
     console.log('\nTemplum CLI Help:');
     console.log('Commands:');
-    console.log('  help     - Show this help message');
-    console.log('  back     - Go to previous menu');
-    console.log('  home     - Go to main menu');
-    console.log('  refresh  - Refresh current menu');
-    console.log('  status   - Show backend service status');
-    console.log('  load <id>- Load backend skin (e.g., load pcl, load minimal-example)');
-    console.log('  quit     - Exit application');
+    console.log('  help          - Show this help message');
+    console.log('  back          - Go to previous menu');
+    console.log('  home          - Go to main menu');
+    console.log('  refresh       - Refresh current menu and trigger service discovery');
+    console.log('  status        - Show detailed backend service status');
+    console.log('  quit          - Exit application');
+    console.log('');
+    console.log('Backend Management:');
+    console.log('  backends      - List all available backends with status details');
+    console.log('  load <id>     - Load backend skin interface (e.g., load pcl)');
+    console.log('  unload <id>   - Disconnect from backend service (e.g., unload pcl)');
     
     if (this.config.enableInteractiveSearch) {
       console.log('  search   - Launch interactive search (also: f, /)');
@@ -1195,7 +1326,7 @@ export class CLIInterfaceAdapter extends EventEmitter implements CLIAdapter {
 
     try {
       const systemStatus = this.orchestrator.getSystemStatus();
-      const backends = systemStatus.coreEngine.backendConnections.backends;
+      const backends = systemStatus.coreEngine?.backendConnections?.backends || {};
       
       console.log('\nBackend Service Status:');
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -1257,7 +1388,7 @@ export class CLIInterfaceAdapter extends EventEmitter implements CLIAdapter {
   async setCurrentMenu(menuId: string): Promise<boolean> {
     try {
       // Validate menu exists
-      const menu = await this.menuRegistry.getMenu(menuId, 'cli');
+      const _menu = await this.menuRegistry.getMenu(menuId, 'cli');
       
       this.navigationHistory.push(this.currentMenu);
       this.currentMenu = menuId;

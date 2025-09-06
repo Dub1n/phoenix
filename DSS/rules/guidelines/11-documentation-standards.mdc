@@ -95,7 +95,7 @@ def log_model_execution(self, task_id: str, model_info: Dict, ruleset: str) -> N
     Flow: CLI args → model log file → results template → comparison table
     
     Args:
-        task_id: Task identifier (e.g., "task-01")
+        task_id: Task identifier (e.g., "TASK-01")
         model_info: Dict with model name, version, capabilities
         ruleset: Ruleset variant being tested
     """

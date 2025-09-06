@@ -11,7 +11,7 @@
  */
 
 import { EventEmitter } from 'events';
-import { SessionContextFoundation, SessionContext } from '../session/session-context-foundation';
+import { SessionContextFoundation } from '../session/session-context-foundation';
 import { StateSyncFoundation } from '../state/state-sync-foundation';
 
 // Extended interfaces for multi-backend and multi-interface support
@@ -307,7 +307,7 @@ export class UniversalMenuRegistry extends EventEmitter {
     }
     
     // Check backend menus
-    for (const [backendId, backendRegistry] of this.backendMenus) {
+    for (const [_backendId, backendRegistry] of this.backendMenus) {
       const backendMenu = backendRegistry.get(menuId);
       if (backendMenu && this.supportsInterface(backendMenu, interfaceType)) {
         const resolvedMenu = await this.adaptMenuForInterface(backendMenu, interfaceType);

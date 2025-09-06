@@ -12,7 +12,6 @@ import { join, dirname } from 'path';
 import { EventEmitter } from 'events';
 import { 
   InterfaceType, 
-  TemplumError, 
   isTemplumError, 
   createTemplumError,
   ErrorSignalPayload 
@@ -730,7 +729,7 @@ export class TemplumConfigManager extends EventEmitter {
             console.log('✓ Templum configuration reloaded');
           }
         }
-      } catch (error) {
+      } catch (_error) {
         // File might have been deleted, ignore
       }
     }, 5000); // Check every 5 seconds

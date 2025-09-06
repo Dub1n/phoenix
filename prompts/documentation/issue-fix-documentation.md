@@ -618,7 +618,7 @@ Choose the appropriate template based on your Pre-Implementation Verification:
 # Quick Fix: {Issue Fix Description}
 
 ## Fix Summary
-- **Date**: {YYYY-MM-DD HH:MM:SS}
+- **Date**: {YYYY-MM-DD HH:MM}
 - **Issue Source**: Implementation Tracker: {Tracker-File-Name.md}
 - **Component**: {Component name and location}
 - **Fix Type**: Compilation Error | Missing Implementation | Type Error | Import Fix
@@ -686,10 +686,10 @@ Choose the appropriate template based on your Pre-Implementation Verification:
 powershell "Get-Date -Format 'yyyy-MM-dd-HHmm'"
 
 # Unix/Linux/macOS:
-date "+%Y-%m-%d-%H%M%S"
+date "+%Y-%m-%d-%H%M"
 
 # Example filename
-2024-08-02-143022-fix-version-command.md
+2024-08-02-1430-fix-version-command.md
 ```
 
 ## Issue Fix Document Template
@@ -701,7 +701,7 @@ Use this exact template for all **complete** issue fix documentation:
 
 ## Fix Information
 
-- **Date**: {YYYY-MM-DD HH:MM:SS} (Generated with: `date` or equivalent)
+- **Date**: {YYYY-MM-DD HH:MM} (Generated with: `date` or equivalent)
 - **Issue Source**: Implementation Tracker: {Tracker-File-Name.md}
 - **Issue Category**: {Critical Missing Component|Broken Component|Mock/Placeholder Component|Build Error}
 - **Severity**: {Critical|High|Medium|Low}
@@ -932,7 +932,7 @@ Fix Document: "Component Status: Working, Build Errors: 0"
 
 **Step 1: Create Fix Document**:
 
-1. Use timestamp: `powershell "Get-Date -Format 'yyyy-MM-dd-HHmm'"` or `date "+%Y-%m-%d-%H%M%S"`
+1. Use timestamp: `powershell "Get-Date -Format 'yyyy-MM-dd-HHmm'"` or `date "+%Y-%m-%d-%H%M"`
 2. Create file in `<project>/dev/fixes/YYYY-MM-DD-HHmm-issue-fix-description.md`
 3. Use the template above with all sections completed
 4. Reference specific Implementation Tracker sections
@@ -1195,7 +1195,7 @@ Before finalizing change documentation:
 ```bash
 # Good - generates actual current time
 # Unix/Linux/macOS:
-date "+%Y-%m-%d-%H%M%S"
+date "+%Y-%m-%d-%H%M"
 
 # Windows PowerShell:
 Get-Date -Format "yyyy-MM-dd-HHmm"

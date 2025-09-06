@@ -11,7 +11,7 @@ import {
   TemplumError, 
   isTemplumError, 
   createTemplumError,
-  Signals, 
+
   ErrorSignalPayload, 
   MetricsSignalPayload,
   PerformanceMetrics 
@@ -396,7 +396,7 @@ export class MetricsCollector {
     }
   }
   
-  private convertToPerformanceMetrics(metric: MetricEntry): PerformanceMetrics {
+  private convertToPerformanceMetrics(_metric: MetricEntry): PerformanceMetrics {
     // Convert metric to PerformanceMetrics format for existing signal compatibility
     return {
       memory: { heapUsed: 0, rss: 0 }, // Will be populated by actual metrics
@@ -634,7 +634,7 @@ export class TemplumObservabilitySystem extends EventEmitter {
       
       this.logger.info('Templum Observability System initialized successfully', {}, 'TemplumObservabilitySystem');
       
-    } catch (error) {
+    } catch (_error) {
       const templumError = createTemplumError('Failed to initialize observability system', 'INITIALIZATION_ERROR', 'configuration');
       this.logger.fatal('Observability system initialization failed', templumError, {}, 'TemplumObservabilitySystem');
       throw templumError;

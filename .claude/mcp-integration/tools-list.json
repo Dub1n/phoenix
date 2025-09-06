@@ -1,0 +1,18 @@
+{
+  "templum-cli": {
+    "description": "Launch Templum CLI interface",
+    "type": "pty-bash"
+  },
+  "templum-menu": {
+    "description": "Navigate Templum menus via structured messages",
+    "type": "pty-message"
+  },
+  "generic-cli": {
+    "description": "Launch generic CLI interface for any project",
+    "type": "pty-bash"
+  },
+  "generic-command": {
+    "description": "Send structured commands to any CLI interface",
+    "type": "pty-message"
+  }
+}

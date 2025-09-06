@@ -167,7 +167,7 @@ npm run test:coverage      # Coverage check (target: >90%)
 
 ```bash
 # Generate timestamp for change document
-timestamp=$(date "+%Y-%m-%d-%H%M%S")
+timestamp=$(date "+%Y-%m-%d-%H%M")
 filename="$timestamp-{brief-description}.md"
 
 # Create change document in Phoenix-Reorg/08-Maintenance/Changes/

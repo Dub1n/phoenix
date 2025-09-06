@@ -1,0 +1,64 @@
+{
+  "subagent": {
+    "version": "1.0",
+    "description": "Test configuration designed to fail validation metrics",
+    "requiredDirectories": [
+      ".claude/handoff",
+      ".claude/handoff/input",
+      ".claude/handoff/output", 
+      ".claude/handoff/archive",
+      ".claude/agents",
+      ".claude/agents/interfaces",
+      ".claude/agents/utils",
+      ".claude/nonexistent-directory",
+      ".claude/missing-required-dir"
+    ],
+    "requiredFiles": {
+      "critical": [
+        ".claude/agents/interfaces/handoff-types.ts",
+        ".claude/agents/interfaces/missing-critical-file.ts"
+      ],
+      "standard": [
+        ".claude/agents/utils/file-naming.ts",
+        ".claude/agents/utils/validation.ts",
+        ".claude/agents/utils/error-handling.ts",
+        ".claude/agents/utils/file-manager.ts",
+        ".claude/agents/utils/missing-standard-file.ts",
+        ".claude/agents/utils/another-missing-file.ts"
+      ],
+      "optional": [
+        ".claude/agents/utils/cleanup.ts",
+        ".claude/agents/utils/audit-logger.ts",
+        ".claude/agents/utils/test-utilities.ts",
+        ".claude/agents/utils/missing-optional-file.ts"
+      ]
+    },
+    "thresholds": {
+      "criticalFiles": "100%",
+      "standardFiles": "90%",
+      "optionalFiles": "50%"
+    },
+    "validation": {
+      "enableSchemaValidation": true,
+      "enableErrorScenarios": true,
+      "enablePerformanceTesting": true,
+      "timeout": 10000
+    },
+    "errorScenarios": {
+      "malformedJson": true,
+      "concurrentAccess": true,
+      "permissionErrors": true,
+      "resourceExhaustion": true
+    },
+    "schemas": {
+      "handoffInput": {
+        "required": ["project", "task_id", "workflow_phase", "context", "execution_parameters", "missing_required_field"],
+        "optional": ["priority", "dependencies", "metadata"]
+      },
+      "handoffOutput": {
+        "required": ["task_id", "status", "confidence", "execution_time_ms", "results", "next_action", "metadata", "another_missing_field"],
+        "optional": ["warnings", "debug_info"]
+      }
+    }
+  }
+}

@@ -163,6 +163,76 @@ export class ProjectDetector {
     this.structure.SRC_DIRS.forEach((dir, index) => 
       console.log(`  ${index + 1}. ${path.relative(this.structure.PROJECT_ROOT, dir)}`));
   }
+
+  /**
+   * Determine the correct build directory based on explicit project parameter
+   * @param {string} project - Explicit project name (templum, phoenix-code-lite, haruspex) or null for default
+   * @returns {string} - Path to the appropriate build directory
+   */
+  getBuildDirectory(project = null) {
+    const projectRoot = this.structure.PROJECT_ROOT;
+    
+    // If explicit project specified, use it
+    if (project) {
+      // First try project directory relative to project root
+      let projectDir = path.join(projectRoot, project);
+      if (fs.existsSync(path.join(projectDir, 'package.json'))) {
+        console.log(`    Using ${project} project directory (explicit)`);
+        return projectDir;
+      }
+      
+      // If that fails, try matching current directory name (case insensitive)
+      const currentDirName = path.basename(projectRoot);
+      if (currentDirName.toLowerCase() === project.toLowerCase()) {
+        if (fs.existsSync(path.join(projectRoot, 'package.json'))) {
+          console.log(`    Using current directory as ${project} project (explicit)`);
+          return projectRoot;
+        }
+      }
+      
+      // Try parent directory for project subdirectories
+      const parentDir = path.dirname(projectRoot);
+      projectDir = path.join(parentDir, project);
+      if (fs.existsSync(path.join(projectDir, 'package.json'))) {
+        console.log(`    Using ${project} project directory from parent (explicit)`);
+        return projectDir;
+      }
+      
+      console.log(`    Warning: Specified project '${project}' not found, using fallback`);
+    }
+    
+    // Check if current directory is a valid project
+    if (fs.existsSync(path.join(projectRoot, 'package.json'))) {
+      console.log(`    Using current directory as project`);
+      return projectRoot;
+    }
+    
+    // Default priority: Templum > phoenix-code-lite > Haruspex
+    const possibleProjects = ['Templum', 'phoenix-code-lite', 'Haruspex'];
+    
+    // Try projects as subdirectories of current directory
+    for (const projectName of possibleProjects) {
+      const projectDir = path.join(projectRoot, projectName);
+      if (fs.existsSync(path.join(projectDir, 'package.json'))) {
+        console.log(`    Using ${projectName} project directory (default priority)`);
+        return projectDir;
+      }
+    }
+    
+    // Try projects as subdirectories of parent directory
+    const parentDir = path.dirname(projectRoot);
+    for (const projectName of possibleProjects) {
+      const projectDir = path.join(parentDir, projectName);
+      if (fs.existsSync(path.join(projectDir, 'package.json'))) {
+        console.log(`    Using ${projectName} project directory from parent (default priority)`);
+        return projectDir;
+      }
+    }
+    
+    // Only use project root as absolute fallback if no projects found
+    console.log(`    Using project root directory as fallback (no projects found)`);
+    return projectRoot;
+  }
 }
 
 /**

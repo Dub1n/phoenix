@@ -526,8 +526,8 @@ export class UniversalInteractionManager extends EventEmitter {
 
   private clearInputBuffer(): void {
     if (process.stdin.readable) {
-      let data;
-      while ((data = process.stdin.read()) !== null) {
+      let _data;
+      while ((_data = process.stdin.read()) !== null) {
         // Clear any buffered input
       }
     }
@@ -642,8 +642,8 @@ export class UniversalInteractionManager extends EventEmitter {
   }
 
   private async handleCLICommandInput(
-    commands: UniversalCommandInfo[],
-    session: SessionContext | null
+    _commands: UniversalCommandInfo[],
+    _session: SessionContext | null
   ): Promise<UniversalInputResult> {
     process.stdout.write(chalk.gray(this.config.commandConfig.promptSymbol));
     const input = await this.getInput();
@@ -680,7 +680,7 @@ export class UniversalInteractionManager extends EventEmitter {
   }
 
   // Validation methods
-  private async validateSessionContext(input: string, context?: any): Promise<InputValidationResult> {
+  private async validateSessionContext(_input: string, _context?: any): Promise<InputValidationResult> {
     const session = this.sessionContext.getActiveSession();
     
     if (!session) {
@@ -700,7 +700,7 @@ export class UniversalInteractionManager extends EventEmitter {
     };
   }
 
-  private async validateCrossInterface(input: string, interfaceType: InterfaceType): Promise<InputValidationResult> {
+  private async validateCrossInterface(input: string, _interfaceType: InterfaceType): Promise<InputValidationResult> {
     // Check if command is available on current interface
     if (input.includes('.')) {
       // Backend-prefixed command
@@ -726,7 +726,7 @@ export class UniversalInteractionManager extends EventEmitter {
     };
   }
 
-  private async validateSyntax(input: string, interfaceType: InterfaceType): Promise<InputValidationResult> {
+  private async validateSyntax(input: string, _interfaceType: InterfaceType): Promise<InputValidationResult> {
     // Basic syntax validation
     if (input.trim().length === 0) {
       return {

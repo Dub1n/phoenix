@@ -9,7 +9,7 @@
 import { EventEmitter } from 'events';
 import { 
   InterfaceType,
-  TemplumError,
+  TemplumError as _TemplumError,
   createTemplumError,
   isTemplumError,
   ErrorSignalPayload
@@ -153,7 +153,7 @@ export class InterfaceAdapterRegistry extends EventEmitter implements IInterface
 
   // Factory methods implementation
 
-  createVSCodeAdapter(context?: any): IInterfaceAdapter {
+  createVSCodeAdapter(_context?: any): IInterfaceAdapter {
     const factory = this.adapterFactories.get('vscode');
     if (!factory) {
       throw createTemplumError('VSCode adapter factory not registered', 'FACTORY_NOT_FOUND', 'configuration');
@@ -161,7 +161,7 @@ export class InterfaceAdapterRegistry extends EventEmitter implements IInterface
     return factory();
   }
 
-  createCLIAdapter(config?: any): IInterfaceAdapter {
+  createCLIAdapter(_config?: any): IInterfaceAdapter {
     const factory = this.adapterFactories.get('cli');
     if (!factory) {
       throw createTemplumError('CLI adapter factory not registered', 'FACTORY_NOT_FOUND', 'configuration');
@@ -169,7 +169,7 @@ export class InterfaceAdapterRegistry extends EventEmitter implements IInterface
     return factory();
   }
 
-  createCommandAdapter(config?: any): IInterfaceAdapter {
+  createCommandAdapter(_config?: any): IInterfaceAdapter {
     const factory = this.adapterFactories.get('command');
     if (!factory) {
       throw createTemplumError('Command adapter factory not registered', 'FACTORY_NOT_FOUND', 'configuration');

@@ -9,7 +9,6 @@
 import * as vscode from 'vscode';
 import { 
   ErrorSignalPayload, 
-  MetricsSignalPayload,
   createTemplumError, 
   isTemplumError,
   InterfaceType,

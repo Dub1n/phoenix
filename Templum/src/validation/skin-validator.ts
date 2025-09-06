@@ -8,10 +8,7 @@
 
 import { 
   UniversalSkinDefinition, 
-  TemplumError, 
-  ValidationError, 
-  isTemplumError, 
-  createTemplumError 
+  isTemplumError
 } from '../types/templum-types';
 
 export interface ValidationResult {
@@ -36,7 +33,7 @@ export interface SkinValidationSchema {
  */
 export function validateSkinDefinition(
   definition: UniversalSkinDefinition,
-  schema: SkinValidationSchema
+  _schema: SkinValidationSchema
 ): ValidationResult {
   const errors: string[] = [];
   const warnings: string[] = [];

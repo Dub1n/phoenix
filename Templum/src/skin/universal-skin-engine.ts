@@ -13,26 +13,26 @@ import {
   RenderingContext, 
   InterfaceType,
   BackendType,
-  RenderedComponent,
+
   ThemeDefinition,
   ColorPalette,
   ColorScale,
-  Typography,
-  SpacingSystem,
-  BorderSystem,
-  ShadowSystem,
-  AnimationSystem,
+
+
+
+
+
   ComponentSkin,
-  ComponentVariant,
-  ComponentState,
-  ResponsiveConfig,
-  AccessibilityConfig,
+
+
+
+
   SkinAssets,
-  IconDefinition,
-  ImageDefinition,
-  FontDefinition,
-  SoundDefinition,
-  RenderingConfiguration,
+
+
+
+
+
   InterfaceRenderingConfig,
   SkinPerformanceConfig,
   SkinOverride,
@@ -45,10 +45,10 @@ import {
   ConflictResolutionStrategy
 } from '../types/universal-skin-engine-types';
 import {
-  TemplumError,
+
   isTemplumError,
   createTemplumError,
-  Signals,
+
   ErrorSignalPayload,
   MetricsSignalPayload
 } from '../types/templum-types';
@@ -56,9 +56,9 @@ import {
 // Import PCL Rendering Adapter for 70% code reuse
 import { 
   PCLRenderingAdapter, 
-  UniversalMenuDefinition,
-  UniversalLayoutConstraints,
-  UniversalRenderResult
+
+
+
 } from './pcl-rendering-adapter';
 
 // Import Skin Version Manager
@@ -217,7 +217,7 @@ export class UniversalSkinEngine extends EventEmitter {
       const conflicts: VersionConflict[] = [];
       
       if (existingVersions) {
-        for (const [existingVersion, existingSkin] of Array.from(existingVersions)) {
+        for (const [_existingVersion, existingSkin] of Array.from(existingVersions)) {
           const detected = this.versionManager.detectConflicts(existingSkin, skin);
           conflicts.push(...detected);
         }
@@ -241,7 +241,7 @@ export class UniversalSkinEngine extends EventEmitter {
       // 4. Apply migrations if needed
       const migrations: Array<{ strategy: any; applied: boolean; duration?: number }> = [];
       if (existingVersions && existingVersions.size > 0) {
-        for (const [existingVersion, existingSkin] of Array.from(existingVersions)) {
+        for (const [existingVersion, _existingSkin] of Array.from(existingVersions)) {
           const migrationStrategy = this.versionManager.findMigrationStrategy(
             existingVersion, 
             skin.version
@@ -698,7 +698,7 @@ export class UniversalSkinEngine extends EventEmitter {
         preservedState: preserveState,
         switchTime
       };
-    } catch (error) {
+    } catch (_error) {
       return {
         success: false,
         preservedState: false,
@@ -1374,7 +1374,7 @@ export class UniversalSkinEngine extends EventEmitter {
       try {
         // Validate semantic version format
         this.versionManager.parseVersion(skin.version);
-      } catch (versionError) {
+      } catch (_versionError) {
         errors.push(`Invalid version format: ${skin.version}`);
       }
 
@@ -2131,7 +2131,7 @@ export class UniversalSkinEngine extends EventEmitter {
     return { tokens: this.extractTokensFromTheme(theme) };
   }
 
-  private generateCSSFromTheme(theme: ThemeDefinition, interfaceType: string, options?: any): string {
+  private generateCSSFromTheme(theme: ThemeDefinition, interfaceType: string, _options?: any): string {
     // Simplified CSS generation - real implementation would be more sophisticated
     const css = `
 :root {
@@ -2164,27 +2164,27 @@ export class UniversalSkinEngine extends EventEmitter {
   }
 
   // Helper methods for advanced functionality
-  private async getMixin(mixinId: string): Promise<any> {
+  private async getMixin(_mixinId: string): Promise<any> {
     // Placeholder - would load mixin definitions
     return null;
   }
 
-  private async applyMixin(inheritedSkin: any, mixin: any): Promise<any> {
+  private async applyMixin(inheritedSkin: any, _mixin: any): Promise<any> {
     // Placeholder - would apply mixin to skin
     return inheritedSkin;
   }
 
-  private applyOverride(inheritedSkin: any, override: SkinOverride): any {
+  private applyOverride(inheritedSkin: any, _override: SkinOverride): any {
     // Apply override to specific property
     return inheritedSkin;
   }
 
-  private async compressOutput(output: any, compressionLevel: number): Promise<any> {
+  private async compressOutput(output: any, _compressionLevel: number): Promise<any> {
     // Placeholder - would apply compression
     return output;
   }
 
-  private treeShakeCSS(css: string, components: string[]): string {
+  private treeShakeCSS(css: string, _components: string[]): string {
     // Placeholder - would remove unused CSS
     return css;
   }

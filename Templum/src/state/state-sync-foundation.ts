@@ -364,7 +364,7 @@ export class StateSyncFoundation extends EventEmitter {
    */
   private setupEventHandlers(): void {
     // Monitor performance and warn if sync time exceeds baseline
-    this.on('stateUpdated', (key, value, interfaceId) => {
+    this.on('stateUpdated', (_key, _value, _interfaceId) => {
       if (this.metrics.averageSyncTime > 150) {
         console.warn(`State sync average time exceeding 150ms baseline: ${this.metrics.averageSyncTime}ms`);
       }

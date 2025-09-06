@@ -662,7 +662,7 @@ export class FallbackManager extends EventEmitter {
         this.emit('rollbackFailed', execution);
         return false;
       }
-    } catch (error) {
+    } catch (_error) {
       execution.rollback = {
         triggered: true,
         reason: reason || 'Automatic rollback due to validation failure',
@@ -680,7 +680,7 @@ export class FallbackManager extends EventEmitter {
     return degradationPercentage >= strategy.triggers.performanceThreshold;
   }
 
-  private async performRecovery(execution: FallbackExecution, strategy: FallbackStrategy): Promise<{
+  private async performRecovery(execution: FallbackExecution, _strategy: FallbackStrategy): Promise<{
     success: boolean;
     performance?: any;
     error?: string;
@@ -713,7 +713,7 @@ export class FallbackManager extends EventEmitter {
     return Array.from(this.strategies.values()).filter(s => s.interfaceType === interfaceType);
   }
 
-  private getBaselineResponseTime(componentId: string): number {
+  private getBaselineResponseTime(_componentId: string): number {
     // Placeholder - would get from performance monitor
     return 100; // 100ms baseline
   }
@@ -783,7 +783,7 @@ export class FallbackManager extends EventEmitter {
     return await adapter.performFunctionalityTest(componentId);
   }
 
-  private async performRollback(execution: FallbackExecution, strategy: FallbackStrategy): Promise<{
+  private async performRollback(execution: FallbackExecution, _strategy: FallbackStrategy): Promise<{
     success: boolean;
   }> {
     const adapter = this.interfaceAdapters.get(execution.interfaceType);
@@ -794,7 +794,7 @@ export class FallbackManager extends EventEmitter {
     try {
       await adapter.performRollback(execution.componentId, execution.execution.method);
       return { success: true };
-    } catch (error) {
+    } catch (_error) {
       return { success: false };
     }
   }

@@ -397,7 +397,7 @@ export class ComponentTransferStrategy extends EventEmitter {
       const responseTime = Number(endTime - startTime) / 1000000; // Convert to milliseconds
       return Math.max(responseTime, 1); // Minimum 1ms for realistic measurement
       
-    } catch (error) {
+    } catch (_error) {
       // Error accessing component - return high baseline
       return 150; // 150ms indicates component error
     }
@@ -458,8 +458,8 @@ export class ComponentTransferStrategy extends EventEmitter {
 
   private async executeTransferStrategy(
     component: ComponentComplexity,
-    pclBackend: any,
-    targetInterface: string
+    _pclBackend: any,
+    _targetInterface: string
   ): Promise<boolean> {
     try {
       // Real component transfer validation - test actual integration
@@ -507,7 +507,7 @@ export class ComponentTransferStrategy extends EventEmitter {
 
       return true; // All validation passed
 
-    } catch (error) {
+    } catch (_error) {
       return false; // Transfer failed due to error
     }
   }
