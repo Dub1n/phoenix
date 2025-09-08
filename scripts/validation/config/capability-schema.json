@@ -1,0 +1,197 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Validation Capability Matrix Schema",
+  "description": "JSON schema for validation capability matrix with enhanced safety framework",
+  "type": "object",
+  "required": ["version", "schemaVersion", "categories", "extensionFramework", "safety"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "Semantic version of the capability matrix"
+    },
+    "schemaVersion": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "Version of this schema"
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "lastUpdated": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "totalExtensions": {
+          "type": "number",
+          "minimum": 0
+        },
+        "systemHealth": {
+          "enum": ["healthy", "warning", "critical"]
+        }
+      }
+    },
+    "categories": {
+      "type": "object",
+      "patternProperties": {
+        "^[a-z][a-z0-9_]*$": {
+          "type": "object",
+          "required": ["scopes", "validator", "description", "capabilities", "safety"],
+          "properties": {
+            "scopes": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1,
+              "description": "File patterns this validator covers"
+            },
+            "validator": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_-]*-validator\\.js$",
+              "description": "Filename of the validator implementation"
+            },
+            "description": {
+              "type": "string",
+              "minLength": 5,
+              "description": "Human-readable description of validation category"
+            },
+            "interfaceVersion": {
+              "type": "string",
+              "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+              "description": "Version of IValidator interface implemented"
+            },
+            "capabilities": {
+              "type": "object",
+              "required": ["supportedProjects", "performanceProfile"],
+              "properties": {
+                "supportedProjects": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "minItems": 1,
+                  "description": "Projects this validator supports"
+                },
+                "performanceProfile": {
+                  "enum": ["fast", "standard", "comprehensive"],
+                  "description": "Expected performance characteristics"
+                },
+                "requiredDependencies": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "Required system dependencies"
+                }
+              }
+            },
+            "safety": {
+              "type": "object",
+              "required": ["lastValidated", "complianceStatus", "testCoverage"],
+              "properties": {
+                "lastValidated": {
+                  "type": "string",
+                  "format": "date-time",
+                  "description": "Last safety validation timestamp"
+                },
+                "complianceStatus": {
+                  "enum": ["verified", "warning", "failed"],
+                  "description": "Interface compliance status"
+                },
+                "testCoverage": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100,
+                  "description": "Test coverage percentage"
+                },
+                "generatedBy": {
+                  "type": "string",
+                  "description": "Generator used if auto-generated"
+                },
+                "generatedAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "description": "Generation timestamp if auto-generated"
+                }
+              }
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "extensionFramework": {
+      "type": "object",
+      "required": ["enabled", "safetyLevel", "rollbackEnabled", "humanReviewRequired"],
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Whether autonomous extension is enabled"
+        },
+        "safetyLevel": {
+          "enum": ["basic", "enhanced", "maximum"],
+          "description": "Level of safety validation required"
+        },
+        "maxExtensionsPerSession": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 5,
+          "description": "Maximum extensions allowed per session"
+        },
+        "rollbackEnabled": {
+          "type": "boolean",
+          "description": "Whether automatic rollback is enabled"
+        },
+        "humanReviewRequired": {
+          "type": "boolean",
+          "description": "Whether human review is required for extensions"
+        }
+      }
+    },
+    "safety": {
+      "type": "object",
+      "required": ["preGenerationValidation", "postGenerationValidation", "sandboxTesting", "interfaceCompliance"],
+      "properties": {
+        "preGenerationValidation": {
+          "type": "boolean",
+          "description": "Enable pre-generation validation"
+        },
+        "postGenerationValidation": {
+          "type": "boolean",
+          "description": "Enable post-generation validation"
+        },
+        "sandboxTesting": {
+          "type": "boolean",
+          "description": "Enable sandbox testing of generated validators"
+        },
+        "interfaceCompliance": {
+          "type": "boolean",
+          "description": "Enable interface compliance checking"
+        },
+        "automaticRollback": {
+          "type": "boolean",
+          "description": "Enable automatic rollback on validation failure"
+        }
+      }
+    },
+    "monitoring": {
+      "type": "object",
+      "properties": {
+        "metricsEnabled": {
+          "type": "boolean"
+        },
+        "successRateTarget": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "qualityThreshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        }
+      }
+    }
+  }
+}

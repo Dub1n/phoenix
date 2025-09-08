@@ -213,7 +213,11 @@ export class PTYManager {
   private cleanupIdleSessions(): void {
     const now = new Date().getTime();
     
-    for (const [sessionId, session] of this.sessions.entries()) {
+    // TODO: [TASK-MCP-INT-002] Pattern: typescript-iterator-compatibility-fix | Complexity: 2 | Dependencies: none
+    // Context: Fixed MapIterator compatibility for older TypeScript targets using Array.from()
+    // Validation-Required: typescript-compilation, iterator-functionality
+    // Pattern-Info: { approach: "Array.from-wrapper", alternatives: "downlevelIteration-flag", trade-offs: "memory-allocation-vs-compatibility" }
+    for (const [sessionId, session] of Array.from(this.sessions.entries())) {
       const idleTime = now - session.lastActivity.getTime();
       
       if (idleTime > this.defaultTimeout) {
@@ -287,7 +291,11 @@ export class PTYManager {
       this.cleanupTimer = undefined;
     }
     
-    for (const sessionId of this.sessions.keys()) {
+    // TODO: [TASK-MCP-INT-002] Pattern: typescript-iterator-compatibility-fix | Complexity: 2 | Dependencies: none
+    // Context: Fixed Map.keys() MapIterator compatibility for cleanup operations
+    // Validation-Required: typescript-compilation, session-cleanup-functionality  
+    // Pattern-Info: { approach: "Array.from-wrapper", alternatives: "downlevelIteration-flag", trade-offs: "memory-allocation-vs-compatibility" }
+    for (const sessionId of Array.from(this.sessions.keys())) {
       this.destroySession(sessionId);
     }
     

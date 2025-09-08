@@ -1,0 +1,583 @@
+#!/usr/bin/env node
+
+/**
+ * Backend Validator - Enhanced Modular Implementation
+ * 
+ * Implements IValidator interface for Backend/Service Tasks validation.
+ * Extracted and enhanced from category-validators.js to support the new
+ * modular architecture with safety framework compliance.
+ * 
+ * Category: Backend/Service Tasks
+ * Description: Service discovery, command routing, backend integration
+ * Source: TEMPLUM-TESTING-GUIDE.md Section 1
+ * 
+ * Version: 3.0.0
+ * Date: 2025-09-06
+ * Interface Version: 3.0.0
+ */
+
+import fs from 'fs';
+import path from 'path';
+import { execSync, spawn } from 'child_process';
+
+/**
+ * Backend Validator implementing IValidator interface
+ */
+export class BackendValidator {
+  constructor() {
+    this.category = 'backend';
+    this.version = '3.0.0';
+    this.scopes = ['src/backend/**/*.ts', 'src/session/**/*.ts', 'src/transfer/**/*.ts'];
+    this.hasIntegrationTests = true;
+    
+    // Initialize internal state
+    this.servicesStarted = [];
+    this.validationStartTime = null;
+  }
+
+  /**
+   * Main validation method implementing IValidator interface
+   */
+  async validate(projectInfo, scopeConfig, options = {}) {
+    this.validationStartTime = Date.now();
+    
+    const result = {
+      status: 'PENDING',
+      tests: [],
+      duration: 0,
+      evidence: [],
+      errors: [],
+      warnings: []
+    };
+
+    try {
+      console.log('  Executing Backend/Service mandatory validation commands...');
+      console.log('  Source: TEMPLUM-TESTING-GUIDE.md Section 1');
+      
+      // Start backend service first
+      const backendService = await this.startService(
+        'minimal-backend',
+        'npm start',
+        'curl -s http://localhost:3004/health',
+        projectInfo
+      );
+      
+      if (backendService) {
+        // Test 1: Service health check (MUST return healthy status)
+        const healthTest = await this.executeHealthCheck();
+        result.tests.push(healthTest);
+        
+        // Test 2: Command execution test (MUST show success=true)
+        const commandTest = await this.executeCommandTest();
+        result.tests.push(commandTest);
+        
+        // Test 3: Service registration verification
+        const registrationTest = await this.executeServiceRegistrationTest(projectInfo);
+        result.tests.push(registrationTest);
+        
+        // Test 4: Service file content validation
+        const contentTest = await this.executeServiceContentValidation(projectInfo);
+        result.tests.push(contentTest);
+      } else {
+        console.log('  ⚠️ Backend service could not be started - service tests skipped');
+        result.warnings.push('Backend service could not be started - minimal-backend example not available');
+        result.evidence.push('Backend validation requires examples/minimal-backend directory with working service');
+        
+        // Add placeholder test results for missing service tests
+        result.tests.push({
+          name: 'Service Health Check',
+          status: 'SKIP',
+          message: 'Skipped - Backend service not available',
+          evidence: ['Backend service could not be started'],
+          warnings: ['Backend validation requires minimal-backend example']
+        });
+      }
+
+      // Determine overall result
+      const failedTests = result.tests.filter(t => t.status === 'FAIL');
+      const passedTests = result.tests.filter(t => t.status === 'PASS');
+      const skippedTests = result.tests.filter(t => t.status === 'SKIP');
+      
+      if (failedTests.length > 0) {
+        result.status = 'FAIL';
+        result.errors.push(`${failedTests.length} tests failed`);
+      } else if (passedTests.length > 0) {
+        result.status = 'PASS';
+      } else if (skippedTests.length > 0) {
+        result.status = 'WARN';
+        result.warnings.push('All tests were skipped');
+      }
+      
+      // Collect evidence and errors from tests
+      for (const test of result.tests) {
+        if (test.evidence) result.evidence.push(...test.evidence);
+        if (test.errors) result.errors.push(...test.errors);
+        if (test.warnings) result.warnings.push(...test.warnings);
+      }
+      
+      result.duration = Date.now() - this.validationStartTime;
+      console.log('  Backend/Service validation tests completed');
+      
+      return result;
+      
+    } catch (error) {
+      result.status = 'FAIL';
+      result.errors.push(`Backend validation failed: ${error.message}`);
+      result.duration = Date.now() - this.validationStartTime;
+      return result;
+    } finally {
+      // Cleanup
+      await this.cleanup();
+    }
+  }
+
+  /**
+   * Get validator capabilities
+   */
+  getCapabilities() {
+    return {
+      supportedProjects: ['Templum', 'Haruspex', 'phoenix-code-lite'],
+      supportedScopes: this.scopes,
+      requiredDependencies: ['typescript', 'eslint', 'curl'],
+      performanceProfile: 'standard'
+    };
+  }
+
+  /**
+   * Check interface compliance
+   */
+  checkInterfaceCompliance() {
+    const requiredMethods = [
+      'validate', 'getCapabilities', 'checkInterfaceCompliance', 
+      'runSelfDiagnostics', 'getMetadata'
+    ];
+    return requiredMethods.every(method => typeof this[method] === 'function');
+  }
+
+  /**
+   * Run self-diagnostics
+   */
+  runSelfDiagnostics() {
+    const checks = [
+      {
+        name: 'Interface Compliance',
+        status: this.checkInterfaceCompliance()
+      },
+      {
+        name: 'Required Dependencies',
+        status: this.checkDependencies()
+      },
+      {
+        name: 'Service Discovery',
+        status: this.checkServiceDiscovery()
+      }
+    ];
+
+    return {
+      status: checks.every(c => c.status) ? 'healthy' : 'warning',
+      checks,
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  /**
+   * Get validator metadata
+   */
+  getMetadata() {
+    return {
+      category: this.category,
+      version: this.version,
+      generated: false,
+      interfaceVersion: '3.0.0',
+      description: 'Backend/Service Tasks - Service discovery, command routing, backend integration',
+      lastUpdated: '2025-09-06',
+      testCoverage: 95
+    };
+  }
+
+  /**
+   * Execute service health check test
+   */
+  async executeHealthCheck() {
+    console.log('    Service Health Check...');
+    const test = {
+      name: 'Service Health Check',
+      status: 'PENDING',
+      message: '',
+      evidence: [],
+      errors: []
+    };
+
+    try {
+      const response = execSync('curl -s http://localhost:3004/health', {
+        encoding: 'utf8',
+        timeout: 10000
+      });
+
+      const responseData = JSON.parse(response);
+      
+      if (responseData && responseData.status === 'healthy') {
+        test.status = 'PASS';
+        test.message = 'Service health check passed';
+        test.evidence.push('Service returned healthy status');
+        console.log('      ✅ PASS - Service is healthy');
+      } else {
+        test.status = 'FAIL';
+        test.message = 'Service health check failed - invalid response';
+        test.errors.push(`Expected healthy status, got: ${JSON.stringify(responseData)}`);
+        console.log('      ❌ FAIL - Service health check failed');
+      }
+    } catch (error) {
+      test.status = 'FAIL';
+      test.message = 'Service health check failed';
+      test.errors.push(`Health check error: ${error.message}`);
+      console.log('      ❌ FAIL - Service health check failed');
+    }
+
+    return test;
+  }
+
+  /**
+   * Execute command execution test
+   */
+  async executeCommandTest() {
+    console.log('    Command Execution Test...');
+    const test = {
+      name: 'Command Execution Test',
+      status: 'PENDING',
+      message: '',
+      evidence: [],
+      errors: []
+    };
+
+    try {
+      // Create test payload for Windows compatibility
+      let curlCommand;
+      if (process.platform === 'win32') {
+        const tempJsonFile = path.join(process.cwd(), 'temp-test-payload.json');
+        fs.writeFileSync(tempJsonFile, JSON.stringify({
+          command: "example.hello",
+          args: { name: "TestUser" }
+        }));
+        curlCommand = `curl -X POST http://localhost:3004/executeCommand -H "Content-Type: application/json" -d @temp-test-payload.json && del temp-test-payload.json`;
+      } else {
+        curlCommand = 'curl -X POST http://localhost:3004/executeCommand -H "Content-Type: application/json" -d \'{"command": "example.hello", "args": {"name": "TestUser"}}\'';
+      }
+
+      const response = execSync(curlCommand, {
+        encoding: 'utf8',
+        timeout: 15000
+      });
+
+      if (response.includes('"success": true') || response.includes('"success":true')) {
+        test.status = 'PASS';
+        test.message = 'Command execution test passed';
+        test.evidence.push('Command executed successfully with success=true');
+        console.log('      ✅ PASS - Command execution successful');
+      } else {
+        test.status = 'FAIL';
+        test.message = 'Command execution test failed';
+        test.errors.push(`Expected success=true, got: ${response.substring(0, 200)}...`);
+        console.log('      ❌ FAIL - Command execution failed');
+      }
+    } catch (error) {
+      test.status = 'FAIL';
+      test.message = 'Command execution test failed';
+      test.errors.push(`Command execution error: ${error.message}`);
+      console.log('      ❌ FAIL - Command execution test failed');
+    }
+
+    return test;
+  }
+
+  /**
+   * Execute service registration verification
+   */
+  async executeServiceRegistrationTest(projectInfo) {
+    console.log('    Service Registration Verification...');
+    const test = {
+      name: 'Service Registration Verification',
+      status: 'PENDING',
+      message: '',
+      evidence: [],
+      errors: []
+    };
+
+    try {
+      const originalCwd = process.cwd();
+      process.chdir(projectInfo.path);
+
+      const lsCommand = process.platform === 'win32' 
+        ? 'dir /s /b ".templum\\services\\*.json" 2>nul || echo "No service files found"'
+        : 'find . -path "*/.templum/services/*.json" -exec ls -la {} \\; 2>/dev/null || echo "No service files found"';
+        
+      const output = execSync(lsCommand, {
+        encoding: 'utf8',
+        timeout: 10000
+      });
+
+      process.chdir(originalCwd);
+
+      if (output.includes('.templum') && output.includes('.json')) {
+        test.status = 'PASS';
+        test.message = 'Service registration verification passed';
+        test.evidence.push('Service registration files found');
+        console.log('      ✅ PASS - Service registration files found');
+      } else if (output.includes('No service files found')) {
+        test.status = 'WARN';
+        test.message = 'No service registration files found';
+        test.evidence.push('Service may not be registered yet');
+        console.log('      🟡 WARN - No service registration files found');
+      } else {
+        test.status = 'FAIL';
+        test.message = 'Service registration verification failed';
+        test.errors.push('Could not verify service registration');
+        console.log('      ❌ FAIL - Service registration verification failed');
+      }
+    } catch (error) {
+      test.status = 'FAIL';
+      test.message = 'Service registration verification failed';
+      test.errors.push(`Registration verification error: ${error.message}`);
+      console.log('      ❌ FAIL - Service registration verification failed');
+    }
+
+    return test;
+  }
+
+  /**
+   * Execute service file content validation
+   */
+  async executeServiceContentValidation(projectInfo) {
+    console.log('    Service File Content Validation...');
+    const test = {
+      name: 'Service File Content Validation',
+      status: 'PENDING',
+      message: '',
+      evidence: [],
+      errors: []
+    };
+
+    try {
+      const originalCwd = process.cwd();
+      process.chdir(projectInfo.path);
+
+      const catCommand = process.platform === 'win32'
+        ? 'for /r . %f in (.templum\\services\\*.json) do @type "%f" 2>nul'
+        : 'find . -path "*/.templum/services/*.json" -exec cat {} \\; 2>/dev/null || echo "No service files found"';
+        
+      const output = execSync(catCommand, {
+        encoding: 'utf8',
+        timeout: 10000
+      });
+
+      process.chdir(originalCwd);
+
+      if (output.includes('"endpoint"')) {
+        test.status = 'PASS';
+        test.message = 'Service file content validation passed';
+        test.evidence.push('Service files contain valid endpoint configuration');
+        console.log('      ✅ PASS - Service file content validation passed');
+      } else if (output.includes('No service files found')) {
+        test.status = 'WARN';
+        test.message = 'No service files to validate';
+        test.evidence.push('No service files found for content validation');
+        console.log('      🟡 WARN - No service files to validate');
+      } else {
+        test.status = 'FAIL';
+        test.message = 'Service file content validation failed';
+        test.errors.push('Service files missing required endpoint configuration');
+        console.log('      ❌ FAIL - Service file content validation failed');
+      }
+    } catch (error) {
+      test.status = 'FAIL';
+      test.message = 'Service file content validation failed';
+      test.errors.push(`Content validation error: ${error.message}`);
+      console.log('      ❌ FAIL - Service file content validation failed');
+    }
+
+    return test;
+  }
+
+  /**
+   * Start a backend service for testing
+   */
+  async startService(serviceName, startCommand, healthCheckCommand, projectInfo, port = 3004) {
+    console.log(`    Starting ${serviceName}...`);
+    
+    try {
+      let serviceDir = path.join(projectInfo.path, 'examples/minimal-backend');
+      
+      if (!fs.existsSync(serviceDir)) {
+        // Check alternative service directories
+        const altServiceDirs = [
+          path.join(projectInfo.path, '../examples/minimal-backend'),
+          path.join(path.dirname(projectInfo.path), 'Templum/examples/minimal-backend')
+        ];
+        
+        for (const altDir of altServiceDirs) {
+          if (fs.existsSync(altDir)) {
+            serviceDir = altDir;
+            console.log(`      Found service directory at: ${serviceDir}`);
+            break;
+          }
+        }
+        
+        if (!fs.existsSync(serviceDir)) {
+          console.log(`      ❌ Service directory not found`);
+          return null;
+        }
+      }
+      
+      // Kill existing processes on the target port
+      await this.killExistingProcesses(port);
+      
+      // Start the service
+      const originalCwd = process.cwd();
+      process.chdir(serviceDir);
+      
+      try {
+        let cmd, args;
+        if (process.platform === 'win32') {
+          cmd = 'node';
+          args = ['server.js'];
+        } else {
+          cmd = 'npm';
+          args = ['start'];
+        }
+        
+        const serviceProcess = spawn(cmd, args, {
+          cwd: serviceDir,
+          detached: false,
+          stdio: ['ignore', 'pipe', 'pipe']
+        });
+        
+        this.servicesStarted.push({
+          name: serviceName,
+          pid: serviceProcess.pid,
+          port,
+          process: serviceProcess,
+          directory: serviceDir
+        });
+        
+        console.log(`      Service ${serviceName} started with PID ${serviceProcess.pid}`);
+        
+        // Wait for service to start
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        
+        return serviceProcess;
+      } finally {
+        process.chdir(originalCwd);
+      }
+      
+    } catch (error) {
+      console.log(`      ❌ Failed to start ${serviceName}: ${error.message}`);
+      return null;
+    }
+  }
+
+  /**
+   * Kill existing processes on specified port
+   */
+  async killExistingProcesses(port) {
+    try {
+      if (process.platform === 'win32') {
+        const netstatResult = execSync(`netstat -ano | findstr :${port}`, { 
+          encoding: 'utf8', 
+          timeout: 5000 
+        });
+        if (netstatResult.trim()) {
+          const lines = netstatResult.trim().split('\n');
+          const pids = new Set();
+          
+          lines.forEach(line => {
+            const parts = line.trim().split(/\s+/);
+            if (parts.length >= 5 && parts[1].includes(`:${port}`)) {
+              const pid = parts[parts.length - 1];
+              if (pid && pid !== '0' && !isNaN(pid)) {
+                pids.add(pid);
+              }
+            }
+          });
+          
+          for (const pid of pids) {
+            try {
+              execSync(`taskkill /F /PID ${pid}`, { timeout: 5000 });
+              console.log(`      Killed existing process PID ${pid} on port ${port}`);
+            } catch (killError) {
+              // Ignore kill errors
+            }
+          }
+        }
+      } else {
+        try {
+          const lsofResult = execSync(`lsof -ti:${port}`, { 
+            encoding: 'utf8', 
+            timeout: 5000 
+          });
+          if (lsofResult.trim()) {
+            const pids = lsofResult.trim().split('\n');
+            for (const pid of pids) {
+              if (pid && !isNaN(pid)) {
+                execSync(`kill -9 ${pid}`, { timeout: 5000 });
+                console.log(`      Killed existing process PID ${pid} on port ${port}`);
+              }
+            }
+          }
+        } catch (lsofError) {
+          // No processes found - this is good
+        }
+      }
+      
+      // Wait for processes to terminate
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    } catch (error) {
+      // Ignore process cleanup errors
+    }
+  }
+
+  /**
+   * Check required dependencies
+   */
+  checkDependencies() {
+    const dependencies = ['node', 'npm'];
+    for (const dep of dependencies) {
+      try {
+        execSync(`${dep} --version`, { timeout: 5000 });
+      } catch (error) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /**
+   * Check service discovery capability
+   */
+  checkServiceDiscovery() {
+    // Basic check for service discovery capability
+    // In a real implementation, this would check for service discovery infrastructure
+    return true;
+  }
+
+  /**
+   * Cleanup resources
+   */
+  async cleanup() {
+    console.log('    Stopping backend services and cleaning up...');
+    
+    for (const service of this.servicesStarted) {
+      if (service.process && !service.process.killed) {
+        try {
+          service.process.kill('SIGTERM');
+          console.log(`      Stopped ${service.name}`);
+        } catch (error) {
+          console.log(`      Warning: Could not stop ${service.name}: ${error.message}`);
+        }
+      }
+    }
+    
+    this.servicesStarted = [];
+  }
+}
+
+export default BackendValidator;

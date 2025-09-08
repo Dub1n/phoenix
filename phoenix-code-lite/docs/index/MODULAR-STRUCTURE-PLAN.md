@@ -34,7 +34,7 @@ description: [Plan for modularizing documentation when size/complexity threshold
 
 ### Core Documentation Modules
 
-``` filesystem
+```filestructure
 docs/
 ├── 00-SYSTEM-OVERVIEW.md           # High-level system context
 ├── 01-ENTRY-POINTS.md              # Application entry points
@@ -50,7 +50,7 @@ docs/
 
 ### Architecture Diagram Modules
 
-```filesystem
+```filestructure
 docs/architecture/
 ├── system-context.md               # C4 Level 1 - System context
 ├── containers.md                   # C4 Level 2 - Container architecture  

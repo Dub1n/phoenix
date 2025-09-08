@@ -1,0 +1,255 @@
+{
+  "$schema": "./capability-schema.json",
+  "version": "3.0.0",
+  "schemaVersion": "1.0.0",
+  "metadata": {
+    "lastUpdated": "2025-09-06T21:30:00Z",
+    "totalExtensions": 0,
+    "systemHealth": "healthy",
+    "lastTask": "TASK-VAL-004"
+  },
+  "categories": {
+    "backend": {
+      "scopes": [
+        "src/backend/**/*.ts",
+        "src/session/**/*.ts",
+        "src/transfer/**/*.ts"
+      ],
+      "validator": "backend-validator.js",
+      "description": "Backend/Service Tasks - Service discovery, command routing, backend integration",
+      "interfaceVersion": "3.0.0",
+      "capabilities": {
+        "supportedProjects": [
+          "Templum",
+          "Haruspex",
+          "phoenix-code-lite"
+        ],
+        "performanceProfile": "standard",
+        "requiredDependencies": [
+          "typescript",
+          "eslint",
+          "curl"
+        ]
+      },
+      "safety": {
+        "lastValidated": "2025-09-06T00:00:00Z",
+        "complianceStatus": "verified",
+        "testCoverage": 95
+      }
+    },
+    "ui": {
+      "scopes": [
+        "src/interfaces/**/*.ts",
+        "src/rendering/**/*.ts",
+        "src/menus/**/*.ts"
+      ],
+      "validator": "ui-validator.js",
+      "description": "UI/Interface Tasks - CLI menus, VSCode integration, UI components",
+      "interfaceVersion": "3.0.0",
+      "capabilities": {
+        "supportedProjects": [
+          "Templum",
+          "phoenix-code-lite"
+        ],
+        "performanceProfile": "fast",
+        "requiredDependencies": [
+          "typescript",
+          "eslint"
+        ]
+      },
+      "safety": {
+        "lastValidated": "2025-09-06T20:15:00Z",
+        "complianceStatus": "implemented",
+        "testCoverage": 85
+      }
+    },
+    "core": {
+      "scopes": [
+        "src/core/**/*.ts",
+        "src/types/**/*.ts",
+        "src/validation/**/*.ts"
+      ],
+      "validator": "core-validator.js",
+      "description": "Core System Tasks - State management, configuration, resource handling",
+      "interfaceVersion": "3.0.0",
+      "capabilities": {
+        "supportedProjects": [
+          "Templum",
+          "Haruspex",
+          "phoenix-code-lite"
+        ],
+        "performanceProfile": "comprehensive",
+        "requiredDependencies": [
+          "typescript",
+          "jest",
+          "eslint"
+        ]
+      },
+      "safety": {
+        "lastValidated": "2025-09-06T20:15:00Z",
+        "complianceStatus": "implemented",
+        "testCoverage": 90
+      }
+    },
+    "build": {
+      "scopes": [],
+      "validator": "build-validator.js",
+      "description": "Compilation/Build Tasks - TypeScript fixes, library compatibility, build configuration",
+      "interfaceVersion": "3.0.0",
+      "capabilities": {
+        "supportedProjects": [
+          "Templum",
+          "Haruspex",
+          "phoenix-code-lite"
+        ],
+        "performanceProfile": "standard",
+        "requiredDependencies": [
+          "typescript",
+          "npm"
+        ]
+      },
+      "safety": {
+        "lastValidated": "2025-09-06T00:00:00Z",
+        "complianceStatus": "verified",
+        "testCoverage": 85
+      }
+    },
+    "quality": {
+      "scopes": [],
+      "validator": "quality-validator.js",
+      "description": "Code Quality Tasks - ESLint fixes, refactoring, cleanup",
+      "interfaceVersion": "3.0.0",
+      "capabilities": {
+        "supportedProjects": [
+          "Templum",
+          "Haruspex",
+          "phoenix-code-lite"
+        ],
+        "performanceProfile": "standard",
+        "requiredDependencies": [
+          "eslint",
+          "prettier"
+        ]
+      },
+      "safety": {
+        "lastValidated": "2025-09-06T20:43:00Z",
+        "complianceStatus": "implemented", 
+        "testCoverage": 90
+      }
+    },
+    "architecture": {
+      "scopes": [],
+      "validator": "architecture-validator.js",
+      "description": "Architecture/Pattern Tasks - New patterns, architectural changes, system design",
+      "interfaceVersion": "3.0.0",
+      "capabilities": {
+        "supportedProjects": [
+          "Templum",
+          "Haruspex",
+          "phoenix-code-lite"
+        ],
+        "performanceProfile": "comprehensive",
+        "requiredDependencies": [
+          "typescript",
+          "jest"
+        ]
+      },
+      "safety": {
+        "lastValidated": "2025-09-06T21:30:00Z",
+        "complianceStatus": "implemented",
+        "testCoverage": 85
+      }
+    },
+    "mcp": {
+      "scopes": [
+        "src/mcp-channel/**/*.ts", 
+        "src/mcp-channel/**/*.js"
+      ],
+      "validator": "mcp-validator.js",
+      "description": "MCP Server Tasks - Model Context Protocol implementations",
+      "interfaceVersion": "3.0.0",
+      "capabilities": {
+        "supportedProjects": [
+          "Templum",
+          "phoenix-code-lite"
+        ],
+        "performanceProfile": "standard",
+        "requiredDependencies": [
+          "typescript",
+          "node"
+        ]
+      },
+      "safety": {
+        "lastValidated": "2025-09-06T21:30:00Z",
+        "complianceStatus": "implemented",
+        "testCoverage": 88
+      }
+    },
+    "feature": {
+      "scopes": [],
+      "validator": "feature-validator.js",
+      "description": "Feature Enhancement Tasks - New capabilities, workflow improvements, optimizations",
+      "interfaceVersion": "3.0.0",
+      "capabilities": {
+        "supportedProjects": [
+          "Templum",
+          "Haruspex",
+          "phoenix-code-lite"
+        ],
+        "performanceProfile": "comprehensive",
+        "requiredDependencies": [
+          "typescript",
+          "jest",
+          "curl"
+        ]
+      },
+      "safety": {
+        "lastValidated": "2025-09-06T21:30:00Z",
+        "complianceStatus": "implemented",
+        "testCoverage": 82
+      }
+    },
+    "subagent": {
+      "scopes": [
+        ".claude/handoff/**/*.json",
+        ".claude/agents/**/*.ts"
+      ],
+      "validator": "subagent-validator.js",
+      "description": "Subagent Workflow Tasks - File-based handoff infrastructure, agent communication",
+      "interfaceVersion": "3.0.0",
+      "capabilities": {
+        "supportedProjects": [
+          "VDL_Vault"
+        ],
+        "performanceProfile": "fast",
+        "requiredDependencies": [
+          "node"
+        ]
+      },
+      "safety": {
+        "lastValidated": "2025-09-06T00:00:00Z",
+        "complianceStatus": "verified",
+        "testCoverage": 88
+      }
+    }
+  },
+  "extensionFramework": {
+    "enabled": true,
+    "safetyLevel": "enhanced",
+    "maxExtensionsPerSession": 1,
+    "rollbackEnabled": true,
+    "humanReviewRequired": true
+  },
+  "safety": {
+    "preGenerationValidation": true,
+    "postGenerationValidation": true,
+    "sandboxTesting": true,
+    "interfaceCompliance": true,
+    "automaticRollback": true
+  },
+  "monitoring": {
+    "metricsEnabled": true,
+    "successRateTarget": 0.9,
+    "qualityThreshold": 80
+  }
+}

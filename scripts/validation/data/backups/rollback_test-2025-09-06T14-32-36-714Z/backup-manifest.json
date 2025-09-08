@@ -1,0 +1,14 @@
+{
+  "backupId": "rollback_test-2025-09-06T14-32-36-714Z",
+  "timestamp": "2025-09-06T14-32-36-714Z",
+  "category": "rollback_test",
+  "type": "validator-specific",
+  "files": [
+    {
+      "originalPath": "C:\\Users\\gabri\\Documents\\Infotopology\\VDL_Vault\\scripts\\validation\\validators\\rollback_test-validator.js",
+      "backupName": "rollback_test-validator.js",
+      "type": "validator"
+    }
+  ],
+  "validationPath": "C:\\Users\\gabri\\Documents\\Infotopology\\VDL_Vault\\scripts\\validation"
+}

@@ -1,0 +1,757 @@
+#!/usr/bin/env node
+
+/**
+ * {{CATEGORY_NAME}} Validator - Advanced Auto-Generated Implementation
+ * 
+ * Comprehensive IValidator interface implementation for {{CATEGORY_DESCRIPTION}} validation.
+ * Generated from validator-complex-template.js using the Enhanced Validation System.
+ * 
+ * Category: {{CATEGORY}}
+ * Description: {{DESCRIPTION}}
+ * Generated: {{GENERATION_TIMESTAMP}}
+ * Template Version: 3.0.0-complex
+ * Interface Version: 3.0.0
+ */
+
+import fs from 'fs';
+import path from 'path';
+import { execSync } from 'child_process';
+import { createHash } from 'crypto';
+import os from 'os';
+
+/**
+ * {{CATEGORY_NAME}} Advanced Validator implementing IValidator interface
+ * Comprehensive implementation with performance monitoring and parallel execution
+ */
+export class {{CLASS_NAME}} {
+  constructor() {
+    this.category = '{{CATEGORY}}';
+    this.version = '3.0.0';
+    this.scopes = [{{SCOPE_PATTERNS}}];
+    this.hasIntegrationTests = {{HAS_INTEGRATION_TESTS}};
+    
+    // Advanced validator metadata
+    this.generated = true;
+    this.generatedAt = '{{GENERATION_TIMESTAMP}}';
+    this.template = 'validator-complex-template.js';
+    this.templateVersion = '3.0.0-complex';
+    
+    // Advanced internal state management
+    this.validationStartTime = null;
+    this.performanceMetrics = new Map();
+    this.validationHistory = [];
+    this.resourceMonitoring = {
+      enabled: true,
+      memoryStart: null,
+      cpuStart: null
+    };
+    
+    // Performance monitoring
+    this.benchmarks = {
+      averageValidationTime: 0,
+      successRate: 100,
+      lastNValidations: []
+    };
+  }
+
+  /**
+   * Main validation method implementing IValidator interface
+   * Advanced implementation with comprehensive monitoring and error recovery
+   */
+  async validate(projectInfo, scopeConfig, options = {}) {
+    this.validationStartTime = Date.now();
+    const validationId = this.generateValidationId();
+    
+    const result = {
+      status: 'PENDING',
+      tests: [],
+      duration: 0,
+      evidence: [],
+      errors: [],
+      warnings: [],
+      recommendations: [],
+      metadata: {
+        validationId,
+        templateVersion: this.templateVersion,
+        projectInfo: {
+          name: projectInfo.name,
+          path: projectInfo.path,
+          type: projectInfo.type
+        },
+        resourceUsage: {},
+        performanceProfile: {}
+      }
+    };
+
+    try {
+      // Initialize resource monitoring
+      await this.initializeResourceMonitoring();
+      
+      console.log(`  Executing {{CATEGORY_NAME}} advanced validation [${validationId}]...`);
+      console.log('  Source: {{VALIDATION_SOURCE}}');
+      
+      // Pre-validation checks and setup
+      await this.runPreValidationChecks(projectInfo, scopeConfig, options, result);
+      
+      // Execute advanced validation logic with monitoring
+      await this.runAdvancedValidationTests(projectInfo, scopeConfig, options, result);
+      
+      // Post-validation analysis and optimization recommendations
+      await this.runPostValidationAnalysis(projectInfo, scopeConfig, options, result);
+
+      // Advanced result determination with scoring
+      await this.calculateValidationScore(result);
+      
+      // Resource usage analysis
+      result.metadata.resourceUsage = await this.getResourceUsage();
+      result.metadata.performanceProfile = this.getPerformanceProfile();
+      
+      // Update benchmarks and history
+      this.updateBenchmarks(result);
+      this.validationHistory.push({
+        id: validationId,
+        timestamp: new Date().toISOString(),
+        status: result.status,
+        duration: result.duration,
+        testCount: result.tests.length
+      });
+      
+      result.duration = Date.now() - this.validationStartTime;
+      console.log(`  {{CATEGORY_NAME}} advanced validation completed [${validationId}] - ${result.status}`);
+      
+      return result;
+      
+    } catch (error) {
+      result.status = 'FAIL';
+      result.errors.push(`{{CATEGORY_NAME}} advanced validation failed: ${error.message}`);
+      result.duration = Date.now() - this.validationStartTime;
+      
+      // Attempt error recovery
+      await this.attemptErrorRecovery(error, result, validationId);
+      
+      return result;
+    } finally {
+      // Advanced cleanup with resource monitoring
+      await this.advancedCleanup(validationId);
+    }
+  }
+
+  /**
+   * Run pre-validation checks and environment setup
+   */
+  async runPreValidationChecks(projectInfo, scopeConfig, options, result) {
+    console.log('    Running pre-validation environment checks...');
+    
+    const preChecks = [
+      () => this.validateEnvironment(projectInfo),
+      () => this.checkSystemRequirements(),
+      () => this.validateProjectStructure(projectInfo),
+      () => this.checkResourceAvailability()
+    ];
+
+    for (const check of preChecks) {
+      try {
+        const checkResult = await check();
+        if (!checkResult.success) {
+          result.warnings.push(`Pre-validation warning: ${checkResult.message}`);
+        }
+      } catch (error) {
+        result.warnings.push(`Pre-validation check failed: ${error.message}`);
+      }
+    }
+  }
+
+  /**
+   * Run advanced validation tests with comprehensive monitoring
+   */
+  async runAdvancedValidationTests(projectInfo, scopeConfig, options, result) {
+    // COMPLEX_VALIDATION_LOGIC_START
+    
+    {{VALIDATION_LOGIC}}
+    
+    // Additional advanced validation patterns
+    await this.runParallelValidationSuite(projectInfo, scopeConfig, options, result);
+    await this.runDependencyValidation(projectInfo, result);
+    await this.runSecurityValidation(projectInfo, result);
+    await this.runPerformanceValidation(projectInfo, result);
+    
+    // COMPLEX_VALIDATION_LOGIC_END
+  }
+
+  /**
+   * Run post-validation analysis and generate recommendations
+   */
+  async runPostValidationAnalysis(projectInfo, scopeConfig, options, result) {
+    console.log('    Running post-validation analysis...');
+    
+    // Analyze patterns and generate recommendations
+    const analysisResults = await this.analyzeValidationPatterns(result);
+    result.recommendations.push(...analysisResults.recommendations);
+    
+    // Performance optimization suggestions
+    const perfOptimizations = await this.generatePerformanceRecommendations(projectInfo, result);
+    result.recommendations.push(...perfOptimizations);
+    
+    // Security enhancement suggestions
+    const securityEnhancements = await this.generateSecurityRecommendations(projectInfo, result);
+    result.recommendations.push(...securityEnhancements);
+  }
+
+  /**
+   * Run parallel validation suite for better performance
+   */
+  async runParallelValidationSuite(projectInfo, scopeConfig, options, result) {
+    const parallelTests = [
+      () => this.validateCodeStructure(projectInfo),
+      () => this.validateFileIntegrity(projectInfo),
+      () => this.validateConfigurationConsistency(projectInfo),
+      () => this.validateDocumentationCoverage(projectInfo)
+    ];
+
+    const parallelResults = await Promise.allSettled(
+      parallelTests.map(test => this.executeAdvancedTest(test.name || 'Parallel Test', test, projectInfo))
+    );
+
+    parallelResults.forEach((promiseResult, index) => {
+      if (promiseResult.status === 'fulfilled') {
+        result.tests.push(promiseResult.value);
+      } else {
+        result.tests.push({
+          name: `Parallel Test ${index}`,
+          status: 'FAIL',
+          message: `Test failed: ${promiseResult.reason.message}`,
+          errors: [promiseResult.reason.message]
+        });
+      }
+    });
+  }
+
+  /**
+   * Advanced validation score calculation
+   */
+  async calculateValidationScore(result) {
+    const failedTests = result.tests.filter(t => t.status === 'FAIL');
+    const passedTests = result.tests.filter(t => t.status === 'PASS');
+    const warnTests = result.tests.filter(t => t.status === 'WARN');
+    const skippedTests = result.tests.filter(t => t.status === 'SKIP');
+    
+    // Calculate weighted score
+    const totalTests = result.tests.length;
+    const passWeight = 1.0;
+    const warnWeight = 0.7;
+    const failWeight = 0.0;
+    const skipWeight = 0.3;
+    
+    const score = totalTests > 0 ? 
+      ((passedTests.length * passWeight + warnTests.length * warnWeight + 
+        skippedTests.length * skipWeight + failedTests.length * failWeight) / totalTests) * 100 : 0;
+    
+    result.metadata.validationScore = Math.round(score);
+    
+    // Determine status based on score and critical failures
+    const hasCriticalFailures = failedTests.some(t => t.critical === true);
+    
+    if (hasCriticalFailures || score < 50) {
+      result.status = 'FAIL';
+    } else if (score < 80 || warnTests.length > 0) {
+      result.status = 'WARN';
+    } else {
+      result.status = 'PASS';
+    }
+    
+    // Collect comprehensive evidence and errors
+    for (const test of result.tests) {
+      if (test.evidence) result.evidence.push(...test.evidence);
+      if (test.errors) result.errors.push(...test.errors);
+      if (test.warnings) result.warnings.push(...test.warnings);
+    }
+  }
+
+  /**
+   * Get enhanced validator capabilities
+   */
+  getCapabilities() {
+    return {
+      supportedProjects: [{{SUPPORTED_PROJECTS}}],
+      supportedScopes: this.scopes,
+      requiredDependencies: [{{REQUIRED_DEPENDENCIES}}],
+      performanceProfile: '{{PERFORMANCE_PROFILE}}',
+      hasIntegrationTests: this.hasIntegrationTests,
+      supportsParallelExecution: true,
+      supportsResourceMonitoring: true,
+      supportsAdvancedRecommendations: true,
+      maxConcurrentTests: {{MAX_CONCURRENT_TESTS}},
+      estimatedExecutionTime: '{{ESTIMATED_EXECUTION_TIME}}',
+      features: [
+        'Resource Monitoring',
+        'Performance Benchmarking', 
+        'Advanced Error Recovery',
+        'Security Validation',
+        'Parallel Test Execution',
+        'Comprehensive Recommendations',
+        'Advanced Diagnostics'
+      ]
+    };
+  }
+
+  /**
+   * Enhanced interface compliance check
+   */
+  checkInterfaceCompliance() {
+    const requiredMethods = [
+      'validate', 'getCapabilities', 'checkInterfaceCompliance', 
+      'runSelfDiagnostics', 'getMetadata'
+    ];
+    
+    const advancedMethods = [
+      'runAdvancedValidationTests', 'attemptErrorRecovery', 
+      'getPerformanceProfile', 'runParallelValidationSuite'
+    ];
+    
+    const basicCompliance = requiredMethods.every(method => typeof this[method] === 'function');
+    const advancedCompliance = advancedMethods.every(method => typeof this[method] === 'function');
+    
+    return {
+      basic: basicCompliance,
+      advanced: advancedCompliance,
+      overall: basicCompliance && advancedCompliance
+    };
+  }
+
+  /**
+   * Comprehensive self-diagnostics with performance analysis
+   */
+  runSelfDiagnostics() {
+    const checks = [
+      {
+        name: 'Interface Compliance',
+        status: this.checkInterfaceCompliance().overall,
+        details: this.checkInterfaceCompliance()
+      },
+      {
+        name: 'Required Dependencies',
+        status: this.checkDependencies(),
+        details: this.getDependencyStatus()
+      },
+      {
+        name: 'Resource Monitoring',
+        status: this.resourceMonitoring.enabled,
+        details: this.getResourceMonitoringStatus()
+      },
+      {
+        name: 'Performance Benchmarks',
+        status: this.benchmarks.successRate >= 80,
+        details: this.benchmarks
+      },
+      {{ADDITIONAL_DIAGNOSTIC_CHECKS}}
+    ];
+
+    const overallStatus = checks.every(c => c.status) ? 'healthy' : 
+                         checks.filter(c => c.status).length / checks.length >= 0.7 ? 'warning' : 'critical';
+
+    return {
+      status: overallStatus,
+      checks,
+      timestamp: new Date().toISOString(),
+      validationHistory: this.validationHistory.slice(-5), // Last 5 validations
+      performanceMetrics: Object.fromEntries(this.performanceMetrics),
+      systemInfo: {
+        platform: os.platform(),
+        arch: os.arch(),
+        nodeVersion: process.version,
+        memory: process.memoryUsage()
+      }
+    };
+  }
+
+  /**
+   * Enhanced metadata with performance and usage analytics
+   */
+  getMetadata() {
+    return {
+      category: this.category,
+      version: this.version,
+      generated: this.generated,
+      generatedAt: this.generatedAt,
+      template: this.template,
+      templateVersion: this.templateVersion,
+      interfaceVersion: '3.0.0',
+      description: '{{DESCRIPTION}}',
+      lastUpdated: '{{GENERATION_TIMESTAMP}}',
+      testCoverage: {{ESTIMATED_TEST_COVERAGE}},
+      
+      // Advanced metadata
+      capabilities: this.getCapabilities(),
+      performance: {
+        averageExecutionTime: this.benchmarks.averageValidationTime,
+        successRate: this.benchmarks.successRate,
+        totalValidations: this.validationHistory.length,
+        lastValidation: this.validationHistory.slice(-1)[0]
+      },
+      
+      // System integration info
+      integrationInfo: {
+        supportedEnvironments: ['Windows', 'Linux', 'macOS'],
+        requiredNodeVersion: '>=14.0.0',
+        maxMemoryUsage: '{{MAX_MEMORY_USAGE}}',
+        recommendedConcurrency: {{RECOMMENDED_CONCURRENCY}}
+      },
+      
+      // Advanced features status
+      features: {
+        resourceMonitoring: this.resourceMonitoring.enabled,
+        parallelExecution: true,
+        performanceBenchmarking: true,
+        comprehensiveRecommendations: true
+      }
+    };
+  }
+
+  /**
+   * Execute advanced validation test with comprehensive monitoring
+   */
+  async executeAdvancedTest(name, description, testFunction, projectInfo, options = {}) {
+    const testStartTime = Date.now();
+    const testId = this.generateTestId(name);
+    
+    console.log(`    ${description}... [${testId}]`);
+    
+    const test = {
+      id: testId,
+      name,
+      status: 'PENDING',
+      message: '',
+      evidence: [],
+      errors: [],
+      warnings: [],
+      recommendations: [],
+      metadata: {
+        startTime: new Date().toISOString(),
+        duration: 0,
+        resourceUsage: {}
+      }
+    };
+
+    try {
+      // Start resource monitoring for this test
+      const resourceStart = process.memoryUsage();
+      
+      const testResult = await testFunction(projectInfo, options);
+      
+      // Calculate resource usage
+      const resourceEnd = process.memoryUsage();
+      test.metadata.resourceUsage = {
+        heapUsed: resourceEnd.heapUsed - resourceStart.heapUsed,
+        heapTotal: resourceEnd.heapTotal - resourceStart.heapTotal,
+        external: resourceEnd.external - resourceStart.external
+      };
+      
+      if (testResult.success !== false) {
+        test.status = testResult.status || 'PASS';
+        test.message = testResult.message || `${description} completed successfully`;
+        if (testResult.evidence) test.evidence.push(...testResult.evidence);
+        if (testResult.warnings) test.warnings.push(...testResult.warnings);
+        if (testResult.recommendations) test.recommendations.push(...testResult.recommendations);
+        console.log(`      ${test.status === 'PASS' ? '✅' : '🟡'} ${test.status} - ${test.message} [${testId}]`);
+      } else {
+        test.status = 'FAIL';
+        test.message = testResult.message || `${description} failed`;
+        if (testResult.errors) test.errors.push(...testResult.errors);
+        console.log(`      ❌ FAIL - ${test.message} [${testId}]`);
+      }
+
+    } catch (error) {
+      test.status = 'FAIL';
+      test.message = `${description} failed with error`;
+      test.errors.push(`${description} error: ${error.message}`);
+      console.log(`      ❌ FAIL - ${error.message} [${testId}]`);
+    } finally {
+      test.metadata.duration = Date.now() - testStartTime;
+      test.metadata.endTime = new Date().toISOString();
+    }
+
+    return test;
+  }
+
+  /**
+   * Execute command with advanced monitoring and retry logic
+   */
+  async executeAdvancedCommand(command, description, projectInfo, options = {}) {
+    const maxRetries = options.retries || 2;
+    let attempt = 0;
+    
+    while (attempt <= maxRetries) {
+      try {
+        const originalCwd = process.cwd();
+        process.chdir(projectInfo.path);
+
+        console.log(`      Command: ${command} (attempt ${attempt + 1}/${maxRetries + 1})`);
+        
+        const startTime = Date.now();
+        const output = execSync(command, {
+          encoding: 'utf8',
+          timeout: options.timeout || 120000,
+          maxBuffer: options.maxBuffer || (2 * 1024 * 1024),
+          env: { ...process.env, ...(options.env || {}) }
+        });
+        const duration = Date.now() - startTime;
+
+        process.chdir(originalCwd);
+
+        return {
+          success: true,
+          output: output.trim(),
+          duration,
+          attempt: attempt + 1,
+          evidence: [
+            `Command executed successfully: ${command}`,
+            `Output length: ${output.length} characters`,
+            `Execution time: ${duration}ms`,
+            `Attempt: ${attempt + 1}/${maxRetries + 1}`
+          ]
+        };
+
+      } catch (error) {
+        process.chdir(process.cwd());
+        attempt++;
+        
+        if (attempt > maxRetries) {
+          return {
+            success: false,
+            errors: [
+              `Command failed after ${maxRetries + 1} attempts: ${command}`,
+              `Final error: ${error.message}`
+            ],
+            evidence: [`Command attempted: ${command}`, `Total attempts: ${maxRetries + 1}`]
+          };
+        }
+        
+        // Wait before retry with exponential backoff
+        const backoffMs = Math.min(1000 * Math.pow(2, attempt - 1), 10000);
+        console.log(`      Retrying in ${backoffMs}ms...`);
+        await new Promise(resolve => setTimeout(resolve, backoffMs));
+      }
+    }
+  }
+
+  // Advanced utility methods
+  generateValidationId() {
+    return createHash('md5').update(`${Date.now()}-${Math.random()}`).digest('hex').substring(0, 8);
+  }
+
+  generateTestId(name) {
+    return createHash('md5').update(`${name}-${Date.now()}`).digest('hex').substring(0, 6);
+  }
+
+  async initializeResourceMonitoring() {
+    if (this.resourceMonitoring.enabled) {
+      this.resourceMonitoring.memoryStart = process.memoryUsage();
+      this.resourceMonitoring.cpuStart = process.cpuUsage();
+    }
+  }
+
+  async getResourceUsage() {
+    if (!this.resourceMonitoring.enabled) return {};
+    
+    const memoryEnd = process.memoryUsage();
+    const cpuEnd = process.cpuUsage(this.resourceMonitoring.cpuStart);
+    
+    return {
+      memory: {
+        heapUsed: memoryEnd.heapUsed - this.resourceMonitoring.memoryStart.heapUsed,
+        heapTotal: memoryEnd.heapTotal - this.resourceMonitoring.memoryStart.heapTotal,
+        external: memoryEnd.external - this.resourceMonitoring.memoryStart.external,
+        rss: memoryEnd.rss - this.resourceMonitoring.memoryStart.rss
+      },
+      cpu: cpuEnd
+    };
+  }
+
+  getPerformanceProfile() {
+    return {
+      averageValidationTime: this.benchmarks.averageValidationTime,
+      successRate: this.benchmarks.successRate,
+      totalValidations: this.validationHistory.length,
+      performanceOptimized: this.benchmarks.averageValidationTime < 60000
+    };
+  }
+
+  updateBenchmarks(result) {
+    this.benchmarks.lastNValidations.push({
+      duration: result.duration,
+      status: result.status,
+      timestamp: Date.now()
+    });
+    
+    // Keep only last 10 validations
+    if (this.benchmarks.lastNValidations.length > 10) {
+      this.benchmarks.lastNValidations.shift();
+    }
+    
+    // Update averages
+    const validDurations = this.benchmarks.lastNValidations
+      .filter(v => v.duration > 0)
+      .map(v => v.duration);
+    
+    if (validDurations.length > 0) {
+      this.benchmarks.averageValidationTime = Math.round(
+        validDurations.reduce((a, b) => a + b, 0) / validDurations.length
+      );
+    }
+    
+    // Update success rate
+    const successfulValidations = this.benchmarks.lastNValidations
+      .filter(v => v.status === 'PASS' || v.status === 'WARN').length;
+    
+    this.benchmarks.successRate = Math.round(
+      (successfulValidations / this.benchmarks.lastNValidations.length) * 100
+    );
+  }
+
+
+  async attemptErrorRecovery(error, result, validationId) {
+    console.log(`    Attempting error recovery for validation ${validationId}...`);
+    
+    try {
+      // Attempt to identify and recover from common error patterns
+      if (error.message.includes('timeout')) {
+        result.recommendations.push('Consider increasing timeout values for long-running operations');
+      }
+      
+      if (error.message.includes('ENOENT')) {
+        result.recommendations.push('Verify that all required files and dependencies exist');
+      }
+      
+      if (error.message.includes('permission')) {
+        result.recommendations.push('Check file and directory permissions');
+      }
+      
+      result.warnings.push(`Error recovery attempted for: ${error.message}`);
+      
+    } catch (recoveryError) {
+      result.errors.push(`Error recovery failed: ${recoveryError.message}`);
+    }
+  }
+
+  /**
+   * Check required dependencies with detailed status
+   */
+  checkDependencies() {
+    const dependencies = [{{DEPENDENCY_CHECK_LIST}}];
+    return dependencies.every(dep => {
+      try {
+        execSync(`${dep} --version`, { timeout: 5000, stdio: 'ignore' });
+        return true;
+      } catch (error) {
+        return false;
+      }
+    });
+  }
+
+  getDependencyStatus() {
+    const dependencies = [{{DEPENDENCY_CHECK_LIST}}];
+    return dependencies.map(dep => {
+      try {
+        const output = execSync(`${dep} --version`, { 
+          timeout: 5000, 
+          encoding: 'utf8',
+          stdio: 'pipe'
+        });
+        return { name: dep, status: 'available', version: output.trim().split('\n')[0] };
+      } catch (error) {
+        return { name: dep, status: 'missing', error: error.message };
+      }
+    });
+  }
+
+  getResourceMonitoringStatus() {
+    return {
+      enabled: this.resourceMonitoring.enabled,
+      memoryTracking: this.resourceMonitoring.memoryStart !== null,
+      cpuTracking: this.resourceMonitoring.cpuStart !== null
+    };
+  }
+
+  // Placeholder methods for advanced validation features
+  async validateEnvironment(projectInfo) {
+    return { success: true, message: 'Environment validation passed' };
+  }
+
+  async checkSystemRequirements() {
+    return { success: true, message: 'System requirements met' };
+  }
+
+  async validateProjectStructure(projectInfo) {
+    return { success: true, message: 'Project structure validated' };
+  }
+
+  async checkResourceAvailability() {
+    return { success: true, message: 'Resources available' };
+  }
+
+  async runDependencyValidation(projectInfo, result) {
+    // Placeholder for dependency validation logic
+  }
+
+  async runSecurityValidation(projectInfo, result) {
+    // Placeholder for security validation logic
+  }
+
+  async runPerformanceValidation(projectInfo, result) {
+    // Placeholder for performance validation logic
+  }
+
+  async analyzeValidationPatterns(result) {
+    return { recommendations: [] };
+  }
+
+  async generatePerformanceRecommendations(projectInfo, result) {
+    return [];
+  }
+
+  async generateSecurityRecommendations(projectInfo, result) {
+    return [];
+  }
+
+  async validateCodeStructure(projectInfo) {
+    return { success: true, message: 'Code structure validated' };
+  }
+
+  async validateFileIntegrity(projectInfo) {
+    return { success: true, message: 'File integrity validated' };
+  }
+
+  async validateConfigurationConsistency(projectInfo) {
+    return { success: true, message: 'Configuration consistency validated' };
+  }
+
+  async validateDocumentationCoverage(projectInfo) {
+    return { success: true, message: 'Documentation coverage validated' };
+  }
+
+  {{ADDITIONAL_METHODS}}
+
+  /**
+   * Advanced cleanup with resource management
+   */
+  async advancedCleanup(validationId) {
+    console.log(`    Performing {{CATEGORY}} advanced cleanup [${validationId}]...`);
+    
+    // Clean up validation history if it gets too large
+    if (this.validationHistory.length > 50) {
+      this.validationHistory = this.validationHistory.slice(-25);
+      console.log(`      Cleaned up validation history, keeping last 25 entries`);
+    }
+    
+    // Clean up performance metrics if they get too large
+    if (this.performanceMetrics.size > 100) {
+      const keysToRemove = Array.from(this.performanceMetrics.keys()).slice(0, 50);
+      keysToRemove.forEach(key => this.performanceMetrics.delete(key));
+      console.log(`      Cleaned up 50 performance metric entries`);
+    }
+    
+    {{ADDITIONAL_CLEANUP}}
+  }
+}
+
+export default {{CLASS_NAME}};

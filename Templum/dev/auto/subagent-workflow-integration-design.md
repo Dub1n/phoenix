@@ -221,7 +221,7 @@ sequenceDiagram
 
 #### Communication Protocol: File Structure
 
-```filesystem
+```filestructure
 /handoff/
 ├── input/
 │   ├── research-context-{task-id}-{timestamp}.json
@@ -513,7 +513,7 @@ async function enhancedWorkflowExecution(researchResults: HandoffOutput) {
 
 #### Agent Configuration: File Structure
 
-```filesystem
+```filestructure
 ~/.claude/agents/
 ├── research-agent.md          # Generic research agent
 ├── execution-agent.md         # Generic execution agent  

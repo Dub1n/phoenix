@@ -1,182 +1,258 @@
-# Component Validation Script
+---
+Purpose: Simple agent interface for autonomous validation system - Usage Guide
+---
 
-## Overview
+# Enhanced Validation System - Agent Guide
 
-The `validate:component` script provides comprehensive validation of <Project> project components, analyzing their health, compilation status, test coverage, and dependencies.
+## Quick Start
 
-## Features
-
-- **File Existence Validation**: Checks if component files exist in expected locations
-- **TypeScript Compilation**: Validates TypeScript compilation without errors
-- **Dependency Analysis**: Identifies external dependencies and their impact
-- **Test Coverage**: Checks for test files and validates test execution
-- **Status Scoring**: Provides quantitative health scores (0-100)
-- **Priority Assessment**: Assigns Critical/High/Medium/Low priority levels
-- **Evidence Collection**: Gathers specific evidence for status assessment
-- **Recommendations**: Generates actionable recommendations for improvement
-- **Results Persistence**: Saves detailed results to JSON files
-
-## Usage
-
-### Basic Usage
+### Basic Validation Command
 
 ```bash
-npm run validate:component <component-name>
+node src/core/enhanced-orchestrator.js --category <category> --project <project-path> --task-id <task-id>
 ```
 
-### Examples
+### Example Usage
 
 ```bash
-# Validate a working component
-npm run validate:component "<project>-core-engine"
+# Backend validation
+node src/core/enhanced-orchestrator.js --category backend --project ./Templum --task-id TASK-001
 
-# Validate a broken component  
-npm run validate:component "<project>-backend-service"
+# UI validation  
+node src/core/enhanced-orchestrator.js --category ui --project ./phoenix-code-lite --task-id TASK-002
 
-# Validate a missing component
-npm run validate:component "analysis-engine"
+# Build validation
+node src/core/enhanced-orchestrator.js --category build --project ./Haruspex --task-id TASK-003
 ```
 
-## Component Discovery
+## Available Categories
 
-The script automatically searches for components in these locations:
+| Category       | Purpose                        | When to Use                        |
+|----------------|--------------------------------|------------------------------------|
+| `backend`      | Backend/Service validation     | API changes, service modifications |
+| `ui`           | Interface/UI validation        | Menu changes, CLI updates          |
+| `core`         | Core system validation         | Configuration, state management    |
+| `build`        | Build/compilation validation   | TypeScript fixes, build issues     |
+| `quality`      | Code quality validation        | ESLint fixes, refactoring          |
+| `architecture` | Architectural validation       | Pattern changes, system design     |
+| `mcp`          | MCP server validation          | MCP implementations                |
+| `feature`      | Feature enhancement validation | New capabilities, optimizations    |
+| `subagent`     | Subagent workflow validation   | Agent handoff workflows            |
 
-- `src/core/`
-- `src/components/`
-- `src/providers/`
-- `src/api/`
-- `src/integration/`
-- `src/compatibility/`
-- `src/debugging/`
-- `src/setup/`
-- `src/monitoring/`
-- `src/skin/`
-- `src/` (root)
+## What the System Does
 
-## Status Scoring System
+### For Existing Categories
 
-### Score Breakdown
+1. **Loads appropriate validator** for the specified category
+2. **Executes validation** with comprehensive testing
+3. **Generates detailed results** with evidence and recommendations
+4. **Returns results** in under 60 seconds for most validations
 
-- **File Existence**: 25 points
-- **Compilation Status**: 35 points  
-- **Test Status**: 25 points
-- **Dependencies**: 15 points
+### For New Categories (Autonomous Extension)
 
-### Status Levels
+1. **Detects unknown category** and initiates extension pipeline
+2. **Performs risk assessment** to ensure safe generation
+3. **Generates new validator** from templates with safety validation
+4. **Tests generated code** in sandboxed environment
+5. **Registers new validator** for future use
+6. **Executes validation** with the newly generated validator
 
-- **🟢 Working** (80-100 points): Component is healthy
-- **🟡 Partial** (60-79 points): Component has minor issues
-- **🔴 Broken** (40-59 points): Component has significant issues
-- **🔴 Broken** (0-39 points): Component is critically broken
+## Expected Output Examples
 
-### Priority Levels
+### Standard Validation
 
-- **Critical**: Immediate attention required
-- **High**: High priority fixes needed
-- **Medium**: Moderate priority issues
-- **Low**: Low priority, can be addressed later
-
-## Output
-
-### Console Output
-
-The script provides detailed console output including:
-
-- Component discovery and file locations
-- Compilation status and error details
-- Test execution results
-- Dependency analysis
-- Status score and priority
-- Actionable recommendations
-
-### JSON Results
-
-Detailed results are saved to:
-
-``` filesystem
-<Project>/dev/validation-results/
-├── YYYY-MM-DDTHHmm-{component}-validation.json
-└── ...
+```log
+Enhanced Validation System v3.0.0
+Compatibility Check: backend category found
+Loading validator: backend-validator.js
+Executing validation with safety monitoring
+Validation Results: PASS (45 seconds)
+All validations completed successfully
 ```
 
-## Validation Results Structure
+### Autonomous Extension
 
-```json
-{
-  "componentName": "string",
-  "timestamp": "ISO timestamp",
-  "status": "🟢 Working | 🔴 Broken | ❌ Missing | 🟡 Partial",
-  "priority": "Critical | High | Medium | Low",
-  "evidence": ["array of evidence strings"],
-  "errors": ["array of error messages"],
-  "warnings": ["array of warning messages"],
-  "files": ["array of file paths"],
-  "compilationStatus": "string",
-  "testStatus": "string",
-  "dependencies": ["array of external dependencies"],
-  "recommendations": ["array of actionable recommendations"]
-}
+```log
+Enhanced Validation System v3.0.0
+Compatibility Check: mobile category not found
+Extension Required - Initiating Safe Extension Process
+   Risk Assessment: LOW risk approved
+   Pre-Generation Validation: PASSED
+   Template-Based Generation: COMPLETED
+   Post-Generation Validation: PASSED
+   Sandbox Testing: PASSED
+   Extension Registration: COMPLETED
+Loading generated validator: mobile-validator.js
+Executing validation with safety monitoring
+Validation Results: PASS (2 minutes 15 seconds)
+Extension successful - mobile validator now available
 ```
 
-## Error Analysis
+## Safety Features
 
-The script categorizes compilation errors into:
+### Automatic Protection
 
-- **Import Errors**: Module resolution issues
-- **Type Errors**: TypeScript type mismatches
-- **Syntax Errors**: Code syntax problems
-- **Other Errors**: Unclassified compilation issues
+- **Risk Assessment**: Evaluates extension safety before generation
+- **Backup System**: Creates automatic backups before any changes
+- **Rollback Capability**: Automatic rollback if generation fails
+- **Sandbox Testing**: Tests generated code in isolation
+- **Interface Compliance**: Ensures all validators meet quality standards
 
-## Recommendations
+### Human Review Process
 
-The script generates context-aware recommendations:
+For high-risk extensions, the system will:
 
-- **Missing Components**: Implementation guidance
-- **Compilation Errors**: Fix suggestions
-- **Test Coverage**: Testing recommendations
-- **Dependencies**: Dependency management advice
-- **Critical Issues**: Escalation guidance
+1. **Generate extension summary** with detailed analysis
+2. **Create safety report** with risk assessment
+3. **Require explicit approval** before activation
+4. **Provide rollback option** if issues are discovered
 
-## Integration with Implementation Tracker
+## Command Arguments
 
-This script is designed to work with the <Project> Implementation Tracker:
+### Required Arguments
 
-- Provides evidence-based status assessment
-- Generates data for tracker updates
-- Supports the issue-fix documentation workflow
-- Enables quantitative component health tracking
+- `--category`: Validation category (see table above)
+- `--project`: Path to project directory (absolute or relative)
+- `--task-id`: Task identifier for tracking and reporting
 
-## Technical Requirements
+### Optional Arguments
 
-- Node.js 18+ (ES modules support)
-- TypeScript compiler (`npx tsc`)
-- Access to <Project> project directory
-- npm for test execution
+- `--scope`: Override default scope patterns for validation
+- `--save`: Save detailed validation results to file
+- `--verbose`: Enable detailed logging and progress information
+
+### System Commands
+
+```bash
+# System health and status
+node src/core/enhanced-orchestrator.js --health-check
+
+# List available categories  
+node src/core/enhanced-orchestrator.js --list-categories
+
+# Validate all existing validators
+node src/core/enhanced-orchestrator.js --validate-all
+```
+
+## Understanding Results
+
+### Result Types
+
+- **PASS**: All validations successful, no issues found
+- **WARN**: Minor issues detected, but functionality intact
+- **FAIL**: Significant issues requiring attention before deployment
+
+### Evidence and Recommendations
+
+The system provides:
+
+- **Specific evidence** for each validation check
+- **Error details** with file locations and line numbers
+- **Actionable recommendations** for fixing identified issues
+- **Performance metrics** and timing information
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **No Output**: Ensure you're using ES modules (project has `"type": "module"`)
-2. **Path Errors**: Verify component names match actual file names
-3. **Compilation Failures**: Check TypeScript installation and project configuration
-4. **Test Failures**: Ensure npm test is configured and working
+#### "Category not found"
 
-### Debug Mode
+- **Normal behavior** - System will automatically generate new validator
+- **Wait for extension process** to complete (1-3 minutes)
+- **Review extension summary** if human approval required
 
-The script includes extensive logging to help diagnose issues:
+#### "Project path invalid"
 
-- File discovery process
-- Compilation attempts
-- Test execution details
-- Error analysis results
+- **Check path exists** and contains package.json
+- **Use absolute path** if relative path fails
+- **Ensure proper permissions** for directory access
 
-## Future Enhancements
+#### "Validation failed with errors"
 
-Planned improvements for future versions:
+- **Review error details** in output for specific issues
+- **Follow recommendations** provided by the validator
+- **Re-run validation** after fixes to confirm resolution
 
-- **Mock Detection**: Identify placeholder implementations
-- **Performance Metrics**: Measure component performance
-- **Integration Testing**: Validate component interactions
-- **Historical Tracking**: Track component health over time
-- **Automated Fixes**: Suggest and apply simple fixes
+#### "Extension generation failed"
+
+- **System automatically rolls back** to previous state
+- **Review failure report** for specific issues
+- **Contact maintainer** if issue persists
+
+### Getting Help
+
+- **Architecture Documentation**: See `VALIDATION-SYSTEM-ARCHITECTURE-README.md`
+- **System Status**: Run `node enhanced-orchestrator.js --health-check`
+- **Test System**: Run `node test-enhanced-system.js`
+
+## Best Practices
+
+### For Agents
+
+1. **Always specify task-id** for tracking and debugging
+2. **Use appropriate category** that matches the type of changes
+3. **Wait for completion** - system may take 1-3 minutes for new categories
+4. **Review recommendations** carefully and implement suggested fixes
+5. **Re-run validation** after making changes to confirm fixes
+
+### For System Reliability
+
+- **Monitor disk space** - System creates backups automatically
+- **Regular health checks** - Run `--health-check` periodically  
+- **Review extension logs** - Check generated validator quality
+- **Keep system updated** - Follow upgrade procedures when available
+
+## System Architecture Summary
+
+### Core Components
+
+- **Enhanced Orchestrator**: Main system coordinator
+- **Extension Generator**: Autonomous validator generation
+- **Safety Framework**: Comprehensive protection mechanisms
+- **Validator Registry**: Category and capability management
+
+### File Locations
+
+- **Main System**: `src/core/enhanced-orchestrator.js`
+- **Validators**: `src/validators/` directory  
+- **Configuration**: `config/capability-matrix.json`
+- **Extensions**: `data/extensions/` directory
+- **Backups**: `data/backups/` directory (automatic)
+- **Reports**: Generated in project `dev/validation-results/`
+
+---
+
+## Quick Reference
+
+### Most Common Commands
+
+```bash
+# Backend service changes
+node src/core/enhanced-orchestrator.js --category backend --project ./Templum --task-id TASK-BE-001
+
+# UI/Interface changes  
+node src/core/enhanced-orchestrator.js --category ui --project ./phoenix-code-lite --task-id TASK-UI-001
+
+# Build/compilation issues
+node src/core/enhanced-orchestrator.js --category build --project ./project --task-id TASK-BUILD-001
+
+# System health check
+node src/core/enhanced-orchestrator.js --health-check
+```
+
+### Expected Time Ranges
+
+- **Existing categories**: 30-60 seconds
+- **New categories**: 1-3 minutes (includes generation)
+- **High-risk extensions**: 3-5 minutes (includes human review)
+
+### Success Indicators
+
+- **Exit code 0**: Validation successful
+- **Exit code 1**: Validation failed (check output for details)
+- **Green checkmarks**: Individual test successes
+- **Extension summary created**: New validator generated successfully
+
+---
+
+**Remember**: The system is designed to be autonomous and safe. Trust the process, follow the recommendations, and contact maintainers if you encounter unexpected behavior.

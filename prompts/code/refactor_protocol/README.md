@@ -7,19 +7,23 @@ The Refactor Protocol System is a comprehensive, LLM-driven approach to code ref
 ## Core Components
 
 ### Main Protocol
+
 - **`refactor_protocol.md`** - The core protocol document containing the complete refactoring workflow
 - **`self_executing_refactor_protocol.md`** - Self-executing version with integrated state management
 
 ### Analysis & Planning
+
 - **`refactor_protocol_notes.md`** - System analysis, improvement roadmap, and implementation guide
 - **`refactor_protocol_roadmap.md`** - Detailed implementation roadmap with phases and milestones
 
 ### Templates & Examples
+
 - **`refactor_protocol_templates.md`** - Template library for common refactoring scenarios
 - **`refactor_protocol_examples.md`** - Practical examples and use cases
 - **`refactor_protocol_language_specifics.md`** - Language-specific refactoring patterns
 
 ### Best Practices & Testing
+
 - **`refactor_protocol_best_practices.md`** - Best practices and guidelines for effective refactoring
 - **`refactor_protocol_testing.md` - Testing strategies and test generation templates
 - **`refactor_protocol_troubleshooting.md`** - Common issues and solutions
@@ -42,6 +46,7 @@ The system includes several optional TypeScript modules that provide enhanced fu
 For detailed information on how to integrate these optional modules, see **[OPTIONAL_MODULES_INTEGRATION.md](OPTIONAL_MODULES_INTEGRATION.md)**.
 
 **Key Benefits**:
+
 - **Progressive Enhancement**: Start with basic functionality and add modules as needed
 - **Conditional Loading**: Only load modules that are actually needed
 - **Graceful Fallbacks**: System works even if modules fail to load
@@ -69,16 +74,20 @@ The Refactor Protocol System follows a phased approach:
 ## Usage Patterns
 
 ### Basic Usage
+
 The core protocol works without any optional modules, providing a solid foundation for code refactoring.
 
 ### Enhanced Usage
+
 Integrate optional modules to add:
+
 - **Security**: Input validation and sanitization
 - **Performance**: Template caching and memory optimization
 - **Monitoring**: Performance metrics and bottleneck detection
 - **Reliability**: State persistence and recovery mechanisms
 
 ### Enterprise Usage
+
 Use all modules together for enterprise-grade refactoring with comprehensive monitoring, security, and performance optimization.
 
 ## Contributing
@@ -94,6 +103,7 @@ This system is designed to be extensible. When adding new features:
 ## Support
 
 For issues or questions:
+
 1. Check `refactor_protocol_troubleshooting.md` for common solutions
 2. Review the examples in `refactor_protocol_examples.md`
 3. Consult the best practices in `refactor_protocol_best_practices.md`

@@ -16,6 +16,7 @@ The refactor protocol system includes several optional TypeScript modules that p
 
 **Purpose**: Comprehensive input validation, sanitization, and security protection  
 **Features**:
+
 - Input sanitization and validation
 - Template injection protection
 - Path traversal protection
@@ -23,6 +24,7 @@ The refactor protocol system includes several optional TypeScript modules that p
 - Validation schemas for different data types
 
 **Use When**:
+
 - Working with untrusted user input
 - Processing templates from external sources
 - Handling file paths and system operations
@@ -32,12 +34,14 @@ The refactor protocol system includes several optional TypeScript modules that p
 
 **Purpose**: Intelligent memory management with monitoring, cleanup, and leak detection  
 **Features**:
+
 - Real-time memory monitoring
 - Automatic cleanup of completed phases
 - Session size management with intelligent warnings
 - Memory leak detection mechanisms
 
 **Use When**:
+
 - Running long refactoring sessions
 - Processing large codebases
 - Need memory usage optimization
@@ -47,12 +51,14 @@ The refactor protocol system includes several optional TypeScript modules that p
 
 **Purpose**: Comprehensive performance monitoring with metrics collection and optimization suggestions  
 **Features**:
+
 - Performance tracking and bottleneck detection
 - Optimization recommendations
 - Performance analysis capabilities
 - Real-time monitoring
 
 **Use When**:
+
 - Need performance optimization
 - Want to identify bottlenecks
 - Monitoring system performance
@@ -62,12 +68,14 @@ The refactor protocol system includes several optional TypeScript modules that p
 
 **Purpose**: Enhanced state persistence, validation, and recovery  
 **Features**:
+
 - State persistence and serialization
 - State validation and integrity checks
 - Backup and recovery mechanisms
 - State versioning and migration
 
 **Use When**:
+
 - Need state persistence across sessions
 - Want backup and recovery capabilities
 - Need state integrity validation
@@ -77,12 +85,14 @@ The refactor protocol system includes several optional TypeScript modules that p
 
 **Purpose**: High-performance template caching with LRU eviction and precompilation  
 **Features**:
+
 - LRU cache with configurable size
 - Template precompilation for static templates
 - Lazy loading for large templates
 - Performance optimization
 
 **Use When**:
+
 - Using templates frequently
 - Need performance optimization
 - Want to reduce template resolution time
@@ -92,12 +102,14 @@ The refactor protocol system includes several optional TypeScript modules that p
 
 **Purpose**: Integrated performance optimization system  
 **Features**:
+
 - Combines all performance modules
 - Integrated configuration
 - Performance metrics collection
 - Optimization recommendations
 
 **Use When**:
+
 - Want comprehensive performance optimization
 - Need integrated performance monitoring
 - Want to use all performance features together

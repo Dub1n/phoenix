@@ -1,0 +1,63 @@
+{
+  "version": "3.0.0",
+  "coreValidationMode": true,
+  "comment": "Set coreValidationMode to false to enable full monitoring features",
+  
+  "features": {
+    "comment": "These features are disabled during core system validation",
+    "healthMonitoring": {
+      "enabled": false,
+      "comment": "Full health monitoring with detailed component analysis"
+    },
+    "metricsTracking": {
+      "enabled": false,
+      "comment": "Performance metrics, success rates, and timing analysis"
+    },
+    "qualityAssessment": {
+      "enabled": false,
+      "comment": "Extension quality scoring and recommendations"
+    }
+  },
+  
+  "coreFeatures": {
+    "comment": "These core features remain enabled for system validation",
+    "extensionGeneration": true,
+    "safetyFramework": true,
+    "rollbackSystem": true,
+    "interfaceCompliance": true
+  },
+  
+  "enableInstructions": {
+    "comment": "To re-enable monitoring features after core validation:",
+    "steps": [
+      "1. Set 'coreValidationMode' to false",
+      "2. Set features.healthMonitoring.enabled to true",
+      "3. Set features.metricsTracking.enabled to true", 
+      "4. Set features.qualityAssessment.enabled to true",
+      "5. Update EnhancedValidationOrchestrator.metricsEnabled to true",
+      "6. Uncomment the disabled monitoring methods in enhanced-orchestrator.js"
+    ]
+  },
+  
+  "extensionFramework": {
+    "enabled": true,
+    "safetyLevel": "enhanced",
+    "maxExtensionsPerSession": 1,
+    "rollbackEnabled": true,
+    "humanReviewRequired": true
+  },
+  
+  "safety": {
+    "preGenerationValidation": true,
+    "postGenerationValidation": true,
+    "sandboxTesting": true,
+    "interfaceCompliance": true,
+    "automaticRollback": true
+  },
+  
+  "performance": {
+    "maxValidationTime": 300000,
+    "memoryLimit": 512,
+    "parallelValidations": 1
+  }
+}

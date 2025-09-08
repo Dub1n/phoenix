@@ -8,7 +8,7 @@ Design for a future template documentation system that provides specialized refe
 
 ### Template Documentation Storage
 
-``` filesystem
+```filestructure
 phoenix-code-lite/
 ├── templates/
 │   ├── starter/

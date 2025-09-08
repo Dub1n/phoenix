@@ -284,11 +284,11 @@ export class ServiceDiscovery extends EventEmitter {
 
 **Key Improvements**:
 
-- ✅ **Zero Port Limitations**: Backends work on any available port
-- ✅ **Instant Discovery**: Real-time detection of new backends  
-- ✅ **Auto-Cleanup**: Dead processes automatically removed
-- ✅ **Process Validation**: PID-based health checking
-- ✅ **Backwards Compatible**: Existing registry files still work
+- [x] **Zero Port Limitations**: Backends work on any available port
+- [x] **Instant Discovery**: Real-time detection of new backends  
+- [x] **Auto-Cleanup**: Dead processes automatically removed
+- [x] **Process Validation**: PID-based health checking
+- [x] **Backwards Compatible**: Existing registry files still work
 
 #### Dynamic Command Router
 
@@ -439,12 +439,14 @@ export class VSCodeAdapter extends BaseInterfaceAdapter {
 The CLI adapter implements a **headless service + standalone CLI** pattern:
 
 **Headless Service** (`npm run start:service`):
+
 - Runs without CLI interface for container/production deployment
 - Registers in service discovery registry (`~/.templum/services/`)
 - Maintains all core functionality and backend connections
 - Supports multiple concurrent CLI connections
 
 **Standalone CLI** (`templum` command globally):
+
 - Discovers running Templum service via registry scanning
 - Connects via IPC for command execution and state synchronization
 - Provides rich interactive interface with service discovery feedback

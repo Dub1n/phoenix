@@ -20,8 +20,8 @@ After comprehensive analysis of the VDL_Vault repository, **the foundation for a
 
 #### **1. Comprehensive Documentation Infrastructure**
 
-``` filesystem
-📚 Documentation Layers:
+```filestructure
+Documentation Layers:
 ├── phoenix-code-lite/docs/index/
 │   ├── CODEBASE-INDEX.md          - Complete file documentation with dependencies
 │   ├── ARCHITECTURE-DIAGRAM.md    - Mermaid diagrams following C4 model

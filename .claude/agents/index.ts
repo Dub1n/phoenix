@@ -23,7 +23,11 @@ export * from './utils/cleanup';
 export * from './utils/audit-logger';
 export * from './utils/test-utilities';
 
-// Research agent implementation moved to Templum/src/agents/ (TASK-SUBAGENT-002)
+// Research agent implementation available in utils/ directory (TASK-SUBAGENT-002)
+// Execution agent implementation available in utils/ directory (TASK-SUBAGENT-004)
+export * from './utils/execution-capabilities';
+export * from './utils/execution-agent-implementation';
+export * from './utils/quality-gates';
 
 // Re-export commonly used classes and functions with convenience names
 export { 
@@ -82,7 +86,7 @@ export {
   runQuickValidationTest
 } from './utils/test-utilities';
 
-// Research agent exports moved to Templum/src/agents/ (TASK-SUBAGENT-002)
+// Research agent exports available via utils/ directory (TASK-SUBAGENT-002)
 
 /**
  * Default configuration for handoff system

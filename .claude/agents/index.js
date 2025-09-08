@@ -36,7 +36,7 @@ __exportStar(require("./utils/file-manager"), exports);
 __exportStar(require("./utils/cleanup"), exports);
 __exportStar(require("./utils/audit-logger"), exports);
 __exportStar(require("./utils/test-utilities"), exports);
-// Research agent implementation moved to Templum/src/agents/ (TASK-SUBAGENT-002)
+// Research agent implementation available in utils/ directory (TASK-SUBAGENT-002)
 // Re-export commonly used classes and functions with convenience names
 var file_manager_1 = require("./utils/file-manager");
 Object.defineProperty(exports, "FileManager", { enumerable: true, get: function () { return file_manager_1.HandoffFileManager; } });
@@ -80,7 +80,7 @@ Object.defineProperty(exports, "TestDataGenerator", { enumerable: true, get: fun
 Object.defineProperty(exports, "TestEnvironment", { enumerable: true, get: function () { return test_utilities_1.HandoffTestEnvironment; } });
 Object.defineProperty(exports, "TestRunner", { enumerable: true, get: function () { return test_utilities_1.HandoffTestRunner; } });
 Object.defineProperty(exports, "runQuickValidationTest", { enumerable: true, get: function () { return test_utilities_1.runQuickValidationTest; } });
-// Research agent exports moved to Templum/src/agents/ (TASK-SUBAGENT-002)
+// Research agent exports available via utils/ directory (TASK-SUBAGENT-002)
 /**
  * Default configuration for handoff system
  */

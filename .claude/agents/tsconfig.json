@@ -2,9 +2,10 @@
 // Implements typescript-configuration-pattern with strict mode and proper module resolution
 {
   "compilerOptions": {
-    "target": "ES2018",
+    "target": "ES2020",
     "module": "commonjs",
-    "lib": ["ES2018", "DOM"],
+    "lib": ["ES2020", "DOM"],
+    "downlevelIteration": true,
     "moduleResolution": "node",
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,

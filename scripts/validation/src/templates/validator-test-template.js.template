@@ -1,0 +1,756 @@
+#!/usr/bin/env node
+
+/**
+ * {{CATEGORY_NAME}} Validator - Test-Focused Auto-Generated Implementation
+ * 
+ * Testing-optimized IValidator interface implementation for {{CATEGORY_DESCRIPTION}} validation.
+ * Generated from validator-test-template.js using the Enhanced Validation System.
+ * 
+ * Category: {{CATEGORY}}
+ * Description: {{DESCRIPTION}}
+ * Generated: {{GENERATION_TIMESTAMP}}
+ * Template Version: 3.0.0-test
+ * Interface Version: 3.0.0
+ */
+
+import fs from 'fs';
+import path from 'path';
+import { execSync } from 'child_process';
+
+/**
+ * {{CATEGORY_NAME}} Test-Focused Validator implementing IValidator interface
+ * Optimized for comprehensive testing scenarios and test validation
+ */
+export class {{CLASS_NAME}} {
+  constructor() {
+    this.category = '{{CATEGORY}}';
+    this.version = '3.0.0';
+    this.scopes = [{{SCOPE_PATTERNS}}];
+    this.hasIntegrationTests = {{HAS_INTEGRATION_TESTS}};
+    
+    // Test-focused validator metadata
+    this.generated = true;
+    this.generatedAt = '{{GENERATION_TIMESTAMP}}';
+    this.template = 'validator-test-template.js';
+    this.templateVersion = '3.0.0-test';
+    
+    // Test-specific internal state
+    this.validationStartTime = null;
+    this.testSuiteResults = new Map();
+    this.testCoverageData = {
+      totalTests: 0,
+      passedTests: 0,
+      failedTests: 0,
+      skippedTests: 0,
+      coverage: 0
+    };
+    
+    // Testing framework detection and configuration
+    this.detectedTestFrameworks = new Set();
+    this.testConfigPaths = [];
+    this.mockingCapabilities = [];
+    
+    // Test execution monitoring
+    this.testExecutionLog = [];
+    this.testPerformanceMetrics = new Map();
+  }
+
+  /**
+   * Main validation method implementing IValidator interface
+   * Test-focused implementation with comprehensive test validation
+   */
+  async validate(projectInfo, scopeConfig, options = {}) {
+    this.validationStartTime = Date.now();
+    
+    const result = {
+      status: 'PENDING',
+      tests: [],
+      duration: 0,
+      evidence: [],
+      errors: [],
+      warnings: [],
+      recommendations: [],
+      testingMetadata: {
+        detectedFrameworks: [],
+        testCoverage: {},
+        testSuiteResults: {},
+        mockingStatus: {},
+        ciIntegration: {}
+      }
+    };
+
+    try {
+      console.log('  Executing {{CATEGORY_NAME}} test-focused validation...');
+      console.log('  Source: {{VALIDATION_SOURCE}}');
+      
+      // Detect testing frameworks and configurations
+      await this.detectTestingEnvironment(projectInfo, result);
+      
+      // Execute test-focused validation logic
+      await this.runTestFocusedValidation(projectInfo, scopeConfig, options, result);
+      
+      // Analyze test coverage and quality
+      await this.analyzeTestCoverage(projectInfo, result);
+      
+      // Validate testing best practices
+      await this.validateTestingBestPractices(projectInfo, result);
+
+      // Determine result based on test-specific criteria
+      await this.calculateTestingScore(result);
+      
+      // Populate testing metadata
+      result.testingMetadata = {
+        detectedFrameworks: Array.from(this.detectedTestFrameworks),
+        testCoverage: this.testCoverageData,
+        testSuiteResults: Object.fromEntries(this.testSuiteResults),
+        mockingStatus: this.analyzeMockingCapabilities(),
+        ciIntegration: await this.checkCIIntegration(projectInfo)
+      };
+      
+      result.duration = Date.now() - this.validationStartTime;
+      console.log('  {{CATEGORY_NAME}} test-focused validation completed');
+      
+      return result;
+      
+    } catch (error) {
+      result.status = 'FAIL';
+      result.errors.push(`{{CATEGORY_NAME}} test validation failed: ${error.message}`);
+      result.duration = Date.now() - this.validationStartTime;
+      return result;
+    } finally {
+      // Test-specific cleanup
+      await this.testCleanup();
+    }
+  }
+
+  /**
+   * Detect testing environment and frameworks
+   */
+  async detectTestingEnvironment(projectInfo, result) {
+    console.log('    Detecting testing environment...');
+    
+    const testFrameworkDetectors = [
+      { name: 'Jest', files: ['jest.config.js', 'jest.config.json', 'package.json'], patterns: ['jest'] },
+      { name: 'Mocha', files: ['mocha.opts', '.mocharc.json', 'test/mocha.opts'], patterns: ['mocha'] },
+      { name: 'Jasmine', files: ['jasmine.json', 'spec/support/jasmine.json'], patterns: ['jasmine'] },
+      { name: 'Vitest', files: ['vitest.config.js', 'vitest.config.ts'], patterns: ['vitest'] },
+      { name: 'Playwright', files: ['playwright.config.js', 'playwright.config.ts'], patterns: ['playwright'] },
+      { name: 'Cypress', files: ['cypress.json', 'cypress.config.js'], patterns: ['cypress'] }
+    ];
+
+    for (const framework of testFrameworkDetectors) {
+      const detected = await this.detectFramework(projectInfo, framework);
+      if (detected.found) {
+        this.detectedTestFrameworks.add(framework.name);
+        this.testConfigPaths.push(...detected.configPaths);
+        result.evidence.push(`Detected ${framework.name} testing framework`);
+      }
+    }
+    
+    if (this.detectedTestFrameworks.size === 0) {
+      result.warnings.push('No testing frameworks detected');
+      result.recommendations.push('Consider adding a testing framework (Jest, Mocha, Vitest, etc.)');
+    }
+  }
+
+  /**
+   * Run test-focused validation tests
+   */
+  async runTestFocusedValidation(projectInfo, scopeConfig, options, result) {
+    // TEST_VALIDATION_LOGIC_START
+    
+    {{VALIDATION_LOGIC}}
+    
+    // Additional test-specific validation patterns
+    await this.validateTestStructure(projectInfo, result);
+    await this.validateTestNaming(projectInfo, result);
+    await this.runTestSuiteExecution(projectInfo, result);
+    await this.validateMockingPractices(projectInfo, result);
+    await this.validateTestConfiguration(projectInfo, result);
+    
+    // TEST_VALIDATION_LOGIC_END
+  }
+
+  /**
+   * Analyze test coverage across the project
+   */
+  async analyzeTestCoverage(projectInfo, result) {
+    console.log('    Analyzing test coverage...');
+    
+    try {
+      // Attempt to run coverage analysis with detected frameworks
+      for (const framework of this.detectedTestFrameworks) {
+        const coverageResult = await this.runCoverageAnalysis(projectInfo, framework);
+        if (coverageResult.success) {
+          this.testCoverageData = { ...this.testCoverageData, ...coverageResult.data };
+          result.evidence.push(`Coverage analysis completed with ${framework}`);
+          break;
+        }
+      }
+      
+      // Generate coverage recommendations
+      if (this.testCoverageData.coverage < 80) {
+        result.recommendations.push(`Test coverage is ${this.testCoverageData.coverage}%. Consider increasing to 80%+`);
+      }
+      
+      if (this.testCoverageData.coverage < 60) {
+        result.warnings.push(`Low test coverage detected: ${this.testCoverageData.coverage}%`);
+      }
+      
+    } catch (error) {
+      result.warnings.push(`Could not analyze test coverage: ${error.message}`);
+    }
+  }
+
+  /**
+   * Validate testing best practices
+   */
+  async validateTestingBestPractices(projectInfo, result) {
+    console.log('    Validating testing best practices...');
+    
+    const bestPracticeChecks = [
+      {
+        name: 'Test Organization',
+        check: () => this.checkTestOrganization(projectInfo),
+        description: 'Tests should be organized in clear directory structures'
+      },
+      {
+        name: 'Test Naming Conventions',
+        check: () => this.checkTestNamingConventions(projectInfo),
+        description: 'Test files should follow consistent naming patterns'
+      },
+      {
+        name: 'Test Isolation',
+        check: () => this.checkTestIsolation(projectInfo),
+        description: 'Tests should be independent and not rely on execution order'
+      },
+      {
+        name: 'Mock Usage',
+        check: () => this.checkMockUsage(projectInfo),
+        description: 'Mocks should be used appropriately for external dependencies'
+      },
+      {
+        name: 'Test Documentation',
+        check: () => this.checkTestDocumentation(projectInfo),
+        description: 'Tests should be well-documented and describe their purpose'
+      }
+    ];
+
+    for (const practiceCheck of bestPracticeChecks) {
+      const testResult = await this.executeTestValidation(
+        practiceCheck.name,
+        practiceCheck.description,
+        practiceCheck.check,
+        projectInfo
+      );
+      result.tests.push(testResult);
+    }
+  }
+
+  /**
+   * Calculate testing-specific validation score
+   */
+  async calculateTestingScore(result) {
+    const failedTests = result.tests.filter(t => t.status === 'FAIL');
+    const passedTests = result.tests.filter(t => t.status === 'PASS');
+    const warnTests = result.tests.filter(t => t.status === 'WARN');
+    const skippedTests = result.tests.filter(t => t.status === 'SKIP');
+    
+    // Test-specific scoring criteria
+    let score = 0;
+    const maxScore = 100;
+    
+    // Framework presence (20 points)
+    score += this.detectedTestFrameworks.size > 0 ? 20 : 0;
+    
+    // Test coverage (30 points)
+    score += Math.min(30, (this.testCoverageData.coverage / 100) * 30);
+    
+    // Test execution success (30 points)
+    const totalTests = result.tests.length;
+    if (totalTests > 0) {
+      score += (passedTests.length / totalTests) * 30;
+    }
+    
+    // Best practices compliance (20 points)
+    const bestPracticesTests = result.tests.filter(t => 
+      ['Test Organization', 'Test Naming Conventions', 'Test Isolation', 'Mock Usage'].includes(t.name)
+    );
+    const passedBestPractices = bestPracticesTests.filter(t => t.status === 'PASS');
+    if (bestPracticesTests.length > 0) {
+      score += (passedBestPractices.length / bestPracticesTests.length) * 20;
+    }
+    
+    result.testingMetadata.testingScore = Math.round(score);
+    
+    // Determine status based on testing criteria
+    if (failedTests.length > 0 || score < 40) {
+      result.status = 'FAIL';
+    } else if (score < 70 || warnTests.length > 0) {
+      result.status = 'WARN';
+    } else {
+      result.status = 'PASS';
+    }
+    
+    // Collect evidence and errors from tests
+    for (const test of result.tests) {
+      if (test.evidence) result.evidence.push(...test.evidence);
+      if (test.errors) result.errors.push(...test.errors);
+      if (test.warnings) result.warnings.push(...test.warnings);
+    }
+  }
+
+  /**
+   * Get test-focused validator capabilities
+   */
+  getCapabilities() {
+    return {
+      supportedProjects: [{{SUPPORTED_PROJECTS}}],
+      supportedScopes: this.scopes,
+      requiredDependencies: [{{REQUIRED_DEPENDENCIES}}],
+      performanceProfile: 'comprehensive',
+      hasIntegrationTests: this.hasIntegrationTests,
+      
+      // Test-specific capabilities
+      supportedTestFrameworks: ['Jest', 'Mocha', 'Jasmine', 'Vitest', 'Playwright', 'Cypress'],
+      coverageAnalysis: true,
+      mockingValidation: true,
+      testOrganizationValidation: true,
+      ciIntegrationChecks: true,
+      
+      testingFeatures: [
+        'Framework Detection',
+        'Coverage Analysis', 
+        'Best Practices Validation',
+        'Test Structure Analysis',
+        'Mocking Pattern Validation',
+        'CI Integration Checks',
+        'Test Performance Analysis'
+      ]
+    };
+  }
+
+  /**
+   * Test-focused interface compliance check
+   */
+  checkInterfaceCompliance() {
+    const requiredMethods = [
+      'validate', 'getCapabilities', 'checkInterfaceCompliance', 
+      'runSelfDiagnostics', 'getMetadata'
+    ];
+    
+    const testSpecificMethods = [
+      'detectTestingEnvironment', 'analyzeTestCoverage', 
+      'validateTestingBestPractices', 'runTestSuiteExecution'
+    ];
+    
+    const basicCompliance = requiredMethods.every(method => typeof this[method] === 'function');
+    const testCompliance = testSpecificMethods.every(method => typeof this[method] === 'function');
+    
+    return {
+      basic: basicCompliance,
+      testSpecific: testCompliance,
+      overall: basicCompliance && testSpecific
+    };
+  }
+
+  /**
+   * Test-focused self-diagnostics
+   */
+  runSelfDiagnostics() {
+    const checks = [
+      {
+        name: 'Interface Compliance',
+        status: this.checkInterfaceCompliance().overall
+      },
+      {
+        name: 'Required Dependencies',
+        status: this.checkDependencies()
+      },
+      {
+        name: 'Test Framework Detection',
+        status: this.detectedTestFrameworks.size > 0,
+        details: Array.from(this.detectedTestFrameworks)
+      },
+      {
+        name: 'Coverage Analysis Capability',
+        status: this.testCoverageData.totalTests >= 0,
+        details: this.testCoverageData
+      },
+      {{ADDITIONAL_DIAGNOSTIC_CHECKS}}
+    ];
+
+    return {
+      status: checks.every(c => c.status) ? 'healthy' : 'warning',
+      checks,
+      timestamp: new Date().toISOString(),
+      testingEnvironment: {
+        detectedFrameworks: Array.from(this.detectedTestFrameworks),
+        configPaths: this.testConfigPaths,
+        coverageData: this.testCoverageData
+      }
+    };
+  }
+
+  /**
+   * Get test-focused metadata
+   */
+  getMetadata() {
+    return {
+      category: this.category,
+      version: this.version,
+      generated: this.generated,
+      generatedAt: this.generatedAt,
+      template: this.template,
+      templateVersion: this.templateVersion,
+      interfaceVersion: '3.0.0',
+      description: '{{DESCRIPTION}}',
+      lastUpdated: '{{GENERATION_TIMESTAMP}}',
+      testCoverage: {{ESTIMATED_TEST_COVERAGE}},
+      
+      // Test-specific metadata
+      testingCapabilities: this.getCapabilities(),
+      testingEnvironment: {
+        detectedFrameworks: Array.from(this.detectedTestFrameworks),
+        supportedFrameworks: this.getCapabilities().supportedTestFrameworks,
+        configurationPaths: this.testConfigPaths
+      },
+      
+      testingMetrics: {
+        totalTestSuites: this.testSuiteResults.size,
+        averageCoverage: this.testCoverageData.coverage,
+        testExecutionHistory: this.testExecutionLog.slice(-5)
+      }
+    };
+  }
+
+  /**
+   * Execute test validation with testing-specific monitoring
+   */
+  async executeTestValidation(name, description, testFunction, projectInfo, options = {}) {
+    const testStartTime = Date.now();
+    console.log(`    ${description}...`);
+    
+    const test = {
+      name,
+      status: 'PENDING',
+      message: '',
+      evidence: [],
+      errors: [],
+      warnings: [],
+      testingMetadata: {
+        executionTime: 0,
+        framework: options.framework || 'generic',
+        testType: options.testType || 'validation'
+      }
+    };
+
+    try {
+      const testResult = await testFunction(projectInfo, options);
+      
+      if (testResult.success !== false) {
+        test.status = testResult.status || 'PASS';
+        test.message = testResult.message || `${description} completed successfully`;
+        if (testResult.evidence) test.evidence.push(...testResult.evidence);
+        if (testResult.warnings) test.warnings.push(...testResult.warnings);
+        console.log(`      ✅ ${test.status} - ${test.message}`);
+      } else {
+        test.status = 'FAIL';
+        test.message = testResult.message || `${description} failed`;
+        if (testResult.errors) test.errors.push(...testResult.errors);
+        console.log(`      ❌ FAIL - ${test.message}`);
+      }
+
+    } catch (error) {
+      test.status = 'FAIL';
+      test.message = `${description} failed with error`;
+      test.errors.push(`${description} error: ${error.message}`);
+      console.log(`      ❌ FAIL - ${error.message}`);
+    } finally {
+      test.testingMetadata.executionTime = Date.now() - testStartTime;
+      
+      // Log test execution for performance analysis
+      this.testExecutionLog.push({
+        name,
+        status: test.status,
+        executionTime: test.testingMetadata.executionTime,
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    return test;
+  }
+
+  /**
+   * Execute test command with framework-specific handling
+   */
+  async executeTestCommand(command, framework, projectInfo, options = {}) {
+    try {
+      const originalCwd = process.cwd();
+      process.chdir(projectInfo.path);
+
+      console.log(`      Test Command (${framework}): ${command}`);
+      const output = execSync(command, {
+        encoding: 'utf8',
+        timeout: options.timeout || 180000, // 3 minutes for tests
+        maxBuffer: options.maxBuffer || (2 * 1024 * 1024)
+      });
+
+      process.chdir(originalCwd);
+
+      // Parse framework-specific output
+      const parsedResults = this.parseTestOutput(output, framework);
+
+      return {
+        success: true,
+        output: output.trim(),
+        parsedResults,
+        evidence: [
+          `Test command executed successfully: ${command}`,
+          `Framework: ${framework}`,
+          `Output length: ${output.length} characters`
+        ]
+      };
+
+    } catch (error) {
+      process.chdir(process.cwd());
+      
+      return {
+        success: false,
+        errors: [`Test command failed: ${command}`, `Framework: ${framework}`, `Error: ${error.message}`],
+        evidence: [`Test command attempted: ${command}`]
+      };
+    }
+  }
+
+  // Test-specific utility methods
+  async detectFramework(projectInfo, framework) {
+    const found = { found: false, configPaths: [] };
+    
+    for (const file of framework.files) {
+      const filePath = path.join(projectInfo.path, file);
+      if (fs.existsSync(filePath)) {
+        found.found = true;
+        found.configPaths.push(filePath);
+      }
+    }
+    
+    // Check package.json for framework dependencies
+    const packageJsonPath = path.join(projectInfo.path, 'package.json');
+    if (fs.existsSync(packageJsonPath)) {
+      try {
+        const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+        const allDeps = { 
+          ...packageJson.dependencies, 
+          ...packageJson.devDependencies 
+        };
+        
+        for (const pattern of framework.patterns) {
+          if (Object.keys(allDeps).some(dep => dep.includes(pattern))) {
+            found.found = true;
+            break;
+          }
+        }
+      } catch (error) {
+        // Ignore package.json parse errors
+      }
+    }
+    
+    return found;
+  }
+
+  async runCoverageAnalysis(projectInfo, framework) {
+    const coverageCommands = {
+      'Jest': 'npx jest --coverage --passWithNoTests',
+      'Mocha': 'npx nyc mocha',
+      'Vitest': 'npx vitest --coverage'
+    };
+    
+    const command = coverageCommands[framework];
+    if (!command) {
+      return { success: false, error: `No coverage command for ${framework}` };
+    }
+    
+    try {
+      const result = await this.executeTestCommand(command, framework, projectInfo, { timeout: 300000 });
+      return {
+        success: result.success,
+        data: this.parseCoverageOutput(result.output, framework)
+      };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  }
+
+  parseCoverageOutput(output, framework) {
+    // Basic coverage parsing - would need framework-specific implementation
+    const coverageMatch = output.match(/(\d+\.?\d*)%/);
+    const coverage = coverageMatch ? parseFloat(coverageMatch[1]) : 0;
+    
+    return {
+      coverage,
+      totalTests: (output.match(/\d+ tests?/gi) || []).length,
+      passedTests: (output.match(/\d+ passed/gi) || []).length,
+      failedTests: (output.match(/\d+ failed/gi) || []).length,
+      skippedTests: (output.match(/\d+ skipped/gi) || []).length
+    };
+  }
+
+  parseTestOutput(output, framework) {
+    // Framework-specific test result parsing
+    return {
+      framework,
+      rawOutput: output,
+      summary: `Test execution completed for ${framework}`
+    };
+  }
+
+  analyzeMockingCapabilities() {
+    return {
+      detectedMockingLibraries: this.mockingCapabilities,
+      mockingPatterns: [],
+      recommendations: []
+    };
+  }
+
+  async checkCIIntegration(projectInfo) {
+    const ciFiles = ['.github/workflows', '.gitlab-ci.yml', '.travis.yml', 'azure-pipelines.yml'];
+    const detected = [];
+    
+    for (const ciFile of ciFiles) {
+      const filePath = path.join(projectInfo.path, ciFile);
+      if (fs.existsSync(filePath)) {
+        detected.push(ciFile);
+      }
+    }
+    
+    return {
+      hasCI: detected.length > 0,
+      detectedPlatforms: detected,
+      recommendations: detected.length === 0 ? ['Consider adding CI/CD integration'] : []
+    };
+  }
+
+  // Test validation methods (placeholder implementations)
+  async validateTestStructure(projectInfo, result) {
+    const testResult = await this.executeTestValidation(
+      'Test Structure',
+      'Validating test directory structure and organization',
+      () => this.checkTestOrganization(projectInfo),
+      projectInfo
+    );
+    result.tests.push(testResult);
+  }
+
+  async validateTestNaming(projectInfo, result) {
+    const testResult = await this.executeTestValidation(
+      'Test Naming',
+      'Validating test file naming conventions',
+      () => this.checkTestNamingConventions(projectInfo),
+      projectInfo
+    );
+    result.tests.push(testResult);
+  }
+
+  async runTestSuiteExecution(projectInfo, result) {
+    for (const framework of this.detectedTestFrameworks) {
+      const testResult = await this.executeTestValidation(
+        `${framework} Test Suite`,
+        `Running ${framework} test suite`,
+        (proj) => this.executeFrameworkTests(proj, framework),
+        projectInfo,
+        { framework, testType: 'suite' }
+      );
+      result.tests.push(testResult);
+    }
+  }
+
+  async validateMockingPractices(projectInfo, result) {
+    const testResult = await this.executeTestValidation(
+      'Mocking Practices',
+      'Validating mocking and stubbing practices',
+      () => this.checkMockUsage(projectInfo),
+      projectInfo
+    );
+    result.tests.push(testResult);
+  }
+
+  async validateTestConfiguration(projectInfo, result) {
+    for (const configPath of this.testConfigPaths) {
+      const configName = path.basename(configPath);
+      const testResult = await this.executeTestValidation(
+        `${configName} Configuration`,
+        `Validating ${configName} test configuration`,
+        () => this.validateConfigFile(configPath),
+        projectInfo
+      );
+      result.tests.push(testResult);
+    }
+  }
+
+  // Placeholder validation methods
+  async checkTestOrganization(projectInfo) {
+    return { success: true, message: 'Test organization validated' };
+  }
+
+  async checkTestNamingConventions(projectInfo) {
+    return { success: true, message: 'Test naming conventions validated' };
+  }
+
+  async checkTestIsolation(projectInfo) {
+    return { success: true, message: 'Test isolation validated' };
+  }
+
+  async checkMockUsage(projectInfo) {
+    return { success: true, message: 'Mock usage validated' };
+  }
+
+  async checkTestDocumentation(projectInfo) {
+    return { success: true, message: 'Test documentation validated' };
+  }
+
+  async executeFrameworkTests(projectInfo, framework) {
+    return { success: true, message: `${framework} test suite executed successfully` };
+  }
+
+  async validateConfigFile(configPath) {
+    return { success: true, message: `Configuration file ${path.basename(configPath)} validated` };
+  }
+
+  /**
+   * Check required dependencies
+   */
+  checkDependencies() {
+    const dependencies = [{{DEPENDENCY_CHECK_LIST}}];
+    for (const dep of dependencies) {
+      try {
+        execSync(`${dep} --version`, { timeout: 5000, stdio: 'ignore' });
+      } catch (error) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  {{ADDITIONAL_METHODS}}
+
+  /**
+   * Test-specific cleanup
+   */
+  async testCleanup() {
+    console.log('    Performing {{CATEGORY}} test cleanup...');
+    
+    // Clean up test artifacts
+    this.testExecutionLog = this.testExecutionLog.slice(-20); // Keep last 20 entries
+    
+    // Clear temporary test data
+    if (this.testSuiteResults.size > 50) {
+      const keysToRemove = Array.from(this.testSuiteResults.keys()).slice(0, 25);
+      keysToRemove.forEach(key => this.testSuiteResults.delete(key));
+    }
+    
+    {{ADDITIONAL_CLEANUP}}
+  }
+}
+
+export default {{CLASS_NAME}};

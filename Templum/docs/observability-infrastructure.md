@@ -22,7 +22,7 @@ The Templum Observability Infrastructure provides enterprise-grade monitoring, l
 
 ### Core Components
 
-```
+``` filestructure
 observability/
 ├── templum-observability-system.ts    # Core observability engine
 ├── observability-adapter.ts           # Dependency injection adapter
@@ -31,35 +31,35 @@ observability/
 
 ### System Architecture
 
-```
+``` diagram
 ┌─────────────────────────────────────────────────────────────────┐
 │                    Templum Core Components                      │
-│  TemplumCore │ BackendRouter │ StateManager │ SkinEngine │ ... │
+│  TemplumCore │ BackendRouter │ StateManager │ SkinEngine │ ...  │
 └─────────────────────┬───────────────────────────────────────────┘
                       │ Uses observability methods
 ┌─────────────────────▼───────────────────────────────────────────┐
-│                 ObservabilityAdapter                           │
-│  • IObservabilityService interface implementation              │
-│  • Logging: logInfo(), logError(), logWarn()                  │
-│  • Metrics: incrementCounter(), setGauge(), recordTiming()    │
-│  • Context: setSessionId(), setCorrelationId()                │
+│                 ObservabilityAdapter                            │
+│  • IObservabilityService interface implementation               │
+│  • Logging: logInfo(), logError(), logWarn()                    │
+│  • Metrics: incrementCounter(), setGauge(), recordTiming()      │
+│  • Context: setSessionId(), setCorrelationId()                  │
 └─────────────────────┬───────────────────────────────────────────┘
                       │
 ┌─────────────────────▼───────────────────────────────────────────┐
-│              TemplumObservabilitySystem                        │
-│  ┌──────────────┐ ┌────────────────┐ ┌──────────────────┐    │
-│  │ObservabilityLogger│ │MetricsCollector│ │   AlertManager   │    │
-│  │• Structured logs │ │• Counters      │ │• Rule evaluation │    │
-│  │• Output formats  │ │• Gauges        │ │• Notifications   │    │
-│  │• Correlation IDs │ │• Histograms    │ │• Cooldowns       │    │
-│  │• Context mgmt    │ │• Timing utils  │ │• Severity levels │    │
-│  └──────────────────┘ └────────────────┘ └──────────────────┘    │
+│              TemplumObservabilitySystem                         │
+│  ┌───────────────────┐ ┌────────────────┐ ┌──────────────────┐  │
+│  │ObservabilityLogger│ │MetricsCollector│ │   AlertManager   │  │
+│  │• Structured logs  │ │• Counters      │ │• Rule evaluation │  │
+│  │• Output formats   │ │• Gauges        │ │• Notifications   │  │
+│  │• Correlation IDs  │ │• Histograms    │ │• Cooldowns       │  │
+│  │• Context mgmt     │ │• Timing utils  │ │• Severity levels │  │
+│  └───────────────────┘ └────────────────┘ └──────────────────┘  │
 └─────────────────────────────────────────────────────────────────┘
                       │ Outputs to
 ┌─────────────────────▼───────────────────────────────────────────┐
-│                     Output Channels                            │
-│     Console    │    JSON     │    File     │   External APIs   │
-│   (development) │ (structured) │ (rotation)  │   (monitoring)    │
+│                     Output Channels                             │
+│     Console     │    JSON      │    File     │   External APIs  │
+│   (development) │ (structured) │ (rotation)  │   (monitoring)   │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -285,7 +285,7 @@ this.observabilityService.recordTiming('database_query', queryDuration, {
 
 ### Console Output (Development)
 
-```
+```log
 [2025-08-27T10:30:45.123Z] [INFO] [TemplumCore] Backend router initialized with injected dependencies {"dependenciesAvailable":["skinEngine","stateManager","resourceManager","observabilityService"]}
 ```
 
@@ -306,7 +306,7 @@ this.observabilityService.recordTiming('database_query', queryDuration, {
 
 ### File Output
 
-```
+```log
 [2025-08-27T10:30:45.123Z] [INFO] [TemplumCore] Backend router initialized with injected dependencies
 [2025-08-27T10:30:46.234Z] [WARN] [BackendRouter] Connection attempt timeout for service phoenix-code-lite
 [2025-08-27T10:30:47.345Z] [ERROR] [StateManager] State sync failed: Connection refused

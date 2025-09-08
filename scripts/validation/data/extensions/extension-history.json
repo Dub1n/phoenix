@@ -1,0 +1,46 @@
+[
+  {
+    "timestamp": "2025-09-06T14:32:37.012Z",
+    "action": "rollback",
+    "category": "audit_test",
+    "details": {
+      "backupUsed": "audit_test-2025-09-06T14-32-36-904Z",
+      "filesRemoved": 1,
+      "registryUpdated": true
+    },
+    "success": true
+  },
+  {
+    "timestamp": "2025-09-06T14:32:37.013Z",
+    "action": "generated",
+    "category": "audit_test",
+    "details": {
+      "request": {
+        "category": "audit_test",
+        "requirements": [
+          "Test audit trail"
+        ],
+        "validationLogic": "return { success: true, message: \"Audit test\" };",
+        "scopePatterns": [
+          "src/**/*.ts"
+        ],
+        "supportedProjects": [
+          "TestProject"
+        ]
+      },
+      "error": "Sandbox testing failed: Sandbox test failed: Only URLs with a scheme in: file, data, and node are supported by the default ESM loader. On Windows, absolute paths must be valid file:// URLs. Received protocol 'c:'"
+    },
+    "success": false
+  },
+  {
+    "timestamp": "2025-09-06T14:32:37.017Z",
+    "action": "rollback",
+    "category": "audit_test",
+    "details": {
+      "backupUsed": "audit_test-2025-09-06T14-32-36-904Z",
+      "filesRemoved": 0,
+      "registryUpdated": true
+    },
+    "success": true
+  }
+]

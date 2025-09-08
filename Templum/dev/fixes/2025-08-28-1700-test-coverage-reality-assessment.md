@@ -50,7 +50,7 @@ Comprehensive analysis and documentation of current test coverage reality with a
 
 #### **Coverage by Module Analysis**
 
-``` filesystem
+```filestructure
 Critical Modules with 0% Coverage:
 ├── src/core (0% - 1,437 statements untested)
 │   ├── templum-core.ts (Central orchestration engine)

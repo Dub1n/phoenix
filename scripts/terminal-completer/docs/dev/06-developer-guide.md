@@ -14,7 +14,7 @@ The Terminal Safety System is a PowerShell-based solution that prevents hanging 
 
 ### Directory Structure
 
-``` filesystem
+```filestructure
 terminal-completer/
 ├── core/                                   # Core terminal safety engine
 │   ├── auto-terminal-manager.ps1           # Original safety engine (legacy)

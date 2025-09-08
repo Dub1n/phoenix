@@ -48,7 +48,7 @@ python main.py --config my-config.yml document.md
 
 ## Architecture
 
-``` filesystem
+```filestructure
 markdown-formatter/
 ├── main.py                 # Main orchestrator script
 ├── config.yml              # Default configuration

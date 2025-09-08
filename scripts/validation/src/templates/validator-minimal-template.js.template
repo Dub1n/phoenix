@@ -1,0 +1,220 @@
+#!/usr/bin/env node
+
+/**
+ * {{CATEGORY_NAME}} Validator - Minimal Auto-Generated Implementation
+ * 
+ * Simple IValidator interface implementation for {{CATEGORY_DESCRIPTION}} validation.
+ * Generated from validator-minimal-template.js using the Enhanced Validation System.
+ * 
+ * Category: {{CATEGORY}}
+ * Description: {{DESCRIPTION}}
+ * Generated: {{GENERATION_TIMESTAMP}}
+ * Template Version: 3.0.0-minimal
+ * Interface Version: 3.0.0
+ */
+
+import fs from 'fs';
+import path from 'path';
+import { execSync } from 'child_process';
+
+/**
+ * {{CATEGORY_NAME}} Minimal Validator implementing IValidator interface
+ * Simplified implementation for basic validation scenarios
+ */
+export class {{CLASS_NAME}} {
+  constructor() {
+    this.category = '{{CATEGORY}}';
+    this.version = '3.0.0';
+    this.scopes = [{{SCOPE_PATTERNS}}];
+    this.hasIntegrationTests = {{HAS_INTEGRATION_TESTS}};
+    
+    // Minimal validator metadata
+    this.generated = true;
+    this.generatedAt = '{{GENERATION_TIMESTAMP}}';
+    this.template = 'validator-minimal-template.js';
+    this.templateVersion = '3.0.0-minimal';
+    
+    // Simplified internal state
+    this.validationStartTime = null;
+  }
+
+  /**
+   * Main validation method implementing IValidator interface
+   * Simplified for basic validation scenarios
+   */
+  async validate(projectInfo, scopeConfig, options = {}) {
+    this.validationStartTime = Date.now();
+    
+    const result = {
+      status: 'PENDING',
+      tests: [],
+      duration: 0,
+      evidence: [],
+      errors: [],
+      warnings: []
+    };
+
+    try {
+      console.log('  Executing {{CATEGORY_NAME}} minimal validation...');
+      
+      // Execute simplified validation logic
+      await this.runBasicValidation(projectInfo, scopeConfig, options, result);
+
+      // Simple result determination
+      const failedTests = result.tests.filter(t => t.status === 'FAIL');
+      const passedTests = result.tests.filter(t => t.status === 'PASS');
+      
+      if (failedTests.length > 0) {
+        result.status = 'FAIL';
+      } else if (passedTests.length > 0) {
+        result.status = 'PASS';
+      } else {
+        result.status = 'WARN';
+        result.warnings.push('No tests completed');
+      }
+      
+      result.duration = Date.now() - this.validationStartTime;
+      console.log('  {{CATEGORY_NAME}} minimal validation completed');
+      
+      return result;
+      
+    } catch (error) {
+      result.status = 'FAIL';
+      result.errors.push(`{{CATEGORY_NAME}} validation failed: ${error.message}`);
+      result.duration = Date.now() - this.validationStartTime;
+      return result;
+    }
+  }
+
+  /**
+   * Run basic validation tests - simplified implementation
+   */
+  async runBasicValidation(projectInfo, scopeConfig, options, result) {
+    // MINIMAL_VALIDATION_LOGIC_START
+    
+    {{VALIDATION_LOGIC}}
+    
+    // MINIMAL_VALIDATION_LOGIC_END
+  }
+
+  /**
+   * Get validator capabilities - minimal implementation
+   */
+  getCapabilities() {
+    return {
+      supportedProjects: [{{SUPPORTED_PROJECTS}}],
+      supportedScopes: this.scopes,
+      requiredDependencies: [{{REQUIRED_DEPENDENCIES}}],
+      performanceProfile: 'fast'
+    };
+  }
+
+  /**
+   * Check interface compliance
+   */
+  checkInterfaceCompliance() {
+    const requiredMethods = ['validate', 'getCapabilities', 'getMetadata'];
+    return requiredMethods.every(method => typeof this[method] === 'function');
+  }
+
+  /**
+   * Run minimal self-diagnostics
+   */
+  runSelfDiagnostics() {
+    const checks = [
+      {
+        name: 'Interface Compliance',
+        status: this.checkInterfaceCompliance()
+      }
+    ];
+
+    return {
+      status: checks.every(c => c.status) ? 'healthy' : 'warning',
+      checks,
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  /**
+   * Get validator metadata
+   */
+  getMetadata() {
+    return {
+      category: this.category,
+      version: this.version,
+      generated: this.generated,
+      generatedAt: this.generatedAt,
+      template: this.template,
+      templateVersion: this.templateVersion,
+      interfaceVersion: '3.0.0',
+      description: '{{DESCRIPTION}}',
+      lastUpdated: '{{GENERATION_TIMESTAMP}}'
+    };
+  }
+
+  /**
+   * Execute a basic validation test with minimal error handling
+   */
+  async executeBasicTest(name, testFunction, projectInfo, options = {}) {
+    const test = {
+      name,
+      status: 'PENDING',
+      message: '',
+      evidence: [],
+      errors: []
+    };
+
+    try {
+      const testResult = await testFunction(projectInfo, options);
+      
+      if (testResult.success !== false) {
+        test.status = 'PASS';
+        test.message = testResult.message || `${name} completed successfully`;
+        if (testResult.evidence) test.evidence.push(...testResult.evidence);
+      } else {
+        test.status = 'FAIL';
+        test.message = testResult.message || `${name} failed`;
+        if (testResult.errors) test.errors.push(...testResult.errors);
+      }
+
+    } catch (error) {
+      test.status = 'FAIL';
+      test.message = `${name} failed with error`;
+      test.errors.push(`${name} error: ${error.message}`);
+    }
+
+    return test;
+  }
+
+  /**
+   * Execute a command - simplified version
+   */
+  async executeSimpleCommand(command, projectInfo) {
+    try {
+      const originalCwd = process.cwd();
+      process.chdir(projectInfo.path);
+
+      const output = execSync(command, {
+        encoding: 'utf8',
+        timeout: 30000
+      });
+
+      process.chdir(originalCwd);
+
+      return {
+        success: true,
+        output: output.trim()
+      };
+
+    } catch (error) {
+      process.chdir(process.cwd());
+      
+      return {
+        success: false,
+        errors: [`Command failed: ${command}`, `Error: ${error.message}`]
+      };
+    }
+  }
+}
+
+export default {{CLASS_NAME}};

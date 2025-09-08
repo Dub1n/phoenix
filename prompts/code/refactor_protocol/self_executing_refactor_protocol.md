@@ -6,7 +6,7 @@
 
 ---
 
-## ⋇ Quick Navigation - Section Links
+## Quick Navigation - Section Links
 
 ### Main Protocol Sections
 
@@ -150,18 +150,14 @@ When enabled, the performance module adds:
 
 ### Usage Examples
 
-**Basic Refactoring (Default)**:
-```
+```bash
+# **Basic Refactoring (Default)**:
 "Use the refactor protocol to clean up this codebase"
-```
 
-**With Performance Features**:
-```
+# **With Performance Features**:
 "Use the refactor protocol with performance monitoring to clean up this codebase"
-```
 
-**Explicit Performance Request**:
-```
+# **Explicit Performance Request**:
 "Use the refactor protocol --enable-performance to clean up this codebase"
 ```
 
@@ -239,7 +235,7 @@ When enabled, performance features integrate at these protocol phases:
 
 ---
 
-## ^ NEXT ACTION
+## NEXT ACTION
 
 **IMMEDIATE TASK**: Phase 0, Step 1 - Project Context Analysis
 
@@ -260,7 +256,7 @@ When enabled, performance features integrate at these protocol phases:
 
 ---
 
-## ⊎ TESTING & VALIDATION FRAMEWORK
+## TESTING & VALIDATION FRAMEWORK
 
 ### Testing Strategy Overview
 

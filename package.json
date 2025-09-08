@@ -10,6 +10,7 @@
     "validate:component": "node scripts/validation/validate-component.js"
   },
   "dependencies": {
+    "ajv": "^8.17.1",
     "eza": "^1.0.7",
     "fd": "^0.0.3",
     "typescript": "^5.9.2"

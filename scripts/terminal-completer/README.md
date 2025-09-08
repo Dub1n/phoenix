@@ -2,11 +2,11 @@
 
 A comprehensive PowerShell-based terminal safety system that prevents hanging commands in development environments by implementing automatic timeouts and process management.
 
-## 🏗️ Architecture
+## Architecture
 
 The system is organized into logical modules for better maintainability:
 
-``` filesystem
+```filestructure
 terminal-completer/
 ├── core/                                   # Core terminal safety engine
 │   ├── enhanced-terminal-manager.ps1       # **NEW** Phase 2 enhanced version (recommended)
@@ -28,13 +28,13 @@ terminal-completer/
 ├── docs/                                   # Documentation
 │   ├── user-guide.md                       # User documentation and usage guide
 │   ├── developer-guide.md                  # Developer documentation and architecture guide
-│   ├── README-Phase1.md                   # Phase 1 implementation details
-│   └── README-Phase2.md                   # **NEW** Phase 2 implementation details
+│   ├── README-Phase1.md                 v  # Phase 1 implementation details
+│   └── README-Phase2.md                    # **NEW** Phase 2 implementation details
 ├── terminal-safety.ps1                     # Main entry point (updated for Phase 2)
 └── README.md                               # Project overview (this file)
 ```
 
-## 🚀 Quick Start
+## Quick Start
 
 ### 1. Install Terminal Safety
 
@@ -69,7 +69,7 @@ powershell -ExecutionPolicy Bypass -File "testing/test-suite.ps1" -Quick
 
 Once installed, terminal safety is automatically applied to all terminal operations in your development environment.
 
-## 🔧 Core Components
+## Core Components
 
 ### Enhanced Terminal Manager (`core/enhanced-terminal-manager.ps1`) **RECOMMENDED**
 

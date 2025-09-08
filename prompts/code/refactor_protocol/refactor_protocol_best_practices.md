@@ -42,7 +42,7 @@
 
 #### **File Organization**
 
-``` filesystem
+```filestructure
 prompts/code/
 ├── self_executing_refactor_protocol.md          # Core execution engine
 ├── refactor_protocol_examples.md                # Workflow examples & troubleshooting
