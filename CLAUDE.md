@@ -10,7 +10,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Claude Code Configuration**: All essential development guidance is organized in the **.claude/README.md** - update this if any new .claude/ files are added
 
-### 📚 Memory Imports for Context
+### Memory Imports for Context
 
 - **.claude/references/VDL-VAULT-PROJECT-INDEX.md** - Repository navigation and project commands
 - **.claude/workflows/DEVELOPMENT-WORKFLOW.md** - Development process for all project typese
@@ -18,7 +18,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **.claude/standards/TDD-STANDARDS.md** - Test-driven development methodology
 - **.claude/standards/CODE-STANDARDS.md** - TypeScript coding standards
 
-### 🤖 Specialized Subagents Available
+### Specialized Subagents Available
 
 - **tdd-specialist** - Expert TDD workflow specialist for Phoenix Code Lite development
 - **qms-specialist** - Expert QMS compliance specialist for medical device software standards  
@@ -58,13 +58,13 @@ Use `/spawn tdd-specialist`, `/spawn qms-specialist`, or `/spawn architecture-sp
 3. **Follow Process**: .claude/workflows/DEVELOPMENT-WORKFLOW.md for step-by-step guidance
 4. **Apply Standards**: Relevant standards from .claude/standards/ directory
 
-## 📚 Repository Overview
+## Repository Overview
 
 ### Multi-Project Development Ecosystem
 
 The VDL_Vault repository is a comprehensive ecosystem for medical device software development, QMS infrastructure, and related tooling. It consists of multiple interconnected projects that work together to provide a complete development and compliance framework.
 
-### * Active Projects
+### Active Projects
 
 #### Active Project: Phoenix Code Lite (PCL)
 
@@ -86,20 +86,20 @@ The VDL_Vault repository is a comprehensive ecosystem for medical device softwar
 - **Location**: `Haruspex/`
 - **Status**: Early planning/architecture phase
 
-### ⋇ Documentation Systems
+### Documentation Systems
 
 - **Phoenix Core Documentation** (`docs/Phoenix-Core/`) - Framework documentation and guides
 - **PCL Technical Documentation** (`phoenix-code-lite/docs/`) - API reference and codebase indices  
 - **QMS Documentation** (`Obsidian/QMS/`) - Regulatory standards and compliance
 - **Strategic Documentation** (`PCL-Info/`, `docs/PCL-QMS/`) - Strategic analysis and planning
 
-### ◦ Infrastructure & Tooling
+### Infrastructure & Tooling
 
 - **Scripts** (`scripts/`) - Development automation and terminal management
 - **NoDeRR** (`noderr/`) - Error analysis and architecture verification
 - **Claude Integration** (`.claude/`) - AI development workflows and standards
 
-## ⌕ Key Guidelines for Claude Code
+## Key Guidelines for Claude Code
 
 ### MCP Tool Usage
 
@@ -157,28 +157,28 @@ The VDL_Vault repository is a comprehensive ecosystem for medical device softwar
 - **DO NOT use emojis**: use standard characters that do not cause syntax errors, erring on the side of caution so that no extra fixing steps are necessary.
 - **Replace any emojis**: should you find any in a file, replace it with an equivalent if possible, remove if not.
 
-#### ⋇ Before Any Development Task
+#### Before Any Development Task
 
 1. **Check Project Scope**: Use .claude/references/VDL-VAULT-PROJECT-INDEX.md to identify target project(s)
 2. **Review Architecture**: Consult .claude/architecture/VDL-VAULT-REPOSITORY-ARCHITECTURE.md for system context
 3. **Follow Workflow**: Apply .claude/workflows/DEVELOPMENT-WORKFLOW.md for project type
 4. **Apply Standards**: Use appropriate standards from .claude/standards/ directory
 
-#### ⋇ Documentation Management
+#### Documentation Management
 
 - **Repository Structure**: All project documentation remains in original project directories  
 - **Claude References**: Use .claude/ directory for Claude Code integration guidance
 - **Update Coordination**: When source documentation changes, consider updating corresponding .claude/ references
 - **Cross-Project Links**: Maintain accurate cross-references between projects
 
-#### ⊛ File Creation Guidelines
+#### File Creation Guidelines
 
 - **Project Context**: Always include appropriate file header stubs with timestamps (`Get-Date -Format "yyyy-MM-dd-HHmm"`)
 - **Minimal Creation**: Create files only when absolutely necessary for the goal
 - **Edit First**: Prefer editing existing files over creating new ones
 - **Documentation**: Only create documentation files when explicitly requested
 
-#### ⇔ Cross-Project Coordination
+#### Cross-Project Coordination
 
 - **Impact Assessment**: Consider effects on other repository projects
 - **Dependency Mapping**: Check for cross-project dependencies before changes

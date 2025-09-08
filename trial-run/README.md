@@ -1,15 +1,19 @@
 ---
-Purpose: Simple agent interface for autonomous validation system - Usage Guide
+Purpose: Simple agent interface for agent-driven validation system - Usage Guide
 ---
 
 # Enhanced Validation System - Agent Guide
 
 ## Quick Start
 
-### Basic Validation Command
+### Validation & Extension Commands
 
 ```bash
 node src/core/enhanced-orchestrator.js --category <category> --project <project-path> --task-id <task-id>
+
+# Submit a new validator for a new category
+node src/core/enhanced-orchestrator.js --submit-validator <path-to-validator.js> --category <new-category> --project <project-path> --task-id <task-id>
+
 ```
 
 ### Example Usage
@@ -48,14 +52,14 @@ node src/core/enhanced-orchestrator.js --category build --project ./Haruspex --t
 3. **Generates detailed results** with evidence and recommendations
 4. **Returns results** in under 60 seconds for most validations
 
-### For New Categories (Autonomous Extension)
+### For New Categories (Agent-Driven Extension)
 
-1. **Detects unknown category** and initiates extension pipeline
-2. **Performs risk assessment** to ensure safe generation
-3. **Generates new validator** from templates with safety validation
-4. **Tests generated code** in sandboxed environment
-5. **Registers new validator** for future use
-6. **Executes validation** with the newly generated validator
+1. **Run Validation**: Agent first attempts to run validation on the new category
+2. **System Notification**: The system detects the unknown category and notifies the agent that a new validator script is required
+3. **Agent Generates Validator**: The agent writes a new validator script, ensuring it complies with the IValidator interface contract
+4. **Agent Submits Validator**: The agent submits the new script to the system using the --submit-validator command
+5. **Secure Integration**: The system initiates a secure integration pipeline, performing risk assessment, sandbox testing, and quality checks on the submitted code
+6. **Registration & Execution**: If all checks pass, the system registers the new validator and executes the validation task
 
 ## Expected Output Examples
 
@@ -70,37 +74,44 @@ Validation Results: PASS (45 seconds)
 All validations completed successfully
 ```
 
-### Autonomous Extension
+### Agent-Driven Extension Workflow
 
 ```log
+# Step 1: Agent attempts validation for a new category
+$ node src/core/enhanced-orchestrator.js --category mobile --project ./MyMobileApp --task-id TASK-002
+
 Enhanced Validation System v3.0.0
-Compatibility Check: mobile category not found
-Extension Required - Initiating Safe Extension Process
-   Risk Assessment: LOW risk approved
-   Pre-Generation Validation: PASSED
-   Template-Based Generation: COMPLETED
-   Post-Generation Validation: PASSED
-   Sandbox Testing: PASSED
-   Extension Registration: COMPLETED
-Loading generated validator: mobile-validator.js
+Compatibility Check: Category 'mobile' not found.
+Extension Required: Please generate a validator script and submit it using the --submit-validator flag.
+
+# Step 2: Agent generates 'mobile-validator.js' and submits it
+$ node src/core/enhanced-orchestrator.js --submit-validator ./mobile-validator.js --category mobile --project ./MyMobileApp --task-id TASK-002
+
+Enhanced Validation System v3.0.0
+Received new validator for category 'mobile'.
+Initiating Secure Integration Pipeline...
+   Risk Assessment: LOW risk approved for submitted code.
+   Sandbox Testing: PASSED. Validator is safe to execute.
+   Interface Compliance: PASSED. Validator meets IValidator contract.
+   Integration Complete: 'mobile' validator registered.
+Loading new validator: mobile-validator.js
 Executing validation with safety monitoring
 Validation Results: PASS (2 minutes 15 seconds)
-Extension successful - mobile validator now available
 ```
 
 ## Safety Features
 
 ### Automatic Protection
 
-- **Risk Assessment**: Evaluates extension safety before generation
+- **Risk Assessment**: Evaluates submitted code safety before integration
 - **Backup System**: Creates automatic backups before any changes
-- **Rollback Capability**: Automatic rollback if generation fails
-- **Sandbox Testing**: Tests generated code in isolation
+- **Rollback Capability**: Automatic rollback if integration fails
+- **Sandbox Testing**: Tests submitted code in isolation
 - **Interface Compliance**: Ensures all validators meet quality standards
 
 ### Human Review Process
 
-For high-risk extensions, the system will:
+For high-risk submissions, the system will:
 
 1. **Generate extension summary** with detailed analysis
 2. **Create safety report** with risk assessment
@@ -114,6 +125,7 @@ For high-risk extensions, the system will:
 - `--category`: Validation category (see table above)
 - `--project`: Path to project directory (absolute or relative)
 - `--task-id`: Task identifier for tracking and reporting
+- `--submit-validator`: Path to the new validator script to be integrated (used for new categories)
 
 ### Optional Arguments
 
@@ -157,9 +169,9 @@ The system provides:
 
 #### "Category not found"
 
-- **Normal behavior** - System will automatically generate new validator
-- **Wait for extension process** to complete (1-3 minutes)
-- **Review extension summary** if human approval required
+- **Normal behavior** - This is the expected response for a new category
+- **Action Required**: You must now generate a validator script
+- **Next Step**: Use the --submit-validator command to provide the new script to the system
 
 #### "Project path invalid"
 
@@ -173,10 +185,10 @@ The system provides:
 - **Follow recommendations** provided by the validator
 - **Re-run validation** after fixes to confirm resolution
 
-#### "Extension generation failed"
+#### "Extension integration failed"
 
 - **System automatically rolls back** to previous state
-- **Review failure report** for specific issues
+- **Review the integration failure report** for specific issues with your submitted code
 - **Contact maintainer** if issue persists
 
 ### Getting Help
@@ -190,8 +202,8 @@ The system provides:
 ### For Agents
 
 1. **Always specify task-id** for tracking and debugging
-2. **Use appropriate category** that matches the type of changes
-3. **Wait for completion** - system may take 1-3 minutes for new categories
+2. **For new categories** run a normal validation to get the "Extension Required" notification then generate and submit the new validator
+3. **Ensure submitted validators** are well-tested and comply with the `IValidator` interface to pass the integration pipeline
 4. **Review recommendations** carefully and implement suggested fixes
 5. **Re-run validation** after making changes to confirm fixes
 
@@ -207,7 +219,7 @@ The system provides:
 ### Core Components
 
 - **Enhanced Orchestrator**: Main system coordinator
-- **Extension Generator**: Autonomous validator generation
+- **Extension Manager**: Secure integration pipeline for agent-submitted code
 - **Safety Framework**: Comprehensive protection mechanisms
 - **Validator Registry**: Category and capability management
 
@@ -216,7 +228,7 @@ The system provides:
 - **Main System**: `src/core/enhanced-orchestrator.js`
 - **Validators**: `src/validators/` directory  
 - **Configuration**: `config/capability-matrix.json`
-- **Extensions**: `data/extensions/` directory
+- **Integrated Extensions**: `data/extensions/` directory
 - **Backups**: `data/backups/` directory (automatic)
 - **Reports**: Generated in project `dev/validation-results/`
 
@@ -236,6 +248,9 @@ node src/core/enhanced-orchestrator.js --category ui --project ./phoenix-code-li
 # Build/compilation issues
 node src/core/enhanced-orchestrator.js --category build --project ./project --task-id TASK-BUILD-001
 
+# Submit a new validator 
+node src/core/enhanced-orchestrator.js --submit-validator ./new-validator.js --category new-cat --project ./project --task-id TASK-NEW-001
+
 # System health check
 node src/core/enhanced-orchestrator.js --health-check
 ```
@@ -243,7 +258,7 @@ node src/core/enhanced-orchestrator.js --health-check
 ### Expected Time Ranges
 
 - **Existing categories**: 30-60 seconds
-- **New categories**: 1-3 minutes (includes generation)
+- **New categories**: 1-3 minutes (includes integration pipeline)
 - **High-risk extensions**: 3-5 minutes (includes human review)
 
 ### Success Indicators
@@ -251,8 +266,8 @@ node src/core/enhanced-orchestrator.js --health-check
 - **Exit code 0**: Validation successful
 - **Exit code 1**: Validation failed (check output for details)
 - **Green checkmarks**: Individual test successes
-- **Extension summary created**: New validator generated successfully
+- **Integration report created**: New validator integrated successfully
 
 ---
 
-**Remember**: The system is designed to be autonomous and safe. Trust the process, follow the recommendations, and contact maintainers if you encounter unexpected behavior.
+**Remember**: The system is designed to safely integrate and run agent-provided code. Ensure your validator scripts are robust and follow the `IValidator` contract. Trust the integration pipeline to catch issues, and review its reports carefully.

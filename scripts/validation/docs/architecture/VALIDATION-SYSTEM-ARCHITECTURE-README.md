@@ -6,7 +6,7 @@ purpose: Comprehensive architectural documentation for autonomous validation sys
 
 # Enhanced Validation System Architecture
 
-## 1. Executive Summary
+## Executive Summary
 
 The Enhanced Validation System is a secure validation framework that empowers an external agent to extend its capabilities. It combines a solid validation foundation with a robust integration pipeline for agent-generated code. The system's primary role is to act as a safe execution and validation environment, ensuring that any new, agent-written validator meets strict quality and safety standards before being integrated.
 
@@ -14,14 +14,47 @@ The Enhanced Validation System is a secure validation framework that empowers an
 
 - Secure integration of agent-generated validator extensions
 - Multi-layered safety framework with automatic rollback
-- Template-based code generation with edge case handling
 - Comprehensive monitoring and audit trail
 - Interface compliance checking and quality assurance
 - Human review process for critical extensions
 
 ---
 
-## 2. System Architecture
+## System Architecture
+
+### Full System Diagram (Gemini Chat Assist)
+
+```mermaid
+sequenceDiagram
+    participant Agent
+    participant ValidationSystem as Enhanced Validation System
+    participant NewCategoryTests as Agent's Self-Test Framework
+    participant SecureIntegration as Secure Integration Pipeline (extension-manager.js)
+
+    Agent->>ValidationSystem: 1. Validate project for new 'mobile' category
+    ValidationSystem-->>Agent: 2. Respond: "Extension Required. Please submit a validator for 'mobile'."
+
+    Agent->>Agent: 3. Generate 'mobile-validator.js' code
+    
+    Note over Agent, NewCategoryTests: Agent uses the provided framework to check its own work.
+    Agent->>NewCategoryTests: 4. (Recommended) Run self-validation tests on 'mobile-validator.js'
+    NewCategoryTests-->>Agent: 5. Self-validation passed (syntax, interface compliance, etc.)
+
+    Agent->>ValidationSystem: 6. Submit new validator via --submit-validator flag
+    ValidationSystem->>SecureIntegration: 7. Hand off submitted code for secure integration
+    
+    subgraph Secure Integration
+        SecureIntegration->>SecureIntegration: 8a. Risk Assessment
+        SecureIntegration->>SecureIntegration: 8b. Interface Compliance Check
+        SecureIntegration->>SecureIntegration: 8c. Sandbox Execution Test
+    end
+
+    SecureIntegration-->>ValidationSystem: 9. Integration successful. Validator registered.
+    
+    Note over ValidationSystem: System now re-attempts the original request with the new validator.
+    ValidationSystem->>ValidationSystem: 10. Execute validation for 'mobile' category
+    ValidationSystem-->>Agent: 11. Return final validation results.
+```
 
 ### High-Level Architecture Diagram
 
@@ -30,12 +63,12 @@ graph TB
     subgraph "Agent Interface"
         A[Agent] --> B[Enhanced Orchestrator]
     end
-    
+
     subgraph "Core Processing Engine"
         B --> C{Category Exists?}
         C -->|Yes| D[Load Existing Validator]
         C -->|No| ExtRequired(Notify Agent: Extension Required)
-        
+
         subgraph "Integration Pipeline"
             direction LR
             AgentSubmit[Agent Submits Validator] --> F[Risk Assessment]
@@ -45,38 +78,38 @@ graph TB
             J --> K[Human Review Process]
             K --> L[Register New Validator]
         end
-        
+
         D --> M[Execute Validation]
         L --> M
         M --> N[Generate Results]
     end
-    
+
     A --> AgentSubmit
     ExtRequired --> A
-    
+
     subgraph "Safety Framework"
         O[Interface Compliance Checker]
         P[Rollback Manager]
         Q[Backup System]
         R[Quality Gates]
-        
+
         F -.-> O
         I -.-> R
         J -.-> Q
     end
-    
+
     subgraph "Storage Layer"
         S[Capability Matrix]
         T[Validator Registry]
         U[Extension History]
         V[Safety Reports]
-        
+
         C -.-> S
         L -.-> T
         K -.-> U
         R -.-> V
     end
-    
+
     N --> W[Agent Response]
 ```
 
@@ -91,10 +124,10 @@ sequenceDiagram
     participant SF as Safety Framework
     participant V as Validator
     participant HR as Human Review
-    
+
     A->>EO: 1. Validation Request (category, project, scope)
     EO->>CM: Check Category
-    
+
     alt Category Exists & Compatible
         CM-->>EO: Validator Path Found
         EO->>V: Load & Execute Validator
@@ -137,8 +170,8 @@ validation/                                          [ROOT]
 │
 ├── src/                                             [Core Enhanced Validation System]
 │   ├── core/                                        [Main system components]
-│   │   ├── enhanced-orchestrator.js                 - Main system orchestrator, handles requests 
-│   │   └── extension-manager.js                     - Manages integration of agent-submitted validators 
+│   │   ├── enhanced-orchestrator.js                 - Main system orchestrator, handles requests
+│   │   └── extension-manager.js                     - Manages integration of agent-submitted validators
 │   │
 │   ├── validators/                                  [Validator implementations]
 │   │   ├── backend-validator.js                     - Backend/Service validation
@@ -180,7 +213,7 @@ validation/                                          [ROOT]
 │
 ├── docs/                                            [Documentation]
 │   ├── architecture/                                [System architecture]
-│   ├── agent-templates/                             [Templates for agent developers] 
+│   ├── agent-templates/                             [Templates for agent developers]
 │   ├── implementation/                              [Implementation guides]
 │   ├── guides/                                      [User guides]
 │   └── reports/                                     [Project reports]
@@ -188,8 +221,8 @@ validation/                                          [ROOT]
 ├── data/                                            [System data - auto-managed]
 │   ├── extensions/                                  [Extension management]
 │   │   ├── extension-history.json                   - Structured history log
-│   │   └── generated/                               - Auto-generated validators
-│   │       └── [category]-validator.js              - Runtime generated
+│   │   └── generated/                               - Integrated validators
+│   │       └── [category]-validator.js              - Runtime integrated
 │   │
 │   └── backups/                                     [Automatic backup system]
 │       └── [timestamped-backups]                    - Safety backups
@@ -199,39 +232,39 @@ validation/                                          [ROOT]
     ├── legacy-validators/                           [2 consolidated legacy validators]
     ├── test-artifacts/                              [3 test artifacts]
     ├── legacy-project-tools/                        [6 legacy project tracking tools]
-    └── legacy-tests/                                [5 legacy unit tests]```
+    └── legacy-tests/                                [5 legacy unit tests]
 ```
 
 ---
 
 ## System Workflow Architecture
 
-### Standard Validation Workflow
+### Standard Validation Workflow (Gemini Chat Assist)
 
 ```mermaid
 flowchart TD
     Start([Agent Validation Request]) --> Input{Parse Arguments}
     Input -->|Valid| CompatCheck[Enhanced Compatibility Check]
     Input -->|Invalid| ErrorExit[Error: Invalid Arguments]
-    
+
     CompatCheck --> CategoryExists{Category Exists?}
     CategoryExists -->|Yes| ProjectSupport{Project Supported?}
-    CategoryExists -->|No| ExtensionPipeline[Extension Pipeline]
-    
+    CategoryExists -->|No| IntegrationPipeline[Integration Pipeline]
+
     ProjectSupport -->|Yes| LoadValidator[Load Existing Validator]
-    ProjectSupport -->|No| ExtensionPipeline
-    
+    ProjectSupport -->|No| IntegrationPipeline
+
     LoadValidator --> SafetyCheck[Validator Safety Check]
     SafetyCheck -->|Pass| ExecuteValidation[Execute Validation]
     SafetyCheck -->|Fail| LoadFallback[Load Fallback Validator]
     LoadFallback --> ExecuteValidation
-    
+
     ExecuteValidation --> GenerateReport[Generate Comprehensive Report]
     GenerateReport --> Success([Return Results])
-    
-    ExtensionPipeline --> ExtensionFlow[See Extension Pipeline Flow]
-    ExtensionFlow --> ExecuteValidation
-    
+
+    IntegrationPipeline --> IntegrationFlow[See Integration Pipeline Flow]
+    IntegrationFlow --> Success
+
     ErrorExit --> End([Exit with Error])
     Success --> End
 ```
@@ -242,36 +275,36 @@ flowchart TD
 flowchart TD
     ExtStart([Agent Submits New Validator]) --> RiskAssess[Risk Assessment of Submitted Code]
     RiskAssess --> RiskLevel{Risk Level}
-    
-    RiskLevel -->|Low/Medium| PreValid[Pre-Generation Validation]
+
+    RiskLevel -->|Low/Medium| PreValid[Pre-Integration Validation]
     RiskLevel -->|High/Critical| HumanReview1[Human Review Required]
-    
+
     HumanReview1 -->|Approved| PreValid
     HumanReview1 -->|Rejected| IntegrationFail[Integration Rejected]
-    
+
     PreValid -->|Pass| CreateBackup[Create System Backup]
     PreValid -->|Fail| IntegrationFail
-    
+
     CreateBackup --> PostValid[Post-Integration Validation]
-    
+
     PostValid -->|Pass| SandboxTest[Sandbox Testing]
     PostValid -->|Fail| AutoRollback[Automatic Rollback]
-    
+
     SandboxTest -->|Pass| QualityCheck[Quality Assessment]
     SandboxTest -->|Fail| AutoRollback
-    
+
     QualityCheck -->|Pass| HumanReview2{Final Human Review Required?}
     QualityCheck -->|Fail| AutoRollback
-    
+
     HumanReview2 -->|Yes| HumanReview3[Human Review Process]
     HumanReview2 -->|No| RegisterExt[Register Extension]
-    
+
     HumanReview3 -->|Approved| RegisterExt
     HumanReview3 -->|Rejected| AutoRollback
-    
+
     RegisterExt --> UpdateMatrix[Update Registry & Capability Matrix]
     UpdateMatrix --> IntegrationSuccess([Integration Complete])
-    
+
     AutoRollback --> RestoreBackup[Restore from Backup]
     RestoreBackup --> IntegrationFail
     IntegrationFail --> End([Integration Failed])
@@ -291,31 +324,31 @@ graph TB
         PG2 --> PG3[Dependency Validation]
         PG3 --> PG4[Initial Safety Approval]
     end
-    
+
     subgraph "Layer 2: Code Ingestion Safety"
         G1[Backup Creation] --> G2[Code Sanitization]
         G2 --> G3[Environment Preparation]
         G3 --> G4[Code Ingestion]
     end
-    
+
     subgraph "Layer 3: Post-Integration Safety"
         PGS1[Syntax Validation] --> PGS2[Interface Compliance]
         PGS2 --> PGS3[Security Analysis]
         PGS3 --> PGS4[Quality Assessment]
     end
-    
+
     subgraph "Layer 4: Testing Safety"
         T1[Sandbox Environment] --> T2[Isolated Execution]
         T2 --> T3[Performance Testing]
         T3 --> T4[Integration Testing]
     end
-    
+
     subgraph "Layer 5: Rollback Safety"
         R1[Failure Detection] --> R2[Automatic Rollback]
         R2 --> R3[System Restoration]
         R3 --> R4[Integrity Verification]
     end
-    
+
     PG4 -->|Approved| G1
     G4 --> PGS1
     PGS4 -->|Pass| T1
@@ -338,7 +371,7 @@ graph TB
 
 ---
 
-## 6. Component Architecture
+## Component Architecture
 
 ### Core Components
 
@@ -349,14 +382,17 @@ graph TB
   - Request routing and processing
   - Component coordination and integration
   - System health monitoring
+  - Error handling and recovery
+  - Metrics collection and reporting
 
-#### 2. Extension Manager (`core/extension-manager.js`)
+#### 2. Extension Manager (`core/extension-generator.js`)
 
-- **Purpose**: Manages the safe integration pipeline for agent-submitted validators.
+- **Purpose**: Manages the safe integration pipeline for agent-submitted validators
 - **Responsibilities**:
   - Risk assessment of submitted code
   - Orchestration of pre/post integration validation
   - Sandbox testing coordination
+  - Quality assessment and reporting on agent-submitted code
 
 #### 3. Capability Matrix (`capability-matrix.json`)
 
@@ -409,7 +445,7 @@ export interface IValidator {
   category: string;
   version: string;
   scopes: string[];
-  
+
   validate(projectInfo: ProjectInfo, scopeConfig: ScopeConfig, options: ValidationOptions): Promise<ValidationResult>;
   getCapabilities(): ValidatorCapabilities;
   checkInterfaceCompliance(): boolean;
@@ -434,4 +470,3 @@ export interface ISafetyFramework {
 export type ProjectInfo = { /* ... */ };
 export type ValidationResult = { /* ... */ };
 // ... other common types
-```

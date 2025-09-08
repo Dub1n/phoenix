@@ -1,0 +1,17 @@
+scenarioId: "scenario-002-mobile"
+trialNumber: 2
+category: "mobile"
+mockTask: "MOCK-TASK-002-mobile.json"
+implementation: "mobile-implementation"
+agentValidatorToSubmit: "agent-generated-validators/good-mobile-validator.js"
+expectedDuration: "1-3 minutes"
+riskLevel: "?"
+successCriteria:
+  - initialRunNotifies: true
+  - submissionIntegrates: true
+  - validationCompletes: true
+  - accuracyScore: ">= 85%"
+monitoringConfig:
+  logLevel: "detailed"
+  captureMetrics: true
+  compareWithIdeal: true
