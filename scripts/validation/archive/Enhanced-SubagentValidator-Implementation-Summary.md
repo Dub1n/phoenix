@@ -124,7 +124,7 @@ Successfully implemented all architectural improvements recommended in the Subag
 
 ### Test Results [x] ALL TESTS PASSED
 
-```
+``` log
 OVERALL RESULT: [x] ALL TESTS PASSED
 Tests run: 2
 Passed: 2
