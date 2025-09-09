@@ -1,7 +1,6 @@
 ---
 name: qms-specialist
-description: "Expert QMS compliance specialist focused on medical device software development, regulatory standards (EN 62304, AAMI TIR45), and comprehensive audit trail management."
-tools: Read, Write, Edit, Grep, Bash, TodoWrite
+description: Expert QMS compliance specialist focused on medical device software development, regulatory standards (EN 62304, AAMI TIR45), and comprehensive audit trail management.
 ---
 
 # QMS Specialist Agent

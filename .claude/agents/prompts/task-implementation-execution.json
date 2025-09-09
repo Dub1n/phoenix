@@ -1,0 +1,163 @@
+{
+  "template_type": "task-implementation-execution",
+  "description": "Safe task implementation with comprehensive validation, TASK-ID tag creation, and rollback capabilities",
+  "parameters": ["{implementation_context}", "{pattern_guidance}", "{complexity_level}", "{safety_requirements}"],
+  "target_agent": "ExecutionAgent", 
+  "communication_type": "chained",
+  "context": {
+    "task_description": "Execute safe task implementation following analyzed patterns with comprehensive TASK-ID tag creation and system stability maintenance",
+    "requirements": [
+      "SAFETY: Validate handoff files and create backups before any file modifications",
+      "IMPLEMENTATION: Apply patterns precisely following analysis guidance and maintain code quality",
+      "TAGGING: Create structured TASK-ID tags with comprehensive metadata for knowledge transfer",
+      "STABILITY: Verify compilation and basic functionality after implementation",
+      "HANDOFF: Prepare validation context and update task status appropriately"
+    ],
+    "constraints": [
+      "Must validate handoff file existence and format before proceeding",
+      "Must create file backups before any modifications",
+      "Must maintain system compilation and basic functionality",
+      "Must create properly formatted TASK-ID tags for all implementations",
+      "Must provide rollback capability for failed implementations"
+    ],
+    "defensive_programming": {
+      "handoff_validation": [
+        "Verify handoff file from analysis phase exists and is readable",
+        "Validate JSON format and parse all required fields successfully",
+        "Check completeness of analysis context and implementation guidance",
+        "Confirm all referenced files and dependencies are accessible",
+        "Validate project context integrity before proceeding"
+      ],
+      "file_operations": [
+        "Always check file existence and permissions before reading or writing",
+        "Create backup copies of all files to be modified and verify backup success",
+        "Use absolute paths for all file operations to prevent path resolution issues",
+        "Validate file content format and syntax before making modifications",
+        "Implement timeout handling for all file operations"
+      ],
+      "implementation_safety": [
+        "Verify pattern applicability and prerequisites before implementation",
+        "Check for potential conflicts with existing implementations",
+        "Validate dependency availability and version compatibility",
+        "Implement error checking for all critical code modifications",
+        "Provide rollback procedures for incomplete or failed implementations"
+      ]
+    },
+    "implementation_framework": {
+      "handoff_processing": [
+        "Parse implementation context including task details and complexity assessment",
+        "Load pattern recommendations and implementation approach guidance", 
+        "Verify file paths and dependency accessibility from analysis results",
+        "Prepare implementation environment with all required context and tools"
+      ],
+      "pattern_application": [
+        "Follow analyzed patterns precisely with no deviations unless justified",
+        "Apply implementation approach (simple vs complex) as determined by analysis",
+        "Maintain consistency with existing project conventions and code style",
+        "Integrate properly with existing system architecture and dependencies"
+      ],
+      "code_implementation": [
+        "Implement features or fixes according to task requirements and pattern guidance",
+        "Maintain code quality standards including readability and maintainability",
+        "Follow existing project error handling and edge case coverage patterns",
+        "Ensure proper integration with existing components and services"
+      ],
+      "stability_verification": [
+        "Execute compilation checks after implementation to ensure system stability",
+        "Perform basic functionality testing to verify implementation works correctly",
+        "Check for syntax errors and basic integration issues immediately",
+        "Validate that existing functionality is not broken by changes"
+      ]
+    },
+    "task_id_tag_requirements": {
+      "format_specification": "// TODO: [TASK-ID-XXX] Pattern: pattern-name | Complexity: N | Dependencies: dep1,dep2\n// Context: Clear description of what was implemented and why\n// Validation-Required: pattern-compliance, performance-baseline, error-handling\n// Pattern-Info: { approach: \"approach-used\", alternatives: \"considered\", trade-offs: \"made\" }",
+      "required_metadata": [
+        "Pattern Name: Use existing pattern name or create descriptive new pattern name",
+        "Complexity Score: 1-10 scale matching analysis complexity assessment",
+        "Dependencies: List components/services implementation depends on",
+        "Context: Business rationale and technical approach taken",
+        "Validation Requirements: Specific items validation agent should verify",
+        "Pattern Information: Detailed approach for documentation phase pattern updates"
+      ],
+      "tag_placement": [
+        "Place tags near implemented functionality for easy discovery",
+        "Use consistent formatting across all tags for systematic processing",
+        "Include sufficient context for documentation phase knowledge transfer",
+        "Ensure tags are discoverable using standard search patterns"
+      ],
+      "validation": [
+        "Verify all TASK-ID tags are properly formatted and complete",
+        "Check that tags contain all required metadata fields",
+        "Validate tag placement and discoverability for cleanup phase",
+        "Confirm tags provide sufficient context for knowledge transfer"
+      ]
+    },
+    "safety_protocols": {
+      "pre_implementation": [
+        "Validate all target files exist and are accessible with proper permissions",
+        "Create backup copies of all files to be modified before starting work",
+        "Verify project structure integrity and dependency availability",
+        "Check for potential conflicts with concurrent implementations"
+      ],
+      "during_implementation": [
+        "Apply modifications incrementally with validation checkpoints",
+        "Monitor for compilation errors and syntax issues continuously", 
+        "Validate changes against pattern requirements and code quality standards",
+        "Maintain error checking and logging throughout implementation process"
+      ],
+      "post_implementation": [
+        "Execute compilation verification to ensure system stability",
+        "Perform basic functionality testing to verify implementation success",
+        "Validate TASK-ID tags are properly formatted and discoverable",
+        "Confirm rollback capability is available if issues are discovered"
+      ],
+      "error_recovery": [
+        "Restore file backups if implementation cannot be completed successfully",
+        "Provide detailed error analysis with specific recovery recommendations",
+        "Maintain implementation state information for debugging and retry attempts",
+        "Escalate complex implementation issues with complete context for manual intervention"
+      ]
+    },
+    "success_criteria": [
+      "Implementation completed successfully following analyzed patterns and approach",
+      "System compilation passes and basic functionality is verified",
+      "Comprehensive TASK-ID tags created with all required metadata",
+      "Task status updated to [T] implemented-testing with clear rationale",
+      "Validation context prepared for next phase with specific requirements",
+      "All safety protocols followed and rollback capability maintained"
+    ],
+    "failure_handling": [
+      "Handoff validation failure: Provide specific missing requirements and escalate to analysis retry",
+      "File access issues: Report specific permission problems and suggest manual file verification",
+      "Pattern application failure: Document conflicts and provide alternative implementation options",
+      "Compilation failure: Restore backups and provide detailed error analysis with recovery steps",
+      "TASK-ID tag creation failure: Ensure basic implementation success and flag for manual tag creation"
+    ]
+  },
+  "execution_phases": {
+    "phase_1_validation": [
+      "Verify handoff file exists and validate JSON format and completeness",
+      "Parse analysis context and validate implementation requirements",
+      "Check all referenced files and dependencies are accessible",
+      "Confirm project context integrity and pattern applicability"
+    ],
+    "phase_2_preparation": [
+      "Create backup copies of all files to be modified and verify backup success",
+      "Validate file permissions and accessibility for all target files",
+      "Prepare implementation environment with required context and dependencies",
+      "Check for potential conflicts and validate pattern prerequisites"
+    ],
+    "phase_3_implementation": [
+      "Apply implementation following analyzed patterns and complexity approach",
+      "Maintain code quality and consistency with existing project conventions",
+      "Create comprehensive TASK-ID tags with all required metadata",
+      "Monitor implementation progress and validate changes continuously"
+    ],
+    "phase_4_verification": [
+      "Execute compilation verification and basic functionality testing",
+      "Validate TASK-ID tags are properly formatted and discoverable",
+      "Update task status and prepare validation context for next phase",
+      "Confirm rollback capability and complete handoff file creation"
+    ]
+  }
+}

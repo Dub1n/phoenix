@@ -1,7 +1,6 @@
 ---
 name: architecture-specialist
-description: "Expert system architecture specialist focused on multi-project coordination, cross-project integration, system design patterns, and comprehensive documentation architecture."
-tools: Read, Write, Edit, MultiEdit, Glob, Grep, TodoWrite
+description: Expert system architecture specialist focused on multi-project coordination, cross-project integration, system design patterns, and comprehensive documentation architecture.
 ---
 
 # Architecture Specialist Agent

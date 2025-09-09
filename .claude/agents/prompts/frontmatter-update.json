@@ -1,0 +1,37 @@
+{
+  "template_type": "frontmatter-update",
+  "description": "Update YAML frontmatter for pattern files following standardized template format",
+  "parameters": ["{filepath}", "{task_id}", "{timestamp}"],
+  "target_agent": "ExecutionAgent",
+  "communication_type": "standalone",
+  "context": {
+    "task_description": "Update YAML frontmatter for one pattern file following standardized template format",
+    "requirements": [
+      "Use kebab-case field names (date-created, last-updated, use-when, etc.)",
+      "Include date-created and last-updated fields at the top",
+      "Add use-when scenarios as YAML list",
+      "Include keywords array for searchability",
+      "Add prerequisites and related-patterns arrays",
+      "Remove difficulty and est-time fields",
+      "Follow exact YAML syntax with proper array formatting"
+    ],
+    "constraints": [
+      "Must preserve all existing pattern content",
+      "Only update frontmatter section",
+      "Maintain pattern documentation integrity"
+    ],
+    "target_file": "{filepath}",
+    "template_format": {
+      "date-created": "YYYY-MM-DD",
+      "last-updated": "YYYY-MM-DD",
+      "name": "pattern-name",
+      "description": "Single line description",
+      "status": "ESTABLISHED|EXPERIMENTAL|DEPRECATED",
+      "category": "Foundation|Infrastructure|Integration|Testing|Configuration|Optimization",
+      "use-when": ["Scenario 1", "Scenario 2"],
+      "keywords": ["keyword1", "keyword2"],
+      "prerequisites": ["pattern-name-1", "pattern-name-2"],
+      "related-patterns": ["related-pattern-1", "related-pattern-2"]
+    }
+  }
+}
