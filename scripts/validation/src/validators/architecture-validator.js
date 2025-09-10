@@ -352,3 +352,7 @@ export class ArchitectureValidator {
     };
   }
 }
+
+// Fixed missing default export to resolve constructor errors during validator loading
+// Pattern-Info: { approach: "standard-default-export", alternatives: "none", trade-offs: "none" }
+export default ArchitectureValidator;

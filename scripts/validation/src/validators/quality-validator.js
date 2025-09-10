@@ -56,24 +56,21 @@ export class QualityValidator {
     try {
       console.log('  Executing Code Quality validation commands...');
       console.log('  Source: IMPLEMENTATION-GAP-ANALYSIS.md Step 2 Quality Validator Requirements');
+      console.log('  📝 Note: Code linting (ESLint, etc.) is available as a separate "lint" category');
       
-      // Test 1: ESLint compliance checking
-      const eslintTest = await this.executeESLintComplianceCheck(projectInfo, scopeConfig);
-      result.tests.push(eslintTest);
-      
-      // Test 2: Code complexity analysis
+      // Test 1: Code complexity analysis
       const complexityTest = await this.executeCodeComplexityAnalysis(projectInfo, scopeConfig);
       result.tests.push(complexityTest);
       
-      // Test 3: Technical debt assessment
+      // Test 2: Technical debt assessment
       const debtTest = await this.executeTechnicalDebtAssessment(projectInfo, scopeConfig);
       result.tests.push(debtTest);
       
-      // Test 4: Refactoring recommendations
+      // Test 3: Refactoring recommendations
       const refactoringTest = await this.executeRefactoringRecommendations(projectInfo, scopeConfig);
       result.tests.push(refactoringTest);
       
-      // Test 5: Maintainability scoring
+      // Test 4: Maintainability scoring
       const maintainabilityTest = await this.executeMaintainabilityScoring(projectInfo, scopeConfig);
       result.tests.push(maintainabilityTest);
 
@@ -112,109 +109,6 @@ export class QualityValidator {
     }
   }
 
-  /**
-   * Execute ESLint compliance checking
-   */
-  async executeESLintComplianceCheck(projectInfo, scopeConfig) {
-    console.log('    ESLint Compliance Check...');
-    const test = {
-      name: 'ESLint Compliance Check',
-      status: 'PENDING',
-      message: '',
-      evidence: [],
-      errors: []
-    };
-
-    try {
-      const eslintConfigPath = path.join(projectInfo.path, '.eslintrc.js');
-      const eslintConfigExists = fs.existsSync(eslintConfigPath) || 
-                                fs.existsSync(path.join(projectInfo.path, '.eslintrc.json')) ||
-                                fs.existsSync(path.join(projectInfo.path, 'eslint.config.js'));
-      
-      if (!eslintConfigExists) {
-        test.status = 'WARN';
-        test.message = 'No ESLint configuration found';
-        test.evidence.push('No ESLint configuration file found in project root');
-        console.log('      🟡 WARN - No ESLint configuration found');
-        return test;
-      }
-
-      // Find files in scope to check
-      const filesToCheck = this.findFilesInScope(projectInfo, scopeConfig.patterns || ['**/*.ts', '**/*.js']);
-      
-      if (filesToCheck.length === 0) {
-        test.status = 'SKIP';
-        test.message = 'No files found in scope for ESLint validation';
-        test.evidence.push('No TypeScript or JavaScript files found in specified scope');
-        console.log('      ⏭️ SKIP - No files found in scope');
-        return test;
-      }
-
-      let totalIssues = 0;
-      let filesWithIssues = 0;
-      let totalFiles = Math.min(filesToCheck.length, 10); // Limit to 10 files for performance
-      
-      // Check a sample of files for ESLint issues
-      for (let i = 0; i < totalFiles; i++) {
-        const file = filesToCheck[i];
-        try {
-          // Run ESLint on individual file to check for issues
-          const eslintResult = execSync(`npx eslint "${file}" --format json`, { 
-            cwd: projectInfo.path, 
-            encoding: 'utf8',
-            stdio: ['pipe', 'pipe', 'pipe']
-          });
-          
-          const lintResults = JSON.parse(eslintResult);
-          if (lintResults.length > 0 && lintResults[0].messages.length > 0) {
-            filesWithIssues++;
-            totalIssues += lintResults[0].messages.length;
-          }
-          
-          test.evidence.push(`ESLint checked: ${path.relative(projectInfo.path, file)} (${lintResults[0]?.messages?.length || 0} issues)`);
-        } catch (eslintError) {
-          // ESLint errors indicate issues exist
-          if (eslintError.stdout) {
-            try {
-              const lintResults = JSON.parse(eslintError.stdout);
-              if (lintResults.length > 0 && lintResults[0].messages) {
-                filesWithIssues++;
-                totalIssues += lintResults[0].messages.length;
-                test.evidence.push(`ESLint issues found in: ${path.relative(projectInfo.path, file)} (${lintResults[0].messages.length} issues)`);
-              }
-            } catch (parseError) {
-              test.evidence.push(`ESLint check failed for: ${path.relative(projectInfo.path, file)}`);
-            }
-          }
-        }
-      }
-
-      // Determine result based on issues found
-      if (totalIssues === 0) {
-        test.status = 'PASS';
-        test.message = 'ESLint compliance check passed';
-        test.evidence.push(`All ${totalFiles} checked files pass ESLint validation`);
-        console.log('      ✅ PASS - ESLint compliance check passed');
-      } else if (totalIssues < 10) {
-        test.status = 'WARN';
-        test.message = 'Minor ESLint issues found';
-        test.evidence.push(`${totalIssues} ESLint issues found in ${filesWithIssues}/${totalFiles} files`);
-        console.log('      🟡 WARN - Minor ESLint issues found');
-      } else {
-        test.status = 'FAIL';
-        test.message = 'Significant ESLint issues found';
-        test.errors.push(`${totalIssues} ESLint issues found across ${filesWithIssues} files`);
-        console.log('      ❌ FAIL - Significant ESLint issues found');
-      }
-    } catch (error) {
-      test.status = 'FAIL';
-      test.message = 'ESLint compliance check failed';
-      test.errors.push(`ESLint validation error: ${error.message}`);
-      console.log('      ❌ FAIL - ESLint compliance check failed');
-    }
-
-    return test;
-  }
 
   /**
    * Execute code complexity analysis

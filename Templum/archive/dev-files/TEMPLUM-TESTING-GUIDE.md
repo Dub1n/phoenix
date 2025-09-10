@@ -24,7 +24,7 @@ node ../scripts/validation/templum-task-validator.js --category <category> --tas
 **Available Categories**:
 
 - `backend` - Backend/Service Tasks (health checks, service discovery, command execution)
-- `ui` - UI/Interface Tasks (CLI functionality, component rendering, interactions)  
+- `ui` - UI/Interface Tasks (CLI functionality, component rendering, interactions)
 - `core` - Core System Tasks (unit tests, integration, state persistence)
 - `build` - Compilation/Build Tasks (clean build, TypeScript, dependencies)
 - `quality` - Code Quality Tasks (ESLint, formatting, regression, complexity)

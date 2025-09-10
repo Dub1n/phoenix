@@ -102,18 +102,19 @@ Routing Logic:
   
   IF task_state == NOT_EXISTS AND description_provided:
     → ResearchAgent: Create and select new task
-    → ExecutionAgent: Implement task  
+    → ExecutionAgent: Implement task with pattern application and TASK-ID tags  
     → ValidationAgent: Test implementation
     → DocumentationAgent: Complete documentation
   
   IF task_state == PENDING AND no_task_id:
     → ResearchAgent: Select optimal task from queue
-    → ExecutionAgent: Implement selected task
+    → ExecutionAgent: Implement selected task with safety checks and knowledge transfer
     → ValidationAgent: Test implementation  
     → DocumentationAgent: Complete documentation
   
   IF task_state == IN_PROGRESS:
     → ResearchAgent: Assess completion status and next steps
+    → ExecutionAgent: Continue or complete implementation (if needed)
     → Route to appropriate agent based on assessment
   
   IF task_state == TESTING_READY:
@@ -165,6 +166,43 @@ const researchResult = await Task({
 - Pass discovered resource availability to agent
 - Let agent adapt analysis approach based on available tools
 - Agent decides if handoff needed or direct response sufficient
+
+### ExecutionAgent Integration
+
+**Purpose**: Task implementation and code modification with TASK-ID tag creation
+
+**Implementation Execution Pattern**:
+
+```typescript
+const executionResult = await Task({
+  subagent_type: "ExecutionAgent",
+  description: "Task implementation execution",
+  prompt: `Use template: task-implementation-execution.json
+           Replace {implementation_context} with: ${implementationContext}
+           Replace {pattern_guidance} with: ${patternGuidance}
+           Replace {task_requirements} with: ${taskRequirements}
+           Replace {complexity_assessment} with: ${complexityAssessment}
+           
+           Implementation context:
+           - task_status: ${taskStatus}
+           - files_to_modify: ${filesToModify}
+           - patterns_to_apply: ${patternsToApply}
+           - safety_requirements: ${safetyRequirements}
+           
+           INSTRUCTION: Execute task implementation with comprehensive safety checks,
+           pattern application, and TASK-ID tag creation. Maintain system stability
+           through compilation verification and rollback capabilities.
+           
+           Chain position: Implementation phase - create handoff for validation`
+});
+```
+
+**Safety-First Implementation Approach**:
+
+- ExecutionAgent performs pre-implementation validation and backup creation
+- Agent applies analyzed patterns while maintaining code consistency
+- Comprehensive TASK-ID tag creation for knowledge transfer
+- Post-implementation verification with rollback capabilities
 
 ### ValidationAgent Integration
 
@@ -422,7 +460,7 @@ interface HandoffStrategy {
 
 1. Main Agent: Assess → task_not_exists, description_provided
 2. ResearchAgent: Create task in active queue → select for implementation
-3. ExecutionAgent: Implement authentication fix
+3. ExecutionAgent: Implement authentication fix with pattern application and TASK-ID tags
 4. ValidationAgent: Test fix (adapts to available validation methods)
 5. DocumentationAgent: Document fix and update patterns
 

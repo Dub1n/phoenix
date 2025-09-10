@@ -20,8 +20,8 @@
   },
   
   "coreFeatures": {
-    "comment": "These core features remain enabled for system validation",
-    "extensionGeneration": true,
+    "comment": "These core features remain enabled for agent-driven validation",
+    "agentSubmissionFramework": true,
     "safetyFramework": true,
     "rollbackSystem": true,
     "interfaceCompliance": true
@@ -37,14 +37,6 @@
       "5. Update EnhancedValidationOrchestrator.metricsEnabled to true",
       "6. Uncomment the disabled monitoring methods in enhanced-orchestrator.js"
     ]
-  },
-  
-  "extensionFramework": {
-    "enabled": true,
-    "safetyLevel": "enhanced",
-    "maxExtensionsPerSession": 1,
-    "rollbackEnabled": true,
-    "humanReviewRequired": true
   },
   
   "safety": {

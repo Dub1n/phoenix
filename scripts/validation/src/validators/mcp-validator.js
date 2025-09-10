@@ -410,7 +410,7 @@ export class MCPValidator {
     return {
       status: hasFailures ? 'ERROR' : 'HEALTHY',
       checks: checks,
-      recommendations: hasFailures ? ['Ensure Node.js and npm are available and interface compliance is maintained'] : [],
+      recommendations: hasFailures ? ['Ensure npm is available and interface compliance is maintained'] : [],
       systemInfo: {
         validator: 'MCPValidator',
         version: this.version,
@@ -419,3 +419,7 @@ export class MCPValidator {
     };
   }
 }
+
+// Fixed missing default export to resolve constructor errors during validator loading
+// Pattern-Info: { approach: "standard-default-export", alternatives: "none", trade-offs: "none" }
+export default MCPValidator;

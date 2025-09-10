@@ -19,12 +19,11 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Import system components
-import { EnhancedValidationOrchestrator } from './enhanced-orchestrator.js';
-import { ExtensionGenerator } from './extension-generator.js';
-import { InterfaceComplianceChecker } from './safety/interface-compliance-checker.js';
-import { RollbackManager } from './safety/rollback-manager.js';
-import { BackendValidator } from './validators/backend-validator.js';
-import { BuildValidator } from './validators/build-validator.js';
+import { EnhancedValidationOrchestrator } from '../../src/core/enhanced-orchestrator.js';
+import { InterfaceComplianceChecker } from '../../src/safety/interface-compliance-checker.js';
+import { RollbackManager } from '../../src/safety/rollback-manager.js';
+import { BackendValidator } from '../../src/validators/backend-validator.js';
+import { BuildValidator } from '../../src/validators/build-validator.js';
 
 /**
  * Test runner for enhanced validation system
@@ -62,7 +61,7 @@ class EnhancedValidationSystemTest {
       await this.testTemplateSystem();
       
       // Test 6: Extension Generation Pipeline
-      await this.testExtensionGenerationPipeline();
+      await this.testAgentSubmissionPipeline();
       
       // Test 7: Rollback Mechanism
       await this.testRollbackMechanism();
@@ -244,44 +243,82 @@ class EnhancedValidationSystemTest {
   }
 
   /**
-   * Test 6: Extension Generation Pipeline (Dry Run)
+   * Test 6: Agent Submission Pipeline (Validation Only)
    */
-  async testExtensionGenerationPipeline() {
-    console.log('\n⚙️ Test 6: Extension Generation Pipeline (Dry Run)');
+  async testAgentSubmissionPipeline() {
+    console.log('\n📝 Test 6: Agent Submission Pipeline (Validation Only)');
     
     try {
-      const extensionGenerator = new ExtensionGenerator(__dirname);
+      // Test the agent submission framework components
+      const category = 'test_integration';
+      const testValidatorContent = `
+export default class TestIntegrationValidator {
+  getCapabilities() {
+    return {
+      supportedProjects: ['TestProject'],
+      performanceProfile: 'fast',
+      requiredDependencies: ['node', 'npm']
+    };
+  }
+  
+  getMetadata() {
+    return {
+      category: 'test_integration',
+      version: '1.0.0',
+      description: 'Test integration validator'
+    };
+  }
+  
+  runSelfDiagnostics() {
+    return { status: 'healthy' };
+  }
+  
+  async validate(projectInfo, scopeConfig, options) {
+    return {
+      status: 'PASS',
+      duration: 100,
+      tests: [],
+      errors: [],
+      warnings: []
+    };
+  }
+}`;
       
-      // Create a test extension request
-      const testRequest = {
-        category: 'test_integration',
-        requirements: [
-          'Validate test integration',
-          'Check system connectivity'
-        ],
-        recommendations: [
-          'Use standard validation patterns',
-          'Include error handling'
-        ],
-        scopePatterns: ['test/**/*.ts'],
-        validationLogic: 'return { success: true, message: "Test validation passed" };',
-        supportedProjects: ['TestProject'],
-        performanceProfile: 'fast'
-      };
+      // Create temporary test validator file
+      const tempValidatorPath = path.join(__dirname, 'temp-test-validator.js');
+      fs.writeFileSync(tempValidatorPath, testValidatorContent);
       
-      // Test pre-generation validation only (don't actually generate)
-      const preValidation = await extensionGenerator.preGenerationValidation(testRequest);
-      
-      if (!preValidation.approved) {
-        throw new Error(`Pre-generation validation failed: ${preValidation.reason}`);
+      try {
+        // Test risk assessment
+        const riskAssessment = await this.orchestrator.assessSubmittedValidatorRisk(tempValidatorPath, category);
+        console.log(`  ✅ Risk assessment completed: ${riskAssessment.riskLevel} risk`);
+        
+        // Test sandbox validation
+        const sandboxResult = await this.orchestrator.sandboxTestSubmittedValidator(tempValidatorPath);
+        if (!sandboxResult.passed) {
+          throw new Error(`Sandbox test failed: ${sandboxResult.errors.join(', ')}`);
+        }
+        console.log('  ✅ Sandbox testing passed');
+        
+        // Test compliance validation
+        const complianceResult = await this.orchestrator.validateSubmittedValidatorCompliance(tempValidatorPath);
+        if (!complianceResult.compliant) {
+          throw new Error('Compliance validation failed');
+        }
+        console.log('  ✅ Interface compliance verified');
+        
+        this.recordTestResult('Agent Submission Pipeline', true, `All validation steps passed, Risk: ${riskAssessment.riskLevel}`);
+        
+      } finally {
+        // Clean up temporary file
+        if (fs.existsSync(tempValidatorPath)) {
+          fs.unlinkSync(tempValidatorPath);
+        }
       }
       
-      console.log(`  ✅ Extension generation pipeline ready (Risk: ${preValidation.safetyAssessment.riskLevel})`);
-      this.recordTestResult('Extension Generation Pipeline', true, `Pre-validation passed, Risk: ${preValidation.safetyAssessment.riskLevel}`);
-      
     } catch (error) {
-      console.log(`  ❌ Extension generation pipeline test failed: ${error.message}`);
-      this.recordTestResult('Extension Generation Pipeline', false, error.message);
+      console.log(`  ❌ Agent submission pipeline test failed: ${error.message}`);
+      this.recordTestResult('Agent Submission Pipeline', false, error.message);
     }
   }
 
@@ -358,7 +395,6 @@ class EnhancedValidationSystemTest {
       // Test that all major components can work together
       const components = {
         orchestrator: this.orchestrator,
-        extensionGenerator: new ExtensionGenerator(__dirname),
         complianceChecker: new InterfaceComplianceChecker(),
         rollbackManager: new RollbackManager(__dirname)
       };

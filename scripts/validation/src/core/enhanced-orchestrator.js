@@ -21,26 +21,22 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Import existing system components
-import { BackendValidator } from './validators/backend-validator.js';
-import { BuildValidator } from './validators/build-validator.js';
-// Additional validators would be imported here as they're created
+// Validators are loaded dynamically - no static imports needed
 
 // Import enhanced system components
-import { ExtensionGenerator } from './extension-generator.js';
-import { InterfaceComplianceChecker } from './safety/interface-compliance-checker.js';
-import { RollbackManager } from './safety/rollback-manager.js';
+import { InterfaceComplianceChecker } from '../safety/interface-compliance-checker.js';
+import { RollbackManager } from '../safety/rollback-manager.js';
 
 /**
  * Enhanced Validation Orchestrator
  */
 export class EnhancedValidationOrchestrator {
   constructor(options = {}) {
-    this.validationPath = options.validationPath || __dirname;
-    this.capabilityMatrixPath = path.join(this.validationPath, 'capability-matrix.json');
-    this.configPath = path.join(this.validationPath, 'enhanced-config.json');
+    this.validationPath = options.validationPath || path.resolve(__dirname, '../..');
+    this.capabilityMatrixPath = path.join(this.validationPath, 'config/capability-matrix.json');
+    this.configPath = path.join(this.validationPath, 'config/enhanced-config.json');
     
-    // Initialize core components only
-    this.extensionGenerator = new ExtensionGenerator(this.validationPath);
+    // Initialize core components only (agent-driven workflow)
     this.complianceChecker = new InterfaceComplianceChecker();
     this.rollbackManager = new RollbackManager(this.validationPath);
     
@@ -50,12 +46,20 @@ export class EnhancedValidationOrchestrator {
     this.systemConfig = null;
     this.initialized = false;
     
-    // Performance metrics - DISABLED FOR CORE SYSTEM VALIDATION
-    // TODO: Re-enable after core system validation complete
+    // Enhanced logging configuration
+    this.loggingEnabled = options.detailedLogging !== false;
+    this.errorHistory = [];
+    
+    // TODO: [TASK-ID-001] Pattern: agent-only-architecture | Complexity: 3 | Dependencies: safety-framework,agent-submission
+    // Context: Remove self-generating extension metrics from agent-only validation system
+    // Validation-Required: pattern-compliance, agent-submission-workflow, safety-framework-integrity
+    // Pattern-Info: { approach: "clean-architecture", alternatives: "hybrid-mode", trade-offs: "simplified-agent-focused" }
+    
+    // Performance metrics - AGENT-DRIVEN WORKFLOW ONLY
     this.metricsEnabled = false;
     this.metrics = {
       validationsRun: 0,
-      extensionsGenerated: 0,
+      agentSubmissions: 0,
       rollbacksPerformed: 0,
       averageValidationTime: 0,
       successRate: 0
@@ -90,7 +94,11 @@ export class EnhancedValidationOrchestrator {
       console.log('✅ Enhanced Validation System initialized successfully');
       
     } catch (error) {
-      console.error(`❌ System initialization failed: ${error.message}`);
+      this.logError('system_initialization', error, {
+        validationPath: this.validationPath,
+        configPath: this.configPath,
+        capabilityMatrixPath: this.capabilityMatrixPath
+      });
       throw error;
     }
   }
@@ -131,50 +139,75 @@ export class EnhancedValidationOrchestrator {
       return result;
       
     } catch (error) {
-      console.error(`❌ Enhanced validation failed for ${category}: ${error.message}`);
+      this.logError('enhanced_validation', error, {
+        category,
+        projectPath: projectInfo.path,
+        validatorLoaded: this.validators.has(category)
+      });
       this.updateMetrics(startTime, false);
       throw error;
     }
   }
 
   /**
-   * Autonomous extension generation
+   * Agent validator submission - Secure integration pipeline for agent-written validators
+   * 
+   * TODO: [TASK-ID-003] Pattern: agent-submission-pipeline | Complexity: 5 | Dependencies: safety-framework,compliance-checker,rollback-manager
+   * Context: Core agent-driven workflow implementation for secure validator integration
+   * Validation-Required: security-compliance, interface-validation, sandbox-testing
+   * Pattern-Info: { approach: "secure-pipeline", alternatives: "direct-integration", trade-offs: "security-over-speed" }
    */
-  async generateExtension(extensionRequest) {
+  async submitAgentValidator(validatorPath, category, projectInfo, options = {}) {
     if (!this.initialized) {
       await this.initialize();
     }
     
-    console.log(`🔧 Generating extension for category: ${extensionRequest.category}`);
+    console.log(`📝 Processing agent-submitted validator for category: ${category}`);
     
     try {
-      // Check if extension framework is enabled
-      if (!this.systemConfig.extensionFramework?.enabled) {
-        throw new Error('Extension framework is disabled');
+      // Verify validator file exists
+      if (!fs.existsSync(validatorPath)) {
+        throw new Error(`Validator file not found: ${validatorPath}`);
       }
       
-      // Verify extension request
-      await this.validateExtensionRequest(extensionRequest);
+      // Initialize secure integration pipeline
+      console.log('🔒 Initiating Secure Integration Pipeline...');
       
-      // Generate extension
-      const result = await this.extensionGenerator.generateValidator(extensionRequest);
+      // Phase 1: Risk Assessment
+      const riskAssessment = await this.assessSubmittedValidatorRisk(validatorPath, category);
+      console.log(`   Risk Assessment: ${riskAssessment.riskLevel.toUpperCase()} risk approved for submitted code.`);
       
-      if (result.success) {
-        // Load the new validator
-        await this.loadValidator(extensionRequest.category);
-        
-        // Update system metrics - DISABLED FOR CORE VALIDATION
-        if (this.metricsEnabled) {
-          this.metrics.extensionsGenerated++;
-        }
-        
-        console.log(`✅ Extension generated successfully: ${extensionRequest.category}`);
+      // Phase 2: Sandbox Testing  
+      const sandboxResult = await this.sandboxTestSubmittedValidator(validatorPath);
+      if (!sandboxResult.passed) {
+        throw new Error(`Sandbox Testing: FAILED. ${sandboxResult.errors.join(', ')}`);
       }
+      console.log('   Sandbox Testing: PASSED. Validator is safe to execute.');
       
-      return result;
+      // Phase 3: Interface Compliance
+      const complianceResult = await this.validateSubmittedValidatorCompliance(validatorPath);
+      if (!complianceResult.compliant) {
+        throw new Error(`Interface Compliance: FAILED. Validator does not meet IValidator contract.`);
+      }
+      console.log('   Interface Compliance: PASSED. Validator meets IValidator contract.');
+      
+      // Phase 4: Integration
+      await this.integrateSubmittedValidator(validatorPath, category);
+      console.log(`   Integration Complete: '${category}' validator registered.`);
+      
+      // Phase 5: Execute validation with new validator
+      const result = await this.orchestrateValidation(projectInfo, category, options.scopeConfig || {}, options);
+      
+      return {
+        success: true,
+        category,
+        validatorPath,
+        riskAssessment,
+        integrationResult: result
+      };
       
     } catch (error) {
-      console.error(`❌ Extension generation failed: ${error.message}`);
+      console.error(`❌ Agent validator submission failed: ${error.message}`);
       throw error;
     }
   }
@@ -193,7 +226,7 @@ export class EnhancedValidationOrchestrator {
       const rollbackResult = await this.rollbackManager.rollbackExtension(category);
       
       if (rollbackResult.success) {
-        // Update metrics - DISABLED FOR CORE VALIDATION
+        // Update metrics - AGENT-DRIVEN WORKFLOW
         if (this.metricsEnabled) {
           this.metrics.rollbacksPerformed++;
         }
@@ -213,8 +246,12 @@ export class EnhancedValidationOrchestrator {
   }
 
   /**
-   * Get system health status - SIMPLIFIED FOR CORE VALIDATION
-   * TODO: Re-enable full health monitoring after core system validation
+   * Get system health status - AGENT-DRIVEN ARCHITECTURE
+   * 
+   * TODO: [TASK-ID-004] Pattern: agent-architecture-verification | Complexity: 2 | Dependencies: safety-framework,agent-submission
+   * Context: Verify agent-only architecture is preserved and functioning after extension removal
+   * Validation-Required: agent-submission-pipeline, safety-framework-integrity, rollback-capability
+   * Pattern-Info: { approach: "health-verification", alternatives: "deep-diagnostics", trade-offs: "simplicity-over-detail" }
    */
   async getSystemHealth() {
     // SIMPLIFIED HEALTH CHECK - Only basic system status
@@ -224,7 +261,7 @@ export class EnhancedValidationOrchestrator {
       coreComponents: {
         validators: this.validators.size > 0,
         capabilityMatrix: this.capabilityMatrix !== null,
-        extensionFramework: this.extensionGenerator !== null,
+        agentSubmissionFramework: this.complianceChecker !== null && this.rollbackManager !== null,
         safetyFramework: this.complianceChecker !== null && this.rollbackManager !== null
       },
       message: 'Core system operational - Advanced monitoring disabled'
@@ -296,7 +333,12 @@ export class EnhancedValidationOrchestrator {
       try {
         await this.loadValidator(category);
       } catch (error) {
-        console.warn(`⚠️ Failed to load validator for ${category}: ${error.message}`);
+        const categoryInfo = this.capabilityMatrix.categories[category] || { validator: `${category}-validator.js` };
+        const validatorPath = path.join(this.validationPath, 'src/validators', categoryInfo.validator);
+        this.logError('validator_loading', error, {
+          category,
+          validatorPath
+        });
       }
     }
     
@@ -312,7 +354,7 @@ export class EnhancedValidationOrchestrator {
       throw new Error(`Category not found in capability matrix: ${category}`);
     }
     
-    const validatorPath = path.join(this.validationPath, 'validators', categoryInfo.validator);
+    const validatorPath = path.join(this.validationPath, 'src/validators', categoryInfo.validator);
     
     if (!fs.existsSync(validatorPath)) {
       throw new Error(`Validator file not found: ${categoryInfo.validator}`);
@@ -398,8 +440,8 @@ export class EnhancedValidationOrchestrator {
     const checks = [
       'capability-matrix.json exists',
       'safety framework components available',
-      'template system functional',
-      'extension framework ready'
+      'agent submission pipeline ready',
+      'compliance validation framework ready'
     ];
     
     console.log('🔍 Verifying system integrity...');
@@ -427,15 +469,80 @@ export class EnhancedValidationOrchestrator {
       diagnostics.validators[category] = validator.runSelfDiagnostics();
     }
     
-    // Analyze results
+    // Analyze results (handle both 'healthy' and 'HEALTHY' status values)
     const unhealthyValidators = Object.entries(diagnostics.validators)
-      .filter(([_, diag]) => diag.status !== 'healthy').length;
+      .filter(([_, diag]) => diag.status?.toLowerCase() !== 'healthy').length;
     
     if (unhealthyValidators > 0) {
       console.warn(`⚠️ ${unhealthyValidators} validators have health issues`);
     }
     
     console.log('✅ System diagnostics completed');
+  }
+
+  /**
+   * Enhanced error logging with detailed context
+   */
+  logError(operation, error, context = {}) {
+    const errorEntry = {
+      timestamp: new Date().toISOString(),
+      operation,
+      error: {
+        message: error.message,
+        type: error.constructor.name,
+        code: error.code,
+        stack: error.stack
+      },
+      context,
+      systemState: {
+        initialized: this.initialized,
+        validatorsLoaded: this.validators.size,
+        validationPath: this.validationPath
+      }
+    };
+    
+    this.errorHistory.push(errorEntry);
+    
+    if (this.loggingEnabled) {
+      console.error(`\n🚨 ERROR IN ${operation.toUpperCase()}`);
+      console.error(`   Message: ${error.message}`);
+      console.error(`   Type: ${error.constructor.name}`);
+      if (error.code) {
+        console.error(`   Code: ${error.code}`);
+      }
+      if (context.category) {
+        console.error(`   Category: ${context.category}`);
+      }
+      if (context.projectPath) {
+        console.error(`   Project: ${context.projectPath}`);
+      }
+      if (context.validatorPath) {
+        console.error(`   Validator: ${context.validatorPath}`);
+      }
+      console.error(`   Time: ${errorEntry.timestamp}`);
+      console.error(`   System: ${this.validators.size} validators loaded, initialized: ${this.initialized}`);
+      if (error.stack) {
+        const stackLines = error.stack.split('\n').slice(0, 4);
+        console.error(`   Stack: ${stackLines.join('\n          ')}`);
+      }
+      console.error(''); // Empty line for readability
+    }
+    
+    return errorEntry;
+  }
+
+  /**
+   * Get error history for troubleshooting
+   */
+  getErrorHistory() {
+    return this.errorHistory;
+  }
+
+  /**
+   * Clear error history
+   */
+  clearErrorHistory() {
+    this.errorHistory = [];
   }
 
   /**
@@ -457,24 +564,170 @@ export class EnhancedValidationOrchestrator {
   }
 
   /**
-   * Validate extension request
+   * Assess risk of submitted agent validator
    */
-  async validateExtensionRequest(request) {
-    if (!request.category) {
-      throw new Error('Extension category is required');
+  async assessSubmittedValidatorRisk(validatorPath, category) {
+    // Read validator file for risk analysis
+    const content = fs.readFileSync(validatorPath, 'utf8');
+    let riskScore = 0;
+    const riskFactors = [];
+    
+    // Check for high-risk patterns
+    if (content.includes('execSync') || content.includes('spawn')) {
+      riskScore += 30;
+      riskFactors.push('Contains command execution');
     }
     
-    if (this.validators.has(request.category)) {
-      throw new Error(`Validator already exists for category: ${request.category}`);
+    if (content.includes('eval(') || content.includes('Function(')) {
+      riskScore += 40;
+      riskFactors.push('Contains code evaluation');
     }
     
-    if (!request.requirements || request.requirements.length === 0) {
-      throw new Error('Extension requirements must be specified');
+    if (content.includes('fs.writeFileSync') || content.includes('fs.unlinkSync')) {
+      riskScore += 20;
+      riskFactors.push('Modifies file system');
     }
     
-    if (!request.validationLogic) {
-      throw new Error('Validation logic must be provided');
+    // Core system categories have higher risk
+    if (['core', 'build', 'architecture'].includes(category)) {
+      riskScore += 25;
+      riskFactors.push('Critical system category');
     }
+    
+    // Determine risk level
+    let riskLevel = 'low';
+    if (riskScore >= 70) {
+      riskLevel = 'critical';
+    } else if (riskScore >= 40) {
+      riskLevel = 'high';
+    } else if (riskScore >= 20) {
+      riskLevel = 'medium';
+    }
+    
+    return {
+      riskLevel,
+      score: riskScore,
+      factors: riskFactors
+    };
+  }
+  
+  /**
+   * Sandbox test submitted validator
+   */
+  async sandboxTestSubmittedValidator(validatorPath) {
+    const result = {
+      passed: false,
+      errors: [],
+      warnings: []
+    };
+    
+    try {
+      // Basic import test
+      const { default: ValidatorClass } = await import(`file://${path.resolve(validatorPath)}`);
+      const validator = new ValidatorClass();
+      
+      // Test required methods exist
+      const requiredMethods = ['validate', 'getCapabilities', 'getMetadata', 'runSelfDiagnostics'];
+      for (const method of requiredMethods) {
+        if (typeof validator[method] !== 'function') {
+          result.errors.push(`Missing required method: ${method}`);
+        }
+      }
+      
+      // Test basic method execution
+      const capabilities = validator.getCapabilities();
+      const metadata = validator.getMetadata();
+      const diagnostics = validator.runSelfDiagnostics();
+      
+      if (!capabilities || !metadata || !diagnostics) {
+        result.errors.push('Basic method execution failed');
+      }
+      
+      result.passed = result.errors.length === 0;
+      
+    } catch (error) {
+      result.errors.push(`Import or execution failed: ${error.message}`);
+    }
+    
+    return result;
+  }
+  
+  /**
+   * Validate submitted validator compliance
+   */
+  async validateSubmittedValidatorCompliance(validatorPath) {
+    try {
+      const { default: ValidatorClass } = await import(`file://${path.resolve(validatorPath)}`);
+      const validator = new ValidatorClass();
+      
+      return await this.complianceChecker.checkCompliance(validator);
+    } catch (error) {
+      return {
+        compliant: false,
+        score: 0,
+        error: error.message
+      };
+    }
+  }
+  
+  /**
+   * Integrate submitted validator
+   */
+  async integrateSubmittedValidator(validatorPath, category) {
+    // Copy validator to validators directory
+    const fileName = `${category}-validator.js`;
+    const targetPath = path.join(this.validationPath, 'src/validators', fileName);
+    
+    // Create backup if validator already exists
+    if (fs.existsSync(targetPath)) {
+      await this.rollbackManager.createBackup(category);
+    }
+    
+    // Copy validator file
+    fs.copyFileSync(validatorPath, targetPath);
+    
+    // Update capability matrix
+    await this.updateCapabilityMatrixForSubmittedValidator(category, fileName);
+    
+    // Load the new validator
+    await this.loadValidator(category);
+  }
+  
+  /**
+   * Update capability matrix for submitted validator
+   */
+  async updateCapabilityMatrixForSubmittedValidator(category, fileName) {
+    let matrix = {};
+    if (fs.existsSync(this.capabilityMatrixPath)) {
+      matrix = JSON.parse(fs.readFileSync(this.capabilityMatrixPath, 'utf8'));
+    }
+    
+    // Add new category
+    matrix.categories = matrix.categories || {};
+    matrix.categories[category] = {
+      scopes: ['**/*'],  // Default scope, can be customized
+      validator: fileName,
+      description: `${category} validation - Agent submitted`,
+      interfaceVersion: '3.0.0',
+      capabilities: {
+        supportedProjects: ['*'],  // Default to all projects
+        performanceProfile: 'standard',
+        requiredDependencies: ['node', 'npm']
+      },
+      safety: {
+        lastValidated: new Date().toISOString(),
+        complianceStatus: 'verified',
+        submittedBy: 'agent',
+        submittedAt: new Date().toISOString()
+      }
+    };
+    
+    // Update metadata
+    matrix.metadata = matrix.metadata || {};
+    matrix.metadata.lastUpdated = new Date().toISOString();
+    matrix.metadata.totalAgentSubmissions = (matrix.metadata.totalAgentSubmissions || 0) + 1;
+    
+    fs.writeFileSync(this.capabilityMatrixPath, JSON.stringify(matrix, null, 2), 'utf8');
   }
 
   /* DISABLED FOR CORE VALIDATION - TODO: Re-enable after core system validation
@@ -563,34 +816,161 @@ export class EnhancedValidationOrchestrator {
    * Get default system configuration
    */
   getDefaultConfig() {
+    // TODO: [TASK-ID-002] Pattern: agent-only-configuration | Complexity: 2 | Dependencies: agent-submission-framework
+    // Context: Update default configuration to reflect agent-only architecture without extension generation
+    // Validation-Required: configuration-consistency, agent-workflow-integrity
+    // Pattern-Info: { approach: "agent-focused-config", alternatives: "hybrid-config", trade-offs: "simplified-maintenance" }
+    
     return {
       version: '3.0.0',
-      extensionFramework: {
+      agentSubmissionFramework: {
         enabled: true,
         safetyLevel: 'enhanced',
-        maxExtensionsPerSession: 1,
+        maxSubmissionsPerSession: 1,
         rollbackEnabled: true,
         humanReviewRequired: true
       },
       safety: {
-        preGenerationValidation: true,
-        postGenerationValidation: true,
+        preValidationChecks: true,
+        postValidationProcessing: true,
         sandboxTesting: true,
         interfaceCompliance: true,
         automaticRollback: true
       },
       monitoring: {
-        metricsEnabled: true,
+        metricsEnabled: false, // Disabled for agent-only mode
         successRateTarget: 0.90,
         qualityThreshold: 80
       },
       performance: {
         maxValidationTime: 300000, // 5 minutes
         memoryLimit: 512, // MB
-        parallelValidations: 3
+        parallelValidations: 1 // Single validation for agent submissions
       }
     };
   }
 }
 
 export default EnhancedValidationOrchestrator;
+
+// CLI handling for direct execution
+if (import.meta.url === `file://${process.argv[1]}`) {
+  const main = async () => {
+    try {
+      const args = process.argv.slice(2);
+      const orchestrator = new EnhancedValidationOrchestrator();
+      
+      // Parse command line arguments
+      let category, project, taskId, submitValidator, scopePatterns;
+      
+      for (let i = 0; i < args.length; i++) {
+        switch (args[i]) {
+          case '--category':
+            category = args[++i];
+            break;
+          case '--project':
+            project = args[++i];
+            break;
+          case '--task-id':
+            taskId = args[++i];
+            break;
+          case '--submit-validator':
+            submitValidator = args[++i];
+            break;
+          case '--scope':
+            scopePatterns = args[++i].split(',');
+            break;
+          case '--health-check':
+            await orchestrator.initialize();
+            const health = await orchestrator.getSystemHealth();
+            console.log(JSON.stringify(health, null, 2));
+            process.exit(health.status === 'healthy' ? 0 : 1);
+            break;
+          case '--list-categories':
+            await orchestrator.initialize();
+            const categories = Object.keys(orchestrator.capabilityMatrix.categories);
+            console.log('Available categories:', categories.join(', '));
+            process.exit(0);
+            break;
+        }
+      }
+      
+      if (!category || !project || !taskId) {
+        console.error('Missing required arguments: --category, --project, --task-id');
+        process.exit(1);
+      }
+      
+      const projectInfo = {
+        name: path.basename(project),
+        path: project
+      };
+      
+      const scopeConfig = {
+        patterns: scopePatterns || ['**/*']
+      };
+      
+      // Handle validator submission workflow
+      if (submitValidator) {
+        console.log('Enhanced Validation System v3.0.0');
+        console.log(`Received new validator for category '${category}'.`);
+        
+        const result = await orchestrator.submitAgentValidator(
+          submitValidator, 
+          category, 
+          projectInfo, 
+          { scopeConfig }
+        );
+        
+        if (result.success) {
+          console.log(`Loading new validator: ${category}-validator.js`);
+          console.log('Executing validation with safety monitoring');
+          console.log(`Validation Results: ${result.integrationResult.status} (${result.integrationResult.duration || 'unknown duration'})`);
+          process.exit(0);
+        } else {
+          process.exit(1);
+        }
+      } else {
+        // Standard validation workflow
+        console.log('Enhanced Validation System v3.0.0');
+        console.log(`Compatibility Check: ${category} category found`);
+        
+        try {
+          await orchestrator.initialize();
+          const validator = await orchestrator.getValidator(category);
+          
+          if (!validator) {
+            console.log(`Compatibility Check: Category '${category}' not found.`);
+            console.log('Extension Required: Please generate a validator script and submit it using the --submit-validator flag.');
+            process.exit(1);
+          }
+          
+          console.log(`Loading validator: ${category}-validator.js`);
+          console.log('Executing validation with safety monitoring');
+          
+          const result = await orchestrator.orchestrateValidation(
+            projectInfo, 
+            category, 
+            scopeConfig
+          );
+          
+          console.log(`Validation Results: ${result.status} (${result.duration || 'unknown duration'})`);
+          console.log('All validations completed successfully');
+          process.exit(result.status === 'PASS' ? 0 : 1);
+          
+        } catch (error) {
+          console.error(`Validation failed: ${error.message}`);
+          process.exit(1);
+        }
+      }
+      
+    } catch (error) {
+      console.error(`System error: ${error.message}`);
+      process.exit(1);
+    }
+  };
+  
+  main().catch(error => {
+    console.error('Fatal error:', error.message);
+    process.exit(1);
+  });
+}

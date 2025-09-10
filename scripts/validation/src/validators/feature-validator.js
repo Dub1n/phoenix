@@ -411,3 +411,7 @@ export class FeatureValidator {
     };
   }
 }
+
+// Fixed missing default export to resolve constructor errors during validator loading
+// Pattern-Info: { approach: "standard-default-export", alternatives: "none", trade-offs: "none" }
+export default FeatureValidator;
