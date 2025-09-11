@@ -1,7 +1,30 @@
-### Terminal State Management Pattern
+---
+date-created: 2025-09-11-0000
+last-updated: 2025-09-11-0000
+name: terminal-state-management
+description: Prevents terminal state corruption when using inquirer in CLI applications
+status: established
+category: infrastructure
+use-when:
+  - CLI applications using inquirer for menu navigation
+  - Terminal-based user interaction workflows with continuation prompts
+  - Preventing nested inquirer session conflicts
+keywords:
+  - terminal
+  - state-management
+  - inquirer
+  - cli
+  - stdin
+  - process-control
+prerequisites:
+  - cli-interface-management
+  - event-handling-patterns
+related-patterns:
+  - cli-process-separation
+  - interactive-menu-systems
+---
 
-**Status**: 🔶 IN DEVELOPMENT | **Category**: Technical
-**Difficulty**: 🟢 Basic | **Time**: ~1-2 hours
+### Terminal State Management Pattern
 **Problem**: Terminal state corruption when nesting `inquirer` prompt sessions causes complete CLI freezing where even Ctrl+C becomes unresponsive.
 **Solution**: Use compatible input handling that cooperates with main inquirer session rather than creating nested prompt conflicts.
 

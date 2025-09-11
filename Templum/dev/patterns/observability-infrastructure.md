@@ -1,11 +1,39 @@
-### Observability Infrastructure Pattern
+---
+date-created: 2025-08-27-0000
+last-updated: 2025-09-11-0000
+name: observability-infrastructure
+description: Complete observability infrastructure with centralized logging, metrics collection, alerting, and integration with existing dependency injection system
+status: established
+category: foundation
+use-when:
+  - Scattered console.log statements throughout codebase need centralization
+  - Enterprise-grade monitoring and alerting is required
+  - Structured logging and metrics collection is needed
+  - Performance monitoring and debugging capabilities must be enhanced
+keywords:
+  - observability
+  - logging
+  - metrics
+  - monitoring
+  - alerting
+  - structured-logging
+  - performance
+  - debugging
+prerequisites:
+  - dependency-injection-system
+  - abstraction-layer-architecture
+related-patterns:
+  - backend-service-integration
+  - dependency-injection-system
+  - abstraction-layer-architecture
+---
 
-**Status**: ESTABLISHED
-**Category**: Foundation
-**Last Updated**: 2025-08-27
-**Difficulty**: 🟠 Advanced
-**Est. Time**: ~5 hours
-**Prerequisites**: Dependency Injection System, Abstraction Layer Architecture
+# Observability Infrastructure Pattern
+
+// TODO: [TASK-PATTERN-001] Pattern: frontmatter-update | Complexity: 2 | Dependencies: yaml-frontmatter
+// Context: Updated observability infrastructure pattern with standardized YAML frontmatter format
+// Validation-Required: frontmatter-syntax, pattern-metadata-completeness
+// Pattern-Info: { approach: "yaml-frontmatter-standardization", alternatives: "markdown-headers", trade-offs: "structured-vs-readable" }
 
 **Problem**: Scattered console.log statements and hardcoded metrics throughout the codebase prevent centralized monitoring, structured logging, and enterprise-grade observability.
 

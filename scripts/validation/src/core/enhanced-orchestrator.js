@@ -14,6 +14,7 @@
 
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 import { fileURLToPath } from 'url';
 
 // Get current directory for ES modules
@@ -115,6 +116,49 @@ export class EnhancedValidationOrchestrator {
     console.log(`🎯 Starting enhanced validation for category: ${category}`);
     
     try {
+      // Resolve project configuration
+      const projectConfig = await this.resolveProjectConfig(projectInfo.name);
+      console.log(`📋 Project configuration loaded for: ${projectInfo.name}`);
+      
+      // Resolve project commands from config and package.json
+      const commands = await this.resolveProjectCommands(projectInfo.path, projectConfig);
+      const commandWarnings = this.validateRequiredCommands(commands, category);
+      
+      // Enhance projectInfo with resolved commands
+      const enhancedProjectInfo = {
+        ...projectInfo,
+        commands,
+        // Legacy properties for backward compatibility
+        buildCommand: commands.build,
+        testCommand: commands.test,
+        lintCommand: commands.lint,
+        typecheckCommand: commands.typecheck,
+        startCommand: commands.start,
+        // Add hasTypeScript detection
+        hasTypeScript: fs.existsSync(path.join(projectInfo.path, 'tsconfig.json'))
+      };
+      
+      // Log command warnings if any
+      if (commandWarnings.length > 0) {
+        console.log('\n⚠️ Command configuration warnings:');
+        commandWarnings.forEach(warning => console.log(`   ${warning}`));
+        console.log('');
+      }
+      
+      // Validate report directories early - fail fast if missing
+      const directoryIssues = this.validateReportDirectories(projectConfig, projectInfo);
+      if (directoryIssues.length > 0) {
+        console.log('\n⚠️ Report directory validation issues:');
+        directoryIssues.forEach(issue => console.log(`   ${issue}`));
+        console.log('🔧 Agent should fix project configuration file\n');
+        throw new Error(`Report directory issues prevent validation: ${directoryIssues.join(', ')}`);
+      }
+      
+      // Apply timeout overrides from project config
+      const categoryTimeout = projectConfig.timeout_overrides?.[category] || 
+                             projectConfig.performance?.maxValidationTime || 
+                             300000; // 5 minute default
+      
       // Get validator for category
       const validator = await this.getValidator(category);
       if (!validator) {
@@ -122,10 +166,27 @@ export class EnhancedValidationOrchestrator {
       }
       
       // Pre-validation checks
-      await this.preValidationChecks(validator, projectInfo, scopeConfig);
+      await this.preValidationChecks(validator, enhancedProjectInfo, scopeConfig);
       
-      // Execute validation
-      const result = await validator.validate(projectInfo, scopeConfig, options);
+      // Execute validation with timeout
+      const validationPromise = validator.validate(enhancedProjectInfo, scopeConfig, { ...options, projectConfig });
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error(`Validation timeout after ${categoryTimeout}ms`)), categoryTimeout);
+      });
+      
+      const result = await Promise.race([validationPromise, timeoutPromise]);
+      
+      // Add timing and task ID to result
+      result.duration = Date.now() - startTime;
+      result.taskId = options.taskId || 'UNKNOWN';
+      
+      // Generate validation report (directories already validated)
+      try {
+        await this.generateValidationReport(result, enhancedProjectInfo, category, projectConfig);
+      } catch (reportError) {
+        console.error(`⚠️ Report generation failed: ${reportError.message}`);
+        // Don't fail validation if report generation fails
+      }
       
       // Post-validation processing (simplified)
       await this.postValidationProcessing(category, result);
@@ -298,10 +359,537 @@ export class EnhancedValidationOrchestrator {
         fs.writeFileSync(this.configPath, JSON.stringify(this.systemConfig, null, 2), 'utf8');
       }
       
+      // Ensure project configuration structure exists
+      const projectsDir = path.join(this.validationPath, 'config/projects');
+      if (!fs.existsSync(projectsDir)) {
+        fs.mkdirSync(projectsDir, { recursive: true });
+      }
+      
+      const templatePath = path.join(this.validationPath, 'config/project-template.json');
+      if (!fs.existsSync(templatePath)) {
+        await this.createDefaultProjectTemplate(templatePath);
+      }
+      
       console.log('📋 System configuration loaded');
     } catch (error) {
       throw new Error(`Failed to load system configuration: ${error.message}`);
     }
+  }
+
+  /**
+   * Resolve project information from config file 
+   * @param {string} projectName - Project name (maps to config filename)
+   * @returns {Object} Project information with name and resolved path
+   */
+  async resolveProjectInfo(projectName) {
+    const normalizedName = projectName.toLowerCase();
+    const projectConfigPath = path.join(
+      this.validationPath, 
+      'config/projects', 
+      `${normalizedName}-valconfig.json`
+    );
+    
+    if (!fs.existsSync(projectConfigPath)) {
+      throw new Error(`Project configuration not found: ${projectConfigPath}`);
+    }
+    
+    const projectConfig = JSON.parse(fs.readFileSync(projectConfigPath, 'utf8'));
+    
+    // Validate required fields
+    if (!projectConfig.project?.name) {
+      throw new Error(`Invalid project config: missing project.name in ${projectConfigPath}`);
+    }
+    if (!projectConfig.project?.project_directory) {
+      throw new Error(`Invalid project config: missing project.project_directory in ${projectConfigPath}`);
+    }
+    
+    // Resolve project directory path (relative to validation system root)
+    let projectPath = projectConfig.project.project_directory;
+    if (!path.isAbsolute(projectPath)) {
+      projectPath = path.resolve(this.validationPath, projectPath);
+    }
+    
+    // Verify project directory exists
+    if (!fs.existsSync(projectPath)) {
+      throw new Error(`Project directory not found: ${projectPath} (specified in ${projectConfigPath})`);
+    }
+    
+    return {
+      name: projectConfig.project.name,
+      path: projectPath,
+      configPath: projectConfigPath,
+      displayName: projectConfig.project.display_name || projectConfig.project.name
+    };
+  }
+
+  /**
+   * Resolve configuration for a specific project
+   * @param {string} projectName - Case-insensitive project name
+   * @returns {Object} Merged configuration object
+   */
+  async resolveProjectConfig(projectName) {
+    const normalizedName = projectName.toLowerCase();
+    const projectConfigPath = path.join(
+      this.validationPath, 
+      'config/projects', 
+      `${normalizedName}-valconfig.json`
+    );
+    
+    // Load system defaults (includes projectDefaults)
+    const systemDefaults = this.systemConfig.systemDefaults || {};
+    
+    // Load project-specific config if exists
+    let projectConfig = {};
+    if (fs.existsSync(projectConfigPath)) {
+      projectConfig = JSON.parse(fs.readFileSync(projectConfigPath, 'utf8'));
+      
+      // Validate project config schema
+      const validation = this.validateProjectConfig(projectConfig);
+      if (!validation.valid) {
+        throw new Error(`Invalid project config: ${validation.errors.join(', ')}`);
+      }
+    } else {
+      // Project config doesn't exist - notify agent
+      await this.handleMissingProjectConfig(projectName, normalizedName);
+    }
+    
+    // Deep merge: systemDefaults.projectDefaults <- projectConfig.validation
+    return this.deepMerge(systemDefaults.projectDefaults || {}, projectConfig.validation || {});
+  }
+
+  /**
+   * Deep merge configuration objects
+   * @param {...Object} configs - Configuration objects to merge
+   * @returns {Object} Merged configuration
+   */
+  deepMerge(...configs) {
+    const result = {};
+    
+    for (const config of configs) {
+      for (const [key, value] of Object.entries(config)) {
+        if (value && typeof value === 'object' && !Array.isArray(value)) {
+          result[key] = this.deepMerge(result[key] || {}, value);
+        } else {
+          result[key] = value;
+        }
+      }
+    }
+    
+    return result;
+  }
+
+  /**
+   * Resolve project commands from config and package.json
+   * @param {string} projectPath - Path to the project
+   * @param {Object} projectConfig - Resolved project configuration
+   * @returns {Object} Commands object with available commands
+   */
+  async resolveProjectCommands(projectPath, projectConfig) {
+    const commands = {};
+    
+    // Start with commands from project config
+    const configCommands = projectConfig.commands || {};
+    
+    // Copy non-comment commands from config
+    Object.entries(configCommands).forEach(([key, value]) => {
+      if (!key.startsWith('_') && typeof value === 'string') {
+        commands[key] = value.split('//')[0].trim(); // Remove inline comments
+      }
+    });
+    
+    // Fallback to package.json scripts if commands not configured
+    try {
+      const packageJsonPath = path.join(projectPath, 'package.json');
+      if (fs.existsSync(packageJsonPath)) {
+        const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+        const scripts = packageJson.scripts || {};
+        
+        // Common command mappings to package.json scripts
+        const scriptMappings = {
+          'build': ['build', 'compile'],
+          'test': ['test'],
+          'lint': ['lint', 'eslint'],
+          'typecheck': ['typecheck', 'type-check', 'tsc'],
+          'start': ['start', 'dev', 'serve']
+        };
+        
+        // Only add fallbacks for commands not explicitly configured
+        Object.entries(scriptMappings).forEach(([commandName, scriptNames]) => {
+          if (!commands[commandName]) {
+            const foundScript = scriptNames.find(scriptName => scripts[scriptName]);
+            if (foundScript) {
+              commands[commandName] = `npm run ${foundScript}`;
+            }
+          }
+        });
+      }
+    } catch (error) {
+      console.warn(`⚠️ Could not read package.json for command fallbacks: ${error.message}`);
+    }
+    
+    return commands;
+  }
+
+  /**
+   * Validate required commands for validators
+   * @param {Object} commands - Available commands
+   * @param {string} category - Validation category
+   * @returns {Array} Array of missing command warnings
+   */
+  validateRequiredCommands(commands, category) {
+    const warnings = [];
+    const requirements = {
+      'build': ['build'],
+      'quality': ['lint'],
+      'core': ['typecheck'],
+      'backend': ['start'],
+      'ui': ['start']
+    };
+    
+    const requiredCommands = requirements[category] || [];
+    
+    requiredCommands.forEach(cmdName => {
+      if (!commands[cmdName]) {
+        warnings.push(`Missing ${cmdName} command for ${category} validation. Add to valconfig.json commands section or package.json scripts.`);
+      }
+    });
+    
+    return warnings;
+  }
+
+  /**
+   * Validate project configuration schema
+   * @param {Object} config - Configuration to validate
+   * @returns {Object} Validation result with errors/warnings
+   */
+  validateProjectConfig(config) {
+    const errors = [];
+    const warnings = [];
+    
+    // Validate required structure
+    if (!config.project?.name) errors.push('Missing project.name');
+    if (!config.validation) errors.push('Missing validation section');
+    
+    // Validate timeout values are reasonable (only check if implemented)
+    if (config.validation?.timeout_overrides) {
+      Object.entries(config.validation.timeout_overrides).forEach(([category, timeout]) => {
+        // Skip comment fields
+        if (category.startsWith('_')) return;
+        
+        if (typeof timeout === 'number' && (timeout < 10000 || timeout > 1800000)) { // 10s to 30min
+          warnings.push(`Unusual timeout for ${category}: ${timeout}ms`);
+        }
+      });
+    }
+    
+    return { 
+      valid: errors.length === 0, 
+      errors, 
+      warnings,
+      schema_version: config.version
+    };
+  }
+
+
+  /**
+   * Handle missing project configuration
+   * @param {string} projectName - Original project name
+   * @param {string} normalizedName - Normalized project name
+   */
+  async handleMissingProjectConfig(projectName, normalizedName) {
+    console.log(`\n🔧 Project configuration required for: ${projectName}`);
+    
+    const projectConfigPath = path.join(
+      this.validationPath, 
+      'config/projects',
+      `${normalizedName}-valconfig.json`
+    );
+    
+    console.log(`📄 Configuration file needed: ${projectConfigPath}`);
+    console.log(`📖 Use project template from: config/project-template.json`);
+    console.log(`🔧 Agent should create and customize project configuration file`);
+    
+    throw new Error(`Project configuration missing - agent action required: ${projectConfigPath}`);
+  }
+
+  /**
+   * Validate that report directories exist and are accessible
+   * @param {Object} projectConfig - Resolved project configuration
+   * @param {Object} projectInfo - Project information with path
+   * @returns {Array} Array of validation issues
+   */
+  validateReportDirectories(projectConfig, projectInfo) {
+    const issues = [];
+    
+    if (projectConfig.report_location) {
+      let reportPath = projectConfig.report_location;
+      
+      // If relative path, resolve relative to project directory (same logic as resolveReportPath)
+      if (!path.isAbsolute(reportPath)) {
+        reportPath = path.resolve(projectInfo.path, reportPath);
+      }
+      
+      if (!fs.existsSync(reportPath)) {
+        issues.push(`Report directory does not exist: ${reportPath}`);
+      } else {
+        try {
+          // Test write access
+          const testFile = path.join(reportPath, '.write-test');
+          fs.writeFileSync(testFile, 'test');
+          fs.unlinkSync(testFile);
+        } catch (error) {
+          issues.push(`Report directory not writable: ${reportPath}`);
+        }
+      }
+    }
+    
+    return issues;
+  }
+
+  /**
+   * Generate validation report
+   * @param {Object} result - Validation result object
+   * @param {Object} projectInfo - Project information
+   * @param {string} category - Validation category
+   * @param {Object} projectConfig - Resolved project configuration
+   */
+  async generateValidationReport(result, projectInfo, category, projectConfig) {
+    try {
+      const reportPath = this.resolveReportPath(projectInfo, category, projectConfig, result.taskId);
+      const reportContent = this.formatValidationReport(result, projectInfo, category);
+      
+      // Write report directly - directory already validated in orchestrateValidation
+      fs.writeFileSync(reportPath, reportContent, 'utf8');
+      
+      console.log(`📄 Validation report generated: ${reportPath}`);
+      return reportPath;
+    } catch (error) {
+      console.error(`⚠️ Failed to generate validation report: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Resolve report file path
+   * @param {Object} projectInfo - Project information  
+   * @param {string} category - Validation category
+   * @param {Object} projectConfig - Resolved project configuration
+   * @returns {string} Absolute path to report file
+   */
+  resolveReportPath(projectInfo, category, projectConfig, taskId = 'UNKNOWN') {
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    const filename = `${timestamp}-${taskId}-${category}-validation-report.md`;
+    
+    let reportDir = projectConfig.report_location || 'validation-reports';
+    
+    // If relative path, resolve relative to project directory
+    if (!path.isAbsolute(reportDir)) {
+      reportDir = path.resolve(projectInfo.path, reportDir);
+    }
+    
+    return path.join(reportDir, filename);
+  }
+
+  /**
+   * Format validation report as Markdown
+   * @param {Object} result - Validation result
+   * @param {Object} projectInfo - Project information
+   * @param {string} category - Validation category
+   * @returns {string} Formatted report content
+   */
+  formatValidationReport(result, projectInfo, category) {
+    const timestamp = new Date().toISOString();
+    const statusMap = {
+      'PASS': 'VALIDATION_PASSED',
+      'WARN': 'VALIDATION_PASSED_WITH_WARNINGS', 
+      'FAIL': 'VALIDATION_FAILED'
+    };
+    
+    const frontmatter = `---
+date: ${timestamp.replace(/[:.]/g, '-').slice(0, 16)}
+TASK-ID: ${result.taskId || 'UNKNOWN'}
+source: validation-system
+validation_type: ${category}
+category: ${category}
+priority: medium
+complexity: TBD
+components: [validation-generated]
+initial_status: [~]
+end_status: [${result.status === 'PASS' ? 'P' : result.status === 'FAIL' ? 'F' : 'W'}]
+tags: ${category}, validation, automated-testing
+---
+
+# Validation Report - ${result.taskId || 'UNKNOWN'} - ${timestamp.replace(/[:.]/g, '-').slice(0, 16)}
+
+## Validation Category: ${this.getCategoryDescription(category)}
+
+**Overall Status**: ${statusMap[result.status] || result.status}
+**Execution Time**: ${result.duration}ms
+**Tests Executed**: ${result.tests.length}
+
+## Tests Executed
+
+${this.formatTestResults(result.tests)}
+
+## Evidence Collected
+
+${this.formatEvidence(result.evidence)}
+
+## Test Results Detail
+
+${this.formatTestResultsDetail(result.tests)}
+
+${result.errors.length > 0 ? `## Errors\n\n${this.formatErrors(result.errors)}\n` : ''}
+${result.warnings.length > 0 ? `## Warnings\n\n${this.formatWarnings(result.warnings)}\n` : ''}
+
+## Summary
+
+- **Project**: ${projectInfo.name}
+- **Category**: ${category}
+- **Status**: ${result.status}
+- **Duration**: ${result.duration}ms
+- **Timestamp**: ${timestamp}
+- **Tests Passed**: ${result.tests.filter(t => t.status === 'PASS').length}
+- **Tests Failed**: ${result.tests.filter(t => t.status === 'FAIL').length}
+- **Tests Warned**: ${result.tests.filter(t => t.status === 'WARN').length}
+`;
+
+    return frontmatter;
+  }
+
+  /**
+   * Get category description for report
+   * @param {string} category - Validation category
+   * @returns {string} Human-readable category description
+   */
+  getCategoryDescription(category) {
+    const descriptions = {
+      'build': 'Compilation/Build Tasks',
+      'quality': 'Code Quality Assessment',
+      'architecture': 'Architecture Validation',
+      'backend': 'Backend/Service Tasks',
+      'feature': 'Feature Implementation',
+      'core': 'Core System Validation',
+      'ui': 'User Interface Testing',
+      'lint': 'Code Linting and Style'
+    };
+    return descriptions[category] || `${category} Validation`;
+  }
+
+  /**
+   * Format test results for report
+   * @param {Array} tests - Test results array
+   * @returns {string} Formatted test list
+   */
+  formatTestResults(tests) {
+    return tests.map(test => {
+      const icon = test.status === 'PASS' ? '✅' : test.status === 'FAIL' ? '❌' : '⚠️';
+      return `- [ ] ${test.name} - ${icon} ${test.status}`;
+    }).join('\n');
+  }
+
+  /**
+   * Format evidence for report
+   * @param {Array} evidence - Evidence array
+   * @returns {string} Formatted evidence list
+   */
+  formatEvidence(evidence) {
+    if (!evidence || evidence.length === 0) {
+      return 'No evidence collected';
+    }
+    
+    return evidence.map((item, index) => {
+      return `${index + 1}. ${item}`;
+    }).join('\n');
+  }
+
+  /**
+   * Format detailed test results
+   * @param {Array} tests - Test results array
+   * @returns {string} Formatted detailed results
+   */
+  formatTestResultsDetail(tests) {
+    return tests.map(test => {
+      return `### ${test.name}
+
+**Status**: ${test.status}
+**Message**: ${test.message || 'N/A'}
+**Evidence**: ${test.evidence ? test.evidence.join(', ') : 'N/A'}
+`;
+    }).join('\n');
+  }
+
+  /**
+   * Format errors for report
+   * @param {Array} errors - Errors array
+   * @returns {string} Formatted errors
+   */
+  formatErrors(errors) {
+    return errors.map(error => `- ${error}`).join('\n');
+  }
+
+  /**
+   * Format warnings for report
+   * @param {Array} warnings - Warnings array
+   * @returns {string} Formatted warnings
+   */
+  formatWarnings(warnings) {
+    return warnings.map(warning => `- ${warning}`).join('\n');
+  }
+
+  /**
+   * Enhanced error handling with actionable guidance
+   * @param {Error} error - The error that occurred
+   * @param {Object} projectInfo - Project information
+   * @param {string} category - Validation category
+   */
+  handleValidationError(error, projectInfo, category) {
+    if (error.message.includes('Project configuration missing')) {
+      console.error(`\n🔧 Project configuration missing for: ${projectInfo.name}`);
+      console.error(`   📄 Configuration file needed: config/projects/${projectInfo.name.toLowerCase()}-valconfig.json`);
+      console.error(`   📖 Use template from: config/project-template.json`);
+      console.error(`   🔧 Agent should create and customize project configuration file\n`);
+    } else if (error.message.includes('Invalid project config')) {
+      console.error(`\n❌ Invalid project configuration: ${projectInfo.name}`);
+      console.error(`   📄 Check file: config/projects/${projectInfo.name.toLowerCase()}-valconfig.json`);
+      console.error(`   🔧 Ensure all required fields are present and properly formatted\n`);
+    } else if (error.message.includes('Validation timeout')) {
+      console.error(`\n⏱️ Timeout occurred during ${category} validation`);
+      console.error(`   📄 Edit: config/projects/${projectInfo.name.toLowerCase()}-valconfig.json`);
+      console.error(`   🔧 Add: "timeout_overrides": { "${category}": ${this.getRecommendedTimeout(category)} }\n`);
+    } else if (error.message.includes('Report directory')) {
+      console.error(`\n📁 Report directory issue for project: ${projectInfo.name}`);
+      console.error(`   📄 Check: config/projects/${projectInfo.name.toLowerCase()}-valconfig.json`);
+      console.error(`   🔧 Ensure report_location is a valid, writable path\n`);
+    } else if (error.message.includes('No validator available')) {
+      console.error(`\n🔧 No validator available for category: ${category}`);
+      console.error(`   💡 Available options:`);
+      console.error(`   1. Use --submit-validator flag to provide a custom validator`);
+      console.error(`   2. Check available categories with --list-categories`);
+      console.error(`   3. Verify category spelling and try again\n`);
+    } else {
+      console.error(`\n❌ Validation failed: ${error.message}`);
+      console.error(`   📄 Project: ${projectInfo.name}`);
+      console.error(`   📂 Category: ${category}`);
+      console.error(`   🔧 Check logs above for specific details\n`);
+    }
+  }
+
+  /**
+   * Get recommended timeout for category
+   * @param {string} category - Validation category
+   * @returns {number} Recommended timeout in milliseconds
+   */
+  getRecommendedTimeout(category) {
+    const timeouts = {
+      'quality': 120000,      // 2 minutes
+      'architecture': 180000, // 3 minutes
+      'backend': 180000,      // 3 minutes
+      'build': 240000,        // 4 minutes
+      'feature': 300000,      // 5 minutes
+      'core': 360000          // 6 minutes
+    };
+    return timeouts[category] || 300000; // 5 minute default
   }
 
   /**
@@ -813,6 +1401,58 @@ export class EnhancedValidationOrchestrator {
   END DISABLED MONITORING SECTION */
 
   /**
+   * Create default project template file
+   * @param {string} templatePath - Path where template should be created
+   */
+  async createDefaultProjectTemplate(templatePath) {
+    const defaultTemplate = {
+      "version": "3.0.1",
+      "project": {
+        "name": "PROJECT_NAME_PLACEHOLDER",
+        "display_name": "PROJECT_DISPLAY_NAME_PLACEHOLDER", 
+        "description": "Validation configuration for PROJECT_DISPLAY_NAME_PLACEHOLDER",
+        "project_directory": "../../PROJECT_NAME_PLACEHOLDER"
+      },
+      "validation": {
+        "report_location": "dev/validation-results",
+        "timeout_overrides": {
+          "_comment": "Override default timeouts for specific categories (milliseconds)",
+          "_examples": {
+            "quality": "120000  // 2 minutes for quality validation",
+            "architecture": "180000  // 3 minutes for architecture validation",
+            "backend": "150000  // 2.5 minutes for backend validation"
+          }
+        },
+        "resource_thresholds": {
+          "_comment": "Adjust resource warning thresholds if needed", 
+          "_examples": {
+            "memory_warning": "75  // Warn when memory usage exceeds 75%",
+            "cpu_warning": "80     // Warn when CPU usage exceeds 80%"
+          }
+        },
+        "commands": {
+          "_comment": "Define commands for validators to use (fallback to package.json scripts if not specified)",
+          "_examples": {
+            "build": "npm run build  // Build command for build validator",
+            "test": "npm test        // Test command for test validators", 
+            "lint": "npm run lint    // Lint command for quality validators",
+            "typecheck": "npx tsc --noEmit  // TypeScript checking command",
+            "start": "npm start      // Start command for backend validators"
+          }
+        }
+      },
+      "reporting": {
+        "format": "markdown",
+        "include_evidence": true,
+        "include_timing": true
+      }
+    };
+    
+    fs.writeFileSync(templatePath, JSON.stringify(defaultTemplate, null, 2), 'utf8');
+    console.log(`📄 Created project template: ${templatePath}`);
+  }
+
+  /**
    * Get default system configuration
    */
   getDefaultConfig() {
@@ -900,10 +1540,8 @@ if (import.meta.url === `file://${process.argv[1]}`) {
         process.exit(1);
       }
       
-      const projectInfo = {
-        name: path.basename(project),
-        path: project
-      };
+      // Resolve project information from config file
+      const projectInfo = await orchestrator.resolveProjectInfo(project);
       
       const scopeConfig = {
         patterns: scopePatterns || ['**/*']
@@ -950,7 +1588,8 @@ if (import.meta.url === `file://${process.argv[1]}`) {
           const result = await orchestrator.orchestrateValidation(
             projectInfo, 
             category, 
-            scopeConfig
+            scopeConfig,
+            { taskId }
           );
           
           console.log(`Validation Results: ${result.status} (${result.duration || 'unknown duration'})`);
@@ -958,7 +1597,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
           process.exit(result.status === 'PASS' ? 0 : 1);
           
         } catch (error) {
-          console.error(`Validation failed: ${error.message}`);
+          orchestrator.handleValidationError(error, projectInfo, category);
           process.exit(1);
         }
       }

@@ -1,11 +1,28 @@
-### Mock-Real API Contract Testing Pattern
+---
+date-created: 2025-09-11-0000
+last-updated: 2025-09-11-0000
+name: mock-real-api-contract-testing
+description: Contract testing to ensure mock/real API consistency with automated validation
+status: experimental
+category: testing
+use-when:
+  - Mock interfaces diverge from real implementations
+  - Test expectations fail due to API inconsistencies
+  - Need automated validation of mock behavior
+keywords:
+  - contract-testing
+  - mock-validation
+  - api-consistency
+  - test-infrastructure
+  - automated-testing
+prerequisites:
+  - real-component-api-analysis
+related-patterns:
+  - test-infrastructure-repair
+  - api-signature-matching
+---
 
-**Status**: 🔄 IN DEVELOPMENT
-**Category**: Foundation
-**Last Updated**: 2025-08-28
-**Difficulty**: 🟡 Medium
-**Est. Time**: ~3 hours
-**Prerequisites**: Real component API analysis
+# Mock-Real API Contract Testing Pattern
 
 **Problem**: Mock interfaces diverge from real implementations, causing test expectations to fail
 

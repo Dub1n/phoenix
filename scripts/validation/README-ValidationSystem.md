@@ -9,24 +9,30 @@ Purpose: Simple agent interface for agent-driven validation system - Usage Guide
 ### Validation & Extension Commands
 
 ```bash
-node src/core/enhanced-orchestrator.js --category <category> --project <project-path> --task-id <task-id>
+node src/core/enhanced-orchestrator.js --category <category> --project <project-name> --task-id <task-id>
 
 # Submit a new validator for a new category
-node src/core/enhanced-orchestrator.js --submit-validator <path-to-validator.js> --category <new-category> --project <project-path> --task-id <task-id>
+node src/core/enhanced-orchestrator.js --submit-validator <path-to-validator.js> --category <new-category> --project <project-name> --task-id <task-id>
 
 ```
 
 ### Example Usage
 
 ```bash
-# Backend validation
-node src/core/enhanced-orchestrator.js --category backend --project ./Templum --task-id TASK-001
+# Backend validation (using project name, not path)
+node src/core/enhanced-orchestrator.js --category backend --project templum --task-id TASK-001
 
 # UI validation  
-node src/core/enhanced-orchestrator.js --category ui --project ./phoenix-code-lite --task-id TASK-002
+node src/core/enhanced-orchestrator.js --category ui --project phoenix-code-lite --task-id TASK-002
 
 # Build validation
-node src/core/enhanced-orchestrator.js --category build --project ./Haruspex --task-id TASK-003
+node src/core/enhanced-orchestrator.js --category build --project haruspex --task-id TASK-003
+
+# Scoped validation (only TypeScript files in src directory)
+node src/core/enhanced-orchestrator.js --category quality --project myproject --task-id TASK-004 --scope "src/**/*.ts"
+
+# Multiple scope patterns (src TypeScript and test files)
+node src/core/enhanced-orchestrator.js --category build --project myproject --task-id TASK-005 --scope "src/**/*.ts,tests/**/*.js,*.json"
 ```
 
 ## Available Categories
@@ -43,14 +49,89 @@ node src/core/enhanced-orchestrator.js --category build --project ./Haruspex --t
 | `feature`      | Feature enhancement validation | New capabilities, optimizations    |
 | `subagent`     | Subagent workflow validation   | Agent handoff workflows            |
 
+## Project Configuration
+
+### Per-Project Settings
+
+Each project can have custom validation settings in `config/projects/{project}-valconfig.json`:
+
+```json
+{
+  "version": "3.0.1",
+  "project": {
+    "name": "myproject",
+    "display_name": "My Project",
+    "project_directory": "../../MyProject"
+  },
+  "validation": {
+    "report_location": "dev/validation-results",
+    "timeout_overrides": {
+      "backend": 180000,
+      "quality": 120000
+    },
+    "commands": {
+      "build": "npm run build",
+      "test": "npm test",
+      "lint": "npm run lint",
+      "typecheck": "npx tsc --noEmit",
+      "start": "npm start"
+    }
+  }
+}
+```
+
+### Configuration Fields
+
+#### Project Section
+- **name**: Internal project identifier (lowercase, matches config filename)
+- **display_name**: Human-readable project name for reports
+- **project_directory**: Path to project root (relative to validation system or absolute)
+
+#### Validation Section  
+- **report_location**: Directory for validation reports (relative to project_directory)
+- **timeout_overrides**: Custom timeouts per validation category (milliseconds)
+- **commands**: Command definitions for validators (fallback to package.json scripts)
+
+#### Commands Configuration
+Commands are used by validators that need to execute project-specific operations:
+- **build**: Build/compilation command (used by build validator)  
+- **test**: Test execution command (used by test validators)
+- **lint**: Code linting command (used by quality validators)
+- **typecheck**: TypeScript checking command (used by core validator)
+- **start**: Service start command (used by backend validators)
+
+If commands are not specified, the system automatically falls back to common package.json scripts.
+
+### Configuration Setup
+
+1. **Missing Config**: System will provide specific guidance when project config is missing
+2. **Template Available**: Use `config/project-template.json` as starting point
+3. **Report Location**: Must exist before validation runs (system won't create directories)
+4. **Project Directory**: Must exist and be accessible from validation system
+5. **Name-based Resolution**: Use `--project <name>` where name maps to `<name>-valconfig.json`
+
+### Upgrading Existing Projects
+
+If you have existing validation configurations that use the old path-based approach:
+
+1. **Add `project_directory` field**: Specify the path to your project directory
+2. **Add `commands` section**: Define build, test, lint commands (optional - fallback to package.json)
+3. **Update CLI usage**: Change from `--project /path/to/project` to `--project myproject`
+4. **Verify paths**: Ensure `report_location` is relative to your project directory
+
+The system will auto-generate new configuration templates with all required fields.
+
 ## What the System Does
 
 ### For Existing Categories
 
-1. **Loads appropriate validator** for the specified category
-2. **Executes validation** with comprehensive testing
-3. **Generates detailed results** with evidence and recommendations
-4. **Returns results** in under 60 seconds for most validations
+1. **Resolves project information** from name-based configuration lookup
+2. **Loads project configuration** for validation settings and commands
+3. **Resolves commands** from config or package.json scripts (automatic fallback)
+4. **Validates report directories** exist before starting
+5. **Executes validation** with project-specific timeouts and commands
+6. **Generates reports automatically** in configured location
+7. **Returns results** in under 60 seconds for most validations
 
 ### For New Categories (Agent-Driven Extension)
 
@@ -123,15 +204,18 @@ For high-risk submissions, the system will:
 ### Required Arguments
 
 - `--category`: Validation category (see table above)
-- `--project`: Path to project directory (absolute or relative)
+- `--project`: Project name (maps to `<name>-valconfig.json` in config/projects/)
 - `--task-id`: Task identifier for tracking and reporting
 - `--submit-validator`: Path to the new validator script to be integrated (used for new categories)
 
+**Note**: The `--project` argument has changed from requiring a filesystem path to requiring a project name. The actual project directory is now configured in the `project_directory` field of the project's configuration file.
+
 ### Optional Arguments
 
-- `--scope`: Override default scope patterns for validation
-- `--save`: Save detailed validation results to file
-- `--verbose`: Enable detailed logging and progress information
+- `--scope`: Limit validation to specific file patterns (comma-separated glob patterns)
+  - Example: `--scope "src/**/*.ts,tests/**/*.js"`
+  - Default: `**/*` (all files)
+  - Use when: Large projects, focused validation, testing specific changes
 
 ### System Commands
 
@@ -166,6 +250,18 @@ The system provides:
 ## Troubleshooting
 
 ### Common Issues
+
+#### "Project configuration missing"
+
+- **Expected behavior** - No project config file exists yet
+- **Check**: `config/projects/{project}-valconfig.json` 
+- **Action**: Copy and customize `config/project-template.json`
+
+#### "Report directory does not exist"
+
+- **Check**: Directory specified in project config `report_location`
+- **Action**: Create the directory manually (system won't auto-create)
+- **Fix**: Update project config with correct path
 
 #### "Category not found"
 
@@ -227,10 +323,13 @@ The system provides:
 
 - **Main System**: `src/core/enhanced-orchestrator.js`
 - **Validators**: `src/validators/` directory  
-- **Configuration**: `config/capability-matrix.json`
+- **System Configuration**: `config/enhanced-config.json`
+- **Project Configurations**: `config/projects/{project}-valconfig.json`
+- **Project Template**: `config/project-template.json`
+- **Capability Matrix**: `config/capability-matrix.json`
 - **Integrated Extensions**: `data/extensions/` directory
 - **Backups**: `data/backups/` directory (automatic)
-- **Reports**: Generated in project `dev/validation-results/`
+- **Reports**: Generated in project-configured location
 
 ---
 
@@ -239,17 +338,17 @@ The system provides:
 ### Most Common Commands
 
 ```bash
-# Backend service changes
-node src/core/enhanced-orchestrator.js --category backend --project ./Templum --task-id TASK-BE-001
+# Backend service changes (using project name)
+node src/core/enhanced-orchestrator.js --category backend --project templum --task-id TASK-BE-001
 
 # UI/Interface changes  
-node src/core/enhanced-orchestrator.js --category ui --project ./phoenix-code-lite --task-id TASK-UI-001
+node src/core/enhanced-orchestrator.js --category ui --project phoenix-code-lite --task-id TASK-UI-001
 
 # Build/compilation issues
-node src/core/enhanced-orchestrator.js --category build --project ./project --task-id TASK-BUILD-001
+node src/core/enhanced-orchestrator.js --category build --project myproject --task-id TASK-BUILD-001
 
 # Submit a new validator 
-node src/core/enhanced-orchestrator.js --submit-validator ./new-validator.js --category new-cat --project ./project --task-id TASK-NEW-001
+node src/core/enhanced-orchestrator.js --submit-validator ./new-validator.js --category new-cat --project myproject --task-id TASK-NEW-001
 
 # System health check
 node src/core/enhanced-orchestrator.js --health-check

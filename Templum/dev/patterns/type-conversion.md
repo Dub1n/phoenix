@@ -1,11 +1,31 @@
-### Type Conversion Pattern
+---
+date-created: 2025-09-11-0000
+last-updated: 2025-09-11-0000
+name: type-conversion
+description: Type-safe conversion utilities that bridge interface gaps while maintaining full type safety
+status: established
+category: foundation
+use-when:
+  - Type system mismatches between simple legacy interfaces and comprehensive modern type definitions
+  - Need to eliminate `as any` casting while maintaining type safety
+  - Converting minimal definitions to comprehensive systems
+  - Creating complete design token systems from basic colors
+keywords:
+  - type-conversion
+  - type-safety
+  - interface-bridging
+  - legacy-compatibility
+  - design-tokens
+  - theme-conversion
+prerequisites:
+  - unified-type-system
+related-patterns:
+  - unified-type-system
+  - null-safety
+  - comprehensive-type-definitions
+---
 
-**Status**: ✅ ESTABLISHED
-**Category**: Foundation
-**Last Updated**: 2025-08-29
-**Difficulty**: 🟡 Medium
-**Est. Time**: ~2 hours
-**Prerequisites**: Unified Type System Pattern, comprehensive target type definitions
+### Type Conversion Pattern
 
 **Problem**: Type system mismatches between simple legacy interfaces and comprehensive modern type definitions requiring `as any` casting.
 
@@ -80,6 +100,11 @@ private adjustOpacity(color: string, opacity: number): string { /* ... */ }
 
 #### Type Conversion Pattern: Implementation Feedback
 <!-- Autonomous agents append feedback here when applying pattern -->
+
+// TODO: [TASK-PATTERN-001] Pattern: frontmatter-standardization | Complexity: 2 | Dependencies: yaml-frontmatter
+// Context: Updated pattern file to use standardized YAML frontmatter format with kebab-case fields, structured use-when scenarios, keywords array, and prerequisite/related-patterns arrays. Replaced old markdown header format while preserving all pattern content.
+// Validation-Required: yaml-syntax, field-completeness, content-preservation
+// Pattern-Info: { approach: "template-substitution", alternatives: "manual-conversion", trade-offs: "automation-consistency-vs-manual-customization" }
 
 - **2025-09-01 - [TASK-COMP-004]**: **ARCHITECTURAL CONFLICT DISCOVERED** - Found SkinPerformanceConfig with conflicting definitions between universal-skin-definition.ts (optional properties) and universal-skin-engine-types.ts (required properties). Applied workaround using type assertions and default values, but created TASK-TYPE-002 for proper resolution. Pattern needs enhancement for handling dual type system conflicts.
 - **2025-09-01 - [TASK-TYPE-002]**: **MAJOR SUCCESS** - Successfully resolved SkinPerformanceConfig and SkinAssets conflicts using comprehensive type system consolidation approach. Established single source of truth architecture (universal-skin-definition.ts), eliminated 30+ type conflicts, applied null safety patterns. Actual time: 6h (est. 2h) - required more comprehensive approach than basic conversion. **PATTERN ENHANCEMENT NEEDED**: Add guidance for complex type system consolidation vs simple conversion.

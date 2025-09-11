@@ -1,11 +1,35 @@
-### Test Health Monitoring Pattern
+---
+date-created: 2025-08-28-0000
+last-updated: 2025-09-11-0000
+name: test-health-monitoring
+description: Comprehensive test infrastructure health monitoring with pre-commit hooks, coverage reality checks, and continuous validation
+status: established
+category: foundation
+use-when:
+  - Test infrastructure might degrade over time without detection
+  - Need to prevent false security from broken tests
+  - Require automated validation before commits
+  - Want continuous monitoring of test system health
+keywords:
+  - test-health
+  - monitoring
+  - pre-commit
+  - coverage
+  - validation
+  - infrastructure
+  - quality-gates
+prerequisites:
+  - husky
+  - jest
+  - typescript
+related-patterns:
+  - ci-cd-pipeline
+  - test-infrastructure-repair
+  - coverage-validation
+  - quality-gates-framework
+---
 
-**Status**: ✅ ESTABLISHED
-**Category**: Foundation
-**Last Updated**: 2025-08-28
-**Difficulty**: 🟢 Basic
-**Est. Time**: ~1.5 hours
-**Prerequisites**: Husky, Jest, TypeScript
+### Test Health Monitoring Pattern
 
 **Problem**: Test infrastructure degrades over time without detection, leading to false security from broken tests
 

@@ -1,11 +1,32 @@
-### Protocol Communication Overview Pattern
+---
+date-created: 2025-08-27-0000
+last-updated: 2025-09-11-0000
+name: protocol-communication-overview
+description: Complete real protocol communication implemented through three specialized patterns for different backend services
+status: established
+category: infrastructure
+use-when:
+  - Need to replace mock protocol implementations with real backend service integration
+  - Implementing specialized communication patterns for IPC, HTTP, and WebSocket protocols
+  - Coordinating multi-protocol backend service communication with fallback mechanisms
+keywords:
+  - protocol
+  - communication
+  - backend-integration
+  - ipc
+  - http
+  - websocket
+  - service-integration
+prerequisites:
+  - backend-service-integration
+  - generic-connection-factory
+related-patterns:
+  - ipc-protocol-communication-pattern
+  - http-protocol-communication-pattern
+  - websocket-protocol-communication-pattern
+---
 
-**Status**: ESTABLISHED
-**Category**: Technical
-**Last Updated**: 2025-08-27
-**Difficulty**: 🔴 Expert
-**Est. Time**: ~9 hours (3 hours per protocol)
-**Prerequisites**: Backend Service Integration, Generic Connection Factory
+# Protocol Communication Overview Pattern
 
 **Problem**: Mock protocol implementations preventing real backend service integration and communication.
 
@@ -41,6 +62,11 @@ Each pattern provides service-specific enhancements, error handling, and integra
 
 #### Protocol Communication Overview Pattern: Implementation Feedback
 <!-- Autonomous agents append feedback here when applying pattern -->
+
+// TODO: [TASK-PATTERN-001] Pattern: frontmatter-standardization | Complexity: 2 | Dependencies: yaml-frontmatter
+// Context: Updated pattern frontmatter to standardized YAML format with proper kebab-case fields and structured metadata
+// Validation-Required: frontmatter-compliance, yaml-syntax, pattern-searchability
+// Pattern-Info: { approach: "template-based-conversion", alternatives: "manual-editing", trade-offs: "standardization-vs-flexibility" }
 
 - **2025-09-02 - [TASK-CLI-010]**: Applied file-based IPC variant for CLI-to-Core communication successfully. Used temporary file exchange pattern with 5-second timeout and cleanup. Required extending pattern for process-independent IPC (CLI/Core run separately vs parent-child). Pattern worked well - actual time: 3h (est. 4-6h). File-based approach more reliable than Node.js child_process IPC for independent processes.
 

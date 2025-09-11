@@ -1,11 +1,36 @@
-### Core Component Unit Testing Pattern
+---
+date-created: 2025-09-01-0000
+last-updated: 2025-09-11-0000
+name: core-component-unit-testing
+description: Comprehensive unit testing pattern with mock management, integration test orchestration, and real backend validation for critical components
+status: established
+category: foundation
+use-when:
+  - Testing core components in Templum with external dependencies
+  - Ensuring reliability of backend integration points
+  - Validating service discovery and connection factory logic
+  - Implementing comprehensive test coverage for critical components
+keywords:
+  - unit-testing
+  - mock-management
+  - integration-testing
+  - backend-validation
+  - jest
+  - typescript
+  - service-discovery
+  - connection-factory
+prerequisites:
+  - jest-framework-setup
+  - typescript-configuration
+  - mock-patterns
+related-patterns:
+  - integration-testing
+  - backend-service-patterns
+  - mock-management
+  - test-orchestration
+---
 
-**Status**: ESTABLISHED
-**Category**: Foundation
-**Last Updated**: 2025-09-01
-**Difficulty**: 🟡 Medium
-**Est. Time**: ~4 hours
-**Prerequisites**: Jest framework, TypeScript, mock patterns, integration testing
+### Core Component Unit Testing Pattern
 
 **Problem**: Core components in Templum required comprehensive testing coverage to ensure reliability, but lacked consistent testing patterns for backend integration, service discovery, connection factories, and mock management.
 
@@ -152,6 +177,11 @@ describe('End-to-End Backend Integration', () => {
 - [ ] Performance tests validate response times
 
 #### Core Component Unit Testing Pattern: Implementation Feedback
+
+// TODO: [TASK-PATTERN-001] Pattern: core-component-unit-testing | Complexity: 6 | Dependencies: jest,typescript,mock-patterns
+// Context: Updated frontmatter format to standardized YAML template with proper kebab-case fields and structured metadata
+// Validation-Required: pattern-compliance, frontmatter-syntax, searchability-enhancement
+// Pattern-Info: { approach: "template-based-standardization", alternatives: "manual-formatting", trade-offs: "consistency-vs-flexibility" }
 
 **Successfully Applied**: TASK-SKIN-007 Comprehensive Backend Integration Validation, TASK-CLEAN-001 Generic Backend Validation, TASK-GENERIC-003 Generic Service Discovery Testing
 

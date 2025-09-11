@@ -1,11 +1,32 @@
-### PCL Rendering Integration Bridge Pattern
+---
+date-created: 2025-08-28-0000
+last-updated: 2025-09-11-0000
+name: pcl-rendering-integration-bridge-pattern
+description: Comprehensive PCL Rendering Adapter that bridges Universal Skin Engine with Phoenix Code Lite's proven rendering patterns
+status: established
+category: integration
+use-when:
+  - Universal Skin Engine needs sophisticated rendering capabilities
+  - Code reuse opportunities exist between Universal and PCL systems
+  - Consistent UI quality across interface types is required
+  - PCL rendering patterns need to be integrated while maintaining architectural boundaries
+keywords:
+  - rendering
+  - pcl-integration
+  - universal-skin-engine
+  - bridge-pattern
+  - theme-mapping
+  - layout-engine
+prerequisites:
+  - universal-interface-orchestration
+  - pcl-component-integration
+related-patterns:
+  - universal-interface-orchestration
+  - backend-service-integration
+  - session-management
+---
 
-**Status**: ESTABLISHED
-**Category**: Integration
-**Last Updated**: 2025-08-28
-**Difficulty**: 🟡 Medium
-**Est. Time**: ~2 hours
-**Prerequisites**: Universal Interface Orchestration, PCL Component Integration
+### PCL Rendering Integration Bridge Pattern
 
 **Problem**: Universal Skin Engine had basic rendering capabilities but lacked sophisticated rendering patterns available in Phoenix Code Lite, resulting in inconsistent UI quality and missed code reuse opportunities.
 
@@ -192,3 +213,8 @@ ${separator}
 **Integration Points**: Universal Interface Orchestration, Backend Service Integration, Session Management
 **Dependencies**: Universal Skin Engine Types (enhanced with PCL metadata support), Phoenix Code Lite rendering patterns (reused), Enhanced type system for PCL-Universal bridge interfaces
 **Files Using This Pattern**: PCL rendering adapter files, Universal Skin Engine bridge components
+
+<!-- TODO: [TASK-PATTERN-001] Pattern: frontmatter-standardization | Complexity: 2 | Dependencies: none
+Context: Updated PCL Rendering Integration Bridge Pattern frontmatter to follow standardized YAML template format with kebab-case field names, structured use-when scenarios, and proper prerequisite/related-pattern arrays
+Validation-Required: yaml-syntax, frontmatter-completeness, pattern-searchability
+Pattern-Info: { approach: "template-substitution", alternatives: "manual-formatting", trade-offs: "automated-consistency-vs-custom-formatting" } -->

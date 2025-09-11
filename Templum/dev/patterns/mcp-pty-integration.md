@@ -1,9 +1,34 @@
-### MCP PTY Integration Pattern
+---
+date-created: 2025-09-05-0000
+last-updated: 2025-09-11-0000
+name: mcp-pty-integration
+description: Mock-ready PTY foundation with comprehensive session lifecycle management for agent-CLI interaction
+status: established
+category: foundation
+use-when:
+  - Need agent-CLI interaction through pseudoterminal sessions
+  - Building MCP server frameworks for terminal automation
+  - Implementing cross-platform terminal integration
+  - Developing mock-first architecture for external dependencies
+keywords:
+  - mcp
+  - pty
+  - terminal
+  - session-management
+  - cross-platform
+  - mock-development
+prerequisites:
+  - typescript-configuration
+  - testing-infrastructure
+related-patterns:
+  - mcp-server-framework
+  - error-handling-foundation
+  - resource-cleanup-pattern
+---
 
-**Status**: ESTABLISHED | **Category**: Foundation  
-**Difficulty**: 🟢 | **Time**: ~4 hours  
-**Problem**: Enable agent-CLI interaction through pseudoterminal session management  
-**Solution**: Mock-ready PTY foundation with comprehensive session lifecycle management  
+# MCP PTY Integration Pattern
+
+Enable agent-CLI interaction through pseudoterminal session management with mock-ready PTY foundation and comprehensive session lifecycle management.  
 
 #### MCP PTY Integration Pattern: Implementation Steps
 

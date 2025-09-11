@@ -1,11 +1,30 @@
-### Integration Test Framework Transition Pattern
+---
+date-created: 2025-08-27-0000
+last-updated: 2025-09-11-0000
+name: integration-test-framework-transition
+description: Transition from private property mocking to public API testing with real component validation
+status: established
+category: testing
+use-when:
+  - Integration tests written for mock-based architecture need to validate real implementation behavior
+  - Private property access in tests causes compilation errors
+  - Test suite provides false confidence due to mock-dependent testing
+  - Real integration issues are hidden by mock responses
+keywords:
+  - integration-testing
+  - jest
+  - public-api
+  - mock-elimination
+  - real-behavior-validation
+prerequisites:
+  - jest-testing-framework
+  - typescript-compilation-understanding
+related-patterns:
+  - api-validation-pattern
+  - component-integration-testing
+---
 
-**Status**: ESTABLISHED
-**Category**: Integration Testing
-**Last Updated**: 2025-08-27
-**Difficulty**: 🟡 Medium
-**Est. Time**: ~1.5 hours
-**Prerequisites**: Jest testing framework, understanding of public vs private APIs
+### Integration Test Framework Transition Pattern
 
 **Problem**: Integration tests written for mock-based architecture don't validate real implementation behavior, leading to false confidence and hidden integration issues.
 
@@ -76,6 +95,11 @@ expect(typeof backendRouter.executeCommand).toBe('function');
 
 #### Integration Test Framework Transition Pattern: Implementation Feedback
 <!-- Autonomous agents append feedback here when applying pattern -->
+
+// TODO: [TASK-PATTERN-001] Pattern: frontmatter-standardization | Complexity: 2 | Dependencies: yaml-formatting
+// Context: Updated pattern frontmatter to follow standardized YAML template format with kebab-case fields
+// Validation-Required: yaml-syntax-validation, pattern-searchability, frontmatter-consistency
+// Pattern-Info: { approach: "template-based-standardization", alternatives: "manual-formatting", trade-offs: "consistency-over-flexibility" }
 
 #### Integration Test Framework Transition Pattern: Pattern Metadata
 

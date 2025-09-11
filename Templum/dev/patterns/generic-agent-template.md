@@ -1,8 +1,33 @@
+---
+date-created: 2025-09-06-0000
+last-updated: 2025-09-11-0000
+name: generic-agent-template
+description: Project-agnostic research agents with context isolation and file-based handoff communication
+status: established
+category: foundation
+use-when: 
+  - Need context isolation during research phases
+  - Require cross-project agent reusability
+  - Want to reduce main agent context by 70%+
+  - Building subagent workflow infrastructure
+keywords: 
+  - agent-template
+  - context-isolation
+  - handoff-protocol
+  - cross-project
+  - research-automation
+prerequisites: 
+  - file-manager-pattern
+  - error-handling-pattern
+related-patterns: 
+  - subagent-workflow
+  - file-based-handoff
+  - research-agent-pattern
+---
+
 ## Generic Agent Template Pattern
 
 ### Generic Agent Template Pattern: Overview
-
-**Status**: ✅ ESTABLISHED | **Category**: Foundation | **Difficulty**: 🟡 Medium | **Time**: ~6 hours
 
 **Problem**: Need for project-agnostic research agents that can operate with context isolation across VDL_Vault projects without polluting main agent context during research phases.
 
@@ -333,3 +358,8 @@ class WorkflowIntegration {
 
 **Next Review**: 2025-12-06 or after first cross-project implementation  
 **Next Enhancement**: 2026-03-06 (Quarterly agent capability expansion)
+
+// TODO: [TASK-PATTERN-001] Pattern: frontmatter-update | Complexity: 2 | Dependencies: yaml-parser,template-engine
+// Context: Updated YAML frontmatter following standardized template format with kebab-case fields, structured arrays, and proper metadata
+// Validation-Required: yaml-syntax, field-completeness, searchability-keywords
+// Pattern-Info: { approach: "template-substitution", alternatives: "manual-editing", trade-offs: "automation-vs-customization" }

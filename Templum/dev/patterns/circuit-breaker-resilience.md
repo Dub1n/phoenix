@@ -1,6 +1,6 @@
 ---
-date-created: 2025-08-20
-last-updated: 2025-08-23
+date-created: 2025-08-20-0000
+last-updated: 2025-09-11-0000
 name: circuit-breaker-resilience
 description: Circuit breaker implementation with operation-specific tracking, Templum error integration, signal emission, and specialized factory patterns
 status: ESTABLISHED
@@ -10,9 +10,20 @@ use-when:
   - Implementing error isolation with comprehensive error recovery
   - Need operation-specific failure tracking and recovery strategies
   - Building fault-tolerant systems with automatic recovery
-keywords: [circuit-breaker, resilience, error-recovery, fault-tolerance, cascading-failures, isolation]
-prerequisites: [unified-type-system, templumerror-integration]
-related-patterns: [error-recovery, observability-infrastructure, templum-resource-management-unified]
+keywords:
+  - circuit-breaker
+  - resilience
+  - error-recovery
+  - fault-tolerance
+  - cascading-failures
+  - isolation
+prerequisites:
+  - unified-type-system
+  - templumerror-integration
+related-patterns:
+  - error-recovery
+  - observability-infrastructure
+  - templum-resource-management-unified
 ---
 
 # Circuit Breaker Resilience Pattern
@@ -158,6 +169,11 @@ isHealthyForOperation(operationType: string): boolean {
 
 #### Circuit Breaker Resilience Pattern: Implementation Feedback
 <!-- Autonomous agents append feedback here when applying pattern -->
+
+// TODO: [TASK-PATTERN-001] Pattern: circuit-breaker-resilience | Complexity: 7 | Dependencies: unified-type-system,templumerror-integration
+// Context: Updated frontmatter to conform to standardized template format and validated related patterns
+// Validation-Required: frontmatter-compliance, pattern-linkage-verification, template-format-validation
+// Pattern-Info: { approach: "frontmatter-standardization", alternatives: "none-required", trade-offs: "updated-timestamp-for-maintenance-tracking" }
 
 #### Circuit Breaker Resilience Pattern: Pattern Metadata
 

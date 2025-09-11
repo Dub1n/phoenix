@@ -1,11 +1,30 @@
-### Factory Registry with Context Management Pattern
+---
+date-created: 2025-08-29-0000
+last-updated: 2025-09-11-0000
+name: factory-registry-with-context-management
+description: Factory registration systems with context-dependent dependencies, error boundaries and graceful degradation
+status: established
+category: foundation
+use-when:
+  - Need factory registration with context dependencies
+  - Implementing VSCode extension context management
+  - Requiring error boundaries with graceful degradation
+keywords:
+  - factory-pattern
+  - registry
+  - context-management
+  - error-boundaries
+  - vscode-extension
+  - dependency-injection
+prerequisites:
+  - dependency-injection-pattern
+  - vscode-extension-context
+related-patterns:
+  - dependency-injection
+  - unified-type-system
+---
 
-**Status**: ✅ ESTABLISHED
-**Category**: Foundation
-**Last Updated**: 2025-08-29
-**Difficulty**: 🟡 Medium
-**Est. Time**: ~2 hours
-**Prerequisites**: Dependency Injection Pattern, VSCode Extension Context understanding
+### Factory Registry with Context Management Pattern
 
 **Problem**: Factory registration systems need to handle context-dependent dependencies (like VSCode Extension Context) while maintaining error boundaries and graceful degradation.
 

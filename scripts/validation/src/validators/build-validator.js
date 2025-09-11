@@ -73,12 +73,16 @@ export class BuildValidator {
       const failedTests = result.tests.filter(t => t.status === 'FAIL');
       const passedTests = result.tests.filter(t => t.status === 'PASS');
       const warnTests = result.tests.filter(t => t.status === 'WARN');
+      const skippedTests = result.tests.filter(t => t.status === 'SKIP');
       
       if (failedTests.length > 0) {
         result.status = 'FAIL';
         result.errors.push(`${failedTests.length} build tests failed`);
       } else if (passedTests.length > 0) {
         result.status = warnTests.length > 0 ? 'WARN' : 'PASS';
+      } else if (skippedTests.length === result.tests.length) {
+        result.status = 'WARN';
+        result.warnings.push('All build tests were skipped due to missing commands');
       } else {
         result.status = 'FAIL';
         result.errors.push('No build tests completed successfully');
@@ -181,6 +185,16 @@ export class BuildValidator {
       errors: [],
       warnings: []
     };
+
+    // Check if build command is available
+    if (!projectInfo.buildCommand) {
+      test.status = 'SKIP';
+      test.message = 'No build command configured';
+      test.warnings.push('Build command not found in project configuration or package.json scripts');
+      test.evidence.push('Add "build" command to valconfig.json or "build" script to package.json');
+      console.log('      🟡 SKIP - No build command configured');
+      return test;
+    }
 
     try {
       const originalCwd = process.cwd();

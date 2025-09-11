@@ -1,3 +1,37 @@
+---
+date-created: 2025-09-11-0000
+last-updated: 2025-09-11-0000
+name: unused-variable-cleanup-automation
+description: Automated script that intelligently distinguishes between unused imports and variables for ESLint cleanup
+status: established
+category: quality
+use-when:
+  - Large codebases accumulate unused variables causing ESLint errors
+  - TypeScript compilation failures from incorrectly handled imports
+  - Manual cleanup is time-consuming and error-prone
+  - Need to reduce ESLint warnings while maintaining compilation
+keywords:
+  - eslint
+  - typescript
+  - automation
+  - unused-variables
+  - imports
+  - code-quality
+  - compilation
+prerequisites:
+  - eslint-configuration
+  - typescript-setup
+related-patterns:
+  - automated-code-quality
+  - build-integration
+  - ci-cd-gates
+---
+
+<!-- TODO: [TASK-PATTERN-001] Pattern: frontmatter-standardization | Complexity: 2 | Dependencies: template-system
+Context: Updated YAML frontmatter following standardized template format with kebab-case fields
+Validation-Required: yaml-syntax, field-completeness, pattern-searchability
+Pattern-Info: { approach: "template-substitution", alternatives: "manual-update", trade-offs: "standardization-vs-flexibility" } -->
+
 ### Unused Variable Cleanup Automation Pattern
 
 #### Unused Variable Cleanup Automation Pattern: Pattern Overview

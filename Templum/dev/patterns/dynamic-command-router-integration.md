@@ -1,12 +1,27 @@
 ---
+date-created: 2025-08-29-0000
+last-updated: 2025-09-11-121733
 name: dynamic-command-router-integration
-description: Menu and registry systems need to integrate with DynamicCommandRouter for skin-driven command routing while maintaining backward compatibility with legacy hardcoded patterns.
-Status: ESTABLISHED
-Category: Integration
-Last Updated: 2025-08-29
-Difficulty: Medium
-Est. Time: ~1-2 hours
-Prerequisites: DynamicCommandRouter understanding, feature flag configuration
+description: Menu and registry systems need to integrate with DynamicCommandRouter for skin-driven command routing while maintaining backward compatibility with legacy hardcoded patterns
+status: established
+category: integration
+use-when:
+  - Menu and registry systems need to integrate with DynamicCommandRouter
+  - Skin-driven command routing while maintaining backward compatibility
+  - Legacy hardcoded patterns must be preserved
+keywords:
+  - dynamic-command-router
+  - menu-integration
+  - registry-systems
+  - backward-compatibility
+  - skin-driven
+prerequisites:
+  - dynamic-command-router-understanding
+  - feature-flag-configuration
+related-patterns:
+  - dynamic-command-routing
+  - universal-command-registry
+  - backend-service-integration-unified
 ---
 
 ### Dynamic Command Router Integration

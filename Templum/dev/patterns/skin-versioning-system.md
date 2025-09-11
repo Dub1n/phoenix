@@ -1,11 +1,34 @@
-### Skin Versioning System Pattern
+---
+date-created: 2025-08-28-0000
+last-updated: 2025-09-11-0000
+name: skin-versioning-system
+description: Comprehensive semantic versioning system with multi-version storage, conflict resolution, compatibility validation, and automated migration framework
+status: established
+category: infrastructure
+use-when:
+  - Universal Skin Engine lacks version management capabilities
+  - Need to handle multiple skin versions with conflict detection
+  - Require compatibility validation and migration strategies
+  - Need version-aware caching and storage management
+keywords:
+  - versioning
+  - semantic-versioning
+  - skin-management
+  - conflict-resolution
+  - migration
+  - compatibility
+  - caching
+prerequisites:
+  - universal-skin-engine
+  - unified-type-system
+  - templum-error-integration
+related-patterns:
+  - universal-skin-engine-pattern
+  - unified-type-system-pattern
+  - templum-error-integration-pattern
+---
 
-**Status**: ✅ ESTABLISHED
-**Category**: Infrastructure
-**Last Updated**: 2025-08-28
-**Difficulty**: 🟠 Advanced
-**Est. Time**: ~4 hours
-**Prerequisites**: Universal Skin Engine, Unified Type System, TemplumError Integration
+# Skin Versioning System Pattern
 
 **Problem**: Universal Skin Engine lacked version management capabilities, making it impossible to handle multiple skin versions, detect conflicts, validate compatibility, or provide migration strategies for version transitions.
 

@@ -1,7 +1,0 @@
-[
-    {
-        "key": "ctrl+alt+e",
-        "command": "workbench.action.tasks.runTask",
-        "args": "Emoji Substitute (Auto Detect)"
-    }
-] 

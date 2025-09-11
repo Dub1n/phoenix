@@ -1,11 +1,32 @@
-### WebSocket Protocol Communication Pattern
+---
+date-created: 2025-08-27-0000
+last-updated: 2025-09-11-0000
+name: websocket-protocol-communication
+description: Real WebSocket implementation with service-specific enhancements and real-time bidirectional messaging
+status: established
+category: integration
+use-when:
+  - Backend service requires WebSocket communication protocol
+  - Real-time bidirectional messaging is needed
+  - Service-specific protocol enhancements are required
+  - Litany backend service integration
+keywords:
+  - websocket
+  - real-time
+  - bidirectional
+  - protocol
+  - litany
+  - backend-service
+  - messaging
+prerequisites:
+  - backend-service-integration
+  - websocket-client-libraries
+related-patterns:
+  - backend-service-integration
+  - universal-skin-engine
+---
 
-**Status**: ESTABLISHED
-**Category**: Technical
-**Last Updated**: 2025-08-27
-**Difficulty**: 🔴 Expert
-**Est. Time**: ~3 hours
-**Prerequisites**: Backend Service Integration, WebSocket client libraries
+### WebSocket Protocol Communication Pattern
 
 **Problem**: Litany backend service requires WebSocket communication with service-specific enhancements and real-time bidirectional messaging.
 

@@ -1,12 +1,32 @@
 ---
+date-created: 2025-08-28-0000
+last-updated: 2025-09-11-121733
 name: backend-service-integration-unified
-description: 
-Status: ESTABLISHED
-Category: Integration
-Last Updated: 2025-08-29
-Difficult*: Advanced
-Est. Time: ~3-4 hours
-Prerequisites: Enhanced BackendConfig Schema, Universal Interface Orchestration
+description: Fully generic, skin-driven backend integration supporting multiple protocols with zero Templum code changes for new backends
+status: ESTABLISHED
+category: Integration
+use-when:
+  - Integrating new backend services without code changes
+  - Supporting multiple communication protocols (IPC, HTTP, WebSocket, gRPC)
+  - Implementing skin-driven service discovery
+  - Building protocol-agnostic connection factories
+  - Creating generic command routing systems
+keywords:
+  - backend-integration
+  - protocol-abstraction
+  - skin-driven
+  - generic-factory
+  - multi-protocol
+prerequisites:
+  - Enhanced BackendConfig Schema
+  - Universal Interface Orchestration
+  - Protocol Communication Framework
+related-patterns:
+  - enhanced-backendconfig-schema
+  - universal-interface-orchestration
+  - ipc-protocol-communication
+  - http-protocol-communication
+  - websocket-protocol-communication
 ---
 
 # Backend Service Integration Unified Pattern
@@ -234,6 +254,11 @@ async discoverAndConnect(): Promise<void> {
 
 #### Backend Service Integration Unified Pattern: Implementation Feedback
 <!-- Autonomous agents append feedback here when applying pattern -->
+
+// TODO: [TASK-PATTERN-001] Pattern: frontmatter-update | Complexity: 3 | Dependencies: pattern-metadata-system
+// Context: Fixed malformed YAML frontmatter and added comprehensive pattern metadata
+// Validation-Required: yaml-syntax, metadata-completeness, pattern-discoverability
+// Pattern-Info: { approach: "comprehensive-metadata-enhancement", alternatives: "minimal-fix", trade-offs: "completeness-over-simplicity" }
 
 ##### Skin Loading Integration: BackendServiceRouter and TemplumCore
 

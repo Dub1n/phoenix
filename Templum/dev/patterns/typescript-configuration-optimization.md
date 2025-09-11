@@ -1,11 +1,31 @@
-### TypeScript Configuration Optimization Pattern
+---
+date-created: 2025-09-11-0000
+last-updated: 2025-09-02-0000
+name: typescript-configuration-optimization
+description: Optimize TypeScript configuration for enhanced library compatibility and build performance
+status: established
+category: configuration
+use-when:
+  - Need to improve TypeScript compilation performance
+  - Experiencing library compatibility issues
+  - Upgrading TypeScript configuration for modern standards
+  - Implementing incremental compilation
+keywords:
+  - "typescript"
+  - "configuration"
+  - "performance"
+  - "compilation"
+  - "module-resolution"
+  - "esmodule-interop"
+prerequisites:
+  - "basic-typescript-knowledge"
+  - "existing-tsconfig"
+related-patterns:
+  - "compilation-error-resolution"
+  - "library-compatibility-validation"
+---
 
-**Status**: ✅ ESTABLISHED  
-**Category**: Foundation  
-**Last Updated**: 2025-09-02  
-**Difficulty**: 🟢 Basic  
-**Est. Time**: ~1 hour  
-**Prerequisites**: Basic TypeScript knowledge, existing tsconfig.json  
+### TypeScript Configuration Optimization Pattern
 
 **Problem**: Optimize TypeScript configuration for enhanced library compatibility and build performance without breaking existing compilation.
 

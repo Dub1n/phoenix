@@ -1,18 +1,32 @@
 ---
-date-created: 2025-08-15
-last-updated: 2025-09-01
+date-created: 2025-08-15-0000
+last-updated: 2025-09-11-0000
 name: universal-skin-engine
 description: Comprehensive universal rendering engine that handles multiple interface types with consistent theming, version management, and cross-platform compatibility
-status: ESTABLISHED
-category: Foundation
+status: established
+category: foundation
 use-when:
   - Need consistent theming across multiple interface types (CLI, VSCode, web)
   - Implementing cross-platform compatibility with high code reuse
   - Building a centralized rendering system with version management
   - Require event-driven architecture for skin management
-keywords: [rendering, theming, cross-platform, version-management, interface-types, universal, engine, PCL-integration]
-prerequisites: [pcl-rendering-integration-bridge, skin-versioning-system, templumerror-integration]
-related-patterns: [pcl-enhanced-rendering, universal-interface-orchestration, advanced-compatibility-validation]
+keywords:
+  - rendering
+  - theming
+  - cross-platform
+  - version-management
+  - interface-types
+  - universal
+  - engine
+  - pcl-integration
+prerequisites:
+  - pcl-rendering-integration-bridge
+  - skin-versioning-system
+  - templumerror-integration
+related-patterns:
+  - pcl-enhanced-rendering
+  - universal-interface-orchestration
+  - advanced-compatibility-validation
 ---
 
 # Universal Skin Engine Pattern
@@ -241,3 +255,8 @@ private initializePCLSkinIntegration(): void {
 - **Files Using This Pattern**: `src/skin/universal-skin-engine.ts`, `src/skin/pcl-rendering-adapter.ts`, `src/skin/skin-version-manager.ts`
 - **Integration Points**: PCL Rendering Adapter, Skin Version Manager, TemplumError system, Event emitters
 - **Dependencies**: Event-driven architecture, PCL integration patterns, version management systems
+
+// TODO: [TASK-PATTERN-001] Pattern: frontmatter-standardization | Complexity: 2 | Dependencies: pattern-template
+// Context: Updated frontmatter to follow standardized template format with proper YAML structure and field naming
+// Validation-Required: yaml-syntax, field-completeness, template-compliance
+// Pattern-Info: { approach: "template-based-update", alternatives: "manual-formatting", trade-offs: "standardization-vs-custom-fields" }

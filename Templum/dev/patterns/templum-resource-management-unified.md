@@ -1,11 +1,35 @@
-### Templum Resource Management Unified Pattern
+---
+date-created: 2025-08-27-0000
+last-updated: 2025-09-11-0000
+name: templum-resource-management-unified
+description: Enterprise-grade resource management system with allocation tracking, policy enforcement, service health monitoring, and automated cleanup
+status: established
+category: infrastructure
+use-when:
+  - System resource leaks need to be prevented
+  - Unmanaged connections causing memory exhaustion
+  - Resource monitoring and policy enforcement required
+  - Investigation tasks blocked by resource issues
+  - Automated cleanup and lifecycle management needed
+keywords:
+  - resource-management
+  - memory-allocation
+  - connection-pooling
+  - policy-enforcement
+  - service-health
+  - automated-cleanup
+  - resource-tracking
+  - performance-monitoring
+prerequisites:
+  - templum-core-architecture
+  - dependency-injection-patterns
+related-patterns:
+  - dependency-injection-unified-pattern
+  - universal-interface-orchestration-pattern
+  - backend-service-integration-unified-pattern
+---
 
-**Status**: ✅ ESTABLISHED  
-**Category**: System Infrastructure  
-**Last Updated**: 2025-08-27  
-**Difficulty**: 🟠 Advanced  
-**Est. Time**: ~4-6 hours  
-**Prerequisites**: Templum Core architecture, dependency injection patterns
+### Templum Resource Management Unified Pattern
 
 **Problem**: System resource leaks, unmanaged connections, memory exhaustion, and lack of resource monitoring leading to performance degradation and investigation task blocking
 
@@ -202,6 +226,11 @@ throw error;
 - [ ] Cleanup intervals and expiration configured
 - [ ] Priority-based resource management implemented
 - [ ] Error handling with resource cleanup comprehensive
+
+// TODO: [TASK-PATTERN-001] Pattern: frontmatter-standardization | Complexity: 2 | Dependencies: yaml-frontmatter,template-compliance
+// Context: Updated pattern file frontmatter from non-standard format to standardized YAML frontmatter following kebab-case naming conventions and structured template format
+// Validation-Required: yaml-syntax-validation, template-compliance-check, pattern-searchability-verification
+// Pattern-Info: { approach: "template-substitution-with-content-preservation", alternatives: "manual-conversion", trade-offs: "automated-consistency-vs-manual-review" }
 
 #### Templum Resource Management Unified Pattern: Implementation Feedback
 <!-- Autonomous agents append feedback here when applying pattern -->

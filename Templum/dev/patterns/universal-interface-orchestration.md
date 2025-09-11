@@ -1,11 +1,37 @@
-### Universal Interface Orchestration Pattern
+---
+date-created: 2025-08-27-0000
+last-updated: 2025-09-11-0000
+name: universal-interface-orchestration
+description: Orchestrates interface switching between multiple interface types while preserving session state and coordinating Universal Skin Engine rendering
+status: established
+category: integration
+use-when:
+  - Complex interface switching between VSCode, CLI, and command interfaces is required
+  - Session state must be preserved across interface switches
+  - Universal Skin Engine integration is needed for interface-specific rendering
+  - Comprehensive validation and error recovery is required for interface switching
+  - Performance monitoring of interface switches is needed
+keywords:
+  - interface-switching
+  - session-preservation
+  - universal-skin-engine
+  - validation
+  - error-recovery
+  - performance-monitoring
+  - orchestration
+prerequisites:
+  - interface-adapters
+  - universal-skin-engine
+  - session-management
+  - dependency-injection
+related-patterns:
+  - backend-service-integration
+  - session-state-management
+  - universal-skin-engine-integration
+  - abstraction-layer-architecture
+---
 
-**Status**: ESTABLISHED
-**Category**: Integration
-**Last Updated**: 2025-09-01
-**Difficulty**: 🔴 Expert
-**Est. Time**: ~4 hours
-**Prerequisites**: Interface adapters, Universal Skin Engine, Session management, Dependency injection
+### Universal Interface Orchestration Pattern
 
 **Problem**: Complex interface switching between multiple interface types (VSCode, CLI, command) while preserving session state, coordinating Universal Skin Engine rendering, and maintaining comprehensive validation and error recovery.
 
@@ -179,3 +205,8 @@ async switchInterface(targetInterface: InterfaceType): Promise<{ success: boolea
 - [TASK-173] ✅ Universal Interface State Synchronization (2025-08-27)
 **Integration Points**: Backend Service Integration, Session State Management, Universal Skin Engine Integration, Session Management, Abstraction Layer Architecture
 **Files Using This Pattern**: src/core/universal-interface-manager.ts, src/core/templum-core.ts, src/extension.ts
+
+// TODO: [TASK-PATTERN-001] Pattern: frontmatter-update | Complexity: 2 | Dependencies: template-format,yaml-syntax
+// Context: Updated YAML frontmatter for universal-interface-orchestration pattern following standardized template format with kebab-case fields, proper array formatting, and comprehensive metadata
+// Validation-Required: yaml-syntax-validation, frontmatter-completeness, pattern-searchability
+// Pattern-Info: { approach: "template-substitution", alternatives: "manual-formatting", trade-offs: "standardization-vs-flexibility" }

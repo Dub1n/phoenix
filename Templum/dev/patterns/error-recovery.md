@@ -1,32 +1,32 @@
 ---
-date-created: "2025-09-01"
-last-updated: "2025-09-09"
-name: "error-recovery"
-description: "Implement structured fallback rendering system that maintains system availability during component failures"
-status: "ESTABLISHED"
-category: "Foundation"
+date-created: 2025-09-01-0000
+last-updated: 2025-09-11-0000
+name: error-recovery
+description: Implement structured fallback rendering system that maintains system availability during component failures
+status: established
+category: foundation
 use-when:
-  - "System components fail completely when primary integration methods encounter errors"
-  - "Users receive empty failure responses instead of graceful degradation"
-  - "Application needs to maintain availability during partial component failures"
-  - "Integration failures should trigger alternative code paths for basic functionality"
-  - "Cross-process communication requires fault-tolerant fallback mechanisms"
+  - System components fail completely when primary integration methods encounter errors
+  - Users receive empty failure responses instead of graceful degradation
+  - Application needs to maintain availability during partial component failures
+  - Integration failures should trigger alternative code paths for basic functionality
+  - Cross-process communication requires fault-tolerant fallback mechanisms
 keywords:
-  - "error-recovery"
-  - "fallback-rendering"
-  - "graceful-degradation" 
-  - "system-availability"
-  - "fault-tolerance"
-  - "integration-failure"
-  - "circuit-breaker"
-  - "resilience"
+  - error-recovery
+  - fallback-rendering
+  - graceful-degradation
+  - system-availability
+  - fault-tolerance
+  - integration-failure
+  - circuit-breaker
+  - resilience
 prerequisites:
-  - "circuit-breaker-resilience"
-  - "templumerror-integration"
+  - circuit-breaker-resilience
+  - templumerror-integration
 related-patterns:
-  - "circuit-breaker-resilience"
-  - "performance-monitoring"
-  - "structured-error-handling"
+  - circuit-breaker-resilience
+  - performance-monitoring
+  - structured-error-handling
 ---
 
 # Error Recovery Pattern
@@ -140,3 +140,8 @@ private trackFallbackUsage(fallbackType: string, success: boolean, duration: num
 **Successfully Applied**: Universal Skin Engine PCL Integration Fallback (2025-09-01), CLI-to-Core IPC Communication Error Recovery (2025-09-02)
 **Integration Points**: Circuit Breaker Resilience Pattern, TemplumError Integration, Performance Monitoring
 **Files Using This Pattern**: src/skin/universal-skin-engine.ts, src/types/universal-skin-engine-types.ts, src/cli-entry.ts, src/core/templum-core.ts
+
+// TODO: [TASK-PATTERN-001] Pattern: frontmatter-update | Complexity: 1 | Dependencies: none
+// Context: Updated frontmatter last-updated timestamp following template standardization maintenance
+// Validation-Required: pattern-compliance, frontmatter-format, metadata-consistency
+// Pattern-Info: { approach: "template-based-update", alternatives: "manual-editing", trade-offs: "standardization-vs-flexibility" }

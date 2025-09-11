@@ -1,11 +1,32 @@
-### VSCode Service Tree Provider with Conditional Display Pattern
+---
+date-created: 2025-09-01-0000
+last-updated: 2025-09-11-0000
+name: vscode-service-tree-provider-with-conditional-display
+description: Implement conditional display logic using BackendCapabilityProfile to show only relevant information based on backend capabilities, with visual type indicators
+status: established
+category: infrastructure
+use-when:
+  - VSCode service tree displays all backend information regardless of capabilities
+  - Need to eliminate confusing Unknown values for unsupported features
+  - Implementing BackendCapabilityProfile-aware UI components
+  - Creating conditional display logic based on backend capabilities
+keywords:
+  - vscode
+  - tree-provider
+  - conditional-display
+  - backend-capability-profile
+  - service-tree
+  - visual-indicators
+prerequisites:
+  - backend-capability-profile-system
+  - vscode-tree-data-provider
+related-patterns:
+  - two-tier-backend-prioritization-system
+  - vscode-extension-integration-system
+  - backend-service-integration-unified
+---
 
-**Status**: ✅ ESTABLISHED
-**Category**: Interface Implementation
-**Last Updated**: 2025-09-01
-**Difficulty**: 🟡 Medium
-**Est. Time**: ~1-2 hours
-**Prerequisites**: BackendCapabilityProfile system, VSCode TreeDataProvider interface
+### VSCode Service Tree Provider with Conditional Display Pattern
 
 **Problem**: VSCode service tree displays all backend information regardless of backend capabilities, showing confusing "Unknown" values for features that backends don't support.
 
@@ -129,3 +150,8 @@ if (capabilityProfile?.hasCapabilitiesEndpoint && serviceInfo.capabilities && se
 - [Two-Tier Backend Prioritization System](#Backend Service Integration Unified) - Uses BackendCapabilityProfile
 - [VSCode Extension Integration System](#vscode-extension-integration-system-pattern) - Part of broader VSCode integration
 - [Backend Service Integration](#backend-service-integration-unified-pattern) - Leverages backend service discovery
+
+// TODO: [TASK-PATTERN-001] Pattern: frontmatter-standardization | Complexity: 2 | Dependencies: yaml-parser
+// Context: Updated pattern frontmatter from legacy format to standardized YAML structure with kebab-case field names, use-when scenarios, keywords array, and related patterns for improved searchability and consistency
+// Validation-Required: yaml-syntax-validation, frontmatter-field-compliance, pattern-searchability
+// Pattern-Info: { approach: "template-based-transformation", alternatives: "manual-conversion", trade-offs: "automation-vs-customization" }

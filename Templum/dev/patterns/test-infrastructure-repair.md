@@ -1,11 +1,35 @@
-### Test Infrastructure Repair Pattern
+---
+date-created: 2025-08-28-0000
+last-updated: 2025-09-11-0000
+name: test-infrastructure-repair
+description: Systematic repair of TypeScript type system consistency and test compilation issues
+status: established
+category: foundation
+use-when:
+  - Test infrastructure fails due to compilation errors and type mismatches
+  - TypeScript compilation errors prevent test execution
+  - Type definition mismatches between tests and components
+  - Mock interfaces don't align with real component interfaces
+keywords:
+  - test-infrastructure
+  - typescript
+  - compilation-errors
+  - type-system
+  - test-repair
+  - interface-alignment
+prerequisites:
+  - typescript-configuration
+related-patterns:
+  - mock-real-api-contract-testing
+  - type-system-pattern
+---
 
-**Status**: ESTABLISHED
-**Category**: Foundation
-**Last Updated**: 2025-08-28
-**Difficulty**: 🟢 Basic
-**Est. Time**: ~45 minutes
-**Prerequisites**: TypeScript configuration
+# Test Infrastructure Repair Pattern
+
+<!-- TODO: [TASK-PATTERN-001] Pattern: test-infrastructure-repair | Complexity: 3 | Dependencies: typescript-configuration -->
+<!-- Context: Standardized YAML frontmatter format applied for pattern metadata consistency -->
+<!-- Validation-Required: frontmatter-format, pattern-compliance, metadata-completeness -->
+<!-- Pattern-Info: { approach: "yaml-frontmatter-conversion", alternatives: "markdown-headers", trade-offs: "standardization-vs-readability" } -->
 
 **Problem**: Test infrastructure fails due to compilation errors and type mismatches, preventing test execution.
 

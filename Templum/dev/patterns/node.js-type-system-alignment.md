@@ -1,7 +1,31 @@
+---
+date-created: 2025-09-01-0000
+last-updated: 2025-09-11-0000
+name: node.js-type-system-alignment
+description: Proper import syntax, variable naming conventions, and Node.js type system integration
+status: established
+category: foundation
+use-when:
+  - WebSocket constructors require correct import syntax
+  - Variable scoping conflicts with Node.js globals
+  - TypeScript compilation errors specific to Node.js type definitions
+  - Constructor functions not accessible after import
+keywords:
+  - nodejs
+  - typescript
+  - websocket
+  - imports
+  - scoping
+  - constructors
+  - type-system
+prerequisites: []
+related-patterns:
+  - typescript-compilation-fixes
+  - import-standardization
+---
+
 ### Node.js Type System Alignment Pattern
 
-**Status**: IN DEVELOPMENT | **Category**: Foundation
-**Difficulty**: 🟢 Basic | **Time**: ~30 minutes
 **Problem**: WebSocket constructors, Node.js module imports, and variable scoping conflicts in Node.js environments
 **Solution**: Proper import syntax, variable naming conventions, and Node.js type system integration
 
@@ -88,6 +112,11 @@ for (const instance of testInstances) { // Correct variable name
 
 #### Node.js Type System Alignment Pattern: Implementation Feedback
 <!-- Autonomous agents append feedback here when applying pattern -->
+
+// TODO: [TASK-PATTERN-001] Pattern: node.js-type-system-alignment | Complexity: 3 | Dependencies: typescript,nodejs-types
+// Context: Frontmatter standardization for pattern documentation following template requirements
+// Validation-Required: yaml-syntax, pattern-searchability, documentation-integrity
+// Pattern-Info: { approach: "template-based-frontmatter", alternatives: "manual-yaml", trade-offs: "standardization-vs-flexibility" }
 
 - **2025-09-01 - [TASK-COMP-006]**: **FIRST SUCCESSFUL APPLICATION** - Fixed WebSocket constructor import (TS2351), resolved process variable conflict (TS2448), corrected variable scoping inconsistency (TS7022). Pattern worked perfectly for Node.js type system integration issues. Actual time: 30min (est. 30min). All target error types resolved with clean, maintainable code.
 

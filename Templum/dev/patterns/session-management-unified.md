@@ -1,11 +1,34 @@
-### Session Management Unified Pattern
+---
+date-created: 2025-08-29-0000
+last-updated: 2025-08-29-0000
+name: session-management-unified
+description: Enterprise-grade session state management with comprehensive error recovery and cross-interface coordination
+status: established
+category: integration
+use-when:
+  - Need to coordinate session state across multiple interfaces (CLI, VSCode, web)
+  - Implementing interface switching while preserving session context
+  - Building enterprise-grade session recovery mechanisms
+  - Managing multi-backend session state synchronization
+  - Tracking session lifecycle and completion status
+keywords:
+  - session-management
+  - interface-coordination
+  - state-preservation
+  - error-recovery
+  - multi-backend
+  - session-lifecycle
+prerequisites:
+  - universal-interface-orchestration
+  - abstraction-layer-architecture
+related-patterns:
+  - universal-interface-orchestration
+  - backend-service-integration-unified
+  - dependency-injection-unified
+  - circuit-breaker-resilience
+---
 
-**Status**: ESTABLISHED
-**Category**: Technical
-**Last Updated**: 2025-08-29
-**Difficulty**: 🟡 Medium
-**Est. Time**: ~3 hours
-**Prerequisites**: Universal Interface Orchestration, Abstraction Layer Architecture
+### Session Management Unified Pattern
 
 **Problem**: Cross-interface session coordination and state management with comprehensive error recovery.
 
@@ -170,6 +193,11 @@ await toAdapter.restoreState(sessionData);
 
 #### Session Management Unified Pattern: Implementation Feedback
 <!-- Autonomous agents append feedback here when applying pattern -->
+
+// TODO: [TASK-PATTERN-001] Pattern: frontmatter-update | Complexity: 2 | Dependencies: pattern-analysis
+// Context: Updated session management pattern with proper YAML frontmatter following template standards
+// Validation-Required: pattern-compliance, yaml-syntax, cross-references
+// Pattern-Info: { approach: "template-standardization", alternatives: "manual-formatting", trade-offs: "consistency-vs-customization" }
 
 #### Session Management Unified Pattern: Pattern Metadata
 

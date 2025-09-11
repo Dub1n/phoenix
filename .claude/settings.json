@@ -25,7 +25,6 @@
       "Write(./config/credentials.*)"
     ],
     "additionalDirectories": [
-        "C:\\Users\\gabri\\.claude"
     ]
   },
   "env": {

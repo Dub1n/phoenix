@@ -1,31 +1,45 @@
-### End-to-End Testing Scenarios Pattern
+---
+date-created: 2025-08-28-0000
+last-updated: 2025-09-11-0000
+name: end-to-end-testing-scenarios
+description: Comprehensive E2E testing framework with flexible scenario execution, realistic backend service mocking, performance monitoring, and systematic validation of complete user journeys across multiple interface types
+status: established
+category: testing
+use-when:
+  - Validating complete user workflows across multiple system components
+  - Testing cross-interface coordination and state synchronization
+  - Establishing performance baselines and regression detection
+  - Validating system behavior under realistic usage scenarios
+keywords:
+  - e2e-testing
+  - integration-testing
+  - performance-monitoring
+  - workflow-validation
+  - cross-interface-testing
+  - mock-services
+  - jest-framework
+prerequisites:
+  - mock-backend-services
+  - jest-testing-framework
+  - interface-adapter-patterns
+related-patterns:
+  - mock-to-real-transition
+  - interface-adapter-integration-testing
+  - test-infrastructure
+---
 
-**Status**: ✅ ESTABLISHED  
-**Category**: Integration Testing Infrastructure  
-**Last Updated**: 2025-08-28  
-**Difficulty**: 🟠 Advanced  
-**Est. Time**: ~6-8 hours  
-**Prerequisites**: Mock Backend Services, Jest Testing Framework, Interface Adapter patterns  
+# End-to-End Testing Scenarios Pattern
 
 **Problem**: System lacks comprehensive E2E testing capabilities to validate complete user workflows, cross-interface scenarios, and performance characteristics across the entire Templum ecosystem.
 
 **Solution**: Comprehensive E2E testing framework with flexible scenario execution, realistic backend service mocking, performance monitoring, and systematic validation of complete user journeys across multiple interface types.
 
-*Pattern Application Guidelines*:
+// TODO: [TASK-PATTERN-001] Pattern: frontmatter-update | Complexity: 3 | Dependencies: yaml-formatting,pattern-standardization
+// Context: Updated frontmatter from markdown headers to standardized YAML format with kebab-case fields
+// Validation-Required: pattern-compliance, yaml-syntax, field-completeness
+// Pattern-Info: { approach: "template-substitution", alternatives: "manual-conversion", trade-offs: "automation-vs-precision" }
 
-**When to Use This Pattern**:
-
-- Validating complete user workflows across multiple system components
-- Testing cross-interface coordination and state synchronization
-- Establishing performance baselines and regression detection
-- Validating system behavior under realistic usage scenarios
-
-**Prerequisites**:
-
-- Mock Backend Services with realistic behavior simulation
-- Testing Framework (Jest) with async/await support
-- Interface Adapter implementations for cross-interface testing
-- Performance monitoring infrastructure
+## Pattern Application Guidelines
 
 *E2E Framework Benefits*:
 

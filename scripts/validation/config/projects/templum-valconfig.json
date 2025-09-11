@@ -1,0 +1,32 @@
+{
+  "version": "3.0.1",
+  "project": {
+    "name": "templum",
+    "display_name": "Templum Backend System",
+    "description": "Multi-interface backend orchestration system",
+    "project_directory": "../../Templum"
+  },
+  "validation": {
+    "report_location": "dev/validation-results",
+    "timeout_overrides": {
+      "backend": 180000,
+      "quality": 120000
+    },
+    "resource_thresholds": {
+      "memory_warning": 75,
+      "cpu_warning": 80
+    },
+    "commands": {
+      "build": "npm run build",
+      "test": "npm test",
+      "lint": "npm run lint", 
+      "typecheck": "npx tsc --noEmit",
+      "start": "npm run start:service"
+    }
+  },
+  "reporting": {
+    "format": "markdown",
+    "include_evidence": true,
+    "include_timing": true
+  }
+}

@@ -1,11 +1,32 @@
-### Multi-Strategy Service Discovery Pattern
+---
+date-created: 2025-08-29-0000
+last-updated: 2025-09-11-0000
+name: multi-strategy-service-discovery
+description: Intelligent multi-strategy discovery system that automatically finds backend services using registry-based, configuration-based, and endpoint scanning strategies with graceful fallback
+status: established
+category: infrastructure
+use-when:
+  - Need to eliminate hardcoded backend service endpoints
+  - Require dynamic service discovery across multiple protocols
+  - Want graceful fallback for service discovery failures
+  - Building flexible backend integration architecture
+keywords:
+  - service-discovery
+  - backend-integration
+  - multi-strategy
+  - dynamic-configuration
+  - endpoint-scanning
+  - registry-based
+prerequisites:
+  - generic-connection-factory
+  - dynamic-command-routing
+related-patterns:
+  - backend-service-router
+  - universal-skin-engine
+  - connection-factory
+---
 
-**Status**: ✅ ESTABLISHED
-**Category**: Backend Integration
-**Last Updated**: 2025-08-29
-**Difficulty**: 🟠 Advanced
-**Est. Time**: ~4 hours
-**Prerequisites**: Generic Connection Factory, Dynamic Command Routing
+# Multi-Strategy Service Discovery Pattern
 
 **Problem**: Hardcoded backend discovery (PCL:3002, Litany:3003, Haruspex file locations) limiting system flexibility and preventing dynamic service management.
 

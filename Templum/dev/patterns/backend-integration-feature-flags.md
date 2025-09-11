@@ -1,12 +1,25 @@
 ---
+date-created: 2025-08-29-0000
+last-updated: 2025-09-11-1217
 name: backend-integration-feature-flags
 description: Feature flag system enabling progressive enhancement with hybrid modes and automatic fallback mechanisms.
-Status: DEPRECATED
-Category: Foundation
-Last Updated: 2025-08-29
-Difficulty: Medium
-Est. Time: ~2-4 hours
-Prerequisites: Backend architecture understanding
+status: deprecated
+category: foundation
+use-when:
+  - Migrating from hardcoded backend integration to generic systems
+  - Need progressive enhancement with hybrid modes
+  - Requiring automatic fallback mechanisms
+keywords:
+  - feature-flags
+  - backend-integration
+  - progressive-enhancement
+  - hybrid-modes
+  - fallback-mechanisms
+prerequisites:
+  - backend-architecture-understanding
+related-patterns:
+  - backend-service-integration-unified
+  - enhanced-backendconfig-schema
 ---
 
 ### Backend Integration Feature Flags Pattern

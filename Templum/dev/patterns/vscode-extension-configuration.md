@@ -1,11 +1,38 @@
-### VSCode Extension Configuration Pattern
+---
+date-created: 2025-08-27-0000
+last-updated: 2025-09-11-0000
+name: vscode-extension-configuration
+description: Systematic package.json configuration for converting Node.js CLI applications to VSCode extensions
+status: established
+category: foundation
+use-when:
+  - Converting Node.js CLI applications to VSCode extensions
+  - Setting up VSCode extension manifest configuration
+  - Configuring activity bar containers and views
+  - Adding commands to VSCode command palette
+  - Setting up extension development dependencies
+keywords:
+  - vscode
+  - extension
+  - configuration
+  - manifest
+  - package.json
+  - cli-conversion
+  - activation-events
+  - view-contributions
+prerequisites:
+  - vscode-extension-development-knowledge
+related-patterns:
+  - extension-development-lifecycle
+  - cli-to-extension-migration
+---
 
-**Status**: ✅ ESTABLISHED
-**Category**: Foundation Infrastructure
-**Last Updated**: 2025-08-27
-**Difficulty**: 🟢 Basic
-**Est. Time**: ~15 minutes
-**Prerequisites**: VSCode extension development knowledge
+<!-- TODO: [TASK-PATTERN-001] Pattern: vscode-extension-configuration | Complexity: 3 | Dependencies: vscode-api,typescript -->
+<!-- Context: Updated frontmatter format for VSCode extension configuration pattern following standardized template -->
+<!-- Validation-Required: pattern-compliance, yaml-syntax, searchability -->
+<!-- Pattern-Info: { approach: "yaml-frontmatter-standardization", alternatives: "markdown-headers", trade-offs: "better-searchability-vs-readability" } -->
+
+### VSCode Extension Configuration Pattern
 
 **Problem**: Converting Node.js CLI applications to VSCode extensions requires specific manifest configuration
 

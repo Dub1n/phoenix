@@ -1,7 +1,33 @@
-### Library Module Interop Resolution Pattern
+---
+date-created: 2025-09-02-0000
+last-updated: 2025-09-11-0000
+name: library-module-interop-resolution
+description: Systematic resolution of ESModule interop conflicts in TypeScript library imports
+status: experimental
+category: foundation
+use-when:
+  - TypeScript compilation fails with TS1259 ESModuleInterop errors
+  - Third-party library imports cause compilation conflicts
+  - Build pipeline blocked by library compatibility issues
+  - Testing workflows fail due to import resolution problems
+keywords:
+  - typescript
+  - esmodule
+  - interop
+  - compilation
+  - library-integration
+  - zod
+  - configuration
+prerequisites:
+  - typescript-configuration
+  - package-management
+related-patterns:
+  - dependency-resolution
+  - build-optimization
+  - typescript-configuration
+---
 
-**Status**: IN DEVELOPMENT | **Category**: Foundation  
-**Difficulty**: 🟡 | **Time**: ~2-3 hours
+### Library Module Interop Resolution Pattern
 
 #### Problem Statement
 

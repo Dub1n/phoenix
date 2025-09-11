@@ -1,11 +1,33 @@
-### CLI Process Separation Pattern
+---
+date-created: 2025-09-02-0000
+last-updated: 2025-09-11-0000
+name: cli-process-separation
+description: Architectural separation of service and CLI into independent processes with IPC-based service discovery
+status: established
+category: architecture
+use-when:
+  - Need headless service deployment without CLI interface
+  - Want multi-terminal CLI access to single service instance
+  - Require containerization with separate CLI access
+  - Building service-oriented architecture with independent components
+keywords:
+  - cli-separation
+  - process-architecture
+  - service-discovery
+  - ipc-communication
+  - headless-deployment
+  - multi-terminal
+prerequisites:
+  - service-discovery
+  - ipc-communication
+  - process-management
+related-patterns:
+  - service-discovery
+  - process-management
+  - ipc-protocol
+---
 
-**Status**: IN DEVELOPMENT
-**Category**: Architecture
-**Last Updated**: 2025-09-02
-**Difficulty**: 🟠 Advanced
-**Est. Time**: ~4-6 hours
-**Prerequisites**: Service Discovery, IPC Communication, Process Management
+### CLI Process Separation Pattern
 
 **Problem**: Monolithic service-CLI architecture prevents proper headless deployment, containerization, and multi-terminal CLI access patterns.
 
@@ -162,9 +184,14 @@ async function main(): Promise<void> {
 - **2025-09-02 - TASK-CLI-005**: Enhanced mock orchestrator proxy implementation. Added missing isInitialized(), loadBackendSkin(), getUniversalSkinEngine() methods and proper backend connection structure. Pattern extension took 1.5h to complete CLI initialization functionality.
 - **2025-09-02 - TASK-CLI-010**: Applied service discovery integration aspect for IPC communication. Leveraged existing service registry with PID validation and process health checking. Pattern's service discovery component provided robust foundation for CLI-to-Core communication. Used established `ServiceRegistryEntry` structure and `isProcessRunning()` validation. Actual integration time: 0.5h (service discovery portion). Key insight: Pattern's service registry design scales well for real IPC communication scenarios.
 
+// TODO: [TASK-PATTERN-001] Pattern: cli-process-separation | Complexity: 7 | Dependencies: service-discovery,ipc-communication,process-management
+// Context: Updated YAML frontmatter to standardized format for better searchability and integration
+// Validation-Required: yaml-format-compliance, pattern-discoverability, metadata-accuracy
+// Pattern-Info: { approach: "frontmatter-standardization", alternatives: "manual-yaml-editing", trade-offs: "consistency-vs-simplicity" }
+
 #### CLI Process Separation Pattern: Pattern Metadata
 
-**Used By Active Tasks**: [TASK-CLI-004], [TASK-CLI-005], [TASK-CLI-010]
-**Successfully Applied**: [TASK-CLI-004] ✅ CLI Process Separation Implementation (2025-09-02), [TASK-CLI-005] ✅ CLI Initialization Error Resolution (2025-09-02), [TASK-CLI-010] ✅ CLI-to-Core IPC Communication (2025-09-02)
+**Used By Active Tasks**: [TASK-CLI-004], [TASK-CLI-005], [TASK-CLI-010], [TASK-PATTERN-001]
+**Successfully Applied**: [TASK-CLI-004] ✅ CLI Process Separation Implementation (2025-09-02), [TASK-CLI-005] ✅ CLI Initialization Error Resolution (2025-09-02), [TASK-CLI-010] ✅ CLI-to-Core IPC Communication (2025-09-02), [TASK-PATTERN-001] ✅ Frontmatter Standardization (2025-09-11)
 **Integration Points**: Service Discovery, IPC Communication, Process Management, Terminal UI Components
 **Files Using This Pattern**: src/index.ts, src/cli-entry.ts, src/core/templum-core.ts, package.json

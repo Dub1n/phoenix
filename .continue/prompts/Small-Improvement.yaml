@@ -1,7 +1,0 @@
-name: Small Improvement
-version: 0.0.1
-schema: v1
-prompts:
-  - name: Small Improvement
-    description: Make a small incremental improvement
-    prompt: What's one most meaningful thing I could do to improve the quality of this code? It shouldn't be too drastic but should still improve the code.

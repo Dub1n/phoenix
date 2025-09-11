@@ -1,6 +1,6 @@
 ---
-date-created: 2025-08-28
-last-updated: 2025-08-28
+date-created: 2025-08-28-0000
+last-updated: 2025-09-11-0000
 name: advanced-compatibility-validation
 description: Multi-dimensional compatibility validation system with configurable depth, interface-specific requirements, performance constraint validation, and comprehensive reporting with actionable recommendations
 status: ESTABLISHED
@@ -10,9 +10,23 @@ use-when:
   - Need deep structural and performance analysis beyond basic version checking
   - Preventing runtime failures in cross-platform deployments
   - Ensuring optimal user experience across different interfaces
-keywords: [validation, compatibility, interfaces, performance, structural, cross-platform, multi-dimensional, constraints]
-prerequisites: [skin-versioning-system, universal-skin-engine, interface-type-system]
-related-patterns: [enhanced-skin-registration-validation, test-type-system-alignment, universal-interface-orchestration]
+keywords: 
+  - validation
+  - compatibility
+  - interfaces
+  - performance
+  - structural
+  - cross-platform
+  - multi-dimensional
+  - constraints
+prerequisites: 
+  - skin-versioning-system
+  - universal-skin-engine
+  - interface-type-system
+related-patterns:
+  - enhanced-skin-registration-validation
+  - test-type-system-alignment
+  - universal-interface-orchestration
 ---
 
 # Advanced Compatibility Validation Pattern

@@ -1,11 +1,31 @@
-### IPC Protocol Communication Pattern
+---
+date-created: 2025-08-27-0000
+last-updated: 2025-09-11-0000
+name: ipc-protocol-communication
+description: Real IPC implementation with service-specific enhancements and real-time message handling
+status: established
+category: integration
+use-when:
+  - Backend service requires IPC communication
+  - Service-specific API integration needed
+  - Real-time message handling required
+  - Cross-process communication necessary
+keywords:
+  - ipc
+  - inter-process-communication
+  - backend-service
+  - haruspex
+  - childprocess
+  - real-time-messaging
+prerequisites:
+  - backend-service-integration
+  - nodejs-childprocess
+related-patterns:
+  - backend-service-discovery
+  - error-recovery-patterns
+---
 
-**Status**: ESTABLISHED
-**Category**: Technical
-**Last Updated**: 2025-08-27
-**Difficulty**: 🔴 Expert
-**Est. Time**: ~3 hours
-**Prerequisites**: Backend Service Integration, Node.js ChildProcess
+### IPC Protocol Communication Pattern
 
 **Problem**: Haruspex backend service requires IPC communication with service-specific enhancements and real-time message handling.
 
@@ -125,6 +145,11 @@ throw createTemplumError(`Failed to establish real IPC connection  to ${serviceI
 
 #### IPC Protocol Communication Pattern: Implementation Feedback
 <!-- Autonomous agents append feedback here when applying pattern -->
+
+// TODO: [TASK-PATTERN-001] Pattern: frontmatter-standardization | Complexity: 2 | Dependencies: yaml-frontmatter
+// Context: Updated IPC Protocol Communication pattern with standardized YAML frontmatter following template requirements
+// Validation-Required: yaml-syntax, frontmatter-compliance, pattern-metadata
+// Pattern-Info: { approach: "template-substitution", alternatives: "manual-formatting", trade-offs: "standardization-vs-flexibility" }
 
 - **2025-09-02 - [TASK-CLI-013]**: Applied file-based IPC variant for CLI command execution scoping fix. Pattern guidance was essential for fixing method scoping issue - moved sendIPCCommand from TemplumCliDiscovery to RemoteTemplumAdapter for proper proxy access. Used established temporary file exchange pattern with 5-second timeout and cleanup. Pattern's error handling structure helped maintain fallback execution when IPC communication fails. Actual time: 1.5h (est. 2-4h). Key insight: Pattern's method organization guidance prevented similar scoping issues in future IPC implementations.
 

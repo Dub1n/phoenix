@@ -1,11 +1,33 @@
-### Enhanced Skin Registration Validation Pattern
+---
+date-created: 2025-08-29-0000
+last-updated: 2025-09-11-0000
+name: enhanced-skin-registration-validation
+description: Comprehensive validation pipeline for Universal Skin Engine registration with version compatibility checks and conflict detection
+status: established
+category: foundation
+use-when:
+  - Universal Skin Engine needs validation for skin registration
+  - Version compatibility checking is required for skin registration
+  - Conflict detection and resolution needed for skin versions
+  - Comprehensive error handling required for skin registration failures
+keywords:
+  - skin-registration
+  - validation
+  - version-management
+  - conflict-detection
+  - error-handling
+  - universal-skin-engine
+prerequisites:
+  - skin-version-manager
+  - templum-error-system
+  - existing-validation-infrastructure
+related-patterns:
+  - skin-version-management
+  - error-handling-patterns
+  - validation-pipeline
+---
 
-**Status**: ESTABLISHED
-**Category**: Foundation
-**Last Updated**: 2025-08-29
-**Difficulty**: 🟡 Medium
-**Est. Time**: ~2 hours
-**Prerequisites**: SkinVersionManager, TemplumError system, existing validation infrastructure
+### Enhanced Skin Registration Validation Pattern
 
 **Problem**: Universal Skin Engine's `registerSkin` method lacked validation, allowing invalid skins to be registered without version compatibility checks, conflict detection, or structural validation.
 
@@ -175,6 +197,11 @@ if (warnings.length > 0) {
 
 #### Enhanced Skin Registration Validation Pattern: Implementation Feedback
 <!-- Autonomous agents append feedback here when applying pattern -->
+
+<!-- TODO: [TASK-PATTERN-001] Pattern: frontmatter-standardization | Complexity: 2 | Dependencies: yaml-frontmatter,pattern-template
+Context: Updated YAML frontmatter to follow standardized template format with kebab-case fields, structured arrays, and comprehensive metadata
+Validation-Required: yaml-syntax, frontmatter-completeness, pattern-discoverability
+Pattern-Info: { approach: "template-based-standardization", alternatives: "manual-formatting", trade-offs: "consistency-vs-flexibility" } -->
 
 #### Enhanced Skin Registration Validation Pattern: Pattern Metadata
 

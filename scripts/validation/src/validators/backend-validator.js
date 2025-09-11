@@ -307,13 +307,37 @@ export class BackendValidator {
       const originalCwd = process.cwd();
       process.chdir(projectInfo.path);
 
+      // First check if .templum/services directory exists and has content
+      const templumServicesPath = path.join(projectInfo.path, '.templum/services');
+      if (fs.existsSync(templumServicesPath)) {
+        const files = fs.readdirSync(templumServicesPath);
+        const jsonFiles = files.filter(f => f.endsWith('.json'));
+        
+        if (jsonFiles.length > 0) {
+          test.status = 'PASS';
+          test.message = 'Service registration verification passed';
+          test.evidence.push(`Found ${jsonFiles.length} service registration file(s): ${jsonFiles.join(', ')}`);
+          console.log(`      ✅ PASS - Found ${jsonFiles.length} service registration files`);
+          process.chdir(originalCwd);
+          return test;
+        } else {
+          test.status = 'WARN';
+          test.message = 'No service registration files found';
+          test.evidence.push('.templum/services directory exists but contains no JSON files');
+          console.log('      🟡 WARN - .templum/services directory is empty');
+          process.chdir(originalCwd);
+          return test;
+        }
+      }
+
+      // Fallback to find command with optimized search and increased timeout
       const lsCommand = process.platform === 'win32' 
         ? 'dir /s /b ".templum\\services\\*.json" 2>nul || echo "No service files found"'
-        : 'find . -path "*/.templum/services/*.json" -exec ls -la {} \\; 2>/dev/null || echo "No service files found"';
+        : 'find . -path "*/.templum/services/*.json" -not -path "./node_modules/*" -not -path "./coverage/*" -not -path "./dist/*" -not -path "./.git/*" -exec ls -la {} \\; 2>/dev/null || echo "No service files found"';
         
       const output = execSync(lsCommand, {
         encoding: 'utf8',
-        timeout: 10000
+        timeout: 30000  // Increased from 10 seconds to 30 seconds
       });
 
       process.chdir(originalCwd);
@@ -337,8 +361,13 @@ export class BackendValidator {
     } catch (error) {
       test.status = 'FAIL';
       test.message = 'Service registration verification failed';
-      test.errors.push(`Registration verification error: ${error.message}`);
-      console.log('      ❌ FAIL - Service registration verification failed');
+      if (error.code === 'ETIMEDOUT') {
+        test.errors.push(`Search timeout after 30 seconds - project directory may be too large. Consider optimizing project structure or excluding large directories.`);
+        console.log('      ❌ FAIL - Search timeout (project too large)');
+      } else {
+        test.errors.push(`Registration verification error: ${error.message}`);
+        console.log('      ❌ FAIL - Service registration verification failed');
+      }
     }
 
     return test;
@@ -361,13 +390,64 @@ export class BackendValidator {
       const originalCwd = process.cwd();
       process.chdir(projectInfo.path);
 
+      // First check if .templum/services directory exists and has content
+      const templumServicesPath = path.join(projectInfo.path, '.templum/services');
+      if (fs.existsSync(templumServicesPath)) {
+        const files = fs.readdirSync(templumServicesPath);
+        const jsonFiles = files.filter(f => f.endsWith('.json'));
+        
+        if (jsonFiles.length > 0) {
+          // Read and validate content directly
+          let hasEndpointConfig = false;
+          const validatedFiles = [];
+          
+          for (const file of jsonFiles) {
+            try {
+              const filePath = path.join(templumServicesPath, file);
+              const content = fs.readFileSync(filePath, 'utf8');
+              validatedFiles.push(`${file}: ${content.length} characters`);
+              
+              if (content.includes('"endpoint"')) {
+                hasEndpointConfig = true;
+              }
+            } catch (readError) {
+              test.errors.push(`Cannot read ${file}: ${readError.message}`);
+            }
+          }
+          
+          if (hasEndpointConfig) {
+            test.status = 'PASS';
+            test.message = 'Service file content validation passed';
+            test.evidence.push('Service files contain valid endpoint configuration');
+            test.evidence.push(`Validated files: ${validatedFiles.join(', ')}`);
+            console.log('      ✅ PASS - Service file content validation passed');
+          } else {
+            test.status = 'WARN';
+            test.message = 'Service files found but missing endpoint configuration';
+            test.evidence.push(`Files found but no endpoint config: ${validatedFiles.join(', ')}`);
+            console.log('      🟡 WARN - Service files missing endpoint configuration');
+          }
+          
+          process.chdir(originalCwd);
+          return test;
+        } else {
+          test.status = 'WARN';
+          test.message = 'No service files to validate';
+          test.evidence.push('.templum/services directory exists but contains no JSON files');
+          console.log('      🟡 WARN - No service files to validate');
+          process.chdir(originalCwd);
+          return test;
+        }
+      }
+
+      // Fallback to find command with optimized search and increased timeout
       const catCommand = process.platform === 'win32'
         ? 'for /r . %f in (.templum\\services\\*.json) do @type "%f" 2>nul'
-        : 'find . -path "*/.templum/services/*.json" -exec cat {} \\; 2>/dev/null || echo "No service files found"';
+        : 'find . -path "*/.templum/services/*.json" -not -path "./node_modules/*" -not -path "./coverage/*" -not -path "./dist/*" -not -path "./.git/*" -exec cat {} \\; 2>/dev/null || echo "No service files found"';
         
       const output = execSync(catCommand, {
         encoding: 'utf8',
-        timeout: 10000
+        timeout: 30000  // Increased from 10 seconds to 30 seconds
       });
 
       process.chdir(originalCwd);
@@ -391,8 +471,13 @@ export class BackendValidator {
     } catch (error) {
       test.status = 'FAIL';
       test.message = 'Service file content validation failed';
-      test.errors.push(`Content validation error: ${error.message}`);
-      console.log('      ❌ FAIL - Service file content validation failed');
+      if (error.code === 'ETIMEDOUT') {
+        test.errors.push(`Search timeout after 30 seconds - project directory may be too large. Consider optimizing project structure or excluding large directories.`);
+        console.log('      ❌ FAIL - Search timeout (project too large)');
+      } else {
+        test.errors.push(`Content validation error: ${error.message}`);
+        console.log('      ❌ FAIL - Service file content validation failed');
+      }
     }
 
     return test;

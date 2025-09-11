@@ -1,13 +1,34 @@
-### Unified Type System Pattern
+---
+date-created: 2025-09-11-0000
+last-updated: 2025-09-11-0000
+name: unified-type-system
+description: Complete type system architecture with error hierarchy, signal types, and compilation compatibility
+status: established
+category: foundation
+use-when:
+  - TypeScript compilation failures due to inconsistent error handling
+  - Map iteration causing TS2488 errors across compilation targets
+  - Need for standardized type system integration
+  - Implementing error hierarchy and signal types
+keywords:
+  - typescript
+  - compilation
+  - error-handling
+  - type-system
+  - map-iteration
+  - signals
+  - templum-types
+prerequisites: []
+related-patterns:
+  - templum-error-integration
+  - map-iteration-pattern
+  - error-handling-pattern
+  - interface-property-alignment-pattern
+---
 
-**Status**: ✅ ESTABLISHED  
-**Category**: Foundation Infrastructure  
-**Last Updated**: 2025-08-27
-**Difficulty**: 🟢 Basic
-**Est. Time**: ~2 hours
-**Prerequisites**: None (foundation pattern)
+# Unified Type System Pattern
 
-**Consolidated From**: `templum-error-integration`,  `map-iteration-pattern`, `error-handling-pattern`,  `interface-property-alignment-pattern`
+**Consolidated From**: `templum-error-integration`, `map-iteration-pattern`, `error-handling-pattern`, `interface-property-alignment-pattern`
 
 **Problem**: TypeScript compilation failures due to inconsistent error  handling, Map iteration, and type system integration
 
@@ -99,6 +120,11 @@ components: Record<string, ComponentSkin>; // Component registry:  skin.componen
 
 #### Unified Type System Pattern: Implementation Feedback
 <!-- Autonomous agents append feedback here when applying pattern -->
+
+// TODO: [TASK-PATTERN-001] Pattern: frontmatter-standardization | Complexity: 3 | Dependencies: yaml-format,kebab-case-fields
+// Context: Updated YAML frontmatter following standardized template format with kebab-case field names, use-when scenarios, keywords array, and proper date fields
+// Validation-Required: yaml-syntax-validation, field-completeness, pattern-searchability
+// Pattern-Info: { approach: "content-preservation-with-frontmatter-restructure", alternatives: "complete-rewrite", trade-offs: "maintained-all-existing-content-while-standardizing-format" }
 
 - **2025-09-01 - [TASK-TYPE-001]**: Applied successfully to unify dual UniversalSkinDefinition interfaces. Pattern worked excellently but required extension for optional properties handling. Added null checks for `themes?`, `pclCompatibility?` properties.
 

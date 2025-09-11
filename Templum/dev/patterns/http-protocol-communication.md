@@ -1,11 +1,33 @@
-### HTTP Protocol Communication Pattern
+---
+date-created: 2025-08-27-0000
+last-updated: 2025-09-11-0000
+name: http-protocol-communication
+description: Real HTTP implementation with PCL service-specific API integration, enhanced headers and request options, and comprehensive error handling
+status: established
+category: infrastructure
+use-when:
+  - PCL backend service requires HTTP communication with service-specific endpoint mapping
+  - Enhanced request/response handling is needed for backend services
+  - Service-specific API integration with proper error handling is required
+  - HTTP communication with timeout and retry logic is needed
+keywords:
+  - http
+  - pcl-integration
+  - backend-communication
+  - api-endpoints
+  - error-handling
+  - timeout-handling
+  - service-mapping
+prerequisites:
+  - backend-service-integration
+  - http-client-libraries
+related-patterns:
+  - backend-service-integration
+  - error-recovery
+  - service-discovery
+---
 
-**Status**: ESTABLISHED
-**Category**: Technical
-**Last Updated**: 2025-08-27
-**Difficulty**: 🔴 Expert
-**Est. Time**: ~3 hours
-**Prerequisites**: Backend Service Integration, HTTP client libraries
+### HTTP Protocol Communication Pattern
 
 **Problem**: PCL backend service requires HTTP communication with service-specific endpoint mapping and enhanced request/response handling.
 
@@ -210,6 +232,11 @@ console.warn(`[HTTP] PCL capability testing failed:`, error);
 <!-- Autonomous agents append feedback here when applying pattern -->
 
 #### HTTP Protocol Communication Pattern: Pattern Metadata
+
+// TODO: [TASK-PATTERN-001] Pattern: frontmatter-standardization | Complexity: 2 | Dependencies: yaml-parsing
+// Context: Standardized YAML frontmatter format applied with kebab-case fields, structured arrays, and comprehensive metadata
+// Validation-Required: yaml-syntax, field-completeness, array-formatting
+// Pattern-Info: { approach: "template-based-standardization", alternatives: "manual-formatting", trade-offs: "consistency-vs-flexibility" }
 
 **Used By Active Tasks**: [TASK-163]
 **Successfully Applied**: [TASK-163] ✅ PCL HTTP Protocol Integration (2025-08-27)

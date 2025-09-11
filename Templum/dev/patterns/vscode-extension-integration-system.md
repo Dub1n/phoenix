@@ -1,11 +1,34 @@
-### VSCode Extension Integration System Pattern
+---
+date-created: 2025-08-29-0000
+last-updated: 2025-09-11-0000
+name: vscode-extension-integration-system
+description: Comprehensive VSCode extension integration with service discovery, connection management, interface switching, and resource cleanup
+status: established
+category: integration
+use-when:
+  - Building comprehensive VSCode extension integration systems
+  - Implementing real-time service discovery in VSCode extensions
+  - Creating interface switching with state preservation
+  - Managing connection lifecycle with progress tracking
+  - Implementing graceful resource cleanup for extensions
+keywords:
+  - vscode-extension
+  - service-discovery
+  - interface-switching
+  - connection-management
+  - resource-cleanup
+  - tree-provider
+  - templum-core
+prerequisites:
+  - vscode-extension-activation
+  - backend-service-integration
+related-patterns:
+  - universal-interface-orchestration
+  - templum-resource-management
+  - backend-service-integration-unified
+---
 
-**Status**: ✅ ESTABLISHED
-**Category**: Integration Infrastructure
-**Last Updated**: 2025-08-29
-**Difficulty**: 🟠 Advanced
-**Est. Time**: ~4-6 hours
-**Prerequisites**: VSCode Extension Activation, Backend Service Integration
+### VSCode Extension Integration System Pattern
 
 **Problem**: VSCode extension needs comprehensive integration system with service discovery, connection management, interface switching, and resource cleanup per Templum 1.1 specification
 
@@ -252,6 +275,11 @@ export async function deactivate() {
 
 #### VSCode Extension Integration System Pattern: Implementation Feedback
 <!-- Autonomous agents append feedback here when applying pattern -->
+
+<!-- TODO: [TASK-PATTERN-001] Pattern: frontmatter-standardization | Complexity: 2 | Dependencies: none
+Context: Updated YAML frontmatter to follow standardized template format with kebab-case fields, removing deprecated fields (difficulty, est-time) and adding structured metadata including use-when scenarios, keywords, prerequisites, and related-patterns arrays
+Validation-Required: yaml-syntax, field-completeness, template-compliance
+Pattern-Info: { approach: "template-substitution", alternatives: "manual-editing", trade-offs: "standardization-vs-flexibility" } -->
 
 #### VSCode Extension Integration System Pattern: Pattern Metadata
 

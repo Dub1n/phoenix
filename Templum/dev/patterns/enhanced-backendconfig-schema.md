@@ -1,11 +1,32 @@
-### Enhanced BackendConfig Schema Pattern
+---
+date-created: 2025-08-29-0000
+last-updated: 2025-09-11-0000
+name: enhanced-backendconfig-schema
+description: Enhanced BackendConfig interface with comprehensive connection specification and backward compatibility
+status: established
+category: foundation
+use-when:
+  - Generic backend integration requires multiple protocol support
+  - Need authentication and service discovery configuration
+  - Transitioning from hardcoded to generic backend configurations
+  - Implementing protocol-specific connection options
+keywords:
+  - backend-config
+  - connection-schema
+  - protocol-support
+  - authentication
+  - service-discovery
+  - backward-compatibility
+prerequisites:
+  - universal-skin-engine-types
+  - typescript-interfaces
+related-patterns:
+  - generic-connection-factory
+  - backend-integration-config
+  - universal-skin-definition
+---
 
-**Status**: ESTABLISHED
-**Category**: Foundation
-**Last Updated**: 2025-08-29
-**Difficulty**: 🟢 Basic
-**Est. Time**: ~30-45 minutes
-**Prerequisites**: Basic TypeScript interface design, Universal Skin Engine Types
+# Enhanced BackendConfig Schema Pattern
 
 **Problem**: Generic backend integration requires comprehensive connection configuration that supports multiple protocols, authentication methods, and service discovery endpoints while maintaining backward compatibility with existing minimal configurations.
 
@@ -115,6 +136,11 @@ class ConnectionFactory {
 
 #### Enhanced BackendConfig Schema Pattern: Implementation Feedback
 <!-- Autonomous agents append feedback here when applying pattern -->
+
+// TODO: [TASK-PATTERN-001] Pattern: enhanced-backendconfig-schema | Complexity: 3 | Dependencies: universal-skin-engine-types,typescript-interfaces
+// Context: Updated frontmatter to standardized YAML format for improved pattern discoverability and metadata consistency
+// Validation-Required: yaml-syntax-validation, pattern-metadata-compliance, frontmatter-structure-verification
+// Pattern-Info: { approach: "frontmatter-standardization", alternatives: "inline-metadata", trade-offs: "structured-yaml-vs-flexible-markdown" }
 
 #### Enhanced BackendConfig Schema Pattern: Pattern Metadata
 

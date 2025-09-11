@@ -1,11 +1,33 @@
-### Real Implementation Integration Pattern
+---
+date-created: 2025-08-27-0000
+last-updated: 2025-09-11-0000
+name: real-implementation-integration
+description: Systematic connection to existing real implementations with proper error handling and fallback coordination
+status: established
+category: integration
+use-when:
+  - Hardcoded placeholder implementations exist when real implementations are available
+  - Need to eliminate unnecessary duplication and improve functionality
+  - Connecting to existing Universal Skin Engine or similar real components
+  - Replacing mock implementations with production-ready alternatives
+keywords:
+  - implementation-integration
+  - placeholder-replacement
+  - universal-skin-engine
+  - error-handling
+  - fallback-coordination
+  - real-implementations
+prerequisites:
+  - universal-skin-engine
+  - error-handling-patterns
+  - component-architecture
+related-patterns:
+  - error-handling-with-fallbacks
+  - component-integration
+  - universal-rendering
+---
 
-**Status**: ESTABLISHED
-**Category**: Integration
-**Last Updated**: 2025-08-27
-**Difficulty**: 🟡 Medium
-**Est. Time**: ~1.5 hours
-**Prerequisites**: Existing real implementations, Universal Skin Engine
+### Real Implementation Integration Pattern
 
 **Problem**: Hardcoded placeholder implementations when real implementations already exist, leading to unnecessary duplication and reduced functionality.
 
@@ -79,6 +101,11 @@ return '<div class="templum-skin-container theme-default"><div  class="templum-c
 
 #### Real Implementation Integration Pattern: Implementation Feedback
 <!-- Autonomous agents append feedback here when applying pattern -->
+
+// TODO: [TASK-PATTERN-001] Pattern: frontmatter-standardization | Complexity: 2 | Dependencies: yaml-formatting,pattern-structure
+// Context: Updated YAML frontmatter to follow standardized template format with proper field naming and structure
+// Validation-Required: yaml-syntax-validation, pattern-searchability, template-compliance
+// Pattern-Info: { approach: "template-substitution", alternatives: "manual-conversion", trade-offs: "consistency-over-custom-formatting" }
 
 #### Real Implementation Integration Pattern: Pattern Metadata
 

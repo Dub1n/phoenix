@@ -1,19 +1,21 @@
-# Workflow System Feedback Template
-
-**Agent**: [Your identifier]  
-**Date**: [YYYY-MM-DD]  
-**Workflow Command Used**: [e.g., /workflow Templum TASK-VAL-006]  
-**Task Complexity**: [Simple | Moderate | Complex]  
-**Chain Length**: [Number of agents used]  
-
-> please place the completed form in .claude\workflows\workflow-feedback once you have filled it in.
-> do not worry about being overly-critical of the user or the worlflow, accurate feedback is essential for improvement.
-
 ---
+agent: [Your identifier]  
+date: [YYYY-MM-DD-HHMM]  
+workflow-command: [e.g. /workflow Templum TASK-VAL-006]  
+task-complexity: [Simple | Moderate | Complex]  
+chain-length: [Number of agents used]  
+context-added: [leave blank]
+---
+
+# Workflow System Feedback
+
+[Please place the completed form in .claude\workflows\workflow-feedback as {date}-{TASK-ID}.md once you have filled it in. Do not worry about being overly-critical of the user or the worlflow, accurate feedback is essential for improvement. Remove this comment on completion.]
 
 ## Operation Procedure
 
-[List your workflow - tool calls and other operations. Provide a summary of each, including input and reponse where applicable]
+[List your workflow - did you use a chain, and if so was it premade or constructed for this task (by you or the user)? Tool calls and other operations - provide a summary of each, including input and reponse where applicable.
+i.e. did you make any templates, which templates did you provide, how long were your inputs and the agent's reponse etc.
+Write out step by step - do not truncate or merge stages - providing the exact order is very important]
 
 ## Overall Workflow Assessment
 
@@ -37,7 +39,7 @@
 
 ### Initial Command Assessment
 
-Command used: [Full command with arguments]
+Command used: [*FULL* command **VERBATIM** - *not* a summary]
 
 **Command Compliance Without Reminder** (delete those that don't apply):
 

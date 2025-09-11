@@ -1,12 +1,30 @@
 ---
+date-created: 2025-08-29-0000
+last-updated: 2025-09-11-0000
 name: dynamic-command-routing
-description: Templum uses hardcoded pattern matching for routing commands to backends, preventing truly generic backend integration.
-Status: ESTABLISHED
-Category: Integration
-Last Updated: 2025-08-29
-Difficulty: Medium
-Est. Time: ~1-2 hours
-Prerequisites: Backend Service Integration, Universal Interface Orchestration, Unified Type System
+description: Dynamic command routing system that eliminates hardcoded patterns by building routing tables from skin definitions at runtime
+status: established
+category: integration
+use-when:
+  - Implementing generic backend integration without hardcoded routing
+  - Adding new backends that need command routing capabilities
+  - Building systems that route commands based on skin definitions
+  - Creating flexible command-to-backend mapping systems
+keywords:
+  - dynamic-routing
+  - command-mapping
+  - backend-integration
+  - skin-definitions
+  - runtime-configuration
+  - generic-routing
+prerequisites:
+  - backend-service-integration
+  - universal-interface-orchestration
+  - unified-type-system
+related-patterns:
+  - backend-service-integration
+  - universal-interface-orchestration
+  - session-management
 ---
 
 ### Dynamic Command Routing Pattern
@@ -82,6 +100,11 @@ class DynamicCommandRouter {
 
 #### Dynamic Command Routing Pattern: Implementation Feedback
 <!-- Autonomous agents append feedback here when applying pattern -->
+
+// TODO: [TASK-PATTERN-001] Pattern: frontmatter-standardization | Complexity: 2 | Dependencies: template-system
+// Context: Updated frontmatter to follow standardized YAML template format with kebab-case fields, structured arrays, and proper metadata organization
+// Validation-Required: yaml-syntax-validation, pattern-metadata-completeness, searchability-enhancement
+// Pattern-Info: { approach: "template-based-standardization", alternatives: "manual-update", trade-offs: "consistency-vs-flexibility" }
 
 #### Dynamic Command Routing Pattern: Pattern Metadata
 

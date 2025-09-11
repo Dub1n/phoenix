@@ -1,11 +1,31 @@
-### Dependency Injection Unified Pattern
+---
+date-created: 2025-08-27-0000
+last-updated: 2025-09-11-0000
+name: dependency-injection-unified
+description: Complete 4-phase dependency injection system with enhanced adapters, systematic initialization, and validation
+status: ESTABLISHED
+category: Infrastructure
+use-when:
+  - Component lifecycle management across interface adapters needed
+  - Dependency coordination between core services required
+  - Enhanced adapter functionality with validation required
+  - Systematic initialization order must be enforced
+keywords:
+  - dependency-injection
+  - adapter-pattern
+  - initialization
+  - lifecycle-management
+  - validation
+prerequisites:
+  - abstraction-layer-architecture
+  - universal-interface-orchestration
+related-patterns:
+  - enhanced-adapter-pattern
+  - 4-phase-initialization
+  - graceful-disposal-pattern
+---
 
-**Status**: ESTABLISHED
-**Category**: Technical
-**Last Updated**: 2025-08-27
-**Difficulty**: 🟠 Advanced
-**Est. Time**: ~4 hours
-**Prerequisites**: Abstraction Layer Architecture, Universal Interface Orchestration
+# Dependency Injection Unified Pattern
 
 **Problem**: Component lifecycle management and dependency coordination across interface adapters and core services.
 
@@ -192,9 +212,14 @@ console.error('BackendServiceRouterAdapter cleanup error:',  errorMessage);
 #### Dependency Injection Unified Pattern: Implementation Feedback
 <!-- Autonomous agents append feedback here when applying pattern -->
 
+// TODO: [TASK-PATTERN-001] Pattern: frontmatter-standardization | Complexity: 2 | Dependencies: yaml-formatting
+// Context: Updated pattern file frontmatter to follow standardized YAML template format with kebab-case field names
+// Validation-Required: yaml-syntax-validity, pattern-searchability, metadata-completeness
+// Pattern-Info: { approach: "template-substitution", alternatives: "manual-formatting", trade-offs: "consistency-vs-flexibility" }
+
 #### Dependency Injection Unified Pattern: Pattern Metadata
 
 **Used By Active Tasks**: [TASK-227]
-**Successfully Applied**: [TASK-227] ✅ 4-Phase Dependency Injection Implementation (2025-08-27)
+**Successfully Applied**: [TASK-227] ✅ 4-Phase Dependency Injection Implementation (2025-08-27), [TASK-PATTERN-001] ✅ Frontmatter Standardization (2025-09-11)
 **Integration Points**: Abstraction Layer Architecture, Universal Interface Orchestration
 **Files Using This Pattern**: src/core/adapter-registry.ts

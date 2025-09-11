@@ -1,11 +1,31 @@
-### Mock-Real API Alignment Pattern
+---
+date-created: 2025-08-28-0000
+last-updated: 2025-09-11-0000
+name: mock-real-api-alignment
+description: Unifies mock interfaces with real implementation APIs to prevent compilation errors and integration failures
+status: established
+category: foundation
+use-when:
+  - Mock interfaces and real implementation APIs become misaligned over time
+  - TypeScript compilation errors from interface conflicts (100+ errors)
+  - Test infrastructure failures due to API mismatches
+  - Integration failures blocking development
+  - Need to maintain backward compatibility while aligning APIs
+keywords:
+  - api-alignment
+  - typescript-interfaces
+  - mocks
+  - testing
+  - compilation-errors
+  - interface-conflicts
+prerequisites:
+  - real-component-api-analysis
+related-patterns:
+  - type-system-foundation
+  - test-infrastructure-patterns
+---
 
-**Status**: ✅ ESTABLISHED
-**Category**: Foundation
-**Last Updated**: 2025-08-28
-**Difficulty**: 🟡 Medium
-**Est. Time**: ~3 hours
-**Prerequisites**: Real component API analysis
+# Mock-Real API Alignment Pattern
 
 **Problem**: Mock interfaces and real implementation APIs become misaligned over time, causing TypeScript compilation errors (100+ errors from interface conflicts), test infrastructure failures, integration failures, and development blocking.
 

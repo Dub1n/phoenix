@@ -1,11 +1,32 @@
-### VSCode Extension Activation Pattern
+---
+date-created: 2025-08-27-0000
+last-updated: 2025-09-11-0000
+name: vscode-extension-activation-pattern
+description: Comprehensive VSCode extension activation with webview providers, command registration, graceful degradation, and resource cleanup
+status: established
+category: foundation
+use-when:
+  - Creating VSCode extension with complete package.json configuration
+  - Implementing extension activation with graceful degradation
+  - Setting up webview providers and command registration
+  - Managing extension lifecycle and resource cleanup
+keywords:
+  - vscode
+  - extension
+  - activation
+  - webview
+  - commands
+  - lifecycle
+  - graceful-degradation
+prerequisites:
+  - vscode-extension-configuration-pattern
+related-patterns:
+  - universal-interface-orchestration-pattern
+  - backend-service-integration-pattern
+  - resource-cleanup-pattern
+---
 
-**Status**: ✅ ESTABLISHED
-**Category**: Foundation Infrastructure
-**Last Updated**: 2025-08-27
-**Difficulty**: 🟡 Medium
-**Est. Time**: ~3-4 hours
-**Prerequisites**: VSCode Extension Configuration
+## VSCode Extension Activation Pattern
 
 **Problem**: VSCode extension with complete package.json configuration requires extension.ts activation file to register components and provide functionality
 
@@ -155,6 +176,11 @@ console.error('Error during extension deactivation:', error);
 
 #### VSCode Extension Activation Pattern: Implementation Feedback
 <!-- Autonomous agents append feedback here when applying pattern -->
+
+// TODO: [TASK-PATTERN-001] Pattern: frontmatter-standardization | Complexity: 2 | Dependencies: yaml-format
+// Context: Updated frontmatter to standardized YAML format with kebab-case fields, proper arrays, and comprehensive metadata
+// Validation-Required: yaml-syntax-validation, frontmatter-completeness, pattern-searchability
+// Pattern-Info: { approach: "template-substitution", alternatives: "manual-editing", trade-offs: "automation-vs-flexibility" }
 
 #### VSCode Extension Activation Pattern: Pattern Metadata
 

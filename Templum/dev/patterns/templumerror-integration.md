@@ -1,11 +1,37 @@
-### TemplumError Integration Pattern
+---
+date-created: 2025-09-01-0000
+last-updated: 2025-09-11-0000
+name: templumerror-integration
+description: Standardized error handling pattern with typed error interfaces, utility functions, and consistent error categorization
+status: established
+category: foundation
+use-when:
+  - Components need consistent error handling approaches
+  - Debugging requires proper error monitoring and categorization
+  - System needs comprehensive error management and recovery
+  - Error handling patterns need to be standardized across components
+keywords:
+  - error-handling
+  - typescript
+  - error-interfaces
+  - error-categorization
+  - monitoring
+  - debugging
+  - type-safety
+  - signal-system
+prerequisites:
+  - typescript-fundamentals
+  - error-handling-basics
+  - logging-systems
+related-patterns:
+  - signal-system-integration
+  - component-error-boundaries
+  - monitoring-integration
+---
 
-**Status**: ESTABLISHED
-**Category**: Foundation
-**Last Updated**: 2025-09-01
-**Difficulty**: 🟡 Medium
-**Est. Time**: ~2 hours
-**Prerequisites**: TypeScript error handling, standardized error interfaces, logging systems
+<!-- TASK-PATTERN-001: Frontmatter standardization completed 2025-09-11-121733 -->
+
+### TemplumError Integration Pattern
 
 **Problem**: Templum components used inconsistent error handling approaches, making debugging difficult and preventing proper error monitoring, categorization, and recovery across the system.
 

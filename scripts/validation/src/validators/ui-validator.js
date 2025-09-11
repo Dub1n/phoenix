@@ -125,7 +125,7 @@ export class UIValidator {
     };
 
     try {
-      const menuFiles = this.findFilesInScope(projectInfo, ['**/menu*.ts', '**/navigation*.ts']);
+      const menuFiles = this.findFilesInScope(projectInfo, ['**/menu*.ts', '**/navigation*.ts'], scopeConfig);
       
       if (menuFiles.length === 0) {
         test.status = 'WARN';
@@ -195,7 +195,7 @@ export class UIValidator {
 
     try {
       // Check for CLI-related files
-      const cliFiles = this.findFilesInScope(projectInfo, ['**/cli*.ts', '**/command*.ts', '**/interface*.ts']);
+      const cliFiles = this.findFilesInScope(projectInfo, ['**/cli*.ts', '**/command*.ts', '**/interface*.ts'], scopeConfig);
       
       if (cliFiles.length === 0) {
         test.status = 'SKIP';
@@ -333,7 +333,7 @@ export class UIValidator {
 
     try {
       // Check for UX-related patterns in interface files
-      const uxFiles = this.findFilesInScope(projectInfo, ['**/interface*.ts', '**/ui*.ts', '**/user*.ts']);
+      const uxFiles = this.findFilesInScope(projectInfo, ['**/interface*.ts', '**/ui*.ts', '**/user*.ts'], scopeConfig);
       
       if (uxFiles.length === 0) {
         test.status = 'SKIP';
@@ -402,7 +402,7 @@ export class UIValidator {
 
     try {
       // Check for accessibility patterns in relevant files
-      const accessibilityFiles = this.findFilesInScope(projectInfo, ['**/interface*.ts', '**/ui*.ts', '**/component*.ts']);
+      const accessibilityFiles = this.findFilesInScope(projectInfo, ['**/interface*.ts', '**/ui*.ts', '**/component*.ts'], scopeConfig);
       
       if (accessibilityFiles.length === 0) {
         test.status = 'SKIP';
@@ -459,26 +459,63 @@ export class UIValidator {
 
   /**
    * Find files matching patterns in project scope
+   * If scopeConfig is provided, it takes precedence over patterns
    */
-  findFilesInScope(projectInfo, patterns) {
+  findFilesInScope(projectInfo, patterns, scopeConfig = null) {
     const files = [];
     
     try {
-      for (const pattern of patterns) {
-        // Simple glob-like pattern matching for common cases
+      // If scope is provided, use its patterns instead of default patterns
+      // scopeConfig is expected to be an object with { patterns: [...] }
+      const effectivePatterns = scopeConfig && scopeConfig.patterns ? scopeConfig.patterns : patterns;
+      
+      for (const pattern of effectivePatterns) {
+        // Enhanced scope-aware pattern matching
         if (pattern.includes('**')) {
           // Handle recursive patterns
-          const basePattern = pattern.replace('**/', '').replace('**/');
-          const searchPath = path.join(projectInfo.path, 'src');
+          let basePattern, searchPath;
+          
+          if (scopeConfig && scopeConfig.patterns && scopeConfig.patterns.includes(pattern)) {
+            // Scope pattern - parse directory and file pattern
+            const pathParts = pattern.split('/');
+            const filePattern = pathParts[pathParts.length - 1]; // e.g., "*.ts"
+            
+            // Build search path from the directory parts (excluding the file pattern)
+            const dirParts = pathParts.slice(0, -1).filter(part => part !== '**');
+            searchPath = path.join(projectInfo.path, ...dirParts);
+            basePattern = filePattern;
+          } else {
+            // Default pattern - search in src directory
+            const basePattern_old = pattern.replace('**/', '').replace('**/');
+            basePattern = basePattern_old;
+            searchPath = path.join(projectInfo.path, 'src');
+          }
           
           if (fs.existsSync(searchPath)) {
-            this.walkDirectory(searchPath, basePattern, files);
+            this.walkDirectory(searchPath, basePattern, files, 0, scopeConfig && scopeConfig.patterns && scopeConfig.patterns.includes(pattern));
           }
         } else {
-          // Handle simple patterns
-          const searchPath = path.join(projectInfo.path, pattern);
+          // Handle simple patterns - direct file paths or simple globs
+          let searchPath;
+          if (scopeConfig && scopeConfig.patterns && scopeConfig.patterns.includes(pattern)) {
+            // Scope is a specific file or simple pattern
+            if (path.isAbsolute(pattern)) {
+              searchPath = pattern;
+            } else {
+              searchPath = path.join(projectInfo.path, pattern);
+            }
+          } else {
+            searchPath = path.join(projectInfo.path, pattern);
+          }
+          
           if (fs.existsSync(searchPath)) {
-            files.push(searchPath);
+            const stat = fs.statSync(searchPath);
+            if (stat.isFile()) {
+              files.push(searchPath);
+            } else if (stat.isDirectory()) {
+              // If it's a directory, search for relevant files
+              this.walkDirectory(searchPath, '*.ts', files, 0, scopeConfig && scopeConfig.patterns && scopeConfig.patterns.includes(pattern));
+            }
           }
         }
       }
@@ -492,16 +529,29 @@ export class UIValidator {
   /**
    * Walk directory recursively to find matching files
    */
-  walkDirectory(dir, pattern, results) {
+  walkDirectory(dir, pattern, results, depth = 0, isScopePattern = false) {
+    // Protection against infinite recursion and performance issues
+    const MAX_DEPTH = 6;
+    const BLACKLISTED_DIRS = ['coverage', 'node_modules', 'dist', '.git', 'lcov-report'];
+    
+    if (depth > MAX_DEPTH) {
+      return;
+    }
+    
     try {
       const files = fs.readdirSync(dir);
       
       for (const file of files) {
+        // Skip blacklisted directories
+        if (BLACKLISTED_DIRS.includes(file)) {
+          continue;
+        }
+        
         const filePath = path.join(dir, file);
         const stat = fs.statSync(filePath);
         
         if (stat.isDirectory()) {
-          this.walkDirectory(filePath, pattern, results);
+          this.walkDirectory(filePath, pattern, results, depth + 1, isScopePattern);
         } else if (this.matchesPattern(file, pattern)) {
           results.push(filePath);
         }

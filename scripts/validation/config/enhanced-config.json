@@ -1,5 +1,50 @@
 {
-  "version": "3.0.0",
+  "version": "3.0.1",
+  "systemDefaults": {
+    "agentSubmissionFramework": {
+      "enabled": true,
+      "safetyLevel": "enhanced",
+      "maxSubmissionsPerSession": 1,
+      "rollbackEnabled": true,
+      "humanReviewRequired": true
+    },
+    "safety": {
+      "preValidationChecks": true,
+      "postValidationProcessing": true,
+      "sandboxTesting": true,
+      "interfaceCompliance": true,
+      "automaticRollback": true
+    },
+    "performance": {
+      "maxValidationTime": 300000,
+      "memoryLimit": 512,
+      "parallelValidations": 1
+    },
+    "projectDefaults": {
+      "report_location": "dev/validation-results",
+      "timeout_overrides": {
+        "quality": 120000,
+        "architecture": 180000,
+        "feature": 300000
+      },
+      "resource_thresholds": {
+        "memory_warning": 75,
+        "cpu_warning": 80,
+        "memory_critical": 85,
+        "cpu_critical": 90
+      },
+      "reporting": {
+        "format": "markdown",
+        "include_evidence": true,
+        "include_timing": true
+      },
+      "monitoring": {
+        "heartbeat_interval": 30000,
+        "resource_check_enabled": true,
+        "progress_updates": false
+      }
+    }
+  },
   "coreValidationMode": true,
   "comment": "Set coreValidationMode to false to enable full monitoring features",
   
