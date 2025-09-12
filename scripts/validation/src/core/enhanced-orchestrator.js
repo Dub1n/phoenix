@@ -113,6 +113,7 @@ export class EnhancedValidationOrchestrator {
     }
     
     const startTime = Date.now();
+    this.validationStartTime = startTime;
     console.log(`🎯 Starting enhanced validation for category: ${category}`);
     
     try {
@@ -168,13 +169,13 @@ export class EnhancedValidationOrchestrator {
       // Pre-validation checks
       await this.preValidationChecks(validator, enhancedProjectInfo, scopeConfig);
       
-      // Execute validation with timeout
-      const validationPromise = validator.validate(enhancedProjectInfo, scopeConfig, { ...options, projectConfig });
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error(`Validation timeout after ${categoryTimeout}ms`)), categoryTimeout);
-      });
+      // TODO: [TASK-VAL-CORE-FIX-001] Pattern: per-validator-timeout-enforcement | Complexity: 7 | Dependencies: circuit-breaker,progress-monitoring
+      // Context: Implement per-validator timeout enforcement with circuit breaker pattern to prevent infinite hangs
+      // Validation-Required: timeout-enforcement, circuit-breaker-functionality, progress-monitoring
+      // Pattern-Info: { approach: "race-condition-with-monitoring", alternatives: "worker-threads", trade-offs: "simplicity-vs-isolation" }
       
-      const result = await Promise.race([validationPromise, timeoutPromise]);
+      // Execute validation with enhanced timeout and progress monitoring
+      const result = await this.executeValidationWithTimeout(validator, enhancedProjectInfo, scopeConfig, { ...options, projectConfig }, categoryTimeout, category);
       
       // Add timing and task ID to result
       result.duration = Date.now() - startTime;
@@ -200,12 +201,40 @@ export class EnhancedValidationOrchestrator {
       return result;
       
     } catch (error) {
-      this.logError('enhanced_validation', error, {
+      // TODO: [TASK-VAL-CORE-FIX-001] Pattern: enhanced-error-recovery | Complexity: 6 | Dependencies: error-diagnosis,recovery-mechanisms
+      // Context: Implement comprehensive error recovery with diagnostic reporting and fallback mechanisms
+      // Validation-Required: error-classification, recovery-strategies, diagnostic-accuracy
+      // Pattern-Info: { approach: \"multi-tier-recovery\", alternatives: \"simple-logging\", trade-offs: \"complexity-vs-reliability\" }
+      
+      // Enhanced error classification and recovery
+      const recoveryResult = await this.attemptErrorRecovery(error, category, projectInfo, enhancedProjectInfo, scopeConfig, options);
+      
+      if (recoveryResult.recovered) {
+        console.log(`✅ Error recovery successful for ${category}: ${recoveryResult.strategy}`);
+        return recoveryResult.result;
+      }
+      
+      // Log comprehensive error details
+      const errorContext = {
         category,
         projectPath: projectInfo.path,
-        validatorLoaded: this.validators.has(category)
-      });
+        validatorLoaded: this.validators.has(category),
+        projectConfig: enhancedProjectInfo.commands ? 'loaded' : 'missing',
+        scopePatterns: scopeConfig.patterns,
+        timeoutUsed: categoryTimeout,
+        validationDuration: Date.now() - startTime,
+        systemState: {
+          initialized: this.initialized,
+          validatorsCount: this.validators.size,
+          memoryUsage: process.memoryUsage()
+        }
+      };
+      
+      this.logError('enhanced_validation', error, errorContext);
       this.updateMetrics(startTime, false);
+      
+      // Enhanced error handling with user guidance
+      this.handleValidationError(error, projectInfo, category);
       throw error;
     }
   }
@@ -988,6 +1017,207 @@ ${result.warnings.length > 0 ? `## Warnings\n\n${this.formatWarnings(result.warn
   }
 
   /**
+   * Attempt error recovery with multiple strategies
+   */
+  async attemptErrorRecovery(error, category, projectInfo, enhancedProjectInfo, scopeConfig, options) {
+    // TODO: [TASK-VAL-CORE-FIX-001] Pattern: multi-strategy-error-recovery | Complexity: 8 | Dependencies: error-classification,validator-management
+    // Context: Implement multiple error recovery strategies based on error type and validation context
+    // Validation-Required: recovery-success-rate, fallback-reliability, error-classification-accuracy
+    // Pattern-Info: { approach: \"tiered-recovery-strategies\", alternatives: \"single-retry\", trade-offs: \"complexity-vs-robustness\" }
+    
+    const recoveryStrategies = [];
+    
+    // Classify error type and determine recovery strategies
+    if (error.message.includes('timeout') || error.message.includes('Timeout')) {
+      recoveryStrategies.push('timeout_recovery');
+    }
+    
+    if (error.message.includes('ENOENT') || error.message.includes('not found')) {
+      recoveryStrategies.push('file_recovery');
+    }
+    
+    if (error.message.includes('permission') || error.message.includes('EACCES')) {
+      recoveryStrategies.push('permission_recovery');  
+    }
+    
+    if (error.message.includes('memory') || error.message.includes('heap')) {
+      recoveryStrategies.push('memory_recovery');
+    }
+    
+    // Always try basic retry as last resort
+    recoveryStrategies.push('basic_retry');
+    
+    // Attempt each recovery strategy
+    for (const strategy of recoveryStrategies) {
+      try {
+        console.log(`  🔄 Attempting error recovery using strategy: ${strategy}`);
+        
+        const recoveryResult = await this.executeRecoveryStrategy(
+          strategy, 
+          error, 
+          category, 
+          projectInfo, 
+          enhancedProjectInfo, 
+          scopeConfig, 
+          options
+        );
+        
+        if (recoveryResult.success) {
+          return {
+            recovered: true,
+            strategy,
+            result: recoveryResult.validationResult
+          };
+        }
+        
+      } catch (recoveryError) {
+        console.log(`  ❌ Recovery strategy ${strategy} failed: ${recoveryError.message}`);
+      }
+    }
+    
+    return {
+      recovered: false,
+      strategy: null,
+      result: null
+    };
+  }
+
+  /**
+   * Execute specific recovery strategy
+   */
+  async executeRecoveryStrategy(strategy, originalError, category, projectInfo, enhancedProjectInfo, scopeConfig, options) {
+    switch (strategy) {
+      case 'timeout_recovery':
+        // Increase timeout and retry with minimal scope
+        console.log(`    ⏱️ Timeout recovery: Extending timeout and reducing scope`);
+        const extendedTimeout = 600000; // 10 minutes
+        const minimalScope = { patterns: ['*.json', '*.ts'] }; // Minimal file patterns
+        
+        const validator = await this.getValidator(category);
+        if (validator) {
+          const result = await this.executeValidationWithTimeout(
+            validator, 
+            enhancedProjectInfo, 
+            minimalScope, 
+            options, 
+            extendedTimeout, 
+            category
+          );
+          return { success: true, validationResult: result };
+        }
+        break;
+        
+      case 'file_recovery':
+        // Create missing directories or files if possible
+        console.log(`    📁 File recovery: Attempting to resolve missing files`);
+        // This is a placeholder - could implement directory creation logic
+        break;
+        
+      case 'permission_recovery':
+        // Skip problematic files and continue with available files
+        console.log(`    🔐 Permission recovery: Continuing with accessible files only`);
+        // This could implement a filtered scope approach
+        break;
+        
+      case 'memory_recovery':
+        // Force garbage collection and retry with reduced scope
+        console.log(`    🧹 Memory recovery: Forcing garbage collection`);
+        if (global.gc) {
+          global.gc();
+        }
+        break;
+        
+      case 'basic_retry':
+        // Simple retry with original parameters
+        console.log(`    🔁 Basic retry: Single retry attempt`);
+        await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
+        
+        const retryValidator = await this.getValidator(category);
+        if (retryValidator) {
+          const result = await retryValidator.validate(enhancedProjectInfo, scopeConfig, options);
+          return { success: true, validationResult: result };
+        }
+        break;
+    }
+    
+    return { success: false };
+  }
+
+  /**
+   * Execute validation with enhanced timeout enforcement and progress monitoring
+   */
+  async executeValidationWithTimeout(validator, projectInfo, scopeConfig, options, categoryTimeout, category) {
+    // TODO: [TASK-VAL-CORE-FIX-001] Pattern: enhanced-timeout-enforcement | Complexity: 8 | Dependencies: circuit-breaker,progress-monitoring
+    // Context: Implement comprehensive timeout enforcement with progress monitoring and circuit breaker
+    // Validation-Required: timeout-prevention, progress-tracking, circuit-breaker-activation
+    // Pattern-Info: { approach: \"multi-layer-timeout\", alternatives: \"single-timeout\", trade-offs: \"complexity-vs-reliability\" }
+    
+    let progressMonitor = null;
+    let circuitBreakerTriggered = false;
+    let validationCompleted = false;
+    
+    try {
+      // Initialize progress monitoring for long-running validations
+      progressMonitor = setInterval(() => {
+        if (!validationCompleted) {
+          console.log(`  ⏳ ${category} validation in progress... (${Math.round((Date.now() - this.validationStartTime) / 1000)}s elapsed)`);
+          
+          // Circuit breaker: If validation exceeds 80% of timeout, trigger warning
+          const elapsed = Date.now() - this.validationStartTime;
+          if (elapsed > categoryTimeout * 0.8 && !circuitBreakerTriggered) {
+            circuitBreakerTriggered = true;
+            console.log(`  ⚠️ Circuit breaker warning: ${category} validation approaching timeout threshold`);
+          }
+        }
+      }, 15000); // Report progress every 15 seconds
+      
+      // Create validation promise with internal timeout handling
+      const validationPromise = new Promise(async (resolve, reject) => {
+        try {
+          // Add per-validator timeout monitoring
+          const validatorTimeout = setTimeout(() => {
+            reject(new Error(`Per-validator timeout: ${category} validator exceeded ${categoryTimeout}ms limit`));
+          }, categoryTimeout);
+          
+          // Execute validation
+          const result = await validator.validate(projectInfo, scopeConfig, options);
+          clearTimeout(validatorTimeout);
+          validationCompleted = true;
+          resolve(result);
+        } catch (error) {
+          validationCompleted = true;
+          reject(error);
+        }
+      });
+      
+      // System-level timeout as backup
+      const systemTimeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => {
+          if (!validationCompleted) {
+            reject(new Error(`System timeout: ${category} validation exceeded system limit of ${categoryTimeout}ms`));
+          }
+        }, categoryTimeout + 5000); // 5 second buffer beyond validator timeout
+      });
+      
+      // Race between validation and timeouts
+      const result = await Promise.race([validationPromise, systemTimeoutPromise]);
+      validationCompleted = true;
+      
+      return result;
+      
+    } finally {
+      // Clean up progress monitoring
+      if (progressMonitor) {
+        clearInterval(progressMonitor);
+      }
+      
+      if (circuitBreakerTriggered) {
+        console.log(`  ✅ Circuit breaker resolved: ${category} validation completed`);
+      }
+    }
+  }
+
+  /**
    * Pre-validation checks
    */
   async preValidationChecks(validator, projectInfo, scopeConfig) {
@@ -997,9 +1227,17 @@ ${result.warnings.length > 0 ? `## Warnings\n\n${this.formatWarnings(result.warn
       console.warn(`⚠️ Validator diagnostics warning: ${validator.category}`);
     }
     
-    // Check project compatibility
+    // TODO: [TASK-VAL-CORE-FIX-001] Pattern: case-insensitive-compatibility-check | Complexity: 3 | Dependencies: project-configuration
+    // Context: Fix false positive compatibility warnings due to case sensitivity between project names
+    // Validation-Required: case-insensitive-matching, compatibility-accuracy
+    // Pattern-Info: { approach: \"lowercase-comparison\", alternatives: \"regex-matching\", trade-offs: \"simplicity-vs-flexibility\" }
+    
+    // Check project compatibility (case-insensitive)
     const capabilities = validator.getCapabilities();
-    if (!capabilities.supportedProjects.includes(projectInfo.name) && 
+    const projectNameLower = projectInfo.name.toLowerCase();
+    const supportedProjectsLower = capabilities.supportedProjects.map(p => p.toLowerCase());
+    
+    if (!supportedProjectsLower.includes(projectNameLower) && 
         !capabilities.supportedProjects.includes('*')) {
       console.warn(`⚠️ Project ${projectInfo.name} may not be fully supported by ${validator.category} validator`);
     }

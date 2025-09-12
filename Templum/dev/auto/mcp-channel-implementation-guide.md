@@ -270,7 +270,7 @@ interface SessionInfo {
 **NEW INTEGRATION TASKS** (2 tasks replace 10):
 
 - **TASK-MCP-INT-001**: pty-mcp-server Installation and Configuration (1-2 days)
-- **TASK-MCP-INT-002**: Templum Service Discovery Integration (2-3 days)
+- **TASK-MCP-004**: Templum Service Discovery Integration (2-3 days)
 
 ### Revised Integration Architecture
 
@@ -305,7 +305,7 @@ graph LR
 4. Test basic pty-bash and pty-message functionality
 5. Validate MCP protocol communication
 
-### TASK-MCP-INT-002: Service Discovery Integration  
+### TASK-MCP-004: Service Discovery Integration  
 
 **Scope**: Integrate pty-mcp-server with Templum service discovery
 **Time**: 2-3 days  

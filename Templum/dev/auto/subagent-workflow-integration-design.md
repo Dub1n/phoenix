@@ -149,7 +149,7 @@ graph TB
     
     subgraph "Streamlined Workflow (File-Based Handoff)"
         MA[Main Agent Coordinator] --> IF1[Input File 1]
-        IF1 --> RA[Research Agent]
+        IF1 --> RA[Analysis Agent]
         RA --> OF1[Output File 1]
         OF1 --> MA
         
@@ -164,7 +164,7 @@ graph TB
 
 ### Core Components
 
-#### 1. ResearchAgent (Consolidated Information Gathering)
+#### 1. Analysis Agent (Consolidated Information Gathering)
 
 **Responsibilities**:
 
@@ -177,7 +177,7 @@ graph TB
 **Output**: Structured research results, implementation recommendations
 **Tools**: Read, Grep, Glob (focused file access)
 
-#### 2. ExecutionAgent (Consolidated Validation & Documentation)
+#### 2. Execution Agent (Consolidated Validation & Documentation)
 
 **Responsibilities**:
 
@@ -196,7 +196,7 @@ graph TB
 sequenceDiagram
     participant MA as Main Agent
     participant IF as Input File
-    participant RA as Research Agent
+    participant RA as Analysis Agent
     participant OF as Output File
     participant EA as Execution Agent
     
@@ -287,7 +287,7 @@ interface HandoffOutput {
 
 ### Phase 1: Proof of Concept (Week 1-2)
 
-**Objective**: Validate file-based handoff system with single ResearchAgent
+**Objective**: Validate file-based handoff system with single Analysis Agent
 
 #### Technical Implementation
 
@@ -295,7 +295,7 @@ interface HandoffOutput {
 
 ```yaml
 ---
-name: "ResearchAgent"
+name: "Analysis Agent"
 description: "Project-agnostic research and analysis agent with file-based I/O"
 tools: ["Read", "Grep", "Glob"]
 parameters:
@@ -306,7 +306,7 @@ max_execution_time: 300
 context_limit: 50000
 ---
 
-# Generic Research Agent
+# Generic Analysis Agent
 
 ## Objective
 Read research context from {input_filepath}, execute {task_description}, write structured results to {output_filepath}.
@@ -366,7 +366,7 @@ async function enhancedTaskSelection() {
   await writeJSON(inputFile, researchContext);
   
   const agentStatus = await Task({
-    agent: "ResearchAgent",
+    agent: "Analysis Agent",
     context: {
       input_filepath: inputFile,
       output_filepath: outputFile,
@@ -392,17 +392,17 @@ async function enhancedTaskSelection() {
 - 70%+ reduction in main agent context usage during research phase
 - Equal or better pattern matching accuracy vs manual analysis  
 - <5% fallback activation rate under normal conditions
-- Research agent execution time <5 minutes
+- Analysis Agent execution time <5 minutes
 
 ### Phase 2: Complete Workflow (Week 3-4)
 
-**Objective**: Add ExecutionAgent for full end-to-end file-based workflow
+**Objective**: Add Execution Agent for full end-to-end file-based workflow
 
-#### ExecutionAgent Implementation
+#### Execution Agent Implementation
 
 ```yaml
 ---
-name: "ExecutionAgent" 
+name: "Execution Agent" 
 description: "Project-agnostic validation and documentation agent with file-based I/O"
 tools: ["Read", "Write", "Edit", "Bash"]
 parameters:
@@ -469,7 +469,7 @@ async function enhancedWorkflowExecution(researchResults: HandoffOutput) {
   await writeJSON(inputFile, executionContext);
   
   const agentStatus = await Task({
-    agent: "ExecutionAgent",
+    agent: "Execution Agent",
     context: {
       input_filepath: inputFile,
       output_filepath: outputFile,
@@ -515,7 +515,7 @@ async function enhancedWorkflowExecution(researchResults: HandoffOutput) {
 
 ```filestructure
 ~/.claude/agents/
-├── research-agent.md          # Generic research agent
+├── research-agent.md          # Generic Analysis Agent
 ├── execution-agent.md         # Generic execution agent  
 └── templates/
     └── generic-agent-template.md
@@ -850,7 +850,7 @@ graph TB
         EM[Enhanced Main Agent]
         
         EM --> EI1[Write research-context.json]
-        EI1 --> RA[Research Agent]
+        EI1 --> RA[Analysis Agent]
         RA --> EO1[Write research-results.json]
         EO1 --> EM
         
@@ -871,7 +871,7 @@ sequenceDiagram
     participant U as User
     participant MA as Main Agent
     participant FS as File System
-    participant RA as Research Agent
+    participant RA as Analysis Agent
     participant EA as Execution Agent
     
     U->>MA: Request task execution
@@ -905,8 +905,8 @@ sequenceDiagram
 
 ```mermaid
 graph TD
-    subgraph "ResearchAgent Responsibilities"
-        RA[Research Agent]
+    subgraph "Analysis Agent Responsibilities"
+        RA[Analysis Agent]
         RA --> RT1[Task Priority Analysis]
         RA --> RT2[Pattern Research & Matching]
         RA --> RT3[Requirements Analysis]
@@ -914,7 +914,7 @@ graph TD
         RA --> RT5[Dependency Mapping]
     end
     
-    subgraph "ExecutionAgent Responsibilities"
+    subgraph "Execution Agent Responsibilities"
         EA[Execution Agent]
         EA --> ET1[Validation Script Execution]
         EA --> ET2[Test Result Analysis]
@@ -1081,34 +1081,34 @@ interface EnhancementDecisionCriteria {
 pr_task_integration:
   file: "pr/task.md"
   lines: "19-28 (Pattern analysis section)"
-  modification: "Replace manual pattern reading with ResearchAgent file handoff"
+  modification: "Replace manual pattern reading with Analysis Agent file handoff"
   
 pr_validate_integration:
   file: "pr/validate.md" 
   lines: "64-69 (Validation execution section)"
-  modification: "Replace direct validation with ExecutionAgent file handoff"
+  modification: "Replace direct validation with Execution Agent file handoff"
   
 pr_document_integration:
   file: "pr/document.md"
   lines: "120-135 (Pattern documentation section)"
-  modification: "Include documentation updates in ExecutionAgent responsibilities"
+  modification: "Include documentation updates in Execution Agent responsibilities"
 ```
 
 #### MCP Claude Code Integration: Server Coordination Strategy
 
 ```yaml
 Context7_Integration:
-  usage: "ResearchAgent for external pattern documentation"
+  usage: "Analysis Agent for external pattern documentation"
   benefit: "Enhanced pattern matching without main agent context bloat"
   implementation: "Agent-specific Context7 calls with isolated results"
 
 Sequential_Integration:
-  usage: "ExecutionAgent for complex validation analysis"
+  usage: "Execution Agent for complex validation analysis"
   benefit: "Structured validation reasoning without main agent overhead"
   implementation: "Agent-specific Sequential thinking with file output"
 
 Playwright_Integration:
-  usage: "ExecutionAgent for UI/CLI validation scenarios"
+  usage: "Execution Agent for UI/CLI validation scenarios"
   benefit: "Automated testing without main agent context pollution"
   implementation: "Agent-specific Playwright automation with result capture"
 ```
@@ -1161,18 +1161,18 @@ const handoffInputSchema: JSONSchema7 = {
 
 ```typescript
 describe('File-Based Handoff System', () => {
-  test('ResearchAgent file processing', async () => {
+  test('Analysis Agent file processing', async () => {
     const inputContext = createTestResearchContext();
-    const result = await executeResearchAgent(inputContext);
+    const result = await executeAnalysis Agent(inputContext);
     
     expect(result.status).toBe('success');
     expect(result.confidence).toBeOneOf(['high', 'medium', 'low']);
     expect(result.results.primary_data).toBeDefined();
   });
   
-  test('ExecutionAgent validation workflow', async () => {
+  test('Execution Agent validation workflow', async () => {
     const inputContext = createTestExecutionContext();
-    const result = await executeExecutionAgent(inputContext);
+    const result = await executeExecution Agent(inputContext);
     
     expect(result.status).toBe('success');
     expect(result.results.evidence_files).toHaveLength(greaterThan(0));
@@ -1180,7 +1180,7 @@ describe('File-Based Handoff System', () => {
   
   test('Fallback mechanism activation', async () => {
     const failureContext = createFailureTestContext();
-    const result = await executeWithFallback('ResearchAgent', failureContext, manualFallback);
+    const result = await executeWithFallback('Analysis Agent', failureContext, manualFallback);
     
     expect(result).toBeDefined(); // Should complete via fallback
   });

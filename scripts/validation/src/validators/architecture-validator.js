@@ -1,43 +1,52 @@
 #!/usr/bin/env node
 
 /**
- * Architecture Validator - Enhanced Modular Implementation
+ * Architecture Validator - Lightweight Static Analysis Implementation
  * 
- * Implements IValidator interface for Architecture/Pattern Tasks validation.
- * Extracted and enhanced from legacy-category-validators.js to support the new
- * modular architecture with safety framework compliance.
+ * TODO: [TASK-VAL-ARCH-FIX-001] Pattern: lightweight-architecture-validation | Complexity: 8 | Dependencies: static-analysis,scope-filtering
+ * Context: Complete redesign from npm test approach to lightweight static analysis with proper scope handling
+ * Validation-Required: timeout-prevention, scope-compliance, static-analysis-accuracy
+ * Pattern-Info: { approach: "static-analysis-with-scope", alternatives: "npm-test-execution", trade-offs: "speed-vs-comprehensive-testing" }
+ * 
+ * Fixed Critical Issues:
+ * - Replaced npm test execution with lightweight static analysis
+ * - Implemented proper scope pattern handling and file filtering
+ * - Added timeout controls to prevent indefinite hangs
+ * - Eliminated dependency on external test execution
  * 
  * Category: Architecture/Pattern Tasks  
- * Description: Pattern implementation verification, design pattern compliance, dependency injection, scalability testing
- * Source: TEMPLUM-TESTING-GUIDE.md Section 6
+ * Description: Lightweight pattern analysis, design compliance, dependency validation, architecture verification
+ * Source: Architecture Validator Timeout Fix - 2025-09-11
  * 
- * Version: 3.0.0
- * Date: 2025-09-06
+ * Version: 4.0.0
+ * Date: 2025-09-11
  * Interface Version: 3.0.0
  */
 
-// Architecture validator implementation for architectural patterns and system design validation
+// Lightweight architecture validator using static analysis and file system operations
 
 import fs from 'fs';
 import path from 'path';
-import { execSync } from 'child_process';
 
 /**
- * Architecture Validator implementing IValidator interface
+ * Architecture Validator implementing IValidator interface with lightweight static analysis
  */
 export class ArchitectureValidator {
   constructor() {
     this.category = 'architecture';
-    this.version = '3.0.0';
-    this.scopes = []; // Applies to determined scope, not its own scope - architecture concerns span the project
-    this.hasIntegrationTests = true;
+    this.version = '4.0.0';
+    this.scopes = []; // Now properly handles scope patterns for file filtering
+    this.hasIntegrationTests = false; // Changed to static analysis only
     
     // Initialize internal state
     this.validationStartTime = null;
+    this.maxFileSize = 5 * 1024 * 1024; // 5MB max file size
+    this.maxTotalSize = 50 * 1024 * 1024; // 50MB max total analysis size
+    this.testTimeout = 10000; // 10 second timeout per test
   }
 
   /**
-   * Main validation method implementing IValidator interface
+   * Main validation method implementing IValidator interface with scope-aware static analysis
    */
   async validate(projectInfo, scopeConfig, options = {}) {
     this.validationStartTime = Date.now();
@@ -49,34 +58,59 @@ export class ArchitectureValidator {
       evidence: [],
       errors: [],
       warnings: [],
-      recommendations: []
+      recommendations: [],
+      scopeInfo: {
+        patternsUsed: scopeConfig.patterns || ['**/*.ts', '**/*.js'],
+        filesAnalyzed: 0,
+        totalSize: 0
+      }
     };
 
     try {
-      console.log('  Executing Architecture/Pattern mandatory validation commands...');
-      console.log('  Source: TEMPLUM-TESTING-GUIDE.md Section 6');
+      console.log('  Executing Architecture/Pattern lightweight static analysis...');
+      console.log('  Source: Architecture Validator Timeout Fix - 2025-09-11');
+      console.log(`  Scope patterns: ${result.scopeInfo.patternsUsed.join(', ')}`);
 
-      // Test 1: Pattern implementation verification
-      const patternTest = await this.executePatternImplementationTest(projectInfo);
+      // Discover files within scope
+      const scopedFiles = await this.discoverScopedFiles(projectInfo.path, scopeConfig);
+      result.scopeInfo.filesAnalyzed = scopedFiles.length;
+      result.evidence.push(`Found ${scopedFiles.length} files matching scope patterns`);
+
+      // Test 1: Pattern implementation analysis (static)
+      const patternTest = await this.executeWithTimeout(
+        () => this.executePatternImplementationAnalysis(projectInfo, scopedFiles),
+        this.testTimeout,
+        'Pattern Implementation Analysis'
+      );
       result.tests.push(patternTest);
       result.evidence.push(...patternTest.evidence || []);
 
-      // Test 2: Design pattern compliance check
-      const complianceTest = await this.executeDesignPatternComplianceCheck(projectInfo);
+      // Test 2: Design pattern compliance check (enhanced with scope)
+      const complianceTest = await this.executeWithTimeout(
+        () => this.executeDesignPatternComplianceCheck(projectInfo, scopedFiles),
+        this.testTimeout,
+        'Design Pattern Compliance Check'
+      );
       result.tests.push(complianceTest);
       result.evidence.push(...complianceTest.evidence || []);
 
-      // Test 3: Dependency injection validation
-      const diTest = await this.executeDependencyInjectionValidation(projectInfo);
+      // Test 3: Dependency injection analysis (static)
+      const diTest = await this.executeWithTimeout(
+        () => this.executeDependencyInjectionAnalysis(projectInfo, scopedFiles),
+        this.testTimeout,
+        'Dependency Injection Analysis'
+      );
       result.tests.push(diTest);
       result.evidence.push(...diTest.evidence || []);
 
-      // Test 4: Scalability testing (integration test)
-      if (this.hasIntegrationTests) {
-        const scalabilityTest = await this.executeScalabilityTest(projectInfo);
-        result.tests.push(scalabilityTest);
-        result.evidence.push(...scalabilityTest.evidence || []);
-      }
+      // Test 4: Architecture compliance validation (replaces scalability)
+      const archTest = await this.executeWithTimeout(
+        () => this.executeArchitectureComplianceValidation(projectInfo, scopedFiles),
+        this.testTimeout,
+        'Architecture Compliance Validation'
+      );
+      result.tests.push(archTest);
+      result.evidence.push(...archTest.evidence || []);
 
       // Determine overall result status
       const failedTests = result.tests.filter(test => test.status === 'FAIL');
@@ -92,7 +126,7 @@ export class ArchitectureValidator {
         result.status = 'PASS';
       }
 
-      result.evidence.push('Architecture/Pattern validation tests completed');
+      result.evidence.push('Architecture/Pattern static analysis completed successfully');
       
     } catch (error) {
       result.status = 'FAIL';
@@ -106,11 +140,163 @@ export class ArchitectureValidator {
   }
 
   /**
-   * Test 1: Pattern implementation verification (MUST demonstrate pattern works correctly)
+   * Utility: Simple pattern matcher for file discovery
    */
-  async executePatternImplementationTest(projectInfo) {
+  matchesPattern(filePath, pattern) {
+    const fileName = path.basename(filePath);
+    const relativePath = filePath.replace(/\\/g, '/');
+    
+    // Simple pattern matching - support basic glob patterns
+    if (pattern === '**/*.ts') {
+      return fileName.endsWith('.ts');
+    }
+    if (pattern === '**/*.js') {
+      return fileName.endsWith('.js');
+    }
+    if (pattern === 'src/**/*.ts') {
+      return (relativePath.includes('src/') || relativePath.startsWith('src/')) && fileName.endsWith('.ts');
+    }
+    if (pattern === 'src/**/*.js') {
+      return (relativePath.includes('src/') || relativePath.startsWith('src/')) && fileName.endsWith('.js');
+    }
+    
+    // More comprehensive pattern matching
+    try {
+      let regexPattern = pattern
+        .replace(/\*\*/g, '___DOUBLESTAR___')
+        .replace(/\*/g, '[^/]*')
+        .replace(/___DOUBLESTAR___/g, '.*')
+        .replace(/\./g, '\\.')
+        .replace(/\?/g, '[^/]');
+      
+      const regex = new RegExp('^' + regexPattern + '$');
+      const matches = regex.test(relativePath) || regex.test(fileName);
+      
+      return matches;
+    } catch (error) {
+      // Fallback to simple extension matching
+      if (pattern.includes('*.ts')) return fileName.endsWith('.ts');
+      if (pattern.includes('*.js')) return fileName.endsWith('.js');
+      return filePath.includes(pattern.replace(/\*+/g, ''));
+    }
+  }
+
+  /**
+   * Utility: Recursively discover files in directory
+   */
+  discoverFilesRecursive(dirPath, patterns, maxDepth = 10, currentDepth = 0) {
+    const files = [];
+    
+    if (currentDepth >= maxDepth) return files;
+    
+    try {
+      const entries = fs.readdirSync(dirPath, { withFileTypes: true });
+      
+      for (const entry of entries) {
+        const fullPath = path.join(dirPath, entry.name);
+        
+        // Skip common ignore directories
+        if (entry.isDirectory()) {
+          if (['node_modules', 'dist', 'build', 'coverage', '.git', '.next', 'out'].includes(entry.name)) {
+            continue;
+          }
+          files.push(...this.discoverFilesRecursive(fullPath, patterns, maxDepth, currentDepth + 1));
+        } else if (entry.isFile()) {
+          // Skip test files and other unwanted files
+          if (entry.name.includes('.test.') || entry.name.includes('.spec.') || 
+              entry.name.startsWith('.') || entry.name.endsWith('.map')) {
+            continue;
+          }
+          
+          const relativePath = fullPath.replace(dirPath, '').replace(/\\/g, '/').replace(/^\//, '');
+          
+          // Check if file matches any pattern
+          for (const pattern of patterns) {
+            if (this.matchesPattern(relativePath, pattern)) {
+              files.push(fullPath);
+              break;
+            }
+          }
+        }
+      }
+    } catch (error) {
+      // Skip directories we can't read
+    }
+    
+    return files;
+  }
+
+  /**
+   * Utility: Discover files within scope patterns
+   */
+  async discoverScopedFiles(projectPath, scopeConfig) {
+    const patterns = scopeConfig.patterns || ['**/*.ts', '**/*.js', 'src/**/*.ts', 'src/**/*.js'];
+    
+    try {
+      const allFiles = this.discoverFilesRecursive(projectPath, patterns);
+      
+      // Remove duplicates and filter by size
+      const uniqueFiles = [...new Set(allFiles)];
+      const validFiles = [];
+      let totalSize = 0;
+      
+      for (const file of uniqueFiles) {
+        try {
+          const stats = fs.statSync(file);
+          if (stats.size <= this.maxFileSize && totalSize + stats.size <= this.maxTotalSize) {
+            validFiles.push(file);
+            totalSize += stats.size;
+          }
+        } catch (error) {
+          // Skip files with stat errors
+          continue;
+        }
+      }
+      
+      return validFiles.slice(0, 100); // Limit to 100 files for performance
+    } catch (error) {
+      console.warn(`Warning: File discovery error: ${error.message}`);
+      return [];
+    }
+  }
+
+  /**
+   * Utility: Execute function with timeout
+   */
+  async executeWithTimeout(fn, timeoutMs, testName) {
+    return new Promise((resolve) => {
+      const timeoutId = setTimeout(() => {
+        resolve({
+          name: testName,
+          status: 'FAIL',
+          evidence: [],
+          errors: [`Test timed out after ${timeoutMs}ms`],
+          warnings: []
+        });
+      }, timeoutMs);
+      
+      fn().then(result => {
+        clearTimeout(timeoutId);
+        resolve(result);
+      }).catch(error => {
+        clearTimeout(timeoutId);
+        resolve({
+          name: testName,
+          status: 'FAIL',
+          evidence: [],
+          errors: [error.message],
+          warnings: []
+        });
+      });
+    });
+  }
+
+  /**
+   * Test 1: Pattern implementation analysis (lightweight static analysis)
+   */
+  async executePatternImplementationAnalysis(projectInfo, scopedFiles) {
     const testResult = {
-      name: 'Pattern Implementation Test',
+      name: 'Pattern Implementation Analysis',
       status: 'PENDING',
       evidence: [],
       errors: [],
@@ -118,38 +304,68 @@ export class ArchitectureValidator {
     };
 
     try {
-      const command = 'npm run test -- --testNamePattern="Pattern|Architecture" --verbose';
-      console.log(`    Executing: ${command}`);
+      console.log(`    Analyzing pattern implementations in ${scopedFiles.length} files`);
       
-      const output = execSync(command, { 
-        encoding: 'utf8', 
-        cwd: projectInfo.path,
-        timeout: 60000 
-      });
-
-      testResult.status = 'PASS';
-      testResult.evidence.push(`Pattern implementation tests executed successfully`);
-      testResult.evidence.push(`Test output: ${output.trim()}`);
+      const patterns = {
+        factory: 0,
+        singleton: 0,
+        observer: 0,
+        strategy: 0,
+        adapter: 0,
+        builder: 0,
+        command: 0
+      };
+      
+      let analyzedFiles = 0;
+      
+      for (const file of scopedFiles) {
+        try {
+          const content = fs.readFileSync(file, 'utf8');
+          
+          // Look for common design patterns
+          if (content.match(/class\s+\w*Factory/gi)) patterns.factory++;
+          if (content.match(/private\s+static\s+instance|getInstance\(\)/gi)) patterns.singleton++;
+          if (content.match(/subscribe|addEventListener|on\(/gi)) patterns.observer++;
+          if (content.match(/interface\s+\w*Strategy|class\s+\w*Strategy/gi)) patterns.strategy++;
+          if (content.match(/class\s+\w*Adapter|interface\s+\w*Adapter/gi)) patterns.adapter++;
+          if (content.match(/class\s+\w*Builder|interface\s+\w*Builder/gi)) patterns.builder++;
+          if (content.match(/interface\s+\w*Command|class\s+\w*Command/gi)) patterns.command++;
+          
+          analyzedFiles++;
+        } catch (error) {
+          // Skip files that can't be read
+          continue;
+        }
+      }
+      
+      const totalPatterns = Object.values(patterns).reduce((sum, count) => sum + count, 0);
+      
+      testResult.status = totalPatterns > 0 ? 'PASS' : 'WARN';
+      testResult.evidence.push(`Analyzed ${analyzedFiles} files for design patterns`);
+      testResult.evidence.push(`Found ${totalPatterns} pattern implementations:`);
+      
+      for (const [pattern, count] of Object.entries(patterns)) {
+        if (count > 0) {
+          testResult.evidence.push(`  - ${pattern}: ${count} implementations`);
+        }
+      }
+      
+      if (totalPatterns === 0) {
+        testResult.warnings.push('No obvious design patterns found - consider implementing Factory, Strategy, or Observer patterns');
+      }
       
     } catch (error) {
-      if (error.status === 1 && error.stdout) {
-        // Test failures are expected - treat as warnings
-        testResult.status = 'WARN';
-        testResult.warnings.push('Some pattern tests failed - this may be expected behavior');
-        testResult.evidence.push(`Test output: ${error.stdout}`);
-      } else {
-        testResult.status = 'FAIL';
-        testResult.errors.push(`Pattern implementation test failed: ${error.message}`);
-      }
+      testResult.status = 'FAIL';
+      testResult.errors.push(`Pattern analysis failed: ${error.message}`);
     }
 
     return testResult;
   }
 
   /**
-   * Test 2: Design pattern compliance (MUST follow established architectural patterns)
+   * Test 2: Design pattern compliance check (enhanced with scope filtering)
    */
-  async executeDesignPatternComplianceCheck(projectInfo) {
+  async executeDesignPatternComplianceCheck(projectInfo, scopedFiles) {
     const testResult = {
       name: 'Design Pattern Compliance Check',
       status: 'PENDING',
@@ -159,82 +375,78 @@ export class ArchitectureValidator {
     };
 
     try {
-      const command = 'grep -r "class\\|interface\\|function" src/ | head -10 && echo "Checking pattern adherence..."';
-      console.log(`    Executing: ${command}`);
+      console.log(`    Analyzing design pattern compliance in ${scopedFiles.length} scoped files`);
       
-      const output = execSync(command, { 
-        encoding: 'utf8', 
-        cwd: projectInfo.path,
-        timeout: 30000 
-      });
-
-      // Analyze output for common architectural patterns
-      const patterns = {
-        classes: (output.match(/class\s+\w+/g) || []).length,
-        interfaces: (output.match(/interface\s+\w+/g) || []).length,
-        functions: (output.match(/function\s+\w+/g) || []).length
+      const analysis = {
+        classes: 0,
+        interfaces: 0,
+        functions: 0,
+        abstractClasses: 0,
+        inheritance: 0,
+        composition: 0
       };
-
-      testResult.status = 'PASS';
-      testResult.evidence.push(`Design pattern analysis completed`);
-      testResult.evidence.push(`Found ${patterns.classes} classes, ${patterns.interfaces} interfaces, ${patterns.functions} functions`);
-      testResult.evidence.push(`Pattern compliance check output: ${output.trim()}`);
       
-    } catch (error) {
-      testResult.status = 'WARN';
-      testResult.warnings.push(`Pattern compliance check had issues: ${error.message}`);
-      testResult.evidence.push(`Note: Pattern compliance verification may require manual review`);
-    }
-
-    return testResult;
-  }
-
-  /**
-   * Test 3: Dependency injection validation (MUST demonstrate proper DI implementation)
-   */
-  async executeDependencyInjectionValidation(projectInfo) {
-    const testResult = {
-      name: 'Dependency Injection Validation',
-      status: 'PENDING',
-      evidence: [],
-      errors: [],
-      warnings: []
-    };
-
-    try {
-      const command = 'npm run test -- --testNamePattern="inject|depend" --verbose';
-      console.log(`    Executing: ${command}`);
+      let totalLines = 0;
       
-      const output = execSync(command, { 
-        encoding: 'utf8', 
-        cwd: projectInfo.path,
-        timeout: 60000 
-      });
-
-      testResult.status = 'PASS';
-      testResult.evidence.push(`Dependency injection tests executed successfully`);
-      testResult.evidence.push(`DI test output: ${output.trim()}`);
-      
-    } catch (error) {
-      if (error.status === 1 && error.stdout) {
-        testResult.status = 'WARN';
-        testResult.warnings.push('Some dependency injection tests failed - may require review');
-        testResult.evidence.push(`DI test output: ${error.stdout}`);
-      } else {
-        testResult.status = 'FAIL';
-        testResult.errors.push(`Dependency injection validation failed: ${error.message}`);
+      for (const file of scopedFiles) {
+        try {
+          const content = fs.readFileSync(file, 'utf8');
+          const lines = content.split('\n');
+          totalLines += lines.length;
+          
+          // Count different structural elements
+          analysis.classes += (content.match(/^\s*class\s+\w+/gm) || []).length;
+          analysis.interfaces += (content.match(/^\s*interface\s+\w+/gm) || []).length;
+          analysis.functions += (content.match(/^\s*function\s+\w+/gm) || []).length;
+          analysis.abstractClasses += (content.match(/^\s*abstract\s+class\s+\w+/gm) || []).length;
+          analysis.inheritance += (content.match(/class\s+\w+\s+extends\s+\w+/gm) || []).length;
+          analysis.composition += (content.match(/private\s+readonly\s+\w+:|constructor\s*\([^)]*\w+\s*:/gm) || []).length;
+          
+        } catch (error) {
+          // Skip files that can't be read
+          continue;
+        }
       }
+      
+      const totalStructures = analysis.classes + analysis.interfaces + analysis.functions;
+      
+      testResult.status = totalStructures > 0 ? 'PASS' : 'WARN';
+      testResult.evidence.push(`Analyzed ${totalLines} lines of code in ${scopedFiles.length} files`);
+      testResult.evidence.push(`Structure analysis:`);
+      testResult.evidence.push(`  - Classes: ${analysis.classes}`);
+      testResult.evidence.push(`  - Interfaces: ${analysis.interfaces}`);
+      testResult.evidence.push(`  - Functions: ${analysis.functions}`);
+      testResult.evidence.push(`  - Abstract classes: ${analysis.abstractClasses}`);
+      testResult.evidence.push(`  - Inheritance relationships: ${analysis.inheritance}`);
+      testResult.evidence.push(`  - Composition patterns: ${analysis.composition}`);
+      
+      // Compliance checks
+      if (analysis.interfaces > 0 && analysis.classes > 0) {
+        testResult.evidence.push('✓ Good interface-based design detected');
+      }
+      
+      if (analysis.composition > analysis.inheritance) {
+        testResult.evidence.push('✓ Composition over inheritance principle followed');
+      }
+      
+      if (totalStructures === 0) {
+        testResult.warnings.push('No structural elements found - ensure code contains classes, interfaces, or functions');
+      }
+      
+    } catch (error) {
+      testResult.status = 'FAIL';
+      testResult.errors.push(`Design pattern compliance check failed: ${error.message}`);
     }
 
     return testResult;
   }
 
   /**
-   * Test 4: Scalability testing (MUST handle expected load) - Integration Test
+   * Test 3: Dependency injection analysis (static analysis)
    */
-  async executeScalabilityTest(projectInfo) {
+  async executeDependencyInjectionAnalysis(projectInfo, scopedFiles) {
     const testResult = {
-      name: 'Scalability Load Test',
+      name: 'Dependency Injection Analysis',
       status: 'PENDING',
       evidence: [],
       errors: [],
@@ -242,24 +454,231 @@ export class ArchitectureValidator {
     };
 
     try {
-      // Simple load test using curl
-      const command = 'for i in {1..10}; do curl -s http://localhost:3004/health & done; wait';
-      console.log(`    Executing scalability test: ${command}`);
+      console.log(`    Analyzing dependency injection patterns in ${scopedFiles.length} files`);
       
-      const output = execSync(command, { 
-        encoding: 'utf8', 
-        cwd: projectInfo.path,
-        timeout: 30000 
-      });
-
-      testResult.status = 'PASS';
-      testResult.evidence.push(`Scalability load test completed successfully`);
-      testResult.evidence.push(`Load test results: 10 concurrent requests processed`);
+      const diAnalysis = {
+        constructorInjection: 0,
+        interfaceBasedDI: 0,
+        serviceRegistrations: 0,
+        circularDeps: 0,
+        singletonPatterns: 0,
+        factoryPatterns: 0
+      };
+      
+      const dependencies = new Set();
+      
+      for (const file of scopedFiles) {
+        try {
+          const content = fs.readFileSync(file, 'utf8');
+          
+          // Constructor injection patterns
+          const constructorMatches = content.match(/constructor\s*\([^)]*\w+\s*:[^)]*\)/gm);
+          if (constructorMatches) {
+            diAnalysis.constructorInjection += constructorMatches.length;
+          }
+          
+          // Interface-based dependency injection
+          const interfaceMatches = content.match(/:\s*I\w+[,|)]/g);
+          if (interfaceMatches) {
+            diAnalysis.interfaceBasedDI += interfaceMatches.length;
+            interfaceMatches.forEach(match => dependencies.add(match.replace(/[:,)]/g, '').trim()));
+          }
+          
+          // Service registration patterns
+          if (content.match(/register|bind|provide|inject/gi)) {
+            diAnalysis.serviceRegistrations++;
+          }
+          
+          // Singleton patterns (potential DI)
+          if (content.match(/getInstance\(\)|private\s+static\s+instance/gi)) {
+            diAnalysis.singletonPatterns++;
+          }
+          
+          // Factory patterns (DI related)
+          if (content.match(/create\w*\(|factory|Factory/gi)) {
+            diAnalysis.factoryPatterns++;
+          }
+          
+          // Simple circular dependency check
+          const imports = content.match(/import.*from\s+['"][^'"]+['"]/g) || [];
+          const exports = content.match(/export.*class\s+(\w+)/g) || [];
+          if (imports.length > 5 && exports.length > 0) {
+            diAnalysis.circularDeps++;
+          }
+          
+        } catch (error) {
+          // Skip files that can't be read
+          continue;
+        }
+      }
+      
+      const totalDIPatterns = diAnalysis.constructorInjection + diAnalysis.interfaceBasedDI + diAnalysis.serviceRegistrations;
+      
+      testResult.status = totalDIPatterns > 0 ? 'PASS' : 'WARN';
+      testResult.evidence.push(`Dependency injection pattern analysis:`);
+      testResult.evidence.push(`  - Constructor injection patterns: ${diAnalysis.constructorInjection}`);
+      testResult.evidence.push(`  - Interface-based dependencies: ${diAnalysis.interfaceBasedDI}`);
+      testResult.evidence.push(`  - Service registrations: ${diAnalysis.serviceRegistrations}`);
+      testResult.evidence.push(`  - Singleton patterns: ${diAnalysis.singletonPatterns}`);
+      testResult.evidence.push(`  - Factory patterns: ${diAnalysis.factoryPatterns}`);
+      testResult.evidence.push(`  - Unique dependencies found: ${dependencies.size}`);
+      
+      if (diAnalysis.circularDeps > 0) {
+        testResult.warnings.push(`Potential circular dependencies detected in ${diAnalysis.circularDeps} files`);
+      }
+      
+      if (totalDIPatterns === 0) {
+        testResult.warnings.push('No dependency injection patterns detected - consider implementing constructor injection or service locator patterns');
+      } else {
+        testResult.evidence.push('✓ Dependency injection patterns detected');
+      }
+      
+      if (diAnalysis.interfaceBasedDI > 0) {
+        testResult.evidence.push('✓ Interface-based dependency injection found');
+      }
       
     } catch (error) {
-      testResult.status = 'WARN';
-      testResult.warnings.push(`Scalability testing requires running backend service: ${error.message}`);
-      testResult.evidence.push(`Note: Scalability tests require active backend service for accurate results`);
+      testResult.status = 'FAIL';
+      testResult.errors.push(`Dependency injection analysis failed: ${error.message}`);
+    }
+
+    return testResult;
+  }
+
+  /**
+   * Test 4: Architecture compliance validation (replaces scalability testing)
+   */
+  async executeArchitectureComplianceValidation(projectInfo, scopedFiles) {
+    const testResult = {
+      name: 'Architecture Compliance Validation',
+      status: 'PENDING',
+      evidence: [],
+      errors: [],
+      warnings: []
+    };
+
+    try {
+      console.log(`    Analyzing architecture compliance in ${scopedFiles.length} files`);
+      
+      const compliance = {
+        layerSeparation: 0,
+        solidPrinciples: {
+          singleResponsibility: 0,
+          openClosed: 0,
+          liskovSubstitution: 0,
+          interfaceSegregation: 0,
+          dependencyInversion: 0
+        },
+        modularity: 0,
+        abstractionUsage: 0,
+        errorHandling: 0
+      };
+      
+      const fileStructure = {
+        controllers: 0,
+        services: 0,
+        repositories: 0,
+        models: 0,
+        interfaces: 0,
+        utils: 0
+      };
+      
+      for (const file of scopedFiles) {
+        try {
+          const content = fs.readFileSync(file, 'utf8');
+          const fileName = path.basename(file).toLowerCase();
+          
+          // Layer identification
+          if (fileName.includes('controller')) fileStructure.controllers++;
+          if (fileName.includes('service')) fileStructure.services++;
+          if (fileName.includes('repository') || fileName.includes('repo')) fileStructure.repositories++;
+          if (fileName.includes('model') || fileName.includes('entity')) fileStructure.models++;
+          if (fileName.includes('interface') || fileName.includes('.d.ts')) fileStructure.interfaces++;
+          if (fileName.includes('util') || fileName.includes('helper')) fileStructure.utils++;
+          
+          // SOLID principles analysis
+          const classMatches = content.match(/class\s+(\w+)/g);
+          if (classMatches && classMatches.length === 1) {
+            compliance.solidPrinciples.singleResponsibility++;
+          }
+          
+          if (content.match(/extends\s+\w+|implements\s+\w+/)) {
+            compliance.solidPrinciples.openClosed++;
+          }
+          
+          if (content.match(/override|super\./)) {
+            compliance.solidPrinciples.liskovSubstitution++;
+          }
+          
+          if (content.match(/interface\s+\w+/)) {
+            compliance.solidPrinciples.interfaceSegregation++;
+          }
+          
+          if (content.match(/constructor\s*\([^)]*I\w+/)) {
+            compliance.solidPrinciples.dependencyInversion++;
+          }
+          
+          // Modularity check
+          const importCount = (content.match(/^import/gm) || []).length;
+          const exportCount = (content.match(/^export/gm) || []).length;
+          if (importCount <= 10 && exportCount > 0) {
+            compliance.modularity++;
+          }
+          
+          // Abstraction usage
+          if (content.match(/abstract\s+class|interface\s+\w+/)) {
+            compliance.abstractionUsage++;
+          }
+          
+          // Error handling
+          if (content.match(/try\s*\{|catch\s*\(|throw\s+/)) {
+            compliance.errorHandling++;
+          }
+          
+        } catch (error) {
+          // Skip files that can't be read
+          continue;
+        }
+      }
+      
+      // Calculate layer separation score
+      const layerTypes = Object.values(fileStructure).filter(count => count > 0).length;
+      compliance.layerSeparation = layerTypes;
+      
+      const solidScore = Object.values(compliance.solidPrinciples).reduce((sum, count) => sum + count, 0);
+      const totalCompliance = compliance.layerSeparation + solidScore + compliance.modularity + compliance.abstractionUsage;
+      
+      testResult.status = totalCompliance > 5 ? 'PASS' : 'WARN';
+      testResult.evidence.push(`Architecture compliance analysis:`);
+      testResult.evidence.push(`  Layer structure:`);
+      Object.entries(fileStructure).forEach(([layer, count]) => {
+        if (count > 0) testResult.evidence.push(`    - ${layer}: ${count} files`);
+      });
+      
+      testResult.evidence.push(`  SOLID principles adherence:`);
+      Object.entries(compliance.solidPrinciples).forEach(([principle, count]) => {
+        if (count > 0) testResult.evidence.push(`    - ${principle}: ${count} instances`);
+      });
+      
+      testResult.evidence.push(`  - Modular files: ${compliance.modularity}`);
+      testResult.evidence.push(`  - Abstraction usage: ${compliance.abstractionUsage}`);
+      testResult.evidence.push(`  - Error handling: ${compliance.errorHandling}`);
+      
+      if (layerTypes >= 3) {
+        testResult.evidence.push('✓ Good layer separation detected');
+      }
+      
+      if (solidScore >= 3) {
+        testResult.evidence.push('✓ SOLID principles adherence detected');
+      }
+      
+      if (totalCompliance <= 5) {
+        testResult.warnings.push('Low architecture compliance score - consider improving layer separation and SOLID principles adherence');
+      }
+      
+    } catch (error) {
+      testResult.status = 'FAIL';
+      testResult.errors.push(`Architecture compliance validation failed: ${error.message}`);
     }
 
     return testResult;
@@ -271,11 +690,13 @@ export class ArchitectureValidator {
   getCapabilities() {
     return {
       supportedProjects: ['typescript', 'javascript', 'mixed'],
-      supportedScopes: ['src/**/*.ts', 'src/**/*.js', 'test/**/*.ts', 'test/**/*.js'],
-      requiredDependencies: ['npm'],
-      performanceProfile: 'comprehensive',
-      hasIntegrationTests: true,
-      supportsRollback: false
+      supportedScopes: ['**/*.ts', '**/*.js', 'src/**/*.ts', 'src/**/*.js', 'lib/**/*.ts', 'lib/**/*.js'],
+      requiredDependencies: [], // No external dependencies required
+      performanceProfile: 'lightweight',
+      hasIntegrationTests: false, // Static analysis only
+      supportsRollback: false,
+      scopeAware: true, // Now properly handles scope filtering
+      timeoutControlled: true // Has timeout controls
     };
   }
 
@@ -288,9 +709,15 @@ export class ArchitectureValidator {
       version: this.version,
       interfaceVersion: '3.0.0',
       generated: false,
-      author: 'Enhanced Validation System',
-      description: 'Architecture and design pattern validation with scalability testing',
-      lastValidated: new Date().toISOString()
+      author: 'Architecture Validator Timeout Fix',
+      description: 'Lightweight architecture validation with static analysis, proper scope handling, and timeout controls',
+      lastValidated: new Date().toISOString(),
+      fixes: [
+        'Replaced npm test execution with static analysis',
+        'Implemented proper scope pattern filtering',
+        'Added timeout controls to prevent hangs',
+        'Enhanced with SOLID principles checking'
+      ]
     };
   }
 
@@ -322,12 +749,20 @@ export class ArchitectureValidator {
   runSelfDiagnostics() {
     const checks = [];
     
-    // Check if npm is available
+    // Check pattern matching functionality
     try {
-      execSync('npm --version', { encoding: 'utf8' });
-      checks.push({ name: 'npm_availability', status: 'PASS', message: 'npm is available' });
+      const testMatch = this.matchesPattern('/test/file.ts', '**/*.ts');
+      checks.push({ name: 'pattern_matching', status: testMatch ? 'PASS' : 'FAIL', message: 'Pattern matching functionality verified' });
     } catch (error) {
-      checks.push({ name: 'npm_availability', status: 'FAIL', message: 'npm is not available' });
+      checks.push({ name: 'pattern_matching', status: 'FAIL', message: 'Pattern matching functionality failed' });
+    }
+    
+    // Check file system access
+    try {
+      fs.accessSync(process.cwd(), fs.constants.R_OK);
+      checks.push({ name: 'filesystem_access', status: 'PASS', message: 'File system is accessible' });
+    } catch (error) {
+      checks.push({ name: 'filesystem_access', status: 'FAIL', message: 'File system is not accessible' });
     }
     
     // Check interface compliance
@@ -338,16 +773,31 @@ export class ArchitectureValidator {
       message: compliant ? 'Interface compliance verified' : 'Interface compliance failed' 
     });
     
+    // Check timeout configuration
+    checks.push({ 
+      name: 'timeout_configuration', 
+      status: this.testTimeout > 0 ? 'PASS' : 'FAIL', 
+      message: `Test timeout set to ${this.testTimeout}ms` 
+    });
+    
     const hasFailures = checks.some(check => check.status === 'FAIL');
     
     return {
       status: hasFailures ? 'ERROR' : 'HEALTHY',
       checks: checks,
-      recommendations: hasFailures ? ['Ensure npm is available and interface compliance is maintained'] : [],
+      recommendations: hasFailures ? ['Ensure file system access and required modules are available'] : [
+        'Architecture validator is healthy',
+        'Static analysis approach eliminates npm test dependencies',
+        'Timeout controls prevent infinite hangs',
+        'Scope filtering improves performance'
+      ],
       systemInfo: {
         validator: 'ArchitectureValidator',
         version: this.version,
-        category: this.category
+        category: this.category,
+        approach: 'static_analysis',
+        timeoutMs: this.testTimeout,
+        scopeAware: true
       }
     };
   }

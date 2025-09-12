@@ -485,9 +485,14 @@ export class UIValidator {
             searchPath = path.join(projectInfo.path, ...dirParts);
             basePattern = filePattern;
           } else {
-            // Default pattern - search in src directory
-            const basePattern_old = pattern.replace('**/', '').replace('**/');
-            basePattern = basePattern_old;
+            // TODO: [TASK-VAL-UI-FIX-001] Pattern: ui-pattern-matching-fix | Complexity: 3 | Dependencies: fs,path
+            // Context: Fixed critical pattern matching bug that caused all project files to be analyzed
+            // Validation-Required: pattern-matching-accuracy, performance-baseline, scope-functionality
+            // Pattern-Info: { approach: "regex-based-pattern-cleaning", alternatives: "string-replace-chain", trade-offs: "performance-vs-simplicity" }
+            
+            // Default pattern - search in src directory  
+            // Fix: Use proper regex to remove all instances of **/ from pattern
+            basePattern = pattern.replace(/\*\*\//g, '');
             searchPath = path.join(projectInfo.path, 'src');
           }
           

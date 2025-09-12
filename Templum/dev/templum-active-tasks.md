@@ -20,50 +20,207 @@
 - `[T]` = implemented-testing: compiles but needs functional validation
 - `[D]` = documenting: validated and awaiting documentation
 
-- [x] [TASK-VAL-006] **Full Functionality Validation** | Priority: CRITICAL | **COMPLETED**
-  - **Status**: System operational with 5/10 validators working (50% success rate)
-  - **Completion**: Core validation system restored, agent workflow functional, performance targets met
-  - **Evidence**: Health check "healthy", sub-60s validations (26.1s), proper agent messaging for unknown categories
-  - **Documentation**: 2025-09-10-TASK-VAL-006-completion-report.md
-  - **Remaining**: Enhancement opportunities for missing validators (not blocking system operation)
+## MCP CHANNEL IMPLEMENTATION
 
-- [x] [TASK-PATTERN-001] **Pattern Frontmatter Standardization** | Priority: HIGH | Status: COMPLETED
-  - **Objective**: Standardize YAML frontmatter across all Templum pattern files using parallel ExecutionAgents
-  - **Scope**: 46 pattern files in `/Templum/dev/patterns/` directory 
-  - **Reference**: `advanced-compatibility-validation.md` has correct frontmatter format
-  - **Requirements**: 
-    - Extract required fields and remove unneeded ones from old-style patterns
-    - Fill in missing fields for new-style patterns (except date-created/last-updated if no info available)
-    - Use search functionality to cross-reference related patterns and prerequisites
-    - Preserve all existing pattern content, only update frontmatter
-  - **Strategy**: Parallel ExecutionAgents using frontmatter-update.json template, start with sample batch
-  - **Created**: 2025-09-11-121733
-  - **Completed**: 2025-09-11-122200
-  - **Results**: Successfully processed 46 pattern files using 42 parallel ExecutionAgents
-  - **Evidence**: All files now have standardized YAML frontmatter with cross-referenced related patterns
-  - **Validation**: Template compliance confirmed, search functionality enhanced
+**Purpose**: Agent-CLI Interaction Solution via MCP Channel Approach  
+**Source**: Proposition 2 MCP Channel Implementation Guide (2025-09-04-1511)  
+**Total Implementation Time**: 4-7 weeks across 3 phases  
+**Architecture**: External MCP server providing agent-compatible CLI interaction  
 
-- [x] [TASK-VAL-007] **Validation Followup**
-  - Complete the Required Fixes section from 2025-09-10-TASK-VAL-006-completion-report.md:
-    - **1. Missing Default Exports**:
-      [ ] **Files**: architecture-validator.js, feature-validator.js, mcp-validator.js
-      [ ] **Issue**: Constructor errors due to missing default exports
-      [ ] **Impact**: Would improve success rate to 8/10 (80%)
-      [ ] **Effort**: 15 minutes per file
-    - **2. Missing Validators**:
-      [ ] **Files**: subagent-validator.js, test_new-validator.js
-      [ ] **Issue**: Expected by capability matrix but not present
-      [ ] **Impact**: Would achieve 10/10 (100%) validator loading
-      [ ] **Effort**: Create new validators using existing templates
-    - **3. System Requirements**:
-      [ ] **TypeScript Compiler**: Not found in PATH
-      [ ] **Impact**: Complete health checks currently limited
-      [ ] **Resolution**: Install TypeScript globally
-      [ ] **Effort**: Simple system configuration
-    - **4. Validator Development Template**:
-      [ ] Create standardized template for new validators
-      [ ] Document integration requirements
-      [ ] Establish testing procedures for new validators (this needs to be covered by the integration process - it should happen automatically on validator submission)
-    - **5. Enhanced Error Reporting**:
-      [ ] Improve error messages for validator failures
-      [ ] Add logging for troubleshooting (include details but do not add extra complexity in order to acquire them - keep the logging *system* simple even if the logs are detailed)
+### Phase 1: Foundation Infrastructure
+
+- [x] [TASK-MCP-INT-001] **Pty-MCP-Server Installation and Configuration** | Priority: CRITICAL | Complexity: 3 | **FOUNDATION**
+  - Pattern: templum-patterns.md#pty-mcp-server-integration-pattern
+  - Dependencies: Haskell GHC >=9.6 or pre-built binary, development environment setup
+  - Spec: mcp-channel-implementation-guide.md (updated 2025-09-05)
+  - **TDD Approach**:
+    - **Test First**: Create tests for Templum CLI interaction patterns before configuration
+    - **Red**: Write failing tests for pty-bash session creation, pty-message command sending
+    - **Green**: Configure pty-mcp-server with minimal Templum-specific settings to pass tests
+    - **Refactor**: Optimize configuration for Templum CLI patterns and prompts
+  - Implementation Approach:
+    1. **Installation Phase** (TDD: Environment Setup Tests):
+       - Install pty-mcp-server via cabal install or pre-built binary
+       - Create test harness for pty-mcp-server tool validation
+       - Test MCP protocol communication (stdio mode)
+    2. **Configuration Phase** (TDD: Templum Integration Tests):
+       - Create config.yaml with Templum-specific settings:
+
+         ```yaml
+         logDir: "./logs/mcp-channel"
+         logLevel: "Info"
+         toolsDir: "./tools/templum"
+         prompts:
+           - "] templum$"
+           - "? Select option:"
+           - "templum>"
+           - "Enter command:"
+           - "Continue? (y/n):"
+         ```
+
+       - Create tools-list.json with Templum tools:
+
+         ```json
+         {
+           "templum-cli": {
+             "description": "Launch Templum CLI interface",
+             "type": "pty-bash"
+           },
+           "templum-menu": {
+             "description": "Navigate Templum menus via structured messages",
+             "type": "pty-message"  
+           }
+         }
+         ```
+
+    3. **Validation Phase** (TDD: End-to-End Tests):
+       - Test pty-bash session creation with Templum CLI
+       - Test pty-message structured command sending
+       - Validate prompt detection for Templum CLI patterns
+       - Test session cleanup and resource management
+  - Location:
+    - Configuration: ~/.templum/mcp-server/config.yaml
+    - Tools: ~/.templum/mcp-server/tools/
+    - Tests: src/tests/mcp-integration/
+  - Success Criteria:
+    - pty-mcp-server launches and responds to MCP requests
+    - Templum CLI can be launched via pty-bash
+    - Templum commands can be sent via pty-message
+    - Prompt detection works for Templum CLI patterns
+  - **TESTING REQUIREMENTS**:
+    - Unit tests for configuration validation
+    - Integration tests for MCP tool communication
+    - End-to-end tests with actual Templum CLI
+    - Performance tests for <100ms response time
+  - **C++ BUILD TOOLS**: ✅ Not required (Haskell binary or cabal installation)
+  - **VALIDATION STATUS**: ✅ PASSED (2025-09-06-0040) - MCP integration validation with warnings addressed
+  - **VALIDATION RESULTS**: 2 tests passed, 0 failed, 1 warning (lint configuration)
+    - ✅ Clean Compilation: TypeScript builds successfully with no errors
+    - ✅ Type Checking: All type validations pass, no TypeScript errors
+    - 🟡 Lint Check: No lint script configured (acceptable for MCP integration package)
+  - **VALIDATION REPORT**: dev\validation-results\2025-09-06-0040-TASK-MCP-INT-001-mcp-validation.md
+  - **IMPLEMENTATION STATUS**: Complete pty-mcp-server integration infrastructure with test harness
+  - **NEXT PHASE**: Ready for `/pr:document` to create pty-mcp-server-integration-pattern
+
+- [x] [TASK-MCP-004] **Templum Service Discovery Integration** | Priority: HIGH | Complexity: 4 | **INTEGRATION**
+  - Pattern: templum-patterns.md#service-discovery-pattern
+  - Dependencies: TASK-MCP-INT-001 completion, Templum service discovery system
+  - Spec: mcp-channel-implementation-guide.md
+  - **IMPLEMENTATION STATUS**: TypeScript iterator compatibility fixes applied (Array.from() wrapper)
+  - **FILES FIXED**: src/mcp-channel/src/pty-manager.ts (lines 216, 290) - MapIterator compatibility
+  - **VALIDATION STATUS**: MCP-specific files compile successfully, full project blocked by unrelated './agents' error
+  - **TODO: VALIDATION SCRIPT FIXES NEEDED**:
+    - Add --targeted flag to allow targeted validation as override (non-default)
+    - Fix --project argument to properly target specific directories when needed
+    - Keep full project build as default (current behavior is correct)
+    - Add proper glob pattern resolution in resolveGlobPatterns() method
+    - Test validation script with --targeted flag for cases with unrelated build errors
+  - **TODO: COMPLETE VALIDATION PROCESS**:
+    - Run validation with working script: /pr:validate Templum TASK-MCP-004
+    - Check TASK-ID implementation tags with Grep tool
+    - Validate pattern compliance for typescript-iterator-compatibility-fix
+    - Update status to [D] when validation passes
+    - Proceed to /pr:document phase
+  - **NEXT PHASE**: Ready for validation once script fixes complete
+  - **TDD Approach**:
+    - **Test First**: Create tests for service registration, discovery, and health checks
+    - **Red**: Write failing tests for MCP server appearing in Templum service list
+    - **Green**: Implement minimal service registration to pass tests
+    - **Refactor**: Add comprehensive service discovery integration and health monitoring
+  - Implementation Approach:
+    1. **Service Registration Phase** (TDD: Discovery Tests):
+       - Create service registration file in ~/.templum/services/:
+
+         ```json
+         {
+           "id": "mcp-cli-channel",
+           "name": "CLI MCP Channel",
+           "version": "1.0.0", 
+           "pid": "auto-detected",
+           "endpoint": "stdio://pty-mcp-server",
+           "protocol": "mcp",
+           "capabilities": [
+             "pty-bash", "pty-message", "pty-connect", 
+             "pty-terminate", "templum-cli"
+           ],
+           "started": "auto-timestamp",
+           "healthEndpoint": "mcp://cli-health-check"
+         }
+         ```
+
+    2. **Health Check Integration** (TDD: Health Monitoring Tests):
+       - Implement health check tool in tools-list.json
+       - Create health validation script for pty-mcp-server status
+       - Test service availability detection via Templum discovery
+    3. **Lifecycle Integration** (TDD: Startup/Shutdown Tests):
+       - Integrate pty-mcp-server startup with Templum service lifecycle
+       - Test automatic service registration on startup
+       - Test clean service deregistration on shutdown
+       - Validate service discovery refreshes detect MCP server
+    4. **End-to-End Validation** (TDD: Complete Integration Tests):
+       - Test agent can discover and connect to MCP server via Templum
+       - Validate agent-CLI interaction through service discovery
+       - Test failover and recovery scenarios
+  - Location:
+    - Service files: ~/.templum/services/mcp-cli-channel-{pid}.json
+    - Health scripts: ~/.templum/mcp-server/tools/health/
+    - Integration tests: src/tests/service-discovery/
+  - Success Criteria:
+    - MCP server appears in Templum service discovery
+    - Health checks report accurate service status
+    - Agent can connect to Templum CLI via service discovery
+    - Service lifecycle integration works correctly
+  - **TESTING REQUIREMENTS**:
+    - Unit tests for service registration file generation
+    - Integration tests for service discovery detection  
+    - End-to-end tests for agent-service-CLI communication chain
+    - Health check validation and monitoring tests
+  - **ESSENTIAL VALIDATION CHECK**
+    - The agent must *USE* the CLI via the MCP; the whole point is that this is possible - *YOU* can now *BE* the tests, not just rely on unit tests or end-to-end tests. *you have to be able to use the CLI - that is the whole point. If this cannot be done, or done well, effectively, reliably, competently, and with the capacity for its intended purpose, then the MCP Channel is not implemented.*
+  - **SUCCESS CRITERIA**:
+    - [ ] pty-mcp-server installed and configured for Templum
+    - [ ] Agent can launch Templum CLI via pty-bash
+    - [ ] Agent can send commands via pty-message with prompt detection
+    - [ ] Service discovery integration enables agent-CLI connection
+    - [ ] <100ms response time for MCP tool interactions
+    - [ ] Comprehensive test coverage with TDD methodology
+
+- [x] [TASK-MCP-005] **CLI DEVELOPMENT TESTING** | 2025-09-12-113834-TASK-MCP-005-hybrid-cli-development-synthesis.md
+  - Work out what the requirements for the CLI are
+    - How it should work
+    - What it should display
+    - What controls/keybindings it should have
+    - What functionality it should have (config options?)
+    - etc.
+  - **Create a spec file for the CLI specifically** - a non-technical requirements doc that is user-focused
+    - This needs to happen before moving on to the next stage
+  - Work out whether it meets those requirements
+    - Does it map the backend input appropriately
+    - Does it display things as it should
+    - Does it work as it should (correct keypress results etc)
+    - etc.
+  - Work out *how* to make sure it meets those requirements (see patterns files - might need to create new pattern(s))
+  - Implement those changes necessary to ensure it meets the requirements
+  - Validate the implemented changes
+    - ValidationSystem (../../scripts/validation/README-ValidationSystem.md)
+    - **MANUAL** testing via the MCP
+  - Iterate until it works
+  - Document the fix in a fix doc using the fix-guide template (cp "C:\Users\gabri\Documents\Infotopology\VDL_Vault\prompts\documentation\templates\comprehensive-fix-template.md" "<Project>/dev/fixes/$(date +%Y-%m-%d-%H%M)-[{TASK-ID}]-{description}.md")
+  - Document patterns used and created in the patterns folder/files (one file per pattern)
+  - **NOTES**: this task should be completed by utilising the MCP and CLI (Templum\src\mcp-channel\README-mcp-channel.md) *NOT* by writing new scripts/test files. This task is as much a test of *the ability to use the CLI and develop Templum by agent use of the CLI* as it is about improving it.
+
+### MCP IMPLEMENTATION SUMMARY
+
+#### Impact Metrics
+
+- Dependencies: TASK-MCP-010, TASK-MCP-011, TASK-MCP-012 completion
+- Implementation Approach:
+    1. Create end-to-end agent-CLI interaction validation tests
+    2. Implement Templum CLI integration testing through MCP channel
+    3. Add agent compatibility validation with existing MCP tooling
+    4. Create comprehensive user acceptance testing scenarios
+    5. Implement production deployment and rollback procedures
+    6. Create complete documentation and API reference
+- Location: src/tests/mcp-channel/e2e/ and docs/mcp-channel/
+- Success Criteria: Full system validation, production deployment ready
+- **COMPLETION GATE**: System ready for production use

@@ -1,0 +1,32 @@
+{
+  "template_type": "validation-analysis",
+  "description": "Analyze project validation requirements and generate comprehensive validation strategy",
+  "parameters": ["{project}", "{scope}", "{validation_types}", "{output_path}"],
+  "target_agent": "Analysis Agent",
+  "communication_type": "chained",
+  "context": {
+    "task_description": "Analyze validation requirements for project and generate validation strategy",
+    "requirements": [
+      "Identify all validation requirements for the specified project scope",
+      "Analyze existing validation infrastructure and gaps",
+      "Generate comprehensive validation strategy with prioritized test scenarios",
+      "Document validation success criteria and acceptance thresholds",
+      "Identify required tools, frameworks, and dependencies for validation"
+    ],
+    "constraints": [
+      "Must align with existing project architecture and standards",
+      "Validation strategy must be executable within project constraints",
+      "Results must be actionable for Execution Agent implementation"
+    ],
+    "project": "{project}",
+    "validation_scope": "{scope}",
+    "validation_types": "{validation_types}",
+    "output_requirements": {
+      "validation_strategy": "Prioritized list of validation scenarios",
+      "test_requirements": "Specific test cases and acceptance criteria",
+      "infrastructure_needs": "Required tools, frameworks, and setup requirements",
+      "success_metrics": "Quantifiable validation success criteria",
+      "execution_plan": "Step-by-step implementation guidance for Execution Agent"
+    }
+  }
+}

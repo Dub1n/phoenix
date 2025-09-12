@@ -1,0 +1,172 @@
+---
+name:
+---
+
+# Subagent Template Catalog
+
+Reusable templates for common subagent tasks. Templates use parameter substitution (e.g., `{filepath}`, `{task_id}`) specified in the main agent's Task tool prompt.
+
+## Usage Pattern
+
+Main agents should:
+
+1. Select appropriate template from this catalog
+2. Reference template in Task prompt: `"Use template: frontmatter-update.json"`
+3. Specify parameter substitutions: `"Replace {filepath} with: /path/to/target/file"`
+4. Indicate communication method: `"This is standalone - respond directly"` or `"This is chained - create handoff file"`
+
+## Available Templates
+
+### frontmatter-update
+
+- **Purpose**: Standardize YAML frontmatter across pattern files
+- **Parameters**: `{filepath}`, `{task_id}`, `{timestamp}`
+- **Target Agent**: Execution Agent
+- **Communication**: Standalone (direct Task response)
+- **Use When**:
+  - Batch updating file metadata
+  - Pattern standardization projects
+  - Converting legacy frontmatter formats
+- **Success Criteria**:
+  - YAML frontmatter follows exact template specification
+  - All existing content preserved
+  - Use-when scenarios are actionable
+  - Keywords support discovery
+
+### validation-analysis
+
+- **Purpose**: Analyze project validation requirements and generate comprehensive validation strategy
+- **Parameters**: `{project}`, `{scope}`, `{validation_types}`, `{output_path}`
+- **Target Agent**: Analysis Agent
+- **Communication**: Chained (creates handoff for test-execution)
+- **Use When**:
+  - Starting comprehensive validation workflows
+  - Need systematic validation strategy development
+  - Multi-step validation requiring analysis phase
+- **Success Criteria**:
+  - Comprehensive validation strategy with prioritized scenarios
+  - Actionable test requirements and acceptance criteria
+  - Clear execution plan for next agent
+
+### test-execution
+
+- **Purpose**: Execute validation tests based on analysis results and collect comprehensive evidence
+- **Parameters**: `{input_handoff}`, `{project}`, `{test_scope}`, `{output_path}`
+- **Target Agent**: Execution Agent
+- **Communication**: Chained (reads from validation-analysis, can chain to reporting)
+- **Use When**:
+  - Second step in validation chains after analysis
+  - Need comprehensive test execution with evidence collection
+  - Validation scenarios requiring structured execution
+- **Success Criteria**:
+  - All validation scenarios executed successfully
+  - Comprehensive evidence collection and failure analysis
+  - Structured results prepared for next chain step
+
+### documentation-sync
+
+- **Purpose**: Synchronize documentation across multiple files and validate cross-references
+- **Parameters**: `{source_files}`, `{target_docs}`, `{sync_type}`, `{validation_level}`
+- **Target Agent**: Execution Agent
+- **Communication**: Standalone (direct Task response)
+- **Use When**:
+  - Documentation consistency maintenance across projects
+  - Cross-reference validation and link integrity checking
+  - Multi-file documentation synchronization needs
+- **Success Criteria**:
+  - All documentation inconsistencies resolved
+  - Cross-references validated and functional
+  - Comprehensive change report generated
+
+---
+
+## Template Development Guidelines
+
+When creating new templates:
+
+- Use descriptive `template_type` names
+- Include all required `parameters` in array format
+- Specify `target_agent` and `communication_type`
+- Provide clear `description` and usage context
+- Include validation criteria in template documentation
+
+---
+
+## Common Chain Definitions
+
+Reference patterns for orchestrating multi-agent workflows. Main agents use these as blueprints for complex task sequences.
+
+### Comprehensive Validation Chain
+
+**Pattern**: Research → Execution → Validation  
+**Templates Used**: `validation-analysis.json` → `test-execution.json` → `validation-reporting.json`
+
+```
+Agent 1: Analysis Agent (validation-analysis) → creates handoff
+Agent 2: Execution Agent (test-execution) → reads handoff, creates handoff  
+Agent 3: Validation Agent (validation-reporting) → reads handoff, final results
+```
+
+**Main Agent Orchestration**:
+
+```javascript
+// Step 1: Analysis
+Task(subagent_type="Analysis Agent", 
+     prompt="Use template: validation-analysis.json
+            Replace {project} with: templum-patterns
+            Replace {scope} with: comprehensive
+            Position 1/3 in chain - create handoff file")
+
+// Step 2: Execution (after checking Agent 1 status)
+Task(subagent_type="Execution Agent",
+     prompt="Use template: test-execution.json
+            Position 2/3 in chain - read previous handoff
+            Create handoff for validation agent")
+
+// Step 3: Final validation (after checking Agent 2 status)  
+Task(subagent_type="Validation Agent",
+     prompt="Position 3/3 in chain - read previous handoff
+            Generate final validation report")
+```
+
+### Documentation Maintenance Chain
+
+**Pattern**: Batch Update → Cross-Reference Sync → Index Generation
+**Templates Used**: `frontmatter-update.json` → `documentation-sync.json` → `index-generation.json`
+
+```
+Agent 1: Execution Agent (frontmatter-update) → batch process, creates handoff
+Agent 2: Execution Agent (documentation-sync) → reads handoff, creates handoff
+Agent 3: Execution Agent (index-generation) → reads handoff, final results
+```
+
+**Usage Pattern**: Ideal for pattern library maintenance, documentation consistency updates
+
+### Quality Assurance Chain  
+
+**Pattern**: Analysis → Parallel Testing → Quality Report
+**Templates Used**: `code-analysis.json` → `test-execution.json` + `security-scan.json` → `quality-report.json`
+
+```
+Agent 1: Analysis Agent (code-analysis) → creates handoff
+Agent 2a: Execution Agent (test-execution) → reads handoff, creates handoff (parallel)
+Agent 2b: Execution Agent (security-scan) → reads handoff, creates handoff (parallel)
+Agent 3: Validation Agent (quality-report) → reads multiple handoffs, final results
+```
+
+**Parallel Execution**: Agents 2a and 2b run simultaneously, Agent 3 waits for both
+
+## Chain Management Guidelines
+
+**Status-Based Orchestration**: Main agent uses Task response status blocks only for normal chain progression
+**Error Handling**: Use `Critical Failure: true` to abort chains, `partial` status to continue with warnings  
+**Handoff Files**: Subagent-to-subagent communication only - main agent reads only for error diagnosis
+**Parameter Flow**: Handoff files for structured data, Task prompts for execution context and chain position
+**Automatic Handoff Discovery**: Next agent finds previous handoff via predictable naming pattern
+
+## TODO
+
+- [ ] Create script to auto-generate this index from template files
+- [ ] Add validation-reporting.json template for chain completion
+- [ ] Add security-scan.json template for parallel quality workflows
+- [ ] Add index-generation.json template for documentation maintenance

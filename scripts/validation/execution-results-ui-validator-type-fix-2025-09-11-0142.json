@@ -1,5 +1,5 @@
 {
-  "agentType": "ExecutionAgent",
+  "agentType": "Execution Agent",
   "executionId": "exec-ui-validator-type-fix-2025-09-11-0142",
   "status": "success",
   "confidence": 95,

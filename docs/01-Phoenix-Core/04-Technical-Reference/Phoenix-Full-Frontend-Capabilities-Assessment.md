@@ -93,7 +93,7 @@ Phoenix Framework's error handling surpasses many traditional development tools:
 
 ```python
 # Phoenix's sophisticated error handling
-class FailureAnalysisAgent(BaseAgent):
+class FailureAnalysis Agent(BaseAgent):
     async def analyze_and_recover(self, error_context: ErrorContext) -> RecoveryStrategy:
         """
         Advanced error handling with:

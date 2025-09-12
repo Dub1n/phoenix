@@ -27,6 +27,20 @@ interface ServiceRegistryEntry {
 }
 
 /**
+ * Options for IPC communication
+ * TODO: [TASK-ID-002] Pattern: ipc-options-configuration | Complexity: 3 | Dependencies: ipc-communication-reliability
+ * Context: Configuration options for enhanced IPC communication with retry and timeout controls
+ * Validation-Required: parameter-validation, timeout-limits, retry-bounds
+ * Pattern-Info: { approach: "typed-configuration-options", alternatives: "global-config", trade-offs: "flexibility-vs-simplicity" }
+ */
+interface IPCOptions {
+  maxRetries?: number;
+  timeoutMs?: number;
+  retryDelay?: number;
+  priority?: 'low' | 'normal' | 'high';
+}
+
+/**
  * TASK-CLI-004: CLI Service Discovery
  * Discovers running Templum service instances via service registry
  */
@@ -128,42 +142,106 @@ class RemoteTemplumAdapter {
 
   /**
    * Send IPC command to running Templum Core service
-   * Moved from TemplumCliDiscovery to fix scoping issue in orchestrator proxy
+   * TODO: [TASK-ID-001] Pattern: ipc-communication-reliability | Complexity: 8 | Dependencies: file-system,process-management
+   * Context: Enhanced IPC communication with retry logic, connection pooling, and circuit breaker pattern for reliability
+   * Validation-Required: reliability-testing, timeout-handling, error-recovery
+   * Pattern-Info: { approach: "enhanced-file-based-ipc-with-circuit-breaker", alternatives: "websocket,named-pipes", trade-offs: "reliability-vs-latency" }
    */
-  private async sendIPCCommand(pid: number, message: any): Promise<any> {
+  private async sendIPCCommand(pid: number, message: any, options: IPCOptions = {}): Promise<any> {
+    const maxRetries = options.maxRetries || 3;
+    const timeoutMs = options.timeoutMs || 8000; // Increased from 5000ms
+    const retryDelay = options.retryDelay || 1000;
+    
+    let lastError: Error | null = null;
+    
+    // Circuit breaker pattern: track failures per PID
+    const circuitKey = `ipc-${pid}`;
+    if (!this.circuitBreaker.has(circuitKey)) {
+      this.circuitBreaker.set(circuitKey, { failures: 0, lastFailure: 0, state: 'closed' });
+    }
+    
+    const circuit = this.circuitBreaker.get(circuitKey)!;
+    
+    // Check circuit breaker state
+    if (circuit.state === 'open') {
+      const timeSinceLastFailure = Date.now() - circuit.lastFailure;
+      if (timeSinceLastFailure < 30000) { // 30 second cooldown
+        throw new Error(`IPC circuit breaker open for PID ${pid}. Cooling down.`);
+      } else {
+        circuit.state = 'half-open';
+      }
+    }
+    
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        const result = await this.attemptIPCCommunication(pid, message, timeoutMs);
+        
+        // Success: reset circuit breaker
+        circuit.failures = 0;
+        circuit.state = 'closed';
+        
+        return result;
+        
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+        circuit.failures++;
+        circuit.lastFailure = Date.now();
+        
+        // Open circuit breaker after 3 consecutive failures
+        if (circuit.failures >= 3) {
+          circuit.state = 'open';
+        }
+        
+        if (attempt < maxRetries) {
+          console.warn(`IPC attempt ${attempt + 1}/${maxRetries + 1} failed for PID ${pid}: ${lastError.message}`);
+          await this.delay(retryDelay * (attempt + 1)); // Exponential backoff
+        }
+      }
+    }
+    
+    throw new Error(`IPC communication failed after ${maxRetries + 1} attempts: ${lastError?.message || 'Unknown error'}`);
+  }
+
+  /**
+   * Circuit breaker state for IPC reliability
+   */
+  private circuitBreaker = new Map<string, { failures: number; lastFailure: number; state: 'open' | 'closed' | 'half-open' }>();
+
+  /**
+   * Attempt single IPC communication with enhanced error handling
+   */
+  private async attemptIPCCommunication(pid: number, message: any, timeoutMs: number): Promise<any> {
     return new Promise((resolve, reject) => {
       try {
-        // Import child_process to communicate with the running service
-        const { spawn: _spawn } = require('child_process');
-        
-        // Create a temporary communication channel
-        // For now, use a simple file-based IPC mechanism as a fallback
-        // In a full implementation, this would use proper Node.js IPC channels
-        
         const tempDir = require('os').tmpdir();
         const requestId = `cli-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         const requestFile = require('path').join(tempDir, `templum-${requestId}-request.json`);
         const responseFile = require('path').join(tempDir, `templum-${requestId}-response.json`);
         
-        // Write the request to a temporary file
-        // Fix: Preserve message structure instead of spreading to avoid flattening type/data
+        // Enhanced request structure with metadata
         const ipcRequest = {
           type: message.type,
           data: message.data,
           requestId,
           responseFile,
-          clientPid: process.pid
+          clientPid: process.pid,
+          timestamp: Date.now(),
+          version: '1.1',
+          priority: message.priority || 'normal'
         };
         
-        require('fs').writeFileSync(requestFile, JSON.stringify(ipcRequest));
+        require('fs').writeFileSync(requestFile, JSON.stringify(ipcRequest, null, 2));
 
-        // Set up a timeout with proper cleanup
+        // Enhanced timeout with cleanup
         const timeout = setTimeout(() => {
           this.safeCleanupTempFiles(requestFile, responseFile);
-          reject(new Error(`IPC timeout after 5000ms for PID ${pid}`));
-        }, 5000);
+          reject(new Error(`IPC timeout after ${timeoutMs}ms for PID ${pid} (request: ${requestId})`));
+        }, timeoutMs);
 
-        // Watch for response file
+        // Optimized response polling with adaptive intervals
+        let pollInterval = 50; // Start with 50ms
+        let pollCount = 0;
+        
         const checkResponse = () => {
           try {
             if (require('fs').existsSync(responseFile)) {
@@ -175,29 +253,46 @@ class RemoteTemplumAdapter {
               // Cleanup temp files safely
               this.safeCleanupTempFiles(requestFile, responseFile);
               
-              if (response.success) {
-                resolve(response.result);
+              // Enhanced response validation
+              if (response.success !== undefined) {
+                if (response.success) {
+                  resolve(response.result || response.data);
+                } else {
+                  reject(new Error(response.error || response.message || 'Command execution failed'));
+                }
               } else {
-                reject(new Error(response.error || 'Command execution failed'));
+                // Legacy response format support
+                resolve(response);
               }
             } else {
-              // Check again in 100ms
-              setTimeout(checkResponse, 100);
+              pollCount++;
+              // Adaptive polling: increase interval after initial fast polls
+              if (pollCount > 10) {
+                pollInterval = Math.min(200, pollInterval * 1.1);
+              }
+              setTimeout(checkResponse, pollInterval);
             }
           } catch (error) {
             clearTimeout(timeout);
             this.safeCleanupTempFiles(requestFile, responseFile);
-            reject(error);
+            reject(new Error(`IPC response processing failed: ${error}`));
           }
         };
 
-        // Start checking for response
-        setTimeout(checkResponse, 100);
+        // Start response polling
+        setTimeout(checkResponse, pollInterval);
         
       } catch (error) {
         reject(new Error(`Failed to initiate IPC communication: ${error}`));
       }
     });
+  }
+
+  /**
+   * Utility for exponential backoff delays
+   */
+  private delay(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 
   /**
@@ -385,8 +480,15 @@ class RemoteTemplumAdapter {
             };
 
             try {
-              // Use Node.js process communication to send command to the running service
-              const result = await sendIPCCommand(serviceEntry.pid, ipcMessage);
+              // Use enhanced IPC communication with retry logic and circuit breaker
+              const ipcOptions: IPCOptions = {
+                maxRetries: 3,
+                timeoutMs: 8000,
+                retryDelay: 1000,
+                priority: 'normal'
+              };
+              
+              const result = await sendIPCCommand(serviceEntry.pid, ipcMessage, ipcOptions);
               
               console.log(chalk.green(`[IPC] Command executed successfully via service PID ${serviceEntry.pid}`));
               
@@ -466,7 +568,11 @@ class RemoteTemplumAdapter {
             }
           };
 
-          const realStatus = await sendIPCCommand(serviceEntry.pid, ipcMessage);
+          const realStatus = await sendIPCCommand(serviceEntry.pid, ipcMessage, { 
+            maxRetries: 2, 
+            timeoutMs: 5000, 
+            priority: 'normal' 
+          });
           console.log(chalk.green(`[${serviceProtocol.toUpperCase()}] System status updated from service`));
           
           // Update cached status
@@ -503,7 +609,11 @@ class RemoteTemplumAdapter {
             }
           };
 
-          const skinDefinition = await sendIPCCommand(serviceEntry.pid, ipcMessage);
+          const skinDefinition = await sendIPCCommand(serviceEntry.pid, ipcMessage, {
+            maxRetries: 2,
+            timeoutMs: 6000,
+            priority: 'normal'
+          });
           console.log(chalk.green(`[${serviceProtocol.toUpperCase()}] Real backend skin loaded: ${skinDefinition?.name || backendId}`));
           
           return skinDefinition;

@@ -152,7 +152,7 @@ Successfully integrated pty-mcp-server as MCP integration foundation, creating c
 ### Task Completion
 
 - **Task Status**: Updated to completed ✓
-- **Dependencies Resolved**: Foundation for TASK-MCP-INT-002 established
+- **Dependencies Resolved**: Foundation for TASK-MCP-004 established
 - **New Dependencies Created**: pty-mcp-server installation requirement
 
 ### Dashboard Updates

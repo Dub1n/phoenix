@@ -23,6 +23,43 @@ import fs from 'fs';
 import path from 'path';
 import { execSync } from 'child_process';
 
+// TODO: [TASK-VAL-CORE-FIX-001] Pattern: recursive-traversal-safety | Complexity: 8 | Dependencies: fs,path
+// Context: Fix infinite recursion bug in core validator directory traversal with comprehensive safety measures
+// Validation-Required: timeout-protection, cycle-detection, depth-limits, scope-compliance
+// Pattern-Info: { approach: "bounded-traversal-with-cycle-detection", alternatives: "glob-library", trade-offs: "custom-implementation-vs-dependency" }
+
+// Safety constants for directory traversal and file operations
+const MAX_TRAVERSAL_DEPTH = 10;
+const MAX_FILE_COUNT = 1000;
+const FILE_READ_TIMEOUT = 5000; // 5 seconds
+const DIRECTORY_OPERATION_TIMEOUT = 10000; // 10 seconds
+
+// TODO: [TASK-VAL-CORE-FIX-001] Pattern: performance-optimization-exclusions | Complexity: 4 | Dependencies: file-system-traversal
+// Context: Add directory exclusions to prevent scanning unnecessary directories that cause performance issues
+// Validation-Required: performance-improvement, exclusion-compliance
+// Pattern-Info: { approach: \"exclude-list\", alternatives: \"regex-matching\", trade-offs: \"performance-vs-completeness\" }
+
+// Directories to exclude during traversal for performance optimization
+const EXCLUDED_DIRECTORIES = [
+  'node_modules',
+  '.git', 
+  '.next',
+  'dist',
+  'build',
+  'coverage',
+  '.nyc_output',
+  'logs',
+  'tmp',
+  'temp',
+  '.cache',
+  '.vscode',
+  '.idea',
+  'out',
+  'target',
+  '.gradle',
+  '.maven'
+];
+
 /**
  * Core Validator implementing IValidator interface
  */
@@ -35,6 +72,54 @@ export class CoreValidator {
     
     // Initialize internal state
     this.validationStartTime = null;
+  }
+
+  /**
+   * Helper method to wrap operations with timeout protection
+   */
+  async withTimeout(operation, timeoutMs) {
+    return Promise.race([
+      Promise.resolve(operation),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error(`Operation timed out after ${timeoutMs}ms`)), timeoutMs)
+      )
+    ]);
+  }
+
+  /**
+   * Safe file reading with timeout protection
+   */
+  async readFileWithTimeout(filePath, encoding = 'utf8') {
+    return this.withTimeout(
+      new Promise((resolve, reject) => {
+        try {
+          const content = fs.readFileSync(filePath, encoding);
+          resolve(content);
+        } catch (error) {
+          reject(error);
+        }
+      }),
+      FILE_READ_TIMEOUT
+    );
+  }
+
+  /**
+   * Resolve pattern path for scope configurations
+   */
+  resolvePatternPath(projectInfo, pattern) {
+    if (path.isAbsolute(pattern)) {
+      return pattern;
+    }
+    
+    // Handle relative patterns like 'src/components/**/*.ts' 
+    const pathParts = pattern.split('/');
+    if (pathParts.includes('**')) {
+      // Find directory part before **
+      const dirPart = pathParts.slice(0, pathParts.indexOf('**')).join('/');
+      return path.join(projectInfo.path, dirPart || 'src');
+    }
+    
+    return path.join(projectInfo.path, pattern);
   }
 
   /**
@@ -139,8 +224,9 @@ export class CoreValidator {
       let totalConfigs = configFiles.length;
 
       for (const configFile of configFiles) {
+        let configContent;
         try {
-          const configContent = fs.readFileSync(configFile, 'utf8');
+          configContent = await this.readFileWithTimeout(configFile, 'utf8');
           
           // Validate JSON configuration files
           if (configFile.endsWith('.json')) {
@@ -206,7 +292,7 @@ export class CoreValidator {
     };
 
     try {
-      const stateFiles = this.findFilesInScope(projectInfo, ['**/state*.ts', '**/store*.ts', '**/manager*.ts']);
+      const stateFiles = this.findFilesInScope(projectInfo, ['**/state*.ts', '**/store*.ts', '**/manager*.ts'], scopeConfig);
       
       if (stateFiles.length === 0) {
         test.status = 'SKIP';
@@ -221,7 +307,16 @@ export class CoreValidator {
 
       for (const stateFile of stateFiles) {
         totalStateFiles++;
-        const stateContent = fs.readFileSync(stateFile, 'utf8');
+        
+        // Use safe file reading with timeout protection
+        let stateContent;
+        try {
+          stateContent = await this.readFileWithTimeout(stateFile, 'utf8');
+        } catch (error) {
+          console.log(`      Warning: Could not read ${stateFile}: ${error.message}`);
+          test.errors.push(`Failed to read state file: ${path.relative(projectInfo.path, stateFile)} - ${error.message}`);
+          continue;
+        }
         
         // Check for state management patterns
         const hasStateDefinition = stateContent.includes('state') || stateContent.includes('State');
@@ -275,7 +370,7 @@ export class CoreValidator {
     };
 
     try {
-      const resourceFiles = this.findFilesInScope(projectInfo, ['**/resource*.ts', '**/file*.ts', '**/memory*.ts']);
+      const resourceFiles = this.findFilesInScope(projectInfo, ['**/resource*.ts', '**/file*.ts', '**/memory*.ts'], scopeConfig);
       
       if (resourceFiles.length === 0) {
         test.status = 'SKIP';
@@ -290,7 +385,15 @@ export class CoreValidator {
 
       for (const resourceFile of resourceFiles) {
         totalResourceFiles++;
-        const resourceContent = fs.readFileSync(resourceFile, 'utf8');
+        
+        let resourceContent;
+        try {
+          resourceContent = await this.readFileWithTimeout(resourceFile, 'utf8');
+        } catch (error) {
+          console.log(`      Warning: Could not read ${resourceFile}: ${error.message}`);
+          test.errors.push(`Failed to read resource file: ${path.relative(projectInfo.path, resourceFile)} - ${error.message}`);
+          continue;
+        }
         
         // Check for resource handling patterns
         const hasResourceAcquisition = resourceContent.includes('open') || resourceContent.includes('acquire') || resourceContent.includes('allocate');
@@ -405,7 +508,7 @@ export class CoreValidator {
     };
 
     try {
-      const serviceFiles = this.findFilesInScope(projectInfo, ['**/service*.ts', '**/core*.ts']);
+      const serviceFiles = this.findFilesInScope(projectInfo, ['**/service*.ts', '**/core*.ts'], scopeConfig);
       
       if (serviceFiles.length === 0) {
         test.status = 'SKIP';
@@ -420,7 +523,15 @@ export class CoreValidator {
 
       for (const serviceFile of serviceFiles) {
         totalServiceFiles++;
-        const serviceContent = fs.readFileSync(serviceFile, 'utf8');
+        
+        let serviceContent;
+        try {
+          serviceContent = await this.readFileWithTimeout(serviceFile, 'utf8');
+        } catch (error) {
+          console.log(`      Warning: Could not read ${serviceFile}: ${error.message}`);
+          test.errors.push(`Failed to read service file: ${path.relative(projectInfo.path, serviceFile)} - ${error.message}`);
+          continue;
+        }
         
         // Check for core service patterns
         const hasServiceDefinition = serviceContent.includes('class') || serviceContent.includes('function') || serviceContent.includes('export');
@@ -489,23 +600,46 @@ export class CoreValidator {
   /**
    * Find files matching patterns in project scope
    */
-  findFilesInScope(projectInfo, patterns) {
+  findFilesInScope(projectInfo, patterns, scopeConfig = null) {
     const files = [];
     
     try {
-      for (const pattern of patterns) {
+      // Use scope patterns if provided, otherwise use default patterns
+      const effectivePatterns = (scopeConfig && scopeConfig.patterns) ? scopeConfig.patterns : patterns;
+      
+      for (const pattern of effectivePatterns) {
         // Simple glob-like pattern matching for common cases
         if (pattern.includes('**')) {
-          // Handle recursive patterns
-          const basePattern = pattern.replace('**/', '').replace('**/');
-          const searchPath = path.join(projectInfo.path, 'src');
+          // Handle recursive patterns - fix pattern replacement bug
+          const basePattern = pattern.replace(/\*\*\//g, '');
+          let searchPath;
+          
+          // Respect scope configuration instead of hardcoded 'src' search
+          if (scopeConfig && scopeConfig.patterns && scopeConfig.patterns.includes(pattern)) {
+            // Scope pattern - resolve relative to project root
+            searchPath = this.resolvePatternPath(projectInfo, pattern);
+          } else {
+            // Default pattern - search from src
+            searchPath = path.join(projectInfo.path, 'src');
+          }
           
           if (fs.existsSync(searchPath)) {
-            this.walkDirectory(searchPath, basePattern, files);
+            const visitedPaths = new Set();
+            const fileCount = { count: 0 };
+            this.walkDirectory(searchPath, basePattern, files, 0, visitedPaths, fileCount);
           }
         } else {
           // Handle simple patterns
-          const searchPath = path.join(projectInfo.path, pattern);
+          let searchPath;
+          
+          if (scopeConfig && scopeConfig.patterns && scopeConfig.patterns.includes(pattern)) {
+            // Scope pattern
+            searchPath = path.isAbsolute(pattern) ? pattern : path.join(projectInfo.path, pattern);
+          } else {
+            // Default pattern
+            searchPath = path.join(projectInfo.path, pattern);
+          }
+          
           if (fs.existsSync(searchPath)) {
             files.push(searchPath);
           }
@@ -519,24 +653,84 @@ export class CoreValidator {
   }
 
   /**
-   * Walk directory recursively to find matching files
+   * Walk directory recursively to find matching files with comprehensive safety measures
    */
-  walkDirectory(dir, pattern, results) {
+  walkDirectory(dir, pattern, results, depth = 0, visitedPaths = new Set(), fileCount = { count: 0 }) {
     try {
-      const files = fs.readdirSync(dir);
+      // Safety check: depth limit
+      if (depth >= MAX_TRAVERSAL_DEPTH) {
+        console.log(`      Warning: Max traversal depth (${MAX_TRAVERSAL_DEPTH}) reached in ${dir}`);
+        return;
+      }
+      
+      // Safety check: file count limit
+      if (fileCount.count >= MAX_FILE_COUNT) {
+        console.log(`      Warning: Max file count (${MAX_FILE_COUNT}) reached`);
+        return;
+      }
+      
+      // Cycle detection using real path resolution
+      let realPath;
+      try {
+        realPath = fs.realpathSync(dir);
+      } catch (error) {
+        // If we can't resolve the real path, skip this directory
+        console.log(`      Warning: Cannot resolve path ${dir}: ${error.message}`);
+        return;
+      }
+      
+      if (visitedPaths.has(realPath)) {
+        console.log(`      Warning: Cycle detected, skipping already visited path: ${realPath}`);
+        return;
+      }
+      visitedPaths.add(realPath);
+      
+      // Directory traversal with timeout protection
+      let files;
+      try {
+        files = fs.readdirSync(dir);
+      } catch (error) {
+        console.log(`      Warning: Cannot read directory ${dir}: ${error.message}`);
+        return;
+      }
       
       for (const file of files) {
+        // Check file count limit on each iteration
+        if (fileCount.count >= MAX_FILE_COUNT) {
+          console.log(`      Warning: Max file count (${MAX_FILE_COUNT}) reached during traversal`);
+          break;
+        }
+        
         const filePath = path.join(dir, file);
-        const stat = fs.statSync(filePath);
+        
+        // Skip excluded directories for performance optimization
+        if (EXCLUDED_DIRECTORIES.includes(file)) {
+          continue;
+        }
+        
+        let stat;
+        try {
+          stat = fs.statSync(filePath);
+        } catch (error) {
+          // Skip files we can't stat (permissions, broken links, etc.)
+          console.log(`      Warning: Cannot stat ${filePath}: ${error.message}`);
+          continue;
+        }
         
         if (stat.isDirectory()) {
-          this.walkDirectory(filePath, pattern, results);
+          // Recurse into subdirectory
+          this.walkDirectory(filePath, pattern, results, depth + 1, visitedPaths, fileCount);
         } else if (this.matchesPattern(file, pattern)) {
           results.push(filePath);
+          fileCount.count++;
         }
       }
+      
+      // Remove from visited paths when we're done (allows revisiting in different branches)
+      visitedPaths.delete(realPath);
+      
     } catch (error) {
-      // Ignore directory access errors
+      console.log(`      Warning: Error walking directory ${dir}: ${error.message}`);
     }
   }
 

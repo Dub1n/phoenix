@@ -1,0 +1,198 @@
+{
+  "chain_engineering_report": {
+    "schema_version": "chain-engineer-v1.1",
+    "report_id": "string",
+    "timestamp": "ISO-8601",
+    "chain_id": "string",
+    
+    "algorithmic_design_profile": {
+      "complexity_assessment": {
+        "computed_score": "number (1-100)",
+        "complexity_factors": {
+          "dependency_depth": "number",
+          "coordination_branching": "number", 
+          "resource_constraints": "number",
+          "pattern_novelty": "number"
+        },
+        "algorithm_confidence": "number (0.0-1.0)",
+        "prediction_accuracy": "number (0.0-1.0)"
+      },
+      "pattern_selection_algorithm": {
+        "selected_pattern": "string",
+        "pattern_confidence_score": "number (0.0-1.0)",
+        "alternative_patterns_considered": "array[string]",
+        "selection_criteria_weights": {
+          "dependency_optimization": "number (0.0-1.0)",
+          "parallel_efficiency": "number (0.0-1.0)",
+          "resource_utilization": "number (0.0-1.0)",
+          "error_resilience": "number (0.0-1.0)"
+        },
+        "pattern_effectiveness_prediction": "number (0.0-1.0)",
+        "actual_pattern_effectiveness": "number (0.0-1.0)"
+      },
+      "optimization_algorithms_applied": [
+        {
+          "algorithm_name": "string",
+          "optimization_target": "string",
+          "predicted_improvement": "number",
+          "actual_improvement": "number", 
+          "algorithm_effectiveness": "number (0.0-1.0)",
+          "application_context": "string"
+        }
+      ]
+    },
+
+    "coordination_engineering_analysis": {
+      "parallel_batch_optimization": {
+        "batch_size_algorithm": {
+          "computed_optimal_size": "number",
+          "actual_optimal_size": "number",
+          "size_prediction_accuracy": "number (0.0-1.0)",
+          "load_balancing_effectiveness": "number (0.0-1.0)"
+        },
+        "coordination_overhead": {
+          "predicted_overhead_percentage": "number",
+          "actual_overhead_percentage": "number",
+          "coordination_efficiency": "number (0.0-1.0)"
+        },
+        "synchronization_complexity": {
+          "sync_points_designed": "number",
+          "sync_points_executed": "number", 
+          "sync_latency_prediction": "number (milliseconds)",
+          "actual_sync_latency": "number (milliseconds)"
+        }
+      },
+      "handoff_strategy_performance": {
+        "handoff_type": "string",
+        "data_transfer_efficiency": "number (0.0-1.0)",
+        "context_preservation_rate": "number (0.0-1.0)",
+        "handoff_latency": "number (milliseconds)",
+        "handoff_success_rate": "number (0.0-1.0)"
+      },
+      "agent_coordination_metrics": {
+        "coordination_graph_complexity": "number",
+        "coordination_success_rate": "number (0.0-1.0)",
+        "inter_agent_communication_efficiency": "number (0.0-1.0)",
+        "coordination_bottleneck_analysis": {
+          "identified_bottlenecks": "array[string]",
+          "bottleneck_severity": "array[number]",
+          "mitigation_effectiveness": "number (0.0-1.0)"
+        }
+      }
+    },
+
+    "optimization_performance_metrics": {
+      "resource_optimization_results": {
+        "context_window_optimization": {
+          "predicted_token_usage": "number",
+          "actual_token_usage": "number",
+          "optimization_effectiveness": "number (0.0-1.0)",
+          "memory_efficiency_gain": "number"
+        },
+        "timeout_optimization": {
+          "timeout_algorithm_accuracy": "number (0.0-1.0)",
+          "predicted_phase_durations": "array[number]",
+          "actual_phase_durations": "array[number]",
+          "duration_prediction_variance": "number"
+        },
+        "agent_allocation_efficiency": {
+          "optimal_agent_count": "number",
+          "actual_agent_count": "number",
+          "utilization_rate": "number (0.0-1.0)",
+          "resource_waste_percentage": "number"
+        }
+      },
+      "algorithmic_prediction_accuracy": {
+        "execution_time_prediction": {
+          "predicted_total_time": "number (minutes)",
+          "actual_total_time": "number (minutes)",
+          "prediction_error_percentage": "number"
+        },
+        "success_rate_prediction": {
+          "predicted_success_rate": "number (0.0-1.0)",
+          "actual_success_rate": "number (0.0-1.0)",
+          "prediction_confidence_interval": "array[number]"
+        },
+        "complexity_scaling_accuracy": {
+          "scaling_algorithm_used": "string",
+          "predicted_scaling_factor": "number",
+          "actual_scaling_factor": "number",
+          "scaling_prediction_accuracy": "number (0.0-1.0)"
+        }
+      }
+    },
+
+    "pattern_intelligence_assessment": {
+      "template_selection_algorithm": {
+        "template_matching_accuracy": "number (0.0-1.0)",
+        "template_success_rate": "number (0.0-1.0)",
+        "template_optimization_applied": "array[string]",
+        "template_effectiveness_score": "number (0.0-1.0)"
+      },
+      "dependency_resolution_intelligence": {
+        "dependency_graph_complexity": "number",
+        "resolution_algorithm_efficiency": "number (0.0-1.0)",
+        "circular_dependency_detection": "boolean",
+        "optimization_path_taken": "string"
+      },
+      "error_recovery_algorithm_performance": {
+        "recovery_strategies_designed": "number",
+        "recovery_strategies_triggered": "number",
+        "recovery_success_rate": "number (0.0-1.0)",
+        "fallback_chain_effectiveness": "number (0.0-1.0)"
+      }
+    },
+
+    "learning_feedback_data": {
+      "algorithmic_learning_inputs": {
+        "pattern_success_correlation": {
+          "successful_patterns": "array[string]",
+          "failed_patterns": "array[string]",
+          "pattern_context_factors": "object"
+        },
+        "optimization_effectiveness_data": {
+          "most_effective_optimizations": "array[string]",
+          "least_effective_optimizations": "array[string]",
+          "context_dependent_effectiveness": "object"
+        },
+        "coordination_complexity_learnings": {
+          "coordination_challenges_encountered": "array[string]",
+          "successful_coordination_strategies": "array[string]",
+          "coordination_failure_modes": "array[string]"
+        }
+      },
+      "algorithm_improvement_recommendations": [
+        {
+          "algorithm_component": "string",
+          "current_performance": "number (0.0-1.0)",
+          "improvement_opportunity": "string",
+          "recommended_adjustment": "string",
+          "expected_improvement": "number (0.0-1.0)"
+        }
+      ],
+      "pattern_library_updates": {
+        "new_patterns_discovered": "array[object]",
+        "pattern_effectiveness_updates": "array[object]",
+        "deprecated_patterns": "array[string]"
+      }
+    },
+
+    "chain_execution_summary": {
+      "overall_algorithmic_effectiveness": "number (0.0-1.0)",
+      "coordination_engineering_score": "number (0.0-1.0)",
+      "optimization_algorithm_success": "number (0.0-1.0)",
+      "pattern_intelligence_accuracy": "number (0.0-1.0)",
+      "system_learning_value": "number (0.0-1.0)"
+    },
+
+    "chain_metadata": {
+      "design_time": "number (seconds)",
+      "total_execution_time": "number (seconds)",
+      "agent_count": "number",
+      "parallel_phases": "number",
+      "sequential_phases": "number",
+      "handoff_files_created": "number",
+      "optimization_iterations": "number"
+    }
+  }
+}

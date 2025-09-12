@@ -1,0 +1,641 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Chain Engineer v1.0 Execution Report",
+  "type": "object",
+  "description": "Standardized format for tracking chain execution performance and outcomes with focus on operational excellence",
+  "properties": {
+    "chain_execution_profile": {
+      "type": "object",
+      "description": "High-level execution summary and identification",
+      "properties": {
+        "chain_id": {
+          "type": "string",
+          "description": "Unique identifier for this chain execution"
+        },
+        "task_description": {
+          "type": "string",
+          "description": "Brief description of the primary task"
+        },
+        "complexity_score": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "description": "Objective complexity rating based on steps, dependencies, and coordination requirements"
+        },
+        "execution_timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When chain execution began"
+        },
+        "completion_timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When chain execution completed"
+        },
+        "total_duration_minutes": {
+          "type": "number",
+          "description": "Actual execution time in minutes"
+        },
+        "estimated_duration_minutes": {
+          "type": "number",
+          "description": "Initial time estimate in minutes"
+        },
+        "duration_variance_percent": {
+          "type": "number",
+          "description": "Percentage difference between actual and estimated duration"
+        }
+      },
+      "required": ["chain_id", "task_description", "complexity_score", "execution_timestamp"]
+    },
+    "pattern_implementation": {
+      "type": "object",
+      "description": "Details about which proven pattern was selected and implemented",
+      "properties": {
+        "pattern_type": {
+          "type": "string",
+          "enum": ["sequential", "parallel_batch", "hybrid", "iterative"],
+          "description": "Primary execution pattern used"
+        },
+        "pattern_rationale": {
+          "type": "string",
+          "description": "Why this pattern was selected for the task"
+        },
+        "dependency_analysis": {
+          "type": "object",
+          "properties": {
+            "total_dependencies": {
+              "type": "integer",
+              "description": "Number of identified task dependencies"
+            },
+            "critical_path_length": {
+              "type": "integer",
+              "description": "Length of longest dependency chain"
+            },
+            "parallelizable_tasks": {
+              "type": "integer",
+              "description": "Number of tasks that could run in parallel"
+            },
+            "sequential_requirements": {
+              "type": "integer",
+              "description": "Number of tasks requiring sequential execution"
+            }
+          }
+        },
+        "pattern_effectiveness": {
+          "type": "string",
+          "enum": ["optimal", "acceptable", "suboptimal", "ineffective"],
+          "description": "How well the chosen pattern performed for this task"
+        }
+      },
+      "required": ["pattern_type", "pattern_rationale", "pattern_effectiveness"]
+    },
+    "resource_orchestration": {
+      "type": "object",
+      "description": "Agent allocation and resource utilization metrics",
+      "properties": {
+        "total_agents_planned": {
+          "type": "integer",
+          "description": "Number of agents initially allocated"
+        },
+        "total_agents_used": {
+          "type": "integer",
+          "description": "Number of agents actually utilized"
+        },
+        "agent_allocation": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "agent_type": {
+                "type": "string",
+                "enum": ["Analysis Agent", "Execution Agent", "Validation Agent", "Documentation Agent"],
+                "description": "Type of agent used"
+              },
+              "count_planned": {
+                "type": "integer",
+                "description": "Number of this agent type originally planned"
+              },
+              "count_used": {
+                "type": "integer",
+                "description": "Number of this agent type actually used"
+              },
+              "average_execution_time_seconds": {
+                "type": "number",
+                "description": "Average execution time for this agent type"
+              }
+            }
+          }
+        },
+        "timeout_configuration": {
+          "type": "object",
+          "properties": {
+            "default_timeout_seconds": {
+              "type": "integer",
+              "description": "Standard timeout setting used"
+            },
+            "extended_timeouts": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "phase_name": {
+                    "type": "string"
+                  },
+                  "timeout_seconds": {
+                    "type": "integer"
+                  },
+                  "rationale": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "resource_efficiency": {
+          "type": "object",
+          "properties": {
+            "agent_utilization_percent": {
+              "type": "number",
+              "description": "Percentage of allocated agents that were actively used"
+            },
+            "average_agent_idle_time_seconds": {
+              "type": "number",
+              "description": "Average idle time per agent"
+            },
+            "resource_waste_assessment": {
+              "type": "string",
+              "enum": ["minimal", "acceptable", "moderate", "significant"],
+              "description": "Overall assessment of resource waste"
+            }
+          }
+        }
+      },
+      "required": ["total_agents_planned", "total_agents_used", "agent_allocation"]
+    },
+    "parallel_performance": {
+      "type": "object",
+      "description": "Metrics specific to parallel execution phases",
+      "properties": {
+        "parallel_phases": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "phase_name": {
+                "type": "string",
+                "description": "Name/identifier of parallel phase"
+              },
+              "agent_count": {
+                "type": "integer",
+                "description": "Number of agents running in parallel"
+              },
+              "batch_size": {
+                "type": "integer",
+                "description": "Items processed per agent"
+              },
+              "load_balance_effectiveness": {
+                "type": "string",
+                "enum": ["excellent", "good", "fair", "poor"],
+                "description": "How evenly work was distributed"
+              },
+              "parallel_efficiency_percent": {
+                "type": "number",
+                "description": "Actual speedup vs theoretical maximum"
+              },
+              "completion_variance_seconds": {
+                "type": "number",
+                "description": "Time difference between first and last agent completion"
+              }
+            }
+          }
+        },
+        "overall_parallel_benefit": {
+          "type": "object",
+          "properties": {
+            "sequential_estimate_minutes": {
+              "type": "number",
+              "description": "Estimated time if executed sequentially"
+            },
+            "actual_parallel_minutes": {
+              "type": "number",
+              "description": "Actual time with parallel execution"
+            },
+            "speedup_factor": {
+              "type": "number",
+              "description": "Ratio of sequential to parallel time"
+            },
+            "optimization_success": {
+              "type": "string",
+              "enum": ["excellent", "good", "marginal", "failed"],
+              "description": "Overall parallel optimization assessment"
+            }
+          }
+        }
+      }
+    },
+    "handoff_coordination": {
+      "type": "object",
+      "description": "File-based communication tracking between phases",
+      "properties": {
+        "handoff_files": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "file_path": {
+                "type": "string",
+                "description": "Path to handoff file"
+              },
+              "producing_agent": {
+                "type": "string",
+                "description": "Agent that created the file"
+              },
+              "consuming_agents": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Agents that read the file"
+              },
+              "file_size_bytes": {
+                "type": "integer",
+                "description": "Size of handoff file"
+              },
+              "creation_success": {
+                "type": "boolean",
+                "description": "Whether file was created successfully"
+              },
+              "read_success_count": {
+                "type": "integer",
+                "description": "Number of successful reads by consuming agents"
+              },
+              "content_quality": {
+                "type": "string",
+                "enum": ["complete", "adequate", "minimal", "insufficient"],
+                "description": "Assessment of handoff content quality"
+              }
+            }
+          }
+        },
+        "handoff_statistics": {
+          "type": "object",
+          "properties": {
+            "total_handoff_files": {
+              "type": "integer",
+              "description": "Total number of handoff files created"
+            },
+            "successful_handoffs": {
+              "type": "integer",
+              "description": "Number of handoffs completed successfully"
+            },
+            "handoff_success_rate_percent": {
+              "type": "number",
+              "description": "Percentage of successful handoffs"
+            },
+            "average_handoff_size_kb": {
+              "type": "number",
+              "description": "Average size of handoff files in KB"
+            },
+            "handoff_efficiency": {
+              "type": "string",
+              "enum": ["optimal", "acceptable", "problematic", "failed"],
+              "description": "Overall handoff process effectiveness"
+            }
+          }
+        }
+      }
+    },
+    "error_resilience": {
+      "type": "object",
+      "description": "Error handling and recovery tracking",
+      "properties": {
+        "error_events": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "error_type": {
+                "type": "string",
+                "enum": ["timeout", "agent_failure", "handoff_failure", "validation_failure", "resource_limit", "other"],
+                "description": "Category of error encountered"
+              },
+              "affected_phase": {
+                "type": "string",
+                "description": "Phase where error occurred"
+              },
+              "error_description": {
+                "type": "string",
+                "description": "Brief description of the error"
+              },
+              "recovery_action": {
+                "type": "string",
+                "description": "Action taken to recover from error"
+              },
+              "recovery_success": {
+                "type": "boolean",
+                "description": "Whether recovery was successful"
+              },
+              "time_to_recover_seconds": {
+                "type": "number",
+                "description": "Time taken to recover from error"
+              }
+            }
+          }
+        },
+        "contingency_utilization": {
+          "type": "object",
+          "properties": {
+            "planned_contingencies": {
+              "type": "integer",
+              "description": "Number of contingency plans prepared"
+            },
+            "activated_contingencies": {
+              "type": "integer",
+              "description": "Number of contingencies actually used"
+            },
+            "contingency_effectiveness": {
+              "type": "string",
+              "enum": ["excellent", "good", "adequate", "poor"],
+              "description": "How well contingencies worked when needed"
+            }
+          }
+        },
+        "error_impact": {
+          "type": "object",
+          "properties": {
+            "total_error_count": {
+              "type": "integer",
+              "description": "Total number of errors encountered"
+            },
+            "critical_errors": {
+              "type": "integer",
+              "description": "Number of errors that threatened chain completion"
+            },
+            "recovered_errors": {
+              "type": "integer",
+              "description": "Number of errors successfully recovered from"
+            },
+            "time_lost_to_errors_minutes": {
+              "type": "number",
+              "description": "Total time lost due to error handling"
+            },
+            "chain_resilience": {
+              "type": "string",
+              "enum": ["robust", "resilient", "fragile", "brittle"],
+              "description": "Overall assessment of chain error handling"
+            }
+          }
+        }
+      }
+    },
+    "delivery_validation": {
+      "type": "object",
+      "description": "Final deliverable quality and completion assessment",
+      "properties": {
+        "completion_status": {
+          "type": "string",
+          "enum": ["complete", "partial", "failed"],
+          "description": "Overall completion status of the chain"
+        },
+        "deliverable_assessment": {
+          "type": "object",
+          "properties": {
+            "primary_deliverables": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "deliverable_name": {
+                    "type": "string",
+                    "description": "Name of deliverable"
+                  },
+                  "completion_percent": {
+                    "type": "number",
+                    "description": "Percentage completion of this deliverable"
+                  },
+                  "quality_rating": {
+                    "type": "string",
+                    "enum": ["excellent", "good", "acceptable", "poor"],
+                    "description": "Quality assessment of deliverable"
+                  },
+                  "validation_method": {
+                    "type": "string",
+                    "description": "How quality was validated"
+                  }
+                }
+              }
+            },
+            "overall_quality": {
+              "type": "string",
+              "enum": ["excellent", "good", "acceptable", "poor"],
+              "description": "Overall quality rating of all deliverables"
+            }
+          }
+        },
+        "success_criteria": {
+          "type": "object",
+          "properties": {
+            "criteria_defined": {
+              "type": "boolean",
+              "description": "Whether success criteria were clearly defined"
+            },
+            "criteria_met": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "criterion": {
+                    "type": "string"
+                  },
+                  "met": {
+                    "type": "boolean"
+                  },
+                  "validation_evidence": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "overall_success_rate_percent": {
+              "type": "number",
+              "description": "Percentage of success criteria met"
+            }
+          }
+        }
+      },
+      "required": ["completion_status", "deliverable_assessment"]
+    },
+    "optimization_insights": {
+      "type": "object",
+      "description": "Lessons learned and optimization opportunities for future chains",
+      "properties": {
+        "performance_bottlenecks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "bottleneck_description": {
+                "type": "string",
+                "description": "Description of performance bottleneck"
+              },
+              "impact_level": {
+                "type": "string",
+                "enum": ["critical", "major", "moderate", "minor"],
+                "description": "Severity of bottleneck impact"
+              },
+              "suggested_improvement": {
+                "type": "string",
+                "description": "Recommended approach to address bottleneck"
+              }
+            }
+          }
+        },
+        "pattern_optimization": {
+          "type": "object",
+          "properties": {
+            "pattern_suitability": {
+              "type": "string",
+              "enum": ["perfect", "good", "adequate", "poor"],
+              "description": "How well chosen pattern matched the task"
+            },
+            "alternative_patterns": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Other patterns that might have worked better"
+            },
+            "pattern_modifications": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Modifications made to standard pattern during execution"
+            }
+          }
+        },
+        "resource_optimization": {
+          "type": "object",
+          "properties": {
+            "agent_count_optimal": {
+              "type": "boolean",
+              "description": "Whether agent count was optimal for the task"
+            },
+            "recommended_agent_count": {
+              "type": "integer",
+              "description": "Recommended agent count for similar future tasks"
+            },
+            "timeout_optimization": {
+              "type": "object",
+              "properties": {
+                "timeouts_adequate": {
+                  "type": "boolean"
+                },
+                "recommended_adjustments": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "phase": {
+                        "type": "string"
+                      },
+                      "current_timeout": {
+                        "type": "integer"
+                      },
+                      "recommended_timeout": {
+                        "type": "integer"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "future_improvements": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "improvement_category": {
+                "type": "string",
+                "enum": ["pattern_selection", "resource_allocation", "error_handling", "handoff_process", "validation", "other"],
+                "description": "Category of improvement"
+              },
+              "improvement_description": {
+                "type": "string",
+                "description": "Specific improvement recommendation"
+              },
+              "priority": {
+                "type": "string",
+                "enum": ["high", "medium", "low"],
+                "description": "Priority level for implementing this improvement"
+              },
+              "estimated_impact": {
+                "type": "string",
+                "enum": ["major", "moderate", "minor"],
+                "description": "Expected impact of implementing this improvement"
+              }
+            }
+          }
+        },
+        "reusability_assessment": {
+          "type": "object",
+          "properties": {
+            "pattern_reusable": {
+              "type": "boolean",
+              "description": "Whether this pattern configuration is reusable for similar tasks"
+            },
+            "template_creation_recommended": {
+              "type": "boolean",
+              "description": "Whether a template should be created from this chain"
+            },
+            "similar_use_cases": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Types of tasks this pattern would work well for"
+            }
+          }
+        }
+      }
+    },
+    "report_metadata": {
+      "type": "object",
+      "description": "Metadata about this execution report",
+      "properties": {
+        "report_version": {
+          "type": "string",
+          "description": "Version of this report format",
+          "default": "1.0"
+        },
+        "generated_by": {
+          "type": "string",
+          "description": "Agent that generated this report",
+          "default": "Chain Engineer v1.0"
+        },
+        "generation_timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When this report was generated"
+        },
+        "data_collection_method": {
+          "type": "string",
+          "enum": ["real_time_monitoring", "post_execution_analysis", "hybrid"],
+          "description": "How execution data was collected"
+        }
+      },
+      "required": ["report_version", "generated_by", "generation_timestamp"]
+    }
+  },
+  "required": [
+    "chain_execution_profile",
+    "pattern_implementation", 
+    "resource_orchestration",
+    "delivery_validation",
+    "optimization_insights",
+    "report_metadata"
+  ]
+}

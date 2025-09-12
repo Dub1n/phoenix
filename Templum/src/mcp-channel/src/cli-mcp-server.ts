@@ -154,20 +154,41 @@ export interface MCPTool {
  * 
  * Implements MCP protocol for agent-CLI interaction with 5 essential tools.
  * Provides session management, navigation translation, and state tracking.
+ * Enhanced with performance optimization for <100ms response times.
  */
 export class CLIMCPServer {
   private ptyManager: PTYManager;
   private readonly tools: Record<string, MCPTool>;
+  private performanceMetrics: {
+    requestCount: number;
+    totalResponseTime: number;
+    lastOptimization: number;
+  };
+  private responseCache: Map<string, { result: any; timestamp: number }>;
+  private readonly CACHE_TTL = 5000; // 5 seconds
+  private readonly MAX_CACHE_SIZE = 100;
 
   constructor() {
     this.ptyManager = new PTYManager();
     this.tools = MCP_TOOL_SCHEMAS;
+    this.performanceMetrics = {
+      requestCount: 0,
+      totalResponseTime: 0,
+      lastOptimization: Date.now()
+    };
+    this.responseCache = new Map();
+    
+    // Start cache cleanup timer
+    setInterval(() => this.cleanupCache(), 30000); // Every 30 seconds
   }
 
   /**
    * Handle MCP request with proper routing and error handling
+   * Enhanced with performance monitoring and caching
    */
   async handleMCPRequest(request: MCPRequest): Promise<MCPResponse> {
+    const startTime = Date.now();
+    
     try {
       // Validate request structure
       if (!request.id || !request.method) {
@@ -175,6 +196,23 @@ export class CLIMCPServer {
           MCPChannelErrorType.INVALID_ACTION,
           "Invalid MCP request: missing id or method"
         );
+      }
+
+      // Check cache for cacheable requests
+      const cacheKey = this.getCacheKey(request);
+      if (cacheKey && this.responseCache.has(cacheKey)) {
+        const cached = this.responseCache.get(cacheKey)!;
+        if (Date.now() - cached.timestamp < this.CACHE_TTL) {
+          // Cache hit - return immediately for optimal performance
+          this.recordPerformance(Date.now() - startTime);
+          return {
+            id: request.id,
+            result: cached.result
+          };
+        } else {
+          // Cache expired
+          this.responseCache.delete(cacheKey);
+        }
       }
 
       // Route to appropriate tool handler
@@ -196,12 +234,23 @@ export class CLIMCPServer {
           );
       }
 
+      // Cache the result if cacheable
+      if (cacheKey) {
+        this.cacheResult(cacheKey, result);
+      }
+
+      // Record performance metrics
+      this.recordPerformance(Date.now() - startTime);
+
       return {
         id: request.id,
         result
       };
 
     } catch (error) {
+      // Record performance even for errors
+      this.recordPerformance(Date.now() - startTime);
+      
       return {
         id: request.id,
         error: {
@@ -517,5 +566,94 @@ export class CLIMCPServer {
    */
   cleanup(): void {
     this.ptyManager.cleanup();
+    this.responseCache.clear();
+  }
+
+  /**
+   * Performance optimization methods
+   */
+
+  /**
+   * Generate cache key for request
+   */
+  private getCacheKey(request: MCPRequest): string | null {
+    // Only cache tools/list requests as they don't change frequently
+    if (request.method === 'tools/list') {
+      return 'tools/list';
+    }
+    
+    // Don't cache tool calls as they may have different results
+    return null;
+  }
+
+  /**
+   * Cache result for future requests
+   */
+  private cacheResult(key: string, result: any): void {
+    // Implement LRU-style cache size management
+    if (this.responseCache.size >= this.MAX_CACHE_SIZE) {
+      const oldestKey = this.responseCache.keys().next().value;
+      if (oldestKey) {
+        this.responseCache.delete(oldestKey);
+      }
+    }
+
+    this.responseCache.set(key, {
+      result: JSON.parse(JSON.stringify(result)), // Deep copy
+      timestamp: Date.now()
+    });
+  }
+
+  /**
+   * Clean up expired cache entries
+   */
+  private cleanupCache(): void {
+    const now = Date.now();
+    const expiredKeys: string[] = [];
+
+    for (const [key, entry] of this.responseCache.entries()) {
+      if (now - entry.timestamp > this.CACHE_TTL) {
+        expiredKeys.push(key);
+      }
+    }
+
+    for (const key of expiredKeys) {
+      this.responseCache.delete(key);
+    }
+
+    if (expiredKeys.length > 0) {
+      console.log(`[MCP_PERFORMANCE] Cleaned up ${expiredKeys.length} expired cache entries`);
+    }
+  }
+
+  /**
+   * Record performance metrics
+   */
+  private recordPerformance(responseTime: number): void {
+    this.performanceMetrics.requestCount++;
+    this.performanceMetrics.totalResponseTime += responseTime;
+
+    // Log slow requests for monitoring
+    if (responseTime > 100) {
+      console.warn(`[MCP_PERFORMANCE] Slow request: ${responseTime}ms`);
+    }
+
+    // Periodic performance reporting
+    if (this.performanceMetrics.requestCount % 100 === 0) {
+      const avgResponse = this.performanceMetrics.totalResponseTime / this.performanceMetrics.requestCount;
+      console.log(`[MCP_PERFORMANCE] Processed ${this.performanceMetrics.requestCount} requests, avg response: ${avgResponse.toFixed(2)}ms`);
+    }
+  }
+
+  /**
+   * Get performance metrics for health monitoring
+   */
+  getPerformanceMetrics(): { requestCount: number; averageResponseTime: number } {
+    return {
+      requestCount: this.performanceMetrics.requestCount,
+      averageResponseTime: this.performanceMetrics.requestCount > 0 
+        ? this.performanceMetrics.totalResponseTime / this.performanceMetrics.requestCount 
+        : 0
+    };
   }
 }

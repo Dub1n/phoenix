@@ -21,6 +21,7 @@
 import fs from 'fs';
 import path from 'path';
 import { execSync } from 'child_process';
+import { minimatch } from 'minimatch';
 
 /**
  * MCP Validator implementing IValidator interface
@@ -56,6 +57,22 @@ export class MCPValidator {
       console.log('  Executing MCP Server mandatory validation commands...');
       console.log('  Source: MCP Channel implementation validation requirements');
 
+      // TODO: [TASK-VAL-MCP-FIX-001] Pattern: scope-evaluation-before-hardcoded-paths | Complexity: 7 | Dependencies: minimatch,scope-config
+      // Context: Fix MCP validator to respect scope configuration instead of always checking hardcoded src/mcp-channel path
+      // Validation-Required: scope-pattern-matching, performance-optimization, early-termination
+      // Pattern-Info: { approach: "scope-first-validation", alternatives: "hybrid-validation", trade-offs: "performance-vs-completeness" }
+      
+      // CRITICAL FIX: Check scope configuration before hardcoded path checking
+      const scopeIncludesMCP = this.checkScopeIncludesMCP(scopeConfig);
+      if (!scopeIncludesMCP) {
+        result.status = 'SKIP';
+        result.evidence.push('MCP validation skipped - scope does not include MCP channel files');
+        result.evidence.push(`Scope patterns: ${JSON.stringify(scopeConfig?.patterns || [])}`);
+        result.evidence.push('MCP validator scope: src/mcp-channel/**/*.ts, src/mcp-channel/**/*.js');
+        console.log('  → Skipping MCP validation - scope excludes MCP channel files');
+        return result;
+      }
+
       // Check if MCP Channel exists
       const mcpChannelPath = path.join(projectInfo.path, 'src', 'mcp-channel');
       const hasMCPChannel = fs.existsSync(mcpChannelPath);
@@ -68,22 +85,22 @@ export class MCPValidator {
       }
 
       // Test 1: MCP Channel Unit Tests
-      const unitTest = await this.executeMCPChannelUnitTests(projectInfo, mcpChannelPath);
+      const unitTest = await this.executeMCPChannelUnitTests(projectInfo, mcpChannelPath, options);
       result.tests.push(unitTest);
       result.evidence.push(...unitTest.evidence || []);
 
       // Test 2: MCP Protocol Compliance Build Test  
-      const complianceTest = await this.executeMCPProtocolComplianceTest(projectInfo, mcpChannelPath);
+      const complianceTest = await this.executeMCPProtocolComplianceTest(projectInfo, mcpChannelPath, options);
       result.tests.push(complianceTest);
       result.evidence.push(...complianceTest.evidence || []);
 
       // Test 3: MCP Tool Registration Verification
-      const registrationTest = await this.executeMCPToolRegistrationTest(projectInfo, mcpChannelPath);
+      const registrationTest = await this.executeMCPToolRegistrationTest(projectInfo, mcpChannelPath, options);
       result.tests.push(registrationTest);
       result.evidence.push(...registrationTest.evidence || []);
 
       // Test 4: Session Lifecycle Test
-      const lifecycleTest = await this.executeSessionLifecycleTest(projectInfo, mcpChannelPath);
+      const lifecycleTest = await this.executeSessionLifecycleTest(projectInfo, mcpChannelPath, options);
       result.tests.push(lifecycleTest);
       result.evidence.push(...lifecycleTest.evidence || []);
 
@@ -115,9 +132,46 @@ export class MCPValidator {
   }
 
   /**
+   * Check if scope configuration includes MCP channel files
+   * @param {Object} scopeConfig - Scope configuration with patterns array
+   * @returns {boolean} - True if scope includes MCP files, false otherwise
+   */
+  checkScopeIncludesMCP(scopeConfig) {
+    // If no scope config provided, assume all files are in scope
+    if (!scopeConfig || !scopeConfig.patterns || scopeConfig.patterns.length === 0) {
+      return true;
+    }
+
+    const mcpPatterns = this.scopes; // ['src/mcp-channel/**/*.ts', 'src/mcp-channel/**/*.js']
+    const scopePatterns = scopeConfig.patterns;
+
+    // Check if any scope pattern would include MCP channel files
+    for (const scopePattern of scopePatterns) {
+      for (const mcpPattern of mcpPatterns) {
+        // Test if the scope pattern would match MCP files
+        // Convert glob patterns to test paths
+        const testPaths = [
+          'src/mcp-channel/index.ts',
+          'src/mcp-channel/server.js',
+          'src/mcp-channel/tools/cli-tools.ts',
+          'src/mcp-channel/test/unit.test.js'
+        ];
+
+        for (const testPath of testPaths) {
+          if (minimatch(testPath, scopePattern)) {
+            return true;
+          }
+        }
+      }
+    }
+
+    return false;
+  }
+
+  /**
    * Test 1: MCP Channel Unit Tests (isolated)
    */
-  async executeMCPChannelUnitTests(projectInfo, mcpChannelPath) {
+  async executeMCPChannelUnitTests(projectInfo, mcpChannelPath, options = {}) {
     const testResult = {
       name: 'MCP Channel Unit Tests',
       status: 'PENDING',
@@ -130,10 +184,13 @@ export class MCPValidator {
       const command = 'npm test';
       console.log(`    Executing in MCP Channel: ${command}`);
       
+      // Performance optimization: configurable timeout from options
+      const testTimeout = options.fastMode ? 60000 : 120000; // 1 min for fast mode, 2 min for standard
+      
       const output = execSync(command, { 
         encoding: 'utf8', 
         cwd: mcpChannelPath,
-        timeout: 120000 // 2 minutes for tests
+        timeout: testTimeout
       });
 
       testResult.status = 'PASS';
@@ -157,7 +214,7 @@ export class MCPValidator {
   /**
    * Test 2: MCP Server Protocol Compliance
    */
-  async executeMCPProtocolComplianceTest(projectInfo, mcpChannelPath) {
+  async executeMCPProtocolComplianceTest(projectInfo, mcpChannelPath, options = {}) {
     const testResult = {
       name: 'MCP Protocol Compliance Build Test',
       status: 'PENDING',
@@ -170,10 +227,13 @@ export class MCPValidator {
       const command = 'npm run build';
       console.log(`    Executing MCP build: ${command}`);
       
+      // Performance optimization: configurable timeout from options
+      const buildTimeout = options.fastMode ? 60000 : 120000; // 1 min for fast mode, 2 min for standard
+      
       const output = execSync(command, { 
         encoding: 'utf8', 
         cwd: mcpChannelPath,
-        timeout: 120000
+        timeout: buildTimeout
       });
 
       testResult.status = 'PASS';
@@ -192,7 +252,7 @@ export class MCPValidator {
   /**
    * Test 3: MCP Tool Registration Verification
    */
-  async executeMCPToolRegistrationTest(projectInfo, mcpChannelPath) {
+  async executeMCPToolRegistrationTest(projectInfo, mcpChannelPath, options = {}) {
     const testResult = {
       name: 'MCP Tool Registration Verification',
       status: 'PENDING',
@@ -222,10 +282,13 @@ export class MCPValidator {
       const command = `node -e "${testScript.replace(/"/g, '\\"')}"`;
       console.log(`    Executing MCP tool registration test`);
       
+      // Performance optimization: reduced timeout for registration test
+      const regTimeout = options.fastMode ? 15000 : 30000; // 15s for fast mode, 30s for standard
+      
       const output = execSync(command, { 
         encoding: 'utf8', 
         cwd: projectInfo.path,
-        timeout: 30000
+        timeout: regTimeout
       });
 
       // Check for successful tool registration
@@ -251,7 +314,7 @@ export class MCPValidator {
   /**
    * Test 4: Session Lifecycle Test
    */
-  async executeSessionLifecycleTest(projectInfo, mcpChannelPath) {
+  async executeSessionLifecycleTest(projectInfo, mcpChannelPath, options = {}) {
     const testResult = {
       name: 'Session Lifecycle Test',
       status: 'PENDING',
@@ -298,10 +361,13 @@ export class MCPValidator {
       const command = `node -e "${testScript.replace(/"/g, '\\"')}"`;
       console.log(`    Executing session lifecycle test`);
       
+      // Performance optimization: reduced timeout for lifecycle test
+      const lifecycleTimeout = options.fastMode ? 15000 : 30000; // 15s for fast mode, 30s for standard
+      
       const output = execSync(command, { 
         encoding: 'utf8', 
         cwd: projectInfo.path,
-        timeout: 30000
+        timeout: lifecycleTimeout
       });
 
       // Check for session lifecycle success

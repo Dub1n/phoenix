@@ -1,7 +1,7 @@
 # TASK-SUBAGENT-002 Compilation Fix Guidance
 
 **Date**: 2025-09-06-0110  
-**Task**: Generic Research Agent Implementation  
+**Task**: Generic Analysis Agent Implementation  
 **Status**: [B] implemented-broken  
 **Validation Results**: Critical compilation failures identified  
 

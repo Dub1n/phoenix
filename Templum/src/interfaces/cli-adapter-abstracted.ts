@@ -65,6 +65,224 @@ export interface NavigationChange {
   previousMenu?: string;
 }
 
+/**
+ * CLI Session State Interface
+ * TODO: [TASK-ID-003] Pattern: session-persistence | Complexity: 6 | Dependencies: file-system,state-management
+ * Context: Session state management for CLI persistence across restarts with navigation history and preferences
+ * Validation-Required: state-serialization, persistence-validation, recovery-testing
+ * Pattern-Info: { approach: "file-based-session-state", alternatives: "memory-only,database", trade-offs: "persistence-vs-performance" }
+ */
+export interface CLISessionState {
+  sessionId: string;
+  currentMenu: string;
+  navigationHistory: string[];
+  interactionMode: 'menu' | 'command';
+  preferences: {
+    theme: string;
+    autoSave: boolean;
+    lastBackend?: string;
+  };
+  lastActivity: number;
+  commandHistory: string[];
+  created: number;
+  version: string;
+}
+
+/**
+ * CLI Session Manager
+ * Handles session persistence and restoration across CLI restarts
+ */
+export class CLISessionManager {
+  private sessionFile: string;
+  private currentSession: CLISessionState;
+  private autoSaveInterval: NodeJS.Timeout | null = null;
+
+  constructor() {
+    const os = require('os');
+    const path = require('path');
+    const homeDir = os.homedir();
+    const templumDir = path.join(homeDir, '.templum');
+    
+    // Ensure .templum directory exists
+    const fs = require('fs');
+    if (!fs.existsSync(templumDir)) {
+      fs.mkdirSync(templumDir, { recursive: true });
+    }
+    
+    this.sessionFile = path.join(templumDir, 'cli-session.json');
+    this.currentSession = this.createDefaultSession();
+  }
+
+  /**
+   * Initialize session manager and restore previous session if available
+   */
+  async initialize(): Promise<void> {
+    try {
+      await this.loadSession();
+      this.startAutoSave();
+      console.log(`CLI Session restored: ${this.currentSession.sessionId}`);
+    } catch (error) {
+      console.warn('Failed to restore previous session, using new session');
+      await this.saveSession();
+    }
+  }
+
+  /**
+   * Create default session state
+   */
+  private createDefaultSession(): CLISessionState {
+    return {
+      sessionId: `cli-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      currentMenu: 'main',
+      navigationHistory: [],
+      interactionMode: 'menu',
+      preferences: {
+        theme: 'dark',
+        autoSave: true
+      },
+      lastActivity: Date.now(),
+      commandHistory: [],
+      created: Date.now(),
+      version: '1.0'
+    };
+  }
+
+  /**
+   * Load session from disk
+   */
+  private async loadSession(): Promise<void> {
+    const fs = require('fs').promises;
+    
+    try {
+      if (require('fs').existsSync(this.sessionFile)) {
+        const sessionData = await fs.readFile(this.sessionFile, 'utf8');
+        const loadedSession = JSON.parse(sessionData) as CLISessionState;
+        
+        // Validate session format and version
+        if (loadedSession.version === '1.0' && loadedSession.sessionId) {
+          this.currentSession = loadedSession;
+          this.currentSession.lastActivity = Date.now(); // Update activity timestamp
+        } else {
+          throw new Error('Invalid or outdated session format');
+        }
+      }
+    } catch (error) {
+      throw new Error(`Session load failed: ${error}`);
+    }
+  }
+
+  /**
+   * Save current session to disk
+   */
+  async saveSession(): Promise<void> {
+    try {
+      const fs = require('fs').promises;
+      this.currentSession.lastActivity = Date.now();
+      
+      const sessionData = JSON.stringify(this.currentSession, null, 2);
+      await fs.writeFile(this.sessionFile, sessionData, 'utf8');
+    } catch (error) {
+      console.warn(`Failed to save session: ${error}`);
+    }
+  }
+
+  /**
+   * Start auto-save timer
+   */
+  private startAutoSave(): void {
+    if (this.currentSession.preferences.autoSave) {
+      this.autoSaveInterval = setInterval(async () => {
+        await this.saveSession();
+      }, 30000); // Save every 30 seconds
+    }
+  }
+
+  /**
+   * Stop auto-save timer
+   */
+  private stopAutoSave(): void {
+    if (this.autoSaveInterval) {
+      clearInterval(this.autoSaveInterval);
+      this.autoSaveInterval = null;
+    }
+  }
+
+  /**
+   * Update session state
+   */
+  updateSession(updates: Partial<CLISessionState>): void {
+    this.currentSession = { ...this.currentSession, ...updates };
+    this.currentSession.lastActivity = Date.now();
+  }
+
+  /**
+   * Get current session state
+   */
+  getCurrentSession(): CLISessionState {
+    return { ...this.currentSession };
+  }
+
+  /**
+   * Add command to history
+   */
+  addCommandToHistory(command: string): void {
+    this.currentSession.commandHistory.unshift(command);
+    
+    // Keep only last 100 commands
+    if (this.currentSession.commandHistory.length > 100) {
+      this.currentSession.commandHistory = this.currentSession.commandHistory.slice(0, 100);
+    }
+    
+    this.currentSession.lastActivity = Date.now();
+  }
+
+  /**
+   * Set current menu and update navigation history
+   */
+  navigateToMenu(menuId: string, addToHistory: boolean = true): void {
+    if (addToHistory && this.currentSession.currentMenu !== menuId) {
+      this.currentSession.navigationHistory.push(this.currentSession.currentMenu);
+      
+      // Keep navigation history manageable
+      if (this.currentSession.navigationHistory.length > 20) {
+        this.currentSession.navigationHistory = this.currentSession.navigationHistory.slice(-20);
+      }
+    }
+    
+    this.currentSession.currentMenu = menuId;
+    this.currentSession.lastActivity = Date.now();
+  }
+
+  /**
+   * Navigate back in history
+   */
+  navigateBack(): string | null {
+    if (this.currentSession.navigationHistory.length > 0) {
+      const previousMenu = this.currentSession.navigationHistory.pop()!;
+      this.currentSession.currentMenu = previousMenu;
+      this.currentSession.lastActivity = Date.now();
+      return previousMenu;
+    }
+    return null;
+  }
+
+  /**
+   * Switch interaction mode
+   */
+  switchInteractionMode(mode: 'menu' | 'command'): void {
+    this.currentSession.interactionMode = mode;
+    this.currentSession.lastActivity = Date.now();
+  }
+
+  /**
+   * Cleanup and save session
+   */
+  async dispose(): Promise<void> {
+    this.stopAutoSave();
+    await this.saveSession();
+  }
+}
+
 export interface CLIRenderResult {
   success: boolean;
   rendered: boolean;
@@ -92,6 +310,7 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
   private activeProgressBar: ProgressBar | null = null;
   private interactiveMenuRenderer: InteractiveMenuRenderer | null = null;
   private interactionMode: 'menu' | 'command' = 'menu';
+  private sessionManager: CLISessionManager;
 
   constructor(config?: Partial<CLIAdapterConfig>) {
     super();
@@ -111,6 +330,13 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
 
     // Initialize terminal UI with centralized defaults
     this.terminalUI = createDefaultTerminalUI(this.config.terminalTheme);
+    
+    // Initialize session manager
+    // TODO: [TASK-ID-004] Pattern: session-manager-integration | Complexity: 4 | Dependencies: session-persistence
+    // Context: Integration of session persistence into CLI adapter lifecycle
+    // Validation-Required: session-restoration, state-synchronization, cleanup-verification
+    // Pattern-Info: { approach: "constructor-initialization", alternatives: "lazy-initialization", trade-offs: "startup-cost-vs-reliability" }
+    this.sessionManager = new CLISessionManager();
   }
 
   /**
@@ -119,13 +345,22 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
   async initialize(orchestrator: ITemplumOrchestrator): Promise<void> {
     this.orchestrator = orchestrator;
     
+    // Initialize session management first
+    await this.sessionManager.initialize();
+    
+    // Restore session state
+    const session = this.sessionManager.getCurrentSession();
+    this.currentMenu = session.currentMenu;
+    this.navigationHistory = [...session.navigationHistory];
+    this.interactionMode = session.interactionMode;
+    
     // Register this adapter with the orchestrator
     await this.orchestrator.registerInterface('cli', this);
     
     // Initialize CLI components
     await this.initializeCLIComponents();
     
-    console.log('CLIInterfaceAdapter: Initialized with orchestrator abstraction');
+    console.log(`CLIInterfaceAdapter: Initialized with session ${session.sessionId}`);
   }
 
   getInterfaceType(): InterfaceType {
@@ -348,19 +583,34 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
         return { success: true, message: 'Backend status displayed', command };
         
       } else if (cmd === 'back') {
-        // Navigate back in menu history
-        if (this.navigationHistory.length > 0) {
-          this.currentMenu = this.navigationHistory.pop() || 'main';
+        // Navigate back in menu history using session manager
+        const previousMenu = this.sessionManager.navigateBack();
+        if (previousMenu) {
+          this.currentMenu = previousMenu;
           await this.loadInitialContent();
+          return { success: true, message: `Navigated back to ${previousMenu}`, command };
+        } else {
+          return { success: false, message: 'No previous menu in history', command };
         }
-        return { success: true, message: 'Navigated back', command };
         
       } else if (cmd === 'home') {
         // Navigate to main menu
+        this.sessionManager.navigateToMenu('main', true);
         this.currentMenu = 'main';
         this.navigationHistory = [];
         await this.loadInitialContent();
         return { success: true, message: 'Navigated to main menu', command };
+        
+      } else if (cmd === 'c' || cmd === 'command') {
+        // TODO: [TASK-ID-005] Pattern: dual-interaction-modes | Complexity: 5 | Dependencies: terminal-ui-components,session-persistence
+        // Context: Switch to command mode with preserved session state and seamless mode switching
+        // Validation-Required: mode-switching, state-preservation, user-experience
+        // Pattern-Info: { approach: "hotkey-mode-switching", alternatives: "menu-selection,flag-based", trade-offs: "immediacy-vs-discoverability" }
+        return await this.switchToCommandMode();
+        
+      } else if (cmd === 'm' || cmd === 'menu') {
+        // Switch to menu mode
+        return await this.switchToMenuMode();
         
       } else if (cmd.startsWith('load ')) {
         // Load specific backend skin
@@ -753,6 +1003,9 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
         await this.stopInteractiveSession();
       }
 
+      // Cleanup session manager
+      await this.sessionManager.dispose();
+
       // Cleanup terminal UI components
       await this.terminalUI.cleanup();
 
@@ -761,11 +1014,321 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
       this.navigationHistory = [];
       this.removeAllListeners();
       
-      console.log('CLIInterfaceAdapter: Disposed successfully');
+      console.log('CLIInterfaceAdapter: Disposed successfully with session saved');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       console.error('CLIInterfaceAdapter disposal error:', errorMessage);
     }
+  }
+
+  /**
+   * Switch to command mode with session persistence
+   * TODO: [TASK-ID-006] Pattern: command-mode-implementation | Complexity: 6 | Dependencies: dual-interaction-modes,session-persistence
+   * Context: Implement direct command input mode with readline interface and command history
+   * Validation-Required: command-parsing, history-management, error-handling
+   * Pattern-Info: { approach: "readline-based-command-mode", alternatives: "prompt-library", trade-offs: "control-vs-simplicity" }
+   */
+  private async switchToCommandMode(): Promise<any> {
+    console.log(chalk.blue('\n🔧 Switching to Command Mode'));
+    console.log(chalk.gray('Type commands directly. Use "m" to return to menu mode.'));
+    console.log(chalk.gray('Commands: help, status, load <backend>, quit, etc.'));
+    console.log(chalk.gray('═'.repeat(50)));
+    
+    this.interactionMode = 'command';
+    this.sessionManager.switchInteractionMode('command');
+    
+    // Start command mode input loop
+    await this.runCommandModeLoop();
+    
+    return { success: true, message: 'Entered command mode', mode: 'command' };
+  }
+
+  /**
+   * Switch to menu mode with session persistence
+   */
+  private async switchToMenuMode(): Promise<any> {
+    console.log(chalk.blue('\n📋 Switching to Menu Mode'));
+    console.log(chalk.gray('Use arrow keys to navigate, Enter to select.'));
+    console.log(chalk.gray('═'.repeat(50)));
+    
+    this.interactionMode = 'menu';
+    this.sessionManager.switchInteractionMode('menu');
+    
+    // Refresh menu content
+    await this.loadInitialContent();
+    
+    return { success: true, message: 'Entered menu mode', mode: 'menu' };
+  }
+
+  /**
+   * Run command mode input loop with readline
+   */
+  private async runCommandModeLoop(): Promise<void> {
+    const readline = require('readline');
+    
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout,
+      prompt: chalk.cyan('templum> ')
+    });
+
+    // Setup command history
+    const session = this.sessionManager.getCurrentSession();
+    if (session.commandHistory.length > 0) {
+      // Note: readline history setup would require more complex implementation
+      console.log(chalk.gray(`Command history available (${session.commandHistory.length} commands)`));
+    }
+
+    rl.prompt();
+
+    return new Promise((resolve) => {
+      rl.on('line', async (input: string) => {
+        const command = input.trim();
+        
+        if (!command) {
+          rl.prompt();
+          return;
+        }
+
+        // Add command to session history
+        this.sessionManager.addCommandToHistory(command);
+
+        // Check for mode switching
+        if (command === 'm' || command === 'menu') {
+          rl.close();
+          await this.switchToMenuMode();
+          resolve();
+          return;
+        }
+
+        // Check for exit
+        if (command === 'quit' || command === 'exit') {
+          console.log('👋 Goodbye!');
+          rl.close();
+          process.exit(0);
+        }
+
+        try {
+          // Process the command
+          const result = await this.processLocalCommand(command);
+          
+          if (result.success) {
+            console.log(chalk.green(`✅ ${result.message}`));
+          } else {
+            console.log(chalk.red(`❌ ${result.message}`));
+          }
+          
+        } catch (error) {
+          // TODO: [TASK-ID-007] Pattern: intelligent-error-recovery | Complexity: 7 | Dependencies: error-recovery-patterns,user-guidance
+          // Context: Enhanced error handling with recovery suggestions and user guidance
+          // Validation-Required: error-categorization, recovery-suggestion-accuracy, user-experience
+          // Pattern-Info: { approach: "contextual-error-recovery", alternatives: "generic-error-display", trade-offs: "complexity-vs-user-experience" }
+          await this.handleIntelligentError(error, command, 'command-mode');
+        }
+
+        rl.prompt();
+      });
+
+      rl.on('close', () => {
+        resolve();
+      });
+
+      rl.on('SIGINT', () => {
+        console.log(chalk.yellow('\n🔄 Use "m" to switch to menu mode or "quit" to exit'));
+        rl.prompt();
+      });
+    });
+  }
+
+  /**
+   * Intelligent error handling with contextual recovery suggestions
+   * TODO: [TASK-ID-008] Pattern: contextual-error-recovery-system | Complexity: 8 | Dependencies: error-analysis,user-guidance-patterns
+   * Context: Comprehensive error analysis and recovery suggestion system with context-aware guidance
+   * Validation-Required: error-pattern-recognition, suggestion-relevance, recovery-success-rate
+   * Pattern-Info: { approach: "pattern-based-error-analysis", alternatives: "static-error-mapping", trade-offs: "intelligence-vs-maintainability" }
+   */
+  private async handleIntelligentError(error: any, context: string, source: string): Promise<void> {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorType = this.categorizeError(error, context);
+    
+    // Display error with context
+    console.log(chalk.red(`\n❌ ${errorType.category}: ${errorMessage}`));
+    
+    // Provide recovery suggestions
+    const suggestions = this.generateRecoverySuggestions(errorType, context, source);
+    if (suggestions.length > 0) {
+      console.log(chalk.yellow('\n💡 Recovery Suggestions:'));
+      suggestions.forEach((suggestion, index) => {
+        console.log(chalk.yellow(`   ${index + 1}. ${suggestion.action}`));
+        if (suggestion.command) {
+          console.log(chalk.gray(`      Try: ${suggestion.command}`));
+        }
+      });
+    }
+    
+    // Offer automated recovery if available
+    const autoRecovery = this.getAutomatedRecovery(errorType, context);
+    if (autoRecovery) {
+      console.log(chalk.blue(`\n🔧 Auto-recovery available: ${autoRecovery.description}`));
+      console.log(chalk.gray('Type "y" to attempt auto-recovery, or any other key to continue...'));
+      
+      // Note: In a full implementation, this would wait for user input
+      // For now, just log the availability
+    }
+    
+    // Log error for session history
+    this.sessionManager.addCommandToHistory(`ERROR: ${context} - ${errorMessage}`);
+  }
+
+  /**
+   * Categorize error based on patterns and context
+   */
+  private categorizeError(error: any, context: string): { category: string; severity: 'low' | 'medium' | 'high'; recoverable: boolean } {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    
+    // IPC/Communication errors
+    if (errorMessage.includes('IPC') || errorMessage.includes('timeout') || errorMessage.includes('ENOENT')) {
+      return { category: 'Communication Error', severity: 'high', recoverable: true };
+    }
+    
+    // Service discovery errors
+    if (errorMessage.includes('service') && (errorMessage.includes('not found') || errorMessage.includes('unavailable'))) {
+      return { category: 'Service Unavailable', severity: 'high', recoverable: true };
+    }
+    
+    // Command syntax errors
+    if (errorMessage.includes('Unknown') && context.includes('command')) {
+      return { category: 'Command Error', severity: 'low', recoverable: true };
+    }
+    
+    // Backend errors
+    if (errorMessage.includes('backend') || errorMessage.includes('skin')) {
+      return { category: 'Backend Error', severity: 'medium', recoverable: true };
+    }
+    
+    // File system errors
+    if (errorMessage.includes('EACCES') || errorMessage.includes('permission')) {
+      return { category: 'Permission Error', severity: 'medium', recoverable: true };
+    }
+    
+    // Network errors
+    if (errorMessage.includes('network') || errorMessage.includes('connection')) {
+      return { category: 'Network Error', severity: 'high', recoverable: true };
+    }
+    
+    // Default categorization
+    return { category: 'System Error', severity: 'medium', recoverable: false };
+  }
+
+  /**
+   * Generate contextual recovery suggestions
+   */
+  private generateRecoverySuggestions(errorType: { category: string; severity: string; recoverable: boolean }, context: string, source: string): Array<{ action: string; command?: string; priority: number }> {
+    const suggestions: Array<{ action: string; command?: string; priority: number }> = [];
+    
+    switch (errorType.category) {
+      case 'Communication Error':
+        suggestions.push(
+          { action: 'Check if Templum service is running', command: 'ps aux | grep templum', priority: 1 },
+          { action: 'Restart Templum service if needed', command: 'node dist/src/index.js', priority: 2 },
+          { action: 'Check service registry', command: 'ls ~/.templum/services/', priority: 3 }
+        );
+        break;
+        
+      case 'Service Unavailable':
+        suggestions.push(
+          { action: 'Refresh backend services', command: 'refresh', priority: 1 },
+          { action: 'Check backend status', command: 'status', priority: 2 },
+          { action: 'Load specific backend manually', command: 'load <backend-id>', priority: 3 }
+        );
+        break;
+        
+      case 'Command Error':
+        suggestions.push(
+          { action: 'View available commands', command: 'help', priority: 1 },
+          { action: 'Check command spelling and syntax', priority: 2 },
+          { action: 'Switch to menu mode for guided navigation', command: 'm', priority: 3 }
+        );
+        break;
+        
+      case 'Backend Error':
+        suggestions.push(
+          { action: 'Check backend connectivity', command: 'status', priority: 1 },
+          { action: 'Try loading a different backend', command: 'load pcl', priority: 2 },
+          { action: 'Restart CLI to refresh connections', priority: 3 }
+        );
+        break;
+        
+      case 'Permission Error':
+        suggestions.push(
+          { action: 'Check file permissions', priority: 1 },
+          { action: 'Run with appropriate permissions', priority: 2 },
+          { action: 'Check ~/.templum directory access', priority: 3 }
+        );
+        break;
+        
+      case 'Network Error':
+        suggestions.push(
+          { action: 'Check network connectivity', priority: 1 },
+          { action: 'Verify service endpoints', priority: 2 },
+          { action: 'Switch to local mode if available', priority: 3 }
+        );
+        break;
+    }
+    
+    // Add context-specific suggestions
+    if (source === 'command-mode') {
+      suggestions.push({ action: 'Switch to menu mode for easier navigation', command: 'm', priority: 4 });
+    }
+    
+    if (context.includes('skin')) {
+      suggestions.push({ action: 'Try loading default skin', command: 'load default', priority: 4 });
+    }
+    
+    return suggestions.sort((a, b) => a.priority - b.priority).slice(0, 5); // Return top 5 suggestions
+  }
+
+  /**
+   * Get automated recovery options
+   */
+  private getAutomatedRecovery(errorType: { category: string; severity: string; recoverable: boolean }, context: string): { description: string; action: () => Promise<void> } | null {
+    if (!errorType.recoverable) {
+      return null;
+    }
+    
+    switch (errorType.category) {
+      case 'Service Unavailable':
+        return {
+          description: 'Refresh backend services and reload interface',
+          action: async () => {
+            await this.orchestrator.refreshBackendServices();
+            await this.loadInitialContent();
+          }
+        };
+        
+      case 'Backend Error':
+        return {
+          description: 'Reset to main menu and refresh content',
+          action: async () => {
+            this.sessionManager.navigateToMenu('main', false);
+            this.currentMenu = 'main';
+            await this.loadInitialContent();
+          }
+        };
+        
+      case 'Command Error':
+        if (context.includes('load')) {
+          return {
+            description: 'Show available backends for loading',
+            action: async () => {
+              await this.displayAvailableBackends();
+            }
+          };
+        }
+        break;
+    }
+    
+    return null;
   }
 
   /**

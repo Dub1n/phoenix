@@ -1,0 +1,176 @@
+{
+  "template_type": "task-analysis-selection",
+  "description": "Comprehensive project discovery, task selection, and implementation planning with bulletproof error handling",
+  "parameters": ["{input_type}", "{project}", "{task_id}", "{description}", "{continue_context}"],
+  "target_agent": "Analysis Agent",
+  "communication_type": "chained",
+  "context": {
+    "task_description": "Execute comprehensive task analysis and selection using bulletproof project discovery with all defensive programming principles from /pr:task logic",
+    "requirements": [
+      "DEFENSIVE: Validate all input parameters before proceeding - check formats, existence, and completeness",
+      "DISCOVERY: Execute multi-pattern project detection with comprehensive fallback algorithms",
+      "SELECTION: Apply task selection algorithms with priority formulas and systematic decision trees",
+      "ANALYSIS: Perform pattern discovery and complexity assessment with confidence scoring",
+      "PLANNING: Generate comprehensive implementation context for execution phase",
+      "VALIDATION: Verify all analysis results meet quality thresholds before handoff creation"
+    ],
+    "constraints": [
+      "Must handle all input modes: project_only, task_id, description, continue",
+      "Must work across all project types: Templum, Haruspex, phoenix-code-lite, repo-agnostic",
+      "Must preserve existing task selection logic and priority formulas exactly",
+      "Must provide fallback strategies for all potential failure scenarios",
+      "Must include confidence scoring and escalation protocols"
+    ],
+    "defensive_programming": {
+      "input_validation": [
+        "Validate input_type matches expected values: project_only|task_id|description|continue",
+        "Check project name format and validate against known project structures",
+        "Verify task_id format matches TASK-ID pattern if provided",
+        "Validate description length and content if provided",
+        "Check continue_context structure and completeness if provided"
+      ],
+      "project_discovery": [
+        "Execute primary project detection using standard directory structures",
+        "Implement fallback search patterns for non-standard project layouts",
+        "Validate project structure integrity before proceeding",
+        "Check file permissions for all required project files",
+        "Provide clear error messages when project detection fails"
+      ],
+      "file_operations": [
+        "Always check file existence before attempting to read",
+        "Verify directory permissions before file access",
+        "Use absolute paths in all file operations and handoff data",
+        "Implement timeout handling for file operations",
+        "Validate file content format before parsing"
+      ]
+    },
+    "project_discovery_algorithm": {
+      "primary_detection": [
+        "Check for {project}/src/ directory structure",
+        "Look for {project}/dev/{project}-active-tasks.md",
+        "Verify {project}/dev/{project}-patterns.md exists",
+        "Validate project-specific validation script locations"
+      ],
+      "repo_agnostic_detection": [
+        "Check for .claude/ subdirectories (mcp-integration, agents)",
+        "Look for .templum/ service configurations", 
+        "Search for active-tasks files in known locations",
+        "Validate repo-level pattern files and documentation"
+      ],
+      "fallback_strategies": [
+        "Execute global search for *-active-tasks.md files",
+        "Search for project indicators in directory names",
+        "Look for package.json or similar configuration files",
+        "Use filename patterns to infer project structure"
+      ],
+      "error_handling": [
+        "Provide specific error messages for each failure mode",
+        "Include suggested recovery actions for common issues",
+        "List all search locations attempted for debugging",
+        "Escalate to manual intervention with complete context"
+      ]
+    },
+    "task_selection_algorithm": {
+      "priority_formula": "Quick Priority = Impact + Feasibility + Blocking (each 1-5, total 3-15)",
+      "selection_hierarchy": [
+        "1. [TASK-ID] provided: Direct task selection with validation",
+        "2. [!] Priority Override: User-specified high-priority tasks",
+        "3. [n] Sequenced Tasks: Follow numerical sequence",
+        "4. [~] In Progress: Continue existing implementation",
+        "5. [ ] Pending Tasks: Priority-based selection with scoring",
+        "6. Fallback: Strategic roadmap consultation"
+      ],
+      "edge_case_handling": [
+        "No available tasks: Check investigation queue and roadmap",
+        "Multiple equal-priority: Apply secondary criteria and dependency analysis",
+        "Invalid task-id: Provide similar task suggestions and format examples",
+        "Malformed task data: Attempt recovery and provide clear error context"
+      ]
+    },
+    "pattern_analysis_framework": {
+      "discovery_process": [
+        "Locate pattern files using systematic search patterns",
+        "Parse pattern content and extract usage information",
+        "Match task requirements against available patterns",
+        "Assess implementation complexity and dependencies"
+      ],
+      "matching_algorithms": [
+        "Keyword-based matching for task-related terms",
+        "Context-based matching for architectural patterns",
+        "Dependency analysis for pattern prerequisites",
+        "Complexity assessment for pattern application"
+      ],
+      "confidence_scoring": [
+        "Pattern relevance: 0-100 based on keyword and context matching",
+        "Implementation feasibility: 0-100 based on complexity and dependencies",
+        "Success probability: 0-100 based on pattern maturity and usage history",
+        "Overall confidence: Weighted average with quality thresholds"
+      ]
+    },
+    "escalation_protocols": {
+      "confidence_thresholds": [
+        "High confidence: >85% - Proceed with implementation",
+        "Medium confidence: 70-85% - Proceed with warnings and monitoring",
+        "Low confidence: <70% - Escalate to manual review before proceeding"
+      ],
+      "complexity_assessment": [
+        "Simple tasks (≤10 complexity): Direct implementation approach",
+        "Complex tasks (>10 complexity): Systematic analysis and planning required",
+        "Critical tasks: Additional validation and review checkpoints"
+      ],
+      "simplicity_checks": [
+        "Is this really architectural complexity or just refactoring?",
+        "Can the simplest solution work without over-engineering?",
+        "Are we treating method changes as system design issues?",
+        "Does this require >30 minutes to understand or >5 file changes?"
+      ]
+    },
+    "success_criteria": [
+      "Exactly one task selected with complete implementation context",
+      "All project files located and validated for accessibility",
+      "Pattern analysis completed with confidence scoring >70%",
+      "Implementation approach determined with complexity assessment",
+      "Comprehensive handoff data prepared for execution phase",
+      "All quality thresholds met and validation checkpoints passed"
+    ],
+    "failure_handling": [
+      "Project detection failure: Provide search results and manual discovery options",
+      "Task selection failure: List available tasks and selection criteria",
+      "Pattern analysis failure: Proceed with generic approach and flag for manual review",
+      "Low confidence results: Escalate to manual intervention with analysis context",
+      "File access issues: Provide specific error details and recovery suggestions"
+    ]
+  },
+  "execution_phases": {
+    "phase_1_validation": [
+      "Validate all input parameters against expected formats",
+      "Check parameter completeness and logical consistency",
+      "Provide clear error messages with examples for invalid inputs",
+      "Confirm workflow variant can be determined from inputs"
+    ],
+    "phase_2_discovery": [
+      "Execute systematic project discovery with multiple search patterns",
+      "Validate project structure and required file accessibility",
+      "Load project context and verify file format integrity",
+      "Confirm project compatibility with requested operations"
+    ],
+    "phase_3_selection": [
+      "Apply appropriate task selection method based on inputs",
+      "Execute priority algorithms and systematic scoring",
+      "Handle edge cases and provide fallback selection options",
+      "Validate selected task exists and is actionable"
+    ],
+    "phase_4_analysis": [
+      "Discover relevant patterns using systematic search algorithms",
+      "Assess pattern applicability and implementation requirements",
+      "Evaluate complexity and determine implementation approach",
+      "Generate confidence scoring and quality assessments"
+    ],
+    "phase_5_planning": [
+      "Prepare comprehensive execution context for implementation",
+      "Structure handoff data with all required information",
+      "Apply escalation protocols and validation checkpoints", 
+      "Confirm analysis completeness and handoff creation"
+    ]
+  }
+}

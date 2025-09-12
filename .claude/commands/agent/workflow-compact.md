@@ -28,7 +28,7 @@ Replaces three-prompt system with unified agent orchestration.
 
 1. Read active-tasks.md to find task state
 2. Check basic resource availability
-3. **IMMEDIATELY DELEGATE TO RESEARCHAGENT**
+3. **IMMEDIATELY DELEGATE TO Analysis Agent**
 
 **ASSESSMENT LIMIT**: Maximum 2 file reads, then delegate
 
@@ -43,28 +43,28 @@ Replaces three-prompt system with unified agent orchestration.
 
 ### **DELEGATION REQUIREMENTS**
 
-**ResearchAgent**: **ALL ANALYSIS AND PLANNING**
+**Analysis Agent**: **ALL ANALYSIS AND PLANNING**
 
 - Task state assessment
 - Requirement analysis
 - Implementation planning
 - Resource coordination
 
-**ExecutionAgent**: **ALL CODE IMPLEMENTATION**  
+**Execution Agent**: **ALL CODE IMPLEMENTATION**  
 
 - Code writing
 - File modifications
 - System changes
 - Technical implementation
 
-**ValidationAgent**: **ALL TESTING AND VALIDATION**
+**Validation Agent**: **ALL TESTING AND VALIDATION**
 
 - Test execution
 - Quality checking
 - Validation procedures
 - Result verification
 
-**DocumentationAgent**: **ALL DOCUMENTATION**
+**Documentation Agent**: **ALL DOCUMENTATION**
 
 - Documentation creation
 - Pattern updates
@@ -75,26 +75,26 @@ Replaces three-prompt system with unified agent orchestration.
 
 **Task States → Agent Delegation**:
 
-- **NOT_EXISTS + description** → **ResearchAgent** (create and implement)
-- **PENDING [ ]** → **ResearchAgent** (analyze and delegate)
-- **IN_PROGRESS [~]** → **ResearchAgent** (assess next steps)
-- **TESTING_READY [T]** → **ValidationAgent** (test directly)
-- **BROKEN [B]** → **ResearchAgent** (analyze and fix)
+- **NOT_EXISTS + description** → **Analysis Agent** (create and implement)
+- **PENDING [ ]** → **Analysis Agent** (analyze and delegate)
+- **IN_PROGRESS [~]** → **Analysis Agent** (assess next steps)
+- **TESTING_READY [T]** → **Validation Agent** (test directly)
+- **BROKEN [B]** → **Analysis Agent** (analyze and fix)
 - **COMPLETED [x]** → **Verify and exit**
-- **--validate-only** → **ValidationAgent** (direct delegation)
-- **--document-only** → **DocumentationAgent** (direct delegation)
+- **--validate-only** → **Validation Agent** (direct delegation)
+- **--document-only** → **Documentation Agent** (direct delegation)
 
 **CRITICAL**: You assess task state, then **IMMEDIATELY DELEGATE**
 
 ## **STEP 3: AGENT DELEGATION COMMANDS**
 
-### **ResearchAgent Delegation**
+### **Analysis Agent Delegation**
 
 **DELEGATE WITH**:
 
 ```javascript
 Task({
-  subagent_type: "ResearchAgent", 
+  subagent_type: "Analysis Agent", 
   description: "Complete task analysis",
   prompt: `Task: ${taskId || description}
            Project: ${project}
@@ -110,13 +110,13 @@ Task({
 - Specify agent approach
 - Micromanage agent decisions
 
-### **ExecutionAgent Delegation**
+### **Execution Agent Delegation**
 
 **DELEGATE WITH**:
 
 ```javascript
 Task({
-  subagent_type: "ExecutionAgent",
+  subagent_type: "Execution Agent",
   description: "Execute task implementation", 
   prompt: `Task: ${taskId}
            Project: ${project}
@@ -132,13 +132,13 @@ Task({
 - Provide technical instructions
 - Micromanage code modifications
 
-### **ValidationAgent Delegation**
+### **Validation Agent Delegation**
 
 **DELEGATE WITH**:
 
 ```javascript
 Task({
-  subagent_type: "ValidationAgent",
+  subagent_type: "Validation Agent",
   description: "Validate task completion", 
   prompt: `Task: ${taskId}
            Project: ${project}
@@ -154,13 +154,13 @@ Task({
 - List resource availability details
 - Provide validation instructions
 
-### **DocumentationAgent Delegation**
+### **Documentation Agent Delegation**
 
 **DELEGATE WITH**:
 
 ```javascript
 Task({
-  subagent_type: "DocumentationAgent",
+  subagent_type: "Documentation Agent",
   description: "Document task completion",
   prompt: `Task: ${taskId}
            Project: ${project}
@@ -204,10 +204,10 @@ Task({
 
 ### **AGENTS HANDLE ALL RECOVERY**
 
-**ResearchAgent**: Handles analysis failures
-**ExecutionAgent**: Handles implementation failures
-**ValidationAgent**: Handles testing failures
-**DocumentationAgent**: Handles documentation failures
+**Analysis Agent**: Handles analysis failures
+**Execution Agent**: Handles implementation failures
+**Validation Agent**: Handles testing failures
+**Documentation Agent**: Handles documentation failures
 
 ### **YOUR ERROR HANDLING**
 
@@ -260,7 +260,7 @@ Task({
 **YOUR ACTIONS**:
 
 1. Check task doesn't exist in active-tasks.md
-2. **IMMEDIATELY DELEGATE** to ResearchAgent
+2. **IMMEDIATELY DELEGATE** to Analysis Agent
 3. Process agent responses and route as needed
 
 ### **Example 2: Testing Ready Task**
@@ -272,8 +272,8 @@ Task({
 **YOUR ACTIONS**:
 
 1. Find task status [T] in active-tasks.md
-2. **IMMEDIATELY DELEGATE** to ValidationAgent  
-3. Route to DocumentationAgent on success
+2. **IMMEDIATELY DELEGATE** to Validation Agent  
+3. Route to Documentation Agent on success
 
 ### **Example 3: Pending Task**
 
@@ -284,7 +284,7 @@ Task({
 **YOUR ACTIONS**:
 
 1. Find task status [ ] in active-tasks.md
-2. **IMMEDIATELY DELEGATE** to ResearchAgent
+2. **IMMEDIATELY DELEGATE** to Analysis Agent
 3. Follow agent routing recommendations
 
 **CRITICAL**: You assess, delegate, orchestrate - **NEVER ANALYZE OR IMPLEMENT**

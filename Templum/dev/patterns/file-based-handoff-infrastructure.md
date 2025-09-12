@@ -144,5 +144,5 @@ Related Patterns
 Used By Active Tasks
 
 - **TASK-SUBAGENT-001**: File-Based Handoff Infrastructure Setup ✅ **COMPLETED**
-- **TASK-SUBAGENT-002**: Generic Research Agent Implementation (implemented-testing)
+- **TASK-SUBAGENT-002**: Generic Analysis Agent Implementation (implemented-testing)
 - **TASK-SUBAGENT-004**: Generic Execution Agent Implementation (planned)

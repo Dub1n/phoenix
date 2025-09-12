@@ -1,0 +1,240 @@
+{
+  "chain_handoff_format_v1.4": {
+    "format_version": "1.4.0",
+    "format_name": "Chain Engineer Speed-Optimized Handoff Format",
+    "design_philosophy": "Rapid execution tracking focused on speed optimization and delivery performance",
+    
+    "velocity_core": {
+      "description": "Core speed and timing metrics for rapid execution tracking",
+      "design_time_seconds": {
+        "type": "number",
+        "description": "Total time spent designing the chain (target: <120 seconds)",
+        "target_threshold": 120,
+        "critical_threshold": 180
+      },
+      "pattern_selection_time": {
+        "type": "number", 
+        "description": "Time to select and apply pattern template (target: <30 seconds)",
+        "target_threshold": 30
+      },
+      "customization_time": {
+        "type": "number",
+        "description": "Time spent customizing the selected pattern (target: <45 seconds)",
+        "target_threshold": 45
+      },
+      "total_chain_duration_minutes": {
+        "type": "number",
+        "description": "Estimated total execution time for the chain",
+        "efficiency_rating": "calculated_vs_actual_performance"
+      },
+      "speed_optimization_score": {
+        "type": "number",
+        "range": "1-10",
+        "description": "Overall speed optimization rating (10 = maximum speed achieved)"
+      }
+    },
+
+    "pattern_execution": {
+      "description": "Template and pattern performance data for speed optimization",
+      "selected_pattern": {
+        "type": "string",
+        "enum": ["fast_sequential", "standard_parallel", "quick_hybrid", "emergency_simple"],
+        "description": "Core pattern used from speed-optimized library"
+      },
+      "pattern_confidence": {
+        "type": "string",
+        "enum": ["high", "medium"],
+        "description": "Confidence in pattern selection (only high/medium used for speed)"
+      },
+      "template_customizations": {
+        "type": "array",
+        "description": "List of essential customizations made to base template",
+        "items": {
+          "customization_type": "string",
+          "time_impact_seconds": "number",
+          "necessity_rating": "essential|helpful|optional"
+        }
+      },
+      "heuristic_decisions": {
+        "type": "array",
+        "description": "Quick decisions made using heuristics vs full analysis",
+        "items": {
+          "decision_point": "string",
+          "heuristic_used": "string", 
+          "time_saved_seconds": "number",
+          "confidence_level": "high|medium"
+        }
+      },
+      "fallback_usage": {
+        "type": "boolean",
+        "description": "Whether emergency simple pattern was used as fallback"
+      }
+    },
+
+    "execution_efficiency": {
+      "description": "Resource utilization and parallel execution optimization data",
+      "agent_utilization": {
+        "total_agents_deployed": "number",
+        "parallel_execution_phases": "number",
+        "sequential_dependency_count": "number",
+        "resource_efficiency_score": "number (1-10)"
+      },
+      "batch_optimization": {
+        "batch_size_used": "number",
+        "batch_efficiency_rating": "optimal|good|acceptable",
+        "parallel_processing_effectiveness": "number (1-10)"
+      },
+      "timeout_strategy": {
+        "base_timeout_seconds": "number",
+        "complexity_multiplier": "number",
+        "timeout_optimization_applied": "boolean",
+        "timeout_efficiency_score": "number (1-10)"
+      }
+    },
+
+    "speed_vs_quality_balance": {
+      "description": "Trade-offs made prioritizing speed over exhaustive optimization",
+      "quality_shortcuts_applied": {
+        "type": "array",
+        "items": {
+          "shortcut_type": "string",
+          "quality_impact": "minimal|moderate|acceptable",
+          "time_saved_minutes": "number",
+          "success_probability_impact": "number (percentage)"
+        }
+      },
+      "80_20_rule_application": {
+        "optimization_percentage_achieved": "number (target: 80)",
+        "analysis_time_percentage": "number (target: 20)",
+        "efficiency_ratio": "number"
+      },
+      "good_enough_decisions": {
+        "type": "array",
+        "description": "Decisions where 'good enough' was chosen over perfect",
+        "items": {
+          "decision_area": "string",
+          "good_enough_threshold": "string",
+          "time_saved": "number"
+        }
+      }
+    },
+
+    "recovery_performance": {
+      "description": "Error handling and adaptation speed metrics",
+      "error_recovery_strategies": {
+        "primary_strategy": "extend_timeout_50_percent|reduce_scope_and_retry|switch_to_sequential",
+        "average_recovery_time_seconds": "number",
+        "recovery_success_rate": "number (percentage)"
+      },
+      "adaptation_speed": {
+        "pattern_switching_time": "number",
+        "resource_reallocation_time": "number",
+        "scope_reduction_time": "number"
+      },
+      "resilience_score": {
+        "type": "number",
+        "range": "1-10", 
+        "description": "How quickly chain adapts to unexpected conditions"
+      }
+    },
+
+    "delivery_impact": {
+      "description": "User-facing results and satisfaction with speed-first approach",
+      "delivery_metrics": {
+        "time_to_first_result_minutes": "number",
+        "user_satisfaction_with_speed": "number (1-10)",
+        "quality_acceptability_rating": "number (1-10)",
+        "would_choose_speed_again": "boolean"
+      },
+      "business_value": {
+        "faster_iteration_cycles": "boolean",
+        "reduced_decision_paralysis": "boolean", 
+        "increased_throughput": "boolean",
+        "user_preference_speed_vs_perfection": "speed_preferred|perfection_preferred|balanced"
+      }
+    },
+
+    "optimization_insights": {
+      "description": "Lessons learned for improving future speed optimization",
+      "pattern_performance_insights": {
+        "most_effective_pattern": "string",
+        "fastest_customization_approaches": "array",
+        "optimal_decision_shortcuts": "array"
+      },
+      "speed_bottlenecks_identified": {
+        "type": "array",
+        "items": {
+          "bottleneck_area": "string",
+          "time_impact_seconds": "number",
+          "improvement_suggestion": "string"
+        }
+      },
+      "template_enhancement_opportunities": {
+        "type": "array",
+        "description": "Ways to make templates even faster to apply",
+        "items": {
+          "enhancement_type": "string",
+          "potential_time_savings": "number",
+          "implementation_effort": "low|medium|high"
+        }
+      },
+      "next_iteration_improvements": {
+        "speed_optimization_priorities": "array",
+        "pattern_library_updates": "array", 
+        "heuristic_refinements": "array"
+      }
+    },
+
+    "handoff_execution_data": {
+      "description": "Specific data for agent execution and coordination",
+      "agent_task_distribution": {
+        "type": "array",
+        "items": {
+          "agent_type": "string",
+          "task_count": "number",
+          "estimated_duration_minutes": "number",
+          "dependency_chain_position": "number"
+        }
+      },
+      "handoff_strategy": {
+        "strategy_type": "chained_handoff|standalone_execution|hybrid_approach",
+        "coordination_overhead_minutes": "number",
+        "handoff_efficiency_score": "number (1-10)"
+      },
+      "execution_readiness": {
+        "all_dependencies_mapped": "boolean",
+        "resource_availability_confirmed": "boolean",
+        "error_recovery_plan_ready": "boolean",
+        "ready_for_immediate_execution": "boolean"
+      }
+    },
+
+    "metadata": {
+      "chain_id": "string",
+      "timestamp": "ISO 8601 datetime",
+      "user_request_complexity": "number (1-5)",
+      "engineer_confidence": "high|medium",
+      "format_compliance_version": "1.4.0",
+      "speed_optimization_enabled": true,
+      "design_approach": "speed_first_heuristic_driven"
+    }
+  },
+
+  "design_rationale": {
+    "speed_first_philosophy": "Every field directly supports faster chain design and execution",
+    "actionable_metrics": "All data points inform concrete speed optimization decisions",
+    "heuristic_emphasis": "Tracks where quick decisions outperformed exhaustive analysis",
+    "template_performance": "Focuses on pattern effectiveness for rapid deployment",
+    "user_value_focus": "Prioritizes delivery speed and user satisfaction over theoretical optimization",
+    "recovery_speed": "Emphasizes rapid adaptation over comprehensive error analysis",
+    "continuous_improvement": "Structured to drive faster iterations in future chain designs"
+  },
+
+  "usage_guidelines": {
+    "when_to_use": "All Chain Engineer v1.4 handoffs requiring speed optimization tracking",
+    "completion_time_target": "Format should be filled in <60 seconds post-execution",
+    "focus_areas": "Prioritize velocity_core, pattern_execution, and delivery_impact sections",
+    "optimization_cycle": "Use optimization_insights to improve next chain design speed",
+    "quality_threshold": "Accept 'good enough' data over perfect measurements for speed"
+  }
+}

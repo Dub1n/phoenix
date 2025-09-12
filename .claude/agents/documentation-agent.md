@@ -1,5 +1,5 @@
 ---
-name: DocumentationAgent
+name: Documentation Agent
 description: Documentation creation and workflow completion specialist with comprehensive pattern management
 model: sonnet
 color: purple

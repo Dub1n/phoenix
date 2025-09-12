@@ -2,7 +2,7 @@
 date-created: 2025-09-06-0000
 last-updated: 2025-09-11-0000
 name: generic-agent-template
-description: Project-agnostic research agents with context isolation and file-based handoff communication
+description: Project-agnostic Analysis Agents with context isolation and file-based handoff communication
 status: established
 category: foundation
 use-when: 
@@ -29,7 +29,7 @@ related-patterns:
 
 ### Generic Agent Template Pattern: Overview
 
-**Problem**: Need for project-agnostic research agents that can operate with context isolation across VDL_Vault projects without polluting main agent context during research phases.
+**Problem**: Need for project-agnostic Analysis Agents that can operate with context isolation across VDL_Vault projects without polluting main agent context during research phases.
 
 **Solution**: File-based handoff communication with standardized agent template enabling cross-project reusability through generic implementation approach.
 
@@ -47,7 +47,7 @@ export interface GenericAgentTemplate {
   handoffOutput: HandoffOutput;   // Structured JSON output to file
   
   // Execution Parameters
-  executionTimeout: number;       // 300 seconds for research agents
+  executionTimeout: number;       // 300 seconds for Analysis Agents
   contextLimit: number;           // 50K tokens maximum
   confidenceThreshold: number;    // 0.7 minimum for results
   
@@ -119,11 +119,11 @@ class AgentErrorHandler {
 
 ### Generic Agent Template Pattern: Usage Examples
 
-**1. Project-Agnostic Research Agent**:
+**1. Project-Agnostic Analysis Agent**:
 
 ```typescript
 // .claude/agents/research-agent.md
-export class ResearchAgent implements GenericAgentTemplate {
+export class Analysis Agent implements GenericAgentTemplate {
   async execute(input: HandoffInput): Promise<HandoffOutput> {
     try {
       // Pattern matching with project context
@@ -285,7 +285,7 @@ export const TEMPLUM_AGENT_CONFIG = {
 
 **Performance Standards**:
 
-- **Execution Time**: <5 minutes for research agents, <10 minutes for execution agents
+- **Execution Time**: <5 minutes for Analysis Agents, <10 minutes for execution agents
 - **Error Recovery**: <5% fallback activation rate under normal conditions
 - **Resource Cleanup**: 100% cleanup rate, no memory leaks
 - **Cross-Project Compatibility**: Works across all VDL_Vault projects without modification
@@ -327,7 +327,7 @@ const PROJECT_INTEGRATIONS = {
 class WorkflowIntegration {
   async enhancedTaskSelection(projectName: string, complexity: number): Promise<TaskSelection> {
     if (complexity > 5 || this.requiresResearch(projectName)) {
-      // Delegate to ResearchAgent
+      // Delegate to Analysis Agent
       const taskId = await this.handoffManager.createResearchHandoff({
         projectName,
         researchType: 'task-selection',
@@ -346,7 +346,7 @@ class WorkflowIntegration {
 
 ### Generic Agent Template Pattern: Implementation Feedback
 
-- **[2025-09-06] - [TASK-SUBAGENT-002]**: Successfully implemented Generic Research Agent with complete TypeScript strict mode compliance. Achieved all success criteria: <5 minute execution timeout (✓), >80% pattern relevance scoring (✓), complete context isolation through file-based handoff (✓), comprehensive error handling with retry mechanisms (✓), cross-project reusability confirmed across VDL_Vault projects (✓). Key technical challenges: TypeScript null-safety violations required extensive refactoring with proper null-safety operators (??) and error type casting. Module resolution issues resolved with corrected import/export structure. Time taken: ~10 hours vs 8-12 hour estimate (within range). Pattern effectiveness: File-based handoff provides excellent context isolation (70%+ token reduction validated), generic template architecture enables true cross-project reusability. Implementation approach: TDD with comprehensive error recovery testing caught critical edge cases early. Ready for TASK-SUBAGENT-003: ResearchAgent Integration with pr/task Workflow. Architecture insight: Project-agnostic design with configuration-based overrides highly effective for multi-project ecosystems.
+- **[2025-09-06] - [TASK-SUBAGENT-002]**: Successfully implemented Generic Analysis Agent with complete TypeScript strict mode compliance. Achieved all success criteria: <5 minute execution timeout (✓), >80% pattern relevance scoring (✓), complete context isolation through file-based handoff (✓), comprehensive error handling with retry mechanisms (✓), cross-project reusability confirmed across VDL_Vault projects (✓). Key technical challenges: TypeScript null-safety violations required extensive refactoring with proper null-safety operators (??) and error type casting. Module resolution issues resolved with corrected import/export structure. Time taken: ~10 hours vs 8-12 hour estimate (within range). Pattern effectiveness: File-based handoff provides excellent context isolation (70%+ token reduction validated), generic template architecture enables true cross-project reusability. Implementation approach: TDD with comprehensive error recovery testing caught critical edge cases early. Ready for TASK-SUBAGENT-003: Analysis Agent Integration with pr/task Workflow. Architecture insight: Project-agnostic design with configuration-based overrides highly effective for multi-project ecosystems.
 
 ### Generic Agent Template Pattern: Pattern Metadata
 

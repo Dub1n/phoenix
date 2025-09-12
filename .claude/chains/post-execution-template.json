@@ -1,0 +1,152 @@
+{
+  "chain-metadata": {
+    "execution-id": "[YYYY-MM-DD-HHMM-TASK-ID]",
+    "start-time": "[YYYY-MM-DD-HHMM]",
+    "total-duration": "[number_of_minutes]",
+    "project": "[project_name]",
+    "category": "[validation|implementation|analysis|documentation|testing|refactoring|integration|research]",
+    "complexity": "[simple|moderate|complex|enterprise]",
+    "tags": ["[tag1]", "[tag2]", "[tag3]"]
+  },
+
+  "request_and_design": {
+    "command": "[full_command_used_verbatim]",
+    "description": "[brief_task_description]",
+    "user-intent": "[what_user_wanted_to_achieve]",
+    "chain-design": "[complete_verbatim_chain_output_from_planning_phase]"
+  },
+
+  "phases": [
+    {
+      "phase": "[phase_identifier]",
+      "execution_pattern": "[sequential|parallel|hybrid]",
+      "designed_intent": "[what_this_phase_was_meant_to_accomplish]",
+      "invocations": [
+        {
+          "agent": "[agent_type]",
+          "prompt": "[prompt_template_name_or_brief_description]",
+          "parameters": ["[parameter1]", "[parameter2]"],
+          "response": "[response_summary_or_handoff_file_reference]",
+          "duration": "[number_of_minutes]",
+          "success": "[true|false]",
+          "confidence": "[high|medium|low]",
+          "recovery": "[true|false|null]"
+        }
+      ]
+    }
+  ],
+
+  "chain_effectiveness": {
+    "completion_attempted": "[description_of_what_percentage_or_scope_was_attempted]",
+    "attempt_success": "[description_of_success_rate_for_attempted_work]",
+    "quality_indicators": {
+      "unnecessary_work": ["[description_of_work_that_was_not_needed]"],
+      "missed_opportunities": [
+        "[description_of_optimization_or_improvement_that_could_have_been_made]",
+        "[another_missed_opportunity]"
+      ]
+    },
+    "improvement_recommendations": [
+      "[specific_suggestion_for_workflow_improvement]",
+      "[another_improvement_recommendation]",
+      "[technical_or_process_enhancement_suggestion]"
+    ]
+  },
+
+  "handoff_files": [
+    "[handoff_file_name_1.format]",
+    "[handoff_file_name_2.format]"
+  ],
+
+  "execution_metrics": {
+    "total_agents_used": "[number]",
+    "parallel_batches": "[number]",
+    "sequential_phases": "[number]", 
+    "context_tokens_consumed": "[number_or_estimate]",
+    "files_modified": "[number]",
+    "files_created": "[number]",
+    "test_cases_run": "[number|null]",
+    "errors_encountered": "[number]",
+    "errors_resolved": "[number]"
+  },
+
+  "quality_assessment": {
+    "overall_success_rating": "[1-5]",
+    "time_efficiency_rating": "[1-5]", 
+    "output_quality_rating": "[1-5]",
+    "delegation_confidence_rating": "[1-5]",
+    "workflow_naturalness": "[Y|N|Partial]",
+    "resource_discovery_effectiveness": "[Excellent|Good|Adequate|Poor]",
+    "agent_selection_confidence": "[High|Medium|Low]"
+  },
+
+  "technical_performance": {
+    "agent_response_times": "[Fast|Acceptable|Slow|Too slow]",
+    "tool_integration_quality": "[Seamless|Good|Some issues|Poor integration]",
+    "timeout_incidents": "[number]",
+    "recovery_actions_taken": "[number]",
+    "bottlenecks_identified": ["[bottleneck_description]"],
+    "parallel_opportunities_missed": ["[missed_parallel_opportunity]"]
+  },
+
+  "outcome_comparison": {
+    "estimated_manual_time": "[number_of_hours_or_minutes]",
+    "actual_workflow_time": "[number_of_hours_or_minutes]",
+    "efficiency_gain_percentage": "[number_percentage]",
+    "better_than_single_agent": "[Significantly|Somewhat|About same|Worse]",
+    "appropriate_for_complexity": "[Perfect fit|Good fit|Acceptable|Overkill|Insufficient]"
+  },
+
+  "user_experience": {
+    "most_natural_aspects": "[description_of_what_felt_smooth_and_intuitive]",
+    "most_awkward_aspects": "[description_of_what_felt_forced_or_clunky]",
+    "confidence_levels": "[description_of_confidence_throughout_process]",
+    "unexpected_benefits": ["[positive_outcome_not_anticipated]"],
+    "unexpected_challenges": ["[problem_not_anticipated]"],
+    "would_use_again_similar": "[Definitely|Probably|Maybe|Probably not|Definitely not]",
+    "would_use_again_different": "[Definitely|Probably|Maybe|Probably not|Definitely not]"
+  },
+
+  "context_specific": {
+    "project_type": "[project_name]",
+    "workflow_fit_for_project": "[Excellent|Good|Adequate|Poor]",
+    "task_category": "[task_type]",
+    "workflow_fit_for_task": "[Excellent|Good|Adequate|Poor]",
+    "project_specific_adaptations_needed": "[description_of_project_specific_improvements]",
+    "task_specific_adaptations_needed": "[description_of_task_specific_improvements]"
+  },
+
+  "final_deliverables": {
+    "completeness": "[Fully complete|Mostly complete|Some gaps|Incomplete]",
+    "accuracy": "[Highly accurate|Accurate|Some errors|Multiple errors]",
+    "professional_standard": "[Exceeds|Meets|Close to|Below standard]",
+    "documentation_created": ["[file_path_1]", "[file_path_2]"],
+    "code_modifications": ["[file_path_1]", "[file_path_2]"],
+    "validation_reports": ["[report_path_1]", "[report_path_2]"]
+  },
+
+  "lessons_learned": {
+    "high_priority_fixes": [
+      {
+        "issue": "[issue_description]",
+        "suggested_fix": "[description_and_suggested_solution]"
+      }
+    ],
+    "enhancement_opportunities": [
+      {
+        "enhancement": "[enhancement_description]", 
+        "expected_benefit": "[description_of_expected_improvement]"
+      }
+    ],
+    "agent_specialization_improvements": "[suggestions_for_better_agent_roles_or_capabilities]",
+    "workflow_template_improvements": "[suggestions_for_better_prompts_or_workflow_structure]"
+  },
+
+  "review_metadata": {
+    "completion_date": "[YYYY-MM-DD-HHMM]",
+    "review_priority": "[High|Medium|Low]",
+    "follow_up_required": "[true|false]",
+    "follow_up_description": "[description_of_needed_follow_up_actions]",
+    "additional_comments": "[any_other_feedback_or_observations]"
+  }
+}

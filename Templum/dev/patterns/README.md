@@ -10,10 +10,10 @@
 
 ### Quick Stats
 
-- **Total Patterns**: 31+ (24 established, 7 in development, 1 deprecated)
-- **Last Updated**: 2025-09-06 (Enhanced Validation Testing Pattern added)
+- **Total Patterns**: 33+ (26 established, 7 in development, 1 deprecated)  
+- **Last Updated**: 2025-09-12 (Hybrid CLI Development Testing and Agent-CLI Interaction Validation patterns added)
 - **Most Used**: Backend Service Integration (8+ implementations)
-- **Recently Updated**: Terminal UI Components (2025-08-31) - Interactive Search added
+- **Recently Updated**: MCP PTY Integration (2025-09-12) - Testing validation insights added
 
 ### By Usage Frequency & Implementation Priority
 
@@ -36,7 +36,9 @@
 
 - [Enhanced Validation Testing](enhanced-validation-testing) - 8-category comprehensive test coverage for autonomous validation with production safety frameworks | Foundation | ~20-24 hours | **NEW 2025-09-06**
 - [File-Based Handoff Infrastructure](file-based-handoff-infrastructure) - Subagent workflow foundation with structured file communication | Foundation | ~4 hours | **NEW 2025-09-05**
-- [Generic Agent Template](generic-agent-template) - Project-agnostic research agent with pattern matching and complexity assessment | Foundation | ~6 hours | **NEW 2025-09-06**
+- [Generic Agent Template](generic-agent-template) - Project-agnostic Analysis Agent with pattern matching and complexity assessment | Foundation | ~6 hours | **NEW 2025-09-06**
+- [Hybrid CLI Development Testing](hybrid-cli-development-testing) - 5-phase synthesis approach for CLI development with agent interaction, achieving comprehensive validation in ~20 seconds | Testing-Integration | ~6-8 hours | **NEW 2025-09-12**
+- [Agent-CLI Interaction Validation](agent-cli-interaction-validation) - Multi-category validation approach for agent-facing CLI systems with menu structure, consistency, integration, UX, and accessibility testing | Validation-Testing | ~2-3 hours | **NEW 2025-09-12**
 - [MCP PTY Integration](mcp-pty-integration) - Agent-CLI interaction foundation via pseudoterminal session management | Foundation | ~4 hours | **NEW 2025-09-05**
 - [Circuit Breaker Resilience](circuit-breaker-resilience) - Error recovery and failure isolation for critical operations | Foundation | ~2-3 hours | **NEW 2025-08-23**
 - [Error Recovery](error-recovery) - Component-level operational fallback and graceful degradation | Foundation | ~2-3 hours | **NEW 2025-09-01**

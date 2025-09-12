@@ -555,7 +555,7 @@ class SecurityAnalystAgent(BaseAgent):
 from ..base import BaseAgent, AgentResult
 from typing import Dict, Any, List
 
-class DocumentationAgent(BaseAgent):
+class Documentation Agent(BaseAgent):
     """Generates comprehensive project documentation"""
     
     async def execute(self, project_artifacts: Dict[str, Any], context: Dict[str, Any]) -> AgentResult:
@@ -611,7 +611,7 @@ class OrchestratorAgent:
             'test_engineer': TestEngineerAgent(self.config['agents']['test_engineer']),
             'implementation': ImplementationAgent(self.config['agents']['implementation']),
             'security_analyst': SecurityAnalystAgent(self.config['agents']['security']),
-            'documentation': DocumentationAgent(self.config['agents']['documentation']),
+            'documentation': Documentation Agent(self.config['agents']['documentation']),
             # ... other agents
         }
     

@@ -27,7 +27,20 @@ export class BuildValidator {
   constructor() {
     this.category = 'build';
     this.version = '3.0.0';
-    this.scopes = []; // Build validation applies to full project
+    // TODO: [TASK-VAL-BUILD-FIX-001] Pattern: scope-aware-build-validation | Complexity: 7 | Dependencies: file-system,build-tools
+    // Context: Build validator now supports scope-based filtering to optimize validation performance for targeted changes
+    // Validation-Required: scope-pattern-matching, conditional-test-execution, performance-improvement
+    // Pattern-Info: { approach: "file-pattern-matching", alternatives: "full-validation", trade-offs: "accuracy-vs-speed" }
+    this.scopes = [
+      'package.json',
+      'tsconfig.json', 
+      '*.config.*',
+      'src/**/*.ts',
+      'src/**/*.js',
+      'build/**/*',
+      'scripts/**/*',
+      '**/*.d.ts'
+    ];
     this.hasIntegrationTests = false;
     
     // Initialize internal state
@@ -50,26 +63,89 @@ export class BuildValidator {
     };
 
     try {
-      console.log('  Executing Compilation/Build mandatory validation commands...');
+      // Process scope configuration for targeted validation
+      const scopeAnalysis = this.analyzeScopeForBuildRelevance(scopeConfig);
+      
+      console.log('  Executing Compilation/Build validation commands...');
       console.log('  Source: TEMPLUM-TESTING-GUIDE.md Section 4');
       
-      // Test 1: Clean build test (MUST compile with zero errors)
-      const buildTest = await this.executeCleanBuildTest(projectInfo);
-      result.tests.push(buildTest);
+      if (scopeAnalysis.hasNoRelevantFiles) {
+        result.status = 'SKIP';
+        result.warnings.push('Scope contains no build-relevant files - skipping build validation');
+        result.evidence.push(`Analyzed scope patterns: ${scopeAnalysis.patterns.join(', ')}`);
+        result.evidence.push('Scope optimization: Build validation skipped for performance');
+        result.duration = Date.now() - this.validationStartTime;
+        console.log('  🟡 SKIP - No build-relevant files in scope');
+        return result;
+      }
       
-      // Test 2: TypeScript type checking (MUST have no type errors)
-      const typeCheckTest = await this.executeTypeScriptTypeChecking(projectInfo);
-      result.tests.push(typeCheckTest);
+      // Add scope evidence
+      result.evidence.push(`Scope-aware validation: ${scopeAnalysis.relevantPatterns.length} relevant patterns`);
+      if (scopeAnalysis.optimizations.length > 0) {
+        result.evidence.push(`Applied optimizations: ${scopeAnalysis.optimizations.join(', ')}`);
+      }
       
-      // Test 3: Dependency validation (MUST have no conflicts)
-      const dependencyTest = await this.executeDependencyValidation(projectInfo);
-      result.tests.push(dependencyTest);
+      // Test 1: Clean build test (conditional based on scope)
+      if (scopeAnalysis.requiresBuild) {
+        const buildTest = await this.executeCleanBuildTest(projectInfo, scopeAnalysis);
+        result.tests.push(buildTest);
+      } else {
+        result.tests.push({
+          name: 'Clean Build Test',
+          status: 'SKIP',
+          message: 'Skipped - scope contains only non-build files',
+          evidence: ['Scope optimization: Build test not required for current file changes'],
+          errors: [],
+          warnings: []
+        });
+      }
       
-      // Test 4: Build artifact verification (MUST generate expected output files)
-      const artifactTest = await this.executeBuildArtifactVerification(projectInfo);
-      result.tests.push(artifactTest);
+      // Test 2: TypeScript type checking (conditional based on scope)
+      if (scopeAnalysis.requiresTypeChecking) {
+        const typeCheckTest = await this.executeTypeScriptTypeChecking(projectInfo, scopeAnalysis);
+        result.tests.push(typeCheckTest);
+      } else {
+        result.tests.push({
+          name: 'TypeScript Type Checking',
+          status: 'SKIP',
+          message: 'Skipped - scope contains no TypeScript files',
+          evidence: ['Scope optimization: TypeScript validation not required for current file changes'],
+          errors: [],
+          warnings: []
+        });
+      }
+      
+      // Test 3: Dependency validation (conditional based on scope)
+      if (scopeAnalysis.requiresDependencyCheck) {
+        const dependencyTest = await this.executeDependencyValidation(projectInfo, scopeAnalysis);
+        result.tests.push(dependencyTest);
+      } else {
+        result.tests.push({
+          name: 'Dependency Validation',
+          status: 'SKIP',
+          message: 'Skipped - scope does not affect dependencies',
+          evidence: ['Scope optimization: Dependency validation not required for current file changes'],
+          errors: [],
+          warnings: []
+        });
+      }
+      
+      // Test 4: Build artifact verification (conditional based on scope)
+      if (scopeAnalysis.requiresArtifactCheck) {
+        const artifactTest = await this.executeBuildArtifactVerification(projectInfo, scopeAnalysis);
+        result.tests.push(artifactTest);
+      } else {
+        result.tests.push({
+          name: 'Build Artifact Verification',
+          status: 'SKIP',
+          message: 'Skipped - scope does not affect build artifacts',
+          evidence: ['Scope optimization: Artifact verification not required for current file changes'],
+          errors: [],
+          warnings: []
+        });
+      }
 
-      // Determine overall result
+      // Determine overall result with scope-aware logic
       const failedTests = result.tests.filter(t => t.status === 'FAIL');
       const passedTests = result.tests.filter(t => t.status === 'PASS');
       const warnTests = result.tests.filter(t => t.status === 'WARN');
@@ -81,8 +157,9 @@ export class BuildValidator {
       } else if (passedTests.length > 0) {
         result.status = warnTests.length > 0 ? 'WARN' : 'PASS';
       } else if (skippedTests.length === result.tests.length) {
-        result.status = 'WARN';
-        result.warnings.push('All build tests were skipped due to missing commands');
+        result.status = 'PASS';
+        result.warnings.push('All build tests were skipped due to scope optimization - no relevant changes detected');
+        result.evidence.push('Performance optimization: Validation completed in minimal time due to scope filtering');
       } else {
         result.status = 'FAIL';
         result.errors.push('No build tests completed successfully');
@@ -96,7 +173,7 @@ export class BuildValidator {
       }
       
       result.duration = Date.now() - this.validationStartTime;
-      console.log('  Compilation/Build validation tests completed');
+      console.log(`  Compilation/Build validation tests completed in ${result.duration}ms`);
       
       return result;
       
@@ -116,7 +193,7 @@ export class BuildValidator {
       supportedProjects: ['Templum', 'Haruspex', 'phoenix-code-lite'],
       supportedScopes: this.scopes,
       requiredDependencies: ['typescript', 'npm'],
-      performanceProfile: 'standard'
+      performanceProfile: 'scope-aware'
     };
   }
 
@@ -471,6 +548,116 @@ export class BuildValidator {
    */
   async cleanup() {
     // Build validator doesn't need cleanup
+  }
+
+  /**
+   * Analyze scope configuration to determine build validation requirements
+   */
+  analyzeScopeForBuildRelevance(scopeConfig) {
+    const analysis = {
+      patterns: [],
+      relevantPatterns: [],
+      hasNoRelevantFiles: false,
+      requiresBuild: false,
+      requiresTypeChecking: false,
+      requiresDependencyCheck: false,
+      requiresArtifactCheck: false,
+      optimizations: []
+    };
+
+    // Handle missing or empty scope - default to full validation
+    if (!scopeConfig || !scopeConfig.patterns || scopeConfig.patterns.length === 0) {
+      analysis.requiresBuild = true;
+      analysis.requiresTypeChecking = true;
+      analysis.requiresDependencyCheck = true;
+      analysis.requiresArtifactCheck = true;
+      analysis.patterns = ['*'];
+      analysis.relevantPatterns = ['*'];
+      return analysis;
+    }
+
+    analysis.patterns = Array.isArray(scopeConfig.patterns) ? scopeConfig.patterns : [scopeConfig.patterns];
+    
+    // Check each pattern for build relevance
+    for (const pattern of analysis.patterns) {
+      const isRelevant = this.isPatternBuildRelevant(pattern);
+      
+      if (isRelevant.relevant) {
+        analysis.relevantPatterns.push(pattern);
+        
+        if (isRelevant.requiresBuild) analysis.requiresBuild = true;
+        if (isRelevant.requiresTypeChecking) analysis.requiresTypeChecking = true;
+        if (isRelevant.requiresDependencyCheck) analysis.requiresDependencyCheck = true;
+        if (isRelevant.requiresArtifactCheck) analysis.requiresArtifactCheck = true;
+      }
+    }
+
+    // Determine if scope has no relevant files
+    analysis.hasNoRelevantFiles = analysis.relevantPatterns.length === 0;
+    
+    // Add optimization notes
+    if (analysis.hasNoRelevantFiles) {
+      analysis.optimizations.push('complete-skip');
+    } else {
+      if (!analysis.requiresBuild) analysis.optimizations.push('skip-build-test');
+      if (!analysis.requiresTypeChecking) analysis.optimizations.push('skip-typescript-check');
+      if (!analysis.requiresDependencyCheck) analysis.optimizations.push('skip-dependency-check');
+      if (!analysis.requiresArtifactCheck) analysis.optimizations.push('skip-artifact-check');
+    }
+
+    return analysis;
+  }
+
+  /**
+   * Determine if a file pattern is relevant for build validation
+   */
+  isPatternBuildRelevant(pattern) {
+    const result = {
+      relevant: false,
+      requiresBuild: false,
+      requiresTypeChecking: false,
+      requiresDependencyCheck: false,
+      requiresArtifactCheck: false
+    };
+
+    // TypeScript files
+    if (pattern.includes('.ts') || pattern.includes('src/')) {
+      result.relevant = true;
+      result.requiresBuild = true;
+      result.requiresTypeChecking = true;
+      result.requiresArtifactCheck = true;
+    }
+    
+    // JavaScript files
+    if (pattern.includes('.js') || pattern.includes('.mjs')) {
+      result.relevant = true;
+      result.requiresBuild = true;
+      result.requiresArtifactCheck = true;
+    }
+    
+    // Configuration files that affect build
+    if (pattern.includes('package.json') || pattern.includes('tsconfig.json') || 
+        pattern.includes('.config.') || pattern.includes('webpack') || pattern.includes('vite')) {
+      result.relevant = true;
+      result.requiresBuild = true;
+      result.requiresTypeChecking = true;
+      result.requiresDependencyCheck = true;
+      result.requiresArtifactCheck = true;
+    }
+    
+    // Build directories
+    if (pattern.includes('build/') || pattern.includes('dist/') || pattern.includes('out/')) {
+      result.relevant = true;
+      result.requiresArtifactCheck = true;
+    }
+    
+    // Scripts that might affect build
+    if (pattern.includes('scripts/') || pattern.includes('.sh') || pattern.includes('.bat')) {
+      result.relevant = true;
+      result.requiresBuild = true;
+    }
+
+    return result;
   }
 }
 

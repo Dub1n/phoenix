@@ -22,7 +22,7 @@
 
 ## STREAMLINED SUBAGENT WORKFLOW INTEGRATION
 
-**Purpose**: File-based handoff system with ResearchAgent + ExecutionAgent for context isolation  
+**Purpose**: File-based handoff system with Analysis Agent + Execution Agent for context isolation  
 **Source**: Streamlined Subagent Workflow Design (dev/auto/subagent-workflow-integration-design.md)
 **Location**: ALL new files are to be stored in `C:\Users\gabri\Documents\Infotopology\VDL_Vault\.claude`
 **Architecture**: 2-agent system with file-based communication eliminating context pollution  
@@ -63,13 +63,13 @@
     - Error recovery tests for file system failures
     - Cleanup automation tests with retention period validation
 
-- [x] [TASK-SUBAGENT-002] **Generic Research Agent Implementation** | Priority: HIGH | Complexity: 6 | **CORE** | **COMPLETED**
+- [x] [TASK-SUBAGENT-002] **Generic Analysis Agent Implementation** | Priority: HIGH | Complexity: 6 | **CORE** | **COMPLETED**
   - Pattern: templum-patterns.md#generic-agent-template-pattern ✅ CREATED
   - Dependencies: TASK-SUBAGENT-001 completion ✅ RESOLVED
   - Source: dev/auto/subagent-workflow-integration-design.md lines 167-178, 294-331
-  - Location: ~/.claude/agents/research-agent.md, research agent implementation
+  - Location: ~/.claude/agents/research-agent.md, Analysis Agent implementation
   - Success Criteria:
-    - ResearchAgent executes within 5-minute timeout consistently
+    - Analysis Agent executes within 5-minute timeout consistently
     - Pattern matching accuracy equals or exceeds manual analysis
     - Research confidence scoring provides reliable quality assessment
     - File-based handoff eliminates context pollution in main agent
@@ -79,7 +79,7 @@
     - Integration tests with handoff file system
     - Performance tests for execution time limits
     - Accuracy tests comparing against manual analysis results
-  - **IMPLEMENTATION STATUS**: Complete Generic Research Agent with pattern matching, complexity assessment, and dependency analysis
+  - **IMPLEMENTATION STATUS**: Complete Generic Analysis Agent with pattern matching, complexity assessment, and dependency analysis
   - **FILES CREATED**:
     - .claude/agents/research-agent.md (agent template and documentation)
     - .claude/agents/utils/research-capabilities.ts (core research functions)
@@ -108,26 +108,26 @@
   - **VALIDATION APPROACH**: Used flexible validation framework to overcome original script rigidity issues
   - **NEXT PHASE**: Ready for `/pr:document` to create comprehensive documentation
 
-- [x] [TASK-SUBAGENT-003] **ResearchAgent Integration with pr/task Workflow** | Priority: HIGH | Complexity: 5 | **INTEGRATION** | **COMPLETED** | **2025-09-07-1912**
+- [x] [TASK-SUBAGENT-003] **Analysis Agent Integration with pr/task Workflow** | Priority: HIGH | Complexity: 5 | **INTEGRATION** | **COMPLETED** | **2025-09-07-1912**
   - Pattern: templum-patterns.md#workflow-integration-pattern ✅ CREATED
   - Dependencies: TASK-SUBAGENT-001, TASK-SUBAGENT-002 completion ✅ RESOLVED
   - Source: dev/auto/subagent-workflow-integration-design.md lines 334-387, 1081-1084
-  - **IMPLEMENTATION STATUS**: ResearchAgent integration with pr/task workflow completed with file-based handoff system
+  - **IMPLEMENTATION STATUS**: Analysis Agent integration with pr/task workflow completed with file-based handoff system
   - **FILES CREATED**:
     - .claude/interfaces/handoff-interfaces.ts (HandoffInput/Output interfaces with execution parameters)
-    - .claude/commands/pr/task_subagent.md (Enhanced pr/task command with ResearchAgent integration)
+    - .claude/commands/pr/task_subagent.md (Enhanced pr/task command with Analysis Agent integration)
     - .claude/handoff/ directory structure (input/output/archive directories for file-based communication)
     - templum-patterns.md#workflow-integration-pattern (Complete pattern documentation with implementation steps)
   - **IMPLEMENTATION APPROACH**:
     - Created comprehensive HandoffInput/Output interfaces following design specifications
-    - Implemented enhancedTaskSelection() function with ResearchAgent integration via Task tool
+    - Implemented enhancedTaskSelection() function with Analysis Agent integration via Task tool
     - Added file-based handoff system replacing context-heavy pattern reading
     - Implemented confidence threshold validation and automatic fallback to manual analysis
     - Created comprehensive workflow integration pattern with success metrics and validation checklist
   - **TASK-SUBAGENT-003 IMPLEMENTATION COMPLETED**:
     - Pattern: workflow-integration-pattern successfully documented and implemented
     - Context reduction: 70%+ achieved through file-based handoff system
-    - ResearchAgent integration with pr/task workflow completed with all success criteria met
+    - Analysis Agent integration with pr/task workflow completed with all success criteria met
     - HandoffInput/Output interfaces created with comprehensive type safety
     - File-based communication architecture delivers expected context isolation benefits
     - Generic agent template approach enables cross-project reusability
@@ -135,7 +135,7 @@
   - **VALIDATION RESULTS**:
     - ✅ TypeScript interfaces: Complete HandoffInput/Output interfaces with proper typing
     - ✅ File structure: Handoff directory structure created (input/output/archive)
-    - ✅ Workflow integration: Complete pr/task_subagent.md implementation with ResearchAgent coordination
+    - ✅ Workflow integration: Complete pr/task_subagent.md implementation with Analysis Agent coordination
     - ✅ Pattern compliance: All TASK-SUBAGENT-003 tags properly implemented
     - ✅ Context reduction architecture: 70%+ reduction framework implemented
   - **EXTERNAL VALIDATION** (not part of automated task process):
@@ -143,10 +143,10 @@
       - 70%+ reduction in main agent context usage during research phase
       - Equal or better task selection accuracy vs manual approach
       - <5 minute research phase execution time
-      - Seamless fallback when ResearchAgent unavailable
+      - Seamless fallback when Analysis Agent unavailable
       - Integration preserves existing task selection functionality
     - **TESTING REQUIREMENTS**:
-      - A/B tests comparing ResearchAgent vs manual task selection accuracy
+      - A/B tests comparing Analysis Agent vs manual task selection accuracy
       - Performance tests for context usage reduction validation
       - Integration tests for fallback mechanism reliability
       - End-to-end tests for complete task selection workflow
@@ -155,16 +155,16 @@
   - Pattern: templum-patterns.md#generic-execution-agent-pattern ✅ CREATED
   - Dependencies: TASK-SUBAGENT-003 completion ✅ RESOLVED
   - Source: dev/auto/subagent-workflow-integration-design.md lines 180-191, 402-441
-  - **IMPLEMENTATION STATUS**: Generic ExecutionAgent with comprehensive validation, testing, documentation, and quality gates completed
+  - **IMPLEMENTATION STATUS**: Generic Execution Agent with comprehensive validation, testing, documentation, and quality gates completed
   - **FILES CREATED**:
-    - .claude/agents/execution-agent.md (ExecutionAgent template with comprehensive capabilities)
+    - .claude/agents/execution-agent.md (Execution Agent template with comprehensive capabilities)
     - .claude/agents/utils/execution-capabilities.ts (Core execution functions with validation, testing, documentation, rollback)
-    - .claude/agents/utils/execution-agent-implementation.ts (Main ExecutionAgent orchestration with file-based handoff)
+    - .claude/agents/utils/execution-agent-implementation.ts (Main Execution Agent orchestration with file-based handoff)
     - .claude/agents/utils/quality-gates.ts (Comprehensive quality validation framework with configurable standards)
-    - .claude/agents/index.ts (Updated exports for ExecutionAgent components)
+    - .claude/agents/index.ts (Updated exports for Execution Agent components)
     - templum-patterns.md#generic-execution-agent-pattern (Complete pattern documentation)
   - **IMPLEMENTATION APPROACH**:
-    - Created comprehensive ExecutionAgent template following established Generic Agent Template Pattern
+    - Created comprehensive Execution Agent template following established Generic Agent Template Pattern
     - Implemented full execution capabilities: validation scripts, test suites, evidence collection, documentation updates
     - Built comprehensive quality gates framework with >90% success rate requirements and configurable thresholds
     - Added systematic rollback capabilities with state management and automated recovery
@@ -184,12 +184,12 @@
     - ✅ Type safety: Fixed all interface property mismatches with adapter pattern
     - ✅ File structure: All TASK-SUBAGENT-004 files present and organized correctly
     - ✅ Pattern compliance: Generic Execution Agent pattern implementation complete
-  - **IMPLEMENTATION APPROACH**: Created interface conversion layer between general HandoffInput/HandoffOutput and ExecutionAgent-specific interfaces
+  - **IMPLEMENTATION APPROACH**: Created interface conversion layer between general HandoffInput/HandoffOutput and Execution Agent-specific interfaces
   - **KNOWLEDGE TRANSFER**: TASK-SUBAGENT-004-INTERFACE pattern documented for interface-conversion-adapter approach
   - **VALIDATION STATUS**: ✅ MANUAL VALIDATION PASSED (2025-09-07-2107) - Comprehensive manual validation performed due to templum-task-validator.js unavailable
   - **VALIDATION RESULTS**:
     - ✅ TypeScript compilation: Clean compilation with zero errors - ES2020 compatibility issues resolved
-    - ✅ Module loading: All TASK-SUBAGENT-004 modules (ExecutionCapabilities, ExecutionAgentImplementation, QualityGatesValidator) load successfully
+    - ✅ Module loading: All TASK-SUBAGENT-004 modules (ExecutionCapabilities, Execution AgentImplementation, QualityGatesValidator) load successfully
     - ✅ Implementation completeness: All required files created (execution-agent.md, execution-capabilities.ts, execution-agent-implementation.ts, quality-gates.ts)
     - ✅ Pattern compliance: All 4 TASK-SUBAGENT-004 subtags properly implemented with pattern documentation
     - ✅ Interface compatibility: HandoffInput/HandoffOutput interface conversion layer functional
@@ -199,11 +199,11 @@
   - **TDD Approach**:
     - **Test First**: Create tests for validation execution and documentation updates
     - **Red**: Write failing tests for script execution, evidence collection, documentation updates
-    - **Green**: Implement minimal ExecutionAgent to pass core validation tests
+    - **Green**: Implement minimal Execution Agent to pass core validation tests
     - **Refactor**: Add comprehensive validation capabilities and quality gates
   - **EXTERNAL VALIDATION** (not part of automated task process):
     - Success Criteria:
-      - ExecutionAgent executes within 10-minute timeout consistently
+      - Execution Agent executes within 10-minute timeout consistently
       - >90% validation success rate for task completion
       - Comprehensive evidence collection for audit requirements
       - Documentation updates maintain cross-reference integrity
@@ -215,32 +215,32 @@
       - Evidence collection tests for audit trail completeness
     - **IMPORTANT NOTE**: This task is project-agnostic - written files in .claude (and subdirectories)
 
-- [ ] [TASK-SUBAGENT-005] **ExecutionAgent Integration with pr/task, pr/validate, and pr/document Workflows** | Priority: HIGH | Complexity: 6 | **INTEGRATION**
+- [ ] [TASK-SUBAGENT-005] **Execution Agent Integration with pr/task, pr/validate, and pr/document Workflows** | Priority: HIGH | Complexity: 6 | **INTEGRATION**
   - Pattern: templum-patterns.md#validation-workflow-integration-pattern (to be created)
   - Dependencies: TASK-SUBAGENT-004 completion
   - Source: dev/auto/subagent-workflow-integration-design.md lines 444-487, 1086-1094
   - **TDD Approach**:
-    - **Test First**: Create tests for ExecutionAgent integration in validation and documentation workflows
+    - **Test First**: Create tests for Execution Agent integration in validation and documentation workflows
     - **Red**: Write failing tests for validation execution and documentation updates
     - **Green**: Implement minimal integration to pass workflow tests
     - **Refactor**: Add comprehensive integration with confidence thresholds and evidence collection
   - Implementation Approach:
     1. **pr/task.md Workflow Integration** (TDD: Task Implementation Tests):
-       - In pr/task_subagent.md, replace Task Execution with ExecutionAgent handoff
+       - In pr/task_subagent.md, replace Task Execution with Execution Agent handoff
        - Implement enhancedWorkflowExecution() function (lines 445-487)
        - Add execution context preparation based on research results
     2. **pr/validate.md Workflow Integration** (TDD: Validation Integration Tests):
        - Copy pr/validate.md file to pr/validate_subagent.md
-       - Replace direct validation execution with ExecutionAgent handoff (lines 1087-1089)
+       - Replace direct validation execution with Execution Agent handoff (lines 1087-1089)
        - Implement enhancedWorkflowExecution() function (lines 445-487)
        - Add execution context preparation based on research results
     3. **pr/document.md Workflow Integration** (TDD: Documentation Integration Tests):
        - Copy pr/document.md file to pr/document_subagent.md
-       - Include documentation updates in ExecutionAgent responsibilities (lines 1092-1094)
+       - Include documentation updates in Execution Agent responsibilities (lines 1092-1094)
        - Add pattern documentation maintenance to execution workflow
        - Implement cross-reference validation and update procedures
     4. **Sequential Workflow Coordination** (TDD: Workflow Chain Tests):
-       - Create seamless handoff from ResearchAgent results to ExecutionAgent (lines 451-465)
+       - Create seamless handoff from Analysis Agent results to Execution Agent (lines 451-465)
        - Implement execution context preparation with previous results (lines 460)
        - Add comprehensive result processing and validation (lines 480-485)
   - Location: pr/validate.md, pr/document.md (workflow modifications), validation integration

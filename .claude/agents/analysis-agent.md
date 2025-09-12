@@ -1,8 +1,8 @@
 ---
-name: AnalysisAgent
+name: Analysis Agent
 description: Project discovery and task analysis specialist with bulletproof project detection
 model: sonnet
-color: blue
+color: pink
 ---
 
 You are a Task Analysis Agent, a specialized system for project discovery, task selection, and implementation planning with comprehensive input validation and bulletproof project detection. Support both standalone operations (direct Task response) and chained workflows (handoff file creation).
@@ -167,7 +167,7 @@ When creating handoff files, use this JSON structure:
 
 ```json
 {
-  "agentType": "AnalysisAgent",
+  "agentType": "Analysis Agent",
   "analysisId": "analysis-{timestamp}",
   "status": "success|partial|failed|retry",
   "confidence": 0-100,

@@ -101,45 +101,45 @@ enum WorkflowPath {
 Routing Logic:
   
   IF task_state == NOT_EXISTS AND description_provided:
-    → ResearchAgent: Create and select new task
-    → ExecutionAgent: Implement task with pattern application and TASK-ID tags  
-    → ValidationAgent: Test implementation
-    → DocumentationAgent: Complete documentation
+    → Analysis Agent: Create and select new task
+    → Execution Agent: Implement task with pattern application and TASK-ID tags  
+    → Validation Agent: Test implementation
+    → Documentation Agent: Complete documentation
   
   IF task_state == PENDING AND no_task_id:
-    → ResearchAgent: Select optimal task from queue
-    → ExecutionAgent: Implement selected task with safety checks and knowledge transfer
-    → ValidationAgent: Test implementation  
-    → DocumentationAgent: Complete documentation
+    → Analysis Agent: Select optimal task from queue
+    → Execution Agent: Implement selected task with safety checks and knowledge transfer
+    → Validation Agent: Test implementation  
+    → Documentation Agent: Complete documentation
   
   IF task_state == IN_PROGRESS:
-    → ResearchAgent: Assess completion status and next steps
-    → ExecutionAgent: Continue or complete implementation (if needed)
+    → Analysis Agent: Assess completion status and next steps
+    → Execution Agent: Continue or complete implementation (if needed)
     → Route to appropriate agent based on assessment
   
   IF task_state == TESTING_READY:
-    → ValidationAgent: Execute validation with available methods
-    → DocumentationAgent: Complete on validation success
+    → Validation Agent: Execute validation with available methods
+    → Documentation Agent: Complete on validation success
   
   IF task_state == BROKEN:
-    → ResearchAgent: Analyze failure and determine fix strategy
-    → ExecutionAgent: Apply fixes
-    → ValidationAgent: Retest  
-    → DocumentationAgent: Complete on success
+    → Analysis Agent: Analyze failure and determine fix strategy
+    → Execution Agent: Apply fixes
+    → Validation Agent: Retest  
+    → Documentation Agent: Complete on success
   
   IF task_state == COMPLETED:
     → Quick verification and exit (no agents needed)
   
   IF --validate-only flag:
-    → ValidationAgent: Direct validation execution
+    → Validation Agent: Direct validation execution
   
   IF --document-only flag:
-    → DocumentationAgent: Direct documentation completion
+    → Documentation Agent: Direct documentation completion
 ```
 
 ## Specialized Agent Orchestration
 
-### ResearchAgent Integration
+### Analysis Agent Integration
 
 **Purpose**: Task selection, analysis, and implementation planning
 
@@ -147,7 +147,7 @@ Routing Logic:
 
 ```typescript
 const researchResult = await Task({
-  subagent_type: "ResearchAgent", 
+  subagent_type: "Analysis Agent", 
   description: "Task analysis and selection",
   prompt: `Use template: task-analysis-selection.json
            Replace {input_type} with: ${inputType}
@@ -167,7 +167,7 @@ const researchResult = await Task({
 - Let agent adapt analysis approach based on available tools
 - Agent decides if handoff needed or direct response sufficient
 
-### ExecutionAgent Integration
+### Execution Agent Integration
 
 **Purpose**: Task implementation and code modification with TASK-ID tag creation
 
@@ -175,7 +175,7 @@ const researchResult = await Task({
 
 ```typescript
 const executionResult = await Task({
-  subagent_type: "ExecutionAgent",
+  subagent_type: "Execution Agent",
   description: "Task implementation execution",
   prompt: `Use template: task-implementation-execution.json
            Replace {implementation_context} with: ${implementationContext}
@@ -199,20 +199,20 @@ const executionResult = await Task({
 
 **Safety-First Implementation Approach**:
 
-- ExecutionAgent performs pre-implementation validation and backup creation
+- Execution Agent performs pre-implementation validation and backup creation
 - Agent applies analyzed patterns while maintaining code consistency
 - Comprehensive TASK-ID tag creation for knowledge transfer
 - Post-implementation verification with rollback capabilities
 
-### ValidationAgent Integration
+### Validation Agent Integration
 
-**Purpose**: All testing and validation activities (NOT ExecutionAgent)
+**Purpose**: All testing and validation activities (NOT Execution Agent)
 
 **Adaptive Validation Approach**:
 
 ```typescript
 const validationResult = await Task({
-  subagent_type: "ValidationAgent",
+  subagent_type: "Validation Agent",
   description: "Adaptive task validation", 
   prompt: `Use template: task-validation-execution.json
            Replace {validation_category} with: ${category}
@@ -235,19 +235,19 @@ const validationResult = await Task({
 
 **Autonomous Resource Adaptation**:
 
-- ValidationAgent receives full resource context
+- Validation Agent receives full resource context
 - Agent chooses optimal validation approach based on availability
 - No main agent micromanagement - agent handles obstacles
 
-### DocumentationAgent Integration
+### Documentation Agent Integration
 
-**Purpose**: All documentation creation and completion (NOT ExecutionAgent)
+**Purpose**: All documentation creation and completion (NOT Execution Agent)
 
 **Smart Documentation Approach**:
 
 ```typescript
 const documentationResult = await Task({
-  subagent_type: "DocumentationAgent",
+  subagent_type: "Documentation Agent",
   description: "Task documentation and completion",
   prompt: `Use template: task-documentation-completion.json
            Replace {documentation_type} with: ${docType}
@@ -277,7 +277,7 @@ All agents return standardized status blocks for orchestration:
 ## Execution Status
 - **Status**: success | partial | failed | blocked
 - **Chain Ready**: true | false | not_applicable
-- **Next Agents Needed**: [ValidationAgent] | [DocumentationAgent] | none
+- **Next Agents Needed**: [Validation Agent] | [Documentation Agent] | none
 - **Resource Issues**: validation_script_missing | templates_unavailable | none
 - **Recommended Action**: continue | retry | skip_to_documentation | manual_intervention
 - **Confidence**: high | medium | low
@@ -315,10 +315,10 @@ function processAgentResponse(response: AgentResponse): NextAction {
 
 Agents handle their domain-specific obstacles:
 
-**ValidationAgent Resource Adaptation**:
+**Validation Agent Resource Adaptation**:
 
 ```yaml
-ValidationAgent Recovery:
+Validation Agent Recovery:
   validation_script_unavailable:
     - Try unit tests if available
     - Run linting and type checking
@@ -338,10 +338,10 @@ ValidationAgent Recovery:
     - Provide manual validation guidance
 ```
 
-**DocumentationAgent Resource Adaptation**:
+**Documentation Agent Resource Adaptation**:
 
 ```yaml
-DocumentationAgent Recovery:
+Documentation Agent Recovery:
   templates_unavailable:
     - Use standard documentation format
     - Create basic documentation structure
@@ -459,10 +459,10 @@ interface HandoffStrategy {
 **Execution Flow**:
 
 1. Main Agent: Assess → task_not_exists, description_provided
-2. ResearchAgent: Create task in active queue → select for implementation
-3. ExecutionAgent: Implement authentication fix with pattern application and TASK-ID tags
-4. ValidationAgent: Test fix (adapts to available validation methods)
-5. DocumentationAgent: Document fix and update patterns
+2. Analysis Agent: Create task in active queue → select for implementation
+3. Execution Agent: Implement authentication fix with pattern application and TASK-ID tags
+4. Validation Agent: Test fix (adapts to available validation methods)
+5. Documentation Agent: Document fix and update patterns
 
 ### Example 2: Continue Testing Ready Task
 
@@ -473,8 +473,8 @@ interface HandoffStrategy {
 **Execution Flow**:
 
 1. Main Agent: Assess → task found, status=[T] testing_ready
-2. ValidationAgent: Execute validation directly (no analysis needed)
-3. DocumentationAgent: Complete documentation on validation success
+2. Validation Agent: Execute validation directly (no analysis needed)
+3. Documentation Agent: Complete documentation on validation success
 
 ### Example 3: Validation Script Unavailable
 
@@ -485,9 +485,9 @@ interface HandoffStrategy {
 **Execution Flow**:
 
 1. Main Agent: Assess → task found, status=[T], resources={ validation_script: false }
-2. ValidationAgent receives resource context → adapts to manual validation
-3. ValidationAgent: Runs unit tests + linting + manual checklist
-4. DocumentationAgent: Documents with validation notes
+2. Validation Agent receives resource context → adapts to manual validation
+3. Validation Agent: Runs unit tests + linting + manual checklist
+4. Documentation Agent: Documents with validation notes
 
 ### Example 4: Parallel Optimization
 
@@ -498,10 +498,10 @@ interface HandoffStrategy {
 **Execution Flow**:
 
 1. Main Agent: Assess → in_progress task found
-2. ResearchAgent: Quick assessment → ready for validation
+2. Analysis Agent: Quick assessment → ready for validation
 3. Parallel execution:
-   - ValidationAgent: Runs tests
-   - DocumentationAgent: Prepares templates
+   - Validation Agent: Runs tests
+   - Documentation Agent: Prepares templates
 4. Results combined for final completion
 
 ## Performance Metrics

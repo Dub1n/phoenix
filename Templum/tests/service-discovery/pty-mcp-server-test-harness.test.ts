@@ -1,14 +1,20 @@
 /**
- * TASK-MCP-INT-002: Templum Service Discovery Integration Test Harness
+ * TASK-MCP-004: Templum Service Discovery Integration Test Harness
  * Created: 2025-09-05
- * Purpose: Templum-specific test harness for pty-mcp-server tool validation
+ * Updated: 2025-09-11 - Enhanced with service discovery integration testing
+ * Purpose: Templum-specific test harness for MCP service discovery integration
  * Location: Templum/tests/service-discovery/ (Templum-specific)
- * TDD Approach: Environment Setup Tests, CLI Integration Tests, End-to-End Tests
+ * TDD Approach: Environment Setup Tests, CLI Integration Tests, Service Discovery Tests
  */
 
 import { spawn, ChildProcess } from 'child_process';
-import { existsSync, readFileSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync, mkdirSync, rmSync } from 'fs';
 import * as path from 'path';
+import * as os from 'os';
+import { MCPServiceRegistration } from '../../src/mcp-channel/src/service-registration';
+import { CLIMCPServer } from '../../src/mcp-channel/src/cli-mcp-server';
+import { PTYManager } from '../../src/mcp-channel/src/pty-manager';
+import { MCPLifecycleCoordinator } from '../../src/mcp-channel/src/lifecycle-coordinator';
 
 describe('Pty-MCP-Server Test Harness', () => {
   let mcpServerProcess: ChildProcess | null = null;
@@ -124,6 +130,150 @@ describe('Pty-MCP-Server Test Harness', () => {
     });
   });
 
+  describe('Service Discovery Integration Tests', () => {
+    let testServicesDir: string;
+    let mcpServer: CLIMCPServer;
+    let ptyManager: PTYManager;
+    let serviceRegistration: MCPServiceRegistration;
+
+    beforeEach(() => {
+      // Create temporary services directory for testing
+      testServicesDir = path.join(os.tmpdir(), `templum-test-services-${Date.now()}`);
+      mkdirSync(testServicesDir, { recursive: true });
+      
+      // Initialize test components
+      mcpServer = new CLIMCPServer();
+      ptyManager = new PTYManager();
+    });
+
+    afterEach(async () => {
+      // Clean up test resources
+      if (serviceRegistration) {
+        await serviceRegistration.unregister();
+      }
+      
+      if (mcpServer) {
+        mcpServer.cleanup();
+      }
+      
+      if (ptyManager) {
+        ptyManager.cleanup();
+      }
+      
+      // Remove test services directory
+      if (existsSync(testServicesDir)) {
+        rmSync(testServicesDir, { recursive: true, force: true });
+      }
+    });
+
+    test('should register MCP service in services directory', async () => {
+      serviceRegistration = new MCPServiceRegistration({
+        serviceId: 'test-mcp-server',
+        serviceName: 'Test MCP Server',
+        servicesDir: testServicesDir,
+        healthCheckInterval: 1000,
+        enableAutoCleanup: false // Disable for testing
+      });
+
+      serviceRegistration.initialize(mcpServer, ptyManager);
+      await serviceRegistration.register();
+
+      const serviceFilePath = serviceRegistration.getServiceFilePath();
+      expect(existsSync(serviceFilePath)).toBe(true);
+      
+      const serviceConfig = JSON.parse(readFileSync(serviceFilePath, 'utf-8'));
+      expect(serviceConfig.id).toBe('test-mcp-server');
+      expect(serviceConfig.name).toBe('Test MCP Server');
+      expect(serviceConfig.capabilities).toContain('cli-create-session');
+      expect(serviceConfig.pid).toBe(process.pid);
+    });
+
+    test('should validate service health monitoring', async () => {
+      serviceRegistration = new MCPServiceRegistration({
+        serviceId: 'test-health-mcp',
+        servicesDir: testServicesDir,
+        healthCheckInterval: 500, // Short interval for testing
+        enableAutoCleanup: false
+      });
+
+      serviceRegistration.initialize(mcpServer, ptyManager);
+      await serviceRegistration.register();
+
+      // Wait for at least one health check
+      await new Promise(resolve => setTimeout(resolve, 600));
+
+      const serviceConfig = JSON.parse(readFileSync(serviceRegistration.getServiceFilePath(), 'utf-8'));
+      expect(serviceConfig.lastSeen).toBeGreaterThan(Date.now() - 1000);
+    });
+
+    test('should unregister service on cleanup', async () => {
+      serviceRegistration = new MCPServiceRegistration({
+        serviceId: 'test-cleanup-mcp',
+        servicesDir: testServicesDir,
+        enableAutoCleanup: false
+      });
+
+      serviceRegistration.initialize(mcpServer, ptyManager);
+      await serviceRegistration.register();
+
+      const serviceFilePath = serviceRegistration.getServiceFilePath();
+      expect(existsSync(serviceFilePath)).toBe(true);
+
+      await serviceRegistration.unregister();
+      expect(existsSync(serviceFilePath)).toBe(false);
+    });
+
+    test('should validate MCP performance metrics', async () => {
+      // Test MCP server performance optimization
+      const testRequest = {
+        id: 'perf-test-1',
+        method: 'tools/list'
+      };
+
+      const startTime = Date.now();
+      const response = await mcpServer.handleMCPRequest(testRequest);
+      const responseTime = Date.now() - startTime;
+
+      expect(response.error).toBeUndefined();
+      expect(response.result).toBeDefined();
+      expect(responseTime).toBeLessThan(100); // <100ms requirement
+      
+      // Test caching - second request should be faster
+      const cachedStartTime = Date.now();
+      const cachedResponse = await mcpServer.handleMCPRequest(testRequest);
+      const cachedResponseTime = Date.now() - cachedStartTime;
+
+      expect(cachedResponse.error).toBeUndefined();
+      expect(cachedResponseTime).toBeLessThanOrEqual(responseTime); // Should be same or faster due to caching
+    });
+
+    test('should validate lifecycle coordinator integration', async () => {
+      const coordinator = new MCPLifecycleCoordinator({
+        serviceId: 'test-lifecycle-mcp',
+        servicesDir: testServicesDir,
+        healthCheckInterval: 1000,
+        enableAutoCleanup: false
+      });
+
+      await coordinator.start();
+      expect(coordinator.isReady()).toBe(true);
+      
+      const state = coordinator.getState();
+      expect(state.phase).toBe('running');
+      expect(state.services.mcpServer).toBe('running');
+      expect(state.services.ptyManager).toBe('running');
+      expect(state.services.serviceRegistration).toBe('running');
+
+      // Verify service file was created
+      const expectedServiceFile = path.join(testServicesDir, `test-lifecycle-mcp.json`);
+      expect(existsSync(expectedServiceFile)).toBe(true);
+
+      await coordinator.stop();
+      expect(coordinator.getState().phase).toBe('stopped');
+      expect(existsSync(expectedServiceFile)).toBe(false);
+    });
+  });
+
   describe('Configuration Validation Tests', () => {
     test('should validate tools directory structure', () => {
       const toolsDir = path.join(__dirname, '..', '..', 'mcp-server', 'tools');
@@ -141,7 +291,7 @@ describe('Pty-MCP-Server Test Harness', () => {
 });
 
 /**
- * TODO: [TASK-MCP-INT-002] Pattern: templum-service-discovery-pattern | Complexity: 4 | Dependencies: TASK-MCP-INT-001,Templum-service-discovery
+ * TODO: [TASK-MCP-004] Pattern: templum-service-discovery-pattern | Complexity: 4 | Dependencies: TASK-MCP-INT-001,Templum-service-discovery
  * Context: Templum-specific test harness for service discovery integration with TDD approach
  * Location: Templum/tests/service-discovery/ (Templum-specific)
  * Validation-Required: service-registration, discovery-detection, health-monitoring

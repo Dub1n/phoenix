@@ -591,27 +591,77 @@ export class QualityValidator {
   }
 
   /**
-   * Find files matching patterns in project scope
+   * Find files matching patterns in project scope - PERFORMANCE OPTIMIZED VERSION
+   * 
+   * TODO: [TASK-VAL-QUALITY-FIX-001] Pattern: performance-optimized-file-discovery | Complexity: 7 | Dependencies: glob-pattern-matching,file-system-traversal
+   * Context: Fixed performance issues with wildcard patterns and pattern matching bugs that caused timeouts and missed files
+   * Validation-Required: pattern-matching-accuracy, performance-improvement, directory-exclusion
+   * Pattern-Info: { approach: \"smart-pattern-filtering-with-path-aware-matching\", alternatives: \"fast-glob-library\", trade-offs: \"accuracy-vs-speed\" }
    */
   findFilesInScope(projectInfo, patterns) {
     const files = [];
+    const maxFiles = 1000; // Limit to prevent infinite scanning
+    
+    // Define directories to exclude for performance
+    const excludedDirs = [
+      'node_modules',
+      '.git',
+      '.next',
+      'dist',
+      'build',
+      'coverage',
+      '.nyc_output',
+      'logs',
+      'tmp',
+      'temp',
+      '.cache',
+      '.vscode',
+      '.idea'
+    ];
     
     try {
       for (const pattern of patterns) {
-        // Handle both specific scope patterns and general patterns
+        if (files.length >= maxFiles) {
+          console.log(`      ⚠️ File limit reached (${maxFiles}), truncating discovery`);
+          break;
+        }
+        
+        // Handle different pattern types more intelligently
         if (pattern.includes('**')) {
-          // Handle recursive patterns
-          const basePattern = pattern.replace('**/', '').replace('**\\', '');
-          const searchPath = path.join(projectInfo.path, 'src');
+          // Handle recursive patterns with very limited scope for performance
+          let searchPaths = [path.join(projectInfo.path, 'src')];
+          
+          // If src doesn't exist, try project root but with very restrictive search
+          if (!fs.existsSync(searchPaths[0])) {
+            searchPaths = [projectInfo.path];
+          }
+          
+          for (const searchPath of searchPaths) {
+            if (fs.existsSync(searchPath)) {
+              // Use reduced depth for recursive patterns to prevent timeouts
+              this.walkDirectoryOptimized(searchPath, pattern, files, excludedDirs, 0, 3, maxFiles, projectInfo.path);
+            }
+          }
+        } else if (pattern.includes('/') || pattern.includes('\\')) {
+          // Handle path-specific patterns like "src/core/*.ts"
+          const pathParts = pattern.split(/[\/\\]/);
+          const dirPath = pathParts.slice(0, -1).join(path.sep);
+          const filePattern = pathParts[pathParts.length - 1];
+          const searchPath = path.join(projectInfo.path, dirPath);
           
           if (fs.existsSync(searchPath)) {
-            this.walkDirectory(searchPath, basePattern, files);
+            this.walkDirectoryOptimized(searchPath, pattern, files, excludedDirs, 0, 1, maxFiles, projectInfo.path);
           }
         } else {
-          // Handle simple patterns
+          // Handle simple patterns and direct file paths
           const searchPath = path.join(projectInfo.path, pattern);
           if (fs.existsSync(searchPath)) {
-            files.push(searchPath);
+            const stat = fs.statSync(searchPath);
+            if (stat.isFile()) {
+              files.push(searchPath);
+            } else if (stat.isDirectory()) {
+              this.walkDirectoryOptimized(searchPath, '*.{ts,js}', files, excludedDirs, 0, 1, maxFiles, projectInfo.path);
+            }
           }
         }
       }
@@ -623,37 +673,156 @@ export class QualityValidator {
   }
 
   /**
-   * Walk directory recursively to find matching files
+   * Walk directory recursively to find matching files - PATTERN-AWARE OPTIMIZED VERSION
+   * 
+   * TODO: [TASK-VAL-QUALITY-FIX-001] Pattern: pattern-aware-directory-walker | Complexity: 8 | Dependencies: glob-pattern-matching,file-system-performance
+   * Context: Fixed pattern matching to handle path-based patterns and improved performance with better directory filtering
+   * Validation-Required: pattern-matching-accuracy, performance-improvement, path-awareness
+   * Pattern-Info: { approach: \"relative-path-pattern-matching\", alternatives: \"glob-library\", trade-offs: \"custom-implementation-vs-library\" }
    */
-  walkDirectory(dir, pattern, results) {
+  walkDirectoryOptimized(dir, pattern, results, excludedDirs, currentDepth, maxDepth, maxFiles, projectRoot = null) {
+    // Prevent infinite recursion and excessive scanning
+    if (currentDepth >= maxDepth || results.length >= maxFiles) {
+      return;
+    }
+    
     try {
       const files = fs.readdirSync(dir);
       
       for (const file of files) {
+        if (results.length >= maxFiles) {
+          break; // Early termination when file limit reached
+        }
+        
         const filePath = path.join(dir, file);
-        const stat = fs.statSync(filePath);
+        
+        // Skip excluded directories
+        if (excludedDirs.includes(file)) {
+          continue;
+        }
+        
+        let stat;
+        try {
+          stat = fs.statSync(filePath);
+        } catch (error) {
+          // Skip files with permission issues
+          continue;
+        }
         
         if (stat.isDirectory()) {
-          this.walkDirectory(filePath, pattern, results);
-        } else if (this.matchesPattern(file, pattern)) {
+          // Recursively search subdirectories with depth limit
+          this.walkDirectoryOptimized(filePath, pattern, results, excludedDirs, currentDepth + 1, maxDepth, maxFiles, projectRoot);
+        } else if (this.matchesPatternFixed(filePath, pattern, projectRoot || dir)) {
           results.push(filePath);
         }
       }
     } catch (error) {
-      // Ignore directory access errors
+      // Ignore directory access errors (permission issues, etc.)
     }
   }
 
   /**
-   * Check if filename matches a simple pattern
+   * Legacy walk directory method - DEPRECATED
+   * Kept for backward compatibility, but no longer used
    */
-  matchesPattern(filename, pattern) {
-    // Convert simple glob pattern to regex
-    const regexPattern = pattern
+  walkDirectory(dir, pattern, results) {
+    console.log('      ⚠️ Using deprecated walkDirectory method, consider updating to walkDirectoryOptimized');
+    return this.walkDirectoryOptimized(dir, pattern, results, [], 0, 10, 10000);
+  }
+
+  /**
+   * Check if file path matches a glob pattern - FIXED VERSION
+   * 
+   * TODO: [TASK-VAL-QUALITY-FIX-001] Pattern: path-aware-glob-matching | Complexity: 6 | Dependencies: glob-pattern-parsing
+   * Context: Fixed pattern matching bug that prevented patterns like 'src/core/*.ts' from matching existing files
+   * Validation-Required: glob-pattern-accuracy, path-component-handling, cross-platform-compatibility
+   * Pattern-Info: { approach: "relative-path-normalization-with-glob", alternatives: "minimatch-library", trade-offs: "simplicity-vs-feature-completeness" }
+   */
+  matchesPatternFixed(filePath, pattern, projectRoot) {
+    try {
+      // Get relative path from project root for comparison
+      let relativePath;
+      if (projectRoot && filePath.startsWith(projectRoot)) {
+        relativePath = path.relative(projectRoot, filePath);
+      } else {
+        relativePath = filePath;
+      }
+      
+      // Normalize path separators to forward slashes for consistent matching
+      relativePath = relativePath.replace(/\\/g, '/');
+      const normalizedPattern = pattern.replace(/\\/g, '/');
+      
+      // Handle different pattern types
+      if (normalizedPattern.includes('**')) {
+        // Handle recursive wildcard patterns
+        const patternParts = normalizedPattern.split('**');
+        if (patternParts.length === 2) {
+          const prefix = patternParts[0];
+          const suffix = patternParts[1];
+          
+          // Check if path starts with prefix (if any) and contains suffix pattern
+          if (prefix && !relativePath.startsWith(prefix)) {
+            return false;
+          }
+          
+          // Match the suffix pattern
+          if (suffix.startsWith('/')) {
+            const suffixPattern = suffix.substring(1);
+            return this.matchesSimplePattern(path.basename(relativePath), suffixPattern);
+          } else {
+            return this.matchesSimplePattern(path.basename(relativePath), suffix);
+          }
+        }
+      } else if (normalizedPattern.includes('/')) {
+        // Handle path-specific patterns like "src/core/*.ts"
+        const patternParts = normalizedPattern.split('/');
+        const pathParts = relativePath.split('/');
+        
+        // Must have same number of path components
+        if (patternParts.length !== pathParts.length) {
+          return false;
+        }
+        
+        // Check each path component
+        for (let i = 0; i < patternParts.length; i++) {
+          if (!this.matchesSimplePattern(pathParts[i], patternParts[i])) {
+            return false;
+          }
+        }
+        
+        return true;
+      } else {
+        // Handle simple filename patterns
+        return this.matchesSimplePattern(path.basename(relativePath), normalizedPattern);
+      }
+    } catch (error) {
+      // Fallback to simple matching on error
+      return this.matchesSimplePattern(path.basename(filePath), pattern);
+    }
+    
+    return false;
+  }
+  
+  /**
+   * Match simple glob patterns without path components
+   */
+  matchesSimplePattern(filename, pattern) {
+    // Escape regex special characters except * and ?
+    const escaped = pattern
+      .replace(/[.+^${}()|[\]\\]/g, '\\$&')
       .replace(/\*/g, '.*')
       .replace(/\?/g, '.');
     
-    return new RegExp(`^${regexPattern}$`).test(filename);
+    return new RegExp(`^${escaped}$`).test(filename);
+  }
+
+  /**
+   * Check if filename matches a simple pattern - DEPRECATED
+   * Use matchesPatternFixed instead
+   */
+  matchesPattern(filename, pattern) {
+    console.log('      ⚠️ Using deprecated matchesPattern method, consider updating to matchesPatternFixed');
+    return this.matchesSimplePattern(filename, pattern);
   }
 
   /**

@@ -1,0 +1,532 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Chain Analyst Universal Synthesis Schema",
+  "description": "Universal handoff format for multi-engineer chain synthesis and optimization",
+  "version": "1.0.0",
+  "type": "object",
+  "required": [
+    "initial_task",
+    "chain_specification",
+    "engineering_profile", 
+    "performance_expectations",
+    "synthesis_metadata"
+  ],
+  "properties": {
+    
+    "initial_task": {
+      "description": "full verbatim task: initial prompt + task tracker information if present",
+      "type": "string"
+    },
+
+    "chain_specification": {
+      "description": "Complete executable chain design with all technical details",
+      "type": "object",
+      "required": ["chain_structure", "execution_flow", "resource_requirements"],
+      "properties": {
+        "chain_id": {
+          "type": "string",
+          "description": "Unique identifier for this chain design"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When this chain design was completed"
+        },
+        "chain_structure": {
+          "type": "object",
+          "description": "Core chain architecture and components",
+          "required": ["total_agents", "execution_pattern", "coordination_approach"],
+          "properties": {
+            "total_agents": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Total number of agents in this chain"
+            },
+            "execution_pattern": {
+              "type": "string",
+              "enum": ["sequential", "parallel", "hybrid", "adaptive"],
+              "description": "Primary execution pattern used"
+            },
+            "coordination_approach": {
+              "type": "string", 
+              "description": "How agents are coordinated (e.g., 'file handoff', 'direct chaining', 'batch processing')"
+            },
+            "phase_breakdown": {
+              "type": "array",
+              "description": "Execution phases with agent assignments",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "phase_name": {"type": "string"},
+                  "agent_count": {"type": "integer"},
+                  "estimated_duration_minutes": {"type": "number"},
+                  "dependencies": {"type": "array", "items": {"type": "string"}},
+                  "critical_path": {"type": "boolean"}
+                }
+              }
+            }
+          }
+        },
+        "execution_flow": {
+          "type": "object", 
+          "description": "Concrete execution instructions and dependencies",
+          "properties": {
+            "task_specifications": {
+              "type": "array",
+              "description": "Specific Task() invocations or equivalent",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "task_id": {"type": "string"},
+                  "agent_type": {"type": "string"},
+                  "task_description": {"type": "string"},
+                  "timeout_seconds": {"type": "number"},
+                  "success_criteria": {"type": "array", "items": {"type": "string"}},
+                  "handoff_requirements": {"type": "array", "items": {"type": "string"}}
+                }
+              }
+            },
+            "dependency_graph": {
+              "type": "array",
+              "description": "Inter-task dependencies and sequencing",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "prerequisite_task": {"type": "string"},
+                  "dependent_task": {"type": "string"}, 
+                  "dependency_type": {"type": "string", "enum": ["blocking", "data", "resource", "validation"]}
+                }
+              }
+            },
+            "batch_configurations": {
+              "type": "array",
+              "description": "Parallel batch processing configurations",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "batch_name": {"type": "string"},
+                  "batch_size": {"type": "integer"},
+                  "coordination_method": {"type": "string"},
+                  "timeout_strategy": {"type": "string"}
+                }
+              }
+            }
+          }
+        },
+        "resource_requirements": {
+          "type": "object",
+          "description": "Resource constraints and availability needs",
+          "properties": {
+            "estimated_total_duration_minutes": {
+              "type": "number",
+              "description": "Total expected chain execution time"
+            },
+            "peak_concurrent_agents": {
+              "type": "integer",
+              "description": "Maximum agents running simultaneously"
+            },
+            "computational_intensity": {
+              "type": "string",
+              "enum": ["low", "moderate", "high", "intensive"],
+              "description": "Overall computational resource requirements"
+            },
+            "external_dependencies": {
+              "type": "array",
+              "items": {"type": "string"},
+              "description": "External systems or resources required"
+            },
+            "critical_resource_constraints": {
+              "type": "array",
+              "items": {"type": "string"},
+              "description": "Resource limitations that could impact execution"
+            }
+          }
+        }
+      }
+    },
+
+    "engineering_profile": {
+      "description": "Chain Engineer approach and philosophy applied",
+      "type": "object", 
+      "required": ["engineer_version", "primary_optimization_focus", "design_approach"],
+      "properties": {
+        "engineer_version": {
+          "type": "string",
+          "enum": ["v1.0-practical", "v1.1-algorithmic", "v1.2-pattern-centric", "v1.3-risk-adaptive", "v1.4-speed-optimized"],
+          "description": "Which Chain Engineer variant created this design"
+        },
+        "primary_optimization_focus": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "What this engineer primarily optimized for (e.g., 'execution reliability', 'resource efficiency', 'adaptation capability')"
+        },
+        "design_approach": {
+          "type": "string",
+          "description": "High-level description of the methodology used"
+        },
+        "core_strengths": {
+          "type": "array", 
+          "items": {"type": "string"},
+          "description": "What this design does particularly well"
+        },
+        "acknowledged_limitations": {
+          "type": "array",
+          "items": {"type": "string"}, 
+          "description": "What this engineer recognizes as limitations or trade-offs"
+        },
+        "design_confidence_level": {
+          "type": "string",
+          "enum": ["high", "medium", "low"],
+          "description": "Engineer's confidence in this chain design"
+        }
+      }
+    },
+
+    "performance_expectations": {
+      "description": "Predicted outcomes and success metrics",
+      "type": "object",
+      "required": ["success_probability", "primary_success_criteria"],
+      "properties": {
+        "success_probability": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Estimated probability of successful chain completion"
+        },
+        "primary_success_criteria": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Key criteria defining successful execution"
+        },
+        "performance_targets": {
+          "type": "object",
+          "description": "Quantitative performance expectations", 
+          "properties": {
+            "target_duration_minutes": {"type": "number"},
+            "acceptable_duration_range": {
+              "type": "object",
+              "properties": {
+                "min_acceptable": {"type": "number"},
+                "max_acceptable": {"type": "number"}
+              }
+            },
+            "resource_efficiency_target": {"type": "number", "minimum": 0, "maximum": 1},
+            "quality_level_expected": {
+              "type": "string",
+              "enum": ["optimal", "high", "acceptable", "minimum"]
+            }
+          }
+        },
+        "failure_scenarios": {
+          "type": "array",
+          "description": "Anticipated ways this chain might fail",
+          "items": {
+            "type": "object",
+            "properties": {
+              "failure_mode": {"type": "string"},
+              "probability": {"type": "number", "minimum": 0, "maximum": 1},
+              "impact_severity": {"type": "string", "enum": ["low", "medium", "high", "critical"]},
+              "detection_method": {"type": "string"}
+            }
+          }
+        },
+        "trade_off_decisions": {
+          "type": "array",
+          "description": "Conscious trade-offs made in this design",
+          "items": {
+            "type": "object", 
+            "properties": {
+              "trade_off_description": {"type": "string"},
+              "chosen_approach": {"type": "string"},
+              "rejected_alternative": {"type": "string"},
+              "rationale": {"type": "string"}
+            }
+          }
+        }
+      }
+    },
+
+    "optimization_strategy": {
+      "description": "Specific optimization approaches and techniques used",
+      "type": "object",
+      "properties": {
+        "optimization_priorities": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "priority_area": {"type": "string"},
+              "optimization_technique": {"type": "string"},
+              "expected_benefit": {"type": "string"},
+              "implementation_effort": {"type": "string", "enum": ["low", "medium", "high"]}
+            }
+          }
+        },
+        "pattern_or_template_usage": {
+          "type": "object",
+          "description": "Base patterns or templates applied",
+          "properties": {
+            "base_pattern_name": {"type": "string"},
+            "pattern_confidence": {"type": "number", "minimum": 0, "maximum": 1},
+            "customizations_applied": {"type": "array", "items": {"type": "string"}},
+            "pattern_effectiveness_history": {"type": "string"}
+          }
+        },
+        "algorithmic_optimizations": {
+          "type": "array",
+          "description": "Algorithmic improvements applied",
+          "items": {
+            "type": "object",
+            "properties": {
+              "optimization_name": {"type": "string"},
+              "target_metric": {"type": "string"},
+              "expected_improvement": {"type": "string"}
+            }
+          }
+        },
+        "speed_optimizations": {
+          "type": "array",
+          "description": "Specific speed enhancements implemented",
+          "items": {
+            "type": "object",
+            "properties": {
+              "optimization_type": {"type": "string"},
+              "time_savings_estimate": {"type": "string"},
+              "quality_impact": {"type": "string", "enum": ["none", "minimal", "moderate", "significant"]}
+            }
+          }
+        }
+      }
+    },
+
+    "risk_and_adaptation": {
+      "description": "Risk management and adaptive capabilities", 
+      "type": "object",
+      "properties": {
+        "risk_assessment": {
+          "type": "object",
+          "description": "Risk evaluation and mitigation approaches",
+          "properties": {
+            "overall_risk_level": {
+              "type": "string",
+              "enum": ["low", "medium", "high", "critical"]
+            },
+            "primary_risk_factors": {
+              "type": "array",
+              "items": {"type": "string"}
+            },
+            "mitigation_strategies": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "risk_addressed": {"type": "string"},
+                  "mitigation_approach": {"type": "string"},
+                  "effectiveness_estimate": {"type": "string", "enum": ["high", "medium", "low"]}
+                }
+              }
+            }
+          }
+        },
+        "adaptation_mechanisms": {
+          "type": "array",
+          "description": "How the chain can adapt to unexpected conditions",
+          "items": {
+            "type": "object",
+            "properties": {
+              "adaptation_trigger": {"type": "string"},
+              "adaptation_response": {"type": "string"},
+              "response_time_estimate": {"type": "string"}
+            }
+          }
+        },
+        "fallback_strategies": {
+          "type": "array",
+          "description": "Fallback approaches if primary execution fails",
+          "items": {
+            "type": "object",
+            "properties": {
+              "trigger_condition": {"type": "string"},
+              "fallback_approach": {"type": "string"},
+              "success_probability": {"type": "number", "minimum": 0, "maximum": 1},
+              "performance_impact": {"type": "string"}
+            }
+          }
+        },
+        "uncertainty_handling": {
+          "type": "string",
+          "description": "How this chain handles uncertain or variable conditions"
+        }
+      }
+    },
+
+    "specialization_details": {
+      "description": "Engineer-specific advanced metrics and insights",
+      "type": "object", 
+      "properties": {
+        "pattern_analytics": {
+          "type": "object",
+          "description": "Pattern-centric engineer insights",
+          "properties": {
+            "pattern_selection_methodology": {"type": "string"},
+            "historical_pattern_performance": {"type": "string"},
+            "confidence_scoring_breakdown": {"type": "string"},
+            "learning_outcomes_expected": {"type": "array", "items": {"type": "string"}}
+          }
+        },
+        "algorithmic_intelligence": {
+          "type": "object", 
+          "description": "Algorithmic engineer optimizations",
+          "properties": {
+            "complexity_scoring": {"type": "number"},
+            "optimization_algorithms_applied": {"type": "array", "items": {"type": "string"}},
+            "coordination_intelligence": {"type": "string"},
+            "prediction_accuracy_estimates": {"type": "string"}
+          }
+        },
+        "probabilistic_modeling": {
+          "type": "object",
+          "description": "Risk-adaptive engineer probabilistic assessments",
+          "properties": {
+            "outcome_probability_distributions": {"type": "string"},
+            "uncertainty_quantification": {"type": "string"},
+            "adaptive_architecture_details": {"type": "string"},
+            "cascade_prevention_measures": {"type": "array", "items": {"type": "string"}}
+          }
+        },
+        "velocity_metrics": {
+          "type": "object",
+          "description": "Speed-optimized engineer performance data", 
+          "properties": {
+            "design_time_optimization": {"type": "string"},
+            "execution_speed_targets": {"type": "string"},
+            "heuristic_decision_points": {"type": "array", "items": {"type": "string"}},
+            "good_enough_thresholds": {"type": "array", "items": {"type": "string"}}
+          }
+        },
+        "practical_execution_focus": {
+          "type": "object",
+          "description": "Practical engineer execution insights",
+          "properties": {
+            "proven_template_usage": {"type": "string"},
+            "execution_reliability_measures": {"type": "array", "items": {"type": "string"}},
+            "operational_efficiency_approach": {"type": "string"},
+            "template_development_insights": {"type": "array", "items": {"type": "string"}}
+          }
+        }
+      }
+    },
+
+    "synthesis_metadata": {
+      "description": "Information specifically designed to enable effective chain synthesis",
+      "type": "object",
+      "required": ["synthesis_readiness", "combination_potential"],
+      "properties": {
+        "synthesis_readiness": {
+          "type": "object",
+          "description": "How ready this chain is for synthesis with others",
+          "required": ["completeness_level", "integration_compatibility"],
+          "properties": {
+            "completeness_level": {
+              "type": "string", 
+              "enum": ["complete", "mostly_complete", "partial", "conceptual"],
+              "description": "How complete this chain specification is"
+            },
+            "integration_compatibility": {
+              "type": "string",
+              "enum": ["high", "medium", "low"],
+              "description": "How easily this can be combined with other approaches"
+            },
+            "execution_readiness": {
+              "type": "string",
+              "enum": ["immediate", "minor_refinement", "significant_development"],
+              "description": "How ready this is for actual execution"
+            }
+          }
+        },
+        "combination_potential": {
+          "type": "object",
+          "description": "How this design could be combined with others",
+          "properties": {
+            "compatible_approaches": {
+              "type": "array", 
+              "items": {"type": "string"},
+              "description": "Other Chain Engineer approaches this could work well with"
+            },
+            "incompatible_approaches": {
+              "type": "array",
+              "items": {"type": "string"}, 
+              "description": "Approaches that would conflict with this design"
+            },
+            "integration_opportunities": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "integration_area": {"type": "string"},
+                  "potential_benefit": {"type": "string"},
+                  "integration_complexity": {"type": "string", "enum": ["low", "medium", "high"]}
+                }
+              }
+            },
+            "synthesis_constraints": {
+              "type": "array",
+              "items": {"type": "string"},
+              "description": "Constraints that limit how this design can be combined"
+            }
+          }
+        },
+        "differentiation_factors": {
+          "type": "object",
+          "description": "What makes this approach unique compared to others",
+          "properties": {
+            "unique_advantages": {
+              "type": "array",
+              "items": {"type": "string"},
+              "description": "Specific advantages this approach offers"
+            },
+            "approach_philosophy": {
+              "type": "string",
+              "description": "Core philosophy driving this design approach"
+            },
+            "innovation_areas": {
+              "type": "array", 
+              "items": {"type": "string"},
+              "description": "Areas where this design introduces novel approaches"
+            },
+            "improvement_priorities": {
+              "type": "array",
+              "items": {"type": "string"},
+              "description": "What this engineer would focus on improving"
+            }
+          }
+        },
+        "synthesis_recommendations": {
+          "type": "object",
+          "description": "Engineer's recommendations for synthesis",
+          "properties": {
+            "best_combination_candidates": {
+              "type": "array",
+              "items": {"type": "string"},
+              "description": "Other approaches recommended for combination"
+            },
+            "synthesis_priorities": {
+              "type": "array",
+              "items": {"type": "string"}, 
+              "description": "What should be prioritized in synthesis"
+            },
+            "integration_suggestions": {
+              "type": "array",
+              "items": {"type": "string"},
+              "description": "Specific suggestions for how to integrate with other designs"
+            }
+          }
+        }
+      }
+    }
+  },
+
+  "additionalProperties": false,
+
+  "$comment": "Design Philosophy: This universal schema prioritizes synthesis enablement over execution tracking. It balances universal compatibility (all engineers can populate core sections) with specialization capture (optional sections for each engineer's expertise). The focus is on providing Chain Analysts with the information needed to compare, evaluate, and synthesize multiple chain proposals into optimal hybrid designs."
+}

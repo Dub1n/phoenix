@@ -31,7 +31,7 @@ MockImplementation3: has a non-standard file placement, such as files in differe
 
 MockImplementation4: has code that would be caught as an error by a bad validation script but is understood to be fine by the IdealValidator - perhaps the code in another part of the project has an error that shouldn't be picked up but might.
 
-It is important to note that the agent that writes the validation script doesn't get all of the information - they only know what is passed to them from the previous agent- for a Subagent that would be the Main Agent's context to it + the handoff from the Research Agent if there was one, and for the Main Agent that would be what the Task Agent gave it in the Task Tracker information if it left any. As such they need to be given the tools and framework to write a comprehensive validation extension for any given task.
+It is important to note that the agent that writes the validation script doesn't get all of the information - they only know what is passed to them from the previous agent- for a Subagent that would be the Main Agent's context to it + the handoff from the Analysis Agent if there was one, and for the Main Agent that would be what the Task Agent gave it in the Task Tracker information if it left any. As such they need to be given the tools and framework to write a comprehensive validation extension for any given task.
 
 The output of all the validators that the agent generates need to match the target requirements.
 

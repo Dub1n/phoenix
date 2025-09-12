@@ -1,5 +1,5 @@
 # Templum MCP Server Configuration
-# Generated for TASK-MCP-INT-002: Templum Service Discovery Integration
+# Generated for TASK-MCP-004: Templum Service Discovery Integration
 # Created: 2025-09-05
 # Location: Templum/mcp-server/config/ (Templum-specific)
 # Purpose: Configure pty-mcp-server for Templum CLI interaction

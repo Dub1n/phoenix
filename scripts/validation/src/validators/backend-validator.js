@@ -33,6 +33,14 @@ export class BackendValidator {
     // Initialize internal state
     this.servicesStarted = [];
     this.validationStartTime = null;
+    this.debugMode = process.env.BACKEND_VALIDATOR_DEBUG === 'true';
+    this.metrics = {
+      serviceStartupAttempts: 0,
+      serviceStartupTime: 0,
+      healthCheckAttempts: 0,
+      commandExecutionAttempts: 0,
+      retryCount: 0
+    };
   }
 
   /**
@@ -136,7 +144,7 @@ export class BackendValidator {
    */
   getCapabilities() {
     return {
-      supportedProjects: ['Templum', 'Haruspex', 'phoenix-code-lite'],
+      supportedProjects: ['Templum', 'templum', 'Haruspex', 'haruspex', 'phoenix-code-lite'],
       supportedScopes: this.scopes,
       requiredDependencies: ['typescript', 'eslint', 'curl'],
       performanceProfile: 'standard'
@@ -196,7 +204,7 @@ export class BackendValidator {
   }
 
   /**
-   * Execute service health check test
+   * Execute service health check test with retry logic
    */
   async executeHealthCheck() {
     console.log('    Service Health Check...');
@@ -209,36 +217,54 @@ export class BackendValidator {
     };
 
     try {
-      const response = execSync('curl -s http://localhost:3004/health', {
-        encoding: 'utf8',
-        timeout: 10000
-      });
+      const healthCheckOperation = async () => {
+        // Try localhost first, then 127.0.0.1 as fallback
+        const urls = ['http://localhost:3004/health', 'http://127.0.0.1:3004/health'];
+        let lastError;
+        
+        for (const url of urls) {
+          try {
+            const response = execSync(`curl -s --connect-timeout 3 --max-time 8 ${url}`, {
+              encoding: 'utf8',
+              timeout: 10000
+            });
 
-      const responseData = JSON.parse(response);
+            const responseData = JSON.parse(response);
+            
+            if (responseData && responseData.status === 'healthy') {
+              test.evidence.push(`Service returned healthy status from ${url}`);
+              return { success: true, data: responseData, url };
+            } else {
+              throw new Error(`Invalid response from ${url}: ${JSON.stringify(responseData)}`);
+            }
+          } catch (error) {
+            lastError = error;
+            console.log(`      Trying alternative URL due to: ${error.message.substring(0, 100)}`);
+          }
+        }
+        
+        throw lastError;
+      };
+
+      const result = await this.executeWithRetry(healthCheckOperation, 3, 2000);
       
-      if (responseData && responseData.status === 'healthy') {
-        test.status = 'PASS';
-        test.message = 'Service health check passed';
-        test.evidence.push('Service returned healthy status');
-        console.log('      ✅ PASS - Service is healthy');
-      } else {
-        test.status = 'FAIL';
-        test.message = 'Service health check failed - invalid response';
-        test.errors.push(`Expected healthy status, got: ${JSON.stringify(responseData)}`);
-        console.log('      ❌ FAIL - Service health check failed');
-      }
+      test.status = 'PASS';
+      test.message = 'Service health check passed with retry logic';
+      test.evidence.push(`Service responded successfully from ${result.url}`);
+      console.log('      ✅ PASS - Service is healthy');
     } catch (error) {
       test.status = 'FAIL';
-      test.message = 'Service health check failed';
-      test.errors.push(`Health check error: ${error.message}`);
-      console.log('      ❌ FAIL - Service health check failed');
+      test.message = 'Service health check failed after retries';
+      test.errors.push(`Health check error after retries: ${error.message}`);
+      test.evidence.push('Attempted both localhost and 127.0.0.1 endpoints');
+      console.log('      ❌ FAIL - Service health check failed after retries');
     }
 
     return test;
   }
 
   /**
-   * Execute command execution test
+   * Execute command execution test with retry logic and better error handling
    */
   async executeCommandTest() {
     console.log('    Command Execution Test...');
@@ -251,40 +277,69 @@ export class BackendValidator {
     };
 
     try {
-      // Create test payload for Windows compatibility
-      let curlCommand;
-      if (process.platform === 'win32') {
-        const tempJsonFile = path.join(process.cwd(), 'temp-test-payload.json');
-        fs.writeFileSync(tempJsonFile, JSON.stringify({
-          command: "example.hello",
-          args: { name: "TestUser" }
-        }));
-        curlCommand = `curl -X POST http://localhost:3004/executeCommand -H "Content-Type: application/json" -d @temp-test-payload.json && del temp-test-payload.json`;
-      } else {
-        curlCommand = 'curl -X POST http://localhost:3004/executeCommand -H "Content-Type: application/json" -d \'{"command": "example.hello", "args": {"name": "TestUser"}}\'';
-      }
+      const commandExecutionOperation = async () => {
+        // Try both localhost and 127.0.0.1
+        const hosts = ['localhost', '127.0.0.1'];
+        let lastError;
 
-      const response = execSync(curlCommand, {
-        encoding: 'utf8',
-        timeout: 15000
-      });
+        for (const host of hosts) {
+          try {
+            // Create test payload for Windows compatibility
+            let curlCommand;
+            if (process.platform === 'win32') {
+              const tempJsonFile = path.join(process.cwd(), `temp-test-payload-${Date.now()}.json`);
+              fs.writeFileSync(tempJsonFile, JSON.stringify({
+                command: "example.hello",
+                args: { name: "TestUser" }
+              }));
+              curlCommand = `curl -X POST http://${host}:3004/executeCommand -H "Content-Type: application/json" --connect-timeout 3 --max-time 10 -d @${tempJsonFile} && del ${tempJsonFile}`;
+            } else {
+              curlCommand = `curl -X POST http://${host}:3004/executeCommand -H "Content-Type: application/json" --connect-timeout 3 --max-time 10 -d '{"command": "example.hello", "args": {"name": "TestUser"}}'`;
+            }
 
-      if (response.includes('"success": true') || response.includes('"success":true')) {
-        test.status = 'PASS';
-        test.message = 'Command execution test passed';
-        test.evidence.push('Command executed successfully with success=true');
-        console.log('      ✅ PASS - Command execution successful');
-      } else {
-        test.status = 'FAIL';
-        test.message = 'Command execution test failed';
-        test.errors.push(`Expected success=true, got: ${response.substring(0, 200)}...`);
-        console.log('      ❌ FAIL - Command execution failed');
-      }
+            const response = execSync(curlCommand, {
+              encoding: 'utf8',
+              timeout: 12000
+            });
+
+            if (response.includes('"success": true') || response.includes('"success":true')) {
+              test.evidence.push(`Command executed successfully from http://${host}:3004`);
+              test.evidence.push(`Response contained success=true: ${response.substring(0, 100)}...`);
+              return { success: true, response, host };
+            } else {
+              throw new Error(`Command execution failed - no success=true in response: ${response.substring(0, 200)}`);
+            }
+          } catch (error) {
+            lastError = error;
+            console.log(`      Trying alternative host due to: ${error.message.substring(0, 100)}`);
+            
+            // Clean up temp file if it exists
+            if (process.platform === 'win32') {
+              try {
+                const tempFiles = fs.readdirSync(process.cwd()).filter(f => f.startsWith('temp-test-payload-'));
+                tempFiles.forEach(f => {
+                  try { fs.unlinkSync(path.join(process.cwd(), f)); } catch {}
+                });
+              } catch {}
+            }
+          }
+        }
+
+        throw lastError;
+      };
+
+      const result = await this.executeWithRetry(commandExecutionOperation, 2, 3000);
+      
+      test.status = 'PASS';
+      test.message = 'Command execution test passed with retry logic';
+      test.evidence.push(`Command executed successfully from ${result.host}`);
+      console.log('      ✅ PASS - Command execution successful');
     } catch (error) {
       test.status = 'FAIL';
-      test.message = 'Command execution test failed';
-      test.errors.push(`Command execution error: ${error.message}`);
-      console.log('      ❌ FAIL - Command execution test failed');
+      test.message = 'Command execution test failed after retries';
+      test.errors.push(`Command execution error after retries: ${error.message}`);
+      test.evidence.push('Attempted both localhost and 127.0.0.1 endpoints');
+      console.log('      ❌ FAIL - Command execution test failed after retries');
     }
 
     return test;
@@ -483,11 +538,18 @@ export class BackendValidator {
     return test;
   }
 
+  // TODO: [TASK-VAL-BACKEND-FIX-001] Pattern: service-integration-reliability-enhancement | Complexity: 7 | Dependencies: backend-validator.js,minimal-backend,validation-framework
+  // Context: Enhanced service startup with intelligent polling and exponential backoff to fix timing issues
+  // Validation-Required: service-startup-timing, health-check-reliability, command-execution-consistency
+  // Pattern-Info: { approach: "polling-with-exponential-backoff", alternatives: "fixed-delays", trade-offs: "complexity-vs-reliability" }
+
   /**
-   * Start a backend service for testing
+   * Start a backend service for testing with intelligent readiness polling
    */
   async startService(serviceName, startCommand, healthCheckCommand, projectInfo, port = 3004) {
     console.log(`    Starting ${serviceName}...`);
+    const startupStartTime = Date.now();
+    this.recordMetric('serviceStartupAttempts', this.metrics.serviceStartupAttempts + 1);
     
     try {
       let serviceDir = path.join(projectInfo.path, 'examples/minimal-backend');
@@ -546,9 +608,17 @@ export class BackendValidator {
         
         console.log(`      Service ${serviceName} started with PID ${serviceProcess.pid}`);
         
-        // Wait for service to start
-        await new Promise(resolve => setTimeout(resolve, 5000));
+        // Wait for service to be ready using intelligent polling
+        const isReady = await this.waitForServiceReady(`http://localhost:${port}/health`, 15, 1000);
         
+        if (!isReady) {
+          console.log(`      ❌ Service ${serviceName} failed to become ready after polling`);
+          return null;
+        }
+        
+        console.log(`      ✅ Service ${serviceName} is ready and responding`);
+        this.recordMetric('serviceStartupTime', Date.now() - startupStartTime);
+        this.debugLog('info', `Service startup completed in ${Date.now() - startupStartTime}ms`);
         return serviceProcess;
       } finally {
         process.chdir(originalCwd);
@@ -556,8 +626,96 @@ export class BackendValidator {
       
     } catch (error) {
       console.log(`      ❌ Failed to start ${serviceName}: ${error.message}`);
+      this.debugLog('error', `Service startup failed after ${Date.now() - startupStartTime}ms`, { error: error.message });
       return null;
     }
+  }
+
+  /**
+   * Wait for service to be ready with intelligent polling and exponential backoff
+   */
+  async waitForServiceReady(url, maxAttempts = 15, initialDelayMs = 1000) {
+    console.log(`      Polling service readiness at ${url}...`);
+    
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        const response = execSync(`curl -s --connect-timeout 3 --max-time 5 ${url}`, {
+          encoding: 'utf8',
+          timeout: 8000
+        });
+        
+        const responseData = JSON.parse(response);
+        if (responseData && responseData.status === 'healthy') {
+          console.log(`      ✅ Service ready on attempt ${attempt}`);
+          return true;
+        }
+      } catch (error) {
+        const delay = Math.min(initialDelayMs * Math.pow(1.5, attempt - 1), 5000);
+        console.log(`      Attempt ${attempt}/${maxAttempts} failed, waiting ${delay}ms...`);
+        
+        if (attempt < maxAttempts) {
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+      }
+    }
+    
+    console.log(`      ❌ Service not ready after ${maxAttempts} attempts`);
+    return false;
+  }
+
+  /**
+   * Enhanced debug logging method
+   */
+  debugLog(level, message, data = null) {
+    if (this.debugMode || level === 'error') {
+      const timestamp = new Date().toISOString();
+      const prefix = `[${timestamp}] [BACKEND-VALIDATOR] [${level.toUpperCase()}]`;
+      
+      if (data) {
+        console.log(`${prefix} ${message}`, JSON.stringify(data, null, 2));
+      } else {
+        console.log(`${prefix} ${message}`);
+      }
+    }
+  }
+
+  /**
+   * Record metrics for monitoring and debugging
+   */
+  recordMetric(name, value) {
+    if (this.metrics.hasOwnProperty(name)) {
+      this.metrics[name] = value;
+    }
+    this.debugLog('debug', `Metric recorded: ${name} = ${value}`);
+  }
+
+  /**
+   * Execute operation with retry logic and exponential backoff
+   */
+  async executeWithRetry(operation, maxRetries = 3, initialBackoffMs = 1000) {
+    let lastError;
+    this.metrics.retryCount++;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        this.debugLog('debug', `Retry operation attempt ${attempt}/${maxRetries}`);
+        const result = await operation();
+        this.debugLog('debug', `Retry operation succeeded on attempt ${attempt}`);
+        return result;
+      } catch (error) {
+        lastError = error;
+        this.debugLog('debug', `Retry attempt ${attempt} failed: ${error.message}`);
+        
+        if (attempt < maxRetries) {
+          const backoff = initialBackoffMs * Math.pow(2, attempt - 1);
+          console.log(`      Retry attempt ${attempt}/${maxRetries} failed, waiting ${backoff}ms...`);
+          await new Promise(resolve => setTimeout(resolve, backoff));
+        }
+      }
+    }
+    
+    this.debugLog('error', `All retry attempts failed`, { maxRetries, error: lastError.message });
+    throw lastError;
   }
 
   /**
@@ -645,7 +803,7 @@ export class BackendValidator {
   }
 
   /**
-   * Cleanup resources
+   * Enhanced cleanup resources with graceful termination
    */
   async cleanup() {
     console.log('    Stopping backend services and cleaning up...');
@@ -653,15 +811,59 @@ export class BackendValidator {
     for (const service of this.servicesStarted) {
       if (service.process && !service.process.killed) {
         try {
+          // First attempt graceful termination
+          console.log(`      Gracefully terminating ${service.name} (PID ${service.pid})...`);
           service.process.kill('SIGTERM');
+          
+          // Wait for graceful termination
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          
+          // Check if process is still running
+          if (!service.process.killed) {
+            console.log(`      Force terminating ${service.name} (PID ${service.pid})...`);
+            service.process.kill('SIGKILL');
+          }
+          
           console.log(`      Stopped ${service.name}`);
         } catch (error) {
           console.log(`      Warning: Could not stop ${service.name}: ${error.message}`);
+          
+          // Fallback: try to kill by PID using system commands
+          try {
+            if (process.platform === 'win32') {
+              execSync(`taskkill /F /PID ${service.pid}`, { timeout: 3000 });
+            } else {
+              execSync(`kill -9 ${service.pid}`, { timeout: 3000 });
+            }
+            console.log(`      Force killed ${service.name} using system command`);
+          } catch (killError) {
+            console.log(`      Could not force kill ${service.name}: ${killError.message}`);
+          }
         }
       }
     }
     
+    // Clean up any remaining port bindings
+    for (const service of this.servicesStarted) {
+      if (service.port) {
+        console.log(`      Cleaning up port ${service.port}...`);
+        await this.killExistingProcesses(service.port);
+      }
+    }
+    
+    // Clean up temporary files
+    try {
+      const tempFiles = fs.readdirSync(process.cwd()).filter(f => f.startsWith('temp-test-payload-'));
+      for (const tempFile of tempFiles) {
+        try {
+          fs.unlinkSync(path.join(process.cwd(), tempFile));
+          console.log(`      Cleaned up temp file: ${tempFile}`);
+        } catch {}
+      }
+    } catch {}
+    
     this.servicesStarted = [];
+    console.log('    Cleanup completed');
   }
 }
 

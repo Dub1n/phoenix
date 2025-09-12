@@ -80,7 +80,7 @@ Successfully implemented comprehensive file-based handoff infrastructure for the
 
 This implementation establishes the foundation for:
 
-1. **Phase 2**: Generic Research Agent Implementation (TASK-SUBAGENT-002)
+1. **Phase 2**: Generic Analysis Agent Implementation (TASK-SUBAGENT-002)
 2. **Phase 2**: Generic Execution Agent Implementation (TASK-SUBAGENT-004)  
 3. **Cross-Project Reusability**: Generic agents can be used across VDL_Vault projects
 
@@ -93,8 +93,8 @@ This implementation establishes the foundation for:
 
 ## Next Steps
 
-1. **TASK-SUBAGENT-002**: Generic Research Agent Implementation  
-2. **TASK-SUBAGENT-003**: ResearchAgent Integration with pr/task Workflow
+1. **TASK-SUBAGENT-002**: Generic Analysis Agent Implementation  
+2. **TASK-SUBAGENT-003**: Analysis Agent Integration with pr/task Workflow
 3. **Pattern Documentation**: Add File-Based Handoff Infrastructure Pattern to templum-patterns.md
 
 ## Files Modified
