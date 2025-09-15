@@ -32,19 +32,19 @@ export async function main(): Promise<void> {
     // Create and initialize Templum Core
     const templumCore = new TemplumCore(config);
     
-    console.log('🔧 Initializing Templum Core Engine...');
+    console.log('Initializing Templum Core Engine...');
     await templumCore.initialize();
 
     // Display system status
     const systemStatus = templumCore.getSystemStatus();
-    console.log('✅ Templum Core Engine initialized successfully');
-    console.log(`📊 Supported interfaces: ${templumCore.getSupportedInterfaces().join(', ')}`);
-    console.log(`🎨 Loaded skins: ${systemStatus.coreEngine.loadedSkins.length}`);
-    console.log(`🔗 Active interfaces: ${systemStatus.coreEngine.activeInterfaces.length}`);
+    console.log('Templum Core Engine initialized successfully');
+    console.log(`Supported interfaces: ${templumCore.getSupportedInterfaces().join(', ')}`);
+    console.log(`Loaded skins: ${systemStatus.coreEngine.loadedSkins.length}`);
+    console.log(`Active interfaces: ${systemStatus.coreEngine.activeInterfaces.length}`);
 
     // TASK-CLI-004: Headless Service - CLI interface now runs in separate process
-    console.log('🔧 Running in headless service mode...');
-    console.log('💡 Use "templum" command to access CLI interface');
+    console.log('Running in headless service mode...');
+    console.log('Use "templum" command to access CLI interface');
     
     // Register service for CLI discovery (IPC-based service registration)
     await templumCore.registerForCliDiscovery();

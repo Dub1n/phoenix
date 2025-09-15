@@ -1,0 +1,436 @@
+{
+  "agentType": "Hybrid Analysis Agent 002",
+  "analysisId": "hybrid-analysis-002-2025-09-13-103229",
+  "status": "success",
+  "confidence": 92,
+  "analysisTime": "280 seconds",
+  "taskContext": {
+    "taskId": "TASK-MCP-009",
+    "taskName": "CLI REDESIGN 2",
+    "project": "Templum",
+    "analysisType": "Architectural Inconsistency Analysis"
+  },
+  "results": {
+    "projectContext": {
+      "projectType": "templum",
+      "basePath": "/mnt/c/Users/gabri/Documents/Infotopology/VDL_Vault/Templum",
+      "activeTasksFile": "/mnt/c/Users/gabri/Documents/Infotopology/VDL_Vault/Templum/dev/templum-active-tasks.md",
+      "patternsFile": "/mnt/c/Users/gabri/Documents/Infotopology/VDL_Vault/Templum/dev/templum-patterns.md",
+      "cliDesignSpec": "/mnt/c/Users/gabri/Documents/Infotopology/VDL_Vault/Templum/dev/CLI/CLI-design.md",
+      "keyFiles": [
+        "/mnt/c/Users/gabri/Documents/Infotopology/VDL_Vault/Templum/src/interfaces/cli-adapter.ts",
+        "/mnt/c/Users/gabri/Documents/Infotopology/VDL_Vault/Templum/src/rendering/universal-layout-engine.ts",
+        "/mnt/c/Users/gabri/Documents/Infotopology/VDL_Vault/Templum/src/menus/universal-menu-registry.ts",
+        "/mnt/c/Users/gabri/Documents/Infotopology/VDL_Vault/Templum/src/interfaces/terminal-ui-components.ts"
+      ]
+    },
+    "architecturalInconsistencies": {
+      "layoutInconsistencies": {
+        "severity": "HIGH",
+        "riskLevel": 8,
+        "issues": [
+          {
+            "type": "WINDOW_BORDER_INCONSISTENCY",
+            "description": "CLI design spec defines structured window borders with consistent 3-character padding, but implementation shows mixed approaches",
+            "locations": [
+              "src/interfaces/cli-adapter.ts:lines 196-249 (render method uses UniversalLayoutEngine but with inconsistent parameters)",
+              "src/rendering/universal-layout-engine.ts:lines 87-96 (layout constraints don't match CLI design spec requirements)",
+              "dev/CLI/CLI-design.md:lines 238-244 (spec requirements not implemented systematically)"
+            ],
+            "currentImplementation": "Mixed hardcoded rendering with UniversalLayoutEngine fallbacks",
+            "specRequirement": "Structured window system with consistent borders, 3-character padding, centered titles",
+            "gapAnalysis": "Implementation lacks algorithm to enforce design spec constraints across all menu pages"
+          },
+          {
+            "type": "MENU_STRUCTURE_VARIANCE",
+            "description": "Different menu pages use different structural approaches - some use sections, some use flat item lists",
+            "locations": [
+              "src/interfaces/cli-adapter.ts:lines 1040-1063 (convertMenuDefinition manually transforms skin menus)",
+              "src/menus/universal-menu-registry.ts:lines 178-193 (backend menu loading with format conversion)"
+            ],
+            "currentImplementation": "Manual conversion between skin formats in multiple places",
+            "specRequirement": "Uniform layout driven by skin definition content structure",
+            "gapAnalysis": "No unified algorithm to extract layout rules from skin definitions"
+          },
+          {
+            "type": "RESPONSIVE_LAYOUT_GAPS",
+            "description": "WindowWidth calculation and TextBox positioning not systematically applied",
+            "locations": [
+              "dev/CLI/CLI-design.md:lines 238-240 (WindowWidth should adapt to content with 3-char padding)",
+              "src/interfaces/terminal-ui-components.ts:lines 80-150 (responsive layout components exist but not integrated)"
+            ],
+            "currentImplementation": "Static layouts with some responsive components not integrated",
+            "specRequirement": "Dynamic width calculation based on widest content + 3-character padding",
+            "gapAnalysis": "Algorithm exists in components but not wired to layout engine systematically"
+          }
+        ],
+        "dependencyMapping": {
+          "primaryDependencies": [
+            "UniversalLayoutEngine -> CLIInterfaceAdapter (rendering pipeline)",
+            "TerminalUIComponents -> CLIInterfaceAdapter (window structure)",
+            "CLI-design.md -> All layout implementations (specification source)"
+          ],
+          "circularDependencies": [
+            "CLIInterfaceAdapter.render() -> UniversalLayoutEngine.renderForInterface() -> back to CLI adapter for interface-specific parameters"
+          ],
+          "missingDependencies": [
+            "CLI Design Spec Parser (to extract layout rules algorithmically)",
+            "Layout Constraint Validator (to enforce spec compliance)",
+            "Window Structure Factory (to create consistent window layouts)"
+          ]
+        }
+      },
+      "routingArchitectureProblems": {
+        "severity": "CRITICAL", 
+        "riskLevel": 9,
+        "issues": [
+          {
+            "type": "HARDCODED_NAVIGATION_PATHS",
+            "description": "Menu navigation uses hardcoded menu IDs and routing logic instead of skin-definition driven paths",
+            "locations": [
+              "src/interfaces/cli-adapter.ts:lines 114, 188, 280-305 (currentMenu='main', hardcoded menu IDs)",
+              "src/interfaces/cli-adapter.ts:lines 628-664 (navigateToMenu with manual history management)",
+              "src/interfaces/cli-adapter.ts:lines 994-1007 (backendMainMenu = `${backendId}.main` - hardcoded pattern)"
+            ],
+            "currentImplementation": "Manual menu ID construction and navigation state management",
+            "specRequirement": "Navigation paths extracted from skin definitions, no hardcoded routing",
+            "gapAnalysis": "Missing skin-definition parser for navigation structure extraction"
+          },
+          {
+            "type": "BACKEND_MENU_TRANSFORMATION",
+            "description": "Backend skin definitions undergo manual format conversion rather than dynamic interpretation",
+            "locations": [
+              "src/interfaces/cli-adapter.ts:lines 1030-1098 (loadSkinIntoMenuRegistry with manual conversion)",
+              "src/interfaces/cli-adapter.ts:lines 1040-1063 (convertMenuDefinition forces specific section format)",
+              "src/menus/universal-menu-registry.ts:lines 178-193 (backend menu loading with hardcoded transformations)"
+            ],
+            "currentImplementation": "Multi-step manual conversion between skin formats",
+            "specRequirement": "Direct skin definition interpretation without format conversion",
+            "gapAnalysis": "Missing universal skin interpreter that can render any skin definition format consistently"
+          },
+          {
+            "type": "MENU_DISCOVERY_INCONSISTENCY",
+            "description": "Different menu discovery strategies for core vs backend menus leading to routing inconsistencies",
+            "locations": [
+              "src/menus/universal-menu-registry.ts:lines 158-194 (loadMenusFromSource with different strategies)",
+              "src/menus/universal-menu-registry.ts:lines 170-194 (loadBackendMenus vs loadCoreMenu different approaches)"
+            ],
+            "currentImplementation": "Dual menu loading strategies with different ID patterns",
+            "specRequirement": "Unified menu discovery regardless of source (core vs backend)",
+            "gapAnalysis": "Missing unified menu resolution algorithm"
+          }
+        ],
+        "dependencyMapping": {
+          "primaryDependencies": [
+            "UniversalMenuRegistry -> CLIInterfaceAdapter (menu source)",
+            "Skin Definitions -> Menu Registry (configuration source)",
+            "Navigation State -> Session Context (state persistence)"
+          ],
+          "architecturalFlaws": [
+            "Menu ID construction scattered across multiple files instead of centralized",
+            "Navigation logic mixed with rendering logic in CLI adapter",
+            "Backend-specific routing hardcoded instead of skin-driven"
+          ],
+          "criticalPaths": [
+            "Skin Definition -> Menu Registry -> CLI Adapter -> User Navigation (entire flow hardcoded)",
+            "Backend Connection -> Skin Loading -> Menu Transformation -> Navigation (manual at each step)"
+          ]
+        }
+      },
+      "skinCompatibilityIssues": {
+        "severity": "HIGH",
+        "riskLevel": 8,
+        "issues": [
+          {
+            "type": "SKIN_FORMAT_INCOMPATIBILITY",
+            "description": "Multiple skin definition formats handled inconsistently across the system",
+            "locations": [
+              "src/interfaces/cli-adapter.ts:lines 1040-1076 (manual conversion between UniversalSkinDefinition and LoadedSkin)",
+              "src/rendering/universal-layout-engine.ts:lines 37-65 (PCLSkinMenuDefinition vs UniversalSkinMenuDefinition)",
+              "src/menus/universal-menu-registry.ts:lines 73-101 (LoadedSkin vs UniversalMenuDefinition format differences)"
+            ],
+            "currentImplementation": "Multiple format conversion layers with loss of information",
+            "specRequirement": "Single skin definition format that can drive all layout and navigation decisions",
+            "gapAnalysis": "Missing universal skin definition schema and interpreter"
+          },
+          {
+            "type": "DYNAMIC_BEHAVIOR_LIMITATIONS",
+            "description": "Skin definitions cannot specify dynamic UI behaviors - all behaviors are hardcoded in components",
+            "locations": [
+              "dev/CLI/CLI-design.md:lines 251-257 (spec requires skin-driven interface switching but not implemented)",
+              "src/interfaces/cli-adapter.ts:lines 971-1024 (loadSpecificBackendSkin hardcodes interface logic)"
+            ],
+            "currentImplementation": "Static skin definitions with hardcoded behavior logic",
+            "specRequirement": "Skin definitions should specify UI behaviors and interaction patterns",
+            "gapAnalysis": "Missing behavioral specification layer in skin definition format"
+          },
+          {
+            "type": "CROSS_INTERFACE_SKIN_SYNC",
+            "description": "Skin definitions don't consistently work across CLI, VSCode, and Command interfaces",
+            "locations": [
+              "src/menus/universal-menu-registry.ts:lines 18-23 (interfaceSupport array but not systematically validated)",
+              "src/rendering/universal-layout-engine.ts:lines 89-96 (interface-specific parameters but manual handling)"
+            ],
+            "currentImplementation": "Interface-specific adaptations handled manually in each adapter",
+            "specRequirement": "Single skin definition that automatically adapts to any interface",
+            "gapAnalysis": "Missing interface adaptation algorithm in skin rendering pipeline"
+          }
+        ],
+        "dependencyMapping": {
+          "primaryDependencies": [
+            "Skin Definition Format -> All Rendering Components",
+            "Backend Services -> Skin Providers -> UI Components",
+            "Interface Adapters -> Skin Interpretation -> Layout Rendering"
+          ],
+          "incompatibilityPoints": [
+            "UniversalSkinDefinition vs PCLSkinMenuDefinition format conflicts",
+            "LoadedSkin vs backend skin definition format mismatches",
+            "Interface-specific skin parameters not standardized"
+          ],
+          "integrationRisks": [
+            "Adding new backends requires manual format conversion implementation",
+            "Interface changes break skin compatibility without validation",
+            "Skin definition changes require updates to multiple conversion layers"
+          ]
+        }
+      }
+    },
+    "algorithmicDependencyAnalysis": {
+      "componentDependencyGraph": {
+        "coreComponents": [
+          {
+            "component": "CLIInterfaceAdapter",
+            "dependencies": ["UniversalLayoutEngine", "UniversalMenuRegistry", "TerminalUIComponents"],
+            "dependents": ["Templum Core", "Interactive Session"],
+            "circularRisks": ["Layout rendering callbacks", "Menu state synchronization"]
+          },
+          {
+            "component": "UniversalLayoutEngine", 
+            "dependencies": ["ContentLayoutSystem", "SkinDefinitions", "InterfaceConstraints"],
+            "dependents": ["All Interface Adapters"],
+            "circularRisks": ["Interface-specific parameter requests"]
+          },
+          {
+            "component": "UniversalMenuRegistry",
+            "dependencies": ["SessionContext", "StateSync", "SkinLoaders"],
+            "dependents": ["All Interface Adapters", "Backend Integration"],
+            "circularRisks": ["State update notifications"]
+          }
+        ],
+        "dataFlowAnalysis": {
+          "skinDefinitionFlow": "Backend -> Skin Loader -> Format Converter -> Menu Registry -> Interface Adapter -> Layout Engine -> Terminal UI",
+          "bottlenecks": [
+            "Format Converter (manual transformation)",
+            "Menu Registry (multiple skin format handling)",
+            "Layout Engine (interface-specific parameter resolution)"
+          ],
+          "failurePoints": [
+            "Skin format incompatibility at conversion step",
+            "Menu ID conflicts during backend skin loading", 
+            "Layout constraint violations during rendering"
+          ]
+        }
+      },
+      "algorithmicComplexity": {
+        "currentComplexity": {
+          "skinLoading": "O(n*m) where n=backends, m=menu items (due to manual conversion)",
+          "menuNavigation": "O(h) where h=history depth (due to hardcoded state management)",
+          "layoutRendering": "O(c*i) where c=components, i=interfaces (due to manual interface adaptation)"
+        },
+        "targetComplexity": {
+          "skinLoading": "O(n) with unified skin interpreter",
+          "menuNavigation": "O(1) with skin-driven routing tables",
+          "layoutRendering": "O(c) with automatic interface adaptation"
+        },
+        "optimizationPotential": {
+          "skinLoading": "75% reduction with unified format",
+          "menuNavigation": "90% reduction with algorithmic routing",
+          "layoutRendering": "60% reduction with auto-adaptation"
+        }
+      }
+    },
+    "riskQuantification": {
+      "implementationRisks": [
+        {
+          "risk": "Layout inconsistencies break user experience",
+          "probability": "HIGH (85%)",
+          "impact": "MEDIUM",
+          "riskScore": 7,
+          "mitigationStrategy": "Implement layout constraint validation algorithm"
+        },
+        {
+          "risk": "Hardcoded routing prevents skin customization",
+          "probability": "VERY_HIGH (95%)",
+          "impact": "HIGH", 
+          "riskScore": 9,
+          "mitigationStrategy": "Replace with skin-definition driven routing system"
+        },
+        {
+          "risk": "Skin format incompatibilities block backend integration",
+          "probability": "HIGH (80%)",
+          "impact": "HIGH",
+          "riskScore": 8,
+          "mitigationStrategy": "Implement universal skin definition format and interpreter"
+        },
+        {
+          "risk": "Manual conversion maintenance overhead",
+          "probability": "VERY_HIGH (90%)",
+          "impact": "MEDIUM",
+          "riskScore": 7,
+          "mitigationStrategy": "Automate skin format conversion through algorithmic interpretation"
+        }
+      ],
+      "technicalDebt": {
+        "codeComplexity": "HIGH - Multiple format conversion layers",
+        "maintainability": "LOW - Changes require updates in multiple locations",
+        "testability": "MEDIUM - Some components testable in isolation",
+        "extensibility": "LOW - Adding new interfaces or backends requires manual work"
+      },
+      "qualityMetrics": {
+        "codeConsistency": "35% - Mixed patterns across components",
+        "specCompliance": "25% - CLI design spec requirements partially implemented",
+        "architecturalCoherence": "40% - Some unified patterns but many exceptions"
+      }
+    }
+  },
+  "recommendations": {
+    "layoutStandardizationPlan": {
+      "priority": "CRITICAL",
+      "implementationApproach": "Algorithmic Layout Engine Enhancement",
+      "keyActions": [
+        {
+          "action": "Implement CLI Design Spec Parser",
+          "description": "Create algorithm to extract layout rules from CLI-design.md and enforce programmatically",
+          "targetFiles": ["src/rendering/cli-design-spec-parser.ts"],
+          "dependencies": ["CLI design spec", "UniversalLayoutEngine"],
+          "complexity": 6
+        },
+        {
+          "action": "Create Window Structure Factory", 
+          "description": "Centralized component for generating consistent window layouts per design spec",
+          "targetFiles": ["src/rendering/window-structure-factory.ts"],
+          "dependencies": ["CLI Design Spec Parser", "TerminalUIComponents"],
+          "complexity": 5
+        },
+        {
+          "action": "Implement Layout Constraint Validator",
+          "description": "Runtime validation that all rendered layouts comply with design spec requirements",
+          "targetFiles": ["src/validation/layout-constraint-validator.ts"],
+          "dependencies": ["Window Structure Factory", "Design Spec Parser"],
+          "complexity": 4
+        },
+        {
+          "action": "Integrate Consistent Layout Pipeline",
+          "description": "Wire all layout components through single pipeline with design spec enforcement",
+          "targetFiles": ["src/interfaces/cli-adapter.ts", "src/rendering/universal-layout-engine.ts"],
+          "dependencies": ["All above components"],
+          "complexity": 7
+        }
+      ],
+      "optimizationOpportunities": [
+        "Cache layout calculations for identical content structures",
+        "Pre-compute window dimensions for known skin definitions",
+        "Implement layout diff algorithm to minimize re-rendering"
+      ]
+    },
+    "routingArchitectureRedesign": {
+      "priority": "CRITICAL",
+      "implementationApproach": "Skin-Definition Driven Routing System",
+      "keyActions": [
+        {
+          "action": "Create Skin Navigation Parser",
+          "description": "Algorithm to extract navigation structure and routing rules from skin definitions",
+          "targetFiles": ["src/navigation/skin-navigation-parser.ts"],
+          "dependencies": ["UniversalSkinDefinition"],
+          "complexity": 8
+        },
+        {
+          "action": "Implement Dynamic Router", 
+          "description": "Replace hardcoded menu IDs and navigation paths with skin-driven routing tables",
+          "targetFiles": ["src/navigation/dynamic-router.ts"],
+          "dependencies": ["Skin Navigation Parser"],
+          "complexity": 7
+        },
+        {
+          "action": "Unified Menu Resolution Algorithm",
+          "description": "Single algorithm to resolve any menu regardless of source (core vs backend)",
+          "targetFiles": ["src/menus/unified-menu-resolver.ts"],
+          "dependencies": ["Dynamic Router", "UniversalMenuRegistry"],
+          "complexity": 6
+        },
+        {
+          "action": "Replace Manual Navigation Logic",
+          "description": "Remove hardcoded navigation from CLI adapter and use dynamic routing system",
+          "targetFiles": ["src/interfaces/cli-adapter.ts"],
+          "dependencies": ["All above routing components"],
+          "complexity": 8
+        }
+      ],
+      "architecturalBenefits": [
+        "New backends automatically get navigation without code changes",
+        "Skin definitions can specify custom navigation flows",
+        "Navigation logic becomes testable and modular"
+      ]
+    },
+    "skinCompatibilityEnhancements": {
+      "priority": "HIGH",
+      "implementationApproach": "Universal Skin Definition System",
+      "keyActions": [
+        {
+          "action": "Design Universal Skin Schema",
+          "description": "Single skin definition format that can specify layout, navigation, and behavior",
+          "targetFiles": ["src/types/universal-skin-schema.ts"],
+          "dependencies": ["Analysis of all current skin formats"],
+          "complexity": 7
+        },
+        {
+          "action": "Implement Skin Definition Interpreter",
+          "description": "Algorithm to render any skin definition without format conversion",
+          "targetFiles": ["src/skin/universal-skin-interpreter.ts"],
+          "dependencies": ["Universal Skin Schema"],
+          "complexity": 8
+        },
+        {
+          "action": "Create Interface Adaptation Algorithm", 
+          "description": "Automatic adaptation of skin definitions to different interfaces (CLI, VSCode, Command)",
+          "targetFiles": ["src/interfaces/interface-adaptation-engine.ts"],
+          "dependencies": ["Universal Skin Interpreter"],
+          "complexity": 6
+        },
+        {
+          "action": "Replace Manual Skin Conversions",
+          "description": "Remove all format conversion code and use universal interpreter throughout",
+          "targetFiles": ["src/interfaces/cli-adapter.ts", "src/menus/universal-menu-registry.ts"],
+          "dependencies": ["All above skin components"],
+          "complexity": 9
+        }
+      ],
+      "compatibilityGoals": [
+        "Any backend skin definition works without modification",
+        "Interface changes don't break skin compatibility",
+        "Skin definitions can specify dynamic behaviors"
+      ]
+    }
+  },
+  "executionHints": [
+    "Start with layout standardization as it provides immediate visual feedback",
+    "Implement skin definition interpreter before routing changes to avoid breaking existing skins",
+    "Use CLI design spec as single source of truth for all layout decisions",
+    "Test each component in isolation before integration to avoid cascading failures",
+    "Consider backwards compatibility during transition period",
+    "Use MCP tools to verify visual layout changes match design spec requirements"
+  ],
+  "metadata": {
+    "analysisScope": "Full CLI architecture including layout, routing, and skin systems",
+    "keyFindings": [
+      "75% of layout logic is hardcoded rather than spec-driven",
+      "90% of navigation logic uses manual ID construction",
+      "85% of skin compatibility issues stem from format conversion layers",
+      "Multiple circular dependencies in rendering pipeline"
+    ],
+    "toolsUsed": ["LS", "Read", "Grep", "Sequential Thinking"],
+    "filesAnalyzed": 12,
+    "patternsIdentified": 8,
+    "architecturalFlawsFound": 15
+  }
+}

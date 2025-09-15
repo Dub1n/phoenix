@@ -1,14 +1,28 @@
-/**---
- * title: [Interactive Menu Renderer - Visual CLI Navigation]
- * tags: [Interface, Menu, Interactive, Navigation, CLI]
- * provides: [InteractiveMenuRenderer, Arrow Key Navigation, Visual Menu Display]
- * requires: [inquirer, chalk, ITemplumOrchestrator, UniversalSkinDefinition]
- * description: [Interactive menu system with arrow key navigation, visual selection, and dynamic menu generation from orchestrator status]
- * ---*/
+/**
+---
+title: [Interactive Menu Renderer - Visual CLI Navigation]
+tags: [Interface, Menu, Interactive, Navigation, CLI]
+provides: [InteractiveMenuRenderer, Arrow Key Navigation, Visual Menu Display]
+requires: [inquirer, chalk, ITemplumOrchestrator, UniversalSkinDefinition]
+description: [Interactive menu system with arrow key navigation, visual selection, and dynamic menu generation from orchestrator status]
+---
+**/
 
 import inquirer from 'inquirer';
 import chalk from 'chalk';
 import { ITemplumOrchestrator } from './templum-orchestrator-interface';
+import { 
+  EnhancedInteractiveMenu, 
+  EnhancedMenuConfig, 
+  MenuSection, 
+  DefaultColorThemes,
+  WindowContentItem 
+} from './terminal-ui-components';
+import { 
+  CLIDisplayConsistencyEngine, 
+  createCLIDisplayConsistencyEngine 
+} from './cli-display-consistency-engine';
+import { ServiceInfo } from './service-ordering-manager';
 
 /**
  * Menu item definition for interactive display
@@ -54,14 +68,90 @@ export class InteractiveMenuRenderer {
   private currentMenu: string = 'main';
   private navigationHistory: string[] = [];
   private menus: Map<string, InteractiveMenu> = new Map();
+  private consistencyEngine: CLIDisplayConsistencyEngine;
   
   constructor(orchestrator: ITemplumOrchestrator) {
     this.orchestrator = orchestrator;
     this.initializeDefaultMenus();
+    
+    // Initialize consistency engine for menu display standardization
+    // TODO: [TASK-ID-007] Pattern: menu-consistency-integration | Complexity: 5 | Dependencies: cli-display-consistency-engine,service-ordering
+    // Context: Apply display consistency framework to menu rendering for uniform spacing and service ordering
+    // Validation-Required: menu-formatting-consistency, service-order-correctness, responsive-menu-behavior
+    // Pattern-Info: { approach: "menu-display-integration", alternatives: "manual-formatting", trade-offs: "consistency-vs-menu-flexibility" }
+    this.consistencyEngine = createCLIDisplayConsistencyEngine({
+      enforceWidthStandards: true,
+      enforceServiceOrdering: true, // Apply connected-first, alphabetical ordering to menu items
+      enforceLayoutNormalization: true,
+      skinCompatibilityMode: true
+    });
   }
 
   /**
-   * Display interactive menu with arrow key navigation
+   * Display enhanced interactive menu with CLI design specification compliance
+   * Integrates new CLI design with existing menu system for pattern-based UX optimization
+   * Pattern: enhanced-menu-integration - See /dev/patterns/enhanced-menu-integration.md for reusable implementation guide  
+   * Validation-Required: menu-integration, performance-timing, user-experience
+   */
+  async displayEnhancedMenu(menuId: string = this.currentMenu): Promise<MenuInteractionResult> {
+    const menu = this.menus.get(menuId);
+    if (!menu) {
+      return { action: 'navigate', target: 'main' };
+    }
+
+    // Update menu items based on orchestrator status with performance optimization
+    const startTime = Date.now();
+    await this.updateDynamicMenuItems(menu);
+    const updateTime = Date.now() - startTime;
+
+    // Apply speed heuristics - if update took > 100ms, show loading indicator next time
+    if (updateTime > 100) {
+      console.log(chalk.yellow('Loading menu data...'));
+    }
+
+    // Build enhanced menu configuration
+    const menuConfig: EnhancedMenuConfig = {
+      title: menu.title,
+      subtitle: menu.description,
+      sections: this.buildEnhancedSections(menu),
+      theme: DefaultColorThemes.default,
+      onSelection: async (item: WindowContentItem) => {
+        // Handle selection with performance tracking
+        const selectionStart = Date.now();
+        await this.handleEnhancedSelection(item);
+        const selectionTime = Date.now() - selectionStart;
+        
+        // Log performance for UX optimization
+        if (selectionTime > 50) {
+          console.log(chalk.dim(`Selection processed in ${selectionTime}ms`));
+        }
+      },
+      onExit: async () => {
+        console.log(chalk.green('Templum CLI shutting down...'));
+        process.exit(0);
+      }
+    };
+
+    // Create and start enhanced menu
+    const enhancedMenu = new EnhancedInteractiveMenu(menuConfig);
+    
+    try {
+      const selectedItem = await enhancedMenu.start();
+      
+      if (!selectedItem) {
+        return { action: 'quit' };
+      }
+
+      return this.convertToMenuResult(selectedItem);
+    } catch (error) {
+      console.error('Enhanced menu error:', error);
+      // Fallback to original menu system
+      return this.displayMenu(menuId);
+    }
+  }
+
+  /**
+   * Display interactive menu with arrow key navigation (original implementation preserved)
    */
   async displayMenu(menuId: string = this.currentMenu): Promise<MenuInteractionResult> {
     const menu = this.menus.get(menuId);
@@ -93,9 +183,10 @@ export class InteractiveMenuRenderer {
       return this.processMenuSelection(selection, menu);
 
     } catch (error) {
-      // Handle Ctrl+C or other interruptions
+      // Handle Ctrl+C or other interruptions with proper CLI design behavior
       if (error && (error as any).isTtyError === false) {
-        return { action: 'quit' };
+        console.log('\nPress Ctrl+C again to shut down Templum CLI');
+        return { action: 'quit', data: { confirmRequired: true } };
       }
       throw error;
     }
@@ -146,8 +237,7 @@ export class InteractiveMenuRenderer {
           description: 'View and manage connected backend services',
           action: 'navigate',
           target: 'services',
-          enabled: true,
-          icon: '🔗'
+          enabled: true
         },
         {
           id: 'commands',
@@ -155,8 +245,7 @@ export class InteractiveMenuRenderer {
           description: 'Run commands on connected backends',
           action: 'navigate', 
           target: 'commands',
-          enabled: true,
-          icon: '⚡'
+          enabled: true
         },
         {
           id: 'status',
@@ -164,8 +253,7 @@ export class InteractiveMenuRenderer {
           description: 'View system health and configuration',
           action: 'execute',
           command: 'system:status',
-          enabled: true,
-          icon: '📊'
+          enabled: true
         },
         {
           id: 'settings',
@@ -173,8 +261,7 @@ export class InteractiveMenuRenderer {
           description: 'Configure Templum behavior',
           action: 'navigate',
           target: 'settings',
-          enabled: true,
-          icon: '⚙️'
+          enabled: true
         }
       ]
     });
@@ -188,12 +275,11 @@ export class InteractiveMenuRenderer {
       items: [
         {
           id: 'list-services',
-          title: 'List Connected Services',
+          title: 'Connected Services',
           description: 'Show all currently connected backend services',
           action: 'execute',
           command: 'services:list',
-          enabled: true,
-          icon: '📋'
+          enabled: true
         },
         {
           id: 'refresh-services',
@@ -201,8 +287,7 @@ export class InteractiveMenuRenderer {
           description: 'Scan for new backend services',
           action: 'execute',
           command: 'services:refresh',
-          enabled: true,
-          icon: '🔄'
+          enabled: true
         }
       ]
     });
@@ -220,8 +305,7 @@ export class InteractiveMenuRenderer {
           description: 'Type a command to execute',
           action: 'execute',
           command: 'command:custom',
-          enabled: true,
-          icon: '💬'
+          enabled: true
         }
       ]
     });
@@ -239,15 +323,14 @@ export class InteractiveMenuRenderer {
           description: 'Use text-based command entry',
           action: 'execute',
           command: 'settings:toggle-mode',
-          enabled: true,
-          icon: '🔀'
+          enabled: true
         }
       ]
     });
   }
 
   /**
-   * Update menu items based on orchestrator status
+   * Update menu items based on orchestrator status using consistency framework
    */
   private async updateDynamicMenuItems(menu: InteractiveMenu): Promise<void> {
     if (!this.orchestrator.isInitialized()) {
@@ -268,16 +351,39 @@ export class InteractiveMenuRenderer {
             ['list-services', 'refresh-services'].includes(item.id)
           );
           
-          // Add dynamic backend items
-          for (const [backendId, backend] of backendEntries) {
+          // Convert backends to ServiceInfo format for consistency engine
+          const services: ServiceInfo[] = backendEntries.map(([serviceId, backend]) => {
+            const backendTyped = backend as any;
+            return {
+              id: serviceId,
+              name: serviceId,
+              connected: backendTyped.connected || false,
+              health: backendTyped.health || 'unknown',
+              responseTime: backendTyped.responseTime,
+              capabilities: backendTyped.capabilities || [],
+              lastCheck: backendTyped.lastCheck || Date.now()
+            } as ServiceInfo;
+          });
+
+          // Apply consistency framework service ordering (connected-first, alphabetical)
+          const orderingResult = this.consistencyEngine.orderServices(services, 'menu-selection');
+          const sortedServices = orderingResult.orderedServices;
+          
+          // Add dynamic backend items using consistency framework ordered services
+          for (const service of sortedServices) {
+            const statusIcon = service.connected ? '🟢' : '🔴';
+            const statusText = service.connected 
+              ? (service.health === 'healthy' ? 'Healthy' : `${service.health}`)
+              : 'Disconnected';
+              
             menu.items.push({
-              id: `backend-${backendId}`,
-              title: `${backendId}`,
-              description: `Health: ${backend.health || 'Unknown'} - ${backend.connected ? 'Connected' : 'Disconnected'}`,
+              id: `backend-${service.id}`,
+              title: `${statusIcon} ${service.id}`,
+              description: `Status: ${statusText}${service.responseTime ? ` | Response: ${service.responseTime}ms` : ''}`,
               action: 'execute',
-              command: `backend:info:${backendId}`,
-              enabled: backend.connected,
-              icon: backend.connected && backend.health === 'healthy' ? '✅' : '⚠️'
+              command: `backend:info:${service.id}`,
+              enabled: service.connected,
+              icon: statusIcon
             });
           }
         }
@@ -299,8 +405,7 @@ export class InteractiveMenuRenderer {
               description: `Run command on ${backendId}`,
               action: 'execute',
               command: `execute:${backendId}`,
-              enabled: true,
-              icon: '▶️'
+              enabled: true
             });
           }
         }
@@ -311,39 +416,26 @@ export class InteractiveMenuRenderer {
   }
 
   /**
-   * Display menu header with title and description
+   * Display menu using new CLI window design - no separate header
    */
   private displayMenuHeader(menu: InteractiveMenu): void {
     console.clear();
-    console.log(chalk.blue.bold(`* ${menu.title}`));
-    
-    if (menu.description) {
-      console.log(chalk.gray(menu.description));
-    }
-    
-    // Show navigation path
-    if (this.navigationHistory.length > 0 || menu.parent) {
-      const path = [...this.navigationHistory, menu.id].join(' › ');
-      console.log(chalk.dim(`📍 ${path}`));
-    }
-    
-    console.log(); // Empty line for spacing
+    // Header is now integrated into the window layout - no separate display needed
   }
 
   /**
-   * Create choices for inquirer prompt
+   * Create choices for inquirer prompt - simplified for window-based design
    */
   private createMenuChoices(menu: InteractiveMenu): any[] {
     const choices: any[] = [];
 
-    // Add menu items
+    // Add menu items (no icons, description handled in window layout)
     for (const item of menu.items) {
-      const icon = item.icon || '•';
       const title = item.enabled ? item.title : chalk.dim(item.title);
       const description = item.description ? chalk.gray(` - ${item.description}`) : '';
       
       choices.push({
-        name: `${icon} ${title}${description}`,
+        name: `${title}${description}`,
         value: item.id,
         disabled: !item.enabled ? 'Not available' : false
       });
@@ -357,7 +449,7 @@ export class InteractiveMenuRenderer {
     // Add back option if not at root
     if (this.navigationHistory.length > 0 || menu.parent) {
       choices.push({
-        name: `🔙 Back`,
+        name: 'Back',
         value: 'back'
       });
     }
@@ -365,15 +457,15 @@ export class InteractiveMenuRenderer {
     // Add common options
     choices.push(
       {
-        name: `🏠 Main Menu`,
+        name: 'Home',
         value: 'home'
       },
       {
-        name: `❓ Help`,
+        name: 'Help',
         value: 'help'
       },
       {
-        name: `🚪 Exit`,
+        name: 'Exit',
         value: 'quit'
       }
     );
@@ -436,6 +528,10 @@ export class InteractiveMenuRenderer {
   /**
    * Display help information  
    * TASK-CLI-009: Fixed nested inquirer calls to prevent terminal state corruption
+   * TODO: [TASK-MCP-010-001] Pattern: cli-design-compliance | Complexity: 2 | Dependencies: navigation-flow
+   * Context: Removed Press Enter continuation message per CLI-design specification requirement
+   * Validation-Required: navigation-integration, user-experience-flow, cli-design-compliance
+   * Pattern-Info: { approach: "immediate-return", alternatives: "timeout-pause", trade-offs: "improved-ux-vs-display-time" }
    */
   private async displayHelp(): Promise<void> {
     console.clear();
@@ -447,28 +543,207 @@ export class InteractiveMenuRenderer {
     console.log('  Ctrl+C Exit application');
     console.log();
     console.log('Menu Items:');
-    console.log('  🔗    Backend Services - Manage service connections');
-    console.log('  ⚡    Execute Commands - Run operations on backends');
-    console.log('  📊    System Status - View health and configuration');
-    console.log('  ⚙️    Settings - Configure Templum behavior');
+    console.log('  Backend Services  - Manage service connections');
+    console.log('  Execute Commands  - Run operations on backends');
+    console.log('  System Status     - View health and configuration');
+    console.log('  Settings          - Configure Templum behavior');
     console.log();
-    console.log('Press Enter to continue...');
+    // Return immediately - help display integrates with menu navigation
+    // CLI-design compliance: No "Press Enter to continue" messages
+    return Promise.resolve();
+  }
+
+  /**
+   * Build enhanced menu sections with proper ordering
+   * @private
+   */
+  private buildEnhancedSections(menu: InteractiveMenu): MenuSection[] {
+    const sections: MenuSection[] = [];
+
+    // Main content section
+    const mainItems = menu.items
+      .filter(item => !['back', 'home', 'help', 'exit'].includes(item.id))
+      .map(item => ({
+        id: item.id,
+        label: item.title,
+        description: item.description,
+        action: item.action === 'navigate' ? `navigate:${item.target}` : 
+                item.action === 'execute' ? `execute:${item.command}` : item.action,
+        enabled: item.enabled,
+        icon: item.icon || ''
+      }));
+
+    if (mainItems.length > 0) {
+      sections.push({
+        id: 'main-items',
+        items: mainItems
+      });
+    }
+
+    // Add separator
+    sections.push({
+      id: 'separator',
+      type: 'separator',
+      items: []
+    });
+
+    // Navigation items (with proper ordering)
+    const navigationItems = [];
     
-    // Use simple stdin listener to avoid nested inquirer conflicts
+    // Add Back if available
+    const backItem = menu.items.find(item => item.id === 'back');
+    if (backItem) {
+      navigationItems.push({
+        id: 'back',
+        label: 'Back',
+        description: '',
+        action: 'navigate:back',
+        enabled: true,
+        icon: ''
+      });
+    }
+
+    // Standard navigation items
+    navigationItems.push(
+      {
+        id: 'home',
+        label: 'Home',
+        description: '',
+        action: 'navigate:main',
+        enabled: true,
+        icon: ''
+      },
+      {
+        id: 'help',
+        label: 'Help',
+        description: '',
+        action: 'show:help',
+        enabled: true,
+        icon: ''
+      },
+      {
+        id: 'exit',
+        label: 'Exit',
+        description: '',
+        action: 'system:exit',
+        enabled: true,
+        icon: ''
+      }
+    );
+
+    sections.push({
+      id: 'navigation',
+      items: navigationItems
+    });
+
+    return sections;
+  }
+
+  /**
+   * Handle enhanced menu selection
+   * @private
+   */
+  private async handleEnhancedSelection(item: WindowContentItem): Promise<void> {
+    const itemData = item.data as any;
+    if (!itemData?.action) return;
+
+    const [actionType, actionTarget] = itemData.action.split(':', 2);
+
+    switch (actionType) {
+      case 'navigate':
+        if (actionTarget === 'back') {
+          this.navigateBack();
+        } else if (actionTarget === 'main') {
+          this.navigateToMenu('main');
+        } else {
+          this.navigateToMenu(actionTarget);
+        }
+        break;
+
+      case 'execute':
+        console.log(`Executing command: ${actionTarget}`);
+        // Handle command execution
+        break;
+
+      case 'show':
+        if (actionTarget === 'help') {
+          await this.displayEnhancedHelp();
+        }
+        break;
+
+      case 'system':
+        if (actionTarget === 'exit') {
+          // Exit is handled by the menu system
+        }
+        break;
+    }
+  }
+
+  /**
+   * Convert enhanced menu result to standard menu result
+   * @private
+   */
+  private convertToMenuResult(item: WindowContentItem): MenuInteractionResult {
+    const itemData = item.data as any;
+    if (!itemData?.action) {
+      return { action: 'navigate', target: this.currentMenu };
+    }
+
+    const [actionType, actionTarget] = itemData.action.split(':', 2);
+
+    switch (actionType) {
+      case 'navigate':
+        return { action: 'navigate', target: actionTarget };
+      case 'execute':
+        return { action: 'execute', command: actionTarget };
+      case 'show':
+        return { action: 'help' };
+      case 'system':
+        return { action: 'quit' };
+      default:
+        return { action: 'navigate', target: this.currentMenu };
+    }
+  }
+
+  /**
+   * Display enhanced help with better formatting
+   * @private
+   */
+  private async displayEnhancedHelp(): Promise<void> {
+    console.clear();
+    console.log(chalk.blue.bold('┌─────────────────────────────────────────────────────────────────────────┐'));
+    console.log(chalk.blue.bold('│                               Templum Help                             │'));
+    console.log(chalk.blue.bold('├─────────────────────────────────────────────────────────────────────────┤'));
+    console.log(chalk.blue.bold('│') + '                                                                       ' + chalk.blue.bold('│'));
+    console.log(chalk.blue.bold('│') + '   Navigation:                                                         ' + chalk.blue.bold('│'));
+    console.log(chalk.blue.bold('│') + '     ↑↓     Navigate menu items                                       ' + chalk.blue.bold('│'));
+    console.log(chalk.blue.bold('│') + '     Enter  Select highlighted option                                 ' + chalk.blue.bold('│'));
+    console.log(chalk.blue.bold('│') + '     Escape Return to previous menu                                   ' + chalk.blue.bold('│'));
+    console.log(chalk.blue.bold('│') + '     Ctrl+C Exit application (press twice)                            ' + chalk.blue.bold('│'));
+    console.log(chalk.blue.bold('│') + '                                                                       ' + chalk.blue.bold('│'));
+    console.log(chalk.blue.bold('│') + '   Features:                                                           ' + chalk.blue.bold('│'));
+    console.log(chalk.blue.bold('│') + '     • Cross-separator navigation                                      ' + chalk.blue.bold('│'));
+    console.log(chalk.blue.bold('│') + '     • Exit confirmation behavior                                      ' + chalk.blue.bold('│'));
+    console.log(chalk.blue.bold('│') + '     • Connected services prioritized                                  ' + chalk.blue.bold('│'));
+    console.log(chalk.blue.bold('│') + '     • Performance-optimized rendering                                 ' + chalk.blue.bold('│'));
+    console.log(chalk.blue.bold('│') + '                                                                       ' + chalk.blue.bold('│'));
+    console.log(chalk.blue.bold('└─────────────────────────────────────────────────────────────────────────┘'));
+    console.log();
+    console.log(chalk.dim('Press any key to continue...'));
+
+    // Wait for keypress
     return new Promise((resolve) => {
       const stdin = process.stdin;
-      
       if (stdin.isTTY) {
         stdin.resume();
         const listener = () => {
           stdin.removeListener('data', listener);
           stdin.pause();
-          resolve(void 0);
+          resolve();
         };
         stdin.once('data', listener);
       } else {
-        // Non-TTY fallback
-        setTimeout(() => resolve(void 0), 1000);
+        setTimeout(() => resolve(), 2000);
       }
     });
   }

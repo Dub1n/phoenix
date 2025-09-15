@@ -2,9 +2,11 @@
 
 # Pattern Index Metadata
 
-generated: 2024-01-09
-  total_patterns: 60
+generated: 2025-09-12
+  total_patterns: 65
   categories: [Foundation, Infrastructure, Integration, Testing, Configuration, Optimization]
+  last_updated: TASK-MCP-006 CLI Rework Implementation
+  new_patterns_added: 5
   ---
 
 # Templum Patterns Index
@@ -33,9 +35,10 @@ generated: 2024-01-09
 **Description**: Multi-dimensional compatibility validation with interface-specific requirements and
 performance constraints
 **Use When**:
-  - Validating skin compatibility across multiple interface types
-  - Need deep structural and performance analysis
-  - Preventing runtime failures in cross-platform deployments
+
+- Validating skin compatibility across multiple interface types
+- Need deep structural and performance analysis
+- Preventing runtime failures in cross-platform deployments
 **Keywords**: validation, compatibility, interfaces, performance, structural, cross-platform
 **Prerequisites**: [skin-versioning-system, universal-skin-engine, unified-type-system]
 **Related**: [enhanced-skin-registration-validation, test-type-system-alignment]
@@ -69,6 +72,101 @@ performance constraints
   4. Identify prerequisites from the frontmatter
   5. Detect related patterns through shared categories or prerequisites
   6. Output a single index file with all patterns in this structured format
+
+## Pattern: cli-visual-design-structured-windows
+
+**Category**: Integration
+**Status**: ESTABLISHED
+**Description**: Structured window rendering system with Unicode box-drawing and ASCII fallback for clean, emoji-free CLI interfaces with proper padding and progressive enhancement
+**Use When**:
+
+- Migrating from emoji-heavy CLI interfaces to clean structured design
+- Need terminal compatibility with Unicode fallback to ASCII borders
+- Building professional CLI interfaces requiring structured window layout
+- Implementing accessibility-compliant CLI design with screen reader support
+**Keywords**: structured-windows, border-rendering, unicode-fallback, terminal-compatibility, progressive-enhancement, emoji-elimination, accessibility-compliance
+**Prerequisites**: [terminal-ui-components, chalk-theming]
+**Related**: [emoji-elimination-systematic-replacement, progressive-enhancement-terminal-ui, accessibility-compliance-cli-interfaces]
+**Complexity**: Advanced
+**File**: patterns/cli-visual-design-structured-windows.md
+
+---
+
+## Pattern: emoji-elimination-systematic-replacement
+
+**Category**: Infrastructure
+**Status**: ESTABLISHED
+**Description**: Comprehensive emoji removal and replacement system with 47+ mapped emojis, text equivalents, and batch processing for clean CLI interface design
+**Use When**:
+
+- Converting emoji-heavy interfaces to professional text-based design
+- Need systematic emoji replacement across multiple files and components
+- Building accessibility-compliant interfaces requiring text equivalents
+- Implementing clean design standards that eliminate emoji dependencies
+**Keywords**: emoji-elimination, systematic-replacement, text-equivalents, batch-processing, accessibility-compliance, clean-design, unicode-cleanup
+**Prerequisites**: [none]
+**Related**: [cli-visual-design-structured-windows, accessibility-compliance-cli-interfaces, progressive-enhancement-terminal-ui]
+**Complexity**: Medium
+**File**: patterns/emoji-elimination-systematic-replacement.md
+
+---
+
+## Pattern: mcp-integration-preservation-ui-changes
+
+**Category**: Integration
+**Status**: ESTABLISHED
+**Description**: Maintain MCP Channel compatibility and agent-CLI interaction capabilities during major UI transformations while preserving backward compatibility and command mapping
+**Use When**:
+
+- Performing major CLI interface redesigns while maintaining agent compatibility
+- Updating UI frameworks that could break existing MCP tool integrations
+- Need to preserve agent-CLI interaction patterns during visual transformation
+- Ensuring backward compatibility for automated agent workflows during UI changes
+**Keywords**: mcp-preservation, agent-cli-compatibility, backward-compatibility, ui-transformation, command-mapping, session-management, mcp-bridge
+**Prerequisites**: [mcp-pty-integration, agent-cli-interaction-validation, session-management-unified]
+**Related**: [cli-visual-design-structured-windows, progressive-enhancement-terminal-ui, hybrid-cli-development-testing]
+**Complexity**: Advanced
+**File**: patterns/mcp-integration-preservation-ui-changes.md
+
+---
+
+## Pattern: progressive-enhancement-terminal-ui
+
+**Category**: Infrastructure
+**Status**: ESTABLISHED
+**Description**: Environment capability detection with multi-layer fallback strategies and adaptive UI enhancement selection for optimal terminal experience across all platforms
+**Use When**:
+
+- Building CLI interfaces that must work across diverse terminal environments
+- Need optimal visual experience while maintaining universal compatibility
+- Implementing features that depend on terminal capabilities (Unicode, colors, dimensions)
+- Creating professional interfaces that degrade gracefully on limited terminals
+**Keywords**: progressive-enhancement, terminal-compatibility, capability-detection, adaptive-ui, fallback-strategies, environment-detection, graceful-degradation
+**Prerequisites**: [terminal-ui-components, chalk-theming]
+**Related**: [cli-visual-design-structured-windows, emoji-elimination-systematic-replacement, accessibility-compliance-cli-interfaces]
+**Complexity**: Medium
+**File**: patterns/progressive-enhancement-terminal-ui.md
+
+---
+
+## Pattern: accessibility-compliance-cli-interfaces
+
+**Category**: Infrastructure
+**Status**: ESTABLISHED
+**Description**: WCAG 2.1 AA compliant CLI interface design with screen reader support, keyboard navigation accessibility, and semantic markup for assistive technologies
+**Use When**:
+
+- Building CLI applications requiring accessibility compliance (WCAG 2.1 AA)
+- Need screen reader compatibility and assistive technology support
+- Implementing interfaces for users with visual, motor, or cognitive disabilities
+- Creating enterprise applications with accessibility requirements
+**Keywords**: accessibility-compliance, wcag-2-1-aa, screen-reader-support, keyboard-navigation, assistive-technologies, semantic-markup, inclusive-design
+**Prerequisites**: [terminal-ui-components, emoji-elimination-systematic-replacement]
+**Related**: [cli-visual-design-structured-windows, progressive-enhancement-terminal-ui, emoji-elimination-systematic-replacement]
+**Complexity**: Advanced
+**File**: patterns/accessibility-compliance-cli-interfaces.md
+
+---
 
 SCRIPT:
 

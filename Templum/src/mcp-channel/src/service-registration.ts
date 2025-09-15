@@ -14,6 +14,7 @@ import * as path from 'path';
 import * as os from 'os';
 import { CLIMCPServer } from './cli-mcp-server';
 import { PTYManager } from './pty-manager';
+import { ProgressiveTimeoutManager, createOperationSpecificTimeoutManager } from './progressive-timeout-manager';
 
 export interface MCPServiceConfig {
   id: string;
@@ -41,6 +42,9 @@ export interface ServiceRegistrationOptions {
   healthCheckInterval?: number;
   servicesDir?: string;
   enableAutoCleanup?: boolean;
+  enableProgressiveTimeout?: boolean;
+  registrationTimeout?: number;
+  maxRegistrationRetries?: number;
 }
 
 /**
@@ -57,6 +61,8 @@ export class MCPServiceRegistration {
   private serviceFilePath: string;
   private mcpServer?: CLIMCPServer;
   private ptyManager?: PTYManager;
+  private progressiveTimeoutManager?: ProgressiveTimeoutManager;
+  private registrationAttempts: number = 0;
 
   constructor(options: ServiceRegistrationOptions = {}) {
     // Generate service configuration
@@ -70,7 +76,10 @@ export class MCPServiceRegistration {
       protocol: options.protocol || 'mcp',
       healthCheckInterval: options.healthCheckInterval || 30000, // 30 seconds
       servicesDir: options.servicesDir || defaultServicesDir,
-      enableAutoCleanup: options.enableAutoCleanup ?? true
+      enableAutoCleanup: options.enableAutoCleanup ?? true,
+      enableProgressiveTimeout: options.enableProgressiveTimeout ?? true,
+      registrationTimeout: options.registrationTimeout || 30000, // 30 seconds default
+      maxRegistrationRetries: options.maxRegistrationRetries || 3
     };
 
     this.serviceFilePath = path.join(this.options.servicesDir, `${serviceId}.json`);
@@ -94,6 +103,12 @@ export class MCPServiceRegistration {
     // Set endpoints after config is initialized
     this.config.endpoint = this.generateEndpoint();
     this.config.health = this.generateHealthEndpoint();
+
+    // Initialize progressive timeout manager if enabled
+    if (this.options.enableProgressiveTimeout) {
+      this.progressiveTimeoutManager = createOperationSpecificTimeoutManager('service-discovery');
+      console.log('[MCP_REGISTRATION] Progressive timeout management enabled');
+    }
   }
 
   /**
@@ -108,6 +123,30 @@ export class MCPServiceRegistration {
    * Register MCP service with service discovery
    */
   async register(): Promise<void> {
+    if (this.options.enableProgressiveTimeout && this.progressiveTimeoutManager) {
+      // Use progressive timeout management for registration
+      return this.progressiveTimeoutManager.executeWithProgressiveTimeout(
+        `service-registration-${this.config.id}`,
+        'service-discovery',
+        () => this.performRegistration()
+      );
+    } else {
+      // Use traditional timeout
+      return this.performRegistrationWithTimeout();
+    }
+  }
+
+  /**
+   * Perform actual registration with progressive timeout support
+   */
+  private async performRegistration(): Promise<void> {
+    // TODO: [TASK-MCP-007-REGISTRATION-001] Pattern: progressive-service-registration | Complexity: 6 | Dependencies: timeout-management,error-recovery
+    // Context: Service registration with progressive timeout and retry logic for >90% success rate
+    // Validation-Required: registration-success-rate, timeout-adaptation, error-recovery-effectiveness
+    // Pattern-Info: { approach: "progressive-retry", alternatives: "fixed-timeout,exponential-backoff", trade-offs: "complexity-vs-reliability" }
+    
+    this.registrationAttempts++;
+    
     try {
       // Ensure services directory exists
       if (!fs.existsSync(this.options.servicesDir)) {
@@ -115,11 +154,17 @@ export class MCPServiceRegistration {
         fs.mkdirSync(this.options.servicesDir, { recursive: true });
       }
 
-      // Write service registration file
-      fs.writeFileSync(this.serviceFilePath, JSON.stringify(this.config, null, 2));
+      // Validate service configuration before registration
+      await this.validateServiceConfiguration();
+
+      // Perform connectivity validation
+      await this.validateConnectivity();
+
+      // Write service registration file with retry logic
+      await this.writeServiceRegistrationFile();
       
       this.isRegistered = true;
-      console.log(`[MCP_REGISTRATION] Service registered: ${this.config.id}`);
+      console.log(`[MCP_REGISTRATION] Service registered: ${this.config.id} (attempt ${this.registrationAttempts})`);
       console.log(`[MCP_REGISTRATION] Service file: ${this.serviceFilePath}`);
 
       // Start health check monitoring
@@ -131,9 +176,36 @@ export class MCPServiceRegistration {
       }
 
     } catch (error) {
-      console.error('[MCP_REGISTRATION] Registration failed:', error);
+      console.error(`[MCP_REGISTRATION] Registration failed (attempt ${this.registrationAttempts}):`, error);
+      
+      // Reset attempt counter if max retries exceeded
+      if (this.registrationAttempts >= this.options.maxRegistrationRetries) {
+        this.registrationAttempts = 0;
+      }
+      
       throw new Error(`MCP service registration failed: ${error instanceof Error ? error.message : error}`);
     }
+  }
+
+  /**
+   * Perform registration with traditional timeout
+   */
+  private async performRegistrationWithTimeout(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error(`Registration timed out after ${this.options.registrationTimeout}ms`));
+      }, this.options.registrationTimeout);
+
+      this.performRegistration()
+        .then(() => {
+          clearTimeout(timeout);
+          resolve();
+        })
+        .catch(error => {
+          clearTimeout(timeout);
+          reject(error);
+        });
+    });
   }
 
   /**
@@ -147,6 +219,9 @@ export class MCPServiceRegistration {
         this.healthCheckTimer = undefined;
       }
 
+      // Cleanup progressive timeout manager
+      this.cleanupProgressiveTimeout();
+
       // Remove service file
       if (fs.existsSync(this.serviceFilePath)) {
         fs.unlinkSync(this.serviceFilePath);
@@ -154,6 +229,7 @@ export class MCPServiceRegistration {
       }
 
       this.isRegistered = false;
+      this.registrationAttempts = 0;
 
     } catch (error) {
       console.error('[MCP_REGISTRATION] Unregistration failed:', error);
@@ -339,6 +415,141 @@ export class MCPServiceRegistration {
    */
   getServiceFilePath(): string {
     return this.serviceFilePath;
+  }
+
+  /**
+   * Validate service configuration before registration
+   */
+  private async validateServiceConfiguration(): Promise<void> {
+    // TODO: [TASK-MCP-007-VALIDATION-001] Pattern: service-configuration-validation | Complexity: 4 | Dependencies: config-schema,endpoint-validation
+    // Context: Comprehensive service configuration validation for reliable registration
+    // Validation-Required: config-completeness, endpoint-validity, protocol-support
+    // Pattern-Info: { approach: "schema-based-validation", alternatives: "runtime-validation,manual-checks", trade-offs: "validation-depth-vs-performance" }
+    
+    // Validate required configuration fields
+    if (!this.config.id || !this.config.name || !this.config.endpoint) {
+      throw new Error('Invalid service configuration: missing required fields');
+    }
+
+    // Validate endpoint format
+    if (!this.isValidEndpoint(this.config.endpoint)) {
+      throw new Error(`Invalid endpoint format: ${this.config.endpoint}`);
+    }
+
+    // Validate protocol support
+    if (!['mcp', 'stdio', 'tcp'].includes(this.config.protocol)) {
+      throw new Error(`Unsupported protocol: ${this.config.protocol}`);
+    }
+
+    // Validate port for TCP protocol
+    if (this.config.protocol === 'tcp' && (!this.config.port || this.config.port <= 0)) {
+      throw new Error('TCP protocol requires valid port number');
+    }
+
+    console.log('[MCP_REGISTRATION] Service configuration validated');
+  }
+
+  /**
+   * Validate connectivity before registration
+   */
+  private async validateConnectivity(): Promise<void> {
+    // TODO: [TASK-MCP-007-CONNECTIVITY-001] Pattern: connectivity-validation | Complexity: 7 | Dependencies: network-checks,service-availability
+    // Context: Connectivity validation with progressive timeout and error recovery
+    // Validation-Required: network-connectivity, service-availability, response-validation
+    // Pattern-Info: { approach: "progressive-validation", alternatives: "ping-check,service-call", trade-offs: "validation-thoroughness-vs-speed" }
+    
+    try {
+      // Validate MCP server is responsive
+      if (this.mcpServer) {
+        const tools = this.mcpServer.getAvailableTools();
+        if (tools.length === 0) {
+          throw new Error('MCP server has no available tools');
+        }
+      }
+
+      // Validate PTY manager is functional
+      if (this.ptyManager) {
+        const sessions = this.ptyManager.getActiveSessions();
+        console.log(`[MCP_REGISTRATION] PTY manager functional with ${sessions.length} sessions`);
+      }
+
+      // Validate services directory is writable
+      try {
+        const testFile = path.join(this.options.servicesDir, 'test-write.tmp');
+        fs.writeFileSync(testFile, 'test');
+        fs.unlinkSync(testFile);
+      } catch (error) {
+        throw new Error(`Services directory not writable: ${this.options.servicesDir}`);
+      }
+
+      console.log('[MCP_REGISTRATION] Connectivity validation passed');
+      
+    } catch (error) {
+      console.error('[MCP_REGISTRATION] Connectivity validation failed:', error);
+      throw new Error(`Connectivity validation failed: ${error instanceof Error ? error.message : error}`);
+    }
+  }
+
+  /**
+   * Write service registration file with error handling
+   */
+  private async writeServiceRegistrationFile(): Promise<void> {
+    try {
+      // Update last seen timestamp
+      this.config.lastSeen = Date.now();
+      
+      // Write service registration file atomically
+      const tempFilePath = `${this.serviceFilePath}.tmp`;
+      fs.writeFileSync(tempFilePath, JSON.stringify(this.config, null, 2));
+      fs.renameSync(tempFilePath, this.serviceFilePath);
+      
+      console.log('[MCP_REGISTRATION] Service registration file written successfully');
+      
+    } catch (error) {
+      console.error('[MCP_REGISTRATION] Failed to write service registration file:', error);
+      throw new Error(`Failed to write service registration: ${error instanceof Error ? error.message : error}`);
+    }
+  }
+
+  /**
+   * Validate endpoint format
+   */
+  private isValidEndpoint(endpoint: string): boolean {
+    // Basic endpoint format validation
+    const patterns = [
+      /^mcp:\/\/local\/[\w-]+$/, // MCP protocol
+      /^stdio:\/\/local$/, // STDIO protocol
+      /^tcp:\/\/localhost:\d+$/ // TCP protocol
+    ];
+    
+    return patterns.some(pattern => pattern.test(endpoint));
+  }
+
+  /**
+   * Get progressive timeout manager metrics
+   */
+  getTimeoutMetrics() {
+    return this.progressiveTimeoutManager?.getAdaptationMetrics() || null;
+  }
+
+  /**
+   * Reset progressive timeout context
+   */
+  resetTimeoutContext(): void {
+    if (this.progressiveTimeoutManager) {
+      this.progressiveTimeoutManager.resetOperationContext(`service-registration-${this.config.id}`);
+      console.log('[MCP_REGISTRATION] Progressive timeout context reset');
+    }
+  }
+
+  /**
+   * Cleanup progressive timeout manager
+   */
+  private cleanupProgressiveTimeout(): void {
+    if (this.progressiveTimeoutManager) {
+      this.progressiveTimeoutManager.cleanup();
+      this.progressiveTimeoutManager = undefined;
+    }
   }
 }
 

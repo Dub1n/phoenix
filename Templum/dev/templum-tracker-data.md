@@ -58,6 +58,7 @@
 
 | Date            | Task ID             | Component                                                 | Status       | Title                                        |
 |-----------------|---------------------|-----------------------------------------------------------|--------------|----------------------------------------------|
+| 2025-09-13-1047 | TASK-MCP-009        | CLI Redesign (Partial - 78% Complete)                    | [x] Partial  | cli-redesign-hybrid-synthesis-partial       |
 | 2025-09-10-0014 | TASK-VAL-006        | Full Functionality Validation System                     | [x] Complete | full-functionality-validation-completion    |
 | 2025-09-07-2112 | TASK-SUBAGENT-004   | Generic Execution Agent Implementation                    | [x] Complete | generic-execution-agent-implementation       |
 | 2025-09-07-1912 | TASK-SUBAGENT-003   | Analysis Agent Integration with pr/task Workflow           | [x] Complete | Analysis Agent-integration-pr-task-workflow   |
@@ -69,6 +70,7 @@
 | 2025-09-06-0238 | TASK-SUBAGENT-002   | Generic Analysis Agent Implementation Documentation       | [x] Complete | generic-research-agent-implementation        |
 | 2025-09-06-0155 | TASK-SUBAGENT-002   | Generic Analysis Agent Implementation                     | [x] Complete | generic-research-agent-implementation        |
 | 2025-09-05-2300 | TASK-SUBAGENT-001   | File-Based Handoff Infrastructure                         | [x] Complete | file-based-handoff-infrastructure            |
+| 2025-09-13-1017 | TASK-MCP-008        | Enhanced Error Handling (Superseded)                     | [-] Cancelled | superseded-by-pty-mcp-server-error-handling  |
 | 2025-09-05-0832 | TASK-MCP-002        | MCP Channel Server Framework                              | [x] Complete | mcp-server-framework-implementation          |
 | 2025-09-05-0000 | TASK-MCP-001        | MCP Channel PTY Foundation                                | [x] Complete | pty-foundation-research-and-setup            |
 | 2025-09-04-1658 | TASK-CLI-018        | CLI Interface Adapter                                     | [x] Complete | enhanced-cli-commands-backend-management     |

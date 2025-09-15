@@ -35,6 +35,9 @@ export interface LifecycleOptions extends ServiceRegistrationOptions {
   startupTimeout?: number;
   shutdownTimeout?: number;
   enablePerformanceOptimization?: boolean;
+  enableProgressiveTimeout?: boolean;
+  registrationTimeout?: number;
+  maxRegistrationRetries?: number;
 }
 
 /**
@@ -61,6 +64,11 @@ export class MCPLifecycleCoordinator {
   constructor(options: LifecycleOptions = {}) {
     this.startTime = Date.now();
     
+    // TODO: [TASK-MCP-007-CONFIG-001] Pattern: comprehensive-configuration | Complexity: 3 | Dependencies: service-registration
+    // Context: Complete lifecycle options with progressive timeout and registration settings
+    // Validation-Required: default-value-appropriateness, configuration-completeness, type-safety
+    // Pattern-Info: { approach: "comprehensive-defaults", alternatives: "minimal-config", trade-offs: "completeness-vs-simplicity" }
+    
     this.options = {
       serviceId: options.serviceId || `mcp-server-${Date.now()}`,
       serviceName: options.serviceName || 'Templum MCP Server',
@@ -71,7 +79,10 @@ export class MCPLifecycleCoordinator {
       enableAutoCleanup: options.enableAutoCleanup ?? true,
       startupTimeout: options.startupTimeout || 10000, // 10 seconds
       shutdownTimeout: options.shutdownTimeout || 5000, // 5 seconds
-      enablePerformanceOptimization: options.enablePerformanceOptimization ?? true
+      enablePerformanceOptimization: options.enablePerformanceOptimization ?? true,
+      enableProgressiveTimeout: options.enableProgressiveTimeout ?? true,
+      registrationTimeout: options.registrationTimeout || 30000, // 30 seconds
+      maxRegistrationRetries: options.maxRegistrationRetries || 3
     };
 
     this.state = {

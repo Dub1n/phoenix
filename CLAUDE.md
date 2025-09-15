@@ -5,8 +5,9 @@
 Response style for all responses:
 @.claude/claude-guides/Critical-Collaborator.md
 
-Frontmatter for every file except schema files or ones that would break by including it:
+Frontmatter for every file except schema files:
 @.claude/claude-guides/frontmatter-schema.json
+Commenting conventions for every implementation: TypeScript: /**...*/; JavaScript: /*...*/; Python: '''...'''; Markdown: no comments needed; Other: use the standard for that format
 If editing a file that doesn't contain this frontmatter in this format, add it/update the existing frontmatter
 
 Status Legend:

@@ -26,7 +26,7 @@ import type {
   FeatureMatrix,
   PerformanceHints
 } from './universal-skin-definition';
-export { 
+export type { 
   UniversalSkinDefinition,
   InterfaceType,
   BackendType,

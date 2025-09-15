@@ -20,7 +20,7 @@ import {
 } from './universal-skin-definition';
 
 // Re-export imported types for backward compatibility
-export { 
+export type { 
   UniversalSkinDefinition,
   BackendType,
   InterfaceType,
@@ -344,7 +344,7 @@ export interface RollbackDefinition {
  */
 export interface TemplumError extends Error {
   code: string;
-  category: 'validation' | 'runtime' | 'integration' | 'configuration' | 'network';
+  category: 'validation' | 'runtime' | 'integration' | 'configuration' | 'network' | 'dependency-resolution';
   timestamp: number;
   context?: Record<string, any>;
   originalError?: Error;

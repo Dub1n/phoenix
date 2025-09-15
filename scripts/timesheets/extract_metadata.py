@@ -4,10 +4,9 @@ Repository File Metadata Extractor
 Extracts creation and modification times for all files in a multi-project repository
 and exports the data as JSON for visualization.
 Example command: 
-python scripts/timesheets/extract_metadata.py C:\Users\gabri\Documents\Infotopology\VDL_Vault --projects DSS Haruspex phoenix-code-lite Templum docs
+python scripts/timesheets/extract_metadata.py C:/Users/gabri/Documents/Infotopology/VDL_Vault --projects DSS Haruspex phoenix-code-lite Templum docs
 """
 
-import os
 import json
 import argparse
 from pathlib import Path

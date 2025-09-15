@@ -611,11 +611,11 @@ export class CLIMCPServer {
     const now = Date.now();
     const expiredKeys: string[] = [];
 
-    for (const [key, entry] of this.responseCache.entries()) {
+    this.responseCache.forEach((entry, key) => {
       if (now - entry.timestamp > this.CACHE_TTL) {
         expiredKeys.push(key);
       }
-    }
+    });
 
     for (const key of expiredKeys) {
       this.responseCache.delete(key);

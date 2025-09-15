@@ -1,0 +1,14 @@
+- There is still no "Windows" in the CLI.
+- There is still no "TextBox"
+- There isn't proper layout of the "Page" contents
+- There are still some emojis - not standard emojis but the status indicators, such as 🛑 or 🔴 are still present, such as in the connected services view.
+- The Backend Services view doesn't need to have both Disconnected and Not Available
+- The unavailable backends should still allow the user to see their service info once they have been loaded and the info is available (such as the description and commands/capabilities) even if it is greyed out in the Backend Services page
+- The Ctrl+C command doesn't fully quit the CLI yet and has no warning before exiting
+- The Exit button doesn't fully quite and no warning/"Press Enter again to exit the Templum CLI" message
+- The system status page has a timeout - none of the pages should have timeouts
+- The system status page still has emojis
+- The system status page doesn't have a menu with the Back, Home, Help, Exit items
+- The Command Mode page (that is a placeholder but still needs fixing) has the same problems as the system status page
+- The Enter Custom Command on entering a command times out - shouldn't do this
+- Using Ctrl+C in the Enter Custom Command breaks the CLI

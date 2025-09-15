@@ -24,9 +24,9 @@
     "forceConsistentCasingInFileNames": true,
     
     // Library Compatibility (Enhanced)
-    "skipLibCheck": false,
-    "skipDefaultLibCheck": false,
-    "isolatedModules": false,
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "isolatedModules": true,
     "verbatimModuleSyntax": false,
     
     // Code Generation
@@ -38,8 +38,7 @@
     "downlevelIteration": true,
     
     // Performance Optimizations
-    "incremental": false,
-    // Issues with incremental mean it is now set to false
+    "incremental": true,
     "composite": false,
     "tsBuildInfoFile": "./.tsbuildinfo",
     

@@ -15,6 +15,10 @@ cd templum && npm start
 
 Bash(cd C:/Users/gabri/Documents/Infotopology/VDL_Vault/Templum && node dist/src/cli-entry.js --status)
 
+## Fix Template
+
+cp "C:\Users\gabri\Documents\Infotopology\VDL_Vault\prompts\documentation\templates\comprehensive-fix-template.md" "<Project>/dev/fixes/$(date +%Y-%m-%d-%H%M)-[{TASK-ID}]-{description}.md"
+
 ## File Tree
 
 python scripts\export_tree.py "C:\Users\gabri\Documents\Infotopology\VDL_Vault\Templum" --exclude "fixes/" --exclude ".husky/" --exclude ".validation-reports/" --exclude "archive/"

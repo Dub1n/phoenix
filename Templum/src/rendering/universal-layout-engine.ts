@@ -12,9 +12,16 @@
 
 import chalk from 'chalk';
 import { InterfaceType } from '../types/templum-types';
+import { 
+  ContentLayoutSystem, 
+  WindowContent, 
+  ContentSection, 
+  ContentItem,
+  WindowLayoutConfig 
+} from './content-layout-system';
 
 // Re-export InterfaceType for other modules
-export { InterfaceType };
+export type { InterfaceType };
 
 // Extended interfaces for multi-interface support
 export interface UniversalSkinMenuDefinition extends PCLSkinMenuDefinition {
@@ -122,6 +129,7 @@ export interface UniversalCalculatedLayout extends CalculatedLayout {
   interfaceType: InterfaceType;
   interfaceSpecific?: any;
   compatibilityMode?: 'pcl' | 'universal';
+  totalWidth?: number;
 }
 
 export interface CalculatedLayout {
@@ -159,6 +167,11 @@ export interface RenderResult {
  */
 export class UniversalLayoutEngine {
   private performanceMetrics: Map<string, number> = new Map();
+  private contentLayoutSystem: ContentLayoutSystem;
+
+  constructor() {
+    this.contentLayoutSystem = new ContentLayoutSystem();
+  }
 
   /**
    * Main entry point for multi-interface rendering
@@ -171,25 +184,42 @@ export class UniversalLayoutEngine {
     const startTime = Date.now();
 
     try {
+      // TASK-MCP-009: Verify and adapt skin compatibility
+      const compatibilityCheck = this.verifySkinCompatibility(skinDefinition, interfaceType);
+      const adaptedSkinDefinition = compatibilityCheck.compatible 
+        ? skinDefinition 
+        : this.applySkinAdaptations(skinDefinition, compatibilityCheck.adaptations);
+      
+      // Log compatibility issues for debugging
+      if (!compatibilityCheck.compatible) {
+        console.warn('Skin compatibility issues detected:', compatibilityCheck.issues);
+        console.info('Applied adaptations:', compatibilityCheck.adaptations);
+      }
+      
+      if (compatibilityCheck.recommendations.length > 0) {
+        console.info('Skin optimization recommendations:', compatibilityCheck.recommendations);
+      }
+      
       // Determine if this is PCL compatibility mode
-      const isUniversalDef = 'interfaces' in skinDefinition;
+      const isUniversalDef = 'interfaces' in adaptedSkinDefinition;
       const compatibilityMode = isUniversalDef ? 'universal' : 'pcl';
 
-      // Create universal constraints with interface-specific settings
-      const universalConstraints = this.createUniversalConstraints(
+      // Create content-driven constraints for algorithmic consistency
+      const universalConstraints = this.createContentDrivenConstraints(
+        adaptedSkinDefinition,
         interfaceType,
         constraints
       );
 
       // Calculate layout for the specific interface
       const layout = this.calculateUniversalLayout(
-        skinDefinition,
+        adaptedSkinDefinition,
         universalConstraints
       );
 
       // Render for the specific interface
       const output = await this.renderForSpecificInterface(
-        skinDefinition,
+        adaptedSkinDefinition,
         layout,
         interfaceType
       );
@@ -389,14 +419,211 @@ export class UniversalLayoutEngine {
   }
 
   /**
-   * CLI interface rendering (preserves original PCL behavior)
+   * CLI interface rendering with enhanced content layout system
    */
   private renderCLIInterface(
     skinDefinition: UniversalSkinMenuDefinition | PCLSkinMenuDefinition,
     layout: UniversalCalculatedLayout
   ): string {
-    // Use original PCL rendering logic for CLI compatibility
-    return this.renderMenuWithLayout(skinDefinition, layout);
+    // Check if enhanced rendering is enabled via interface config
+    const cliConfig = layout.interfaceSpecific as any;
+    const useEnhancedRendering = cliConfig?.terminalFeatures?.enhancedBorders !== false;
+    
+    if (useEnhancedRendering) {
+      // Use enhanced content layout system
+      return this.renderCLIWithContentLayout(skinDefinition, layout);
+    } else {
+      // Use original PCL rendering logic for compatibility
+      return this.renderMenuWithLayout(skinDefinition, layout);
+    }
+  }
+
+  /**
+   * Enhanced CLI rendering using the new content layout system
+   * TASK-MCP-009: CLI Design Spec compliance with algorithmic consistency
+   */
+  private renderCLIWithContentLayout(
+    skinDefinition: UniversalSkinMenuDefinition | PCLSkinMenuDefinition,
+    layout: UniversalCalculatedLayout
+  ): string {
+    try {
+      // Convert skin definition to WindowContent format with CLI Design Spec compliance
+      // Pass navigation context for dynamic routing
+      const navigationContext = {
+        currentMenuId: layout.interfaceSpecific?.currentMenu || 'main',
+        navigationHistory: layout.interfaceSpecific?.navigationHistory || []
+      };
+      const windowContent = this.convertToWindowContentWithDesignSpec(skinDefinition, navigationContext);
+      
+      // Use content-driven width calculation from CLI Design Spec
+      const cliSpecific = layout.interfaceSpecific?.cli;
+      const contentWidth = cliSpecific?.minContentWidth || 40;
+      const paddingChars = 3; // CLI Design Spec requirement
+      const borderWidth = 2;
+      const optimalWidth = contentWidth + (paddingChars * 2) + borderWidth;
+      
+      // Configure layout options for CLI Design Spec compliance  
+      const layoutConfig: Partial<WindowLayoutConfig> = {
+        minWidth: Math.max(40, optimalWidth),
+        maxWidth: Math.min(process.stdout.columns - 4 || 100, optimalWidth + 10),
+        padding: paddingChars, // Exact 3-character padding as per spec
+        borderStyle: 'unicode', // Use ┌─┐ style borders
+        enableColors: true
+      };
+      
+      // Render with enhanced content layout system
+      const result = this.contentLayoutSystem.renderContent(windowContent, layoutConfig);
+      
+      // Add CLI Design Spec footer with input prompt box
+      const renderedOutput = result.output;
+      const promptBox = this.createDesignSpecFooter(layout.totalWidth || optimalWidth);
+      
+      return renderedOutput + '\n\n' + promptBox;
+      
+    } catch (error) {
+      console.warn('Enhanced CLI rendering failed, falling back to original:', error);
+      // Fallback to original rendering
+      return this.renderMenuWithLayout(skinDefinition, layout);
+    }
+  }
+
+  /**
+   * Convert skin definition to WindowContent with CLI Design Spec compliance
+   * TASK-MCP-009: Uses dynamic routing instead of hardcoded navigation
+   */
+  private convertToWindowContentWithDesignSpec(
+    skinDefinition: UniversalSkinMenuDefinition | PCLSkinMenuDefinition,
+    navigationContext?: {
+      currentMenuId?: string;
+      navigationHistory?: string[];
+    }
+  ): WindowContent {
+    const sections: ContentSection[] = [];
+    
+    // Build dynamic routing from skin definition
+    const skinRouting = this.buildDynamicMenuRouting(skinDefinition);
+    
+    // Generate navigation context for current position
+    const currentMenuId = navigationContext?.currentMenuId || 'main';
+    const navigationHistory = navigationContext?.navigationHistory || [];
+    const navContext = this.generateNavigationContext(currentMenuId, navigationHistory, skinRouting);
+    
+    // Group items into sections with proper CLI Design Spec formatting
+    if (skinDefinition.items && skinDefinition.items.length > 0) {
+      const mainItems: ContentItem[] = [];
+      
+      // Process main menu items with procedural numbering (dynamic from skin)
+      skinDefinition.items.forEach((item, index) => {
+        mainItems.push({
+          id: item.id,
+          label: item.label,
+          description: item.description,
+          enabled: true,
+          selected: false,
+          prefix: `${index + 1}.` // Procedural numbering as per CLI Design Spec
+        });
+      });
+      
+      // Add main items section
+      sections.push({
+        id: 'main',
+        heading: undefined, // No section heading for simple menus
+        items: mainItems
+      });
+      
+      // Add DYNAMIC navigation items based on skin routing and context
+      const dynamicNavigationItems: ContentItem[] = [];
+      
+      for (const navItem of navContext.contextualNavigation) {
+        dynamicNavigationItems.push({
+          id: navItem.id,
+          label: navItem.label,
+          enabled: true,
+          selected: false
+        });
+      }
+      
+      // Only add navigation section if there are navigation items
+      if (dynamicNavigationItems.length > 0) {
+        sections.push({
+          id: 'navigation',
+          heading: '───────────────────────────────────────────────────────────────────', // Menu separator
+          items: dynamicNavigationItems
+        });
+      }
+    }
+    
+    // Add breadcrumb support for CLI Design Spec
+    const breadcrumbSubtitle = navContext.breadcrumb.length > 1 
+      ? `${skinDefinition.subtitle || ''} │ ${navContext.breadcrumb.join(' › ')}`
+      : skinDefinition.subtitle;
+    
+    return {
+      title: skinDefinition.title,
+      subtitle: breadcrumbSubtitle,
+      sections,
+      footer: undefined // Footer handled separately for input prompt box
+    };
+  }
+
+  /**
+   * Create CLI Design Spec compliant footer with input prompt box
+   */
+  private createDesignSpecFooter(windowWidth: number): string {
+    const borderChar = '─';
+    const topBorder = '┌' + borderChar.repeat(windowWidth - 2) + '┐';
+    const bottomBorder = '└' + borderChar.repeat(windowWidth - 2) + '┘';
+    const promptText = 'Select an option: (Use arrow keys)';
+    const paddedPrompt = '│ ' + promptText.padEnd(windowWidth - 4) + ' │';
+    
+    return [topBorder, paddedPrompt, bottomBorder].join('\n');
+  }
+
+  /**
+   * Convert skin menu definition to WindowContent format with CLI design compliance
+   */
+  private convertToWindowContent(
+    skinDefinition: UniversalSkinMenuDefinition | PCLSkinMenuDefinition,
+    selectedItemId?: string,
+    isNestedWindow?: boolean,
+    parentTitle?: string
+  ): WindowContent {
+    const sections: ContentSection[] = [];
+    
+    // Group items into sections
+    if (skinDefinition.items && skinDefinition.items.length > 0) {
+      const items: ContentItem[] = skinDefinition.items.map((item) => ({
+        id: item.id,
+        label: item.label,
+        description: item.description,
+        enabled: true,
+        selected: item.id === selectedItemId,
+        isSelector: item.id === selectedItemId // Use selector character for selected item
+      }));
+      
+      sections.push({
+        id: 'main',
+        heading: undefined, // No section heading for simple menus
+        items
+      });
+    }
+    
+    // Create navigation items (Back, Home, Help, Exit)
+    const navigationItems: ContentItem[] = [
+      { id: 'back', label: 'Back', enabled: isNestedWindow || false },
+      { id: 'home', label: 'Home', enabled: true },
+      { id: 'help', label: 'Help', enabled: true },
+      { id: 'exit', label: 'Exit', enabled: true }
+    ];
+    
+    return {
+      title: skinDefinition.title,
+      subtitle: skinDefinition.subtitle,
+      sections,
+      navigationItems,
+      isNestedWindow,
+      parentTitle
+    };
   }
 
   /**
@@ -511,6 +738,306 @@ export class UniversalLayoutEngine {
       ...baseConstraints,
       interfaceType,
       interfaceSpecific: partialConstraints?.interfaceSpecific || {}
+    };
+  }
+
+  /**
+   * TASK-MCP-009: Algorithmic content-driven layout calculation
+   * Replaces hardcoded layout constraints with content analysis
+   */
+  private createContentDrivenConstraints(
+    skinDefinition: UniversalSkinMenuDefinition | PCLSkinMenuDefinition,
+    interfaceType: InterfaceType,
+    partialConstraints?: Partial<UniversalLayoutConstraints>
+  ): UniversalLayoutConstraints {
+    // Analyze skin definition content to determine optimal constraints
+    const contentAnalysis = this.analyzeSkinContent(skinDefinition);
+    
+    // Calculate minimum width based on content (CLI Design Spec requirement)
+    // "WindowWidth is set to the minimum width required to display the widest contents 
+    // of any Page with 3 character padding between the contents and the border"
+    const paddingChars = 3;
+    const borderWidth = 2; // Left and right borders
+    const calculatedMinWidth = contentAnalysis.maxContentWidth + (paddingChars * 2) + borderWidth;
+    
+    // Respect terminal constraints but prioritize content-driven sizing
+    const terminalWidth = process.stdout.columns || 100;
+    const maxAvailableWidth = Math.min(terminalWidth - 4, 120); // Leave margin
+    
+    const baseConstraints: LayoutConstraints = {
+      minHeight: Math.max(15, contentAnalysis.minRequiredHeight),
+      minWidth: Math.max(40, Math.min(calculatedMinWidth, maxAvailableWidth)),
+      maxWidth: partialConstraints?.maxWidth || maxAvailableWidth,
+      textboxLines: partialConstraints?.textboxLines || 3,
+      paddingLines: partialConstraints?.paddingLines || 2,
+      enforceConsistentHeight: partialConstraints?.enforceConsistentHeight !== false
+    };
+
+    // Apply interface-specific constraints
+    const interfaceSpecific = this.getInterfaceSpecificConstraints(
+      interfaceType, 
+      contentAnalysis,
+      partialConstraints?.interfaceSpecific
+    );
+
+    return {
+      ...baseConstraints,
+      interfaceType,
+      interfaceSpecific
+    };
+  }
+
+  /**
+   * TASK-MCP-009: Content analysis for layout calculation
+   */
+  private analyzeSkinContent(skinDefinition: UniversalSkinMenuDefinition | PCLSkinMenuDefinition): {
+    maxContentWidth: number;
+    minRequiredHeight: number;
+    titleWidth: number;
+    itemCount: number;
+    longestItemWidth: number;
+  } {
+    let maxContentWidth = 0;
+    let itemCount = 0;
+    let longestItemWidth = 0;
+    
+    // Measure title
+    const titleWidth = skinDefinition.title ? this.getDisplayWidth(skinDefinition.title) : 0;
+    maxContentWidth = Math.max(maxContentWidth, titleWidth);
+    
+    // Measure subtitle
+    if (skinDefinition.subtitle) {
+      maxContentWidth = Math.max(maxContentWidth, this.getDisplayWidth(skinDefinition.subtitle));
+    }
+    
+    // Measure menu items
+    for (const item of skinDefinition.items) {
+      itemCount++;
+      
+      // Build item text as it would be displayed with procedural numbering
+      const displayLabel = `${itemCount}. ${item.label}`;
+      const descriptionText = item.description ? ` - ${item.description}` : '';
+      const fullItemText = `  ${displayLabel}${descriptionText}`;
+      
+      const itemWidth = this.getDisplayWidth(fullItemText);
+      maxContentWidth = Math.max(maxContentWidth, itemWidth);
+      longestItemWidth = Math.max(longestItemWidth, itemWidth);
+    }
+    
+    // Calculate minimum required height
+    let minRequiredHeight = 5; // Base: title + separator + padding + textbox
+    
+    if (skinDefinition.subtitle) minRequiredHeight += 2; // subtitle + blank line
+    minRequiredHeight += itemCount; // One line per item
+    minRequiredHeight += Math.ceil(itemCount / 10); // Spacing between groups of 10
+    
+    return {
+      maxContentWidth,
+      minRequiredHeight,
+      titleWidth,
+      itemCount,
+      longestItemWidth
+    };
+  }
+
+  /**
+   * Interface-specific constraint adjustments
+   */
+  private getInterfaceSpecificConstraints(
+    interfaceType: InterfaceType,
+    contentAnalysis: any,
+    existingSpecific?: any
+  ): any {
+    const specific = existingSpecific || {};
+    
+    switch (interfaceType) {
+      case 'cli':
+        return {
+          ...specific,
+          cli: {
+            // Enable enhanced rendering for CLI Design Spec compliance
+            enhancedBorders: true,
+            contentDrivenWidth: true,
+            algorithmicConsistency: true,
+            minContentWidth: contentAnalysis.maxContentWidth,
+            itemCount: contentAnalysis.itemCount,
+            ...specific.cli
+          }
+        };
+      case 'vscode':
+        return {
+          ...specific,
+          vscode: {
+            treeDepth: Math.min(3, Math.ceil(contentAnalysis.itemCount / 10)),
+            iconSize: contentAnalysis.itemCount > 20 ? 'small' : 'medium',
+            compactMode: contentAnalysis.itemCount > 15,
+            ...specific.vscode
+          }
+        };
+      case 'command':
+        return {
+          ...specific,
+          command: {
+            outputFormat: contentAnalysis.itemCount > 10 ? 'table' : 'text',
+            verbosityLevel: contentAnalysis.itemCount > 20 ? 'minimal' : 'normal',
+            includeHeaders: true,
+            ...specific.command
+          }
+        };
+      default:
+        return specific;
+    }
+  }
+
+  /**
+   * Get display width of text (strips ANSI codes)
+   */
+  private getDisplayWidth(text: string): number {
+    return this.stripAnsi(text).length;
+  }
+
+  /**
+   * TASK-MCP-009: Dynamic skin-definition routing system
+   * Replaces hardcoded menu navigation with skin-driven routing
+   */
+  private buildDynamicMenuRouting(skinDefinition: UniversalSkinMenuDefinition | PCLSkinMenuDefinition): {
+    availableRoutes: Map<string, any>;
+    navigationItems: any[];
+    menuRelationships: Map<string, string[]>;
+  } {
+    const availableRoutes = new Map<string, any>();
+    const navigationItems: any[] = [];
+    const menuRelationships = new Map<string, string[]>();
+    
+    // Analyze skin definition structure for dynamic routing
+    const skinItems = skinDefinition.items || [];
+    
+    // Build route map from skin items
+    for (const item of skinItems) {
+      if (item.type === 'submenu' && item.command) {
+        // This item leads to another menu
+        availableRoutes.set(item.id, {
+          targetMenu: item.command,
+          label: item.label,
+          description: item.description
+        });
+        
+        // Track parent-child relationships
+        const currentMenu = 'main'; // Assume we're analyzing from main
+        if (!menuRelationships.has(currentMenu)) {
+          menuRelationships.set(currentMenu, []);
+        }
+        menuRelationships.get(currentMenu)!.push(item.command);
+      } else if (item.type === 'command') {
+        // This item executes a command
+        availableRoutes.set(item.id, {
+          command: item.command,
+          label: item.label,
+          description: item.description,
+          type: 'command'
+        });
+      }
+    }
+    
+    // Build dynamic navigation items based on context
+    // These should be contextual rather than always the same
+    if (availableRoutes.size > 0) {
+      // Only add Back if we're not at root level
+      navigationItems.push({
+        id: 'back',
+        label: 'Back',
+        type: 'navigation',
+        condition: 'not-root'
+      });
+    }
+    
+    // Always available navigation
+    navigationItems.push(
+      {
+        id: 'home',
+        label: 'Home', 
+        type: 'navigation',
+        condition: 'always'
+      },
+      {
+        id: 'help',
+        label: 'Help',
+        type: 'navigation', 
+        condition: 'always'
+      },
+      {
+        id: 'exit',
+        label: 'Exit',
+        type: 'navigation',
+        condition: 'always'
+      }
+    );
+    
+    return {
+      availableRoutes,
+      navigationItems,
+      menuRelationships
+    };
+  }
+
+  /**
+   * TASK-MCP-009: Generate navigation context for current menu
+   */
+  private generateNavigationContext(
+    currentMenuId: string,
+    navigationHistory: string[],
+    skinRouting: any
+  ): {
+    breadcrumb: string[];
+    availableActions: any[];
+    contextualNavigation: any[];
+  } {
+    const breadcrumb: string[] = [];
+    const availableActions: any[] = [];
+    const contextualNavigation: any[] = [];
+    
+    // Build breadcrumb from navigation history
+    breadcrumb.push('Templum'); // Root
+    for (const historyItem of navigationHistory) {
+      if (historyItem !== currentMenuId) {
+        breadcrumb.push(historyItem);
+      }
+    }
+    breadcrumb.push(currentMenuId);
+    
+    // Get available actions from skin routing
+    for (const [actionId, actionData] of skinRouting.availableRoutes) {
+      availableActions.push({
+        id: actionId,
+        ...actionData
+      });
+    }
+    
+    // Build contextual navigation based on current position
+    for (const navItem of skinRouting.navigationItems) {
+      let shouldInclude = false;
+      
+      switch (navItem.condition) {
+        case 'always':
+          shouldInclude = true;
+          break;
+        case 'not-root':
+          shouldInclude = navigationHistory.length > 0;
+          break;
+        case 'has-parent':
+          shouldInclude = breadcrumb.length > 2; // More than root + current
+          break;
+      }
+      
+      if (shouldInclude) {
+        contextualNavigation.push(navItem);
+      }
+    }
+    
+    return {
+      breadcrumb,
+      availableActions,
+      contextualNavigation
     };
   }
 
@@ -766,5 +1293,174 @@ export class UniversalLayoutEngine {
    */
   getPerformanceMetrics(): Map<string, number> {
     return new Map(this.performanceMetrics);
+  }
+
+  /**
+   * Get the content layout system for advanced CLI rendering
+   */
+  getContentLayoutSystem(): ContentLayoutSystem {
+    return this.contentLayoutSystem;
+  }
+
+  /**
+   * Test terminal compatibility for enhanced rendering
+   */
+  testTerminalCompatibility(): {
+    capabilities: any;
+    compatibilityLevel: 'full' | 'partial' | 'basic';
+    recommendations: string[];
+  } {
+    return this.contentLayoutSystem.testTerminalCompatibility();
+  }
+
+  /**
+   * Force terminal capabilities for testing
+   */
+  forceTerminalCapabilities(capabilities: any): void {
+    this.contentLayoutSystem.forceTerminalCapabilities(capabilities);
+  }
+
+  /**
+   * Clean text of emojis using the content layout system
+   */
+  cleanTextOfEmojis(text: string): string {
+    return this.contentLayoutSystem.cleanTextOfEmojis(text);
+  }
+
+  /**
+   * TASK-MCP-009: Dynamic skin compatibility verification system
+   * Ensures any backend skin definition can work with the CLI rendering system
+   */
+  verifySkinCompatibility(
+    skinDefinition: UniversalSkinMenuDefinition | PCLSkinMenuDefinition,
+    interfaceType: InterfaceType
+  ): {
+    compatible: boolean;
+    issues: string[];
+    recommendations: string[];
+    adaptations: any;
+  } {
+    const issues: string[] = [];
+    const recommendations: string[] = [];
+    const adaptations: any = {};
+    
+    // Check basic structure requirements
+    if (!skinDefinition.title) {
+      issues.push('Missing title - CLI Design Spec requires window title');
+      adaptations.title = 'Untitled Menu';
+    }
+    
+    if (!skinDefinition.items || skinDefinition.items.length === 0) {
+      issues.push('No menu items - CLI requires at least one actionable item');
+      adaptations.items = [{
+        id: 'placeholder',
+        label: 'No actions available',
+        type: 'command' as const,
+        command: 'help'
+      }];
+    }
+    
+    // Check content width compatibility
+    const contentAnalysis = this.analyzeSkinContent(skinDefinition);
+    const terminalWidth = process.stdout.columns || 100;
+    
+    if (contentAnalysis.maxContentWidth > terminalWidth - 10) {
+      issues.push('Content width exceeds terminal constraints');
+      recommendations.push('Consider shorter labels and descriptions for better display');
+      adaptations.truncateContent = true;
+    }
+    
+    // Check for CLI Design Spec compliance issues
+    const hasLongItems = skinDefinition.items?.some(item => 
+      (item.label.length + (item.description?.length || 0)) > 80
+    );
+    
+    if (hasLongItems) {
+      recommendations.push('Some items have very long labels/descriptions - may need truncation');
+      adaptations.enableTruncation = true;
+    }
+    
+    // Check navigation compatibility
+    const skinRouting = this.buildDynamicMenuRouting(skinDefinition);
+    const hasValidRoutes = skinRouting.availableRoutes.size > 0;
+    
+    if (!hasValidRoutes) {
+      recommendations.push('No navigation routes detected - consider adding submenu items');
+    }
+    
+    // Interface-specific compatibility checks
+    switch (interfaceType) {
+      case 'cli':
+        // CLI-specific compatibility checks
+        if (contentAnalysis.itemCount > 50) {
+          issues.push('Too many items for optimal CLI display');
+          recommendations.push('Consider grouping items or using pagination');
+          adaptations.enablePagination = true;
+        }
+        break;
+        
+      case 'vscode':
+        // VSCode-specific compatibility checks
+        if (contentAnalysis.itemCount > 100) {
+          recommendations.push('Large menu - consider tree view optimization');
+          adaptations.useCompactMode = true;
+        }
+        break;
+        
+      case 'command':
+        // Command-specific compatibility checks
+        if (!skinDefinition.items?.every(item => item.command)) {
+          issues.push('Not all items have executable commands');
+          adaptations.filterNonExecutable = true;
+        }
+        break;
+    }
+    
+    const compatible = issues.length === 0;
+    
+    return {
+      compatible,
+      issues,
+      recommendations,
+      adaptations
+    };
+  }
+
+  /**
+   * Apply adaptations for skin compatibility
+   */
+  applySkinAdaptations(
+    skinDefinition: UniversalSkinMenuDefinition | PCLSkinMenuDefinition,
+    adaptations: any
+  ): UniversalSkinMenuDefinition | PCLSkinMenuDefinition {
+    let adaptedSkin = { ...skinDefinition };
+    
+    // Apply title adaptation
+    if (adaptations.title && !adaptedSkin.title) {
+      adaptedSkin.title = adaptations.title;
+    }
+    
+    // Apply items adaptation
+    if (adaptations.items && (!adaptedSkin.items || adaptedSkin.items.length === 0)) {
+      adaptedSkin.items = adaptations.items;
+    }
+    
+    // Apply truncation if needed
+    if (adaptations.enableTruncation) {
+      adaptedSkin.items = adaptedSkin.items?.map(item => ({
+        ...item,
+        label: item.label.length > 40 ? item.label.substring(0, 37) + '...' : item.label,
+        description: item.description && item.description.length > 60 
+          ? item.description.substring(0, 57) + '...' 
+          : item.description
+      }));
+    }
+    
+    // Filter non-executable items for command interface
+    if (adaptations.filterNonExecutable) {
+      adaptedSkin.items = adaptedSkin.items?.filter(item => item.command);
+    }
+    
+    return adaptedSkin;
   }
 }

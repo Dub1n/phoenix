@@ -1,0 +1,1090 @@
+{
+  "timestamp": "2025-09-14T23:21:13.214Z",
+  "summary": {
+    "totalPatterns": 19,
+    "validationStatus": "WARNINGS",
+    "averageConfidence": 100,
+    "complianceRate": "medium"
+  },
+  "patternValidation": [
+    {
+      "pattern": "service-utils-utility-pattern.md",
+      "status": "PASS",
+      "issues": [],
+      "strengths": [
+        "Valid frontmatter present",
+        "17 headings organized",
+        "Contains implementation guidance",
+        "Contains code examples"
+      ],
+      "metrics": {
+        "contentLength": 38661,
+        "structuralComplexity": 22,
+        "documentationRichness": 5,
+        "taskIntegration": 0
+      }
+    },
+    {
+      "pattern": "debug-utils-utility-pattern.md",
+      "status": "PASS",
+      "issues": [],
+      "strengths": [
+        "Valid frontmatter present",
+        "37 headings organized",
+        "Contains implementation guidance",
+        "Contains code examples"
+      ],
+      "metrics": {
+        "contentLength": 22585,
+        "structuralComplexity": 49,
+        "documentationRichness": 12,
+        "taskIntegration": 0
+      }
+    },
+    {
+      "pattern": "config-utils-intelligence-briefing-pattern.md",
+      "status": "PASS",
+      "issues": [],
+      "strengths": [
+        "Valid frontmatter present",
+        "17 headings organized"
+      ],
+      "metrics": {
+        "contentLength": 18901,
+        "structuralComplexity": 26,
+        "documentationRichness": 9,
+        "taskIntegration": 0
+      }
+    },
+    {
+      "pattern": "registry-utils-utility-pattern.md",
+      "status": "PASS",
+      "issues": [],
+      "strengths": [
+        "Valid frontmatter present",
+        "20 headings organized",
+        "Contains implementation guidance",
+        "Contains code examples"
+      ],
+      "metrics": {
+        "contentLength": 23387,
+        "structuralComplexity": 27,
+        "documentationRichness": 7,
+        "taskIntegration": 1
+      }
+    },
+    {
+      "pattern": "cache-utils-utility-pattern.md",
+      "status": "PASS",
+      "issues": [],
+      "strengths": [
+        "Valid frontmatter present",
+        "21 headings organized",
+        "Contains implementation guidance",
+        "Contains code examples"
+      ],
+      "metrics": {
+        "contentLength": 43602,
+        "structuralComplexity": 30,
+        "documentationRichness": 9,
+        "taskIntegration": 0
+      }
+    },
+    {
+      "pattern": "performance-utils-intelligence-briefing-pattern.md",
+      "status": "PASS",
+      "issues": [],
+      "strengths": [
+        "Valid frontmatter present",
+        "10 headings organized",
+        "Contains analytical content",
+        "Provides actionable recommendations"
+      ],
+      "metrics": {
+        "contentLength": 13266,
+        "structuralComplexity": 18,
+        "documentationRichness": 8,
+        "taskIntegration": 1
+      }
+    },
+    {
+      "pattern": "terminal-formatter-utility-pattern.md",
+      "status": "PASS",
+      "issues": [],
+      "strengths": [
+        "Valid frontmatter present",
+        "45 headings organized",
+        "Contains implementation guidance",
+        "Contains code examples"
+      ],
+      "metrics": {
+        "contentLength": 23842,
+        "structuralComplexity": 63,
+        "documentationRichness": 19,
+        "taskIntegration": 1
+      }
+    },
+    {
+      "pattern": "type-guards-utility-pattern.md",
+      "status": "PASS",
+      "issues": [
+        "Missing implementation details"
+      ],
+      "strengths": [
+        "Valid frontmatter present",
+        "21 headings organized",
+        "Contains code examples"
+      ],
+      "metrics": {
+        "contentLength": 18407,
+        "structuralComplexity": 31,
+        "documentationRichness": 10,
+        "taskIntegration": 0
+      }
+    },
+    {
+      "pattern": "pattern-redundancy.md",
+      "status": "PASS",
+      "issues": [],
+      "strengths": [
+        "Valid frontmatter present",
+        "55 headings organized"
+      ],
+      "metrics": {
+        "contentLength": 19544,
+        "structuralComplexity": 55,
+        "documentationRichness": 0,
+        "taskIntegration": 3
+      }
+    },
+    {
+      "pattern": "pattern-usage-analysis.md",
+      "status": "PASS",
+      "issues": [],
+      "strengths": [
+        "Valid frontmatter present",
+        "28 headings organized"
+      ],
+      "metrics": {
+        "contentLength": 12756,
+        "structuralComplexity": 30,
+        "documentationRichness": 2,
+        "taskIntegration": 1
+      }
+    },
+    {
+      "pattern": "pattern-index.md",
+      "status": "WARN",
+      "issues": [
+        "Missing frontmatter"
+      ],
+      "strengths": [
+        "9 headings organized"
+      ],
+      "metrics": {
+        "contentLength": 8770,
+        "structuralComplexity": 9,
+        "documentationRichness": 0,
+        "taskIntegration": 1
+      }
+    },
+    {
+      "pattern": "2025-09-11-1239-TASK-PATTERN-001-pattern-frontmatter-standardization.md",
+      "status": "PASS",
+      "issues": [],
+      "strengths": [
+        "Valid frontmatter present",
+        "19 headings organized"
+      ],
+      "metrics": {
+        "contentLength": 11141,
+        "structuralComplexity": 21,
+        "documentationRichness": 2,
+        "taskIntegration": 3
+      }
+    },
+    {
+      "pattern": "2025-09-11-1341-pattern-frontmatter.md",
+      "status": "WARN",
+      "issues": [
+        "Missing frontmatter"
+      ],
+      "strengths": [
+        "7 headings organized"
+      ],
+      "metrics": {
+        "contentLength": 2799,
+        "structuralComplexity": 7,
+        "documentationRichness": 0,
+        "taskIntegration": 0
+      }
+    },
+    {
+      "pattern": "minimal-compilation-stabilization-pattern.md",
+      "status": "PASS",
+      "issues": [],
+      "strengths": [
+        "Valid frontmatter present",
+        "7 headings organized"
+      ],
+      "metrics": {
+        "contentLength": 10908,
+        "structuralComplexity": 8,
+        "documentationRichness": 1,
+        "taskIntegration": 11
+      }
+    },
+    {
+      "pattern": "vscode-extension-activation-pattern.md",
+      "status": "PASS",
+      "issues": [],
+      "strengths": [
+        "Valid frontmatter present",
+        "7 headings organized"
+      ],
+      "metrics": {
+        "contentLength": 7372,
+        "structuralComplexity": 12,
+        "documentationRichness": 8,
+        "taskIntegration": 5
+      }
+    },
+    {
+      "pattern": "validation-patterns.md",
+      "status": "WARN",
+      "issues": [
+        "Missing frontmatter"
+      ],
+      "strengths": [
+        "15 headings organized"
+      ],
+      "metrics": {
+        "contentLength": 3606,
+        "structuralComplexity": 16,
+        "documentationRichness": 1,
+        "taskIntegration": 9
+      }
+    },
+    {
+      "pattern": "haruspex-patterns.md",
+      "status": "WARN",
+      "issues": [
+        "Missing frontmatter"
+      ],
+      "strengths": [
+        "189 headings organized"
+      ],
+      "metrics": {
+        "contentLength": 74327,
+        "structuralComplexity": 217,
+        "documentationRichness": 28,
+        "taskIntegration": 8
+      }
+    },
+    {
+      "pattern": "pattern-consolidation.md",
+      "status": "WARN",
+      "issues": [
+        "Missing frontmatter"
+      ],
+      "strengths": [
+        "71 headings organized"
+      ],
+      "metrics": {
+        "contentLength": 24412,
+        "structuralComplexity": 79,
+        "documentationRichness": 21,
+        "taskIntegration": 0
+      }
+    },
+    {
+      "pattern": "2025-08-23-1358-session-management-pcl-pattern.md",
+      "status": "WARN",
+      "issues": [
+        "Missing frontmatter"
+      ],
+      "strengths": [
+        "30 headings organized"
+      ],
+      "metrics": {
+        "contentLength": 14218,
+        "structuralComplexity": 31,
+        "documentationRichness": 1,
+        "taskIntegration": 4
+      }
+    }
+  ],
+  "confidenceScores": {
+    "service-utils-utility-pattern.md": 100,
+    "debug-utils-utility-pattern.md": 100,
+    "config-utils-intelligence-briefing-pattern.md": 100,
+    "registry-utils-utility-pattern.md": 100,
+    "cache-utils-utility-pattern.md": 100,
+    "performance-utils-intelligence-briefing-pattern.md": 100,
+    "terminal-formatter-utility-pattern.md": 100,
+    "type-guards-utility-pattern.md": 100,
+    "pattern-redundancy.md": 100,
+    "pattern-usage-analysis.md": 100,
+    "pattern-index.md": 100,
+    "2025-09-11-1239-TASK-PATTERN-001-pattern-frontmatter-standardization.md": 100,
+    "2025-09-11-1341-pattern-frontmatter.md": 100,
+    "minimal-compilation-stabilization-pattern.md": 100,
+    "vscode-extension-activation-pattern.md": 100,
+    "validation-patterns.md": 100,
+    "haruspex-patterns.md": 100,
+    "pattern-consolidation.md": 100,
+    "2025-08-23-1358-session-management-pcl-pattern.md": 100
+  },
+  "consistencyAnalysis": {
+    "issues": [
+      {
+        "type": "missing_frontmatter_key",
+        "category": "utility",
+        "pattern": "service-utils-utility-pattern.md",
+        "issue": "Missing frontmatter key: description"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "utility",
+        "pattern": "service-utils-utility-pattern.md",
+        "issue": "Missing frontmatter key: keywords"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "utility",
+        "pattern": "service-utils-utility-pattern.md",
+        "issue": "Missing frontmatter key: prerequisites"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "utility",
+        "pattern": "service-utils-utility-pattern.md",
+        "issue": "Missing frontmatter key: complexity"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "utility",
+        "pattern": "debug-utils-utility-pattern.md",
+        "issue": "Missing frontmatter key: description"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "utility",
+        "pattern": "debug-utils-utility-pattern.md",
+        "issue": "Missing frontmatter key: keywords"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "utility",
+        "pattern": "debug-utils-utility-pattern.md",
+        "issue": "Missing frontmatter key: prerequisites"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "utility",
+        "pattern": "debug-utils-utility-pattern.md",
+        "issue": "Missing frontmatter key: complexity"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "utility",
+        "pattern": "registry-utils-utility-pattern.md",
+        "issue": "Missing frontmatter key: description"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "utility",
+        "pattern": "registry-utils-utility-pattern.md",
+        "issue": "Missing frontmatter key: keywords"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "utility",
+        "pattern": "registry-utils-utility-pattern.md",
+        "issue": "Missing frontmatter key: prerequisites"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "utility",
+        "pattern": "registry-utils-utility-pattern.md",
+        "issue": "Missing frontmatter key: complexity"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "utility",
+        "pattern": "cache-utils-utility-pattern.md",
+        "issue": "Missing frontmatter key: patterns"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "utility",
+        "pattern": "cache-utils-utility-pattern.md",
+        "issue": "Missing frontmatter key: components"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "utility",
+        "pattern": "cache-utils-utility-pattern.md",
+        "issue": "Missing frontmatter key: dependencies"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "utility",
+        "pattern": "cache-utils-utility-pattern.md",
+        "issue": "Missing frontmatter key: tags"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "utility",
+        "pattern": "cache-utils-utility-pattern.md",
+        "issue": "Missing frontmatter key: keywords"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "utility",
+        "pattern": "cache-utils-utility-pattern.md",
+        "issue": "Missing frontmatter key: prerequisites"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "utility",
+        "pattern": "terminal-formatter-utility-pattern.md",
+        "issue": "Missing frontmatter key: description"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "utility",
+        "pattern": "terminal-formatter-utility-pattern.md",
+        "issue": "Missing frontmatter key: keywords"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "utility",
+        "pattern": "terminal-formatter-utility-pattern.md",
+        "issue": "Missing frontmatter key: prerequisites"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "utility",
+        "pattern": "terminal-formatter-utility-pattern.md",
+        "issue": "Missing frontmatter key: complexity"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "utility",
+        "pattern": "type-guards-utility-pattern.md",
+        "issue": "Missing frontmatter key: patterns"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "utility",
+        "pattern": "type-guards-utility-pattern.md",
+        "issue": "Missing frontmatter key: components"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "utility",
+        "pattern": "type-guards-utility-pattern.md",
+        "issue": "Missing frontmatter key: dependencies"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "utility",
+        "pattern": "type-guards-utility-pattern.md",
+        "issue": "Missing frontmatter key: tags"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "utility",
+        "pattern": "type-guards-utility-pattern.md",
+        "issue": "Missing frontmatter key: keywords"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "utility",
+        "pattern": "type-guards-utility-pattern.md",
+        "issue": "Missing frontmatter key: prerequisites"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "intelligence",
+        "pattern": "config-utils-intelligence-briefing-pattern.md",
+        "issue": "Missing frontmatter key: status"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "intelligence",
+        "pattern": "config-utils-intelligence-briefing-pattern.md",
+        "issue": "Missing frontmatter key: patterns"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "intelligence",
+        "pattern": "config-utils-intelligence-briefing-pattern.md",
+        "issue": "Missing frontmatter key: components"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "intelligence",
+        "pattern": "config-utils-intelligence-briefing-pattern.md",
+        "issue": "Missing frontmatter key: dependencies"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "intelligence",
+        "pattern": "config-utils-intelligence-briefing-pattern.md",
+        "issue": "Missing frontmatter key: tags"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "general",
+        "pattern": "pattern-redundancy.md",
+        "issue": "Missing frontmatter key: source"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "general",
+        "pattern": "pattern-redundancy.md",
+        "issue": "Missing frontmatter key: fix_type"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "general",
+        "pattern": "pattern-redundancy.md",
+        "issue": "Missing frontmatter key: priority"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "general",
+        "pattern": "pattern-redundancy.md",
+        "issue": "Missing frontmatter key: complexity"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "general",
+        "pattern": "pattern-redundancy.md",
+        "issue": "Missing frontmatter key: initial_status"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "general",
+        "pattern": "pattern-redundancy.md",
+        "issue": "Missing frontmatter key: end_status"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "general",
+        "pattern": "pattern-redundancy.md",
+        "issue": "Missing frontmatter key: review_required"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "general",
+        "pattern": "pattern-redundancy.md",
+        "issue": "Missing frontmatter key: description"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "general",
+        "pattern": "pattern-redundancy.md",
+        "issue": "Missing frontmatter key: keywords"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "general",
+        "pattern": "pattern-redundancy.md",
+        "issue": "Missing frontmatter key: prerequisites"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "general",
+        "pattern": "pattern-usage-analysis.md",
+        "issue": "Missing frontmatter key: source"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "general",
+        "pattern": "pattern-usage-analysis.md",
+        "issue": "Missing frontmatter key: fix_type"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "general",
+        "pattern": "pattern-usage-analysis.md",
+        "issue": "Missing frontmatter key: priority"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "general",
+        "pattern": "pattern-usage-analysis.md",
+        "issue": "Missing frontmatter key: complexity"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "general",
+        "pattern": "pattern-usage-analysis.md",
+        "issue": "Missing frontmatter key: initial_status"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "general",
+        "pattern": "pattern-usage-analysis.md",
+        "issue": "Missing frontmatter key: end_status"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "general",
+        "pattern": "pattern-usage-analysis.md",
+        "issue": "Missing frontmatter key: review_required"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "general",
+        "pattern": "pattern-usage-analysis.md",
+        "issue": "Missing frontmatter key: description"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "general",
+        "pattern": "pattern-usage-analysis.md",
+        "issue": "Missing frontmatter key: keywords"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "general",
+        "pattern": "pattern-usage-analysis.md",
+        "issue": "Missing frontmatter key: prerequisites"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "general",
+        "pattern": "2025-09-11-1239-TASK-PATTERN-001-pattern-frontmatter-standardization.md",
+        "issue": "Missing frontmatter key: name"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "general",
+        "pattern": "2025-09-11-1239-TASK-PATTERN-001-pattern-frontmatter-standardization.md",
+        "issue": "Missing frontmatter key: status"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "general",
+        "pattern": "2025-09-11-1239-TASK-PATTERN-001-pattern-frontmatter-standardization.md",
+        "issue": "Missing frontmatter key: description"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "general",
+        "pattern": "2025-09-11-1239-TASK-PATTERN-001-pattern-frontmatter-standardization.md",
+        "issue": "Missing frontmatter key: keywords"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "general",
+        "pattern": "2025-09-11-1239-TASK-PATTERN-001-pattern-frontmatter-standardization.md",
+        "issue": "Missing frontmatter key: prerequisites"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "general",
+        "pattern": "minimal-compilation-stabilization-pattern.md",
+        "issue": "Missing frontmatter key: date"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "general",
+        "pattern": "minimal-compilation-stabilization-pattern.md",
+        "issue": "Missing frontmatter key: patterns"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "general",
+        "pattern": "minimal-compilation-stabilization-pattern.md",
+        "issue": "Missing frontmatter key: components"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "general",
+        "pattern": "minimal-compilation-stabilization-pattern.md",
+        "issue": "Missing frontmatter key: dependencies"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "general",
+        "pattern": "minimal-compilation-stabilization-pattern.md",
+        "issue": "Missing frontmatter key: tags"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "general",
+        "pattern": "minimal-compilation-stabilization-pattern.md",
+        "issue": "Missing frontmatter key: source"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "general",
+        "pattern": "minimal-compilation-stabilization-pattern.md",
+        "issue": "Missing frontmatter key: fix_type"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "general",
+        "pattern": "minimal-compilation-stabilization-pattern.md",
+        "issue": "Missing frontmatter key: priority"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "general",
+        "pattern": "minimal-compilation-stabilization-pattern.md",
+        "issue": "Missing frontmatter key: complexity"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "general",
+        "pattern": "minimal-compilation-stabilization-pattern.md",
+        "issue": "Missing frontmatter key: initial_status"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "general",
+        "pattern": "minimal-compilation-stabilization-pattern.md",
+        "issue": "Missing frontmatter key: end_status"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "general",
+        "pattern": "minimal-compilation-stabilization-pattern.md",
+        "issue": "Missing frontmatter key: review_required"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "general",
+        "pattern": "minimal-compilation-stabilization-pattern.md",
+        "issue": "Missing frontmatter key: keywords"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "general",
+        "pattern": "minimal-compilation-stabilization-pattern.md",
+        "issue": "Missing frontmatter key: prerequisites"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "general",
+        "pattern": "vscode-extension-activation-pattern.md",
+        "issue": "Missing frontmatter key: date"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "general",
+        "pattern": "vscode-extension-activation-pattern.md",
+        "issue": "Missing frontmatter key: patterns"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "general",
+        "pattern": "vscode-extension-activation-pattern.md",
+        "issue": "Missing frontmatter key: components"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "general",
+        "pattern": "vscode-extension-activation-pattern.md",
+        "issue": "Missing frontmatter key: dependencies"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "general",
+        "pattern": "vscode-extension-activation-pattern.md",
+        "issue": "Missing frontmatter key: tags"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "general",
+        "pattern": "vscode-extension-activation-pattern.md",
+        "issue": "Missing frontmatter key: source"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "general",
+        "pattern": "vscode-extension-activation-pattern.md",
+        "issue": "Missing frontmatter key: fix_type"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "general",
+        "pattern": "vscode-extension-activation-pattern.md",
+        "issue": "Missing frontmatter key: priority"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "general",
+        "pattern": "vscode-extension-activation-pattern.md",
+        "issue": "Missing frontmatter key: complexity"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "general",
+        "pattern": "vscode-extension-activation-pattern.md",
+        "issue": "Missing frontmatter key: initial_status"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "general",
+        "pattern": "vscode-extension-activation-pattern.md",
+        "issue": "Missing frontmatter key: end_status"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "general",
+        "pattern": "vscode-extension-activation-pattern.md",
+        "issue": "Missing frontmatter key: review_required"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "general",
+        "pattern": "vscode-extension-activation-pattern.md",
+        "issue": "Missing frontmatter key: keywords"
+      },
+      {
+        "type": "missing_frontmatter_key",
+        "category": "general",
+        "pattern": "vscode-extension-activation-pattern.md",
+        "issue": "Missing frontmatter key: prerequisites"
+      },
+      {
+        "type": "inconsistent_naming",
+        "category": "general",
+        "issue": "Inconsistent naming patterns in general: pattern-redundancy.md, usage-analysis.md, pattern-index.md, frontmatter-standardization.md, pattern-frontmatter.md, stabilization-pattern.md, activation-pattern.md, haruspex-patterns.md, pattern-consolidation.md, pcl-pattern.md"
+      }
+    ],
+    "issueCount": 87
+  },
+  "integrationAnalysis": {
+    "opportunities": [
+      {
+        "type": "utility_consolidation",
+        "patterns": [
+          "service-utils-utility-pattern.md",
+          "debug-utils-utility-pattern.md",
+          "registry-utils-utility-pattern.md",
+          "cache-utils-utility-pattern.md",
+          "terminal-formatter-utility-pattern.md",
+          "type-guards-utility-pattern.md"
+        ],
+        "recommendation": "Consider creating a unified utility pattern library"
+      },
+      {
+        "type": "intelligence_consolidation",
+        "patterns": [
+          "config-utils-intelligence-briefing-pattern.md",
+          "performance-utils-intelligence-briefing-pattern.md"
+        ],
+        "recommendation": "Consider creating a comprehensive intelligence briefing document"
+      },
+      {
+        "type": "thematic_overlap",
+        "theme": "validation",
+        "patterns": [
+          "service-utils-utility-pattern.md",
+          "debug-utils-utility-pattern.md",
+          "config-utils-intelligence-briefing-pattern.md",
+          "registry-utils-utility-pattern.md",
+          "cache-utils-utility-pattern.md",
+          "performance-utils-intelligence-briefing-pattern.md",
+          "terminal-formatter-utility-pattern.md",
+          "type-guards-utility-pattern.md",
+          "pattern-redundancy.md",
+          "pattern-usage-analysis.md",
+          "pattern-index.md",
+          "2025-09-11-1239-TASK-PATTERN-001-pattern-frontmatter-standardization.md",
+          "minimal-compilation-stabilization-pattern.md",
+          "vscode-extension-activation-pattern.md",
+          "validation-patterns.md",
+          "haruspex-patterns.md",
+          "pattern-consolidation.md",
+          "2025-08-23-1358-session-management-pcl-pattern.md"
+        ],
+        "recommendation": "Consider consolidating validation-related patterns"
+      },
+      {
+        "type": "thematic_overlap",
+        "theme": "implementation",
+        "patterns": [
+          "service-utils-utility-pattern.md",
+          "debug-utils-utility-pattern.md",
+          "config-utils-intelligence-briefing-pattern.md",
+          "registry-utils-utility-pattern.md",
+          "cache-utils-utility-pattern.md",
+          "performance-utils-intelligence-briefing-pattern.md",
+          "terminal-formatter-utility-pattern.md",
+          "type-guards-utility-pattern.md",
+          "pattern-redundancy.md",
+          "pattern-usage-analysis.md",
+          "pattern-index.md",
+          "2025-09-11-1239-TASK-PATTERN-001-pattern-frontmatter-standardization.md",
+          "minimal-compilation-stabilization-pattern.md",
+          "vscode-extension-activation-pattern.md",
+          "validation-patterns.md",
+          "haruspex-patterns.md",
+          "pattern-consolidation.md",
+          "2025-08-23-1358-session-management-pcl-pattern.md"
+        ],
+        "recommendation": "Consider consolidating implementation-related patterns"
+      },
+      {
+        "type": "thematic_overlap",
+        "theme": "architecture",
+        "patterns": [
+          "debug-utils-utility-pattern.md",
+          "config-utils-intelligence-briefing-pattern.md",
+          "cache-utils-utility-pattern.md",
+          "performance-utils-intelligence-briefing-pattern.md",
+          "terminal-formatter-utility-pattern.md",
+          "pattern-redundancy.md",
+          "pattern-usage-analysis.md",
+          "minimal-compilation-stabilization-pattern.md",
+          "vscode-extension-activation-pattern.md",
+          "validation-patterns.md",
+          "haruspex-patterns.md",
+          "pattern-consolidation.md",
+          "2025-08-23-1358-session-management-pcl-pattern.md"
+        ],
+        "recommendation": "Consider consolidating architecture-related patterns"
+      },
+      {
+        "type": "thematic_overlap",
+        "theme": "utils",
+        "patterns": [
+          "service-utils-utility-pattern.md",
+          "debug-utils-utility-pattern.md",
+          "config-utils-intelligence-briefing-pattern.md",
+          "registry-utils-utility-pattern.md",
+          "cache-utils-utility-pattern.md",
+          "performance-utils-intelligence-briefing-pattern.md",
+          "pattern-usage-analysis.md"
+        ],
+        "recommendation": "Consider consolidating utils-related patterns"
+      },
+      {
+        "type": "thematic_overlap",
+        "theme": "config",
+        "patterns": [
+          "service-utils-utility-pattern.md",
+          "debug-utils-utility-pattern.md",
+          "config-utils-intelligence-briefing-pattern.md",
+          "registry-utils-utility-pattern.md",
+          "cache-utils-utility-pattern.md",
+          "performance-utils-intelligence-briefing-pattern.md",
+          "terminal-formatter-utility-pattern.md",
+          "type-guards-utility-pattern.md",
+          "pattern-redundancy.md",
+          "pattern-usage-analysis.md",
+          "pattern-index.md",
+          "2025-09-11-1239-TASK-PATTERN-001-pattern-frontmatter-standardization.md",
+          "minimal-compilation-stabilization-pattern.md",
+          "vscode-extension-activation-pattern.md",
+          "haruspex-patterns.md",
+          "2025-08-23-1358-session-management-pcl-pattern.md"
+        ],
+        "recommendation": "Consider consolidating config-related patterns"
+      },
+      {
+        "type": "orphaned_patterns",
+        "patterns": [
+          "debug-utils-utility-pattern.md",
+          "config-utils-intelligence-briefing-pattern.md",
+          "performance-utils-intelligence-briefing-pattern.md",
+          "terminal-formatter-utility-pattern.md",
+          "pattern-index.md",
+          "2025-09-11-1239-TASK-PATTERN-001-pattern-frontmatter-standardization.md",
+          "2025-09-11-1341-pattern-frontmatter.md",
+          "minimal-compilation-stabilization-pattern.md",
+          "validation-patterns.md",
+          "haruspex-patterns.md",
+          "pattern-consolidation.md",
+          "2025-08-23-1358-session-management-pcl-pattern.md"
+        ],
+        "recommendation": "Consider adding cross-references to improve pattern integration"
+      }
+    ],
+    "crossReferences": {
+      "service-utils-utility-pattern.md": [
+        "registry-utils-utility-pattern.md"
+      ],
+      "cache-utils-utility-pattern.md": [
+        "type-guards-utility-pattern.md"
+      ],
+      "pattern-redundancy.md": [
+        "pattern-usage-analysis.md",
+        "vscode-extension-activation-pattern.md"
+      ]
+    }
+  },
+  "intelligence": {
+    "totalPatterns": 19,
+    "categoryDistribution": {
+      "utility": 6,
+      "intelligence": 2,
+      "general": 10,
+      "validation": 1
+    },
+    "qualityMetrics": {
+      "averageConfidence": 100,
+      "highConfidenceCount": 19,
+      "lowConfidenceCount": 0,
+      "passRate": 0.6842105263157895
+    },
+    "integrationMaps": {
+      "crossReferences": {},
+      "integrationOpportunities": 8,
+      "orphanedPatterns": [
+        "debug-utils-utility-pattern.md",
+        "config-utils-intelligence-briefing-pattern.md",
+        "performance-utils-intelligence-briefing-pattern.md",
+        "terminal-formatter-utility-pattern.md",
+        "pattern-index.md",
+        "2025-09-11-1239-TASK-PATTERN-001-pattern-frontmatter-standardization.md",
+        "2025-09-11-1341-pattern-frontmatter.md",
+        "minimal-compilation-stabilization-pattern.md",
+        "validation-patterns.md",
+        "haruspex-patterns.md",
+        "pattern-consolidation.md",
+        "2025-08-23-1358-session-management-pcl-pattern.md"
+      ]
+    },
+    "riskAssessment": [
+      {
+        "type": "consistency_risk",
+        "severity": "medium",
+        "description": "87 consistency issues identified"
+      }
+    ],
+    "complianceStatus": {
+      "frontmatterCompliance": 68,
+      "structuralCompliance": 100,
+      "overallCompliance": "medium"
+    }
+  },
+  "recommendations": [
+    {
+      "priority": "medium",
+      "category": "consistency",
+      "action": "Address consistency issues",
+      "details": "Resolve 87 identified consistency problems"
+    },
+    {
+      "priority": "medium",
+      "category": "integration",
+      "action": "Optimize pattern integration",
+      "details": "Implement 8 integration opportunities"
+    },
+    {
+      "priority": "high",
+      "category": "compliance",
+      "action": "Improve pattern compliance",
+      "details": "Add missing frontmatter and fix structural issues"
+    }
+  ]
+}

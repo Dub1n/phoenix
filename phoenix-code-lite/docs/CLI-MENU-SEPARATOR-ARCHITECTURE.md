@@ -1,10 +1,8 @@
-<!--
 title: [CLI Menu Separator Architecture - Documentation]
 tags: [Documentation, Architecture, CLI, Layout]
 provides: [Content-Driven Menu Composer Spec, Layout Calculation Approach]
 requires: [src/cli/menu-types.ts, src/utils/display.ts]
 description: [Proposes content-driven separator sizing with a dedicated composition system for CLI menus]
--->
 
 # CLI Menu Separator Architecture Design
 

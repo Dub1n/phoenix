@@ -1,0 +1,528 @@
+{
+  "QRMaker": [
+    {
+      "path": "QRMaker/Architecture.md",
+      "name": "Architecture.md",
+      "created": 1753371353.9037862,
+      "modified": 1753361238.638636,
+      "size": 28056
+    },
+    {
+      "path": "assets/qr_template.docx",
+      "name": "qr_template.docx",
+      "created": 1753371353.9037862,
+      "modified": 1753114651.1644192,
+      "size": 24177
+    },
+    {
+      "path": "QRMaker/dialog.html",
+      "name": "dialog.html",
+      "created": 1753371353.9037862,
+      "modified": 1753285084.9767091,
+      "size": 1206
+    },
+    {
+      "path": "QRMaker/log.json",
+      "name": "log.json",
+      "created": 1753371353.9037862,
+      "modified": 1753288137.3564312,
+      "size": 5273
+    },
+    {
+      "path": "QRMaker/manifest.xml",
+      "name": "manifest.xml",
+      "created": 1753371353.9047859,
+      "modified": 1753371316.1999514,
+      "size": 4796
+    },
+    {
+      "path": "QRMaker/PromptCritic.md",
+      "name": "PromptCritic.md",
+      "created": 1753443901.4261255,
+      "modified": 1753443901.4261255,
+      "size": 17869
+    },
+    {
+      "path": "prompts/Label_10_Task_Pane_Bind_UI_to_onSelectionChanged_Event.md",
+      "name": "Label_10_Task_Pane_Bind_UI_to_onSelectionChanged_Event.md",
+      "created": 1753444318.7186842,
+      "modified": 1753444318.7186842,
+      "size": 10774
+    },
+    {
+      "path": "prompts/Label_11_Orphaning_Update_Delete_Logic_for_Orphaned_State.md",
+      "name": "Label_11_Orphaning_Update_Delete_Logic_for_Orphaned_State.md",
+      "created": 1753445004.654701,
+      "modified": 1753445004.654701,
+      "size": 9924
+    },
+    {
+      "path": "prompts/Label_12_Testing_Update_Test_Runner_for_Shape_Creation.md",
+      "name": "Label_12_Testing_Update_Test_Runner_for_Shape_Creation.md",
+      "created": 1753451770.5729835,
+      "modified": 1753451770.5729835,
+      "size": 10596
+    },
+    {
+      "path": "prompts/Label_1_Setup_Create_Architecture_Document.md",
+      "name": "Label_1_Setup_Create_Architecture_Document.md",
+      "created": 1753371353.9047859,
+      "modified": 1753363841.9743786,
+      "size": 7858
+    },
+    {
+      "path": "prompts/Label_2_Data_Layer_Implement_Custom_XML_Part_for_Metadata.md",
+      "name": "Label_2_Data_Layer_Implement_Custom_XML_Part_for_Metadata.md",
+      "created": 1753371353.9047859,
+      "modified": 1753367267.526223,
+      "size": 8152
+    },
+    {
+      "path": "prompts/Label_3_Core_Logic_Refactor_createNewPair_to_use_Shapes.md",
+      "name": "Label_3_Core_Logic_Refactor_createNewPair_to_use_Shapes.md",
+      "created": 1753371353.9047859,
+      "modified": 1753367578.2316952,
+      "size": 9218
+    },
+    {
+      "path": "prompts/Label_4_Core_Logic_Refactor_duplicateSelectedPair_for_Shapes_and_Metadata.md",
+      "name": "Label_4_Core_Logic_Refactor_duplicateSelectedPair_for_Shapes_and_Metadata.md",
+      "created": 1753371353.9047859,
+      "modified": 1753368302.6254492,
+      "size": 10740
+    },
+    {
+      "path": "prompts/Label_5_Core_Logic_Refactor_deleteSelectedPair_for_Shapes_and_Metadata.md",
+      "name": "Label_5_Core_Logic_Refactor_deleteSelectedPair_for_Shapes_and_Metadata.md",
+      "created": 1753371353.9047859,
+      "modified": 1753368863.0778966,
+      "size": 10559
+    },
+    {
+      "path": "prompts/Label_6_Core_Logic_Refactor_refreshAllQrCodes_for_Shapes_and_Metadata.md",
+      "name": "Label_6_Core_Logic_Refactor_refreshAllQrCodes_for_Shapes_and_Metadata.md",
+      "created": 1753371353.9047859,
+      "modified": 1753369560.5212486,
+      "size": 11638
+    },
+    {
+      "path": "prompts/Label_7_Event_Handling_Implement_onSelectionChanged.md",
+      "name": "Label_7_Event_Handling_Implement_onSelectionChanged.md",
+      "created": 1753372259.5886822,
+      "modified": 1753372259.5886822,
+      "size": 10744
+    },
+    {
+      "path": "prompts/Label_8_Highlighting_Implement_Paired_Highlighting_Logic.md",
+      "name": "Label_8_Highlighting_Implement_Paired_Highlighting_Logic.md",
+      "created": 1753372414.3981602,
+      "modified": 1753372414.3981602,
+      "size": 8876
+    },
+    {
+      "path": "prompts/Label_9_Task_Pane_Implement_QR_Code_Editing_UI.md",
+      "name": "Label_9_Task_Pane_Implement_QR_Code_Editing_UI.md",
+      "created": 1753444010.8873549,
+      "modified": 1753444010.8873549,
+      "size": 10051
+    },
+    {
+      "path": "QRMaker/PromptWriter.md",
+      "name": "PromptWriter.md",
+      "created": 1753373557.278443,
+      "modified": 1753373557.278443,
+      "size": 15344
+    },
+    {
+      "path": "QRMaker/Prompt_Sequence_Roadmap.md",
+      "name": "Prompt_Sequence_Roadmap.md",
+      "created": 1753451773.5173113,
+      "modified": 1753451773.5173113,
+      "size": 1217
+    },
+    {
+      "path": "QRMaker/taskpane.html",
+      "name": "taskpane.html",
+      "created": 1753999926.5248673,
+      "modified": 1753999926.5248673,
+      "size": 6607
+    },
+    {
+      "path": "QRMaker/Taskpane.js",
+      "name": "Taskpane.js",
+      "created": 1753371353.9047859,
+      "modified": 1753371316.5877318,
+      "size": 34555
+    },
+    {
+      "path": "tests/run_tests.js",
+      "name": "run_tests.js",
+      "created": 1753371353.9047859,
+      "modified": 1752841250.4659228,
+      "size": 2707
+    },
+    {
+      "path": "tests/tests.js",
+      "name": "tests.js",
+      "created": 1753371353.9047859,
+      "modified": 1753112443.637943,
+      "size": 1081
+    },
+    {
+      "path": "tools/debug-word.ps1",
+      "name": "debug-word.ps1",
+      "created": 1753371353.9047859,
+      "modified": 1753276915.7792616,
+      "size": 2043
+    },
+    {
+      "path": "tools/local-autotest-server.js",
+      "name": "local-autotest-server.js",
+      "created": 1753371353.9047859,
+      "modified": 1753277620.453377,
+      "size": 1389
+    }
+  ],
+  "Phoenix": [
+    {
+      "path": "Phoenix/ArchitectReference.md",
+      "name": "ArchitectReference.md",
+      "created": 1753717431.9835043,
+      "modified": 1753717431.9835043,
+      "size": 66598
+    },
+    {
+      "path": "Phoenix/ArchitectRole.md",
+      "name": "ArchitectRole.md",
+      "created": 1753717903.5658617,
+      "modified": 1753717903.5658617,
+      "size": 35994
+    },
+    {
+      "path": "Phoenix/DevWithClaudeCode.md",
+      "name": "DevWithClaudeCode.md",
+      "created": 1753719600.5042515,
+      "modified": 1753719600.5042515,
+      "size": 39048
+    },
+    {
+      "path": "Phoenix/PhoenixBlueprint.md",
+      "name": "PhoenixBlueprint.md",
+      "created": 1753717503.3247738,
+      "modified": 1753717503.3247738,
+      "size": 13638
+    },
+    {
+      "path": "Phoenix/PhoenixDev.md",
+      "name": "PhoenixDev.md",
+      "created": 1753716511.3418036,
+      "modified": 1753466520.0169353,
+      "size": 52942
+    },
+    {
+      "path": "Phoenix/PhoenixFramework.md",
+      "name": "PhoenixFramework.md",
+      "created": 1753716511.46181,
+      "modified": 1753462732.5666082,
+      "size": 75662
+    },
+    {
+      "path": "Phoenix/PhoenixFramework_2.1.md",
+      "name": "PhoenixFramework_2.1.md",
+      "created": 1753716511.3873055,
+      "modified": 1753450328.1450143,
+      "size": 27341
+    }
+  ],
+  ".claude": [
+    {
+      "path": "hooks/type_check.py",
+      "name": "type_check.py",
+      "created": 1753725693.227357,
+      "modified": 1753725693.227357,
+      "size": 949
+    },
+    {
+      "path": ".claude/settings.local.json",
+      "name": "settings.local.json",
+      "created": 1753925061.4496496,
+      "modified": 1753925061.4406419,
+      "size": 881
+    },
+    {
+      "path": "tasks/sample_task_template.md",
+      "name": "sample_task_template.md",
+      "created": 1753728793.6552753,
+      "modified": 1753728793.6552753,
+      "size": 2192
+    }
+  ],
+  "Phoenix-Reorg": [
+    {
+      "path": "01-Framework-Overview/Architecture-Summary.md",
+      "name": "Architecture-Summary.md",
+      "created": 1753916102.4653049,
+      "modified": 1753916102.4653049,
+      "size": 8303
+    },
+    {
+      "path": "01-Framework-Overview/Comparison-Matrix.md",
+      "name": "Comparison-Matrix.md",
+      "created": 1753918095.4978461,
+      "modified": 1753918095.4978461,
+      "size": 13423
+    },
+    {
+      "path": "01-Framework-Overview/Vision-and-Goals.md",
+      "name": "Vision-and-Goals.md",
+      "created": 1753812949.3106134,
+      "modified": 1753812949.3106134,
+      "size": 5986
+    },
+    {
+      "path": "02-Core-Concepts/Code-as-Data-Paradigm.md",
+      "name": "Code-as-Data-Paradigm.md",
+      "created": 1753806490.916389,
+      "modified": 1753806490.916389,
+      "size": 15613
+    },
+    {
+      "path": "02-Core-Concepts/GTDD-Methodology.md",
+      "name": "GTDD-Methodology.md",
+      "created": 1753735555.338256,
+      "modified": 1753735555.338256,
+      "size": 12626
+    },
+    {
+      "path": "02-Core-Concepts/Multi-Agent-Architecture.md",
+      "name": "Multi-Agent-Architecture.md",
+      "created": 1753735613.966791,
+      "modified": 1753735613.966791,
+      "size": 11514
+    },
+    {
+      "path": "02-Core-Concepts/StateFlow-Model.md",
+      "name": "StateFlow-Model.md",
+      "created": 1753803156.3744128,
+      "modified": 1753803156.3744128,
+      "size": 33374
+    },
+    {
+      "path": "03-Implementation-Guides/Autonomous-Development-Strategy.md",
+      "name": "Autonomous-Development-Strategy.md",
+      "created": 1753806478.1754763,
+      "modified": 1753806478.1754763,
+      "size": 28905
+    },
+    {
+      "path": "03-Implementation-Guides/Claude-Code-Integration.md",
+      "name": "Claude-Code-Integration.md",
+      "created": 1753806477.145501,
+      "modified": 1753806477.145501,
+      "size": 22704
+    },
+    {
+      "path": "03-Implementation-Guides/Full-Framework-Implementation.md",
+      "name": "Full-Framework-Implementation.md",
+      "created": 1753806475.2083814,
+      "modified": 1753806475.2083814,
+      "size": 28900
+    },
+    {
+      "path": "03-Implementation-Guides/Phoenix-Lite-Implementation.md",
+      "name": "Phoenix-Lite-Implementation.md",
+      "created": 1753806463.325593,
+      "modified": 1753806463.325593,
+      "size": 14095
+    },
+    {
+      "path": "03-Implementation-Guides/Phoenix-Lite-Quickstart.md",
+      "name": "Phoenix-Lite-Quickstart.md",
+      "created": 1753806461.4575863,
+      "modified": 1753806461.4575863,
+      "size": 11091
+    },
+    {
+      "path": "04-Technical-Reference/Agent-Specifications.md",
+      "name": "Agent-Specifications.md",
+      "created": 1753911856.5237687,
+      "modified": 1753911856.5237687,
+      "size": 5853
+    },
+    {
+      "path": "04-Technical-Reference/API-Schemas.md",
+      "name": "API-Schemas.md",
+      "created": 1753918380.4522967,
+      "modified": 1753918380.4522967,
+      "size": 8912
+    },
+    {
+      "path": "04-Technical-Reference/Critical-Gap-Analysis-Appendix.md",
+      "name": "Critical-Gap-Analysis-Appendix.md",
+      "created": 1753810676.5852613,
+      "modified": 1753810676.5852613,
+      "size": 26219
+    },
+    {
+      "path": "04-Technical-Reference/Phoenix-Code-Architecture-Comparison.md",
+      "name": "Phoenix-Code-Architecture-Comparison.md",
+      "created": 1753811710.9531384,
+      "modified": 1753811710.9531384,
+      "size": 25972
+    },
+    {
+      "path": "04-Technical-Reference/Phoenix-Code-Critical-Gap-Analysis.md",
+      "name": "Phoenix-Code-Critical-Gap-Analysis.md",
+      "created": 1753896480.6542323,
+      "modified": 1753896480.6542323,
+      "size": 30923
+    },
+    {
+      "path": "04-Technical-Reference/Phoenix-Code-Full-Framework-Analysis.md",
+      "name": "Phoenix-Code-Full-Framework-Analysis.md",
+      "created": 1753805835.2756796,
+      "modified": 1753805835.2756796,
+      "size": 51703
+    },
+    {
+      "path": "04-Technical-Reference/Phoenix-Code-Lite-Technical-Specification-v2.0.md",
+      "name": "Phoenix-Code-Lite-Technical-Specification-v2.0.md",
+      "created": 1753996306.1613247,
+      "modified": 1753996306.1613247,
+      "size": 29804
+    },
+    {
+      "path": "04-Technical-Reference/Phoenix-Code-Lite-Technical-Specification.md",
+      "name": "Phoenix-Code-Lite-Technical-Specification.md",
+      "created": 1754306595.1986806,
+      "modified": 1753925260.5454743,
+      "size": 12905
+    },
+    {
+      "path": "04-Technical-Reference/Phoenix-Full-Frontend-Capabilities-Assessment.md",
+      "name": "Phoenix-Full-Frontend-Capabilities-Assessment.md",
+      "created": 1753806076.177222,
+      "modified": 1753806076.177222,
+      "size": 20705
+    },
+    {
+      "path": "04-Technical-Reference/Prompt-Templates.md",
+      "name": "Prompt-Templates.md",
+      "created": 1753803130.8202248,
+      "modified": 1753803130.8202248,
+      "size": 9190
+    },
+    {
+      "path": "04-Technical-Reference/Technology-Stack.md",
+      "name": "Technology-Stack.md",
+      "created": 1753803144.6312225,
+      "modified": 1753803144.6312225,
+      "size": 8635
+    },
+    {
+      "path": "06-Development/Phoenix-Code-Lite-Development-Roadmap.md",
+      "name": "Phoenix-Code-Lite-Development-Roadmap.md",
+      "created": 1753898849.6737595,
+      "modified": 1753898849.6737595,
+      "size": 126863
+    },
+    {
+      "path": "06-Development/Phoenix-Code-Lite-Enhancement-Proposal.md",
+      "name": "Phoenix-Code-Lite-Enhancement-Proposal.md",
+      "created": 1753916575.0675647,
+      "modified": 1753916575.0675647,
+      "size": 55388
+    },
+    {
+      "path": "06-Development/Phoenix-Lite-Development-Roadmap.md",
+      "name": "Phoenix-Lite-Development-Roadmap.md",
+      "created": 1753918380.4313693,
+      "modified": 1753918380.4313693,
+      "size": 81322
+    },
+    {
+      "path": "07-Phoenix-Code-Lite-Dev/Master-Development-Roadmap.md",
+      "name": "Master-Development-Roadmap.md",
+      "created": 1753915678.8845737,
+      "modified": 1753915678.8845737,
+      "size": 13064
+    },
+    {
+      "path": "07-Phoenix-Code-Lite-Dev/Master-Roadmap-Strategy.md",
+      "name": "Master-Roadmap-Strategy.md",
+      "created": 1753911133.352805,
+      "modified": 1753911133.352805,
+      "size": 8324
+    },
+    {
+      "path": "07-Phoenix-Code-Lite-Dev/Phase-01-Environment-Setup.md",
+      "name": "Phase-01-Environment-Setup.md",
+      "created": 1753910248.3183455,
+      "modified": 1753910248.3183455,
+      "size": 11746
+    },
+    {
+      "path": "07-Phoenix-Code-Lite-Dev/Phase-02-Core-Architecture.md",
+      "name": "Phase-02-Core-Architecture.md",
+      "created": 1753923979.2786553,
+      "modified": 1753923979.2756522,
+      "size": 38355
+    },
+    {
+      "path": "07-Phoenix-Code-Lite-Dev/Phase-03-TDD-Workflow-Engine.md",
+      "name": "Phase-03-TDD-Workflow-Engine.md",
+      "created": 1753923880.550208,
+      "modified": 1753923880.5426147,
+      "size": 60850
+    },
+    {
+      "path": "07-Phoenix-Code-Lite-Dev/Phase-04-CLI-Interface.md",
+      "name": "Phase-04-CLI-Interface.md",
+      "created": 1753911143.786532,
+      "modified": 1753911143.786532,
+      "size": 15164
+    },
+    {
+      "path": "07-Phoenix-Code-Lite-Dev/Phase-05-Configuration-Management.md",
+      "name": "Phase-05-Configuration-Management.md",
+      "created": 1753911147.2311468,
+      "modified": 1753911147.2311468,
+      "size": 25467
+    },
+    {
+      "path": "07-Phoenix-Code-Lite-Dev/Phase-06-Audit-Logging.md",
+      "name": "Phase-06-Audit-Logging.md",
+      "created": 1753911149.401773,
+      "modified": 1753911149.401773,
+      "size": 27822
+    },
+    {
+      "path": "07-Phoenix-Code-Lite-Dev/Phase-07-CLI-Interface.md",
+      "name": "Phase-07-CLI-Interface.md",
+      "created": 1753911152.6797364,
+      "modified": 1753911152.6797364,
+      "size": 41980
+    },
+    {
+      "path": "07-Phoenix-Code-Lite-Dev/Phase-08-Integration-Testing.md",
+      "name": "Phase-08-Integration-Testing.md",
+      "created": 1753911154.673805,
+      "modified": 1753911154.673805,
+      "size": 43101
+    },
+    {
+      "path": "07-Phoenix-Code-Lite-Dev/Phase-Conversion-Guide.md",
+      "name": "Phase-Conversion-Guide.md",
+      "created": 1753911205.1584344,
+      "modified": 1753911205.1584344,
+      "size": 9740
+    },
+    {
+      "path": "Phoenix-Reorg/README.md",
+      "name": "README.md",
+      "created": 1753803709.8305054,
+      "modified": 1753803709.8305054,
+      "size": 5255
+    }
+  ]
+}

@@ -12,6 +12,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import chalk = require('chalk');
 import { CLIInterfaceAdapter } from './interfaces/cli-adapter-abstracted';
+import { DynamicCommandRouter } from './navigation/dynamic-command-router';
+import { ContentNavigationManager } from './navigation/content-driven-navigation';
 
 interface ServiceRegistryEntry {
   id: string;
@@ -135,9 +137,30 @@ class TemplumCliDiscovery {
  */
 class RemoteTemplumAdapter {
   private serviceEntry: ServiceRegistryEntry;
+  private dynamicRouter?: DynamicCommandRouter;
+  private contentNavigationManager?: ContentNavigationManager;
+  private currentSkinId?: string;
 
   constructor(serviceEntry: ServiceRegistryEntry) {
     this.serviceEntry = serviceEntry;
+    this.initializeDynamicRouting();
+  }
+
+  /**
+   * Initialize dynamic routing system
+   * Initialize dynamic routing system for skin-definition based navigation
+   * Pattern: dynamic-routing-initialization - See /dev/patterns/dynamic-routing-initialization.md for reusable implementation guide
+   * Validation-Required: initialization-success, performance-verification, error-handling
+   */
+  private initializeDynamicRouting(): void {
+    try {
+      this.dynamicRouter = new DynamicCommandRouter();
+      this.contentNavigationManager = new ContentNavigationManager(this.dynamicRouter);
+      console.log(chalk.blue('[ROUTING] Dynamic command router initialized'));
+    } catch (error) {
+      console.warn(chalk.yellow('[ROUTING] Failed to initialize dynamic routing, falling back to compatibility mode:'), error);
+      // System will fall back to compatibility mode
+    }
   }
 
   /**
@@ -331,7 +354,7 @@ class RemoteTemplumAdapter {
    * Connect to remote service and initialize CLI interface
    */
   async initializeCLI(): Promise<void> {
-    console.log(chalk.blue('🔗 Connecting to Templum service...'));
+    console.log(chalk.blue('Connecting to Templum service...'));
     console.log(chalk.gray(`   Service: ${this.serviceEntry.id} (PID: ${this.serviceEntry.pid})`));
     console.log(chalk.gray(`   Endpoint: ${this.serviceEntry.endpoint}`));
     console.log(chalk.gray(`   Capabilities: ${this.serviceEntry.capabilities.join(', ')}`));
@@ -616,6 +639,18 @@ class RemoteTemplumAdapter {
           });
           console.log(chalk.green(`[${serviceProtocol.toUpperCase()}] Real backend skin loaded: ${skinDefinition?.name || backendId}`));
           
+          // Initialize dynamic routing with the loaded skin
+          if (this.dynamicRouter && this.contentNavigationManager && skinDefinition) {
+            try {
+              await this.dynamicRouter.initialize(skinDefinition);
+              await this.contentNavigationManager.initialize(skinDefinition);
+              this.currentSkinId = skinDefinition.id;
+              console.log(chalk.green(`[ROUTING] Dynamic navigation initialized for ${skinDefinition.name || backendId}`));
+            } catch (routingError) {
+              console.warn(chalk.yellow(`[ROUTING] Failed to initialize dynamic navigation: ${routingError}`));
+            }
+          }
+          
           return skinDefinition;
           
         } catch (error) {
@@ -671,35 +706,49 @@ class RemoteTemplumAdapter {
       },
 
       /**
-       * TASK-CLI-014: Check if command should be processed locally by CLI adapter
-       * instead of being forwarded via IPC to Templum Core service
+       * TASK-MCP-009: Dynamic command routing with skin-definition based resolution
+       * Replace hardcoded command detection with dynamic skin-definition based routing
+       * Pattern: dynamic-local-command-detection - See /dev/patterns/dynamic-local-command-detection.md for reusable implementation guide
+       * Validation-Required: routing-accuracy, performance-benchmarks, backward-compatibility
        */
-      isLocalCLICommand(command: string, interfaceType: string): boolean {
+      isLocalCLICommand(command: string, interfaceType: string, skinDefinition?: any): boolean {
         // Only apply local command logic for CLI interface
         if (interfaceType !== 'cli') {
           return false;
         }
 
+        // If no skin definition available, fall back to basic compatibility commands
+        if (!skinDefinition && !this.dynamicRouter) {
+          return this.isCompatibilityCommand(command);
+        }
+
+        // Use dynamic router if available
+        if (this.dynamicRouter && this.currentSkinId) {
+          return this.dynamicRouter.isLocalCommand(command, this.currentSkinId);
+        }
+
+        // Fallback to compatibility mode
+        return this.isCompatibilityCommand(command);
+      },
+
+      /**
+       * Backward compatibility command detection for cases where dynamic routing is unavailable
+       */
+      isCompatibilityCommand(command: string): boolean {
         const cmd = command.trim().toLowerCase();
         
-        // Local CLI commands that should be processed by the CLI adapter
-        const localCommands = [
-          'help',           // Show CLI help
-          'refresh',        // Refresh CLI content
-          'back',           // Navigate back
-          'home',           // Navigate to main menu
-          'status',         // Show backend status
-          'quit',           // Exit CLI
-          'exit'            // Alternative exit command
+        // Essential CLI commands that should always be handled locally
+        const essentialLocalCommands = [
+          'help', 'refresh', 'back', 'home', 'status', 'quit', 'exit'
         ];
 
         // Check for exact matches
-        if (localCommands.includes(cmd)) {
+        if (essentialLocalCommands.includes(cmd)) {
           return true;
         }
 
         // Check for commands with arguments
-        if (cmd.startsWith('load ')) {  // load <backend>
+        if (cmd.startsWith('load ')) {
           return true;
         }
 
@@ -708,7 +757,6 @@ class RemoteTemplumAdapter {
           return true;
         }
 
-        // All other commands should be forwarded to Templum Core
         return false;
       }
     };

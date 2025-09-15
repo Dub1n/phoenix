@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "title": "Task Frontmatter Schema",
-  "description": "Schema for YAML frontmatter in task files with required fields and extensible custom properties",
+  "description": "Schema for YAML frontmatter. Commenting conventions: TypeScript: /**...*/; JavaScript: /*...*/; Python: '''...'''; Markdown: no comments needed",
   "required": [
     "date",
     "name", 

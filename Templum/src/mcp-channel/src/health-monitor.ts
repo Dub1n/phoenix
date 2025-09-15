@@ -11,6 +11,7 @@
 
 import { CLIMCPServer, MCPRequest } from './cli-mcp-server';
 import { PTYManager } from './pty-manager';
+import { ProgressiveTimeoutManager, createOperationSpecificTimeoutManager, TimeoutResult, AdaptationMetrics } from './progressive-timeout-manager';
 
 export interface HealthStatus {
   status: 'healthy' | 'degraded' | 'unhealthy';
@@ -21,6 +22,7 @@ export interface HealthStatus {
     ptyManager: HealthCheckResult;
     performance: HealthCheckResult;
     resources: HealthCheckResult;
+    communication: HealthCheckResult;
   };
   metrics: {
     totalRequests: number;
@@ -29,6 +31,9 @@ export interface HealthStatus {
     activeSessions: number;
     memoryUsage: number;
     cpuUsage: number;
+    timeoutAdaptations: number;
+    circuitBreakerTrips: number;
+    communicationStability: number;
   };
 }
 
@@ -45,6 +50,7 @@ export interface PerformanceMetrics {
   errorCount: number;
   lastRequestTime: number;
   responseTimeHistory: number[];
+  averageResponseTime: number;
 }
 
 /**
@@ -60,6 +66,14 @@ export class MCPHealthMonitor {
   private performanceMetrics: PerformanceMetrics;
   private healthCheckHistory: HealthStatus[];
   private maxHistorySize: number = 100;
+  private progressiveTimeoutManager: ProgressiveTimeoutManager;
+  private communicationMetrics: {
+    timeoutAdaptations: number;
+    circuitBreakerTrips: number;
+    communicationStability: number;
+    lastStabilityCheck: number;
+  };
+  private metrics: AdaptationMetrics;
   
   constructor(mcpServer: CLIMCPServer, ptyManager: PTYManager) {
     this.mcpServer = mcpServer;
@@ -71,28 +85,73 @@ export class MCPHealthMonitor {
       totalResponseTime: 0,
       errorCount: 0,
       lastRequestTime: 0,
-      responseTimeHistory: []
+      responseTimeHistory: [],
+      averageResponseTime: 0
     };
     
     this.healthCheckHistory = [];
+    
+    // Initialize progressive timeout manager for health checks
+    this.progressiveTimeoutManager = createOperationSpecificTimeoutManager('health-check');
+    
+    this.communicationMetrics = {
+      timeoutAdaptations: 0,
+      circuitBreakerTrips: 0,
+      communicationStability: 1.0,
+      lastStabilityCheck: Date.now()
+    };
+
+    this.metrics = {
+      totalOperations: 0,
+      successfulOperations: 0,
+      timeoutsByLevel: { level1: 0, level2: 0, level3: 0, fallback: 0 },
+      averageResponseTimeByLevel: { level1: 0, level2: 0, level3: 0, fallback: 0 },
+      circuitBreakerTrips: 0,
+      fallbackActivations: 0,
+      recoverySuccessRate: 0,
+      communicationStability: 1.0
+    };
+
+    // Listen to timeout manager events for communication stability tracking
+    this.setupTimeoutManagerListeners();
   }
 
   /**
    * Perform comprehensive health check
    */
   async performHealthCheck(): Promise<HealthStatus> {
+    return this.progressiveTimeoutManager.executeWithProgressiveTimeout(
+      'health-check-comprehensive',
+      'health-check',
+      () => this.performHealthCheckInternal()
+    );
+  }
+
+  /**
+   * Internal health check implementation with progressive timeout support
+   */
+  private async performHealthCheckInternal(): Promise<HealthStatus> {
     const startTime = Date.now();
     
     try {
+      // TODO: [TASK-MCP-007-HEALTH-001] Pattern: progressive-health-monitoring | Complexity: 7 | Dependencies: timeout-management,communication-stability
+      // Context: Comprehensive health monitoring with progressive timeout and communication stability tracking
+      // Validation-Required: health-check-reliability, timeout-adaptation, communication-metrics
+      // Pattern-Info: { approach: "progressive-monitoring", alternatives: "fixed-timeout,manual-checks", trade-offs: "accuracy-vs-performance" }
+      
       // Run all health checks in parallel for better performance
-      const [mcpCheck, ptyCheck, perfCheck, resourceCheck] = await Promise.all([
+      const [mcpCheck, ptyCheck, perfCheck, resourceCheck, commCheck] = await Promise.all([
         this.checkMCPServer(),
         this.checkPTYManager(), 
         this.checkPerformance(),
-        this.checkResources()
+        this.checkResources(),
+        this.checkCommunicationStability()
       ]);
 
-      const status = this.determineOverallHealth(mcpCheck, ptyCheck, perfCheck, resourceCheck);
+      const status = this.determineOverallHealth(mcpCheck, ptyCheck, perfCheck, resourceCheck, commCheck);
+      
+      // Update communication stability metrics
+      this.updateCommunicationStability();
       
       const healthStatus: HealthStatus = {
         status,
@@ -102,7 +161,8 @@ export class MCPHealthMonitor {
           mcpServer: mcpCheck,
           ptyManager: ptyCheck,
           performance: perfCheck,
-          resources: resourceCheck
+          resources: resourceCheck,
+          communication: commCheck
         },
         metrics: {
           totalRequests: this.performanceMetrics.requestCount,
@@ -110,7 +170,10 @@ export class MCPHealthMonitor {
           errorRate: this.getErrorRate(),
           activeSessions: this.getActiveSessionCount(),
           memoryUsage: this.getMemoryUsage(),
-          cpuUsage: 0 // CPU usage monitoring would require additional dependencies
+          cpuUsage: 0, // CPU usage monitoring would require additional dependencies
+          timeoutAdaptations: this.communicationMetrics.timeoutAdaptations,
+          circuitBreakerTrips: this.communicationMetrics.circuitBreakerTrips,
+          communicationStability: this.communicationMetrics.communicationStability
         }
       };
 
@@ -131,7 +194,8 @@ export class MCPHealthMonitor {
           mcpServer: { status: 'fail', duration: 0, message: 'Health check failed', details: error },
           ptyManager: { status: 'fail', duration: 0, message: 'Health check failed' },
           performance: { status: 'fail', duration: 0, message: 'Health check failed' },
-          resources: { status: 'fail', duration: 0, message: 'Health check failed' }
+          resources: { status: 'fail', duration: 0, message: 'Health check failed' },
+          communication: { status: 'fail', duration: 0, message: 'Health check failed' }
         },
         metrics: {
           totalRequests: this.performanceMetrics.requestCount,
@@ -139,7 +203,10 @@ export class MCPHealthMonitor {
           errorRate: 1,
           activeSessions: 0,
           memoryUsage: this.getMemoryUsage(),
-          cpuUsage: 0
+          cpuUsage: 0,
+          timeoutAdaptations: this.communicationMetrics.timeoutAdaptations,
+          circuitBreakerTrips: this.communicationMetrics.circuitBreakerTrips,
+          communicationStability: 0
         }
       };
 
@@ -361,6 +428,7 @@ export class MCPHealthMonitor {
     this.performanceMetrics.requestCount++;
     this.performanceMetrics.totalResponseTime += responseTime;
     this.performanceMetrics.lastRequestTime = Date.now();
+    this.performanceMetrics.averageResponseTime = this.performanceMetrics.totalResponseTime / this.performanceMetrics.requestCount;
     
     if (!success) {
       this.performanceMetrics.errorCount++;
@@ -388,15 +456,132 @@ export class MCPHealthMonitor {
   }
 
   /**
-   * Determine overall health status
+   * Check communication stability
+   */
+  private async checkCommunicationStability(): Promise<HealthCheckResult> {
+    const startTime = Date.now();
+    
+    try {
+      const timeoutMetrics = this.progressiveTimeoutManager.getAdaptationMetrics();
+      const stability = this.communicationMetrics.communicationStability;
+      
+      let status: 'pass' | 'warn' | 'fail' = 'pass';
+      let message = 'Communication stability normal';
+      
+      // Check circuit breaker trips
+      if (timeoutMetrics.circuitBreakerTrips > 5) {
+        status = 'fail';
+        message = `High circuit breaker trips: ${timeoutMetrics.circuitBreakerTrips}`;
+      } else if (timeoutMetrics.circuitBreakerTrips > 2) {
+        status = 'warn';
+        message = `Elevated circuit breaker trips: ${timeoutMetrics.circuitBreakerTrips}`;
+      }
+      
+      // Check communication stability
+      if (stability < 0.5) { // 50%
+        status = 'fail';
+        message = `Poor communication stability: ${(stability * 100).toFixed(1)}%`;
+      } else if (stability < 0.8) { // 80%
+        status = 'warn';
+        message = `Reduced communication stability: ${(stability * 100).toFixed(1)}%`;
+      }
+
+      return {
+        status,
+        duration: Date.now() - startTime,
+        message,
+        details: {
+          communicationStability: stability,
+          circuitBreakerTrips: timeoutMetrics.circuitBreakerTrips,
+          timeoutAdaptations: this.communicationMetrics.timeoutAdaptations,
+          fallbackActivations: timeoutMetrics.fallbackActivations
+        }
+      };
+
+    } catch (error) {
+      return {
+        status: 'fail',
+        duration: Date.now() - startTime,
+        message: 'Communication stability check failed',
+        details: error
+      };
+    }
+  }
+
+  /**
+   * Setup timeout manager event listeners
+   */
+  private setupTimeoutManagerListeners(): void {
+    this.progressiveTimeoutManager.on('operation-success', (event) => {
+      // Track successful operations for stability metrics
+      this.updateCommunicationStability(true);
+    });
+
+    this.progressiveTimeoutManager.on('operation-failure', (event) => {
+      // Track failed operations and circuit breaker trips
+      this.updateCommunicationStability(false);
+      
+      if (event.error?.message?.includes('circuit breaker')) {
+        this.communicationMetrics.circuitBreakerTrips++;
+      }
+    });
+
+    this.progressiveTimeoutManager.on('timeout-levels-updated', () => {
+      this.communicationMetrics.timeoutAdaptations++;
+    });
+  }
+
+  /**
+   * Update communication stability metrics
+   */
+  private updateCommunicationStability(success?: boolean): void {
+    // TODO: [TASK-MCP-007-STABILITY-001] Pattern: communication-stability-tracking | Complexity: 5 | Dependencies: metrics-aggregation,stability-calculation
+    // Context: Communication stability tracking with weighted success rate calculation
+    // Validation-Required: stability-accuracy, metric-aggregation, trend-analysis
+    // Pattern-Info: { approach: "weighted-success-rate", alternatives: "simple-average,exponential-smoothing", trade-offs: "accuracy-vs-responsiveness" }
+    
+    const now = Date.now();
+    const timeSinceLastCheck = now - this.communicationMetrics.lastStabilityCheck;
+    
+    // Update stability every 30 seconds or on specific events
+    if (timeSinceLastCheck > 30000 || success !== undefined) {
+      const timeoutMetrics = this.progressiveTimeoutManager.getAdaptationMetrics();
+      
+      if (timeoutMetrics.totalOperations > 0) {
+        // Calculate weighted stability based on recent operations
+        const baseStability = timeoutMetrics.successfulOperations / timeoutMetrics.totalOperations;
+        
+        // Apply penalty for circuit breaker trips
+        const circuitBreakerPenalty = Math.min(0.3, timeoutMetrics.circuitBreakerTrips * 0.05);
+        
+        // Apply penalty for fallback activations
+        const fallbackPenalty = Math.min(0.2, timeoutMetrics.fallbackActivations * 0.03);
+        
+        // Calculate weighted stability
+        const newStability = Math.max(0, baseStability - circuitBreakerPenalty - fallbackPenalty);
+        
+        // Smooth stability using exponential moving average
+        const smoothingFactor = 0.7;
+        this.communicationMetrics.communicationStability = 
+          this.communicationMetrics.communicationStability * smoothingFactor + 
+          newStability * (1 - smoothingFactor);
+      }
+      
+      this.communicationMetrics.lastStabilityCheck = now;
+    }
+  }
+
+  /**
+   * Determine overall health status including communication stability
    */
   private determineOverallHealth(
     mcpCheck: HealthCheckResult,
     ptyCheck: HealthCheckResult,
     perfCheck: HealthCheckResult,
-    resourceCheck: HealthCheckResult
+    resourceCheck: HealthCheckResult,
+    commCheck: HealthCheckResult
   ): 'healthy' | 'degraded' | 'unhealthy' {
-    const checks = [mcpCheck, ptyCheck, perfCheck, resourceCheck];
+    const checks = [mcpCheck, ptyCheck, perfCheck, resourceCheck, commCheck];
     
     // If any check fails, service is unhealthy
     if (checks.some(check => check.status === 'fail')) {
@@ -452,6 +637,34 @@ export class MCPHealthMonitor {
     if (this.healthCheckHistory.length > this.maxHistorySize) {
       this.healthCheckHistory.shift();
     }
+  }
+
+  /**
+   * Cleanup resources and stop monitoring
+   */
+  cleanup(): void {
+    // Clean up any resources, timers, or listeners
+    this.healthCheckHistory = [];
+    this.performanceMetrics = {
+      requestCount: 0,
+      totalResponseTime: 0,
+      errorCount: 0,
+      lastRequestTime: 0,
+      responseTimeHistory: [],
+      averageResponseTime: 0
+    };
+    
+    // Reset metrics
+    this.metrics = {
+      totalOperations: 0,
+      successfulOperations: 0,
+      timeoutsByLevel: { level1: 0, level2: 0, level3: 0, fallback: 0 },
+      averageResponseTimeByLevel: { level1: 0, level2: 0, level3: 0, fallback: 0 },
+      circuitBreakerTrips: 0,
+      fallbackActivations: 0,
+      recoverySuccessRate: 0,
+      communicationStability: 1.0
+    };
   }
 }
 

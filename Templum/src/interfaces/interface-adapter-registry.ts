@@ -1,10 +1,12 @@
-/**---
- * title: [Interface Adapter Registry - Abstraction Layer Management]
- * tags: [Registry, Interface, Adapter, Abstraction]
- * provides: [InterfaceAdapterRegistry, Abstracted Adapter Management]
- * requires: [ITemplumOrchestrator, Interface Adapters, Factory Patterns]
- * description: [Registry for managing interface adapters through abstraction layer, eliminates direct coupling to concrete implementations]
- * ---*/
+/**
+ ---
+title: [Interface Adapter Registry - Abstraction Layer Management]
+tags: [Registry, Interface, Adapter, Abstraction]
+provides: [InterfaceAdapterRegistry, Abstracted Adapter Management]
+requires: [ITemplumOrchestrator, Interface Adapters, Factory Patterns]
+description: [Registry for managing interface adapters through abstraction layer, eliminates direct coupling to concrete implementations]
+ ---
+ **/
 
 import { EventEmitter } from 'events';
 import { 

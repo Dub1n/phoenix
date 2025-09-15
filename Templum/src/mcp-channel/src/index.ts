@@ -19,7 +19,7 @@ import { CLIMCPServer } from './cli-mcp-server';
 import { MCPLifecycleCoordinator, LifecycleOptions, createMCPLifecycleCoordinator } from './lifecycle-coordinator';
 
 export { PTYManager, CLIMCPServer };
-export { 
+export type { 
   NavigationAction,
   CLIResponse,
   CLIState,
@@ -37,33 +37,39 @@ export {
 } from './types';
 
 // MCP Server exports
-export { 
-  MCP_TOOL_SCHEMAS,
+export type { 
   MCPRequest,
   MCPResponse,
   MCPTool
 } from './cli-mcp-server';
+export { MCP_TOOL_SCHEMAS } from './cli-mcp-server';
 
 // Service Discovery Integration exports
+export type { 
+  MCPServiceConfig,
+  ServiceRegistrationOptions
+} from './service-registration';
 export { 
   MCPServiceRegistration,
-  MCPServiceConfig,
-  ServiceRegistrationOptions,
   createMCPServiceRegistration
 } from './service-registration';
 
-export {
-  MCPHealthMonitor,
+export type {
   HealthStatus,
   HealthCheckResult,
-  PerformanceMetrics,
+  PerformanceMetrics
+} from './health-monitor';
+export {
+  MCPHealthMonitor,
   createMCPHealthMonitor
 } from './health-monitor';
 
+export type {
+  LifecycleState,
+  LifecycleOptions
+} from './lifecycle-coordinator';
 export {
   MCPLifecycleCoordinator,
-  LifecycleState,
-  LifecycleOptions,
   createMCPLifecycleCoordinator,
   createMCPLifecycleCoordinatorManual
 } from './lifecycle-coordinator';

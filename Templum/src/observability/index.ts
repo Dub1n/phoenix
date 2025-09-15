@@ -33,7 +33,7 @@ export {
 // Adapter for dependency injection
 export {
   ObservabilityAdapter,
-  IObservabilityService,
+  type IObservabilityService,
   createObservabilityAdapter,
   createObservabilityAdapterWithConfig,
   createDevelopmentObservabilityAdapter,

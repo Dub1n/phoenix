@@ -667,4 +667,5 @@ if (require.main === module) {
   });
 }
 
-export { Phase6ValidationCLI, ValidationConfig };
+export { Phase6ValidationCLI };
+export type { ValidationConfig };

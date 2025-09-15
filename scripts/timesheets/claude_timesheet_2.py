@@ -1,3 +1,17 @@
+#!/usr/bin/env python3
+"""
+Claude Code Timesheet Extractor
+Extracts work periods from Claude Code logs based on message activity for timesheet purposes.
+Groups messages into work periods based on activity gaps rather than session boundaries.
+"""
+
+import json
+import os
+from pathlib import Path
+from datetime import datetime, timezone, timedelta
+import sys
+import argparse
+
 def round_time_to_increment(dt, minutes):
     """Round datetime to nearest minute increment."""
     if minutes <= 0:
@@ -15,19 +29,7 @@ def round_time_to_increment(dt, minutes):
     hours = rounded_minutes // 60
     mins = rounded_minutes % 60
     
-    return dt.replace(hour=hours, minute=mins, second=0, microsecond=0)#!/usr/bin/env python3
-"""
-Claude Code Timesheet Extractor
-Extracts work periods from Claude Code logs based on message activity for timesheet purposes.
-Groups messages into work periods based on activity gaps rather than session boundaries.
-"""
-
-import json
-import os
-from pathlib import Path
-from datetime import datetime, timezone, timedelta
-import sys
-import argparse
+    return dt.replace(hour=hours, minute=mins, second=0, microsecond=0)
 
 def parse_timestamp(timestamp_str):
     """Parse ISO timestamp string to datetime object."""

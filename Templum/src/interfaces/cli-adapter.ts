@@ -970,16 +970,16 @@ export class CLIInterfaceAdapter extends EventEmitter implements CLIAdapter {
    */
   private async loadSpecificBackendSkin(backendId: string): Promise<void> {
     if (!backendId) {
-      console.log('❌ Please specify a backend ID (e.g., load pcl, load minimal-example)');
+      console.log('[ERROR] Please specify a backend ID (e.g., load pcl, load minimal-example)');
       return;
     }
 
     try {
-      console.log(`🔄 Loading skin from backend: ${backendId}`);
+      console.log(`[LOADING] Loading skin from backend: ${backendId}`);
       
       // Check if orchestrator is available
       if (!this.orchestrator?.isInitialized()) {
-        console.log('❌ Orchestrator not available - cannot load backend skins');
+        console.log('[ERROR] Orchestrator not available - cannot load backend skins');
         return;
       }
 
@@ -997,29 +997,29 @@ export class CLIInterfaceAdapter extends EventEmitter implements CLIAdapter {
         if (availableMenus.includes(backendMainMenu)) {
           this.currentMenu = backendMainMenu;
           await this.renderCurrentMenu();
-          console.log(`✅ Switched to ${skinDefinition.name || backendId} interface`);
+          console.log(`[OK] Switched to ${skinDefinition.name || backendId} interface`);
         } else if (availableMenus.includes('main')) {
           // Fallback to generic main menu with backend loaded
           await this.renderCurrentMenu();
-          console.log(`✅ Loaded ${skinDefinition.name || backendId} skin (using generic menu)`);
+          console.log(`[OK] Loaded ${skinDefinition.name || backendId} skin (using generic menu)`);
         } else {
-          console.log(`✅ Loaded ${skinDefinition.name || backendId} skin definition`);
+          console.log(`[OK] Loaded ${skinDefinition.name || backendId} skin definition`);
         }
         
         // Update searchable items to include new backend
         await this.buildSearchableItems();
         
       } else {
-        console.log(`❌ Could not load skin from backend: ${backendId}`);
-        console.log('💡 Check if backend is running and accessible');
+        console.log(`[ERROR] Could not load skin from backend: ${backendId}`);
+        console.log('[TIP] Check if backend is running and accessible');
         
         // Show available backends for reference
         await this.displayAvailableBackends();
       }
       
     } catch (error) {
-      console.error(`❌ Failed to load skin from ${backendId}:`, error);
-      console.log('💡 Use "status" command to check backend connectivity');
+      console.error(`[ERROR] Failed to load skin from ${backendId}:`, error);
+      console.log('[TIP] Use "status" command to check backend connectivity');
     }
   }
 
@@ -1029,7 +1029,7 @@ export class CLIInterfaceAdapter extends EventEmitter implements CLIAdapter {
    */
   private async loadSkinIntoMenuRegistry(serviceId: string, skin: UniversalSkinDefinition): Promise<void> {
     if (!skin.menus) {
-      console.log(`⚠️ Backend ${serviceId} has no menu definitions`);
+      console.log(`[WARN] Backend ${serviceId} has no menu definitions`);
       return;
     }
     
@@ -1094,7 +1094,7 @@ export class CLIInterfaceAdapter extends EventEmitter implements CLIAdapter {
     // Load skin into menu registry
     await this.menuRegistry.loadSkin(loadedSkin);
     const menuCount = Object.keys(convertedMenus).length;
-    console.log(`📋 Loaded ${menuCount} menu(s) from ${skin.name || serviceId}`);
+    console.log(`[LIST] Loaded ${menuCount} menu(s) from ${skin.name || serviceId}`);
   }
 
   /**
@@ -1104,8 +1104,8 @@ export class CLIInterfaceAdapter extends EventEmitter implements CLIAdapter {
    */
   private async displayAvailableBackendsDetailed(): Promise<void> {
     if (!this.orchestrator?.isInitialized()) {
-      console.log('❌ Backend management unavailable - orchestrator not initialized');
-      console.log('💡 Try restarting Templum to initialize backend connections');
+      console.log('[ERROR] Backend management unavailable - orchestrator not initialized');
+      console.log('[TIP] Try restarting Templum to initialize backend connections');
       return;
     }
 
@@ -1114,22 +1114,22 @@ export class CLIInterfaceAdapter extends EventEmitter implements CLIAdapter {
       const backends = systemStatus.coreEngine?.backendConnections?.backends || {};
       
       if (Object.keys(backends).length === 0) {
-        console.log('📭 No backends currently discovered');
-        console.log('💡 Backend services will appear here when they start');
+        console.log('[EMPTY] No backends currently discovered');
+        console.log('[TIP] Backend services will appear here when they start');
         return;
       }
       
-      console.log('\n🔧 Backend Management Dashboard');
+      console.log('\n[TOOLS] Backend Management Dashboard');
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       console.log('Backend ID     Status        Health     Skin   Commands Available');
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       
       for (const [serviceId, status] of Object.entries(backends)) {
         const statusIcon = status.connected 
-          ? (status.health === 'healthy' ? '🟢 Connected  ' : '🟡 Connected  ') 
-          : '🔴 Offline    ';
+          ? (status.health === 'healthy' ? '[CONNECTED]  ' : '[WARN]        ') 
+          : '[OFFLINE]     ';
         const health = (status.health || 'Unknown').padEnd(10);
-        const skinStatus = (status as any).skinLoaded ? '✅ Yes ' : '❌ No  ';
+        const skinStatus = (status as any).skinLoaded ? '[OK] Yes ' : '[NO] No  ';
         const capabilityCount = status.capabilities?.length || 0;
         const commandInfo = capabilityCount > 0 ? `${capabilityCount} available` : 'None loaded';
         
@@ -1143,15 +1143,15 @@ export class CLIInterfaceAdapter extends EventEmitter implements CLIAdapter {
       
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       console.log(`Total: ${totalCount} | Connected: ${connectedCount} | Healthy: ${healthyCount} | Skins Loaded: ${skinsLoaded}`);
-      console.log('\n🎮 Management Commands:');
+      console.log('\n[GAME] Management Commands:');
       console.log('  load <backend-id>    - Load backend skin interface');
       console.log('  unload <backend-id>  - Disconnect from backend service');
       console.log('  refresh              - Trigger service discovery');
       console.log('  status               - Show detailed connection status');
       
     } catch (error) {
-      console.log('❌ Failed to retrieve backend information:', error);
-      console.log('💡 Try "refresh" command to re-scan for services');
+      console.log('[ERROR] Failed to retrieve backend information:', error);
+      console.log('[TIP] Try "refresh" command to re-scan for services');
     }
   }
 
@@ -1162,17 +1162,17 @@ export class CLIInterfaceAdapter extends EventEmitter implements CLIAdapter {
    */
   private async unloadSpecificBackend(backendId: string): Promise<void> {
     if (!backendId) {
-      console.log('❌ Please specify a backend ID (e.g., unload pcl, unload minimal-example)');
-      console.log('💡 Use "backends" command to see available backend IDs');
+      console.log('[ERROR] Please specify a backend ID (e.g., unload pcl, unload minimal-example)');
+      console.log('[TIP] Use "backends" command to see available backend IDs');
       return;
     }
 
     try {
-      console.log(`🔄 Disconnecting from backend: ${backendId}`);
+      console.log(`[REFRESH] Disconnecting from backend: ${backendId}`);
       
       // Check if orchestrator is available
       if (!this.orchestrator?.isInitialized()) {
-        console.log('❌ Backend management unavailable - orchestrator not initialized');
+        console.log('[ERROR] Backend management unavailable - orchestrator not initialized');
         return;
       }
 
@@ -1182,13 +1182,13 @@ export class CLIInterfaceAdapter extends EventEmitter implements CLIAdapter {
       const backendStatus = (backends as any)[backendId];
       
       if (!backendStatus) {
-        console.log(`❌ Backend '${backendId}' not found`);
-        console.log('💡 Use "backends" command to see available backend IDs');
+        console.log(`[ERROR] Backend '${backendId}' not found`);
+        console.log('[TIP] Use "backends" command to see available backend IDs');
         return;
       }
       
       if (!backendStatus.connected) {
-        console.log(`⚠️  Backend '${backendId}' is already disconnected`);
+        console.log(`[WARN] Backend '${backendId}' is already disconnected`);
         return;
       }
 
@@ -1210,12 +1210,12 @@ export class CLIInterfaceAdapter extends EventEmitter implements CLIAdapter {
       // Update searchable items to remove this backend's items
       await this.buildSearchableItems();
       
-      console.log(`✅ Disconnected from ${backendId}`);
-      console.log('💡 Backend service may still be running - this only unloads the interface');
+      console.log(`[OK] Disconnected from ${backendId}`);
+      console.log('[TIP] Backend service may still be running - this only unloads the interface');
       
     } catch (error) {
-      console.error(`❌ Failed to disconnect from ${backendId}:`, error);
-      console.log('💡 Use "status" command to check current backend connections');
+      console.error(`[ERROR] Failed to disconnect from ${backendId}:`, error);
+      console.log('[TIP] Use "status" command to check current backend connections');
     }
   }
 
@@ -1238,14 +1238,14 @@ export class CLIInterfaceAdapter extends EventEmitter implements CLIAdapter {
         return;
       }
       
-      console.log('\n📡 Available backends:');
+      console.log('\n[LINK] Available backends:');
       for (const [serviceId, status] of Object.entries(backends)) {
         const statusIcon = status.connected 
-          ? (status.health === 'healthy' ? '🟢' : '🟡') 
-          : '🔴';
+          ? (status.health === 'healthy' ? '[OK]' : '[WARN]') 
+          : '[OFFLINE]';
         console.log(`  ${statusIcon} ${serviceId} - ${status.connected ? 'connected' : 'disconnected'}`);
       }
-      console.log('\n💡 Try: load <backend-id>');
+      console.log('\n[TIP] Try: load <backend-id>');
       
     } catch (_error) {
       console.log('Failed to get backend status');
@@ -1305,11 +1305,11 @@ export class CLIInterfaceAdapter extends EventEmitter implements CLIAdapter {
     // Display real backend integration status
     if (this.orchestrator?.isInitialized()) {
       console.log('\nBackend Integration:');
-      console.log('  ✅ Real backend integration active');
+      console.log('  [OK] Real backend integration active');
       this.displayBackendStatus();
     } else {
       console.log('\nBackend Integration:');
-      console.log('  ⚠️  Local registry fallback mode');
+      console.log('  [WARN] Local registry fallback mode');
     }
     console.log();
   }
@@ -1334,7 +1334,7 @@ export class CLIInterfaceAdapter extends EventEmitter implements CLIAdapter {
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       
       for (const [serviceId, status] of Object.entries(backends)) {
-        const conn = status.connected ? '🟢 Connected ' : '🔴 Disconnected';
+        const conn = status.connected ? '[CONNECTED] ' : '[DISCONNECTED]';
         const health = status.health || 'Unknown';
         const responseTime = status.responseTime ? `${status.responseTime}ms` : 'N/A';
         const capabilities = status.capabilities?.slice(0, 2).join(', ') || 'None';

@@ -1,14 +1,22 @@
-/**---
- * title: [Terminal UI Components - Interactive CLI Elements]
- * tags: [Terminal, UI, Progress, Spinner, Interactive, CLI]
- * provides: [ProgressBar, Spinner, InteractivePrompt, ColorTheme, ResponsiveLayout]
- * requires: [chalk, readline, process]
- * description: [Terminal UI components for progress indication, user interaction, and responsive layouts]
- * ---*/
+/**
+---
+title: [Terminal UI Components - Interactive CLI Elements]
+tags: [Terminal, UI, Progress, Spinner, Interactive, CLI]
+provides: [ProgressBar, Spinner, InteractivePrompt, ColorTheme, ResponsiveLayout]
+requires: [chalk, readline, process]
+description: [Terminal UI components for progress indication, user interaction, and responsive layouts]
+---
+**/
 
-import chalk from 'chalk';
+import * as chalk from 'chalk';
 import * as readline from 'readline';
 import { EventEmitter } from 'events';
+
+// Import consistency framework for table formatting integration
+// TODO: [TASK-ID-006] Pattern: consistency-framework-integration | Complexity: 4 | Dependencies: cli-display-consistency-engine
+// Context: Integrate terminal UI components with display consistency framework for standardized table formatting
+// Validation-Required: table-format-consistency, responsive-layout-preservation, theme-compatibility
+// Pattern-Info: { approach: "optional-integration", alternatives: "full-replacement", trade-offs: "backward-compatibility-vs-consistency" }
 
 // Interactive Search and Filtering components - TASK-CLI-002 implementation
 // Advanced Menu Navigation integration - TASK-CLI-003 compatibility maintained
@@ -60,6 +68,17 @@ export const DefaultColorThemes: Record<string, TerminalColorTheme> = {
     error: chalk.red,
     info: chalk.blue,
     accent: chalk.magenta,
+    muted: chalk.gray
+  },
+  monochrome: {
+    name: 'Monochrome',
+    primary: chalk.white,
+    secondary: chalk.gray,
+    success: chalk.white,
+    warning: chalk.white,
+    error: chalk.white,
+    info: chalk.white,
+    accent: chalk.white,
     muted: chalk.gray
   }
 };
@@ -194,7 +213,7 @@ export const SpinnerFrames = {
   arrow: ['←', '↖', '↑', '↗', '→', '↘', '↓', '↙'],
   bounce: ['⠁', '⠂', '⠄', '⠂'],
   pulse: ['●', '○', '●', '○'],
-  clock: ['🕐', '🕑', '🕒', '🕓', '🕔', '🕕', '🕖', '🕗', '🕘', '🕙', '🕚', '🕛']
+  clock: ['[CLOCK]', '[CLOCK]', '[CLOCK]', '[CLOCK]', '[CLOCK]', '[CLOCK]', '[CLOCK]', '[CLOCK]', '[CLOCK]', '[CLOCK]', '[CLOCK]', '[CLOCK]']
 };
 
 export class Spinner extends EventEmitter {
@@ -254,19 +273,19 @@ export class Spinner extends EventEmitter {
   }
 
   succeed(message: string): void {
-    this.stop(this.config.theme.success('✓ ' + message));
+    this.stop(this.config.theme.success('[OK] ' + message));
   }
 
   fail(message: string): void {
-    this.stop(this.config.theme.error('✗ ' + message));
+    this.stop(this.config.theme.error('[FAIL] ' + message));
   }
 
   warn(message: string): void {
-    this.stop(this.config.theme.warning('⚠ ' + message));
+    this.stop(this.config.theme.warning('[WARN] ' + message));
   }
 
   info(message: string): void {
-    this.stop(this.config.theme.info('ℹ ' + message));
+    this.stop(this.config.theme.info('[INFO] ' + message));
   }
 
   private render(): void {
@@ -351,7 +370,7 @@ export class InteractivePrompt extends EventEmitter {
       
       // Display choices
       choices.forEach((choice, index) => {
-        const indicator = index === defaultIndex ? '❯' : ' ';
+        const indicator = index === defaultIndex ? '>' : ' ';
         const style = index === defaultIndex ? this.config.theme.accent : this.config.theme.muted;
         console.log(`  ${this.config.theme.primary(indicator)} ${style(choice)}`);
       });
@@ -365,7 +384,7 @@ export class InteractivePrompt extends EventEmitter {
         process.stdout.moveCursor(0, -choices.length);
         
         choices.forEach((choice, index) => {
-          const indicator = index === currentIndex ? '❯' : ' ';
+          const indicator = index === currentIndex ? '>' : ' ';
           const style = index === currentIndex ? this.config.theme.accent : this.config.theme.muted;
           
           process.stdout.clearLine(0);
@@ -410,8 +429,8 @@ export class InteractivePrompt extends EventEmitter {
         process.stdout.moveCursor(0, -choices.length - 1);
         
         choices.forEach((choice, index) => {
-          const indicator = index === currentIndex ? '❯' : ' ';
-          const checkbox = selected[index] ? '◉' : '◯';
+          const indicator = index === currentIndex ? '>' : ' ';
+          const checkbox = selected[index] ? '[SELECTED]' : '[ ]';
           const style = index === currentIndex ? this.config.theme.accent : this.config.theme.muted;
           
           process.stdout.clearLine(0);
@@ -479,6 +498,658 @@ export class InteractivePrompt extends EventEmitter {
       this.rl.close();
       this.rl = null;
     }
+  }
+}
+
+/**
+ * Enhanced Window Layout Renderer for CLI Design Specification
+ * Implements the exact CLI design specification with bordered windows, centered titles, and proper padding
+ * Pattern: bordered-window-layout - See /dev/patterns/bordered-window-layout.md for reusable implementation guide
+ * Validation-Required: window-border-rendering, title-centering, padding-consistency, selector-positioning
+ */
+export interface WindowLayoutConfig {
+  title: string;
+  subtitle?: string;
+  content: WindowContentSection[];
+  width?: number; // Auto-calculated if not provided
+  theme: TerminalColorTheme;
+}
+
+export interface WindowContentSection {
+  id: string;
+  heading?: string;
+  items: WindowContentItem[];
+  type: 'menu' | 'info' | 'separator';
+}
+
+export interface WindowContentItem {
+  id: string;
+  label: string;
+  description?: string;
+  enabled: boolean;
+  selected?: boolean;
+  icon?: string;
+  data?: any;
+}
+
+export class EnhancedWindowLayoutRenderer {
+  private theme: TerminalColorTheme;
+  private currentSelection: number = 0;
+  private items: WindowContentItem[] = [];
+  private separatorIndices: number[] = [];
+
+  constructor(theme: TerminalColorTheme = DefaultColorThemes.default) {
+    this.theme = theme;
+  }
+
+  /**
+   * Render bordered window with CLI design specification compliance
+   */
+  renderWindow(config: WindowLayoutConfig): string {
+    const { title, subtitle, content } = config;
+    
+    // Build flattened item list for navigation
+    this.buildNavigationList(content);
+    
+    // Calculate window width based on content
+    const windowWidth = config.width || this.calculateWindowWidth(config);
+    
+    const lines: string[] = [];
+    
+    // Top border with title
+    lines.push(this.renderTopBorder(title, windowWidth));
+    
+    // Subtitle section if present
+    if (subtitle) {
+      lines.push(this.renderContentLine(subtitle, windowWidth));
+      lines.push(this.renderEmptyLine(windowWidth));
+    }
+    
+    // Content sections
+    let itemIndex = 0;
+    for (const section of content) {
+      if (section.type === 'separator') {
+        lines.push(this.renderSeparatorLine(windowWidth));
+        this.separatorIndices.push(itemIndex);
+      } else {
+        // Section heading if present
+        if (section.heading) {
+          lines.push(this.renderContentLine(section.heading, windowWidth));
+          lines.push(this.renderEmptyLine(windowWidth));
+        }
+        
+        // Section items
+        for (const item of section.items) {
+          const isSelected = itemIndex === this.currentSelection;
+          lines.push(this.renderMenuItem(item, isSelected, windowWidth));
+          itemIndex++;
+        }
+        
+        // Add spacing after section
+        if (section !== content[content.length - 1]) {
+          lines.push(this.renderEmptyLine(windowWidth));
+        }
+      }
+    }
+    
+    // Bottom border
+    lines.push(this.renderBottomBorder(windowWidth));
+    
+    // Text box (selector prompt)
+    lines.push('');
+    lines.push(this.renderTextBox(windowWidth));
+    
+    return lines.join('\n');
+  }
+
+  /**
+   * Handle navigation input across separator boundaries
+   */
+  navigate(direction: 'up' | 'down'): boolean {
+    const totalItems = this.items.length;
+    if (totalItems === 0) return false;
+
+    let newSelection = this.currentSelection;
+    
+    if (direction === 'up') {
+      newSelection = this.currentSelection > 0 ? this.currentSelection - 1 : totalItems - 1;
+    } else {
+      newSelection = this.currentSelection < totalItems - 1 ? this.currentSelection + 1 : 0;
+    }
+    
+    // Skip disabled items
+    while (!this.items[newSelection].enabled && newSelection !== this.currentSelection) {
+      if (direction === 'up') {
+        newSelection = newSelection > 0 ? newSelection - 1 : totalItems - 1;
+      } else {
+        newSelection = newSelection < totalItems - 1 ? newSelection + 1 : 0;
+      }
+    }
+    
+    if (newSelection !== this.currentSelection) {
+      this.currentSelection = newSelection;
+      return true;
+    }
+    
+    return false;
+  }
+
+  /**
+   * Get currently selected item
+   */
+  getSelectedItem(): WindowContentItem | null {
+    return this.items[this.currentSelection] || null;
+  }
+
+  /**
+   * Set selection by item ID
+   */
+  setSelection(itemId: string): boolean {
+    const index = this.items.findIndex(item => item.id === itemId);
+    if (index >= 0) {
+      this.currentSelection = index;
+      return true;
+    }
+    return false;
+  }
+
+  private buildNavigationList(content: WindowContentSection[]): void {
+    this.items = [];
+    this.separatorIndices = [];
+    
+    for (const section of content) {
+      if (section.type !== 'separator') {
+        this.items.push(...section.items);
+      }
+    }
+  }
+
+  private calculateWindowWidth(config: WindowLayoutConfig): number {
+    const { title, subtitle, content } = config;
+    let maxWidth = title.length;
+    
+    if (subtitle) {
+      maxWidth = Math.max(maxWidth, subtitle.length);
+    }
+    
+    for (const section of content) {
+      if (section.heading) {
+        maxWidth = Math.max(maxWidth, section.heading.length);
+      }
+      
+      for (const item of section.items) {
+        const itemText = `${item.icon || ''} ${item.label}${item.description ? ` - ${item.description}` : ''}`;
+        maxWidth = Math.max(maxWidth, itemText.length);
+      }
+    }
+    
+    // Add padding (3 characters on each side) and borders (1 character each side)
+    return Math.max(maxWidth + 8, 80); // Minimum 80 characters
+  }
+
+  private renderTopBorder(title: string, width: number): string {
+    const borderWidth = width - 2;
+    const titlePadding = Math.max(0, borderWidth - title.length);
+    const leftPadding = Math.floor(titlePadding / 2);
+    const rightPadding = titlePadding - leftPadding;
+    
+    const centeredTitle = ' '.repeat(leftPadding) + title + ' '.repeat(rightPadding);
+    
+    return this.theme.primary(`┌${'─'.repeat(borderWidth)}┐`) + '\n' +
+           this.theme.primary(`│${centeredTitle}│`);
+  }
+
+  private renderBottomBorder(width: number): string {
+    return this.theme.primary(`└${'─'.repeat(width - 2)}┘`);
+  }
+
+  private renderContentLine(content: string, width: number): string {
+    const availableWidth = width - 8; // Account for borders and padding
+    const truncatedContent = content.length > availableWidth ? content.substring(0, availableWidth - 3) + '...' : content;
+    const padding = ' '.repeat(Math.max(0, availableWidth - truncatedContent.length));
+    
+    return this.theme.primary('│') + 
+           '   ' + 
+           this.theme.secondary(truncatedContent) + 
+           padding + 
+           '   ' + 
+           this.theme.primary('│');
+  }
+
+  private renderEmptyLine(width: number): string {
+    return this.theme.primary('│') + ' '.repeat(width - 2) + this.theme.primary('│');
+  }
+
+  private renderMenuItem(item: WindowContentItem, isSelected: boolean, width: number): string {
+    const availableWidth = width - 8; // Account for borders and padding
+    const selector = isSelected ? '›' : ' ';
+    const icon = item.icon || '';
+    const iconText = icon ? `${icon} ` : '';
+    const itemText = `${iconText}${item.label}`;
+    const description = item.description ? ` - ${item.description}` : '';
+    const fullText = itemText + description;
+    
+    const truncatedText = fullText.length > availableWidth - 1 ? fullText.substring(0, availableWidth - 4) + '...' : fullText;
+    const padding = ' '.repeat(Math.max(0, availableWidth - truncatedText.length - 1));
+    
+    const textStyle = item.enabled ? 
+      (isSelected ? this.theme.accent : this.theme.primary) : 
+      this.theme.muted;
+    
+    return this.theme.primary('│') + 
+           '  ' + 
+           (isSelected ? this.theme.accent(selector) : ' ') + 
+           ' ' + 
+           textStyle(truncatedText) + 
+           padding + 
+           '   ' + 
+           this.theme.primary('│');
+  }
+
+  private renderSeparatorLine(width: number): string {
+    const separatorLength = width - 8;
+    const separator = '─'.repeat(separatorLength);
+    
+    return this.theme.primary('│') + 
+           '   ' + 
+           this.theme.muted(separator) + 
+           '   ' + 
+           this.theme.primary('│');
+  }
+
+  private renderTextBox(width: number): string {
+    const borderWidth = width - 2;
+    const prompt = 'Select an option: (Use arrow keys)';
+    const promptPadding = Math.max(0, borderWidth - prompt.length);
+    const leftPadding = Math.floor(promptPadding / 2);
+    const rightPadding = promptPadding - leftPadding;
+    
+    const centeredPrompt = ' '.repeat(leftPadding) + prompt + ' '.repeat(rightPadding);
+    
+    return this.theme.info(`┌${'─'.repeat(borderWidth)}┐`) + '\n' +
+           this.theme.info(`│${centeredPrompt}│`) + '\n' +
+           this.theme.info(`└${'─'.repeat(borderWidth)}┘`);
+  }
+}
+
+/**
+ * Enhanced Interactive Menu System for CLI Design Specification
+ * Implements proper menu navigation across separators and exit behavior patterns  
+ * Pattern: cross-separator-navigation - See /dev/patterns/cross-separator-navigation.md for reusable implementation guide
+ * Validation-Required: separator-navigation, exit-confirmation, keyboard-responsiveness
+ */
+export interface EnhancedMenuConfig {
+  title: string;
+  subtitle?: string;
+  sections: MenuSection[];
+  theme?: TerminalColorTheme;
+  onSelection?: (item: WindowContentItem) => Promise<void>;
+  onExit?: () => Promise<void>;
+}
+
+export interface MenuSection {
+  id: string;
+  heading?: string;
+  items: MenuItemConfig[];
+  type?: 'menu' | 'separator';
+}
+
+export interface MenuItemConfig {
+  id: string;
+  label: string;
+  description?: string;
+  action: string;
+  enabled?: boolean;
+  icon?: string;
+  data?: any;
+}
+
+export class EnhancedInteractiveMenu extends EventEmitter {
+  private renderer: EnhancedWindowLayoutRenderer;
+  private config: EnhancedMenuConfig;
+  private isActive: boolean = false;
+  private exitConfirmationPending: boolean = false;
+  private ctrlCPressed: boolean = false;
+
+  constructor(config: EnhancedMenuConfig) {
+    super();
+    this.config = config;
+    this.renderer = new EnhancedWindowLayoutRenderer(config.theme || DefaultColorThemes.default);
+  }
+
+  /**
+   * Start the interactive menu session
+   */
+  async start(): Promise<WindowContentItem | null> {
+    return new Promise((resolve, reject) => {
+      this.isActive = true;
+      this.setupKeyHandling(resolve, reject);
+      this.render();
+    });
+  }
+
+  /**
+   * Stop the interactive menu session
+   */
+  stop(): void {
+    this.isActive = false;
+    if (process.stdin.isTTY) {
+      process.stdin.setRawMode(false);
+    }
+    process.stdin.removeAllListeners('keypress');
+  }
+
+  /**
+   * Update menu content and re-render
+   */
+  updateContent(sections: MenuSection[]): void {
+    this.config.sections = sections;
+    if (this.isActive) {
+      this.render();
+    }
+  }
+
+  private setupKeyHandling(resolve: (value: WindowContentItem | null) => void, reject: (error: Error) => void): void {
+    if (!process.stdin.isTTY) {
+      reject(new Error('Not running in a TTY environment'));
+      return;
+    }
+
+    process.stdin.setRawMode(true);
+    process.stdin.resume();
+    process.stdin.setEncoding('utf8');
+
+    const keyPressListener = (chunk: any, key: any) => {
+      if (!this.isActive || !key) return;
+
+      try {
+        this.handleKeyPress(key, resolve, reject);
+      } catch (error) {
+        this.stop();
+        reject(error instanceof Error ? error : new Error('Key handling error'));
+      }
+    };
+
+    process.stdin.on('keypress', keyPressListener);
+    
+    // Setup keypress detection
+    if (typeof process.stdin.setRawMode === 'function') {
+      const keypress = require('keypress');
+      keypress(process.stdin);
+    }
+  }
+
+  private handleKeyPress(
+    key: any, 
+    resolve: (value: WindowContentItem | null) => void, 
+    reject: (error: Error) => void
+  ): void {
+    // Handle Ctrl+C exit pattern
+    if (key.ctrl && key.name === 'c') {
+      if (!this.ctrlCPressed) {
+        this.ctrlCPressed = true;
+        this.showCtrlCConfirmation();
+        return;
+      } else {
+        // Second Ctrl+C - force exit
+        this.stop();
+        if (this.config.onExit) {
+          this.config.onExit().finally(() => resolve(null));
+        } else {
+          resolve(null);
+        }
+        return;
+      }
+    }
+
+    // Reset Ctrl+C state on other keys
+    if (this.ctrlCPressed && !(key.ctrl && key.name === 'c')) {
+      this.ctrlCPressed = false;
+      this.render(); // Re-render to remove Ctrl+C message
+    }
+
+    // Handle arrow key navigation
+    if (key.name === 'up' || key.name === 'down') {
+      const direction = key.name === 'up' ? 'up' : 'down';
+      if (this.renderer.navigate(direction)) {
+        this.render();
+      }
+      return;
+    }
+
+    // Handle Enter key
+    if (key.name === 'return') {
+      const selectedItem = this.renderer.getSelectedItem();
+      if (!selectedItem) return;
+
+      // Handle Exit item with confirmation
+      if (selectedItem.id === 'exit') {
+        if (!this.exitConfirmationPending) {
+          this.exitConfirmationPending = true;
+          this.showExitConfirmation();
+          return;
+        } else {
+          // Second Enter on exit - confirm exit
+          this.stop();
+          if (this.config.onExit) {
+            this.config.onExit().finally(() => resolve(null));
+          } else {
+            resolve(null);
+          }
+          return;
+        }
+      }
+
+      // Reset exit confirmation on other items
+      if (this.exitConfirmationPending && selectedItem.id !== 'exit') {
+        this.exitConfirmationPending = false;
+        this.render();
+      }
+
+      // Handle regular item selection
+      this.stop();
+      if (this.config.onSelection) {
+        this.config.onSelection(selectedItem).finally(() => resolve(selectedItem));
+      } else {
+        resolve(selectedItem);
+      }
+      return;
+    }
+
+    // Handle Escape key
+    if (key.name === 'escape') {
+      this.stop();
+      resolve(null);
+      return;
+    }
+  }
+
+  private render(): void {
+    console.clear();
+    
+    // Convert menu sections to window content
+    const windowContent = this.buildWindowContent();
+    
+    const windowConfig: WindowLayoutConfig = {
+      title: this.config.title,
+      subtitle: this.config.subtitle,
+      content: windowContent,
+      theme: this.config.theme || DefaultColorThemes.default
+    };
+
+    const output = this.renderer.renderWindow(windowConfig);
+    console.log(output);
+  }
+
+  private buildWindowContent(): WindowContentSection[] {
+    const sections: WindowContentSection[] = [];
+    
+    for (const configSection of this.config.sections) {
+      if (configSection.type === 'separator') {
+        sections.push({
+          id: configSection.id,
+          heading: configSection.heading,
+          items: [],
+          type: 'separator'
+        });
+      } else {
+        const items: WindowContentItem[] = configSection.items.map(item => ({
+          id: item.id,
+          label: item.label,
+          description: item.description || '',
+          enabled: item.enabled !== false,
+          icon: item.icon,
+          data: item
+        }));
+
+        sections.push({
+          id: configSection.id,
+          heading: configSection.heading,
+          items: items,
+          type: 'menu'
+        });
+      }
+    }
+
+    return sections;
+  }
+
+  private showExitConfirmation(): void {
+    // Update the exit item to show confirmation message
+    const exitSection = this.config.sections.find(section => 
+      section.items?.some(item => item.id === 'exit')
+    );
+    
+    if (exitSection) {
+      const exitItem = exitSection.items.find(item => item.id === 'exit');
+      if (exitItem) {
+        exitItem.label = 'Press Enter again to shut down Templum CLI';
+        this.render();
+      }
+    }
+  }
+
+  private showCtrlCConfirmation(): void {
+    console.clear();
+    const windowConfig: WindowLayoutConfig = {
+      title: this.config.title,
+      subtitle: 'Press Ctrl+C again to shut down Templum CLI',
+      content: this.buildWindowContent(),
+      theme: this.config.theme || DefaultColorThemes.default
+    };
+
+    const output = this.renderer.renderWindow(windowConfig);
+    console.log(output);
+  }
+
+  /**
+   * Create default menu sections with proper ordering
+   */
+  static createDefaultSections(backendServices?: any[]): MenuSection[] {
+    const sections: MenuSection[] = [];
+
+    // Main menu items
+    sections.push({
+      id: 'main-actions',
+      items: [
+        {
+          id: 'backend-services',
+          label: 'Backend Services',
+          description: 'View and manage connected backend services',
+          action: 'navigate:services',
+          icon: ''
+        },
+        {
+          id: 'execute-commands',
+          label: 'Execute Commands',
+          description: 'Run commands on connected backends',
+          action: 'navigate:commands',
+          icon: ''
+        },
+        {
+          id: 'system-status',
+          label: 'System Status',
+          description: 'View system health and configuration',
+          action: 'execute:status',
+          icon: ''
+        },
+        {
+          id: 'settings',
+          label: 'Settings',
+          description: 'Configure Templum behavior',
+          action: 'navigate:settings',
+          icon: ''
+        }
+      ]
+    });
+
+    // Backend services if provided (connected first, then alphabetical)
+    if (backendServices && backendServices.length > 0) {
+      const connectedServices = backendServices
+        .filter(service => service.connected)
+        .sort((a, b) => a.id.localeCompare(b.id));
+      
+      const disconnectedServices = backendServices
+        .filter(service => !service.connected)
+        .sort((a, b) => a.id.localeCompare(b.id));
+
+      const serviceItems = [...connectedServices, ...disconnectedServices].map(service => ({
+        id: `service-${service.id}`,
+        label: service.id,
+        description: `${service.connected ? 'Connected' : 'Disconnected'} - ${service.health || 'Unknown'}`,
+        action: `service:info:${service.id}`,
+        enabled: true,
+        icon: service.connected && service.health === 'healthy' ? '' : ''
+      }));
+
+      if (serviceItems.length > 0) {
+        sections.push({
+          id: 'backend-services',
+          heading: 'Available Services',
+          items: serviceItems
+        });
+      }
+    }
+
+    // Separator
+    sections.push({
+      id: 'separator',
+      type: 'separator',
+      items: []
+    });
+
+    // Navigation items
+    sections.push({
+      id: 'navigation',
+      items: [
+        {
+          id: 'back',
+          label: 'Back',
+          action: 'navigate:back',
+          enabled: true
+        },
+        {
+          id: 'home',
+          label: 'Home',
+          action: 'navigate:home',
+          enabled: true
+        },
+        {
+          id: 'help',
+          label: 'Help',
+          action: 'show:help',
+          enabled: true
+        },
+        {
+          id: 'exit',
+          label: 'Exit',
+          action: 'system:exit',
+          enabled: true
+        }
+      ]
+    });
+
+    return sections;
   }
 }
 
@@ -585,8 +1256,8 @@ export class ResponsiveLayout extends EventEmitter {
       // Compact vertical layout for small screens
       return this.formatCompactTable(data, headers);
     } else {
-      // Traditional table layout for medium/large screens
-      return this.formatFullTable(data, headers, maxWidth);
+      // Traditional table layout with consistency framework integration
+      return this.formatFullTableWithConsistency(data, headers, maxWidth);
     }
   }
 
@@ -651,6 +1322,83 @@ export class ResponsiveLayout extends EventEmitter {
     result += '└' + colWidths.map(w => '─'.repeat(w + 2)).join('┴') + '┘\n';
     
     return result;
+  }
+
+  private formatFullTableWithConsistency(data: any[], headers: string[], maxWidth: number): string {
+    if (data.length === 0) return '';
+    
+    // Calculate column widths using consistency framework approach
+    // Apply standard 3-character padding as per consistency requirements
+    const STANDARD_PADDING = 3;
+    const colWidths = headers.map(header => {
+      const headerWidth = this.stripAnsiCodes(header).length;
+      const contentWidth = Math.max(...data.map(row => 
+        this.stripAnsiCodes(String(row[header] || '')).length
+      ));
+      return Math.max(headerWidth, contentWidth);
+    });
+    
+    // Apply width standards: minimum width for widest contents + standard padding
+    const optimalWidth = Math.max(...colWidths) + (STANDARD_PADDING * 2);
+    const constrainedWidth = Math.min(optimalWidth, maxWidth - (headers.length * 3));
+    
+    // Adjust widths proportionally if table exceeds maxWidth
+    const totalContentWidth = colWidths.reduce((sum, width) => sum + width, 0);
+    const borderAndPaddingWidth = (headers.length + 1) + (headers.length * 2); // borders + cell padding
+    const totalTableWidth = totalContentWidth + borderAndPaddingWidth;
+    
+    if (totalTableWidth > maxWidth) {
+      const availableContentWidth = maxWidth - borderAndPaddingWidth;
+      const scaleFactor = availableContentWidth / totalContentWidth;
+      colWidths.forEach((width, index) => {
+        colWidths[index] = Math.max(8, Math.floor(width * scaleFactor)); // Min 8 chars per column
+      });
+    }
+    
+    // Build table with consistency framework separator patterns
+    let result = '';
+    
+    // Use standardized border characters (━ for major sections as per consistency framework)
+    const borderChar = '─'; // Horizontal for table borders
+    const verticalChar = '│'; // Vertical for table borders
+    
+    // Header with consistent formatting
+    result += '┌' + colWidths.map(w => borderChar.repeat(w + 2)).join('┬') + '┐\n';
+    result += verticalChar + headers.map((header, i) => {
+      const paddedHeader = ` ${header.padEnd(colWidths[i])} `;
+      return this.config.theme.primary(paddedHeader);
+    }).join(verticalChar) + verticalChar + '\n';
+    
+    // Header separator (major section separator as per consistency framework)
+    result += '├' + colWidths.map(w => borderChar.repeat(w + 2)).join('┼') + '┤\n';
+    
+    // Data rows with consistent spacing
+    data.forEach((row, rowIndex) => {
+      result += verticalChar + headers.map((header, colIndex) => {
+        const value = String(row[header] || '');
+        const width = colWidths[colIndex];
+        
+        // Truncate with ellipsis if necessary (consistent truncation pattern)
+        let cellContent = value.length > width ? 
+          value.substring(0, width - 1) + '…' : value;
+        
+        // Apply consistent padding (1 space each side as per table cell standards)
+        return ` ${cellContent.padEnd(width)} `;
+      }).join(verticalChar) + verticalChar + '\n';
+    });
+    
+    // Bottom border
+    result += '└' + colWidths.map(w => borderChar.repeat(w + 2)).join('┴') + '┘\n';
+    
+    return result;
+  }
+
+  /**
+   * Strip ANSI color codes for accurate width measurement
+   * @private
+   */
+  private stripAnsiCodes(text: string): string {
+    return text.replace(/\x1b\[[0-9;]*m/g, '');
   }
 
   private setupResizeListener(): void {
@@ -1189,7 +1937,7 @@ export class InteractiveSearch extends EventEmitter {
   }
 
   private renderHeader(breakpoint: 'small' | 'medium' | 'large'): void {
-    const title = this.config.theme.primary('🔍 Interactive Search');
+    const title = this.config.theme.primary('[SEARCH] Interactive Search');
     const subtitle = this.config.theme.muted(`${this.filteredItems.length} results`);
     
     if (breakpoint === 'small') {
@@ -1197,7 +1945,7 @@ export class InteractiveSearch extends EventEmitter {
     } else {
       console.log(`${title} - ${subtitle}`);
     }
-    console.log(this.config.theme.muted('─'.repeat(Math.min(60, process.stdout.columns || 80))));
+    console.log(this.config.theme.muted('-'.repeat(Math.min(60, process.stdout.columns || 80))));
   }
 
   private renderSearchInput(_breakpoint: 'small' | 'medium' | 'large'): void {
@@ -1254,7 +2002,7 @@ export class InteractiveSearch extends EventEmitter {
   }
 
   private renderResultItem(result: SearchResult, isSelected: boolean, breakpoint: 'small' | 'medium' | 'large'): void {
-    const indicator = isSelected ? '❯' : ' ';
+    const indicator = isSelected ? '>' : ' ';
     const theme = isSelected ? this.config.theme.accent : this.config.theme.primary;
     
     if (breakpoint === 'small') {
@@ -1284,10 +2032,10 @@ export class InteractiveSearch extends EventEmitter {
 
   private renderFooter(breakpoint: 'small' | 'medium' | 'large'): void {
     const help = breakpoint === 'small' 
-      ? 'ESC: cancel | ENTER: select | ↑↓: navigate'
-      : 'ESC: cancel | ENTER: select | ↑↓: navigate | TAB: filter | Type: search';
+      ? 'ESC: cancel | ENTER: select | UP/DOWN: navigate'
+      : 'ESC: cancel | ENTER: select | UP/DOWN: navigate | TAB: filter | Type: search';
     
-    console.log(this.config.theme.muted('─'.repeat(Math.min(60, process.stdout.columns || 80))));
+    console.log(this.config.theme.muted('-'.repeat(Math.min(60, process.stdout.columns || 80))));
     console.log(this.config.theme.muted(help));
   }
 

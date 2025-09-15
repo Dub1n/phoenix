@@ -1,10 +1,12 @@
-/**---
- * title: [CLI Interface Adapter - Abstraction Layer Implementation]
- * tags: [Interface, Adapter, CLI, Abstraction]
- * provides: [CLIInterfaceAdapter, Abstracted CLI Integration]
- * requires: [ITemplumOrchestrator, CLI Framework, Universal Types]
- * description: [Abstracted CLI interface adapter that depends on ITemplumOrchestrator interface, not concrete implementations]
- * ---*/
+/**
+---
+title: [CLI Interface Adapter - Abstraction Layer Implementation]
+tags: [Interface, Adapter, CLI, Abstraction]
+provides: [CLIInterfaceAdapter, Abstracted CLI Integration]
+requires: [ITemplumOrchestrator, CLI Framework, Universal Types]
+description: [Abstracted CLI interface adapter that depends on ITemplumOrchestrator interface, not concrete implementations]
+---
+*/
 
 import { EventEmitter } from 'events';
 import * as readline from 'readline';
@@ -35,6 +37,12 @@ import {
   InteractiveMenuRenderer, 
   MenuInteractionResult 
 } from './interactive-menu-renderer';
+import { 
+  CLIDisplayConsistencyEngine, 
+  createCLIDisplayConsistencyEngine,
+  BackendStatusDisplayData 
+} from './cli-display-consistency-engine';
+import { ServiceInfo } from './service-ordering-manager';
 
 /**
  * CLI Input Types (Interface-specific)
@@ -311,6 +319,7 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
   private interactiveMenuRenderer: InteractiveMenuRenderer | null = null;
   private interactionMode: 'menu' | 'command' = 'menu';
   private sessionManager: CLISessionManager;
+  private consistencyEngine: CLIDisplayConsistencyEngine;
 
   constructor(config?: Partial<CLIAdapterConfig>) {
     super();
@@ -337,6 +346,23 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
     // Validation-Required: session-restoration, state-synchronization, cleanup-verification
     // Pattern-Info: { approach: "constructor-initialization", alternatives: "lazy-initialization", trade-offs: "startup-cost-vs-reliability" }
     this.sessionManager = new CLISessionManager();
+    
+    // Initialize consistency engine with responsive layout integration
+    // TODO: [TASK-ID-005] Pattern: display-consistency-integration | Complexity: 6 | Dependencies: consistency-framework,responsive-layout
+    // Context: Integration of CLI display consistency engine for uniform formatting across all display elements
+    // Validation-Required: consistency-enforcement, skin-compatibility, responsive-behavior
+    // Pattern-Info: { approach: "centralized-consistency-engine", alternatives: "distributed-formatting", trade-offs: "uniformity-vs-flexibility" }
+    this.consistencyEngine = createCLIDisplayConsistencyEngine({
+      enforceWidthStandards: this.config.enableResponsiveLayout,
+      enforceServiceOrdering: true, // Always enforce connected-first, alphabetical ordering
+      enforceLayoutNormalization: true,
+      skinCompatibilityMode: true,
+      responsiveBreakpoints: {
+        small: 60,
+        medium: 100,
+        large: 140
+      }
+    });
   }
 
   /**
@@ -717,9 +743,13 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
               if (result.command) {
                 await this.executeMenuCommand(result.command, result.data);
                 
-                // Pause briefly to show result before returning to menu
-                console.log(chalk.gray('\nPress Enter to continue...'));
-                await this.waitForKeypress();
+                // TODO: [TASK-MCP-010-002] Pattern: cli-design-compliance | Complexity: 3 | Dependencies: command-execution,navigation-flow
+                // Context: Replaced Press Enter message with timeout-based flow per CLI-design specification
+                // Validation-Required: command-execution-flow, user-experience-timing, cli-design-compliance
+                // Pattern-Info: { approach: "timeout-based-continuation", alternatives: "immediate-return", trade-offs: "result-visibility-vs-flow-speed" }
+                // Brief pause to show result, then return to menu
+                // CLI-design compliance: No Press Enter messages
+                await new Promise(resolve => setTimeout(resolve, 1500));
               }
               break;
               
@@ -739,8 +769,13 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
             sessionRunning = false;
           } else {
             console.error(chalk.red('Menu interaction error:'), error);
-            console.log(chalk.gray('Press Enter to continue...'));
-            await this.waitForKeypress();
+            // TODO: [TASK-MCP-010-003] Pattern: cli-design-compliance | Complexity: 3 | Dependencies: error-handling,navigation-flow
+            // Context: Replaced Press Enter message with timeout-based error handling per CLI-design specification
+            // Validation-Required: error-display-timing, user-experience-flow, cli-design-compliance
+            // Pattern-Info: { approach: "timeout-based-error-handling", alternatives: "immediate-return", trade-offs: "error-visibility-vs-flow-interruption" }
+            // Brief pause to display error, then return to menu
+            // CLI-design compliance: No Press Enter messages
+            await new Promise(resolve => setTimeout(resolve, 2000));
           }
         }
       }
@@ -1731,70 +1766,97 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
   }
 
   /**
-   * Display backend status information with responsive layout
+   * Display backend status information using consistency framework
    * @private
    */
   private displayBackendStatus(backendConnections: any): void {
-    const theme = this.terminalUI.getTheme();
-    const layout = this.terminalUI.getLayout();
-    
-    // Safety check: ensure theme has proper functions before using
-    const isThemeValid = theme && 
-      typeof theme.primary === 'function' &&
-      typeof theme.info === 'function' &&
-      typeof theme.success === 'function' &&
-      typeof theme.warning === 'function';
-    
-    if (!isThemeValid) {
-      console.log('\n🌐 Backend Service Status:');
-    } else {
-      console.log(theme.primary('\n🌐 Backend Service Status:'));
-    }
-    
-    // Create table data for responsive display
-    const tableData = Object.entries(backendConnections.backends).map(([serviceId, status]) => {
+    // Convert backend connections to ServiceInfo format for consistency engine
+    const services: ServiceInfo[] = Object.entries(backendConnections.backends).map(([serviceId, status]) => {
       const statusTyped = status as any;
       return {
-        service: serviceId,
-        status: statusTyped.connected ? 'Connected' : 'Disconnected',
-        health: statusTyped.health || 'Unknown',
-        response: statusTyped.responseTime ? `${statusTyped.responseTime}ms` : 'N/A',
-        capabilities: statusTyped.capabilities?.slice(0, 2).join(', ') || 'None'
-      };
+        id: serviceId,
+        name: serviceId,
+        connected: statusTyped.connected || false,
+        health: statusTyped.health || 'unknown',
+        responseTime: statusTyped.responseTime,
+        capabilities: statusTyped.capabilities || [],
+        lastCheck: statusTyped.lastCheck || Date.now(),
+        version: statusTyped.version,
+        metadata: statusTyped
+      } as ServiceInfo;
+    });
+
+    // Use consistency engine for backend status display
+    const displayData: BackendStatusDisplayData = {
+      services,
+      context: 'status-display',
+      showHealthDetails: true,
+      showResponseTimes: true,
+      showCapabilities: true
+    };
+
+    try {
+      // Apply consistency framework
+      const consistencyResult = this.consistencyEngine.formatBackendStatusDisplay(displayData);
+      
+      // Set theme for skin compatibility
+      const theme = this.terminalUI.getTheme();
+      if (theme) {
+        this.consistencyEngine.setTheme(theme);
+      }
+      
+      // Display the consistently formatted content
+      console.log(consistencyResult.formattedContent);
+      
+      // Display additional statistics with consistent formatting
+      if (consistencyResult.serviceMetadata) {
+        const { connectedCount, totalCount, healthyCount } = consistencyResult.serviceMetadata;
+        const statusText = healthyCount > 0 ? 'Operational' : 'Discovery Mode';
+        
+        // Use theme functions if available
+        if (theme && typeof theme.info === 'function' && typeof theme.success === 'function' && typeof theme.warning === 'function') {
+          const statusDisplay = healthyCount > 0 ? theme.success(statusText) : theme.warning(statusText);
+          console.log(theme.info(`Connected: ${connectedCount}/${totalCount} | Healthy: ${healthyCount}/${connectedCount} | Status: ${statusDisplay}`));
+        } else {
+          console.log(`Connected: ${connectedCount}/${totalCount} | Healthy: ${healthyCount}/${connectedCount} | Status: ${statusText}`);
+        }
+      }
+      
+      // Display recommendations if any
+      if (consistencyResult.recommendations.length > 0) {
+        console.log('\n💡 Recommendations:');
+        consistencyResult.recommendations.forEach(rec => {
+          console.log(`   ${rec}`);
+        });
+      }
+      
+      console.log();
+      
+    } catch (error) {
+      console.warn('CLIInterfaceAdapter: Consistency engine failed, using fallback display');
+      console.error('Error details:', error);
+      
+      // Fallback to basic display
+      this.displayBackendStatusFallback(backendConnections);
+    }
+  }
+
+  /**
+   * Fallback backend status display when consistency engine fails
+   * @private
+   */
+  private displayBackendStatusFallback(backendConnections: any): void {
+    console.log('\n🌐 Backend Service Status (Fallback Display):');
+    console.log('━'.repeat(60));
+    
+    Object.entries(backendConnections.backends).forEach(([serviceId, status]) => {
+      const statusTyped = status as any;
+      const icon = statusTyped.connected ? '🟢' : '🔴';
+      const health = statusTyped.health || 'Unknown';
+      console.log(`${icon} ${serviceId.padEnd(20)} ${statusTyped.connected ? 'Connected' : 'Disconnected'} | ${health}`);
     });
     
-    const headers = ['service', 'status', 'health', 'response', 'capabilities'];
-    
-    // Use responsive table layout
-    if (this.config.enableResponsiveLayout) {
-      const table = layout.createTable(tableData, headers);
-      console.log(table);
-    } else {
-      // Fallback to original table format
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.log('Service      Status      Health    Response   Capabilities');
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      
-      tableData.forEach(row => {
-        const statusIcon = row.status === 'Connected' ? '🟢' : '🔴';
-        const statusText = `${statusIcon} ${row.status}`;
-        console.log(`${row.service.padEnd(12)} ${statusText.padEnd(12)} ${row.health.padEnd(9)} ${row.response.padEnd(10)} ${row.capabilities}`);
-      });
-      
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    }
-    
-    const connectedCount = Object.values(backendConnections.backends).filter((b: any) => b.connected).length;
-    const totalCount = Object.keys(backendConnections.backends).length;
-    const healthyCount = Object.values(backendConnections.backends).filter((b: any) => b.health === 'healthy').length;
-    
-    // Use theme functions only if theme is valid, otherwise use plain text
-    if (isThemeValid) {
-      console.log(theme.info(`Connected: ${connectedCount}/${totalCount} | Healthy: ${healthyCount}/${connectedCount} | Status: ${healthyCount > 0 ? theme.success('Operational') : theme.warning('Discovery Mode')}`));
-    } else {
-      const statusText = healthyCount > 0 ? 'Operational' : 'Discovery Mode';
-      console.log(`Connected: ${connectedCount}/${totalCount} | Healthy: ${healthyCount}/${connectedCount} | Status: ${statusText}`);
-    }
+    console.log('━'.repeat(60));
     console.log();
   }
 

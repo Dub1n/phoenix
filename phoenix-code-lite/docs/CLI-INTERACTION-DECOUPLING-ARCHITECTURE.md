@@ -35,7 +35,8 @@ private showMainMenu(): void {
 }
 ```
 
-**Impact**: 
+**Impact**:
+
 - Inconsistent menu structures across modes
 - Maintenance burden when adding/changing options
 - Risk of feature divergence between modes
@@ -54,6 +55,7 @@ private processAdvancedCommands(cmd: string, context: SessionContext): MenuActio
 ```
 
 **Impact**:
+
 - Business logic mixed with UI concerns
 - Difficult to add new commands or contexts
 - Inconsistent command handling patterns
@@ -73,6 +75,7 @@ switch (context.level) {
 ```
 
 **Impact**:
+
 - Cannot easily test menu logic independent of interaction modes
 - Difficult to extend with new contexts or modes
 - Hard to maintain consistency across different interaction paths
@@ -85,21 +88,21 @@ switch (context.level) {
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                     USER INTERACTION                   │
+│                     USER INTERACTION                    │
 ├─────────────────────────────────────────────────────────┤
 │  Interactive Mode    │  Command Mode   │  Future Modes  │
 │  (Arrow Navigation)  │  (Text Input)   │  (Voice, etc.) │
 ├─────────────────────────────────────────────────────────┤
-│              INTERACTION ABSTRACTION LAYER             │
+│              INTERACTION ABSTRACTION LAYER              │
 ├─────────────────────────────────────────────────────────┤
-│                   MENU DEFINITION LAYER                │
-│         (Data structures describing menus/commands)    │
+│                   MENU DEFINITION LAYER                 │
+│         (Data structures describing menus/commands)     │
 ├─────────────────────────────────────────────────────────┤
-│                   COMMAND EXECUTION LAYER              │
-│              (Business logic implementation)           │
+│                   COMMAND EXECUTION LAYER               │
+│              (Business logic implementation)            │
 ├─────────────────────────────────────────────────────────┤
-│                      SKINS SYSTEM                      │
-│            (Menu/command definitions per domain)       │
+│                      SKINS SYSTEM                       │
+│            (Menu/command definitions per domain)        │
 └─────────────────────────────────────────────────────────┘
 ```
 

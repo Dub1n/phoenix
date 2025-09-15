@@ -1795,66 +1795,66 @@ export async function deactivate() {
     }
 
     // Phase 3: Clean up registered commands
-    console.log('⚡ Phase 3: Command registration cleanup...');
+    console.log('Phase 3: Command registration cleanup...');
     if (registeredCommands.size > 0) {
-      console.log(`🔧 Cleaning up ${registeredCommands.size} registered commands...`);
+      console.log(`Cleaning up ${registeredCommands.size} registered commands...`);
       for (const [commandId, _disposable] of Array.from(registeredCommands)) {
         try {
           // Commands are disposed automatically by VSCode context subscriptions
-          console.log(`✅ Command ${commandId} marked for cleanup`);
+          console.log(`Command ${commandId} marked for cleanup`);
         } catch (error) {
-          console.error(`❌ Failed to cleanup command ${commandId}:`, error);
+          console.error(`Failed to cleanup command ${commandId}:`, error);
         }
       }
       registeredCommands.clear();
-      console.log('✅ All registered commands cleaned up');
+      console.log('All registered commands cleaned up');
     }
 
     // Phase 4: Clean up WebView providers with state preservation
-    console.log('🖼️ Phase 4: WebView provider cleanup...');
+    console.log('Phase 4: WebView provider cleanup...');
     
     if (universalWebViewProvider) {
       try {
         // WebView providers are disposed automatically by VSCode context subscriptions
         universalWebViewProvider = undefined;
-        console.log('✅ Universal WebView provider cleaned up');
+        console.log('Universal WebView provider cleaned up');
       } catch (error) {
-        console.error('❌ Universal WebView provider cleanup failed:', error);
+        console.error('Universal WebView provider cleanup failed:', error);
       }
     }
 
     if (serviceStatusWebViewProvider) {
       try {
         serviceStatusWebViewProvider = undefined;
-        console.log('✅ Service Status WebView provider cleaned up');
+        console.log('Service Status WebView provider cleaned up');
       } catch (error) {
-        console.error('❌ Service Status WebView provider cleanup failed:', error);
+        console.error('Service Status WebView provider cleanup failed:', error);
       }
     }
 
     if (sessionManagerWebViewProvider) {
       try {
         sessionManagerWebViewProvider = undefined;
-        console.log('✅ Session Manager WebView provider cleaned up');
+        console.log('Session Manager WebView provider cleaned up');
       } catch (error) {
-        console.error('❌ Session Manager WebView provider cleanup failed:', error);
+        console.error('Session Manager WebView provider cleanup failed:', error);
       }
     }
 
     // Phase 5: State persistence and core engine shutdown
-    console.log('🏛️ Phase 5: Core engine shutdown...');
+    console.log('Phase 5: Core engine shutdown...');
     if (templumCore) {
       try {
         // Save current state if state manager available
         const stateManager = (templumCore as any).getStateManager?.();
         if (stateManager && (stateManager as any).persistState) {
-          console.log('💾 Persisting current state...');
+          console.log('Persisting current state...');
           await (stateManager as any).persistState();
-          console.log('✅ State persisted successfully');
+          console.log('State persisted successfully');
         }
 
         // Graceful shutdown with timeout
-        console.log('🔄 Initiating core engine shutdown...');
+        console.log('Initiating core engine shutdown...');
         const shutdownPromise = templumCore.shutdown();
         const timeoutPromise = new Promise<void>((_, reject) => {
           setTimeout(() => reject(new Error('Shutdown timeout after 10 seconds')), 10000);
@@ -1862,18 +1862,18 @@ export async function deactivate() {
 
         await Promise.race([shutdownPromise, timeoutPromise]);
         templumCore = undefined;
-        console.log('✅ Templum Core engine shutdown completed');
+        console.log('Templum Core engine shutdown completed');
         
       } catch (shutdownError) {
-        console.error('❌ Error during Templum Core shutdown:', shutdownError);
+        console.error('Error during Templum Core shutdown:', shutdownError);
         // Force cleanup even if shutdown fails
         templumCore = undefined;
-        console.log('⚠️ Templum Core force-cleaned after shutdown error');
+        console.log('Templum Core force-cleaned after shutdown error');
       }
     }
 
     // Phase 6: Final cleanup and metrics
-    console.log('📊 Phase 6: Final cleanup and metrics...');
+    console.log('Phase 6: Final cleanup and metrics...');
     
     try {
       // Clear any remaining global state
@@ -1907,14 +1907,14 @@ export async function deactivate() {
         (process as any).emit('templum:metrics', metricsPayload);
       } catch (metricsError) {
         // Metrics emission failed, but don't block deactivation
-        console.warn('⚠️ Failed to emit final metrics:', metricsError);
+        console.warn('Failed to emit final metrics:', metricsError);
       }
 
-      console.log(`✅ Final cleanup completed in ${deactivationDuration}ms`);
-      console.log('🎉 Templum extension deactivation complete - all resources cleaned up');
+      console.log(`Final cleanup completed in ${deactivationDuration}ms`);
+      console.log('Templum extension deactivation complete - all resources cleaned up');
       
     } catch (finalError) {
-      console.error('❌ Error during final cleanup phase:', finalError);
+      console.error('Error during final cleanup phase:', finalError);
     }
 
   } catch (error) {

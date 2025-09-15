@@ -182,6 +182,7 @@ graph TD
 #### Synthesis Strategies
 
 **Enhancement Strategy**: One proposal is clearly superior
+
 ```yaml
 enhancement_approach:
   base_selection: "highest_scoring_proposal"
@@ -192,6 +193,7 @@ enhancement_approach:
 ```
 
 **Integration Strategy**: Multiple strong proposals with compatibility
+
 ```yaml
 integration_approach:
   base_selection: "most_reliable_proposal"
@@ -202,6 +204,7 @@ integration_approach:
 ```
 
 **Reconstruction Strategy**: Best components from flawed proposals
+
 ```yaml
 reconstruction_approach:
   base_selection: "build_from_scratch_using_best_components"
@@ -382,6 +385,7 @@ synthesis_risk_factors:
 ### Key Schema Fields for Synthesis
 
 When writing to hybrid.json, ensure you populate:
+
 - **initial_task**: Copy from one of the input files (should be identical across all)
 - **chain_specification**: Your synthesized optimal chain design
 - **engineering_profile**: Describe your multi-proposal synthesis approach
@@ -436,6 +440,15 @@ function updateSynthesisKnowledge(synthesisResult, executionOutcome) {
   );
 }
 ```
+
+## **PARALLEL OPPORTUNITIES**
+
+Agents working in parallel is a cornerstone of efficiency. You should be looking for opportunities to run agents in parallel, even if it seems like their job could be done a single agent. If it can be broken down, it should, within reason. Don't *force* any chain to utilise parallel operations, and don't make finding routes to use it your main objective, but spreading the work should be considered with weight.
+
+Example: If a validation can be performed using both qualitative and quantitative (e.g. AnalysisSystem script and CLI interactive testing) it would be preferrable to have separate Validation Agents perform these two tasks.
+
+Effectively, if, in your hybrid chain, there are any Agents whose task can be decomposed into non-conflicting subtasks
+that don't overlap other than reading the handoff(s), they might as well be separate Agents. It will result in quicker, more focused work.
 
 ## Key Rules
 

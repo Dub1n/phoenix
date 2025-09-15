@@ -519,4 +519,5 @@ if (require.main === module) {
   });
 }
 
-export { SimplePhase6Validator, ValidationReport };
+export { SimplePhase6Validator };
+export type { ValidationReport };
