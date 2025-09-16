@@ -22,6 +22,7 @@
 import fs from 'fs';
 import path from 'path';
 import { execSync } from 'child_process';
+import { resolveScopedFiles, appendScopeEvidence, filterScopedFiles } from '../core/scope-utils.js';
 
 // TODO: [TASK-VAL-CORE-FIX-001] Pattern: recursive-traversal-safety | Complexity: 8 | Dependencies: fs,path
 // Context: Fix infinite recursion bug in core validator directory traversal with comprehensive safety measures
@@ -140,7 +141,15 @@ export class CoreValidator {
     try {
       console.log('  Executing Core System validation commands...');
       console.log('  Source: TEMPLUM-TESTING-GUIDE.md Core System sections');
-      
+
+      const scopeResult = await resolveScopedFiles(projectInfo.path, scopeConfig, {
+        maxFiles: options.maxFiles ?? 500,
+        maxFileSize: 6 * 1024 * 1024,
+        maxTotalSize: 80 * 1024 * 1024
+      });
+      this.currentScope = scopeResult;
+      appendScopeEvidence(result, scopeResult, { includePatterns: true, limit: 12 });
+
       // Test 1: Configuration integrity check
       const configTest = await this.executeConfigurationIntegrityCheck(projectInfo, scopeConfig);
       result.tests.push(configTest);
@@ -186,12 +195,14 @@ export class CoreValidator {
       result.duration = Date.now() - this.validationStartTime;
       console.log('  Core System validation tests completed');
       
+      this.currentScope = null;
       return result;
       
     } catch (error) {
       result.status = 'FAIL';
       result.errors.push(`Core system validation failed: ${error.message}`);
       result.duration = Date.now() - this.validationStartTime;
+      this.currentScope = null;
       return result;
     }
   }
@@ -570,8 +581,32 @@ export class CoreValidator {
 
     return test;
   }
+  /**
+   * Find files matching patterns in current scope
+   */
+  findFilesInScope(projectInfo, patterns = [], scopeConfig = null) {
+    const scopeResult = this.currentScope;
+    if (!scopeResult) {
+      return [];
+    }
+
+    const filters = (patterns && patterns.length > 0)
+      ? patterns
+      : (scopeConfig && scopeConfig.patterns ? scopeConfig.patterns : []);
+
+    const combinedPatterns = Array.isArray(filters)
+      ? [...filters, '**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx']
+      : ['**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx'];
+
+    const filtered = filterScopedFiles(scopeResult, combinedPatterns, {
+      projectPath: projectInfo ? projectInfo.path : undefined,
+      fallbackPatterns: ['**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx']
+    });
+    return filtered.files;
+  }
 
   /**
+
    * Find configuration files in project
    */
   findConfigFiles(projectInfo) {
@@ -597,60 +632,6 @@ export class CoreValidator {
     return configFiles;
   }
 
-  /**
-   * Find files matching patterns in project scope
-   */
-  findFilesInScope(projectInfo, patterns, scopeConfig = null) {
-    const files = [];
-    
-    try {
-      // Use scope patterns if provided, otherwise use default patterns
-      const effectivePatterns = (scopeConfig && scopeConfig.patterns) ? scopeConfig.patterns : patterns;
-      
-      for (const pattern of effectivePatterns) {
-        // Simple glob-like pattern matching for common cases
-        if (pattern.includes('**')) {
-          // Handle recursive patterns - fix pattern replacement bug
-          const basePattern = pattern.replace(/\*\*\//g, '');
-          let searchPath;
-          
-          // Respect scope configuration instead of hardcoded 'src' search
-          if (scopeConfig && scopeConfig.patterns && scopeConfig.patterns.includes(pattern)) {
-            // Scope pattern - resolve relative to project root
-            searchPath = this.resolvePatternPath(projectInfo, pattern);
-          } else {
-            // Default pattern - search from src
-            searchPath = path.join(projectInfo.path, 'src');
-          }
-          
-          if (fs.existsSync(searchPath)) {
-            const visitedPaths = new Set();
-            const fileCount = { count: 0 };
-            this.walkDirectory(searchPath, basePattern, files, 0, visitedPaths, fileCount);
-          }
-        } else {
-          // Handle simple patterns
-          let searchPath;
-          
-          if (scopeConfig && scopeConfig.patterns && scopeConfig.patterns.includes(pattern)) {
-            // Scope pattern
-            searchPath = path.isAbsolute(pattern) ? pattern : path.join(projectInfo.path, pattern);
-          } else {
-            // Default pattern
-            searchPath = path.join(projectInfo.path, pattern);
-          }
-          
-          if (fs.existsSync(searchPath)) {
-            files.push(searchPath);
-          }
-        }
-      }
-    } catch (error) {
-      console.log(`      Warning: Error finding files: ${error.message}`);
-    }
-    
-    return files;
-  }
 
   /**
    * Walk directory recursively to find matching files with comprehensive safety measures

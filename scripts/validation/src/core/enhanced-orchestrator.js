@@ -15,7 +15,7 @@
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 
 // Get current directory for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -979,7 +979,8 @@ ${result.warnings.length > 0 ? `## Warnings\n\n${this.formatWarnings(result.warn
     
     try {
       // Dynamic import of validator
-      const { default: ValidatorClass } = await import(validatorPath);
+      const moduleUrl = pathToFileURL(validatorPath).href;
+      const { default: ValidatorClass } = await import(moduleUrl);
       const validator = new ValidatorClass();
       
       // Validate interface compliance
@@ -1732,15 +1733,24 @@ ${result.warnings.length > 0 ? `## Warnings\n\n${this.formatWarnings(result.warn
 export default EnhancedValidationOrchestrator;
 
 // CLI handling for direct execution
-if (import.meta.url === `file://${process.argv[1]}`) {
+const isDirectExecution = (() => {
+  if (!process.argv[1]) {
+    return false;
+  }
+  const entryPath = path.resolve(process.argv[1]);
+  const modulePath = fileURLToPath(import.meta.url);
+  return path.normalize(entryPath) === path.normalize(modulePath);
+})();
+
+if (isDirectExecution) {
   const main = async () => {
     try {
       const args = process.argv.slice(2);
       const orchestrator = new EnhancedValidationOrchestrator();
-      
+
       // Parse command line arguments
       let category, project, taskId, submitValidator, scopePatterns;
-      
+
       for (let i = 0; i < args.length; i++) {
         switch (args[i]) {
           case '--category':
@@ -1772,35 +1782,35 @@ if (import.meta.url === `file://${process.argv[1]}`) {
             break;
         }
       }
-      
+
       if (!category || !project || !taskId) {
         console.error('Missing required arguments: --category, --project, --task-id');
         process.exit(1);
       }
-      
+
       // Resolve project information from config file
       const projectInfo = await orchestrator.resolveProjectInfo(project);
-      
+
       const scopeConfig = {
         patterns: scopePatterns || ['**/*']
       };
-      
+
       // Handle validator submission workflow
       if (submitValidator) {
         console.log('Enhanced Validation System v3.0.0');
-        console.log(`Received new validator for category '${category}'.`);
-        
+        console.log('Received new validator for category ' + category + '.');
+
         const result = await orchestrator.submitAgentValidator(
-          submitValidator, 
-          category, 
-          projectInfo, 
+          submitValidator,
+          category,
+          projectInfo,
           { scopeConfig }
         );
-        
+
         if (result.success) {
-          console.log(`Loading new validator: ${category}-validator.js`);
+          console.log('Loading new validator: ' + category + '-validator.js');
           console.log('Executing validation with safety monitoring');
-          console.log(`Validation Results: ${result.integrationResult.status} (${result.integrationResult.duration || 'unknown duration'})`);
+          console.log('Validation Results: ' + result.integrationResult.status + ' (' + (result.integrationResult.duration || 'unknown duration') + ')');
           process.exit(0);
         } else {
           process.exit(1);
@@ -1808,44 +1818,44 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       } else {
         // Standard validation workflow
         console.log('Enhanced Validation System v3.0.0');
-        console.log(`Compatibility Check: ${category} category found`);
-        
+        console.log('Compatibility Check: ' + category + ' category found');
+
         try {
           await orchestrator.initialize();
           const validator = await orchestrator.getValidator(category);
-          
+
           if (!validator) {
-            console.log(`Compatibility Check: Category '${category}' not found.`);
+            console.log('Compatibility Check: Category ' + category + ' not found.');
             console.log('Extension Required: Please generate a validator script and submit it using the --submit-validator flag.');
             process.exit(1);
           }
-          
-          console.log(`Loading validator: ${category}-validator.js`);
+
+          console.log('Loading validator: ' + category + '-validator.js');
           console.log('Executing validation with safety monitoring');
-          
+
           const result = await orchestrator.orchestrateValidation(
-            projectInfo, 
-            category, 
+            projectInfo,
+            category,
             scopeConfig,
             { taskId }
           );
-          
-          console.log(`Validation Results: ${result.status} (${result.duration || 'unknown duration'})`);
+
+          console.log('Validation Results: ' + result.status + ' (' + (result.duration || 'unknown duration') + ')');
           console.log('All validations completed successfully');
           process.exit(result.status === 'PASS' ? 0 : 1);
-          
+
         } catch (error) {
           orchestrator.handleValidationError(error, projectInfo, category);
           process.exit(1);
         }
       }
-      
+
     } catch (error) {
-      console.error(`System error: ${error.message}`);
+      console.error('System error: ' + error.message);
       process.exit(1);
     }
   };
-  
+
   main().catch(error => {
     console.error('Fatal error:', error.message);
     process.exit(1);

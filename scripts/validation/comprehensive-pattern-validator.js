@@ -35,8 +35,8 @@ class ComprehensivePatternValidator {
    * Main validation orchestration
    */
   async validatePatterns(patternFiles) {
-    console.log('🔍 Starting Comprehensive Pattern Validation');
-    console.log(`📊 Analyzing ${patternFiles.length} pattern files\n`);
+    console.log('[~] Starting Comprehensive Pattern Validation');
+    console.log(`[~] Analyzing ${patternFiles.length} pattern files\n`);
 
     // Phase 1: Load and parse all patterns
     await this.loadPatterns(patternFiles);
@@ -64,7 +64,7 @@ class ComprehensivePatternValidator {
    * Load and parse pattern files
    */
   async loadPatterns(patternFiles) {
-    console.log('📂 Loading pattern files...');
+    console.log('[~] Loading pattern files...');
     
     for (const filePath of patternFiles) {
       try {
@@ -76,7 +76,7 @@ class ComprehensivePatternValidator {
       }
     }
     
-    console.log(`✅ Loaded ${this.patterns.length} patterns successfully\n`);
+    console.log(`[x] Loaded ${this.patterns.length} patterns successfully\n`);
   }
 
   /**
@@ -108,7 +108,7 @@ class ComprehensivePatternValidator {
    * Categorize pattern by filename
    */
   categorizePattern(fileName) {
-    if (fileName.includes('utility-pattern')) return 'utility';
+    if (fileName.includes('utils')) return 'utility';
     if (fileName.includes('intelligence-briefing-pattern')) return 'intelligence';
     if (fileName.includes('architectural') || fileName.includes('architecture')) return 'architecture';
     if (fileName.includes('integration')) return 'integration';
@@ -178,7 +178,7 @@ class ComprehensivePatternValidator {
    * Validate individual patterns with confidence scoring
    */
   async validateIndividualPatterns() {
-    console.log('🎯 Validating individual patterns with confidence scoring...');
+    console.log('[~] Validating individual patterns with confidence scoring...');
 
     for (const pattern of this.patterns) {
       const validation = await this.validateSinglePattern(pattern);
@@ -187,7 +187,7 @@ class ComprehensivePatternValidator {
       const confidence = this.calculateConfidenceScore(validation);
       this.confidenceScores.set(pattern.fileName, confidence);
       
-      console.log(`  ${validation.status === 'PASS' ? '✅' : validation.status === 'WARN' ? '⚠️' : '❌'} ${pattern.fileName} (${confidence}% confidence)`);
+      console.log(`  ${validation.status === 'PASS' ? '[x]' : validation.status === 'WARN' ? '[!]' : '[F]'} ${pattern.fileName} (${confidence}% confidence)`);
     }
     
     console.log('');
@@ -348,7 +348,7 @@ class ComprehensivePatternValidator {
    * Perform consistency verification across patterns
    */
   async performConsistencyVerification() {
-    console.log('🔄 Performing cross-pattern consistency verification...');
+    console.log('[~] Performing cross-pattern consistency verification...');
 
     // Group patterns by category
     const categoryGroups = this.patterns.reduce((groups, pattern) => {
@@ -442,7 +442,7 @@ class ComprehensivePatternValidator {
    * Perform integration validation
    */
   async performIntegrationValidation() {
-    console.log('🔗 Performing integration validation...');
+    console.log('[~] Performing integration validation...');
 
     // Identify cross-references
     await this.identifyCrossReferences();
@@ -565,7 +565,7 @@ class ComprehensivePatternValidator {
    * Consolidate intelligence findings
    */
   async consolidateIntelligence() {
-    console.log('🧠 Consolidating intelligence findings...');
+    console.log('[D] Consolidating intelligence findings...');
 
     const intelligence = {
       totalPatterns: this.patterns.length,
@@ -666,7 +666,7 @@ class ComprehensivePatternValidator {
    * Generate adaptive recommendations
    */
   async generateAdaptiveRecommendations() {
-    console.log('💡 Generating adaptive optimization recommendations...');
+    console.log('[>] Generating adaptive optimization recommendations...');
 
     const recommendations = [];
 
@@ -761,14 +761,14 @@ class ComprehensivePatternValidator {
  */
 async function main() {
   const patternFiles = [
-    '/mnt/c/Users/gabri/Documents/Infotopology/VDL_Vault/Templum/dev/patterns/service-utils-utility-pattern.md',
-    '/mnt/c/Users/gabri/Documents/Infotopology/VDL_Vault/Templum/dev/patterns/debug-utils-utility-pattern.md',
-    '/mnt/c/Users/gabri/Documents/Infotopology/VDL_Vault/cross-project-dev/config-utils-intelligence-briefing-pattern.md',
-    '/mnt/c/Users/gabri/Documents/Infotopology/VDL_Vault/Templum/dev/patterns/registry-utils-utility-pattern.md',
-    '/mnt/c/Users/gabri/Documents/Infotopology/VDL_Vault/Templum/dev/patterns/cache-utils-utility-pattern.md',
-    '/mnt/c/Users/gabri/Documents/Infotopology/VDL_Vault/cross-project-dev/performance-utils-intelligence-briefing-pattern.md',
-    '/mnt/c/Users/gabri/Documents/Infotopology/VDL_Vault/Templum/dev/patterns/terminal-formatter-utility-pattern.md',
-    '/mnt/c/Users/gabri/Documents/Infotopology/VDL_Vault/Templum/dev/patterns/type-guards-utility-pattern.md',
+    '/mnt/c/Users/gabri/Documents/Infotopology/VDL_Vault/Templum/dev/patterns/service-utils.md',
+    '/mnt/c/Users/gabri/Documents/Infotopology/VDL_Vault/Templum/dev/patterns/debug-utils.md',
+    '/mnt/c/Users/gabri/Documents/Infotopology/VDL_Vault/cross-project-dev/config-utils.md',
+    '/mnt/c/Users/gabri/Documents/Infotopology/VDL_Vault/Templum/dev/patterns/registry-utils.md',
+    '/mnt/c/Users/gabri/Documents/Infotopology/VDL_Vault/Templum/dev/patterns/cache-utils.md',
+    '/mnt/c/Users/gabri/Documents/Infotopology/VDL_Vault/cross-project-dev/performance-utils.md',
+    '/mnt/c/Users/gabri/Documents/Infotopology/VDL_Vault/Templum/dev/patterns/terminal-formatter.md',
+    '/mnt/c/Users/gabri/Documents/Infotopology/VDL_Vault/Templum/dev/patterns/type-guards.md',
     '/mnt/c/Users/gabri/Documents/Infotopology/VDL_Vault/Templum/dev/architecture/pattern-redundancy.md',
     '/mnt/c/Users/gabri/Documents/Infotopology/VDL_Vault/Templum/dev/architecture/pattern-usage-analysis.md',
     '/mnt/c/Users/gabri/Documents/Infotopology/VDL_Vault/Templum/dev/pattern-index.md',
@@ -787,7 +787,7 @@ async function main() {
     const report = await validator.validatePatterns(patternFiles);
     
     // Output summary
-    console.log('📋 VALIDATION SUMMARY');
+    console.log('VALIDATION SUMMARY');
     console.log('='.repeat(50));
     console.log(`Status: ${report.summary.validationStatus}`);
     console.log(`Total Patterns: ${report.summary.totalPatterns}`);
@@ -800,12 +800,12 @@ async function main() {
     // Save detailed report
     const reportPath = path.join(__dirname, '../validation-reports/comprehensive-pattern-validation-report.json');
     fs.writeFileSync(reportPath, JSON.stringify(report, null, 2), 'utf8');
-    console.log(`\n📄 Detailed report saved: ${reportPath}`);
+    console.log(`\n[x] Detailed report saved: ${reportPath}`);
     
     process.exit(report.summary.validationStatus === 'PASSED' ? 0 : 1);
     
   } catch (error) {
-    console.error(`❌ Validation failed: ${error.message}`);
+    console.error(`[F] Validation failed: ${error.message}`);
     process.exit(1);
   }
 }

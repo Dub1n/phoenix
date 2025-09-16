@@ -28201,8 +28201,8 @@
       "size": 4032
     },
     {
-      "path": "patterns/serialization-utils-safe-processing.md",
-      "name": "serialization-utils-safe-processing.md",
+      "path": "patterns/serialization-utils.md",
+      "name": "serialization-utils.md",
       "created": 1757853613.2347593,
       "modified": 1757853612.186919,
       "size": 15075
@@ -28334,15 +28334,15 @@
       "size": 9257
     },
     {
-      "path": "dev/test-utils-utility.md",
-      "name": "test-utils-utility.md",
+      "path": "dev/test-utils.md",
+      "name": "test-utils.md",
       "created": 1757851677.5045996,
       "modified": 1757851675.292342,
       "size": 18042
     },
     {
-      "path": "display/display-utils-utility.md",
-      "name": "display-utils-utility.md",
+      "path": "display/display-utils.md",
+      "name": "display-utils.md",
       "created": 1757851571.6359172,
       "modified": 1757851570.6037035,
       "size": 14667

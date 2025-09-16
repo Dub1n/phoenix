@@ -16,6 +16,9 @@
  * Interface Version: 3.0.0
  */
 
+// TODO[SCOPE-UTIL-ADOPTION]: Refactor this validator to use resolveScopedFiles/project scope helpers for consistent discovery.
+//    Usage example: const scope = await resolveScopedFiles(projectInfo.path, scopeConfig); appendScopeEvidence(result, scope);
+//    Replace manual pattern matching with filterScopedFiles(scope, ['**/*.ts', '**/*.js'], scopeConfig) before running analysis.
 import fs from 'fs';
 import path from 'path';
 import { execSync, spawn } from 'child_process';

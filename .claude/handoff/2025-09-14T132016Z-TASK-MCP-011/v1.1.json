@@ -37,7 +37,7 @@
         {
           "task_id": "pattern-event-utils",
           "agent_type": "Documentation Agent",
-          "task_description": "Create event-utils-utility.md pattern file following the established format and Pattern File Creation Guide from safe-consolidation-candidates.md",
+          "task_description": "Create event-utils.md pattern file following the established format and Pattern File Creation Guide from safe-consolidation-candidates.md",
           "timeout_seconds": 300,
           "success_criteria": ["Pattern file created", "Follows frontmatter schema", "Includes specific redundancy counts", "Minimal usage footprint API design"],
           "handoff_requirements": ["standalone response"]
@@ -61,7 +61,7 @@
         {
           "task_id": "pattern-theme-utils",
           "agent_type": "Documentation Agent",
-          "task_description": "Create theme-utils-utility.md pattern file for theme management consolidation",
+          "task_description": "Create theme-utils.md pattern file for theme management consolidation",
           "timeout_seconds": 300,
           "success_criteria": ["Pattern file created", "Centralized theme switching", "Interface adaptation support"],
           "handoff_requirements": ["standalone response"]
@@ -69,7 +69,7 @@
         {
           "task_id": "pattern-validator",
           "agent_type": "Documentation Agent",
-          "task_description": "Create validator-utility.md pattern file for validation logic consolidation with chainable API",
+          "task_description": "Create validator.md pattern file for validation logic consolidation with chainable API",
           "timeout_seconds": 300,
           "success_criteria": ["Pattern file created", "Chainable validation API", "Schema validation support"],
           "handoff_requirements": ["standalone response"]
@@ -77,7 +77,7 @@
         {
           "task_id": "pattern-type-guards",
           "agent_type": "Documentation Agent",
-          "task_description": "Create type-guards-utility.md pattern file for runtime type safety consolidation",
+          "task_description": "Create type-guards.md pattern file for runtime type safety consolidation",
           "timeout_seconds": 300,
           "success_criteria": ["Pattern file created", "Semantic type guards", "Property existence checks"],
           "handoff_requirements": ["standalone response"]
@@ -117,7 +117,7 @@
         {
           "task_id": "pattern-cache-utils",
           "agent_type": "Documentation Agent",
-          "task_description": "Create cache-utils-utility.md pattern file for caching pattern consolidation",
+          "task_description": "Create cache-utils.md pattern file for caching pattern consolidation",
           "timeout_seconds": 300,
           "success_criteria": ["Pattern file created", "LRU with TTL support", "Cache invalidation patterns"],
           "handoff_requirements": ["standalone response"]
@@ -133,7 +133,7 @@
         {
           "task_id": "pattern-registry-utils",
           "agent_type": "Documentation Agent",
-          "task_description": "Create registry-utils-utility.md pattern file for registry pattern base class",
+          "task_description": "Create registry-utils.md pattern file for registry pattern base class",
           "timeout_seconds": 300,
           "success_criteria": ["Pattern file created", "Base registry class", "Lifecycle management"],
           "handoff_requirements": ["standalone response"]
@@ -141,7 +141,7 @@
         {
           "task_id": "pattern-factory-utils",
           "agent_type": "Documentation Agent",
-          "task_description": "Create factory-utils-utility.md pattern file for factory pattern consolidation",
+          "task_description": "Create factory-utils.md pattern file for factory pattern consolidation",
           "timeout_seconds": 300,
           "success_criteria": ["Pattern file created", "Factory pattern base", "Configuration support"],
           "handoff_requirements": ["standalone response"]
@@ -149,7 +149,7 @@
         {
           "task_id": "pattern-resilience-utils",
           "agent_type": "Documentation Agent",
-          "task_description": "Create resilience-utils-utility.md pattern file for resilience pattern consolidation",
+          "task_description": "Create resilience-utils.md pattern file for resilience pattern consolidation",
           "timeout_seconds": 300,
           "success_criteria": ["Pattern file created", "Unified resilience patterns", "Risk management"],
           "handoff_requirements": ["standalone response"]
@@ -157,7 +157,7 @@
         {
           "task_id": "pattern-navigation-utils",
           "agent_type": "Documentation Agent",
-          "task_description": "Create navigation-utils-utility.md pattern file for navigation pattern consolidation",
+          "task_description": "Create navigation-utils.md pattern file for navigation pattern consolidation",
           "timeout_seconds": 300,
           "success_criteria": ["Pattern file created", "Unified navigation API", "Breadcrumb management"],
           "handoff_requirements": ["standalone response"]
@@ -165,7 +165,7 @@
         {
           "task_id": "pattern-protocol-utils",
           "agent_type": "Documentation Agent",
-          "task_description": "Create protocol-utils-utility.md pattern file for protocol pattern consolidation across IPC/HTTP/WebSocket",
+          "task_description": "Create protocol-utils.md pattern file for protocol pattern consolidation across IPC/HTTP/WebSocket",
           "timeout_seconds": 300,
           "success_criteria": ["Pattern file created", "Shared protocol utilities", "Connection management"],
           "handoff_requirements": ["standalone response"]
@@ -173,7 +173,7 @@
         {
           "task_id": "pattern-service-utils",
           "agent_type": "Documentation Agent",
-          "task_description": "Create service-utils-utility.md pattern file for service management consolidation",
+          "task_description": "Create service-utils.md pattern file for service management consolidation",
           "timeout_seconds": 300,
           "success_criteria": ["Pattern file created", "Service management utilities", "Health monitoring"],
           "handoff_requirements": ["standalone response"]
@@ -181,7 +181,7 @@
         {
           "task_id": "pattern-debug-utils",
           "agent_type": "Documentation Agent",
-          "task_description": "Create debug-utils-utility.md pattern file for development debugging consolidation",
+          "task_description": "Create debug-utils.md pattern file for development debugging consolidation",
           "timeout_seconds": 300,
           "success_criteria": ["Pattern file created", "Development debugging utilities", "Inspection support"],
           "handoff_requirements": ["standalone response"]

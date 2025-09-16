@@ -23,7 +23,7 @@
         {
           "task_id": "pattern-agent-1",
           "agent_type": "Documentation Agent",
-          "task_description": "Create pattern files for Core Infrastructure & Events: event-utils-utility.md and debug-utils-utility.md. Follow the Pattern File Creation Guide in safe-consolidation-candidates.md. Use existing pattern files as templates (logger-utility.md, error-handler-utility.md). Include exact redundancy counts, minimal-footprint API design, and specific file lists from the analysis. Place files in /Templum/dev/patterns/utilities/ with appropriate subdirectory structure.",
+          "task_description": "Create pattern files for Core Infrastructure & Events: event-utils.md and debug-utils.md. Follow the Pattern File Creation Guide in safe-consolidation-candidates.md. Use existing pattern files as templates (logger-utility.md, error-handler-utility.md). Include exact redundancy counts, minimal-footprint API design, and specific file lists from the analysis. Place files in /Templum/dev/patterns/utilities/ with appropriate subdirectory structure.",
           "timeout_seconds": 600,
           "success_criteria": [
             "Both pattern files created with proper YAML frontmatter",
@@ -36,7 +36,7 @@
         {
           "task_id": "pattern-agent-2", 
           "agent_type": "Documentation Agent",
-          "task_description": "Create pattern files for Display & UI Foundation: window-utils-utility.md, terminal-formatter-utility.md, and theme-utils-utility.md. Follow the Pattern File Creation Guide in safe-consolidation-candidates.md. Reference display-utils-utility.md as template. Include specific chalk usage counts (279 calls), border/window layout details, and theme management requirements. Focus on fluent API design for UI consistency.",
+          "task_description": "Create pattern files for Display & UI Foundation: window-utils-utility.md, terminal-formatter-utility.md, and theme-utils.md. Follow the Pattern File Creation Guide in safe-consolidation-candidates.md. Reference display-utils.md as template. Include specific chalk usage counts (279 calls), border/window layout details, and theme management requirements. Focus on fluent API design for UI consistency.",
           "timeout_seconds": 600,
           "success_criteria": [
             "All three pattern files created with proper structure",
@@ -49,7 +49,7 @@
         {
           "task_id": "pattern-agent-3",
           "agent_type": "Documentation Agent", 
-          "task_description": "Create pattern files for Data Processing: validator-utility.md, type-guards-utility.md, and serialization-utils-utility.md. Focus on chainable validation APIs, semantic type guards, and safe serialization patterns. Include specific file paths from backend components that use validation patterns. Reference existing patterns for data management consistency.",
+          "task_description": "Create pattern files for Data Processing: validator-utility.md, type-guards.md, and serialization-utils-utility.md. Focus on chainable validation APIs, semantic type guards, and safe serialization patterns. Include specific file paths from backend components that use validation patterns. Reference existing patterns for data management consistency.",
           "timeout_seconds": 600,
           "success_criteria": [
             "All three data processing patterns created",
@@ -75,7 +75,7 @@
         {
           "task_id": "pattern-agent-5",
           "agent_type": "Documentation Agent",
-          "task_description": "Create pattern files for System Infrastructure: config-utils-utility.md and cache-utils-utility.md. Document unified configuration management with environment variable handling and multi-level caching patterns. Reference configuration loading patterns from backend components and caching opportunities mentioned in architecture analysis.",
+          "task_description": "Create pattern files for System Infrastructure: config-utils-utility.md and cache-utils.md. Document unified configuration management with environment variable handling and multi-level caching patterns. Reference configuration loading patterns from backend components and caching opportunities mentioned in architecture analysis.",
           "timeout_seconds": 600,
           "success_criteria": [
             "Configuration utility with unified loading/merging",
@@ -88,7 +88,7 @@
         {
           "task_id": "pattern-agent-6",
           "agent_type": "Documentation Agent",
-          "task_description": "Create pattern files for Performance & Registry: performance-utils-utility.md and registry-utils-utility.md. Document performance tracking utilities and base registry patterns used across command/menu/adapter registries. Include timing/profiling capabilities and lifecycle management patterns.",
+          "task_description": "Create pattern files for Performance & Registry: performance-utils-utility.md and registry-utils.md. Document performance tracking utilities and base registry patterns used across command/menu/adapter registries. Include timing/profiling capabilities and lifecycle management patterns.",
           "timeout_seconds": 600,
           "success_criteria": [
             "Performance utility with timing and profiling",
@@ -101,7 +101,7 @@
         {
           "task_id": "pattern-agent-7",
           "agent_type": "Documentation Agent",
-          "task_description": "Create pattern files for Factory & Resilience Patterns: factory-utils-utility.md and resilience-utils-utility.md. Document factory pattern base classes and resilience utilities (fallback, monitoring, rollback). Reference connection factory patterns and risk management components for specific implementation examples.",
+          "task_description": "Create pattern files for Factory & Resilience Patterns: factory-utils.md and resilience-utils.md. Document factory pattern base classes and resilience utilities (fallback, monitoring, rollback). Reference connection factory patterns and risk management components for specific implementation examples.",
           "timeout_seconds": 600,
           "success_criteria": [
             "Factory utility base class with builder pattern",
@@ -114,7 +114,7 @@
         {
           "task_id": "pattern-agent-8",
           "agent_type": "Documentation Agent",
-          "task_description": "Create pattern files for Business Logic: navigation-utils-utility.md, protocol-utils-utility.md, and service-utils-utility.md. Document navigation abstractions (breadcrumb, exit handling), protocol utilities for IPC/HTTP/WebSocket patterns, and service management utilities. Reference existing navigation and protocol components.",
+          "task_description": "Create pattern files for Business Logic: navigation-utils.md, protocol-utils.md, and service-utils.md. Document navigation abstractions (breadcrumb, exit handling), protocol utilities for IPC/HTTP/WebSocket patterns, and service management utilities. Reference existing navigation and protocol components.",
           "timeout_seconds": 600,
           "success_criteria": [
             "Navigation utility with unified breadcrumb/exit API",

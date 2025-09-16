@@ -19,6 +19,10 @@
 import fs from 'fs';
 import path from 'path';
 import { execSync } from 'child_process';
+import { resolveScopedFiles, appendScopeEvidence } from '../core/scope-utils.js';
+
+const toPosixPath = value => value.replace(/\\/g, '/');
+const ensureArray = value => (Array.isArray(value) ? value : value ? [value] : []);
 
 /**
  * Build Validator implementing IValidator interface
@@ -64,7 +68,18 @@ export class BuildValidator {
 
     try {
       // Process scope configuration for targeted validation
-      const scopeAnalysis = this.analyzeScopeForBuildRelevance(scopeConfig);
+      const scopeResult = await resolveScopedFiles(projectInfo.path, scopeConfig, {
+        maxFiles: options.maxFiles ?? 400,
+        maxFileSize: 8 * 1024 * 1024,
+        maxTotalSize: 80 * 1024 * 1024
+      });
+      appendScopeEvidence(result, scopeResult, { includePatterns: true, limit: 12 });
+      const scopeAnalysis = this.analyzeScopeForBuildRelevance(projectInfo, scopeConfig, scopeResult);
+
+      if (scopeAnalysis.matchedFiles.length > 0) {
+        const limited = scopeAnalysis.matchedFiles.slice(0, 10);
+        result.evidence.push(`Build-relevant files: ${limited.join(', ')}${scopeAnalysis.matchedFiles.length > 10 ? ' (truncated)' : ''}`);
+      }
       
       console.log('  Executing Compilation/Build validation commands...');
       console.log('  Source: TEMPLUM-TESTING-GUIDE.md Section 4');
@@ -553,10 +568,16 @@ export class BuildValidator {
   /**
    * Analyze scope configuration to determine build validation requirements
    */
-  analyzeScopeForBuildRelevance(scopeConfig) {
+  analyzeScopeForBuildRelevance(projectInfo, scopeConfig, scopeResult) {
+    const patternsFromScope = ensureArray(scopeConfig?.patterns);
+    const effectivePatterns = (scopeResult?.patterns && scopeResult.patterns.length > 0)
+      ? scopeResult.patterns
+      : (patternsFromScope.length > 0 ? patternsFromScope : ['*']);
+
     const analysis = {
-      patterns: [],
+      patterns: effectivePatterns,
       relevantPatterns: [],
+      matchedFiles: [],
       hasNoRelevantFiles: false,
       requiresBuild: false,
       requiresTypeChecking: false,
@@ -565,37 +586,97 @@ export class BuildValidator {
       optimizations: []
     };
 
-    // Handle missing or empty scope - default to full validation
-    if (!scopeConfig || !scopeConfig.patterns || scopeConfig.patterns.length === 0) {
-      analysis.requiresBuild = true;
-      analysis.requiresTypeChecking = true;
-      analysis.requiresDependencyCheck = true;
-      analysis.requiresArtifactCheck = true;
-      analysis.patterns = ['*'];
-      analysis.relevantPatterns = ['*'];
-      return analysis;
-    }
+    const files = (scopeResult?.files ?? []).map((file, index) => ({
+      absolute: file,
+      relative: scopeResult?.relativeFiles?.[index] ?? toPosixPath(path.relative(projectInfo.path, file))
+    }));
 
-    analysis.patterns = Array.isArray(scopeConfig.patterns) ? scopeConfig.patterns : [scopeConfig.patterns];
-    
-    // Check each pattern for build relevance
-    for (const pattern of analysis.patterns) {
-      const isRelevant = this.isPatternBuildRelevant(pattern);
-      
-      if (isRelevant.relevant) {
-        analysis.relevantPatterns.push(pattern);
-        
-        if (isRelevant.requiresBuild) analysis.requiresBuild = true;
-        if (isRelevant.requiresTypeChecking) analysis.requiresTypeChecking = true;
-        if (isRelevant.requiresDependencyCheck) analysis.requiresDependencyCheck = true;
-        if (isRelevant.requiresArtifactCheck) analysis.requiresArtifactCheck = true;
+    if (files.length > 0) {
+      const matchedPatternSet = new Set();
+
+      for (const fileEntry of files) {
+        const matches = scopeResult?.patternMatches?.get(fileEntry.absolute) ?? [];
+        matches.forEach(pattern => matchedPatternSet.add(pattern));
+
+        const relativeLower = fileEntry.relative.toLowerCase();
+        let fileRelevant = false;
+
+        if (relativeLower.endsWith('package.json') || relativeLower.includes('package-lock') || relativeLower.includes('pnpm-lock')) {
+          analysis.requiresDependencyCheck = true;
+          fileRelevant = true;
+        }
+
+        if (relativeLower.endsWith('.ts') || relativeLower.endsWith('.tsx')) {
+          analysis.requiresTypeChecking = true;
+          if (relativeLower.startsWith('src/') || relativeLower.startsWith('scripts/')) {
+            analysis.requiresBuild = true;
+          }
+          fileRelevant = true;
+        }
+
+        if (relativeLower.endsWith('.js') && (relativeLower.startsWith('src/') || relativeLower.startsWith('scripts/'))) {
+          analysis.requiresBuild = true;
+          fileRelevant = true;
+        }
+
+        if (/(webpack|rollup|vite|esbuild|gulp|grunt).*(config|\.js|\.ts)/.test(relativeLower)) {
+          analysis.requiresBuild = true;
+          analysis.requiresArtifactCheck = true;
+          fileRelevant = true;
+        }
+
+        if (relativeLower.includes('tsconfig') || relativeLower.includes('babel') || relativeLower.includes('swc')) {
+          analysis.requiresBuild = true;
+          analysis.requiresTypeChecking = true;
+          fileRelevant = true;
+        }
+
+        if (relativeLower.startsWith('build/') || relativeLower.startsWith('dist/')) {
+          analysis.requiresArtifactCheck = true;
+          fileRelevant = true;
+        }
+
+        if (relativeLower.includes('dockerfile') || relativeLower.endsWith('.dockerignore')) {
+          analysis.requiresBuild = true;
+          fileRelevant = true;
+        }
+
+        if ((relativeLower.endsWith('.yml') || relativeLower.endsWith('.yaml')) &&
+            (relativeLower.includes('github') || relativeLower.includes('pipeline'))) {
+          analysis.requiresArtifactCheck = true;
+          fileRelevant = true;
+        }
+
+        if (fileRelevant) {
+          analysis.matchedFiles.push(fileEntry.relative);
+        }
+      }
+
+      if (matchedPatternSet.size > 0) {
+        analysis.relevantPatterns = [...matchedPatternSet];
       }
     }
 
-    // Determine if scope has no relevant files
-    analysis.hasNoRelevantFiles = analysis.relevantPatterns.length === 0;
-    
-    // Add optimization notes
+    if (analysis.relevantPatterns.length === 0) {
+      const fallbackPatterns = patternsFromScope.length > 0 ? patternsFromScope : analysis.patterns;
+      for (const pattern of fallbackPatterns) {
+        const relevance = this.isPatternBuildRelevant(pattern);
+        if (relevance.relevant) {
+          analysis.relevantPatterns.push(pattern);
+          if (relevance.requiresBuild) analysis.requiresBuild = true;
+          if (relevance.requiresTypeChecking) analysis.requiresTypeChecking = true;
+          if (relevance.requiresDependencyCheck) analysis.requiresDependencyCheck = true;
+          if (relevance.requiresArtifactCheck) analysis.requiresArtifactCheck = true;
+        }
+      }
+    }
+
+    analysis.hasNoRelevantFiles =
+      !analysis.requiresBuild &&
+      !analysis.requiresTypeChecking &&
+      !analysis.requiresDependencyCheck &&
+      !analysis.requiresArtifactCheck;
+
     if (analysis.hasNoRelevantFiles) {
       analysis.optimizations.push('complete-skip');
     } else {
@@ -603,6 +684,14 @@ export class BuildValidator {
       if (!analysis.requiresTypeChecking) analysis.optimizations.push('skip-typescript-check');
       if (!analysis.requiresDependencyCheck) analysis.optimizations.push('skip-dependency-check');
       if (!analysis.requiresArtifactCheck) analysis.optimizations.push('skip-artifact-check');
+    }
+
+    if (analysis.relevantPatterns.length === 0) {
+      analysis.relevantPatterns = analysis.patterns;
+    }
+
+    if (analysis.matchedFiles.length > 0) {
+      analysis.matchedFiles = [...new Set(analysis.matchedFiles)];
     }
 
     return analysis;

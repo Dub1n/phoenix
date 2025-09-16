@@ -18,8 +18,8 @@
  * Description: Lightweight pattern analysis, design compliance, dependency validation, architecture verification
  * Source: Architecture Validator Timeout Fix - 2025-09-11
  * 
- * Version: 4.0.0
- * Date: 2025-09-11
+ * Version: 5.0.0
+ * Date: 2025-09-16
  * Interface Version: 3.0.0
  */
 
@@ -27,6 +27,7 @@
 
 import fs from 'fs';
 import path from 'path';
+import { resolveScopedFiles, appendScopeEvidence } from '../core/scope-utils.js';
 
 /**
  * Architecture Validator implementing IValidator interface with lightweight static analysis
@@ -71,10 +72,16 @@ export class ArchitectureValidator {
       console.log('  Source: Architecture Validator Timeout Fix - 2025-09-11');
       console.log(`  Scope patterns: ${result.scopeInfo.patternsUsed.join(', ')}`);
 
-      // Discover files within scope
-      const scopedFiles = await this.discoverScopedFiles(projectInfo.path, scopeConfig);
+      const scopeResult = await resolveScopedFiles(projectInfo.path, scopeConfig, {
+        maxFiles: options.maxFiles ?? 250,
+        maxFileSize: this.maxFileSize,
+        maxTotalSize: this.maxTotalSize
+      });
+      const scopedFiles = scopeResult.files;
+      result.scopeInfo.patternsUsed = scopeResult.patterns;
       result.scopeInfo.filesAnalyzed = scopedFiles.length;
-      result.evidence.push(`Found ${scopedFiles.length} files matching scope patterns`);
+      result.scopeInfo.totalSize = scopeResult.totalSize;
+      appendScopeEvidence(result, scopeResult, { includePatterns: true, limit: 10 });
 
       // Test 1: Pattern implementation analysis (static)
       const patternTest = await this.executeWithTimeout(
@@ -142,124 +149,6 @@ export class ArchitectureValidator {
   /**
    * Utility: Simple pattern matcher for file discovery
    */
-  matchesPattern(filePath, pattern) {
-    const fileName = path.basename(filePath);
-    const relativePath = filePath.replace(/\\/g, '/');
-    
-    // Simple pattern matching - support basic glob patterns
-    if (pattern === '**/*.ts') {
-      return fileName.endsWith('.ts');
-    }
-    if (pattern === '**/*.js') {
-      return fileName.endsWith('.js');
-    }
-    if (pattern === 'src/**/*.ts') {
-      return (relativePath.includes('src/') || relativePath.startsWith('src/')) && fileName.endsWith('.ts');
-    }
-    if (pattern === 'src/**/*.js') {
-      return (relativePath.includes('src/') || relativePath.startsWith('src/')) && fileName.endsWith('.js');
-    }
-    
-    // More comprehensive pattern matching
-    try {
-      let regexPattern = pattern
-        .replace(/\*\*/g, '___DOUBLESTAR___')
-        .replace(/\*/g, '[^/]*')
-        .replace(/___DOUBLESTAR___/g, '.*')
-        .replace(/\./g, '\\.')
-        .replace(/\?/g, '[^/]');
-      
-      const regex = new RegExp('^' + regexPattern + '$');
-      const matches = regex.test(relativePath) || regex.test(fileName);
-      
-      return matches;
-    } catch (error) {
-      // Fallback to simple extension matching
-      if (pattern.includes('*.ts')) return fileName.endsWith('.ts');
-      if (pattern.includes('*.js')) return fileName.endsWith('.js');
-      return filePath.includes(pattern.replace(/\*+/g, ''));
-    }
-  }
-
-  /**
-   * Utility: Recursively discover files in directory
-   */
-  discoverFilesRecursive(dirPath, patterns, maxDepth = 10, currentDepth = 0) {
-    const files = [];
-    
-    if (currentDepth >= maxDepth) return files;
-    
-    try {
-      const entries = fs.readdirSync(dirPath, { withFileTypes: true });
-      
-      for (const entry of entries) {
-        const fullPath = path.join(dirPath, entry.name);
-        
-        // Skip common ignore directories
-        if (entry.isDirectory()) {
-          if (['node_modules', 'dist', 'build', 'coverage', '.git', '.next', 'out'].includes(entry.name)) {
-            continue;
-          }
-          files.push(...this.discoverFilesRecursive(fullPath, patterns, maxDepth, currentDepth + 1));
-        } else if (entry.isFile()) {
-          // Skip test files and other unwanted files
-          if (entry.name.includes('.test.') || entry.name.includes('.spec.') || 
-              entry.name.startsWith('.') || entry.name.endsWith('.map')) {
-            continue;
-          }
-          
-          const relativePath = fullPath.replace(dirPath, '').replace(/\\/g, '/').replace(/^\//, '');
-          
-          // Check if file matches any pattern
-          for (const pattern of patterns) {
-            if (this.matchesPattern(relativePath, pattern)) {
-              files.push(fullPath);
-              break;
-            }
-          }
-        }
-      }
-    } catch (error) {
-      // Skip directories we can't read
-    }
-    
-    return files;
-  }
-
-  /**
-   * Utility: Discover files within scope patterns
-   */
-  async discoverScopedFiles(projectPath, scopeConfig) {
-    const patterns = scopeConfig.patterns || ['**/*.ts', '**/*.js', 'src/**/*.ts', 'src/**/*.js'];
-    
-    try {
-      const allFiles = this.discoverFilesRecursive(projectPath, patterns);
-      
-      // Remove duplicates and filter by size
-      const uniqueFiles = [...new Set(allFiles)];
-      const validFiles = [];
-      let totalSize = 0;
-      
-      for (const file of uniqueFiles) {
-        try {
-          const stats = fs.statSync(file);
-          if (stats.size <= this.maxFileSize && totalSize + stats.size <= this.maxTotalSize) {
-            validFiles.push(file);
-            totalSize += stats.size;
-          }
-        } catch (error) {
-          // Skip files with stat errors
-          continue;
-        }
-      }
-      
-      return validFiles.slice(0, 100); // Limit to 100 files for performance
-    } catch (error) {
-      console.warn(`Warning: File discovery error: ${error.message}`);
-      return [];
-    }
-  }
-
   /**
    * Utility: Execute function with timeout
    */

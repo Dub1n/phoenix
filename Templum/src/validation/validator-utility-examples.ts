@@ -6,7 +6,7 @@
  * status: [[T]]
  * patterns: [usage-examples, migration-patterns, integration-guides]
  * components: [ValidationExamples, MigrationHelpers, IntegrationPatterns]
- * dependencies: [validator-utility-pattern, existing-validation-systems]
+ * dependencies: [validator, existing-validation-systems]
  * tags: [examples, migration, integration, patterns, usage-guide]
  * ---*/
 
@@ -32,7 +32,7 @@ import {
   validateWithSchema,
   validateWithRecovery,
   ValidationPatterns
-} from './validator-utility-pattern';
+} from './validator';
 
 // Example schemas for validation
 const componentConfigSchema: SchemaDefinition = {

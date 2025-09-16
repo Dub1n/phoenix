@@ -1,7 +1,7 @@
 ---
 date-created: 2025-09-15T100000Z
 last-updated: 2025-09-15T100000Z
-name: window-utils-utility-consolidation-pattern
+name: window-utils
 description: Centralized window utilities to consolidate scattered border rendering, window layout logic, and general window management across CLI components.
 status: proposed
 category: display-ui
@@ -17,10 +17,10 @@ keywords:
   - layout-management
   - terminal-ui
 prerequisites:
-  - logger-utility
-  - terminal-formatter-utility
+  - logger
+  - terminal-formatter
 related-patterns:
-  - display-utils-utility
+  - display-utils
   - terminal-ui-components
 ---
 
@@ -60,9 +60,9 @@ function drawModal(content: string[], title: string): string {
 **Core WindowUtils Class** (Minimal Usage Design):
 
 ```typescript
-import { createLogger } from '../core/logger-utility';
-import { SemanticFormatter } from '../display/terminal-formatter-utility';
-import { DisplayUtils } from '../display/display-utils-utility';
+import { createLogger } from '../core/logger';
+import { SemanticFormatter } from '../display/terminal-formatter';
+import { DisplayUtils } from '../display/display-utils';
 
 export class WindowUtils {
   private static logger = createLogger('window-utils');

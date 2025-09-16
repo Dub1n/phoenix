@@ -28,7 +28,7 @@ This improvement action plan addresses the critical validation failures and proc
 
 1. Missing patterns:
    - [ ] **Pattern File**: [Window Utils Utility Pattern](../patterns/utilities/display/window-utils-utility.md)
-   - [ ] **Pattern File**: [Validator Utility Pattern](../patterns/utilities/data/validator-utility.md)
+   - [ ] **Pattern File**: [Validator Utility Pattern](../patterns/utilities/data/validator.md)
 
 2. **Create Missing Pattern Files** (Day 2, 2-3 hours)
    - Use Documentation Agent to create missing utility patterns

@@ -1,6 +1,6 @@
 ---
 date: 2025-09-14T140000Z
-name: navigation-utils-utility-pattern
+name: navigation-utils
 TASK-ID: [TASK-NAV-001]
 category: utility
 status: [x]
@@ -709,12 +709,13 @@ export interface NavigationHistoryItem {
 
 **Used By Active Tasks**: [TASK-NAV-001]
 **Successfully Applied**: Initial implementation - 2025-09-14
-**Integration Points**: 
+**Integration Points**:
+
 - content-driven-navigation.ts (ContentNavigationManager integration)
 - cross-separator-navigation.md (menu navigation integration)  
 - dynamic-command-router.ts (routing coordination)
 - terminal-ui-components.md (UI integration)
-**Files Using This Pattern**: 
+**Files Using This Pattern**:
 - /src/navigation/navigation-utils.ts (implementation)
 - /src/navigation/breadcrumb-manager.ts (specialized implementation)
 - /src/navigation/path-validator.ts (validation implementation)

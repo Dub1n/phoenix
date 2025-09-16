@@ -8,153 +8,180 @@ description: [Registry for managing interface adapters through abstraction layer
  ---
  **/
 
-import { EventEmitter } from 'events';
-import { 
-  InterfaceType,
-  TemplumError as _TemplumError,
-  createTemplumError,
-  isTemplumError,
-  ErrorSignalPayload
-} from '../types/templum-types';
-import { 
-  ITemplumOrchestrator,
-  IInterfaceAdapter,
-  IInterfaceAdapterFactory
-} from './templum-orchestrator-interface';
+import { InterfaceType, ErrorSignalPayload, createTemplumError, isTemplumError } from '../types/templum-types';
+import { ITemplumOrchestrator, IInterfaceAdapter, IInterfaceAdapterFactory } from './templum-orchestrator-interface';
+import {
+  BaseRegistry,
+  ComponentRegistration,
+  LifecycleConfiguration,
+  RegistryIntelligence,
+  ValidationReport
+} from '../utils/registry-utils';
+
+type AdapterFactory = () => IInterfaceAdapter;
+
+export interface InterfaceAdapterRegistryInitializeOptions {
+  registerBuiltIns?: boolean;
+}
+
+interface AdapterRegistrationMetadata {
+  interfaceType: InterfaceType;
+  eager: boolean;
+}
+
+const DEFAULT_LIFECYCLE_CONFIGURATION: Partial<LifecycleConfiguration> = {
+  enableValidation: true,
+  validationLevel: 'standard',
+  enableIntelligence: true,
+  intelligenceUpdateInterval: 30_000,
+  enablePerformanceMonitoring: true,
+  lifecycleTimeout: 10_000
+};
 
 /**
- * Interface Adapter Registry with Abstraction Layer
- * 
- * This registry manages interface adapters through the abstraction layer,
- * ensuring that no adapter has direct coupling to concrete implementations.
- * All adapters depend only on the ITemplumOrchestrator abstraction.
+ * Interface Adapter Registry backed by the shared registry utilities.
+ *
+ * This rewrite replaces bespoke map/lifecycle logic with the generic BaseRegistry implementation,
+ * ensuring consistent validation, intelligence reporting, and lifecycle management across all registries.
  */
-export class InterfaceAdapterRegistry extends EventEmitter implements IInterfaceAdapterFactory {
-  private adapters: Map<InterfaceType, IInterfaceAdapter> = new Map();
-  private adapterFactories: Map<InterfaceType, () => IInterfaceAdapter> = new Map();
-  private orchestrator!: ITemplumOrchestrator;
-  private initialized: boolean = false;
+export class InterfaceAdapterRegistry
+  extends BaseRegistry<IInterfaceAdapter, InterfaceAdapterRegistryInitializeOptions>
+  implements IInterfaceAdapterFactory
+{
+  private orchestrator: ITemplumOrchestrator | null = null;
   private vsCodeContext: any = null;
+  private registryReady = false;
+  private builtInsRegistered = false;
+  private readonly adapterFactories = new Map<InterfaceType, AdapterFactory>();
+
+  constructor(configuration: Partial<LifecycleConfiguration> = {}) {
+    super({ ...DEFAULT_LIFECYCLE_CONFIGURATION, ...configuration }, 'interface-adapter-registry');
+  }
 
   /**
-   * Initialize the registry with orchestrator abstraction
+   * Initialize the registry with orchestrator abstraction and optional built-in factories.
    */
-  async initialize(orchestrator: ITemplumOrchestrator): Promise<void> {
-    if (this.initialized) {
-      console.warn('InterfaceAdapterRegistry: Already initialized');
+  async initialize(
+    orchestrator: ITemplumOrchestrator,
+    options: InterfaceAdapterRegistryInitializeOptions = {}
+  ): Promise<void> {
+    if (this.registryReady) {
+      this.logger.warn('InterfaceAdapterRegistry: Already initialized');
       return;
     }
 
     try {
       this.orchestrator = orchestrator;
-      
-      // Register built-in adapter factories
-      await this.registerBuiltInFactories();
-      
-      this.initialized = true;
-      this.emit('initialized', { timestamp: Date.now(), adapterFactories: this.adapterFactories.size });
-      
-      console.log('InterfaceAdapterRegistry: Initialized with abstraction layer', {
-        registeredFactories: Array.from(this.adapterFactories.keys()),
-        orchestratorInitialized: orchestrator.isInitialized()
+      const shouldRegisterBuiltIns = options.registerBuiltIns ?? true;
+
+      if (shouldRegisterBuiltIns && !this.builtInsRegistered) {
+        await this.registerBuiltInFactories();
+      }
+
+      await super.initialize(options);
+      this.registryReady = true;
+
+      this.emit('initialized', {
+        timestamp: Date.now(),
+        adapterFactories: this.adapterFactories.size
       });
-      
+
+      this.logger.info('InterfaceAdapterRegistry: Initialized with abstraction layer', {
+        registeredFactories: Array.from(this.adapterFactories.keys()),
+        orchestratorInitialized: this.orchestrator?.isInitialized() ?? false
+      });
     } catch (error) {
-      const errorPayload: ErrorSignalPayload = {
+      const payload: ErrorSignalPayload = {
         timestamp: Date.now(),
         source: 'InterfaceAdapterRegistry',
-        error: isTemplumError(error) ? error : createTemplumError(
-          error instanceof Error ? error.message : 'Unknown initialization error',
-          'REGISTRY_INITIALIZATION_ERROR',
-          'configuration'
-        ),
+        error: isTemplumError(error)
+          ? error
+          : createTemplumError(
+              error instanceof Error ? error.message : 'Unknown initialization error',
+              'REGISTRY_INITIALIZATION_ERROR',
+              'configuration'
+            ),
         severity: 'critical'
       };
 
-      console.error('InterfaceAdapterRegistry: Initialization failed:', errorPayload.error);
-      throw createTemplumError(`Registry initialization failed: ${errorPayload.error.message}`, 'INITIALIZATION_ERROR', 'configuration');
+      this.logger.error('InterfaceAdapterRegistry: Initialization failed', {
+        error: payload.error.message
+      });
+
+      throw payload.error;
     }
   }
 
   /**
-   * Create and register interface adapter using factory pattern
+   * Create (or resolve) an adapter instance for the requested interface type.
    */
   async createAndRegisterAdapter(interfaceType: InterfaceType, context?: any): Promise<IInterfaceAdapter> {
-    if (!this.initialized || !this.orchestrator.isInitialized()) {
-      throw createTemplumError('Registry or orchestrator not initialized', 'SERVICE_NOT_READY', 'configuration');
+    this.ensureReady();
+
+    if (!this.has(interfaceType)) {
+      throw createTemplumError(
+        `Adapter factory for ${interfaceType} is not registered`,
+        'FACTORY_NOT_FOUND',
+        'configuration'
+      );
+    }
+
+    if (interfaceType === 'vscode' && context) {
+      this.setVSCodeContext(context);
+    }
+
+    const adapter = await this.resolve(interfaceType);
+
+    this.emit('adapterRegistered', {
+      interfaceType,
+      timestamp: Date.now(),
+      totalAdapters: this.components.size
+    });
+
+    return adapter;
+  }
+
+  /**
+   * Retrieve an existing adapter instance without creating a new one.
+   */
+  getAdapter(interfaceType: InterfaceType): IInterfaceAdapter | undefined {
+    return this.components.get(interfaceType);
+  }
+
+  /**
+   * Retrieve all active adapters.
+   */
+  getAllAdapters(): Map<InterfaceType, IInterfaceAdapter> {
+    const entries = Array.from(this.components.entries()) as Array<[InterfaceType, IInterfaceAdapter]>;
+    return new Map(entries);
+  }
+
+  /**
+   * Remove and dispose of an adapter instance while keeping the factory registration intact.
+   */
+  async removeAdapter(interfaceType: InterfaceType): Promise<void> {
+    const adapter = this.components.get(interfaceType);
+    if (!adapter) {
+      return;
     }
 
     try {
-      // Check if adapter already exists
-      if (this.adapters.has(interfaceType)) {
-        console.warn(`InterfaceAdapterRegistry: Adapter for ${interfaceType} already exists, returning existing`);
-        return this.adapters.get(interfaceType)!;
+      if (typeof adapter.dispose === 'function') {
+        await Promise.resolve(adapter.dispose());
       }
-
-      // Create adapter using factory
-      const adapter = await this.createAdapter(interfaceType, context);
-      
-      // Initialize adapter with orchestrator abstraction
-      await adapter.initialize(this.orchestrator);
-      
-      // Register adapter
-      this.adapters.set(interfaceType, adapter);
-      
-      this.emit('adapterRegistered', { 
-        interfaceType, 
+    } finally {
+      this.components.delete(interfaceType);
+      this.emit('adapterRemoved', {
+        interfaceType,
         timestamp: Date.now(),
-        totalAdapters: this.adapters.size
+        remainingAdapters: this.components.size
       });
-      
-      console.log(`InterfaceAdapterRegistry: Created and registered ${interfaceType} adapter via abstraction layer`);
-      return adapter;
-      
-    } catch (error) {
-      const errorMessage = isTemplumError(error) ? error.message : (error instanceof Error ? error.message : 'Unknown error');
-      throw createTemplumError(`Failed to create ${interfaceType} adapter: ${errorMessage}`, 'ADAPTER_CREATION_ERROR', 'runtime');
     }
   }
 
   /**
-   * Get existing interface adapter
+   * Factory interface implementation for VSCode adapter creation.
    */
-  getAdapter(interfaceType: InterfaceType): IInterfaceAdapter | undefined {
-    return this.adapters.get(interfaceType);
-  }
-
-  /**
-   * Get all registered adapters
-   */
-  getAllAdapters(): Map<InterfaceType, IInterfaceAdapter> {
-    return new Map(this.adapters);
-  }
-
-  /**
-   * Remove and dispose of interface adapter
-   */
-  async removeAdapter(interfaceType: InterfaceType): Promise<void> {
-    const adapter = this.adapters.get(interfaceType);
-    if (adapter) {
-      try {
-        await adapter.dispose();
-        this.adapters.delete(interfaceType);
-        
-        this.emit('adapterRemoved', { 
-          interfaceType, 
-          timestamp: Date.now(),
-          remainingAdapters: this.adapters.size
-        });
-        
-        console.log(`InterfaceAdapterRegistry: Removed ${interfaceType} adapter`);
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        console.error(`InterfaceAdapterRegistry: Failed to dispose ${interfaceType} adapter:`, errorMessage);
-      }
-    }
-  }
-
-  // Factory methods implementation
-
   createVSCodeAdapter(_context?: any): IInterfaceAdapter {
     const factory = this.adapterFactories.get('vscode');
     if (!factory) {
@@ -163,6 +190,9 @@ export class InterfaceAdapterRegistry extends EventEmitter implements IInterface
     return factory();
   }
 
+  /**
+   * Factory interface implementation for CLI adapter creation.
+   */
   createCLIAdapter(_config?: any): IInterfaceAdapter {
     const factory = this.adapterFactories.get('cli');
     if (!factory) {
@@ -171,6 +201,9 @@ export class InterfaceAdapterRegistry extends EventEmitter implements IInterface
     return factory();
   }
 
+  /**
+   * Factory interface implementation for command adapter creation.
+   */
   createCommandAdapter(_config?: any): IInterfaceAdapter {
     const factory = this.adapterFactories.get('command');
     if (!factory) {
@@ -179,221 +212,316 @@ export class InterfaceAdapterRegistry extends EventEmitter implements IInterface
     return factory();
   }
 
-  registerAdapterFactory(interfaceType: InterfaceType, factory: () => IInterfaceAdapter): void {
+  /**
+   * Register custom adapter factory and wire it into the shared registry lifecycle.
+   */
+  registerAdapterFactory(interfaceType: InterfaceType, factory: AdapterFactory, eager = false): void {
     this.adapterFactories.set(interfaceType, factory);
-    console.log(`InterfaceAdapterRegistry: Registered factory for ${interfaceType} adapter`);
+
+    if (this.has(interfaceType)) {
+      const existing = this.components.get(interfaceType);
+      if (existing && typeof existing.dispose === 'function') {
+        void Promise.resolve(existing.dispose()).catch(() => undefined);
+      }
+      this.components.delete(interfaceType);
+      this.unregister(interfaceType);
+    }
+
+    this.register({
+      name: interfaceType,
+      factory: async () => {
+        const adapter = await Promise.resolve(factory());
+        await this.initializeAdapter(interfaceType, adapter);
+        return adapter;
+      },
+      lifecycle: {
+        eager,
+        dispose: async (adapter) => {
+          if (typeof adapter.dispose === 'function') {
+            await Promise.resolve(adapter.dispose());
+          }
+        }
+      },
+      metadata: this.createRegistrationMetadata(interfaceType, eager)
+    });
+
+    this.logger.debug('InterfaceAdapterRegistry: Registered factory', { interfaceType, eager });
   }
 
   /**
-   * Dispose all adapters and clean up registry
+   * Dispose registry and reset tracked state.
    */
   async dispose(): Promise<void> {
     try {
-      // Dispose all adapters
-      const disposePromises = Array.from(this.adapters.values()).map(adapter => {
-        return adapter.dispose().catch(error => {
-          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-          console.error('InterfaceAdapterRegistry: Adapter disposal error:', errorMessage);
-        });
-      });
-      
-      await Promise.allSettled(disposePromises);
-      
-      // Clear registries
-      this.adapters.clear();
-      this.adapterFactories.clear();
-      this.initialized = false;
-      
-      this.emit('disposed', { timestamp: Date.now() });
-      this.removeAllListeners();
-      
-      console.log('InterfaceAdapterRegistry: Disposal complete');
-      
+      await super.dispose();
+      this.registryReady = false;
+      this.components.clear();
+      this.logger.info('InterfaceAdapterRegistry: Disposal complete');
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error('InterfaceAdapterRegistry: Disposal failed:', errorMessage);
-      throw createTemplumError(`Registry disposal failed: ${errorMessage}`, 'DISPOSAL_ERROR', 'runtime');
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error('InterfaceAdapterRegistry: Disposal failed', { error: message });
+      throw error;
     }
   }
 
   /**
-   * Set VSCode context for enhanced context provider integration
-   * This provides a clean way to inject VSCode extension context
-   * @param context VSCode extension context from activation
+   * High-level status snapshot for diagnostics and observability.
    */
-  setVSCodeContext(context: any): void {
-    this.vsCodeContext = context;
-    this.emit('vsCodeContextSet', { 
-      timestamp: Date.now(),
-      hasContext: !!context,
-      contextKeys: context ? Object.keys(context) : []
-    });
-    
-    console.log('InterfaceAdapterRegistry: VSCode context set', {
-      hasContext: !!context,
-      contextType: context?.constructor?.name || 'unknown'
-    });
-  }
+  getStatus(): {
+    initialized: boolean;
+    registeredAdapters: string[];
+    activeAdapters: InterfaceType[];
+    orchestratorReady: boolean;
+    validation?: ValidationReport | null;
+    intelligence?: RegistryIntelligence | null;
+    contextStatus: {
+      vscodeContextAvailable: boolean;
+      vscodeContextSource: 'registry' | 'global' | 'environment' | 'none';
+    };
+  } {
+    const validation = this.getValidationReport();
+    const intelligence = this.getIntelligence();
 
-  /**
-   * Get registry status
-   */
-  getStatus(): any {
     return {
-      initialized: this.initialized,
-      registeredAdapters: Array.from(this.adapters.keys()),
-      availableFactories: Array.from(this.adapterFactories.keys()),
-      orchestratorReady: this.orchestrator?.isInitialized() || false,
+      initialized: this.registryReady,
+      registeredAdapters: this.getRegisteredComponents(),
+      activeAdapters: Array.from(this.components.keys()) as InterfaceType[],
+      orchestratorReady: this.orchestrator?.isInitialized() ?? false,
+      validation,
+      intelligence,
       contextStatus: {
-        vscodeContextAvailable: !!(this.vsCodeContext || (global as any).__templumVSCodeContext || process.env.VSCODE_IPC_HOOK),
-        vscodeContextSource: this.vsCodeContext ? 'registry' : 
-                           (global as any).__templumVSCodeContext ? 'global' : 
-                           process.env.VSCODE_IPC_HOOK ? 'environment' : 'none'
+        vscodeContextAvailable: !!this.resolveVSCodeContext(false),
+        vscodeContextSource: this.determineVSCodeContextSource()
       }
     };
   }
 
   /**
-   * Set VSCode extension context for adapter creation
-   * Following Haruspex context management patterns for proper provider initialization
+   * Set VSCode extension context for adapter creation (instance-level).
+   */
+  setVSCodeContext(context: any): void {
+    this.vsCodeContext = context;
+    this.logger.debug('InterfaceAdapterRegistry: VSCode context set', {
+      provided: true,
+      hasSubscriptions: !!context?.subscriptions,
+      hasGlobalState: !!context?.globalState
+    });
+  }
+
+  /**
+   * Clear VSCode extension context (instance-level).
+   */
+  clearVSCodeContext(): void {
+    this.vsCodeContext = null;
+    this.logger.debug('InterfaceAdapterRegistry: VSCode context cleared');
+  }
+
+  /**
+   * Static helpers for legacy integrations that set the context globally.
    */
   static setVSCodeContext(context: any): void {
     (global as any).__templumVSCodeContext = context;
     console.log('InterfaceAdapterRegistry: VSCode context registered for adapter factory use');
   }
 
-  /**
-   * Clear VSCode extension context (for cleanup)
-   */
   static clearVSCodeContext(): void {
     delete (global as any).__templumVSCodeContext;
     console.log('InterfaceAdapterRegistry: VSCode context cleared');
   }
 
-  /**
-   * Create adapter using appropriate factory
-   * @private
-   */
-  private async createAdapter(interfaceType: InterfaceType, context?: any): Promise<IInterfaceAdapter> {
-    switch (interfaceType) {
-      case 'vscode':
-        return this.createVSCodeAdapter(context);
-      case 'cli':
-        return this.createCLIAdapter(context);
-      case 'command':
-        return this.createCommandAdapter(context);
-      default:
-        throw createTemplumError(`Unsupported interface type: ${interfaceType}`, 'UNSUPPORTED_INTERFACE', 'validation');
+  // BaseRegistry lifecycle hooks ------------------------------------------------
+
+  protected onBeforeInitialize(): void {
+    // No-op hook maintained for future extensions.
+  }
+
+  protected onAfterInitialize(): void {
+    // No additional work required post initialization.
+  }
+
+  protected onBeforeDispose(): void {
+    // No-op hook maintained for symmetry.
+  }
+
+  protected onAfterDispose(): void {
+    this.builtInsRegistered = false;
+    this.orchestrator = null;
+  }
+
+  protected async validateComponent(
+    component: IInterfaceAdapter,
+    registration: ComponentRegistration<IInterfaceAdapter>
+  ): Promise<{
+    name: string;
+    valid: boolean;
+    issues: string[];
+    interfaceCompliance: boolean;
+    methodAvailability: boolean;
+    initializationStatus: 'pending' | 'initialized' | 'failed';
+    confidenceScore: number;
+  }> {
+    const issues: string[] = [];
+
+    if (typeof component.initialize !== 'function') {
+      issues.push('Adapter is missing initialize method');
+    }
+
+    if (typeof component.dispose !== 'function') {
+      issues.push('Adapter is missing dispose method');
+    }
+
+    const initialized = this.components.has(registration.name);
+
+    return {
+      name: registration.name,
+      valid: issues.length === 0,
+      issues,
+      interfaceCompliance: true,
+      methodAvailability: issues.length === 0,
+      initializationStatus: initialized ? 'initialized' : 'pending',
+      confidenceScore: issues.length === 0 ? 0.95 : 0.5
+    };
+  }
+
+  // Internal helpers -----------------------------------------------------------
+
+  private ensureReady(): void {
+    if (!this.registryReady) {
+      throw createTemplumError('InterfaceAdapterRegistry is not initialized', 'SERVICE_NOT_READY', 'configuration');
+    }
+
+    if (!this.orchestrator || !this.orchestrator.isInitialized()) {
+      throw createTemplumError('ITemplumOrchestrator is not initialized', 'SERVICE_NOT_READY', 'configuration');
     }
   }
 
-  /**
-   * Register built-in adapter factories with lazy loading and proper context handling
-   * Following Haruspex extension.ts provider registration patterns for robust initialization
-   * @private
-   */
+  private async initializeAdapter(interfaceType: InterfaceType, adapter: IInterfaceAdapter): Promise<void> {
+    if (!this.orchestrator || !this.orchestrator.isInitialized()) {
+      throw createTemplumError('ITemplumOrchestrator is not initialized', 'SERVICE_NOT_READY', 'configuration');
+    }
+
+    if (typeof adapter.initialize === 'function') {
+      await Promise.resolve(adapter.initialize(this.orchestrator));
+    }
+
+    this.logger.debug('InterfaceAdapterRegistry: Adapter initialized', { interfaceType });
+  }
+
+  private createRegistrationMetadata(interfaceType: InterfaceType, eager: boolean): AdapterRegistrationMetadata {
+    return {
+      interfaceType,
+      eager
+    };
+  }
+
+  private determineVSCodeContextSource(): 'registry' | 'global' | 'environment' | 'none' {
+    if (this.vsCodeContext) {
+      return 'registry';
+    }
+
+    if ((global as any).__templumVSCodeContext) {
+      return 'global';
+    }
+
+    if (typeof process !== 'undefined' && process.env.VSCODE_IPC_HOOK) {
+      return 'environment';
+    }
+
+    return 'none';
+  }
+
+  private resolveVSCodeContext(throwOnMissing = true): any {
+    if (this.vsCodeContext) {
+      return this.vsCodeContext;
+    }
+
+    if ((global as any).__templumVSCodeContext) {
+      return (global as any).__templumVSCodeContext;
+    }
+
+    if (typeof process !== 'undefined' && process.env.VSCODE_IPC_HOOK) {
+      return {
+        subscriptions: [],
+        extensionPath: process.cwd(),
+        globalState: {
+          get: () => undefined,
+          update: () => Promise.resolve()
+        },
+        workspaceState: {
+          get: () => undefined,
+          update: () => Promise.resolve()
+        }
+      };
+    }
+
+    if (throwOnMissing) {
+      throw createTemplumError('VSCode context not available for adapter creation', 'CONTEXT_NOT_AVAILABLE', 'configuration');
+    }
+
+    return null;
+  }
+
   private async registerBuiltInFactories(): Promise<void> {
-    const registeredFactories: string[] = [];
-    const failedFactories: string[] = [];
-    
+    const registered: InterfaceType[] = [];
+    const failed: string[] = [];
+
     try {
-      // VSCode adapter factory with context validation and graceful degradation
+      // VSCode adapter factory with layered context resolution
       this.registerAdapterFactory('vscode', () => {
         try {
-          // Dynamic import to avoid circular dependencies
+          // eslint-disable-next-line @typescript-eslint/no-var-requires
           const { createVSCodeInterfaceAdapter } = require('./vscode-adapter-abstracted');
-          
-          // Enhanced VSCode Context Provider Integration
-          // Supports multiple context provision strategies with fallback chain
-          let context: any = null;
-          
-          // Strategy 1: Context provided via registry setVSCodeContext method (preferred)
-          if (this.vsCodeContext) {
-            context = this.vsCodeContext;
-          }
-          // Strategy 2: Global state fallback for legacy integration
-          else if ((global as any).__templumVSCodeContext) {
-            context = (global as any).__templumVSCodeContext;
-            console.info('InterfaceAdapterRegistry: Using global VSCode context (legacy fallback)');
-          }
-          // Strategy 3: Dynamic context resolution from VSCode environment
-          else if (typeof process !== 'undefined' && process.env.VSCODE_IPC_HOOK) {
-            // VSCode environment detected, create minimal context for extension integration
-            context = {
-              subscriptions: [],
-              extensionPath: process.cwd(),
-              globalState: {
-                get: () => undefined,
-                update: () => Promise.resolve()
-              },
-              workspaceState: {
-                get: () => undefined,
-                update: () => Promise.resolve()
-              }
-            };
-            console.info('InterfaceAdapterRegistry: Created minimal VSCode context from environment');
-          }
-          
-          if (!context) {
-            console.warn('InterfaceAdapterRegistry: VSCode context not available, adapter creation will be deferred');
-            throw createTemplumError('VSCode context not available for adapter creation', 'CONTEXT_NOT_AVAILABLE', 'configuration');
-          }
-          
+          const context = this.resolveVSCodeContext();
           return createVSCodeInterfaceAdapter(context);
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : 'Unknown VSCode adapter creation error';
-          console.error('InterfaceAdapterRegistry: VSCode adapter factory failed:', errorMessage);
-          throw createTemplumError(`VSCode adapter creation failed: ${errorMessage}`, 'ADAPTER_FACTORY_ERROR', 'runtime');
+          const message = error instanceof Error ? error.message : 'Unknown VSCode adapter creation error';
+          throw createTemplumError(`VSCode adapter creation failed: ${message}`, 'ADAPTER_FACTORY_ERROR', 'runtime');
         }
       });
-      registeredFactories.push('vscode');
+      registered.push('vscode');
 
-      // CLI adapter factory with enhanced error handling
+      // CLI adapter factory
       this.registerAdapterFactory('cli', () => {
         try {
-          // Dynamic import to avoid circular dependencies
+          // eslint-disable-next-line @typescript-eslint/no-var-requires
           const { createCLIInterfaceAdapter } = require('./cli-adapter-abstracted');
-          return createCLIInterfaceAdapter(); // Default configuration works for CLI
+          return createCLIInterfaceAdapter();
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : 'Unknown CLI adapter creation error';
-          console.error('InterfaceAdapterRegistry: CLI adapter factory failed:', errorMessage);
-          throw createTemplumError(`CLI adapter creation failed: ${errorMessage}`, 'ADAPTER_FACTORY_ERROR', 'runtime');
+          const message = error instanceof Error ? error.message : 'Unknown CLI adapter creation error';
+          throw createTemplumError(`CLI adapter creation failed: ${message}`, 'ADAPTER_FACTORY_ERROR', 'runtime');
         }
       });
-      registeredFactories.push('cli');
+      registered.push('cli');
 
-      // Command adapter factory with enhanced error handling
+      // Command adapter factory
       this.registerAdapterFactory('command', () => {
         try {
-          // Dynamic import to avoid circular dependencies
+          // eslint-disable-next-line @typescript-eslint/no-var-requires
           const { createCommandInterfaceAdapter } = require('./command-adapter-abstracted');
-          return createCommandInterfaceAdapter(); // Default configuration works for command interface
+          return createCommandInterfaceAdapter();
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : 'Unknown command adapter creation error';
-          console.error('InterfaceAdapterRegistry: Command adapter factory failed:', errorMessage);
-          throw createTemplumError(`Command adapter creation failed: ${errorMessage}`, 'ADAPTER_FACTORY_ERROR', 'runtime');
+          const message = error instanceof Error ? error.message : 'Unknown command adapter creation error';
+          throw createTemplumError(`Command adapter creation failed: ${message}`, 'ADAPTER_FACTORY_ERROR', 'runtime');
         }
       });
-      registeredFactories.push('command');
+      registered.push('command');
 
-      console.log('InterfaceAdapterRegistry: Built-in factories registered with enhanced error handling', {
-        factories: registeredFactories,
-        implemented: ['vscode', 'cli', 'command'],
-        contextDependencies: ['vscode'],
-        independentFactories: ['cli', 'command']
+      this.logger.info('InterfaceAdapterRegistry: Built-in factories registered', {
+        factories: registered
       });
-      
+      this.builtInsRegistered = true;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.warn('InterfaceAdapterRegistry: Factory registration encountered errors:', errorMessage);
-      failedFactories.push('unknown');
+      const message = error instanceof Error ? error.message : 'Unknown adapter factory registration error';
+      failed.push(message);
+      this.logger.warn('InterfaceAdapterRegistry: Factory registration encountered errors', {
+        error: message
+      });
+      throw error;
     } finally {
-      // Log final registration status with Haruspex-style comprehensive reporting
-      console.log('InterfaceAdapterRegistry: Factory registration complete', {
-        successful: registeredFactories,
-        failed: failedFactories,
-        total: registeredFactories.length + failedFactories.length,
-        gracefulDegradation: failedFactories.length > 0 ? 'Enabled - manual registration available' : 'Not needed'
+      this.logger.debug('InterfaceAdapterRegistry: Factory registration summary', {
+        successful: registered,
+        failed,
+        total: registered.length + failed.length
       });
     }
   }

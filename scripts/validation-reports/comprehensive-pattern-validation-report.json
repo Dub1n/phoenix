@@ -8,7 +8,7 @@
   },
   "patternValidation": [
     {
-      "pattern": "service-utils-utility-pattern.md",
+      "pattern": "service-utils.md",
       "status": "PASS",
       "issues": [],
       "strengths": [
@@ -25,7 +25,7 @@
       }
     },
     {
-      "pattern": "debug-utils-utility-pattern.md",
+      "pattern": "debug-utils.md",
       "status": "PASS",
       "issues": [],
       "strengths": [
@@ -57,7 +57,7 @@
       }
     },
     {
-      "pattern": "registry-utils-utility-pattern.md",
+      "pattern": "registry-utils.md",
       "status": "PASS",
       "issues": [],
       "strengths": [
@@ -74,7 +74,7 @@
       }
     },
     {
-      "pattern": "cache-utils-utility-pattern.md",
+      "pattern": "cache-utils.md",
       "status": "PASS",
       "issues": [],
       "strengths": [
@@ -125,7 +125,7 @@
       }
     },
     {
-      "pattern": "type-guards-utility-pattern.md",
+      "pattern": "type-guards.md",
       "status": "PASS",
       "issues": [
         "Missing implementation details"
@@ -315,14 +315,14 @@
     }
   ],
   "confidenceScores": {
-    "service-utils-utility-pattern.md": 100,
-    "debug-utils-utility-pattern.md": 100,
+    "service-utils.md": 100,
+    "debug-utils.md": 100,
     "config-utils-intelligence-briefing-pattern.md": 100,
-    "registry-utils-utility-pattern.md": 100,
-    "cache-utils-utility-pattern.md": 100,
+    "registry-utils.md": 100,
+    "cache-utils.md": 100,
     "performance-utils-intelligence-briefing-pattern.md": 100,
     "terminal-formatter-utility-pattern.md": 100,
-    "type-guards-utility-pattern.md": 100,
+    "type-guards.md": 100,
     "pattern-redundancy.md": 100,
     "pattern-usage-analysis.md": 100,
     "pattern-index.md": 100,
@@ -340,109 +340,109 @@
       {
         "type": "missing_frontmatter_key",
         "category": "utility",
-        "pattern": "service-utils-utility-pattern.md",
+        "pattern": "service-utils.md",
         "issue": "Missing frontmatter key: description"
       },
       {
         "type": "missing_frontmatter_key",
         "category": "utility",
-        "pattern": "service-utils-utility-pattern.md",
+        "pattern": "service-utils.md",
         "issue": "Missing frontmatter key: keywords"
       },
       {
         "type": "missing_frontmatter_key",
         "category": "utility",
-        "pattern": "service-utils-utility-pattern.md",
+        "pattern": "service-utils.md",
         "issue": "Missing frontmatter key: prerequisites"
       },
       {
         "type": "missing_frontmatter_key",
         "category": "utility",
-        "pattern": "service-utils-utility-pattern.md",
+        "pattern": "service-utils.md",
         "issue": "Missing frontmatter key: complexity"
       },
       {
         "type": "missing_frontmatter_key",
         "category": "utility",
-        "pattern": "debug-utils-utility-pattern.md",
+        "pattern": "debug-utils.md",
         "issue": "Missing frontmatter key: description"
       },
       {
         "type": "missing_frontmatter_key",
         "category": "utility",
-        "pattern": "debug-utils-utility-pattern.md",
+        "pattern": "debug-utils.md",
         "issue": "Missing frontmatter key: keywords"
       },
       {
         "type": "missing_frontmatter_key",
         "category": "utility",
-        "pattern": "debug-utils-utility-pattern.md",
+        "pattern": "debug-utils.md",
         "issue": "Missing frontmatter key: prerequisites"
       },
       {
         "type": "missing_frontmatter_key",
         "category": "utility",
-        "pattern": "debug-utils-utility-pattern.md",
+        "pattern": "debug-utils.md",
         "issue": "Missing frontmatter key: complexity"
       },
       {
         "type": "missing_frontmatter_key",
         "category": "utility",
-        "pattern": "registry-utils-utility-pattern.md",
+        "pattern": "registry-utils.md",
         "issue": "Missing frontmatter key: description"
       },
       {
         "type": "missing_frontmatter_key",
         "category": "utility",
-        "pattern": "registry-utils-utility-pattern.md",
+        "pattern": "registry-utils.md",
         "issue": "Missing frontmatter key: keywords"
       },
       {
         "type": "missing_frontmatter_key",
         "category": "utility",
-        "pattern": "registry-utils-utility-pattern.md",
+        "pattern": "registry-utils.md",
         "issue": "Missing frontmatter key: prerequisites"
       },
       {
         "type": "missing_frontmatter_key",
         "category": "utility",
-        "pattern": "registry-utils-utility-pattern.md",
+        "pattern": "registry-utils.md",
         "issue": "Missing frontmatter key: complexity"
       },
       {
         "type": "missing_frontmatter_key",
         "category": "utility",
-        "pattern": "cache-utils-utility-pattern.md",
+        "pattern": "cache-utils.md",
         "issue": "Missing frontmatter key: patterns"
       },
       {
         "type": "missing_frontmatter_key",
         "category": "utility",
-        "pattern": "cache-utils-utility-pattern.md",
+        "pattern": "cache-utils.md",
         "issue": "Missing frontmatter key: components"
       },
       {
         "type": "missing_frontmatter_key",
         "category": "utility",
-        "pattern": "cache-utils-utility-pattern.md",
+        "pattern": "cache-utils.md",
         "issue": "Missing frontmatter key: dependencies"
       },
       {
         "type": "missing_frontmatter_key",
         "category": "utility",
-        "pattern": "cache-utils-utility-pattern.md",
+        "pattern": "cache-utils.md",
         "issue": "Missing frontmatter key: tags"
       },
       {
         "type": "missing_frontmatter_key",
         "category": "utility",
-        "pattern": "cache-utils-utility-pattern.md",
+        "pattern": "cache-utils.md",
         "issue": "Missing frontmatter key: keywords"
       },
       {
         "type": "missing_frontmatter_key",
         "category": "utility",
-        "pattern": "cache-utils-utility-pattern.md",
+        "pattern": "cache-utils.md",
         "issue": "Missing frontmatter key: prerequisites"
       },
       {
@@ -472,37 +472,37 @@
       {
         "type": "missing_frontmatter_key",
         "category": "utility",
-        "pattern": "type-guards-utility-pattern.md",
+        "pattern": "type-guards.md",
         "issue": "Missing frontmatter key: patterns"
       },
       {
         "type": "missing_frontmatter_key",
         "category": "utility",
-        "pattern": "type-guards-utility-pattern.md",
+        "pattern": "type-guards.md",
         "issue": "Missing frontmatter key: components"
       },
       {
         "type": "missing_frontmatter_key",
         "category": "utility",
-        "pattern": "type-guards-utility-pattern.md",
+        "pattern": "type-guards.md",
         "issue": "Missing frontmatter key: dependencies"
       },
       {
         "type": "missing_frontmatter_key",
         "category": "utility",
-        "pattern": "type-guards-utility-pattern.md",
+        "pattern": "type-guards.md",
         "issue": "Missing frontmatter key: tags"
       },
       {
         "type": "missing_frontmatter_key",
         "category": "utility",
-        "pattern": "type-guards-utility-pattern.md",
+        "pattern": "type-guards.md",
         "issue": "Missing frontmatter key: keywords"
       },
       {
         "type": "missing_frontmatter_key",
         "category": "utility",
-        "pattern": "type-guards-utility-pattern.md",
+        "pattern": "type-guards.md",
         "issue": "Missing frontmatter key: prerequisites"
       },
       {
@@ -866,12 +866,12 @@
       {
         "type": "utility_consolidation",
         "patterns": [
-          "service-utils-utility-pattern.md",
-          "debug-utils-utility-pattern.md",
-          "registry-utils-utility-pattern.md",
-          "cache-utils-utility-pattern.md",
+          "service-utils.md",
+          "debug-utils.md",
+          "registry-utils.md",
+          "cache-utils.md",
           "terminal-formatter-utility-pattern.md",
-          "type-guards-utility-pattern.md"
+          "type-guards.md"
         ],
         "recommendation": "Consider creating a unified utility pattern library"
       },
@@ -887,14 +887,14 @@
         "type": "thematic_overlap",
         "theme": "validation",
         "patterns": [
-          "service-utils-utility-pattern.md",
-          "debug-utils-utility-pattern.md",
+          "service-utils.md",
+          "debug-utils.md",
           "config-utils-intelligence-briefing-pattern.md",
-          "registry-utils-utility-pattern.md",
-          "cache-utils-utility-pattern.md",
+          "registry-utils.md",
+          "cache-utils.md",
           "performance-utils-intelligence-briefing-pattern.md",
           "terminal-formatter-utility-pattern.md",
-          "type-guards-utility-pattern.md",
+          "type-guards.md",
           "pattern-redundancy.md",
           "pattern-usage-analysis.md",
           "pattern-index.md",
@@ -912,14 +912,14 @@
         "type": "thematic_overlap",
         "theme": "implementation",
         "patterns": [
-          "service-utils-utility-pattern.md",
-          "debug-utils-utility-pattern.md",
+          "service-utils.md",
+          "debug-utils.md",
           "config-utils-intelligence-briefing-pattern.md",
-          "registry-utils-utility-pattern.md",
-          "cache-utils-utility-pattern.md",
+          "registry-utils.md",
+          "cache-utils.md",
           "performance-utils-intelligence-briefing-pattern.md",
           "terminal-formatter-utility-pattern.md",
-          "type-guards-utility-pattern.md",
+          "type-guards.md",
           "pattern-redundancy.md",
           "pattern-usage-analysis.md",
           "pattern-index.md",
@@ -937,9 +937,9 @@
         "type": "thematic_overlap",
         "theme": "architecture",
         "patterns": [
-          "debug-utils-utility-pattern.md",
+          "debug-utils.md",
           "config-utils-intelligence-briefing-pattern.md",
-          "cache-utils-utility-pattern.md",
+          "cache-utils.md",
           "performance-utils-intelligence-briefing-pattern.md",
           "terminal-formatter-utility-pattern.md",
           "pattern-redundancy.md",
@@ -957,11 +957,11 @@
         "type": "thematic_overlap",
         "theme": "utils",
         "patterns": [
-          "service-utils-utility-pattern.md",
-          "debug-utils-utility-pattern.md",
+          "service-utils.md",
+          "debug-utils.md",
           "config-utils-intelligence-briefing-pattern.md",
-          "registry-utils-utility-pattern.md",
-          "cache-utils-utility-pattern.md",
+          "registry-utils.md",
+          "cache-utils.md",
           "performance-utils-intelligence-briefing-pattern.md",
           "pattern-usage-analysis.md"
         ],
@@ -971,14 +971,14 @@
         "type": "thematic_overlap",
         "theme": "config",
         "patterns": [
-          "service-utils-utility-pattern.md",
-          "debug-utils-utility-pattern.md",
+          "service-utils.md",
+          "debug-utils.md",
           "config-utils-intelligence-briefing-pattern.md",
-          "registry-utils-utility-pattern.md",
-          "cache-utils-utility-pattern.md",
+          "registry-utils.md",
+          "cache-utils.md",
           "performance-utils-intelligence-briefing-pattern.md",
           "terminal-formatter-utility-pattern.md",
-          "type-guards-utility-pattern.md",
+          "type-guards.md",
           "pattern-redundancy.md",
           "pattern-usage-analysis.md",
           "pattern-index.md",
@@ -993,7 +993,7 @@
       {
         "type": "orphaned_patterns",
         "patterns": [
-          "debug-utils-utility-pattern.md",
+          "debug-utils.md",
           "config-utils-intelligence-briefing-pattern.md",
           "performance-utils-intelligence-briefing-pattern.md",
           "terminal-formatter-utility-pattern.md",
@@ -1010,11 +1010,11 @@
       }
     ],
     "crossReferences": {
-      "service-utils-utility-pattern.md": [
-        "registry-utils-utility-pattern.md"
+      "service-utils.md": [
+        "registry-utils.md"
       ],
-      "cache-utils-utility-pattern.md": [
-        "type-guards-utility-pattern.md"
+      "cache-utils.md": [
+        "type-guards.md"
       ],
       "pattern-redundancy.md": [
         "pattern-usage-analysis.md",
@@ -1040,7 +1040,7 @@
       "crossReferences": {},
       "integrationOpportunities": 8,
       "orphanedPatterns": [
-        "debug-utils-utility-pattern.md",
+        "debug-utils.md",
         "config-utils-intelligence-briefing-pattern.md",
         "performance-utils-intelligence-briefing-pattern.md",
         "terminal-formatter-utility-pattern.md",

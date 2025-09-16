@@ -2,23 +2,23 @@ Features:
 
 1. Command-line arguments:
 
-- directory - Path to export (defaults to current directory)
-- --exclude - Add custom exclude patterns (can be used multiple times)
-- --output or -o - Save to file instead of console
-- --no-defaults - Skip default exclude patterns
+    - directory - Path to export (defaults to current directory)
+    - --exclude - Add custom exclude patterns (can be used multiple times)
+    - --output or -o - Save to file instead of console
+    - --no-defaults - Skip default exclude patterns
 
 2. Gitignore-style pattern matching:
 
-- fixes/ - Excludes directories named "fixes"
-- .husky/ - Excludes ".husky" directories
-- *.log - Excludes all .log files
-- /dist - Excludes "dist" only at root level
-- temp* - Excludes anything starting with "temp"
-- Common gitignore patterns:
-  - Directory-only patterns (folder/)
-  - Root-relative patterns (/root-only)
-  - Wildcards (*.ext, temp*)
-  - Nested matching (**/pattern)
+    - fixes/ - Excludes directories named "fixes"
+    - .husky/ - Excludes ".husky" directories
+    - *.log - Excludes all .log files
+    - /dist - Excludes "dist" only at root level
+    - temp* - Excludes anything starting with "temp"
+    - Common gitignore patterns:
+      - Directory-only patterns (folder/)
+      - Root-relative patterns (/root-only)
+      - Wildcards (*.ext, temp*)
+      - Nested matching (**/pattern)
 
 Usage Examples:
 

@@ -32,33 +32,33 @@
         
         "pattern_inventory": {
           "pre_existing_confirmed": [
-            "logger-utility.md",
-            "error-handler-utility.md", 
-            "async-utils-utility.md",
-            "display-utils-utility.md",
-            "test-utils-utility.md"
+            "logger.md",
+            "error-handler.md", 
+            "async-utils.md",
+            "display-utils.md",
+            "test-utils.md"
           ],
           "new_patterns_found": [
-            "event-utils-utility.md",
-            "theme-utils-utility.md",
-            "navigation-utils-utility.md",
-            "factory-utils-utility.md",
-            "protocol-utils-utility.md",
-            "resilience-utils-utility.md",
-            "type-guards-utility-pattern.md",
-            "terminal-formatter-utility-pattern.md",
-            "cache-utils-utility-pattern.md",
-            "registry-utils-utility-pattern.md",
-            "debug-utils-utility-pattern.md",
-            "service-utils-utility-pattern.md",
-            "path-utils-confidence-validated-file-operations.md",
-            "chainable-string-utils-confidence-validation.md",
-            "serialization-utils-safe-processing.md",
-            "performance-utils-intelligence-briefing-pattern.md",
-            "config-utils-intelligence-briefing-pattern.md"
+            "event-utils.md",
+            "theme-utils.md",
+            "navigation-utils.md",
+            "factory-utils.md",
+            "protocol-utils.md",
+            "resilience-utils.md",
+            "type-guards.md",
+            "terminal-formatter.md",
+            "cache-utils.md",
+            "registry-utils.md",
+            "debug-utils.md",
+            "service-utils.md",
+            "path-utils.md",
+            "chainable-string-utils.md",
+            "serialization-utils.md",
+            "performance-utils.md",
+            "config-utils.md"
           ],
           "unplanned_additions": [
-            "resilience-utils-utility.md"
+            "resilience-utils.md"
           ]
         }
       }
@@ -118,7 +118,7 @@
         "severity": "medium",
         "description": "Resilience Utils pattern created outside original specification",
         "specification_reference": "Not included in original 19 patterns list",
-        "actual_delivery": "resilience-utils-utility.md created in batch 2",
+        "actual_delivery": "resilience-utils.md created in batch 2",
         "impact": "Scope creep - good outcome but specification deviation"
       },
       {

@@ -20,7 +20,7 @@
         "qualityLevel": "high",
         "specificValidations": [
           {
-            "file": "Templum/dev/patterns/utilities/core/event-utils-utility.md",
+            "file": "Templum/dev/patterns/utilities/core/event-utils.md",
             "status": "validated",
             "quality": "exceptional",
             "functionalContent": "579 lines of TypeScript implementation with comprehensive type definitions, error handling, and usage examples",
@@ -89,7 +89,7 @@
     "feedbackFile": ".claude/chains/workflow-feedback/2025-09-15T002202Z-TASK-MCP-011-feedback.md", 
     "completionDocument": "Templum/dev/fixes/2025-09-15-1129-TASK-MCP-011-utility-pattern-creation-completion.md",
     "sampleValidatedFiles": [
-      "Templum/dev/patterns/utilities/core/event-utils-utility.md",
+      "Templum/dev/patterns/utilities/core/event-utils.md",
       "cross-project-dev/config-utils-intelligence-briefing-pattern.md",
       "cross-project-dev/performance-utils-intelligence-briefing-pattern.md"
     ],

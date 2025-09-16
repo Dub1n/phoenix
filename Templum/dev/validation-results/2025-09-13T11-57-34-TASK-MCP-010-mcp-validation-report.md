@@ -62,14 +62,11 @@ tags: mcp, validation, automated-testing
 **Message**: N/A
 **Evidence**: Session lifecycle test requires functional MCP server
 
-
 ## Errors
 
 - MCP protocol compliance build failed: Command failed: npm run build
 - MCP tool registration verification failed: spawnSync /bin/sh ETIMEDOUT
 - Session lifecycle test failed: spawnSync /bin/sh ETIMEDOUT
-
-
 
 ## Summary
 

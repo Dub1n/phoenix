@@ -39,7 +39,7 @@ tags: ['consolidation', 'utilities', 'redundancy', 'optimization', 'phase-1-comp
 
 ### Overview for Future Developers
 
-This section provides essential guidance for creating the remaining utility pattern files. **5 pattern files have been created as examples** (`logger-utility.md`, `error-handler-utility.md`, `async-utils-utility.md`, `display-utils-utility.md`, `test-utils-utility.md`) - **19 patterns remain to be documented**.
+This section provides essential guidance for creating the remaining utility pattern files. **5 pattern files have been created as examples** (`logger.md`, `error-handler.md`, `async-utils.md`, `display-utils.md`, `test-utils.md`) - **19 patterns remain to be documented**.
 
 ### Required Pattern File Format
 
@@ -227,7 +227,8 @@ These areas show true redundancy without architectural value:
 
 ### 1. Logger Consolidation - HIGHEST IMPACT
 
-- [x] **Pattern File**: [Logger Utility Pattern](../patterns/utilities/core/logger-utility.md)
+- [x] **Pattern File**: [Logger Utility Pattern](../patterns/utilities/core/logger.md)
+- [T] **Utility File**: (Templum/src/utils/logger.ts)
 - [ ] **Files Using This Pattern**:
   - [ ] `src/backend/backend-service-router.ts` (315 console calls)
   - [ ] `src/backend/service-discovery.ts` (287 console calls)
@@ -249,7 +250,8 @@ These areas show true redundancy without architectural value:
 
 ### 2. Error Handler Consolidation
 
-- [x] **Pattern File**: [Error Handler Utility Pattern](../patterns/utilities/core/error-handler-utility.md)
+- [x] **Pattern File**: [Error Handler Utility Pattern](../patterns/utilities/core/error-handler.md)
+- [T] **Utility File**: (Templum/src/utils/error-handler.ts)
 - [ ] **Files Using This Pattern**:
   - [ ] `src/backend/backend-service-router.ts` (87 catch blocks)
   - [ ] `src/backend/service-discovery.ts` (76 catch blocks)
@@ -265,7 +267,8 @@ These areas show true redundancy without architectural value:
 
 ### 3. Async Utils Consolidation
 
-- [x] **Pattern File**: [Async Utils Utility Pattern](../patterns/utilities/core/async-utils-utility.md)
+- [x] **Pattern File**: [Async Utils Utility Pattern](../patterns/utilities/core/async-utils.md)
+- [T] **Utility File**: (Templum/src/utils/async-utils.ts)
 - [ ] **Files Using This Pattern**:
   - [ ] `src/backend/service-discovery.ts` (43 timeout calls)
   - [ ] `src/backend/connection-factory.ts` (38 timeout calls)
@@ -280,7 +283,8 @@ These areas show true redundancy without architectural value:
 
 ### 4. Event Utils Consolidation
 
-- [x] **Pattern File**: [Event Utils Utility Pattern](../patterns/utilities/core/event-utils-utility.md)
+- [x] **Pattern File**: [Event Utils Utility Pattern](../patterns/utilities/core/event-utils.md)
+- [T] **Utility File**: (Templum/src/utils/event-utils.ts)
 - [ ] **Files Using This Pattern**:
   - [ ] All components using EventEmitter pattern (528 uses across codebase)
   - [ ] Event handling, debouncing, aggregation patterns
@@ -296,7 +300,8 @@ These areas show true redundancy without architectural value:
 
 ### 5. Display Utils Consolidation - UI Consistency
 
-- [x] **Pattern File**: [Display Utils Utility Pattern](../patterns/utilities/display/display-utils-utility.md)
+- [x] **Pattern File**: [Display Utils Utility Pattern](../patterns/utilities/display/display-utils.md)
+- [T] **Utility File**: (Templum/src/utils/display-utils.ts)
 - [ ] **Files Using This Pattern**:
   - [ ] `src/interfaces/cli-display-consistency-engine.ts` - DisplayStandardsCalculator
   - [ ] `src/interfaces/service-ordering-manager.ts` - Service display ordering
@@ -309,7 +314,8 @@ These areas show true redundancy without architectural value:
 
 ### 6. Window Utils Consolidation - Border & Layout
 
-- [ ] **Pattern File**: [Window Utils Utility Pattern](../patterns/utilities/display/window-utils-utility.md)
+- [x] **Pattern File**: [Window Utils Utility Pattern](../patterns/utilities/display/window-utils.md)
+- [T] **Utility File**: (Templum/src/utils/window-utils.ts)
 - [ ] **Files Using This Pattern**:
   - [ ] `src/rendering/content-layout-system.ts` - BorderRenderer, WindowLayout
   - [ ] `src/interfaces/terminal-ui-components.ts` - Window management
@@ -321,7 +327,8 @@ These areas show true redundancy without architectural value:
 
 ### 7. Terminal Formatter Consolidation
 
-- [x] **Pattern File**: [Terminal Formatter Utility Pattern](../patterns/utilities/display/terminal-formatter-utility.md)
+- [x] **Pattern File**: [Terminal Formatter Utility Pattern](../patterns/utilities/display/terminal-formatter.md)
+- [T] **Utility File**: (Templum/src/utils/terminal-formatter.ts)
 - [ ] **Files Using This Pattern**:
   - [ ] `src/interfaces/cli-adapter.ts` (47 chalk calls)
   - [ ] `src/interfaces/cli-adapter-abstracted.ts` (52 chalk calls)
@@ -335,7 +342,8 @@ These areas show true redundancy without architectural value:
 
 ### 8. Theme Utils Consolidation
 
-- [x] **Pattern File**: [Theme Utils Utility Pattern](../patterns/utilities/display/theme-utils-utility.md)
+- [x] **Pattern File**: [Theme Utils Utility Pattern](../patterns/utilities/display/theme-utils.md)
+- [ ] **Utility File**: (Templum/src/utils/theme-utils.ts)
 - [ ] **Files Using This Pattern**:
   - [ ] Theme loading and switching patterns
   - [ ] Color palette management beyond chalk
@@ -351,7 +359,8 @@ These areas show true redundancy without architectural value:
 
 ### 9. Validator Consolidation
 
-- [ ] **Pattern File**: [Validator Utility Pattern](../patterns/utilities/data/validator-utility.md)
+- [x] **Pattern File**: [Validator Utility Pattern](../patterns/utilities/data/validator.md)
+- [T] **Utility File**: (Templum/src/utils/validator.ts)
 - [ ] **Files Using This Pattern**:
   - [ ] `src/backend/connection-factory.ts` - validateConfig method
   - [ ] `src/backend/service-discovery.ts` - health validation, process validation
@@ -364,7 +373,8 @@ These areas show true redundancy without architectural value:
 
 ### 10. Type Guards Consolidation  
 
-- [x] **Pattern File**: [Type Guards Utility Pattern](../patterns/utilities/data/type-guards-utility-pattern.md)
+- [x] **Pattern File**: [Type Guards Utility Pattern](../patterns/utilities/data/type-guards.md)
+- [T] **Utility File**: (Templum/src/utils/type-guards.ts)
 - [ ] **Files Using This Pattern**:
   - [ ] Type checking patterns across all components
   - [ ] Interface validation, property existence checks
@@ -376,7 +386,8 @@ These areas show true redundancy without architectural value:
 
 ### 11. Serialization Utils Consolidation
 
-- [x] **Pattern File**: [Serialization Utils Utility Pattern](../patterns/utilities/data/serialization-utils-safe-processing.md)
+- [x] **Pattern File**: [Serialization Utils Utility Pattern](../patterns/utilities/data/serialization-utils.md)
+- [T] **Utility File**: (Templum/src/utils/serialization-utils.ts)
 - [ ] **Files Using This Pattern**:
   - [ ] JSON processing for skin definitions
   - [ ] Configuration file serialization
@@ -388,7 +399,8 @@ These areas show true redundancy without architectural value:
 
 ### 12. String Utils Consolidation
 
-- [x] **Pattern File**: [String Utils Utility Pattern](../patterns/utilities/data/chainable-string-utils-confidence-validation.md)
+- [x] **Pattern File**: [String Utils Utility Pattern](../patterns/utilities/data/chainable-string-utils.md)
+- [T] **Utility File**: (Templum/src/utils/chainable-string-utils.ts)
 - [ ] **Files Using This Pattern**:
   - [ ] Text truncation, padding, wrapping patterns
   - [ ] Case conversion, string escaping
@@ -404,7 +416,8 @@ These areas show true redundancy without architectural value:
 
 ### 13. Path Utils Consolidation
 
-- [x] **Pattern File**: [Path Utils Utility Pattern](../patterns/utilities/system/path-utils-confidence-validated-file-operations.md)
+- [x] **Pattern File**: [Path Utils Utility Pattern](../patterns/utilities/system/path-utils.md)
+- [ ] **Utility File**: (Templum/src/utils/path-utils.ts)
 - [ ] **Files Using This Pattern**:
   - [ ] `src/backend/service-discovery.ts` - Service file management
   - [ ] `src/backend/connection-factory.ts` - Workspace detection
@@ -416,7 +429,8 @@ These areas show true redundancy without architectural value:
 
 ### 14. Config Utils Consolidation
 
-- [x] **Pattern File**: [Config Utils Utility Pattern](../patterns/utilities/system/configuration-util.md)
+- [x] **Pattern File**: [Config Utils Utility Pattern](../patterns/utilities/system/configuration-utils.md)
+- [ ] **Utility File**: (Templum/src/utils/configuration-utils.ts)
 - [ ] **Files Using This Pattern**:
   - [ ] Configuration loading, validation, merging
   - [ ] Environment variable handling
@@ -428,7 +442,8 @@ These areas show true redundancy without architectural value:
 
 ### 15. Cache Utils Consolidation
 
-- [x] **Pattern File**: [Cache Utils Utility Pattern](../patterns/utilities/system/cache-utils-utility.md)
+- [x] **Pattern File**: [Cache Utils Utility Pattern](../patterns/utilities/system/cache-utils.md)
+- [ ] **Utility File**: (Templum/src/utils/cahce-utils.ts)
 - [ ] **Files Using This Pattern**:
   - [ ] Multi-level caching patterns mentioned in architecture
   - [ ] Cache key generation, TTL management
@@ -441,6 +456,7 @@ These areas show true redundancy without architectural value:
 ### 16. Performance Utils Consolidation
 
 - [x] **Pattern File**: [Performance Utils Utility Pattern](../patterns/utilities/system/performance-utils.md)
+- [ ] **Utility File**: (Templum/src/utils/performance-utils.ts)
 - [ ] **Files Using This Pattern**:
   - [ ] Performance tracking scattered across components
   - [ ] Metrics collection patterns
@@ -456,13 +472,14 @@ These areas show true redundancy without architectural value:
 
 ### 17. Registry Utils Consolidation
 
-- [x] **Pattern File**: [Registry Utils Utility Pattern](../patterns/utilities/registry-utils-utility.md)
+- [x] **Pattern File**: [Registry Utils Utility Pattern](../patterns/utilities/registry-utils.md)
+- [T] **Utility File**: (Templum/src/utils/registry-utils.ts)
 - [ ] **Files Using This Pattern**:
   - [ ] `src/commands/universal-command-registry.ts` - Command registration
   - [ ] `src/menus/universal-menu-registry.ts` - Menu registration  
   - [ ] `src/registry/pcl-command-registry.ts` - PCL command patterns
   - [ ] `src/registry/pcl-menu-registry.ts` - PCL menu patterns
-  - [ ] `src/interfaces/interface-adapter-registry.ts` - Adapter registration
+  - [T] `src/interfaces/interface-adapter-registry.ts` - Adapter registration
 
 **Current Problem**: Registry patterns repeated with similar lifecycle management
 **API Design**: `registry.create<T>().register(key, item).lifecycle()` - Base registry class
@@ -470,7 +487,8 @@ These areas show true redundancy without architectural value:
 
 ### 18. Factory Utils Consolidation
 
-- [x] **Pattern File**: [Factory Utils Utility Pattern](../patterns/utilities/core/factory-utils-utility.md)
+- [x] **Pattern File**: [Factory Utils Utility Pattern](../patterns/utilities/core/factory-utils.md)
+- [ ] **Utility File**: (Templum/src/utils/factory-utils.ts)
 - [ ] **Files Using This Pattern**:
   - [ ] `src/backend/connection-factory.ts` - Connection creation patterns
   - [ ] Adapter factory patterns across interface components
@@ -482,7 +500,8 @@ These areas show true redundancy without architectural value:
 
 ### 19. Resilience Utils Consolidation
 
-- [x] **Pattern File**: [Resilience Utils Utility Pattern](../patterns/utilities/resilience-utils-utility.md)
+- [x] **Pattern File**: [Resilience Utils Utility Pattern](../patterns/utilities/resilience-utils.md)
+- [T] **Utility File**: (Templum/src/utils/resilience-utils.ts)
 - [ ] **Files Using This Pattern**:
   - [ ] `src/risk/fallback-manager.ts` - Fallback strategies
   - [ ] `src/risk/performance-monitor.ts` - Performance monitoring
@@ -498,7 +517,8 @@ These areas show true redundancy without architectural value:
 
 ### 20. Navigation Utils Consolidation
 
-- [x] **Pattern File**: [Navigation Utils Utility Pattern](../patterns/utilities/core/navigation-utils-utility.md)
+- [x] **Pattern File**: [Navigation Utils Utility Pattern](../patterns/utilities/core/navigation-utils.md)
+- [T] **Utility File**: (Templum/src/utils/navigation-utils.ts)
 - [ ] **Files Using This Pattern**:
   - [ ] `src/navigation/breadcrumb-manager.ts` - Breadcrumb management
   - [ ] `src/navigation/exit-handler.ts` - Exit handling
@@ -511,7 +531,8 @@ These areas show true redundancy without architectural value:
 
 ### 21. Protocol Utils Consolidation
 
-- [x] **Pattern File**: [Protocol Utils Utility Pattern](../patterns/utilities/core/protocol-utils-utility.md)
+- [x] **Pattern File**: [Protocol Utils Utility Pattern](../patterns/utilities/core/protocol-utils.md)
+- [T] **Utility File**: (Templum/src/utils/protocol-utils.ts)
 - [ ] **Files Using This Pattern**:
   - [ ] IPC protocol patterns - connection, retry, health
   - [ ] HTTP protocol patterns - similar shared concerns
@@ -524,7 +545,8 @@ These areas show true redundancy without architectural value:
 
 ### 22. Service Utils Consolidation
 
-- [x] **Pattern File**: [Service Utils Utility Pattern](../patterns/utilities/core/service-utils-utility.md)
+- [x] **Pattern File**: [Service Utils Utility Pattern](../patterns/utilities/core/service-utils.md)
+- [T] **Utility File**: (Templum/src/utils/service-utils.ts)
 - [ ] **Files Using This Pattern**:
   - [ ] `src/interfaces/service-ordering-manager.ts` - Service ordering
   - [ ] Service health monitoring patterns
@@ -540,7 +562,8 @@ These areas show true redundancy without architectural value:
 
 ### 23. Test Utils Consolidation - MAJOR IMPACT
 
-- [x] **Pattern File**: [Test Utils Utility Pattern](../patterns/utilities/dev/test-utils-utility.md)
+- [x] **Pattern File**: [Test Utils Utility Pattern](../patterns/utilities/dev/test-utils.md)
+- [ ] **Utility File**: (Templum/src/utils/test-utils.ts)
 - [ ] **Files Using This Pattern**:
   - [ ] `src/tests/integration-validation-framework.ts` (4,234 lines - MASSIVE!)
   - [ ] `src/validation/hybrid-validation-system-v3c.ts` (2,049 lines - HUGE!)
@@ -553,7 +576,8 @@ These areas show true redundancy without architectural value:
 
 ### 24. Debug Utils Consolidation
 
-- [x] **Pattern File**: [Debug Utils Utility Pattern](../patterns/utilities/dev/debug-utils-utility.md)
+- [x] **Pattern File**: [Debug Utils Utility Pattern](../patterns/utilities/dev/debug-utils.md)
+- [ ] **Utility File**: (Templum/src/utils/debug-utils.ts)
 - [ ] **Files Using This Pattern**:
   - [ ] Debug logging patterns scattered across components
   - [ ] Inspection and profiling utilities
@@ -624,23 +648,23 @@ These areas show true redundancy without architectural value:
 
 ### Quantitative Targets
 
-- [x] **35-40% codebase reduction** (7,700+ lines removed)
-- [x] **No files over 2000 lines** (achieved through utility consolidation)
-- [x] **Consistent patterns** across all 388+ affected files
-- [x] **Test coverage maintained >80%**
+- [ ] **35-40% codebase reduction** (7,700+ lines removed)
+- [ ] **No files over 2000 lines** (achieved through utility consolidation)
+- [ ] **Consistent patterns** across all 388+ affected files
+- [ ] **Test coverage maintained >80%**
 
 ### Qualitative Targets  
 
-- [x] **All core capabilities preserved** (zero-knowledge connectivity, multi-interface, skin-based)
-- [x] **Improved maintainability** through centralized utilities
-- [x] **Better developer experience** with minimal-footprint APIs
-- [x] **Enhanced consistency** across entire codebase
+- [ ] **All core capabilities preserved** (zero-knowledge connectivity, multi-interface, skin-based)
+- [ ] **Improved maintainability** through centralized utilities
+- [ ] **Better developer experience** with minimal-footprint APIs
+- [ ] **Enhanced consistency** across entire codebase
 
 ## Conclusion
 
 This comprehensive analysis identifies **all consolidation opportunities** in the Templum codebase, ensuring **no further iterations** will be needed. The 24 utilities across 7 categories address every redundancy while preserving the sophisticated architectural patterns that enable Templum's core capabilities.
 
-**Phase 1 Part 2 Status: COMPLETE** ✅
+**Phase 1 Part 2 Status**: **COMPLETE**
 
 The consolidation opportunities provide **35-40% code reduction** (higher than originally estimated) while maintaining the zero-knowledge backend connectivity, dynamic skin-based rendering, and multi-interface support that define Templum's architectural strength.
 
@@ -648,8 +672,8 @@ The consolidation opportunities provide **35-40% code reduction** (higher than o
 
 ---
 
-**Analysis Completed**: 2025-09-14T180000Z  
-**Files Analyzed**: 128+ TypeScript files + 71+ patterns + architecture documentation  
-**Consolidation Opportunities**: 24 utilities across 7 categories  
-**Total Impact**: ~7,700 lines (35-40% reduction), 388+ files affected  
+**Analysis Completed**: 2025-09-14T180000Z
+**Files Analyzed**: 128+ TypeScript files + 71+ patterns + architecture documentation
+**Consolidation Opportunities**: 24 utilities across 7 categories
+**Total Impact**: ~7,700 lines (35-40% reduction), 388+ files affected
 **Architectural Integrity**: 100% preserved - all core capabilities maintained

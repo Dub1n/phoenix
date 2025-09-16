@@ -18,6 +18,9 @@
 
 // MCP validator implementation for Model Context Protocol server validation
 
+// TODO[SCOPE-UTIL-ADOPTION]: Refactor this validator to use resolveScopedFiles/project scope helpers for consistent discovery.
+//    Usage example: const scope = await resolveScopedFiles(projectInfo.path, scopeConfig); appendScopeEvidence(result, scope);
+//    Replace manual pattern matching with filterScopedFiles(scope, ['**/*.ts', '**/*.js'], scopeConfig) before running analysis.
 import fs from 'fs';
 import path from 'path';
 import { execSync } from 'child_process';
