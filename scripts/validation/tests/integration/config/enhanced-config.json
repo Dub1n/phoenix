@@ -1,0 +1,43 @@
+{
+  "version": "3.0.0-test",
+  "coreValidationMode": true,
+  "agentSubmissionFramework": {
+    "enabled": true,
+    "safetyLevel": "enhanced",
+    "maxSubmissionsPerSession": 1,
+    "rollbackEnabled": true,
+    "humanReviewRequired": true
+  },
+  "safety": {
+    "preValidationChecks": true,
+    "postValidationProcessing": true,
+    "sandboxTesting": true,
+    "interfaceCompliance": true,
+    "automaticRollback": true
+  },
+  "performance": {
+    "maxValidationTime": 180000,
+    "memoryLimit": 256,
+    "parallelValidations": 1
+  },
+  "systemDefaults": {
+    "projectDefaults": {
+      "report_location": "test/output",
+      "timeout_overrides": {
+        "backend": 180000,
+        "build": 240000,
+        "quality": 120000
+      },
+      "reporting": {
+        "format": "json",
+        "include_evidence": true,
+        "include_timing": true
+      },
+      "monitoring": {
+        "heartbeat_interval": 15000,
+        "resource_check_enabled": true,
+        "progress_updates": true
+      }
+    }
+  }
+}

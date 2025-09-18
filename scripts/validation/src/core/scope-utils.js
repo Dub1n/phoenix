@@ -51,6 +51,62 @@ const ensurePatternsArray = patterns => {
   return [...DEFAULT_PATTERNS];
 };
 
+const toPatternArray = value => {
+  if (!value) {
+    return [];
+  }
+
+  if (Array.isArray(value)) {
+    return value
+      .map(pattern => (pattern ?? '').toString().trim())
+      .filter(Boolean);
+  }
+
+  if (typeof value === 'string') {
+    return value
+      .split(',')
+      .map(pattern => pattern.trim())
+      .filter(Boolean);
+  }
+
+  return [];
+};
+
+const extractPatternArray = value => {
+  if (!value) {
+    return [];
+  }
+
+  if (typeof value === 'object' && !Array.isArray(value)) {
+    if (Array.isArray(value.patterns) || typeof value.patterns === 'string') {
+      return toPatternArray(value.patterns);
+    }
+  }
+
+  return toPatternArray(value);
+};
+
+export const normalizeScopePatterns = (scopeConfig, fallbackPatterns = [], options = {}) => {
+  const { useDefaultFallback = true } = options;
+
+  const explicitPatterns = extractPatternArray(scopeConfig);
+  if (explicitPatterns.length) {
+    return explicitPatterns;
+  }
+
+  const fallback = extractPatternArray(fallbackPatterns);
+  if (fallback.length) {
+    return fallback;
+  }
+
+  return useDefaultFallback ? [...DEFAULT_PATTERNS] : [];
+};
+
+// TODO[VALIDATION-SCOPE-CONFIG]: Provide a companion normalizeScopeConfig helper that accepts string | array | object
+//   inputs, calls normalizeScopePatterns internally, and mirrors the configuration guidance in
+//   Templum/dev/patterns/utilities/system/configuration-utils.md. Backend/feature/UI validators can then import it
+//   instead of maintaining bespoke normalization routines.
+
 const normalizePattern = (projectPath, rawPattern) => {
   if (!rawPattern) {
     return '';
@@ -232,6 +288,67 @@ export const resolveScopedFiles = async (projectPath, scopeConfig = {}, customOp
     warnings: state.warnings,
     patterns: patterns.length ? patterns : [...DEFAULT_PATTERNS]
   };
+};
+
+export const resolveProjectScope = async (projectInfo = {}, scopeConfig = {}, options = {}, cacheAdapter) => {
+  const projectPath = projectInfo?.path || process.cwd();
+  const normalizedScopeConfig = scopeConfig || {};
+  const normalizedOptions = options || {};
+  const cacheKey = JSON.stringify({
+    projectPath,
+    scopeConfig: normalizedScopeConfig,
+    options: normalizedOptions
+  });
+
+  const applyCache = value => {
+    if (!cacheAdapter) {
+      return;
+    }
+    if (typeof cacheAdapter.set === 'function') {
+      try {
+        cacheAdapter.set(cacheKey, value);
+      } catch (error) {
+        console.log(`      Warning: Scope cache set failed: ${error.message}`);
+      }
+      return;
+    }
+    cacheAdapter.key = cacheKey;
+    cacheAdapter.value = value;
+  };
+
+  if (cacheAdapter) {
+    if (typeof cacheAdapter.get === 'function') {
+      try {
+        const cached = cacheAdapter.get(cacheKey);
+        if (cached) {
+          return cached;
+        }
+      } catch (error) {
+        console.log(`      Warning: Scope cache get failed: ${error.message}`);
+      }
+    } else if (cacheAdapter.key === cacheKey) {
+      return cacheAdapter.value;
+    }
+  }
+
+  try {
+    const scopeResult = await resolveScopedFiles(projectPath, normalizedScopeConfig, normalizedOptions);
+    applyCache(scopeResult);
+    return scopeResult;
+  } catch (error) {
+    console.log(`      Warning: Error resolving scope: ${error.message}`);
+    const fallback = {
+      root: projectPath,
+      files: [],
+      relativeFiles: [],
+      patternMatches: new Map(),
+      totalSize: 0,
+      warnings: [`Scope resolution failed: ${error.message}`],
+      patterns: []
+    };
+    applyCache(fallback);
+    return fallback;
+  }
 };
 
 const formatBytes = bytes => {

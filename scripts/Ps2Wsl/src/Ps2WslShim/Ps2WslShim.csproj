@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <PublishSingleFile>true</PublishSingleFile>
+    <PublishDir>$(MSBuildProjectDirectory)/../../</PublishDir>
+  </PropertyGroup>
+
+  <Target Name="RenameShimExecutable" AfterTargets="Publish" Condition="Exists('$(PublishDir)Ps2WslShim.exe')">
+    <Copy SourceFiles="$(PublishDir)Ps2WslShim.exe"
+          DestinationFiles="$(PublishDir)powershell.exe"
+          SkipUnchangedFiles="false" />
+    <Delete Files="$(PublishDir)Ps2WslShim.exe" />
+  </Target>
+</Project>

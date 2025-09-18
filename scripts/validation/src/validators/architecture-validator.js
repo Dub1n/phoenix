@@ -3,17 +3,6 @@
 /**
  * Architecture Validator - Lightweight Static Analysis Implementation
  * 
- * TODO: [TASK-VAL-ARCH-FIX-001] Pattern: lightweight-architecture-validation | Complexity: 8 | Dependencies: static-analysis,scope-filtering
- * Context: Complete redesign from npm test approach to lightweight static analysis with proper scope handling
- * Validation-Required: timeout-prevention, scope-compliance, static-analysis-accuracy
- * Pattern-Info: { approach: "static-analysis-with-scope", alternatives: "npm-test-execution", trade-offs: "speed-vs-comprehensive-testing" }
- * 
- * Fixed Critical Issues:
- * - Replaced npm test execution with lightweight static analysis
- * - Implemented proper scope pattern handling and file filtering
- * - Added timeout controls to prevent indefinite hangs
- * - Eliminated dependency on external test execution
- * 
  * Category: Architecture/Pattern Tasks  
  * Description: Lightweight pattern analysis, design compliance, dependency validation, architecture verification
  * Source: Architecture Validator Timeout Fix - 2025-09-11
@@ -28,6 +17,7 @@
 import fs from 'fs';
 import path from 'path';
 import { resolveScopedFiles, appendScopeEvidence } from '../core/scope-utils.js';
+import { withTimeout } from '../core/execution-utils.js';
 
 /**
  * Architecture Validator implementing IValidator interface with lightweight static analysis
@@ -153,31 +143,20 @@ export class ArchitectureValidator {
    * Utility: Execute function with timeout
    */
   async executeWithTimeout(fn, timeoutMs, testName) {
-    return new Promise((resolve) => {
-      const timeoutId = setTimeout(() => {
-        resolve({
+    const operation = Promise.resolve().then(() => fn());
+
+    try {
+      return await withTimeout(operation, timeoutMs, new Error(`Test timed out after ${timeoutMs}ms`));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return {
           name: testName,
           status: 'FAIL',
           evidence: [],
-          errors: [`Test timed out after ${timeoutMs}ms`],
+        errors: [message],
           warnings: []
-        });
-      }, timeoutMs);
-      
-      fn().then(result => {
-        clearTimeout(timeoutId);
-        resolve(result);
-      }).catch(error => {
-        clearTimeout(timeoutId);
-        resolve({
-          name: testName,
-          status: 'FAIL',
-          evidence: [],
-          errors: [error.message],
-          warnings: []
-        });
-      });
-    });
+      };
+    }
   }
 
   /**

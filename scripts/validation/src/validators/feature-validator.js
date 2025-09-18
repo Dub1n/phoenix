@@ -24,6 +24,7 @@
 import fs from 'fs';
 import path from 'path';
 import { execSync } from 'child_process';
+import { withTimeout } from '../core/execution-utils.js';
 // Dynamic import for glob to handle both CommonJS and ES modules
 let globSync = null;
 
@@ -552,56 +553,71 @@ export class FeatureValidator {
    */
   async executeWithTimeout(command, options = {}) {
     const { cwd, timeout = 60000, progressCallback } = options;
-    
-    return new Promise((resolve, reject) => {
-      const startTime = Date.now();
-      let progressInterval;
-      
+    const { spawn } = require('child_process');
+
+    let progressInterval;
+    let childProcess;
+    const startTime = Date.now();
+
+    const cleanupProgress = () => {
+      if (progressInterval) {
+        clearInterval(progressInterval);
+        progressInterval = null;
+      }
+    };
+
+    const commandPromise = new Promise((resolve, reject) => {
       if (progressCallback) {
         progressInterval = setInterval(() => {
           progressCallback(Date.now() - startTime);
         }, 10000);
       }
-      
-      const child = require('child_process').spawn('sh', ['-c', command], {
+
+      childProcess = spawn('sh', ['-c', command], {
         cwd,
         stdio: ['ignore', 'pipe', 'pipe']
       });
-      
+
       let stdout = '';
       let stderr = '';
-      
-      child.stdout.on('data', (data) => {
+
+      childProcess.stdout.on('data', data => {
         stdout += data.toString();
       });
-      
-      child.stderr.on('data', (data) => {
+
+      childProcess.stderr.on('data', data => {
         stderr += data.toString();
       });
-      
-      const timeoutHandle = setTimeout(() => {
-        child.kill('SIGTERM');
-        if (progressInterval) clearInterval(progressInterval);
-        const error = new Error(`Command timed out after ${timeout}ms`);
-        error.code = 'TIMEOUT';
-        reject(error);
-      }, timeout);
-      
-      child.on('close', (code) => {
-        clearTimeout(timeoutHandle);
-        if (progressInterval) clearInterval(progressInterval);
-        
+
+      childProcess.on('close', code => {
+        cleanupProgress();
         resolve({ stdout, stderr, exitCode: code });
       });
-      
-      child.on('error', (error) => {
-        clearTimeout(timeoutHandle);
-        if (progressInterval) clearInterval(progressInterval);
+
+      childProcess.on('error', error => {
+        cleanupProgress();
         reject(error);
       });
     });
+
+    const timeoutError = new Error(`Command timed out after ${timeout}ms`);
+    timeoutError.code = 'TIMEOUT';
+
+    try {
+      return await withTimeout(commandPromise, timeout, timeoutError);
+    } catch (error) {
+      cleanupProgress();
+      if (childProcess && !childProcess.killed) {
+        try {
+          childProcess.kill('SIGTERM');
+        } catch (killError) {
+          // ignore kill errors
+        }
+      }
+      throw error;
+    }
   }
-  
+
   /**
    * Parse test results from command output
    */
@@ -1008,3 +1024,7 @@ export class FeatureValidator {
 // Fixed missing default export to resolve constructor errors during validator loading
 // Pattern-Info: { approach: "standard-default-export", alternatives: "none", trade-offs: "none" }
 export default FeatureValidator;
+
+
+
+

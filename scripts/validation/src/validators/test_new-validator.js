@@ -254,6 +254,9 @@ export class TestNewValidator {
       process.chdir(projectInfo.path);
 
       // Look for test files
+      // TODO[VALIDATION-FILE-DISCOVERY]: Once a shared scope/file discovery helper exists, replace these
+      //   platform-specific find/dir commands with calls to that utility so coverage analysis uses the same
+      //   resolveScopedFiles + filterScopedFiles pipeline captured in the UI/lint/subagent TODOs.
       const testSearchPattern = process.platform === 'win32'
         ? 'dir /s /b *.test.ts *.test.js *.spec.ts *.spec.js 2>nul || echo "No test files found"'
         : 'find . -name "*.test.ts" -o -name "*.test.js" -o -name "*.spec.ts" -o -name "*.spec.js" 2>/dev/null | wc -l';

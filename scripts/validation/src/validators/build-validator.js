@@ -31,10 +31,6 @@ export class BuildValidator {
   constructor() {
     this.category = 'build';
     this.version = '3.0.0';
-    // TODO: [TASK-VAL-BUILD-FIX-001] Pattern: scope-aware-build-validation | Complexity: 7 | Dependencies: file-system,build-tools
-    // Context: Build validator now supports scope-based filtering to optimize validation performance for targeted changes
-    // Validation-Required: scope-pattern-matching, conditional-test-execution, performance-improvement
-    // Pattern-Info: { approach: "file-pattern-matching", alternatives: "full-validation", trade-offs: "accuracy-vs-speed" }
     this.scopes = [
       'package.json',
       'tsconfig.json', 

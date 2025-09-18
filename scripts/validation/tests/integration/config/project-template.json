@@ -1,0 +1,42 @@
+{
+  "version": "3.0.1",
+  "project": {
+    "name": "PROJECT_NAME_PLACEHOLDER",
+    "display_name": "PROJECT_DISPLAY_NAME_PLACEHOLDER",
+    "description": "Validation configuration for PROJECT_DISPLAY_NAME_PLACEHOLDER",
+    "project_directory": "../../PROJECT_NAME_PLACEHOLDER"
+  },
+  "validation": {
+    "report_location": "dev/validation-results",
+    "timeout_overrides": {
+      "_comment": "Override default timeouts for specific categories (milliseconds)",
+      "_examples": {
+        "quality": "120000  // 2 minutes for quality validation",
+        "architecture": "180000  // 3 minutes for architecture validation",
+        "backend": "150000  // 2.5 minutes for backend validation"
+      }
+    },
+    "resource_thresholds": {
+      "_comment": "Adjust resource warning thresholds if needed",
+      "_examples": {
+        "memory_warning": "75  // Warn when memory usage exceeds 75%",
+        "cpu_warning": "80     // Warn when CPU usage exceeds 80%"
+      }
+    },
+    "commands": {
+      "_comment": "Define commands for validators to use (fallback to package.json scripts if not specified)",
+      "_examples": {
+        "build": "npm run build  // Build command for build validator",
+        "test": "npm test        // Test command for test validators",
+        "lint": "npm run lint    // Lint command for quality validators",
+        "typecheck": "npx tsc --noEmit  // TypeScript checking command",
+        "start": "npm start      // Start command for backend validators"
+      }
+    }
+  },
+  "reporting": {
+    "format": "markdown",
+    "include_evidence": true,
+    "include_timing": true
+  }
+}

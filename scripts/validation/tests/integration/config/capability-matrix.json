@@ -1,0 +1,67 @@
+{
+  "version": "3.0.0-test",
+  "schemaVersion": "1.0.0",
+  "metadata": {
+    "lastUpdated": "2025-09-06T00:00:00.000Z",
+    "systemHealth": "healthy",
+    "totalAgentSubmissions": 0
+  },
+  "categories": {
+    "backend": {
+      "scopes": [
+        "src/backend/**/*.js"
+      ],
+      "validator": "backend-validator.js",
+      "description": "Backend validation fixture",
+      "interfaceVersion": "3.0.0",
+      "capabilities": {
+        "supportedProjects": [
+          "TestProject"
+        ],
+        "performanceProfile": "standard",
+        "requiredDependencies": [
+          "node"
+        ]
+      },
+      "safety": {
+        "lastValidated": "2025-09-06T00:00:00.000Z",
+        "complianceStatus": "verified",
+        "testCoverage": 80
+      }
+    },
+    "build": {
+      "scopes": [
+        "src/build/**/*.js"
+      ],
+      "validator": "build-validator.js",
+      "description": "Build validation fixture",
+      "interfaceVersion": "3.0.0",
+      "capabilities": {
+        "supportedProjects": [
+          "TestProject"
+        ],
+        "performanceProfile": "fast",
+        "requiredDependencies": [
+          "node"
+        ]
+      },
+      "safety": {
+        "lastValidated": "2025-09-06T00:00:00.000Z",
+        "complianceStatus": "verified",
+        "testCoverage": 75
+      }
+    }
+  },
+  "safety": {
+    "preGenerationValidation": true,
+    "postGenerationValidation": true,
+    "sandboxTesting": true,
+    "interfaceCompliance": true,
+    "automaticRollback": true
+  },
+  "monitoring": {
+    "metricsEnabled": false,
+    "successRateTarget": 0.9,
+    "qualityThreshold": 75
+  }
+}

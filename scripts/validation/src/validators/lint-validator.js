@@ -205,6 +205,10 @@ export class LintValidator {
   /**
    * Find files in scope based on patterns
    */
+  // TODO[VALIDATION-FILE-DISCOVERY]: Once the shared scope discovery helper described in
+  //   scripts/validation/src/validators/ui-validator.js is introduced, replace this bespoke traversal with an import so
+  //   lint validation automatically benefits from resolveScopedFiles filtering and the path utilities captured in
+  //   Templum/dev/patterns/utilities/system/path-utils.md.
   findFilesInScope(projectInfo, patterns) {
     const files = [];
     const basePath = projectInfo.path;

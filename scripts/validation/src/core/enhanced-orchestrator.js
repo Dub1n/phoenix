@@ -25,8 +25,10 @@ const __dirname = path.dirname(__filename);
 // Validators are loaded dynamically - no static imports needed
 
 // Import enhanced system components
-import { InterfaceComplianceChecker } from '../safety/interface-compliance-checker.js';
 import { RollbackManager } from '../safety/rollback-manager.js';
+import { ValidatorValidationService } from './validator-validation-service.js';
+import { ValidatorSubmissionService } from './validator-submission-service.js';
+import { ValidationReportService } from './validation-report-service.js';
 
 /**
  * Enhanced Validation Orchestrator
@@ -38,8 +40,17 @@ export class EnhancedValidationOrchestrator {
     this.configPath = path.join(this.validationPath, 'config/enhanced-config.json');
     
     // Initialize core components only (agent-driven workflow)
-    this.complianceChecker = new InterfaceComplianceChecker();
+    this.validatorValidationService = new ValidatorValidationService();
     this.rollbackManager = new RollbackManager(this.validationPath);
+    this.validatorSubmissionService = new ValidatorSubmissionService({
+      validationPath: this.validationPath,
+      capabilityMatrixPath: this.capabilityMatrixPath,
+      rollbackManager: this.rollbackManager,
+      validatorValidationService: this.validatorValidationService,
+      loadValidator: this.loadValidator.bind(this),
+      reloadCapabilityMatrix: this.loadCapabilityMatrix.bind(this)
+    });
+    this.validationReportService = new ValidationReportService();
     
     // System state
     this.validators = new Map();
@@ -73,7 +84,7 @@ export class EnhancedValidationOrchestrator {
   async initialize() {
     if (this.initialized) return;
     
-    console.log('🚀 Initializing Enhanced Validation System v3.0.0');
+    console.log('[~] Initializing Enhanced Validation System v3.0.0');
     
     try {
       // Load system configuration
@@ -92,7 +103,7 @@ export class EnhancedValidationOrchestrator {
       await this.runSystemDiagnostics();
       
       this.initialized = true;
-      console.log('✅ Enhanced Validation System initialized successfully');
+      console.log('[x] Enhanced Validation System initialized successfully');
       
     } catch (error) {
       this.logError('system_initialization', error, {
@@ -114,12 +125,12 @@ export class EnhancedValidationOrchestrator {
     
     const startTime = Date.now();
     this.validationStartTime = startTime;
-    console.log(`🎯 Starting enhanced validation for category: ${category}`);
+    console.log(`[T] Starting enhanced validation for category: ${category}`);
     
     try {
       // Resolve project configuration
       const projectConfig = await this.resolveProjectConfig(projectInfo.name);
-      console.log(`📋 Project configuration loaded for: ${projectInfo.name}`);
+      console.log(`[x] Project configuration loaded for: ${projectInfo.name}`);
       
       // Resolve project commands from config and package.json
       const commands = await this.resolveProjectCommands(projectInfo.path, projectConfig);
@@ -141,7 +152,7 @@ export class EnhancedValidationOrchestrator {
       
       // Log command warnings if any
       if (commandWarnings.length > 0) {
-        console.log('\n⚠️ Command configuration warnings:');
+        console.log('\n[!] Command configuration warnings:');
         commandWarnings.forEach(warning => console.log(`   ${warning}`));
         console.log('');
       }
@@ -149,9 +160,9 @@ export class EnhancedValidationOrchestrator {
       // Validate report directories early - fail fast if missing
       const directoryIssues = this.validateReportDirectories(projectConfig, projectInfo);
       if (directoryIssues.length > 0) {
-        console.log('\n⚠️ Report directory validation issues:');
+        console.log('\n[!] Report directory validation issues:');
         directoryIssues.forEach(issue => console.log(`   ${issue}`));
-        console.log('🔧 Agent should fix project configuration file\n');
+        console.log('[?] Agent should fix project configuration file\n');
         throw new Error(`Report directory issues prevent validation: ${directoryIssues.join(', ')}`);
       }
       
@@ -185,7 +196,7 @@ export class EnhancedValidationOrchestrator {
       try {
         await this.generateValidationReport(result, enhancedProjectInfo, category, projectConfig);
       } catch (reportError) {
-        console.error(`⚠️ Report generation failed: ${reportError.message}`);
+        console.error(`[F] Report generation failed: ${reportError.message}`);
         // Don't fail validation if report generation fails
       }
       
@@ -197,7 +208,7 @@ export class EnhancedValidationOrchestrator {
         this.updateMetrics(startTime, result.status === 'PASS');
       }
       
-      console.log(`✅ Enhanced validation completed for ${category}: ${result.status}`);
+      console.log(`[x] Enhanced validation completed for ${category}: ${result.status}`);
       return result;
       
     } catch (error) {
@@ -210,7 +221,7 @@ export class EnhancedValidationOrchestrator {
       const recoveryResult = await this.attemptErrorRecovery(error, category, projectInfo, enhancedProjectInfo, scopeConfig, options);
       
       if (recoveryResult.recovered) {
-        console.log(`✅ Error recovery successful for ${category}: ${recoveryResult.strategy}`);
+        console.log(`[x] Error recovery successful for ${category}: ${recoveryResult.strategy}`);
         return recoveryResult.result;
       }
       
@@ -239,74 +250,37 @@ export class EnhancedValidationOrchestrator {
     }
   }
 
-  /**
-   * Agent validator submission - Secure integration pipeline for agent-written validators
-   * 
-   * TODO: [TASK-ID-003] Pattern: agent-submission-pipeline | Complexity: 5 | Dependencies: safety-framework,compliance-checker,rollback-manager
-   * Context: Core agent-driven workflow implementation for secure validator integration
-   * Validation-Required: security-compliance, interface-validation, sandbox-testing
-   * Pattern-Info: { approach: "secure-pipeline", alternatives: "direct-integration", trade-offs: "security-over-speed" }
-   */
+  // Agent validator submission - Secure integration pipeline for agent-written validators
+  
   async submitAgentValidator(validatorPath, category, projectInfo, options = {}) {
     if (!this.initialized) {
       await this.initialize();
     }
-    
-    console.log(`📝 Processing agent-submitted validator for category: ${category}`);
-    
+
+    const scopeConfig = options.scopeConfig || {};
+
     try {
-      // Verify validator file exists
-      if (!fs.existsSync(validatorPath)) {
-        throw new Error(`Validator file not found: ${validatorPath}`);
-      }
-      
-      // Initialize secure integration pipeline
-      console.log('🔒 Initiating Secure Integration Pipeline...');
-      
-      // Phase 1: Risk Assessment
-      const riskAssessment = await this.assessSubmittedValidatorRisk(validatorPath, category);
-      console.log(`   Risk Assessment: ${riskAssessment.riskLevel.toUpperCase()} risk approved for submitted code.`);
-      
-      // Phase 2: Sandbox Testing  
-      const sandboxResult = await this.sandboxTestSubmittedValidator(validatorPath);
-      if (!sandboxResult.passed) {
-        throw new Error(`Sandbox Testing: FAILED. ${sandboxResult.errors.join(', ')}`);
-      }
-      console.log('   Sandbox Testing: PASSED. Validator is safe to execute.');
-      
-      // Phase 3: Interface Compliance
-      const complianceResult = await this.validateSubmittedValidatorCompliance(validatorPath);
-      if (!complianceResult.compliant) {
-        throw new Error(`Interface Compliance: FAILED. Validator does not meet IValidator contract.`);
-      }
-      console.log('   Interface Compliance: PASSED. Validator meets IValidator contract.');
-      
-      // Phase 4: Integration
-      await this.integrateSubmittedValidator(validatorPath, category);
-      console.log(`   Integration Complete: '${category}' validator registered.`);
-      
-      // Phase 5: Execute validation with new validator
-      const result = await this.orchestrateValidation(projectInfo, category, options.scopeConfig || {}, options);
-      
-      return {
-        success: true,
-        category,
+      return await this.validatorSubmissionService.submitValidator({
         validatorPath,
-        riskAssessment,
-        integrationResult: result
-      };
-      
+        category,
+        scopeConfig,
+        executeValidation: async finalScope => {
+          const effectiveScope = finalScope || scopeConfig;
+          return this.orchestrateValidation(projectInfo, category, effectiveScope, options);
+        }
+      });
     } catch (error) {
-      console.error(`❌ Agent validator submission failed: ${error.message}`);
+      console.error(`[x] Agent validator submission failed: ${error.message}`);
       throw error;
     }
   }
+
 
   /**
    * Rollback an extension
    */
   async rollbackExtension(category, reason = 'Manual rollback request') {
-    console.log(`🔄 Rolling back extension: ${category}`);
+    console.log(`[<] Rolling back extension: ${category}`);
     
     try {
       // Remove validator from memory
@@ -324,13 +298,13 @@ export class EnhancedValidationOrchestrator {
         // Reload capability matrix
         await this.loadCapabilityMatrix();
         
-        console.log(`✅ Extension rollback completed: ${category}`);
+        console.log(`[x] Extension rollback completed: ${category}`);
       }
       
       return rollbackResult;
       
     } catch (error) {
-      console.error(`❌ Extension rollback failed: ${error.message}`);
+      console.error(`[F] Extension rollback failed: ${error.message}`);
       throw error;
     }
   }
@@ -351,8 +325,8 @@ export class EnhancedValidationOrchestrator {
       coreComponents: {
         validators: this.validators.size > 0,
         capabilityMatrix: this.capabilityMatrix !== null,
-        agentSubmissionFramework: this.complianceChecker !== null && this.rollbackManager !== null,
-        safetyFramework: this.complianceChecker !== null && this.rollbackManager !== null
+        agentSubmissionFramework: this.validatorSubmissionService !== null && this.rollbackManager !== null,
+        safetyFramework: this.validatorValidationService?.isReady() && this.rollbackManager !== null
       },
       message: 'Core system operational - Advanced monitoring disabled'
     };
@@ -399,7 +373,7 @@ export class EnhancedValidationOrchestrator {
         await this.createDefaultProjectTemplate(templatePath);
       }
       
-      console.log('📋 System configuration loaded');
+      console.log('[x] System configuration loaded');
     } catch (error) {
       throw new Error(`Failed to load system configuration: ${error.message}`);
     }
@@ -553,7 +527,7 @@ export class EnhancedValidationOrchestrator {
         });
       }
     } catch (error) {
-      console.warn(`⚠️ Could not read package.json for command fallbacks: ${error.message}`);
+      console.warn(`[!] Could not read package.json for command fallbacks: ${error.message}`);
     }
     
     return commands;
@@ -626,7 +600,7 @@ export class EnhancedValidationOrchestrator {
    * @param {string} normalizedName - Normalized project name
    */
   async handleMissingProjectConfig(projectName, normalizedName) {
-    console.log(`\n🔧 Project configuration required for: ${projectName}`);
+    console.log(`\n[?] Project configuration required for: ${projectName}`);
     
     const projectConfigPath = path.join(
       this.validationPath, 
@@ -634,236 +608,52 @@ export class EnhancedValidationOrchestrator {
       `${normalizedName}-valconfig.json`
     );
     
-    console.log(`📄 Configuration file needed: ${projectConfigPath}`);
-    console.log(`📖 Use project template from: config/project-template.json`);
-    console.log(`🔧 Agent should create and customize project configuration file`);
+    console.log(`[?] Configuration file needed: ${projectConfigPath}`);
+    console.log(`[>] Use project template from: config/project-template.json`);
+    console.log(`[>] Agent should create and customize project configuration file`);
     
     throw new Error(`Project configuration missing - agent action required: ${projectConfigPath}`);
   }
 
-  /**
-   * Validate that report directories exist and are accessible
-   * @param {Object} projectConfig - Resolved project configuration
-   * @param {Object} projectInfo - Project information with path
-   * @returns {Array} Array of validation issues
-   */
+
   validateReportDirectories(projectConfig, projectInfo) {
-    const issues = [];
-    
-    if (projectConfig.report_location) {
-      let reportPath = projectConfig.report_location;
-      
-      // If relative path, resolve relative to project directory (same logic as resolveReportPath)
-      if (!path.isAbsolute(reportPath)) {
-        reportPath = path.resolve(projectInfo.path, reportPath);
-      }
-      
-      if (!fs.existsSync(reportPath)) {
-        issues.push(`Report directory does not exist: ${reportPath}`);
-      } else {
-        try {
-          // Test write access
-          const testFile = path.join(reportPath, '.write-test');
-          fs.writeFileSync(testFile, 'test');
-          fs.unlinkSync(testFile);
-        } catch (error) {
-          issues.push(`Report directory not writable: ${reportPath}`);
-        }
-      }
-    }
-    
-    return issues;
+    return this.validationReportService.validateReportDirectories(projectConfig, projectInfo);
   }
 
-  /**
-   * Generate validation report
-   * @param {Object} result - Validation result object
-   * @param {Object} projectInfo - Project information
-   * @param {string} category - Validation category
-   * @param {Object} projectConfig - Resolved project configuration
-   */
   async generateValidationReport(result, projectInfo, category, projectConfig) {
-    try {
-      const reportPath = this.resolveReportPath(projectInfo, category, projectConfig, result.taskId);
-      const reportContent = this.formatValidationReport(result, projectInfo, category);
-      
-      // Write report directly - directory already validated in orchestrateValidation
-      fs.writeFileSync(reportPath, reportContent, 'utf8');
-      
-      console.log(`📄 Validation report generated: ${reportPath}`);
-      return reportPath;
-    } catch (error) {
-      console.error(`⚠️ Failed to generate validation report: ${error.message}`);
-      throw error;
-    }
+    return this.validationReportService.generateValidationReport(result, projectInfo, category, projectConfig);
   }
 
-  /**
-   * Resolve report file path
-   * @param {Object} projectInfo - Project information  
-   * @param {string} category - Validation category
-   * @param {Object} projectConfig - Resolved project configuration
-   * @returns {string} Absolute path to report file
-   */
   resolveReportPath(projectInfo, category, projectConfig, taskId = 'UNKNOWN') {
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-    const filename = `${timestamp}-${taskId}-${category}-validation-report.md`;
-    
-    let reportDir = projectConfig.report_location || 'validation-reports';
-    
-    // If relative path, resolve relative to project directory
-    if (!path.isAbsolute(reportDir)) {
-      reportDir = path.resolve(projectInfo.path, reportDir);
-    }
-    
-    return path.join(reportDir, filename);
+    return this.validationReportService.resolveReportPath(projectInfo, category, projectConfig, taskId);
   }
 
-  /**
-   * Format validation report as Markdown
-   * @param {Object} result - Validation result
-   * @param {Object} projectInfo - Project information
-   * @param {string} category - Validation category
-   * @returns {string} Formatted report content
-   */
   formatValidationReport(result, projectInfo, category) {
-    const timestamp = new Date().toISOString();
-    const statusMap = {
-      'PASS': 'VALIDATION_PASSED',
-      'WARN': 'VALIDATION_PASSED_WITH_WARNINGS', 
-      'FAIL': 'VALIDATION_FAILED'
-    };
-    
-    const frontmatter = `---
-date: ${timestamp.replace(/[:.]/g, '-').slice(0, 16)}
-TASK-ID: ${result.taskId || 'UNKNOWN'}
-source: validation-system
-validation_type: ${category}
-category: ${category}
-priority: medium
-complexity: TBD
-components: [validation-generated]
-initial_status: [~]
-end_status: [${result.status === 'PASS' ? 'P' : result.status === 'FAIL' ? 'F' : 'W'}]
-tags: ${category}, validation, automated-testing
----
-
-# Validation Report - ${result.taskId || 'UNKNOWN'} - ${timestamp.replace(/[:.]/g, '-').slice(0, 16)}
-
-## Validation Category: ${this.getCategoryDescription(category)}
-
-**Overall Status**: ${statusMap[result.status] || result.status}
-**Execution Time**: ${result.duration}ms
-**Tests Executed**: ${result.tests.length}
-
-## Tests Executed
-
-${this.formatTestResults(result.tests)}
-
-## Evidence Collected
-
-${this.formatEvidence(result.evidence)}
-
-## Test Results Detail
-
-${this.formatTestResultsDetail(result.tests)}
-
-${result.errors.length > 0 ? `## Errors\n\n${this.formatErrors(result.errors)}\n` : ''}
-${result.warnings.length > 0 ? `## Warnings\n\n${this.formatWarnings(result.warnings)}\n` : ''}
-
-## Summary
-
-- **Project**: ${projectInfo.name}
-- **Category**: ${category}
-- **Status**: ${result.status}
-- **Duration**: ${result.duration}ms
-- **Timestamp**: ${timestamp}
-- **Tests Passed**: ${result.tests.filter(t => t.status === 'PASS').length}
-- **Tests Failed**: ${result.tests.filter(t => t.status === 'FAIL').length}
-- **Tests Warned**: ${result.tests.filter(t => t.status === 'WARN').length}
-`;
-
-    return frontmatter;
+    return this.validationReportService.formatValidationReport(result, projectInfo, category);
   }
 
-  /**
-   * Get category description for report
-   * @param {string} category - Validation category
-   * @returns {string} Human-readable category description
-   */
   getCategoryDescription(category) {
-    const descriptions = {
-      'build': 'Compilation/Build Tasks',
-      'quality': 'Code Quality Assessment',
-      'architecture': 'Architecture Validation',
-      'backend': 'Backend/Service Tasks',
-      'feature': 'Feature Implementation',
-      'core': 'Core System Validation',
-      'ui': 'User Interface Testing',
-      'lint': 'Code Linting and Style'
-    };
-    return descriptions[category] || `${category} Validation`;
+    return this.validationReportService.getCategoryDescription(category);
   }
 
-  /**
-   * Format test results for report
-   * @param {Array} tests - Test results array
-   * @returns {string} Formatted test list
-   */
   formatTestResults(tests) {
-    return tests.map(test => {
-      const icon = test.status === 'PASS' ? '✅' : test.status === 'FAIL' ? '❌' : '⚠️';
-      return `- [ ] ${test.name} - ${icon} ${test.status}`;
-    }).join('\n');
+    return this.validationReportService.formatTestResults(tests);
   }
 
-  /**
-   * Format evidence for report
-   * @param {Array} evidence - Evidence array
-   * @returns {string} Formatted evidence list
-   */
   formatEvidence(evidence) {
-    if (!evidence || evidence.length === 0) {
-      return 'No evidence collected';
-    }
-    
-    return evidence.map((item, index) => {
-      return `${index + 1}. ${item}`;
-    }).join('\n');
+    return this.validationReportService.formatEvidence(evidence);
   }
 
-  /**
-   * Format detailed test results
-   * @param {Array} tests - Test results array
-   * @returns {string} Formatted detailed results
-   */
   formatTestResultsDetail(tests) {
-    return tests.map(test => {
-      return `### ${test.name}
-
-**Status**: ${test.status}
-**Message**: ${test.message || 'N/A'}
-**Evidence**: ${test.evidence ? test.evidence.join(', ') : 'N/A'}
-`;
-    }).join('\n');
+    return this.validationReportService.formatTestResultsDetail(tests);
   }
 
-  /**
-   * Format errors for report
-   * @param {Array} errors - Errors array
-   * @returns {string} Formatted errors
-   */
   formatErrors(errors) {
-    return errors.map(error => `- ${error}`).join('\n');
+    return this.validationReportService.formatErrors(errors);
   }
 
-  /**
-   * Format warnings for report
-   * @param {Array} warnings - Warnings array
-   * @returns {string} Formatted warnings
-   */
   formatWarnings(warnings) {
-    return warnings.map(warning => `- ${warning}`).join('\n');
+    return this.validationReportService.formatWarnings(warnings);
   }
 
   /**
@@ -874,33 +664,33 @@ ${result.warnings.length > 0 ? `## Warnings\n\n${this.formatWarnings(result.warn
    */
   handleValidationError(error, projectInfo, category) {
     if (error.message.includes('Project configuration missing')) {
-      console.error(`\n🔧 Project configuration missing for: ${projectInfo.name}`);
-      console.error(`   📄 Configuration file needed: config/projects/${projectInfo.name.toLowerCase()}-valconfig.json`);
-      console.error(`   📖 Use template from: config/project-template.json`);
-      console.error(`   🔧 Agent should create and customize project configuration file\n`);
+      console.error(`\n[?] Project configuration missing for: ${projectInfo.name}`);
+      console.error(`   [?] Configuration file needed: config/projects/${projectInfo.name.toLowerCase()}-valconfig.json`);
+      console.error(`   [>] Use template from: config/project-template.json`);
+      console.error(`   [>] Agent should create and customize project configuration file\n`);
     } else if (error.message.includes('Invalid project config')) {
-      console.error(`\n❌ Invalid project configuration: ${projectInfo.name}`);
-      console.error(`   📄 Check file: config/projects/${projectInfo.name.toLowerCase()}-valconfig.json`);
-      console.error(`   🔧 Ensure all required fields are present and properly formatted\n`);
+      console.error(`\n[?] Invalid project configuration: ${projectInfo.name}`);
+      console.error(`   [>] Check file: config/projects/${projectInfo.name.toLowerCase()}-valconfig.json`);
+      console.error(`   [>] Ensure all required fields are present and properly formatted\n`);
     } else if (error.message.includes('Validation timeout')) {
-      console.error(`\n⏱️ Timeout occurred during ${category} validation`);
-      console.error(`   📄 Edit: config/projects/${projectInfo.name.toLowerCase()}-valconfig.json`);
-      console.error(`   🔧 Add: "timeout_overrides": { "${category}": ${this.getRecommendedTimeout(category)} }\n`);
+      console.error(`\n[?] Timeout occurred during ${category} validation`);
+      console.error(`   [>] Edit: config/projects/${projectInfo.name.toLowerCase()}-valconfig.json`);
+      console.error(`   [>] Add: "timeout_overrides": { "${category}": ${this.getRecommendedTimeout(category)} }\n`);
     } else if (error.message.includes('Report directory')) {
-      console.error(`\n📁 Report directory issue for project: ${projectInfo.name}`);
-      console.error(`   📄 Check: config/projects/${projectInfo.name.toLowerCase()}-valconfig.json`);
-      console.error(`   🔧 Ensure report_location is a valid, writable path\n`);
+      console.error(`\n[?] Report directory issue for project: ${projectInfo.name}`);
+      console.error(`   [>] Check: config/projects/${projectInfo.name.toLowerCase()}-valconfig.json`);
+      console.error(`   [>] Ensure report_location is a valid, writable path\n`);
     } else if (error.message.includes('No validator available')) {
-      console.error(`\n🔧 No validator available for category: ${category}`);
-      console.error(`   💡 Available options:`);
+      console.error(`\n[?] No validator available for category: ${category}`);
+      console.error(`   Available options:`);
       console.error(`   1. Use --submit-validator flag to provide a custom validator`);
       console.error(`   2. Check available categories with --list-categories`);
       console.error(`   3. Verify category spelling and try again\n`);
     } else {
-      console.error(`\n❌ Validation failed: ${error.message}`);
-      console.error(`   📄 Project: ${projectInfo.name}`);
-      console.error(`   📂 Category: ${category}`);
-      console.error(`   🔧 Check logs above for specific details\n`);
+      console.error(`\n[F] Validation failed: ${error.message}`);
+      console.error(`   Project: ${projectInfo.name}`);
+      console.error(`   Category: ${category}`);
+      console.error(`   Check logs above for specific details\n`);
     }
   }
 
@@ -928,7 +718,7 @@ ${result.warnings.length > 0 ? `## Warnings\n\n${this.formatWarnings(result.warn
     try {
       if (fs.existsSync(this.capabilityMatrixPath)) {
         this.capabilityMatrix = JSON.parse(fs.readFileSync(this.capabilityMatrixPath, 'utf8'));
-        console.log(`📊 Capability matrix loaded - ${Object.keys(this.capabilityMatrix.categories).length} categories`);
+        console.log(`[x] Capability matrix loaded - ${Object.keys(this.capabilityMatrix.categories).length} categories`);
       } else {
         throw new Error('Capability matrix not found');
       }
@@ -944,7 +734,7 @@ ${result.warnings.length > 0 ? `## Warnings\n\n${this.formatWarnings(result.warn
     const loadedCount = 0;
     const categories = Object.keys(this.capabilityMatrix.categories);
     
-    console.log(`🔧 Loading ${categories.length} validators...`);
+    console.log(`[~] Loading ${categories.length} validators...`);
     
     for (const category of categories) {
       try {
@@ -959,7 +749,7 @@ ${result.warnings.length > 0 ? `## Warnings\n\n${this.formatWarnings(result.warn
       }
     }
     
-    console.log(`✅ Loaded ${this.validators.size}/${categories.length} validators`);
+    console.log(`[x] Loaded ${this.validators.size}/${categories.length} validators`);
   }
 
   /**
@@ -984,14 +774,14 @@ ${result.warnings.length > 0 ? `## Warnings\n\n${this.formatWarnings(result.warn
       const validator = new ValidatorClass();
       
       // Validate interface compliance
-      const complianceResult = await this.complianceChecker.checkCompliance(validator);
+      const complianceResult = await this.validatorValidationService.ensureInterfaceCompliance(validator);
       if (!complianceResult.compliant) {
         throw new Error(`Validator interface compliance failed: ${complianceResult.score}%`);
       }
       
       // Store validator
       this.validators.set(category, validator);
-      console.log(`✅ Loaded validator: ${category}`);
+      console.log(`[x] Loaded validator: ${category}`);
       
     } catch (error) {
       throw new Error(`Failed to load validator ${category}: ${error.message}`);
@@ -1010,7 +800,7 @@ ${result.warnings.length > 0 ? `## Warnings\n\n${this.formatWarnings(result.warn
         await this.loadValidator(category);
         validator = this.validators.get(category);
       } catch (error) {
-        console.warn(`⚠️ Could not load validator for ${category}, checking for fallback`);
+        console.warn(`[>] Could not load validator for ${category}, checking for fallback`);
       }
     }
     
@@ -1051,7 +841,7 @@ ${result.warnings.length > 0 ? `## Warnings\n\n${this.formatWarnings(result.warn
     // Attempt each recovery strategy
     for (const strategy of recoveryStrategies) {
       try {
-        console.log(`  🔄 Attempting error recovery using strategy: ${strategy}`);
+        console.log(`  [>] Attempting error recovery using strategy: ${strategy}`);
         
         const recoveryResult = await this.executeRecoveryStrategy(
           strategy, 
@@ -1072,7 +862,7 @@ ${result.warnings.length > 0 ? `## Warnings\n\n${this.formatWarnings(result.warn
         }
         
       } catch (recoveryError) {
-        console.log(`  ❌ Recovery strategy ${strategy} failed: ${recoveryError.message}`);
+        console.log(`  [F] Recovery strategy ${strategy} failed: ${recoveryError.message}`);
       }
     }
     
@@ -1090,7 +880,7 @@ ${result.warnings.length > 0 ? `## Warnings\n\n${this.formatWarnings(result.warn
     switch (strategy) {
       case 'timeout_recovery':
         // Increase timeout and retry with minimal scope
-        console.log(`    ⏱️ Timeout recovery: Extending timeout and reducing scope`);
+        console.log(`    [>] Timeout recovery: Extending timeout and reducing scope`);
         const extendedTimeout = 600000; // 10 minutes
         const minimalScope = { patterns: ['*.json', '*.ts'] }; // Minimal file patterns
         
@@ -1110,19 +900,19 @@ ${result.warnings.length > 0 ? `## Warnings\n\n${this.formatWarnings(result.warn
         
       case 'file_recovery':
         // Create missing directories or files if possible
-        console.log(`    📁 File recovery: Attempting to resolve missing files`);
+        console.log(`    [>] File recovery: Attempting to resolve missing files`);
         // This is a placeholder - could implement directory creation logic
         break;
         
       case 'permission_recovery':
         // Skip problematic files and continue with available files
-        console.log(`    🔐 Permission recovery: Continuing with accessible files only`);
+        console.log(`    [>] Permission recovery: Continuing with accessible files only`);
         // This could implement a filtered scope approach
         break;
         
       case 'memory_recovery':
         // Force garbage collection and retry with reduced scope
-        console.log(`    🧹 Memory recovery: Forcing garbage collection`);
+        console.log(`    [>] Memory recovery: Forcing garbage collection`);
         if (global.gc) {
           global.gc();
         }
@@ -1130,7 +920,7 @@ ${result.warnings.length > 0 ? `## Warnings\n\n${this.formatWarnings(result.warn
         
       case 'basic_retry':
         // Simple retry with original parameters
-        console.log(`    🔁 Basic retry: Single retry attempt`);
+        console.log(`    [>] Basic retry: Single retry attempt`);
         await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
         
         const retryValidator = await this.getValidator(category);
@@ -1161,13 +951,13 @@ ${result.warnings.length > 0 ? `## Warnings\n\n${this.formatWarnings(result.warn
       // Initialize progress monitoring for long-running validations
       progressMonitor = setInterval(() => {
         if (!validationCompleted) {
-          console.log(`  ⏳ ${category} validation in progress... (${Math.round((Date.now() - this.validationStartTime) / 1000)}s elapsed)`);
+          console.log(`  [~] ${category} validation in progress... (${Math.round((Date.now() - this.validationStartTime) / 1000)}s elapsed)`);
           
           // Circuit breaker: If validation exceeds 80% of timeout, trigger warning
           const elapsed = Date.now() - this.validationStartTime;
           if (elapsed > categoryTimeout * 0.8 && !circuitBreakerTriggered) {
             circuitBreakerTriggered = true;
-            console.log(`  ⚠️ Circuit breaker warning: ${category} validation approaching timeout threshold`);
+            console.log(`  [!] Circuit breaker warning: ${category} validation approaching timeout threshold`);
           }
         }
       }, 15000); // Report progress every 15 seconds
@@ -1213,7 +1003,7 @@ ${result.warnings.length > 0 ? `## Warnings\n\n${this.formatWarnings(result.warn
       }
       
       if (circuitBreakerTriggered) {
-        console.log(`  ✅ Circuit breaker resolved: ${category} validation completed`);
+        console.log(`  [x] Circuit breaker resolved: ${category} validation completed`);
       }
     }
   }
@@ -1225,7 +1015,7 @@ ${result.warnings.length > 0 ? `## Warnings\n\n${this.formatWarnings(result.warn
     // Verify validator health
     const diagnostics = validator.runSelfDiagnostics();
     if (diagnostics.status !== 'healthy') {
-      console.warn(`⚠️ Validator diagnostics warning: ${validator.category}`);
+      console.warn(`[!] Validator diagnostics warning: ${validator.category}`);
     }
     
     // TODO: [TASK-VAL-CORE-FIX-001] Pattern: case-insensitive-compatibility-check | Complexity: 3 | Dependencies: project-configuration
@@ -1240,7 +1030,7 @@ ${result.warnings.length > 0 ? `## Warnings\n\n${this.formatWarnings(result.warn
     
     if (!supportedProjectsLower.includes(projectNameLower) && 
         !capabilities.supportedProjects.includes('*')) {
-      console.warn(`⚠️ Project ${projectInfo.name} may not be fully supported by ${validator.category} validator`);
+      console.warn(`[!] Project ${projectInfo.name} may not be fully supported by ${validator.category} validator`);
     }
   }
 
@@ -1249,14 +1039,14 @@ ${result.warnings.length > 0 ? `## Warnings\n\n${this.formatWarnings(result.warn
    */
   async postValidationProcessing(category, result) {
     // Basic validation result logging only
-    console.log(`📊 Validation result for ${category}: ${result.status} (${result.duration}ms)`);
+    console.log(`[D] Validation result for ${category}: ${result.status} (${result.duration}ms)`);
     
     // DISABLED FOR CORE VALIDATION - TODO: Re-enable after core system validation
     // await this.updateValidatorMetrics(category, result);
     
     // Basic issue detection only
     if (result.status === 'FAIL' && result.errors.length > 3) {
-      console.warn(`⚠️ Multiple failures in ${category} - review recommended`);
+      console.warn(`[F] Multiple failures in ${category} - review recommended`);
     }
   }
 
@@ -1271,19 +1061,19 @@ ${result.warnings.length > 0 ? `## Warnings\n\n${this.formatWarnings(result.warn
       'compliance validation framework ready'
     ];
     
-    console.log('🔍 Verifying system integrity...');
+    console.log('[T] Verifying system integrity...');
     
     // Add integrity checks here
     // This is a placeholder for comprehensive system checks
     
-    console.log('✅ System integrity verified');
+    console.log('[x] System integrity verified');
   }
 
   /**
    * Run system diagnostics
    */
   async runSystemDiagnostics() {
-    console.log('🩺 Running system diagnostics...');
+    console.log('[T] Running system diagnostics...');
     
     const diagnostics = {
       validators: {},
@@ -1301,10 +1091,10 @@ ${result.warnings.length > 0 ? `## Warnings\n\n${this.formatWarnings(result.warn
       .filter(([_, diag]) => diag.status?.toLowerCase() !== 'healthy').length;
     
     if (unhealthyValidators > 0) {
-      console.warn(`⚠️ ${unhealthyValidators} validators have health issues`);
+      console.warn(`[!] ${unhealthyValidators} validators have health issues`);
     }
     
-    console.log('✅ System diagnostics completed');
+    console.log('[x] System diagnostics completed');
   }
 
   /**
@@ -1331,7 +1121,7 @@ ${result.warnings.length > 0 ? `## Warnings\n\n${this.formatWarnings(result.warn
     this.errorHistory.push(errorEntry);
     
     if (this.loggingEnabled) {
-      console.error(`\n🚨 ERROR IN ${operation.toUpperCase()}`);
+      console.error(`\n[!] ERROR IN ${operation.toUpperCase()}`);
       console.error(`   Message: ${error.message}`);
       console.error(`   Type: ${error.constructor.name}`);
       if (error.code) {
@@ -1394,169 +1184,26 @@ ${result.warnings.length > 0 ? `## Warnings\n\n${this.formatWarnings(result.warn
    * Assess risk of submitted agent validator
    */
   async assessSubmittedValidatorRisk(validatorPath, category) {
-    // Read validator file for risk analysis
-    const content = fs.readFileSync(validatorPath, 'utf8');
-    let riskScore = 0;
-    const riskFactors = [];
-    
-    // Check for high-risk patterns
-    if (content.includes('execSync') || content.includes('spawn')) {
-      riskScore += 30;
-      riskFactors.push('Contains command execution');
-    }
-    
-    if (content.includes('eval(') || content.includes('Function(')) {
-      riskScore += 40;
-      riskFactors.push('Contains code evaluation');
-    }
-    
-    if (content.includes('fs.writeFileSync') || content.includes('fs.unlinkSync')) {
-      riskScore += 20;
-      riskFactors.push('Modifies file system');
-    }
-    
-    // Core system categories have higher risk
-    if (['core', 'build', 'architecture'].includes(category)) {
-      riskScore += 25;
-      riskFactors.push('Critical system category');
-    }
-    
-    // Determine risk level
-    let riskLevel = 'low';
-    if (riskScore >= 70) {
-      riskLevel = 'critical';
-    } else if (riskScore >= 40) {
-      riskLevel = 'high';
-    } else if (riskScore >= 20) {
-      riskLevel = 'medium';
-    }
-    
-    return {
-      riskLevel,
-      score: riskScore,
-      factors: riskFactors
-    };
+    return this.validatorValidationService.assessSubmittedValidatorRisk(validatorPath, category);
   }
   
   /**
    * Sandbox test submitted validator
    */
   async sandboxTestSubmittedValidator(validatorPath) {
-    const result = {
-      passed: false,
-      errors: [],
-      warnings: []
-    };
-    
-    try {
-      // Basic import test
-      const { default: ValidatorClass } = await import(`file://${path.resolve(validatorPath)}`);
-      const validator = new ValidatorClass();
-      
-      // Test required methods exist
-      const requiredMethods = ['validate', 'getCapabilities', 'getMetadata', 'runSelfDiagnostics'];
-      for (const method of requiredMethods) {
-        if (typeof validator[method] !== 'function') {
-          result.errors.push(`Missing required method: ${method}`);
-        }
-      }
-      
-      // Test basic method execution
-      const capabilities = validator.getCapabilities();
-      const metadata = validator.getMetadata();
-      const diagnostics = validator.runSelfDiagnostics();
-      
-      if (!capabilities || !metadata || !diagnostics) {
-        result.errors.push('Basic method execution failed');
-      }
-      
-      result.passed = result.errors.length === 0;
-      
-    } catch (error) {
-      result.errors.push(`Import or execution failed: ${error.message}`);
-    }
-    
-    return result;
+    return this.validatorValidationService.sandboxTestSubmittedValidator(validatorPath);
   }
   
   /**
    * Validate submitted validator compliance
    */
   async validateSubmittedValidatorCompliance(validatorPath) {
-    try {
-      const { default: ValidatorClass } = await import(`file://${path.resolve(validatorPath)}`);
-      const validator = new ValidatorClass();
-      
-      return await this.complianceChecker.checkCompliance(validator);
-    } catch (error) {
-      return {
-        compliant: false,
-        score: 0,
-        error: error.message
-      };
-    }
+    return this.validatorValidationService.validateSubmittedValidatorCompliance(validatorPath);
   }
   
   /**
    * Integrate submitted validator
    */
-  async integrateSubmittedValidator(validatorPath, category) {
-    // Copy validator to validators directory
-    const fileName = `${category}-validator.js`;
-    const targetPath = path.join(this.validationPath, 'src/validators', fileName);
-    
-    // Create backup if validator already exists
-    if (fs.existsSync(targetPath)) {
-      await this.rollbackManager.createBackup(category);
-    }
-    
-    // Copy validator file
-    fs.copyFileSync(validatorPath, targetPath);
-    
-    // Update capability matrix
-    await this.updateCapabilityMatrixForSubmittedValidator(category, fileName);
-    
-    // Load the new validator
-    await this.loadValidator(category);
-  }
-  
-  /**
-   * Update capability matrix for submitted validator
-   */
-  async updateCapabilityMatrixForSubmittedValidator(category, fileName) {
-    let matrix = {};
-    if (fs.existsSync(this.capabilityMatrixPath)) {
-      matrix = JSON.parse(fs.readFileSync(this.capabilityMatrixPath, 'utf8'));
-    }
-    
-    // Add new category
-    matrix.categories = matrix.categories || {};
-    matrix.categories[category] = {
-      scopes: ['**/*'],  // Default scope, can be customized
-      validator: fileName,
-      description: `${category} validation - Agent submitted`,
-      interfaceVersion: '3.0.0',
-      capabilities: {
-        supportedProjects: ['*'],  // Default to all projects
-        performanceProfile: 'standard',
-        requiredDependencies: ['node', 'npm']
-      },
-      safety: {
-        lastValidated: new Date().toISOString(),
-        complianceStatus: 'verified',
-        submittedBy: 'agent',
-        submittedAt: new Date().toISOString()
-      }
-    };
-    
-    // Update metadata
-    matrix.metadata = matrix.metadata || {};
-    matrix.metadata.lastUpdated = new Date().toISOString();
-    matrix.metadata.totalAgentSubmissions = (matrix.metadata.totalAgentSubmissions || 0) + 1;
-    
-    fs.writeFileSync(this.capabilityMatrixPath, JSON.stringify(matrix, null, 2), 'utf8');
-  }
-
   /* DISABLED FOR CORE VALIDATION - TODO: Re-enable after core system validation
   
   /**
@@ -1621,7 +1268,7 @@ ${result.warnings.length > 0 ? `## Warnings\n\n${this.formatWarnings(result.warn
   async checkSafetyFrameworkHealth() {
     const health = { status: 'healthy', issues: [] };
     
-    if (!this.complianceChecker || !this.rollbackManager) {
+    if (!this.validatorValidationService?.isReady() || !this.rollbackManager) {
       health.status = 'error';
       health.issues.push('Safety framework components missing');
     }
@@ -1688,7 +1335,7 @@ ${result.warnings.length > 0 ? `## Warnings\n\n${this.formatWarnings(result.warn
     };
     
     fs.writeFileSync(templatePath, JSON.stringify(defaultTemplate, null, 2), 'utf8');
-    console.log(`📄 Created project template: ${templatePath}`);
+    console.log(`[>] Created project template: ${templatePath}`);
   }
 
   /**

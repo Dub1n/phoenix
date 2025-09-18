@@ -1,0 +1,210 @@
+# ContextGrabber: Embeddable Context Provider
+
+## Preface
+
+There is a serious call for questioning the veracity of information shared online. Considering the unprecedented amount of misinformation spread online, which is especially harmful for political efforts, and with shifts in community notes/fact-checking availability, the lack of transparency, trust, and validity of online discussion is at an all time low. While there very much is a requirement for the validation of information *posted* online, but this tool is aimed at solving the *sharing* aspect of distribution.
+
+## Description
+
+When a user writes to any website they can include a ContextLink that is understood by the ContextGrabber. This link points to a file/text/section of text from wherever (so long as it supports the context grabber). When someone wants to quote this text, they use the ContextGrabber via an embeddable tool - such as in X.com posts.
+Ideally, the use of this tool would establish a ground source of truth for quotes, and also cause anyone who is not quoting via the ContextGrabber to be viewed as questionable in thier approach to presenting information as truth, and cause quotes that aren't shown using the ContextGrabber as questionable in thier validity.
+
+## Usage
+
+This tool would read the text selected and find the relevant context that the user has decided is related to this (or any part of) this quote and appends it to the resulting view, so that it looks (by default) like:
+
+-------------------------------------
+"Quote ... end of quote"
+Context: "Context ... end of context"
+-------------------------------------
+
+This is useful because often there are things that people want to ensure are not taken out of context or ensure that necessary relevant information is supplied alongside whatever it is they are saying.
+
+The ContextLink can be of a number of formats, such as a whole page, a section of a page, a literal string, etc. Each of these options also allows the user to specify whether it is presented as a link to that text or pasted out into the Context block of the view. There will be limits on the amount of text that can be displayed as context (and even as quote) with a "quote quote quote ... (link to quote)" and "context context context ... (link to context)" as truncated versions should they exceed that limit.
+
+They can also decide where the context is placed:
+Option 1: a ContextLink inside of the text where they want it, i.e. "text text text [ContextLink] text text"
+which would be displayed as "text text text [Context contents] text text"
+Option 2: ContextLinks at any other point in their document that has a ContextRef that can be placed elsewhere in the text, i.e. "text text text [1] text text" ... "[1](ContextLink)"
+Either of these options then determine where the text is placed relative to the quote should that be possible, depending on the section of the text that is quoted, otherwise it will have to fallback to the default. An example of a failing placement would be if they have placed a ContextLink (or refContextRef) inline with instructions <TODO: need to work this one out> to add the context for the text around it, but the quoter only quotes some of that text but not the part that includes the ContextLink or ContextRef.
+
+This allows the author to have their quote be before, during, or after the quoted text when displayed by ContextGrabber's embedded view.
+
+
+## ChatGPT-5 review
+
+here’s a fair, supervisor-style critique with real-world legs—product thinking, buildability, adoption, and the sharp edges you’ll hit in the wild. i’ll reference your text where useful.
+
+# quick take
+
+the core idea—**linking a quote to verifiable surrounding context and showing both in the embed**—is strong and timely. it tackles *sharing integrity* rather than truth arbitration. solid. where it needs work is: platform reality (x/”cards”, extensions, policy), a precise selector model (how we find exactly *that* text again), tamper/bit-rot resilience (pages change), and incentives/adoption.
+
+---
+
+# what’s working
+
+* **clear problem framing:** you explicitly position this as solving *sharing* rather than *validation*. that’s smart and less politically fraught.&#x20;
+* **simple mental model:** “quote + context shown together,” with truncation and links. it’s legible and implementable.&#x20;
+* **author-driven placement options:** inline `ContextLink` or a referenced `ContextRef`, with fallback behavior if the quoted region doesn’t include the marker. good UX thinking seed.&#x20;
+
+---
+
+# key gaps & how to fix them
+
+## 1) platform reality (x, fb, etc.)
+
+* your doc imagines an “embeddable tool—such as in x.com posts.” in practice, you **don’t control** how platforms render external links. you get an Open Graph/Twitter Card preview at best; no arbitrary JS. consider:
+
+  * **phase 1:** a hosted share URL that renders a clean “quote + context” card. rely on link previews (OG tags) to tease content; clickthrough shows the full interactive.
+  * **phase 2:** **browser extension** + **publisher JS widget** (wordpress/ghost/substack plugins) that add a “quote with context” button. end-run platforms.
+  * **phase 3 (moonshot):** official integrations. plan as bonus, not baseline.
+* also, your preface claims a “recent loss of x.com community notes and facebook fact checker.” treat this as **time-sensitive and verify before publishing**; otherwise credibility takes a hit. Rephrase: “with shifts in community notes/fact-checking availability…” and cite current status.&#x20;
+
+## 2) precise text anchoring (selectors)
+
+* quoting text on the web is fragile (DOM shifts, edits). specify a **selector strategy**:
+
+  * **primary:** W3C Web Annotation **TextQuoteSelector** (exact/prefix/suffix text) + **TextPositionSelector** (start/end offsets).
+  * **fallbacks:** CSS/XPath to nearest stable container; URL fragments; content hash of the nearest block.
+  * **tolerance:** fuzz matching to survive minor edits; highlight drift if confidence < threshold.
+* add a short algorithmic note: *resolve selectors → fetch page (or archive) → locate exact match → expand ±N sentences for context → render*.
+
+## 3) link rot & page mutation
+
+* quotes disappear or change. add durability:
+
+  * **on create:** store a capture (link to Memento/Internet Archive, or your own lightweight snapshot).
+  * **hashing:** store a **hash of the quoted string** and surrounding block; warn if current page no longer matches the hash.
+  * **timestamp & version:** show capture time and “from archive vs live” badge.
+
+## 4) author-chosen context ≠ objective context
+
+* you note “the user decides relevant context.” that can be abused (cherry-picking). mitigate by:
+
+  * a **toggle to expand automatic neutral context** (e.g., ±2 sentences / paragraph before & after), shown *in addition to* author-provided context.
+  * a **disclosure chip**: “context provided by author • auto-context available.”
+  * optionally, **community add-on context** (threaded, rate-limited), but that’s scope creep—plan later.
+
+## 5) UI/UX specifics
+
+* your ASCII mock is clear; specify component rules:
+
+  * **quote block** (large typographic weight, copy icon, source URL, timestamp).
+  * **context block** (collapsible; “N more sentences” affordance).
+  * **drift badge** if source changed.
+  * **truncation** rules (“… (open full quote)”) already mentioned—keep both quote and context truncation consistent.&#x20;
+* placement logic for inline/ref cases is underdefined; give 2–3 deterministic rules and a fallback. you already flag a failing case; formalize it.&#x20;
+
+## 6) security, privacy, abuse
+
+* **PII leaks:** context expansion might surface unintended PII. add a **safety screen** (client-side regex/ML heuristic) before publishing.
+* **copyright:** showing context may exceed fair use. defaults: short context, always link through, obey robots/copyright headers; publisher opt-out header (`meta name="contextgrabber" content="noembed"`).
+* **phishing/spam:** signed share objects (see below) + rate limits.
+
+## 7) trust & authenticity
+
+* start simple: no grand reputation system. but define a **signed claim** format (JWS):
+
+  * payload fields: `url`, `quote_text`, `context_bounds`, `selectors`, `created_at`, `source_hash`, `archive_url`, `display_opts`.
+  * signature by creator (optional; keypair) or by your service for tamper-evidence.
+* later, allow **org-verified keys** (newsrooms, journals) to sign shares.
+
+---
+
+# productization & adoption
+
+## target users (wedge strategy)
+
+1. **journalists & newsletters** (Substack/Ghost): need defensible quotes; easy plugins win.
+2. **research/academia/blogs:** care about citations but want low friction.
+3. **policy/advocacy orgs:** routinely misquoted; clear benefit.
+
+## go-to-market
+
+* **wordpress/ghost/substack plugins** + **browser extension** are your adoption engine.
+* **publisher SDK**: a 1-line `<script>` to enable “quote with context” buttons on their articles.
+* **case studies**: show misquote → your card fixes it → lift in trust metrics (clickthrough, time-on-page).
+
+## incentives
+
+* readers get clarity; authors get misquote armor. bake **analytics**: how often your card is viewed vs original article CTR. publishers like numbers.
+
+---
+
+# feasibility & likelihood to build/audience
+
+**build feasibility (MVP in 6–8 weeks by 1–2 devs): 8/10**
+
+* hosted renderer + link preview + selector engine + extension is very doable.
+
+**platform integration dependence: 3/10**
+
+* you won’t control in-feed rendering beyond link previews. plan around that.
+
+**audience potential (12 months): 6/10 baseline, 8/10 with newsroom/plugin wins**
+
+* adoption hinges on **publisher tooling** and **creator ergonomics**. win a few visible pilots and you get network effects.
+
+**biggest pitfalls**
+
+* link rot & selector fragility (solve with archive + hashes).
+* IP/fair use drama (solve with tight defaults + opt-outs).
+* “this is still cherry-picked” critiques (solve with auto-context + disclosure).
+* platform throttling of external link previews (mitigate with extension/publisher embeds).
+
+---
+
+# concrete spec tighten-ups (map to your doc)
+
+* **name the artifact**: `ContextLink` → a URL with packed, signed selectors + display options. (where you say “When a user writes… include a ContextLink understood by ContextGrabber.”)&#x20;
+* **define formats you already hint at** (whole page / section / literal string): add a `type` field + selector schema; set a hard cap on displayed chars with “… (open full)”.&#x20;
+* **placement rules** for Option 1 vs Option 2 (inline vs referenced) with exact fallback order; you already note failure modes—codify them.&#x20;
+
+---
+
+# minimal data model (v0)
+
+```
+ContextShare {
+  id,                 // short uid
+  url,                // canonicalized source url
+  quote_text,         // exact quoted string
+  context_policy,     // e.g., ±2 sentences | author_snippet_only
+  selectors: { textQuote, textPosition, xpath?, css? },
+  source_hash,        // hash of source block
+  archive_url?,       // memento/perma.cc/etc
+  created_at,
+  display: { show_context: true, truncation_chars: 280 },
+  signature?          // JWS for tamper-evidence
+}
+```
+
+---
+
+# 2-week MVP plan (tight)
+
+1. **selector engine** (TextQuote/TextPosition + fuzz).
+2. **renderer** (hosted page + OG tags for pretty previews).
+3. **share composer** (simple web UI + browser extension “quote with context”).
+4. **archive hookup** (save archive link when possible; warn if blocked).
+5. **wordpress/ghost plugin** (one-click button + auto-OG tags).
+6. **drift detection** (badge when source text no longer matches hash).
+
+---
+
+# edits to your document (surgical)
+
+* **preface:** soften platform claims; cite current status or generalize the observation.&#x20;
+* **description:** explicitly note platforms don’t run your JS; describe the link-preview + extension approach.&#x20;
+* **usage:** specify selector standard, truncation defaults, and the exact placement fallback order; keep your inline vs ref examples (they’re good).&#x20;
+
+---
+
+# closing
+
+the idea is sound and shippable with an honest v1. focus on **selector robustness, archiving, and publisher tooling**; treat social platforms as *distribution*, not runtime. if you make it one-click for writers and predictable for readers, this can carve a niche—and maybe, over time, become the “quote card” norm. 🙂
+
+
+
+
+

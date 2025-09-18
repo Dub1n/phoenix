@@ -464,6 +464,11 @@ export class UIValidator {
    * Find files matching patterns in project scope
    * If scopeConfig is provided, it takes precedence over patterns
    */
+  // TODO[VALIDATION-FILE-DISCOVERY]: Extract this scope-aware traversal into a shared helper (e.g.
+  //   scripts/validation/src/core/file-discovery-utils.js) that builds on resolveScopedFiles/filterScopedFiles and the
+  //   path-safety patterns documented in Templum/dev/patterns/utilities/system/path-utils.md. The shared helper should
+  //   accept projectInfo + scopeConfig and return the matched files so UI, lint, subagent, and test validators stop
+  //   duplicating manual walkDirectory implementations.
   findFilesInScope(projectInfo, patterns, scopeConfig = null) {
     const files = [];
     

@@ -1,0 +1,28 @@
+export default class {{CLASS_NAME}} {
+  constructor() {
+    this.category = '{{CATEGORY}}';
+    this.name = '{{CATEGORY_NAME}}';
+    this.description = '{{DESCRIPTION}}';
+  }
+
+  getCapabilities() {
+    return {
+      category: '{{CATEGORY}}',
+      name: '{{CATEGORY_NAME}}',
+      description: '{{DESCRIPTION}}'
+    };
+  }
+
+  getMetadata() {
+    return {
+      category: '{{CATEGORY}}',
+      categoryName: '{{CATEGORY_NAME}}',
+      description: '{{DESCRIPTION}}',
+      version: '{{VERSION}}'
+    };
+  }
+
+  async validate(projectInfo, scopeConfig, options) {
+    {{VALIDATION_LOGIC}}
+  }
+}

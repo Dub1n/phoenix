@@ -22,6 +22,7 @@
 import fs from 'fs';
 import path from 'path';
 import { execSync, spawn } from 'child_process';
+import { resolveScopedFiles, appendScopeEvidence, filterScopedFiles, normalizeScopePatterns } from '../core/scope-utils.js';
 
 /**
  * Backend Validator implementing IValidator interface
@@ -44,6 +45,9 @@ export class BackendValidator {
       commandExecutionAttempts: 0,
       retryCount: 0
     };
+
+    this.scopeResult = null;
+    this.scopedBackendFiles = [];
   }
 
   /**
@@ -51,7 +55,7 @@ export class BackendValidator {
    */
   async validate(projectInfo, scopeConfig, options = {}) {
     this.validationStartTime = Date.now();
-    
+
     const result = {
       status: 'PENDING',
       tests: [],
@@ -64,7 +68,34 @@ export class BackendValidator {
     try {
       console.log('  Executing Backend/Service mandatory validation commands...');
       console.log('  Source: TEMPLUM-TESTING-GUIDE.md Section 1');
-      
+
+      const projectPath = projectInfo?.path || process.cwd();
+      this.scopeResult = await this.resolveBackendScope(projectPath, scopeConfig);
+      appendScopeEvidence(result, this.scopeResult, { limit: 5, includePatterns: true });
+
+      const effectivePatterns = normalizeScopePatterns(scopeConfig, this.scopes);
+      const filteredScope = filterScopedFiles(this.scopeResult, effectivePatterns);
+      this.scopedBackendFiles = filteredScope.files;
+
+      if (this.scopedBackendFiles.length === 0) {
+        const scopeTest = {
+          name: 'Backend Scope Validation',
+          status: 'SKIP',
+          message: 'No backend files detected in scope',
+          evidence: ['Scope produced no backend-related files; backend validation skipped'],
+          warnings: ['Backend validator skipped because no relevant files matched scope patterns'],
+          errors: []
+        };
+        appendScopeEvidence(scopeTest, this.scopeResult, { limit: 5, includePatterns: true });
+        result.tests.push(scopeTest);
+        result.status = 'WARN';
+        result.warnings.push('No backend files detected in scope - backend validator skipped');
+        result.duration = Date.now() - this.validationStartTime;
+        return result;
+      }
+
+      console.log(`  Backend scope resolved with ${this.scopedBackendFiles.length} file${this.scopedBackendFiles.length === 1 ? '' : 's'}`);
+
       // Start backend service first
       const backendService = await this.startService(
         'minimal-backend',
@@ -139,6 +170,23 @@ export class BackendValidator {
     } finally {
       // Cleanup
       await this.cleanup();
+    }
+  }
+
+  async resolveBackendScope(projectPath, scopeConfig) {
+    try {
+      return await resolveScopedFiles(projectPath, scopeConfig || {});
+    } catch (error) {
+      console.log(`  Warning: Unable to resolve backend scope: ${error.message}`);
+      return {
+        root: projectPath,
+        files: [],
+        relativeFiles: [],
+        patternMatches: new Map(),
+        totalSize: 0,
+        warnings: [`Scope resolution failed: ${error.message}`],
+        patterns: []
+      };
     }
   }
 
@@ -695,10 +743,14 @@ export class BackendValidator {
   /**
    * Execute operation with retry logic and exponential backoff
    */
+  // TODO[VALIDATION-UTILS-RETRY]: Consolidate retry/backoff handling into shared execution utilities by adapting
+  //   Templum/src/utils/async-utils.ts (AsyncUtils.retry) or resilience-utils so every validator can import a single
+  //   `retryWithBackoff` helper instead of re-implementing counters/timers here. The shared helper should accept the
+  //   same maxRetries/backoff options used below to avoid behavioural drift.
   async executeWithRetry(operation, maxRetries = 3, initialBackoffMs = 1000) {
     let lastError;
     this.metrics.retryCount++;
-    
+
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         this.debugLog('debug', `Retry operation attempt ${attempt}/${maxRetries}`);

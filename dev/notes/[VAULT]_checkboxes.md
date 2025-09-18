@@ -39,4 +39,5 @@
 [o] event / appointment: sometimes used to denote a calendar event rather than a task.
 [B] implemented-broken: core logic done but compilation/tests failing (requires structural fix)
 [T] implemented-testing: compiles but needs functional validation
+[D] documenting: compiles and functionality validated, ready for documentation
 [F] failure

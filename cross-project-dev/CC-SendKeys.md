@@ -14,7 +14,7 @@ Discovered that PowerShell `SendKeys` from background bash processes can send ke
 
 ### What We Tested
 
-#### Approach 1: Piped Input ( Works Great)
+#### Approach 1: Piped Input (Works Great)
 
 ```bash
 echo -e "1\n2\n3\n" | node test-interactive.js

@@ -17,15 +17,150 @@
 
 // Pattern: modular-validator-implementation (documented in templum-patterns.md)
 // Implementation: Interface-compliance-validation approach following IValidator pattern
-// TODO[QUALITY-REWRITE-001]: Modularise this validator into composable units (scope handling, analysis runners, reporters) without altering behaviour.
-//    Suggested structure:\n//    const scope = await resolveScopedFiles(...);\n//    const complexity = await runComplexityAnalysis(scope);\n//    const debt = await runDebtAnalysis(scope);\n//    return aggregateResults([complexity, debt, refactoring, maintainability]);
-// TODO[QUALITY-REWRITE-002]: Implement enhanced reporting modules once structure is modularised.
-//    Example detail emitter:\n//    const debtReport = buildDebtReport(fileContent, patterns);\n//    debtReport.entries.forEach(entry => evidence.push(Debt: : -> ));
+
+const QUALITY_REPORT_LABELS = Object.freeze({
+  SUMMARY: '[SUMMARY]',
+  BREAKDOWN: '[BREAKDOWN]',
+  INSIGHT: '[INSIGHT]'
+});
+
+function createQualityReportingModules() {
+  const knownStatuses = new Set(['PASS', 'FAIL', 'WARN', 'SKIP', 'PENDING']);
+
+  const normaliseStatus = status => {
+    if (!status) return 'UNKNOWN';
+    const normalised = String(status).toUpperCase();
+    return knownStatuses.has(normalised) ? normalised : 'UNKNOWN';
+  };
+
+  const buildSummary = (tests, duration) => {
+    const counts = { PASS: 0, FAIL: 0, WARN: 0, SKIP: 0, PENDING: 0, UNKNOWN: 0 };
+    for (let i = 0; i < tests.length; i++) {
+      counts[normaliseStatus(tests[i].status)]++;
+    }
+    const summaryParts = [
+      `${tests.length} total`,
+      `PASS:${counts.PASS}`,
+      `WARN:${counts.WARN}`,
+      `FAIL:${counts.FAIL}`
+    ];
+    if (counts.SKIP) summaryParts.push(`SKIP:${counts.SKIP}`);
+    if (counts.PENDING) summaryParts.push(`PENDING:${counts.PENDING}`);
+    if (counts.UNKNOWN) summaryParts.push(`UNKNOWN:${counts.UNKNOWN}`);
+    const durationValid = typeof duration === 'number' && Number.isFinite(duration) && duration >= 0;
+    const durationPart = durationValid ? `Duration:${Math.trunc(duration)}ms` : null;
+    return durationPart
+      ? `Tests run - ${summaryParts.join(', ')}; ${durationPart}`
+      : `Tests run - ${summaryParts.join(', ')}`;
+  };
+
+  const buildBreakdown = tests => {
+    const breakdown = [];
+    for (let i = 0; i < tests.length; i++) {
+      const test = tests[i];
+      const status = normaliseStatus(test.status);
+      const name = test?.name || 'Unnamed Test';
+      const message = typeof test?.message === 'string' ? test.message.trim() : '';
+      const evidenceCount = Array.isArray(test?.evidence) ? test.evidence.length : 0;
+      let detail = `${name}: ${status}`;
+      if (message) {
+        detail += ` - ${message}`;
+      } else if (evidenceCount > 0) {
+        detail += ` - ${evidenceCount} evidence items`;
+      }
+      breakdown.push(detail);
+    }
+    return breakdown;
+  };
+
+  const buildInsights = tests => {
+    const insights = { warnings: [], evidence: [] };
+    const failing = [];
+    const warning = [];
+    const skipped = [];
+    let evidenceTotal = 0;
+
+    for (let i = 0; i < tests.length; i++) {
+      const test = tests[i];
+      const status = normaliseStatus(test.status);
+      const displayName = test?.name || 'Unnamed Test';
+      evidenceTotal += Array.isArray(test?.evidence) ? test.evidence.length : 0;
+
+      if (status === 'FAIL') {
+        failing.push(displayName);
+      } else if (status === 'WARN') {
+        warning.push(displayName);
+      } else if (status === 'SKIP') {
+        skipped.push(displayName);
+      }
+    }
+
+    if (failing.length > 0) {
+      insights.warnings.push(`Investigate failing tests: ${failing.join(', ')}`);
+    }
+    if (warning.length > 0) {
+      insights.warnings.push(`Review warnings for: ${warning.join(', ')}`);
+    }
+    if (skipped.length > 0 && skipped.length !== tests.length) {
+      insights.warnings.push(`Skipped tests detected: ${skipped.join(', ')}`);
+    } else if (skipped.length === tests.length && tests.length > 0) {
+      insights.warnings.push('All quality checks skipped - verify scope configuration.');
+    }
+    if (evidenceTotal > 0) {
+      insights.evidence.push(`Evidence coverage: ${evidenceTotal} items across ${tests.length} tests`);
+    }
+
+    return insights;
+  };
+
+  return Object.freeze({
+    apply(result) {
+      if (!result || !Array.isArray(result.tests) || result.tests.length === 0) {
+        return;
+      }
+      const tests = result.tests;
+      const summary = buildSummary(tests, result.duration);
+      if (summary) {
+        result.evidence.unshift(`${QUALITY_REPORT_LABELS.SUMMARY} ${summary}`);
+      }
+      const breakdown = buildBreakdown(tests);
+      for (let i = 0; i < breakdown.length; i++) {
+        result.evidence.push(`${QUALITY_REPORT_LABELS.BREAKDOWN} ${breakdown[i]}`);
+      }
+      const insights = buildInsights(tests);
+      if (insights.evidence.length > 0) {
+        for (let i = 0; i < insights.evidence.length; i++) {
+          result.evidence.push(`${QUALITY_REPORT_LABELS.INSIGHT} ${insights.evidence[i]}`);
+        }
+      }
+      if (insights.warnings.length > 0) {
+        const prefixed = new Array(insights.warnings.length);
+        for (let i = 0; i < insights.warnings.length; i++) {
+          prefixed[i] = `${QUALITY_REPORT_LABELS.INSIGHT} ${insights.warnings[i]}`;
+        }
+        result.warnings = prefixed.concat(result.warnings || []);
+      }
+    }
+  });
+}
+
+const QUALITY_REPORTER = createQualityReportingModules();
 import fs from 'fs';
 import path from 'path';
 import { execSync } from 'child_process';
-import { resolveScopedFiles, appendScopeEvidence, filterScopedFiles } from '../core/scope-utils.js';
+import { resolveProjectScope as resolveSharedProjectScope, appendScopeEvidence, filterScopedFiles } from '../core/scope-utils.js';
 const CODE_SCOPE_PATTERNS = ['**/*.ts', '**/*.js'];
+const TECHNICAL_DEBT_PATTERNS = Object.freeze([
+  { regex: /TODO:/i, label: 'TODO marker', severity: 'medium', recommendation: 'Convert TODO into a tracked issue or resolve the outstanding work' },
+  { regex: /FIXME:/i, label: 'FIXME marker', severity: 'high', recommendation: 'Address the FIX ME note before release to avoid known defect' },
+  { regex: /HACK:/i, label: 'HACK marker', severity: 'medium', recommendation: 'Replace temporary workaround with supported logic' },
+  { regex: /XXX:/i, label: 'XXX marker', severity: 'medium', recommendation: 'Resolve XXX annotations or document permanent intent' },
+  { regex: /BUG:/i, label: 'BUG marker', severity: 'high', recommendation: 'Investigate and resolve known bug reference' },
+  { regex: /DEPRECATED/i, label: 'Deprecated usage', severity: 'medium', recommendation: 'Replace deprecated API with supported alternative' },
+  { regex: /\bany\b/i, label: 'TypeScript any', severity: 'medium', recommendation: 'Replace `any` with an explicit interface or type alias' },
+  { regex: /console\.log\s*\(/i, label: 'Console logging', severity: 'low', recommendation: 'Replace with structured logger or remove debug logging' },
+  { regex: /debugger;/i, label: 'Debugger statement', severity: 'high', recommendation: 'Remove debugger statements before committing' }
+]);
 /**
  * Quality Validator implementing IValidator interface
  */
@@ -56,9 +191,8 @@ export class QualityValidator {
       warnings: []
     };
     try {
-      console.log('  Executing Code Quality validation commands...');
-      console.log('  Source: IMPLEMENTATION-GAP-ANALYSIS.md Step 2 Quality Validator Requirements');
-      console.log('  📝 Note: Code linting (ESLint, etc.) is available as a separate "lint" category');
+      console.log('  [T] Executing Code Quality validation commands...');
+      console.log('  [-] Note: Code linting (ESLint, etc.) is available as a separate "lint" category');
       
       // Test 1: Code complexity analysis
       const complexityTest = await this.executeCodeComplexityAnalysis(projectInfo, scopeConfig);
@@ -98,7 +232,8 @@ export class QualityValidator {
       }
       
       result.duration = Date.now() - this.validationStartTime;
-      console.log('  Code Quality validation tests completed');
+      QUALITY_REPORTER.apply(result);
+      console.log('    Code Quality validation tests completed');
       
       return result;
       
@@ -106,6 +241,7 @@ export class QualityValidator {
       result.status = 'FAIL';
       result.errors.push(`Quality validation failed: ${error.message}`);
       result.duration = Date.now() - this.validationStartTime;
+      QUALITY_REPORTER.apply(result);
       return result;
     }
   }
@@ -114,13 +250,14 @@ export class QualityValidator {
    * Execute code complexity analysis
    */
   async executeCodeComplexityAnalysis(projectInfo, scopeConfig) {
-    console.log('    Code Complexity Analysis...');
+    console.log('    > Code Complexity Analysis...');
     const test = {
       name: 'Code Complexity Analysis',
       status: 'PENDING',
       message: '',
       evidence: [],
-      errors: []
+      errors: [],
+      fileFindings: []
     };
     try {
       const { files: filesToAnalyze, scopeResult } = await this.getScopedFileList(
@@ -134,52 +271,103 @@ export class QualityValidator {
         test.message = 'No files found for complexity analysis';
         test.evidence.push('No TypeScript or JavaScript files found in specified scope');
         appendScopeEvidence(test, scopeResult, { limit: 5, includePatterns: true });
-        console.log('      ⏭️ SKIP - No files found for analysis');
+        console.log('      [-] SKIP - No files found for analysis');
         return test;
       }
       let totalComplexity = 0;
       let highComplexityFiles = 0;
       let filesAnalyzed = 0;
+      const fileFindings = [];
+      const detailedEvidence = [];
       const maxFilesToAnalyze = Math.min(filesToAnalyze.length, 15); // Limit for performance
       for (let i = 0; i < maxFilesToAnalyze; i++) {
         const file = filesToAnalyze[i];
+        const relativePath = path.relative(projectInfo.path, file);
         try {
           const content = fs.readFileSync(file, 'utf8');
           const complexity = this.calculateCyclomaticComplexity(content);
           totalComplexity += complexity;
           filesAnalyzed++;
-          
+
+          const lines = content.split('\n');
+          const hotspots = this.extractComplexityHotspots(lines);
+          const flaggedHotspots = hotspots.filter(h => h.score >= 2).slice(0, 5);
+
+          const finding = {
+            file: relativePath,
+            summary: `Cyclomatic complexity: ${complexity}`,
+            metrics: { complexity },
+            findings: []
+          };
+
           if (complexity > 10) {
             highComplexityFiles++;
+            finding.findings.push({
+              type: 'complexity-threshold',
+              severity: 'high',
+              message: `Complexity ${complexity} exceeds recommended maximum of 10`,
+              lines: flaggedHotspots.map(h => h.line),
+              recommendation: 'Reduce branching by extracting helper functions or simplifying conditionals'
+            });
+          } else if (complexity > 7) {
+            finding.findings.push({
+              type: 'complexity-threshold',
+              severity: 'medium',
+              message: `Complexity ${complexity} is approaching limit of 10`,
+              lines: flaggedHotspots.map(h => h.line),
+              recommendation: 'Monitor branching in highlighted areas to keep functions small'
+            });
           }
-          
-          test.evidence.push(`Complexity analysis: ${path.relative(projectInfo.path, file)} (complexity: ${complexity})`);
+
+          if (flaggedHotspots.length > 0) {
+            finding.findings.push({
+              type: 'complexity-hotspot',
+              severity: complexity > 10 ? 'high' : 'medium',
+              message: `High branching on lines ${flaggedHotspots.map(h => h.line).join(', ')}`,
+              lines: flaggedHotspots.map(h => h.line),
+              snippet: flaggedHotspots.map(h => `${h.line}: ${h.snippet}`).join(' | '),
+              recommendation: 'Inline simple branches or move nested logic into named utilities'
+            });
+          }
+
+          if (finding.findings.length > 0) {
+            fileFindings.push(finding);
+            detailedEvidence.push(this.buildFileFindingEvidence('Complexity hotspots', finding));
+          }
+
+          test.evidence.push(`Complexity analysis: ${relativePath} (complexity: ${complexity})`);
         } catch (readError) {
-          test.evidence.push(`Could not analyze: ${path.relative(projectInfo.path, file)}`);
+          test.evidence.push(`Could not analyze: ${relativePath}`);
         }
       }
+
+      if (detailedEvidence.length > 0) {
+        test.evidence.push(...detailedEvidence);
+      }
+      test.fileFindings = fileFindings;
+
       const averageComplexity = filesAnalyzed > 0 ? totalComplexity / filesAnalyzed : 0;
       if (averageComplexity <= 5 && highComplexityFiles === 0) {
         test.status = 'PASS';
         test.message = 'Code complexity analysis passed';
         test.evidence.push(`Average complexity: ${averageComplexity.toFixed(2)} (excellent)`);
-        console.log('      ✅ PASS - Code complexity analysis passed');
+        console.log('      [x] PASS - Code complexity analysis passed');
       } else if (averageComplexity <= 8 && highComplexityFiles < filesAnalyzed * 0.2) {
         test.status = 'WARN';
         test.message = 'Moderate code complexity found';
         test.evidence.push(`Average complexity: ${averageComplexity.toFixed(2)}, ${highComplexityFiles} high-complexity files`);
-        console.log('      🟡 WARN - Moderate code complexity found');
+        console.log('      [!] WARN - Moderate code complexity found');
       } else {
         test.status = 'FAIL';
         test.message = 'High code complexity detected';
         test.errors.push(`Average complexity: ${averageComplexity.toFixed(2)}, ${highComplexityFiles} high-complexity files need refactoring`);
-        console.log('      ❌ FAIL - High code complexity detected');
+        console.log('      [F] FAIL - High code complexity detected');
       }
     } catch (error) {
       test.status = 'FAIL';
       test.message = 'Code complexity analysis failed';
       test.errors.push(`Complexity analysis error: ${error.message}`);
-      console.log('      ❌ FAIL - Code complexity analysis failed');
+      console.log('      [F] FAIL - Code complexity analysis failed');
     }
     return test;
   }
@@ -187,13 +375,14 @@ export class QualityValidator {
    * Execute technical debt assessment
    */
   async executeTechnicalDebtAssessment(projectInfo, scopeConfig) {
-    console.log('    Technical Debt Assessment...');
+    console.log('    > Technical Debt Assessment...');
     const test = {
       name: 'Technical Debt Assessment',
       status: 'PENDING',
       message: '',
       evidence: [],
-      errors: []
+      errors: [],
+      fileFindings: []
     };
     try {
       const { files: filesToAssess, scopeResult } = await this.getScopedFileList(
@@ -207,69 +396,77 @@ export class QualityValidator {
         test.message = 'No files found for technical debt assessment';
         test.evidence.push('No TypeScript or JavaScript files found in specified scope');
         appendScopeEvidence(test, scopeResult, { limit: 5, includePatterns: true });
-        console.log('      ⏭️ SKIP - No files found for assessment');
+        console.log('      [-] SKIP - No files found for assessment');
         return test;
       }
       let totalDebtIndicators = 0;
       let filesWithDebt = 0;
       const maxFilesToCheck = Math.min(filesToAssess.length, 20); // Limit for performance
-      const debtPatterns = [
-        /TODO:/gi,
-        /FIXME:/gi,
-        /HACK:/gi,
-        /XXX:/gi,
-        /BUG:/gi,
-        /NOTE:/gi,
-        /DEPRECATED/gi,
-        /any/gi, // TypeScript 'any' type usage
-        /console\.log/gi, // Debug console logs left in code
-        /debugger;/gi // Debugger statements
-      ];
+      const fileFindings = [];
+      const detailedEvidence = [];
+      const debtPatterns = this.getTechnicalDebtPatterns();
       for (let i = 0; i < maxFilesToCheck; i++) {
         const file = filesToAssess[i];
+        const relativePath = path.relative(projectInfo.path, file);
         try {
           const content = fs.readFileSync(file, 'utf8');
-          let fileDebtCount = 0;
-          
-          for (const pattern of debtPatterns) {
-            const matches = content.match(pattern);
-            if (matches) {
-              fileDebtCount += matches.length;
-            }
-          }
-          
-          if (fileDebtCount > 0) {
+          const indicatorResult = this.analyzeTechnicalDebtIndicators(content, debtPatterns);
+
+          if (indicatorResult.total > 0) {
             filesWithDebt++;
-            totalDebtIndicators += fileDebtCount;
+            totalDebtIndicators += indicatorResult.total;
+
+            const finding = {
+              file: relativePath,
+              summary: `${indicatorResult.total} indicator${indicatorResult.total === 1 ? '' : 's'}`,
+              metrics: { indicators: indicatorResult.total },
+              findings: indicatorResult.indicators.map(indicator => ({
+                type: 'technical-debt',
+                severity: indicator.severity,
+                message: `${indicator.label} at line ${indicator.line}`,
+                lines: [indicator.line],
+                snippet: indicator.snippet,
+                recommendation: indicator.recommendation
+              }))
+            };
+
+            fileFindings.push(finding);
+            detailedEvidence.push(this.buildFileFindingEvidence('Technical debt', finding));
           }
-          
-          test.evidence.push(`Debt assessment: ${path.relative(projectInfo.path, file)} (${fileDebtCount} indicators)`);
+
+          test.evidence.push(`Debt assessment: ${relativePath} (${indicatorResult.total} indicators)`);
         } catch (readError) {
-          test.evidence.push(`Could not assess: ${path.relative(projectInfo.path, file)}`);
+          test.evidence.push(`Could not assess: ${relativePath}`);
         }
       }
+
+      if (detailedEvidence.length > 0) {
+        test.evidence.push(...detailedEvidence);
+      }
+      test.fileFindings = fileFindings;
+
       const debtRatio = maxFilesToCheck > 0 ? filesWithDebt / maxFilesToCheck : 0;
       if (totalDebtIndicators <= 5 && debtRatio <= 0.2) {
         test.status = 'PASS';
         test.message = 'Technical debt assessment passed';
         test.evidence.push(`Low technical debt: ${totalDebtIndicators} indicators in ${filesWithDebt} files`);
-        console.log('      ✅ PASS - Technical debt assessment passed');
+        console.log('      [x] PASS - Technical debt assessment passed');
       } else if (totalDebtIndicators <= 20 && debtRatio <= 0.5) {
         test.status = 'WARN';
         test.message = 'Moderate technical debt detected';
         test.evidence.push(`Moderate technical debt: ${totalDebtIndicators} indicators in ${filesWithDebt} files`);
-        console.log('      🟡 WARN - Moderate technical debt detected');
+        console.log('      [!] WARN - Moderate technical debt detected');
       } else {
         test.status = 'FAIL';
         test.message = 'High technical debt detected';
         test.errors.push(`High technical debt: ${totalDebtIndicators} indicators across ${filesWithDebt} files require attention`);
-        console.log('      ❌ FAIL - High technical debt detected');
+        console.log('      [F] FAIL - High technical debt detected');
       }
     } catch (error) {
       test.status = 'FAIL';
       test.message = 'Technical debt assessment failed';
       test.errors.push(`Technical debt assessment error: ${error.message}`);
-      console.log('      ❌ FAIL - Technical debt assessment failed');
+      console.log('      [F] FAIL - Technical debt assessment failed');
     }
     return test;
   }
@@ -277,14 +474,15 @@ export class QualityValidator {
    * Execute refactoring recommendations
    */
   async executeRefactoringRecommendations(projectInfo, scopeConfig) {
-    console.log('    Refactoring Recommendations...');
+    console.log('    > Refactoring Recommendations...');
     const test = {
       name: 'Refactoring Recommendations',
       status: 'PENDING',
       message: '',
       evidence: [],
       errors: [],
-      warnings: []
+      warnings: [],
+      fileFindings: []
     };
     try {
       const { files: filesToCheck, scopeResult } = await this.getScopedFileList(
@@ -298,23 +496,47 @@ export class QualityValidator {
         test.message = 'No files found for refactoring analysis';
         test.evidence.push('No TypeScript or JavaScript files found in specified scope');
         appendScopeEvidence(test, scopeResult, { limit: 5, includePatterns: true });
-        console.log('      ⏭️ SKIP - No files found for analysis');
+        console.log('      [-] SKIP - No files found for analysis');
         return test;
       }
       const recommendations = [];
+      const fileFindings = [];
+      const detailedEvidence = [];
       const maxFilesToCheck = Math.min(filesToCheck.length, 15); // Limit for performance
       for (let i = 0; i < maxFilesToCheck; i++) {
         const file = filesToCheck[i];
+        const relativePath = path.relative(projectInfo.path, file);
         try {
           const content = fs.readFileSync(file, 'utf8');
           const fileRecommendations = this.analyzeForRefactoringOpportunities(content, file, projectInfo);
           recommendations.push(...fileRecommendations);
-          
-          test.evidence.push(`Refactoring analysis: ${path.relative(projectInfo.path, file)} (${fileRecommendations.length} recommendations)`);
+
+          if (fileRecommendations.length > 0) {
+            const finding = {
+              file: relativePath,
+              summary: `${fileRecommendations.length} recommendation${fileRecommendations.length === 1 ? '' : 's'}`,
+              findings: fileRecommendations.map(rec => ({
+                type: rec.type,
+                severity: rec.priority,
+                message: rec.description,
+                lines: rec.lines,
+                snippet: rec.snippet,
+                recommendation: rec.recommendation
+              }))
+            };
+            fileFindings.push(finding);
+            detailedEvidence.push(this.buildFileFindingEvidence('Refactoring', finding));
+          }
+
+          test.evidence.push(`Refactoring analysis: ${relativePath} (${fileRecommendations.length} recommendations)`);
         } catch (readError) {
-          test.evidence.push(`Could not analyze: ${path.relative(projectInfo.path, file)}`);
+          test.evidence.push(`Could not analyze: ${relativePath}`);
         }
       }
+      if (detailedEvidence.length > 0) {
+        test.evidence.push(...detailedEvidence);
+      }
+      test.fileFindings = fileFindings;
       // Categorize recommendations by priority
       const highPriority = recommendations.filter(r => r.priority === 'high');
       const mediumPriority = recommendations.filter(r => r.priority === 'medium');
@@ -323,7 +545,7 @@ export class QualityValidator {
         test.status = 'PASS';
         test.message = 'No refactoring recommendations needed';
         test.evidence.push('Code quality appears good, no immediate refactoring needed');
-        console.log('      ✅ PASS - No refactoring recommendations needed');
+        console.log('      [x] PASS - No refactoring recommendations needed');
       } else if (highPriority.length === 0 && mediumPriority.length <= 3) {
         test.status = 'PASS';
         test.message = 'Minor refactoring opportunities identified';
@@ -331,24 +553,24 @@ export class QualityValidator {
         if (recommendations.length > 0) {
           test.warnings = recommendations.slice(0, 3).map(r => r.description);
         }
-        console.log('      ✅ PASS - Minor refactoring opportunities identified');
+        console.log('      [x] PASS - Minor refactoring opportunities identified');
       } else if (highPriority.length <= 2) {
         test.status = 'WARN';
         test.message = 'Moderate refactoring recommended';
         test.evidence.push(`${recommendations.length} refactoring opportunities (${highPriority.length} high priority)`);
         test.warnings = recommendations.slice(0, 5).map(r => r.description);
-        console.log('      🟡 WARN - Moderate refactoring recommended');
+        console.log('      [!] WARN - Moderate refactoring recommended');
       } else {
         test.status = 'FAIL';
         test.message = 'Significant refactoring needed';
         test.errors.push(`${recommendations.length} refactoring opportunities (${highPriority.length} high priority) require attention`);
-        console.log('      ❌ FAIL - Significant refactoring needed');
+        console.log('      [F] FAIL - Significant refactoring needed');
       }
     } catch (error) {
       test.status = 'FAIL';
       test.message = 'Refactoring recommendations analysis failed';
       test.errors.push(`Refactoring analysis error: ${error.message}`);
-      console.log('      ❌ FAIL - Refactoring recommendations analysis failed');
+      console.log('      [F] FAIL - Refactoring recommendations analysis failed');
     }
     return test;
   }
@@ -356,13 +578,14 @@ export class QualityValidator {
    * Execute maintainability scoring
    */
   async executeMaintainabilityScoring(projectInfo, scopeConfig) {
-    console.log('    Maintainability Scoring...');
+    console.log('    > Maintainability Scoring...');
     const test = {
       name: 'Maintainability Scoring',
       status: 'PENDING',
       message: '',
       evidence: [],
-      errors: []
+      errors: [],
+      fileFindings: []
     };
     try {
       const { files: filesToScore, scopeResult } = await this.getScopedFileList(
@@ -376,47 +599,78 @@ export class QualityValidator {
         test.message = 'No files found for maintainability scoring';
         test.evidence.push('No TypeScript or JavaScript files found in specified scope');
         appendScopeEvidence(test, scopeResult, { limit: 5, includePatterns: true });
-        console.log('      ⏭️ SKIP - No files found for scoring');
+        console.log('      [-] SKIP - No files found for scoring');
         return test;
       }
       let totalScore = 0;
       let filesScored = 0;
+      const fileFindings = [];
+      const detailedEvidence = [];
       const maxFilesToScore = Math.min(filesToScore.length, 20); // Limit for performance
       for (let i = 0; i < maxFilesToScore; i++) {
         const file = filesToScore[i];
+        const relativePath = path.relative(projectInfo.path, file);
         try {
           const content = fs.readFileSync(file, 'utf8');
-          const score = this.calculateMaintainabilityScore(content);
-          totalScore += score;
+          const maintainability = this.calculateMaintainabilityScore(content);
+          totalScore += maintainability.score;
           filesScored++;
-          
-          test.evidence.push(`Maintainability score: ${path.relative(projectInfo.path, file)} (${score}/100)`);
+
+          test.evidence.push(`Maintainability scoring: ${relativePath} (score: ${maintainability.score.toFixed(1)}/100)`);
+
+          if (maintainability.breakdown.length > 0) {
+            const finding = {
+              file: relativePath,
+              summary: `Score reduced to ${maintainability.score.toFixed(1)}/100`,
+              metrics: {
+                score: Number(maintainability.score.toFixed(1)),
+                lineCount: maintainability.metrics.lineCount,
+                complexity: maintainability.metrics.complexity,
+                commentRatio: Number(maintainability.metrics.commentRatio.toFixed(2))
+              },
+              findings: maintainability.breakdown.map(item => ({
+                type: item.type,
+                severity: item.severity,
+                message: item.message,
+                lines: item.lines,
+                snippet: item.snippet,
+                recommendation: item.recommendation
+              }))
+            };
+
+            fileFindings.push(finding);
+            detailedEvidence.push(this.buildFileFindingEvidence('Maintainability', finding));
+          }
         } catch (readError) {
-          test.evidence.push(`Could not score: ${path.relative(projectInfo.path, file)}`);
+          test.evidence.push(`Could not score: ${relativePath}`);
         }
       }
+      if (detailedEvidence.length > 0) {
+        test.evidence.push(...detailedEvidence);
+      }
+      test.fileFindings = fileFindings;
       const averageScore = filesScored > 0 ? totalScore / filesScored : 0;
       if (averageScore >= 80) {
         test.status = 'PASS';
         test.message = 'Maintainability scoring passed';
         test.evidence.push(`Excellent maintainability score: ${averageScore.toFixed(1)}/100`);
-        console.log('      ✅ PASS - Maintainability scoring passed');
+        console.log('      [x] PASS - Maintainability scoring passed');
       } else if (averageScore >= 60) {
         test.status = 'WARN';
         test.message = 'Moderate maintainability score';
         test.evidence.push(`Moderate maintainability score: ${averageScore.toFixed(1)}/100 - consider improvements`);
-        console.log('      🟡 WARN - Moderate maintainability score');
+        console.log('      [!] WARN - Moderate maintainability score');
       } else {
         test.status = 'FAIL';
         test.message = 'Low maintainability score';
         test.errors.push(`Low maintainability score: ${averageScore.toFixed(1)}/100 - requires improvement`);
-        console.log('      ❌ FAIL - Low maintainability score');
+        console.log('      [F] FAIL - Low maintainability score');
       }
     } catch (error) {
       test.status = 'FAIL';
       test.message = 'Maintainability scoring failed';
       test.errors.push(`Maintainability scoring error: ${error.message}`);
-      console.log('      ❌ FAIL - Maintainability scoring failed');
+      console.log('      [F] FAIL - Maintainability scoring failed');
     }
     return test;
   }
@@ -446,82 +700,258 @@ export class QualityValidator {
     }
     return complexity;
   }
+  extractComplexityHotspots(lines) {
+    const hotspots = [];
+    const decisionPatterns = [
+      { regex: /\bif\b/, label: 'if' },
+      { regex: /\belse\s+if\b/, label: 'else if' },
+      { regex: /\bfor\b/, label: 'for' },
+      { regex: /\bwhile\b/, label: 'while' },
+      { regex: /\bswitch\b/, label: 'switch' },
+      { regex: /\bcase\b/, label: 'case' },
+      { regex: /\bcatch\b/, label: 'catch' }
+    ];
+    for (let index = 0; index < lines.length; index++) {
+      const trimmed = lines[index].trim();
+      if (!trimmed) continue;
+
+      let score = 0;
+      const indicators = [];
+      for (const pattern of decisionPatterns) {
+        if (pattern.regex.test(trimmed)) {
+          score += 1;
+          indicators.push(pattern.label);
+        }
+      }
+      const logicalOps = trimmed.match(/&&|\|\|/g) || [];
+      if (logicalOps.length > 0) {
+        score += logicalOps.length;
+        logicalOps.forEach(op => indicators.push(op));
+      }
+      if (trimmed.includes('?') && trimmed.includes(':')) {
+        score += 1;
+        indicators.push('ternary');
+      }
+
+      if (score > 0) {
+        hotspots.push({
+          line: index + 1,
+          score,
+          indicators,
+          snippet: trimmed.slice(0, 140)
+        });
+      }
+    }
+    hotspots.sort((a, b) => b.score - a.score);
+    return hotspots;
+  }
+  getTechnicalDebtPatterns() {
+    return TECHNICAL_DEBT_PATTERNS;
+  }
+  analyzeTechnicalDebtIndicators(content, patterns) {
+    const indicators = [];
+    const lines = content.split('\n');
+    for (let index = 0; index < lines.length; index++) {
+      const rawLine = lines[index];
+      for (const pattern of patterns) {
+        if (pattern.regex.test(rawLine)) {
+          indicators.push({
+            label: pattern.label,
+            severity: pattern.severity,
+            line: index + 1,
+            snippet: rawLine.trim().slice(0, 140),
+            recommendation: pattern.recommendation
+          });
+        }
+      }
+    }
+    return {
+      total: indicators.length,
+      indicators
+    };
+  }
+  detectDeepNesting(lines, threshold = 4) {
+    let currentNesting = 0;
+    let maxNesting = 0;
+    const locations = [];
+    for (let index = 0; index < lines.length; index++) {
+      const rawLine = lines[index];
+      const closeCount = (rawLine.match(/}/g) || []).length;
+      if (closeCount > 0) {
+        currentNesting = Math.max(0, currentNesting - closeCount);
+      }
+
+      const openCount = (rawLine.match(/{/g) || []).length;
+      if (openCount > 0) {
+        for (let i = 0; i < openCount; i++) {
+          currentNesting += 1;
+          if (currentNesting > maxNesting) {
+            maxNesting = currentNesting;
+          }
+          if (currentNesting > threshold) {
+            locations.push({
+              line: index + 1,
+              level: currentNesting,
+              snippet: rawLine.trim().slice(0, 140)
+            });
+          }
+        }
+      }
+    }
+    const uniqueLocations = [];
+    const seenLines = new Set();
+    for (const location of locations) {
+      if (!seenLines.has(location.line)) {
+        uniqueLocations.push(location);
+        seenLines.add(location.line);
+      }
+    }
+    return {
+      maxLevel: maxNesting,
+      locations: uniqueLocations
+    };
+  }
+  findLongParameterLines(lines) {
+    const results = [];
+    const functionSignature = /^(?:async\s+)?function\s+\w+|^(?:const|let|var)\s+\w+\s*=\s*(?:async\s*)?\(|^\w+\s*\(/;
+    const controlKeywords = ['if', 'for', 'while', 'switch'];
+    for (let index = 0; index < lines.length; index++) {
+      const trimmed = lines[index].trim();
+      if (!trimmed) continue;
+      if (!functionSignature.test(trimmed) && !trimmed.includes('=>')) continue;
+      const prefix = trimmed.split('(')[0].trim().split(' ')[0];
+      if (controlKeywords.includes(prefix)) continue;
+      const match = trimmed.match(/\(([^)]*)\)/);
+      if (!match) continue;
+      const params = match[1];
+      const parameterCount = params.split(',').filter(token => token.trim().length > 0).length;
+      if (params.length >= 80 || parameterCount >= 5) {
+        results.push({
+          line: index + 1,
+          snippet: trimmed.slice(0, 140)
+        });
+      }
+    }
+    return results;
+  }
+  buildFileFindingEvidence(label, finding) {
+    if (!finding) {
+      return `${label}: No findings`;
+    }
+    const metricsPart = finding.metrics && Object.keys(finding.metrics).length > 0
+      ? ` (${Object.entries(finding.metrics).map(([key, value]) => `${key}:${value}`).join(', ')})`
+      : '';
+    const detailParts = Array.isArray(finding.findings)
+      ? finding.findings.slice(0, 2).map(item => {
+          const linesPart = item.lines && item.lines.length > 0 ? ` [lines ${item.lines.join(', ')}]` : '';
+          return `${item.message}${linesPart}`;
+        })
+      : [];
+    const detailSuffix = detailParts.length > 0 ? ` -> ${detailParts.join('; ')}` : '';
+    return `${label}: ${finding.file}${metricsPart}${detailSuffix}`;
+  }
   /**
    * Analyze file for refactoring opportunities
    */
   analyzeForRefactoringOpportunities(content, filePath, projectInfo) {
     const recommendations = [];
     const lines = content.split('\n');
-    
-    // Check for long functions (> 50 lines)
-    const functionMatches = content.match(/function\s+\w+|const\s+\w+\s*=\s*\(/g);
-    if (functionMatches && lines.length > 50) {
+    const relativePath = path.relative(projectInfo.path, filePath);
+
+    // Flag very large files that likely contain oversized functions
+    if (lines.length > 200) {
       recommendations.push({
-        type: 'function-length',
-        priority: 'medium',
-        description: `File has ${lines.length} lines - consider breaking into smaller functions`,
-        file: path.relative(projectInfo.path, filePath)
+        type: 'file-length',
+        priority: lines.length > 350 ? 'high' : 'medium',
+        description: `File has ${lines.length} lines; consider splitting responsibilities across modules`,
+        file: relativePath,
+        lines: [],
+        recommendation: 'Extract independent sections into smaller files or dedicated helpers'
       });
     }
-    // Check for duplicate code patterns
-    const duplicateLines = this.findDuplicateLines(lines);
-    if (duplicateLines.length > 3) {
+
+    // Check for duplicate code patterns with explicit line numbers
+    const duplicateGroups = this.findDuplicateLines(lines);
+    if (duplicateGroups.length > 0) {
+      const repeatedLineCount = duplicateGroups.reduce((total, group) => total + group.lines.length, 0) - duplicateGroups.length;
+      const priority = repeatedLineCount >= 6 ? 'high' : 'medium';
       recommendations.push({
         type: 'code-duplication',
-        priority: 'high',
-        description: `${duplicateLines.length} duplicate lines detected - consider extracting common functionality`,
-        file: path.relative(projectInfo.path, filePath)
+        priority,
+        description: `${duplicateGroups.length} duplicate line group${duplicateGroups.length === 1 ? '' : 's'} detected (${repeatedLineCount} repeated lines)`,
+        file: relativePath,
+        lines: Array.from(new Set(duplicateGroups.flatMap(group => group.lines))).sort((a, b) => a - b),
+        snippet: duplicateGroups.slice(0, 3).map(group => `${group.lines.join(', ')} -> ${group.content}`).join(' | '),
+        recommendation: 'Extract shared logic into utility functions or remove duplicate branches'
       });
     }
-    // Check for deeply nested code
-    let maxNesting = 0;
-    let currentNesting = 0;
-    for (const line of lines) {
-      const openBraces = (line.match(/{/g) || []).length;
-      const closeBraces = (line.match(/}/g) || []).length;
-      currentNesting += openBraces - closeBraces;
-      maxNesting = Math.max(maxNesting, currentNesting);
-    }
-    
-    if (maxNesting > 4) {
+
+    // Check for deeply nested code and highlight locations
+    const nesting = this.detectDeepNesting(lines, 4);
+    if (nesting.maxLevel > 4) {
       recommendations.push({
         type: 'deep-nesting',
-        priority: 'medium',
-        description: `Deep nesting detected (level ${maxNesting}) - consider extracting methods`,
-        file: path.relative(projectInfo.path, filePath)
+        priority: nesting.maxLevel >= 6 ? 'high' : 'medium',
+        description: `Deep nesting detected (max level ${nesting.maxLevel})`,
+        file: relativePath,
+        lines: nesting.locations.map(location => location.line),
+        snippet: nesting.locations.slice(0, 3).map(location => `${location.line} -> ${location.snippet}`).join(' | '),
+        recommendation: 'Refactor by extracting helper functions or using guard clauses to flatten nesting'
       });
     }
-    // Check for large parameter lists
-    const parameterMatches = content.match(/function\s+\w+\s*\([^)]{50,}\)|const\s+\w+\s*=\s*\([^)]{50,}\)/g);
-    if (parameterMatches && parameterMatches.length > 0) {
+
+    // Check for long parameter lists and provide the affected lines
+    const longParameterLines = this.findLongParameterLines(lines);
+    if (longParameterLines.length > 0) {
       recommendations.push({
         type: 'parameter-list',
-        priority: 'low',
-        description: 'Long parameter lists detected - consider using configuration objects',
-        file: path.relative(projectInfo.path, filePath)
+        priority: longParameterLines.length > 1 ? 'medium' : 'low',
+        description: `Long parameter list detected on line${longParameterLines.length > 1 ? 's' : ''} ${longParameterLines.map(item => item.line).join(', ')}`,
+        file: relativePath,
+        lines: longParameterLines.map(item => item.line),
+        snippet: longParameterLines.slice(0, 3).map(item => `${item.line} -> ${item.snippet}`).join(' | '),
+        recommendation: 'Switch to an options object or destructured parameters to improve readability'
       });
     }
+
     return recommendations;
   }
   /**
    * Find duplicate lines in code
    */
   findDuplicateLines(lines) {
-    const lineCount = {};
+    const occurrences = new Map();
+    // Track non-empty, non-comment lines so we can report exact line numbers
+    for (let index = 0; index < lines.length; index++) {
+      const rawLine = lines[index];
+      const trimmed = rawLine.trim();
+      if (!trimmed) continue;
+      if (trimmed.startsWith('//') || trimmed.startsWith('*') || trimmed.startsWith('/*')) continue;
+      if (trimmed === '{' || trimmed === '}' || trimmed === '};') continue;
+
+      const normalised = trimmed.replace(/\s+/g, ' ');
+      if (!occurrences.has(normalised)) {
+        occurrences.set(normalised, {
+          content: trimmed,
+          lines: []
+        });
+      }
+      occurrences.get(normalised).lines.push(index + 1);
+    }
+
     const duplicates = [];
-    // Count non-empty, non-comment lines
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (trimmed && !trimmed.startsWith('//') && !trimmed.startsWith('*') && !trimmed.startsWith('/*')) {
-        lineCount[trimmed] = (lineCount[trimmed] || 0) + 1;
+    for (const entry of occurrences.values()) {
+      if (entry.lines.length > 1) {
+        // Only report lines that truly repeat
+        duplicates.push({
+          content: entry.content,
+          lines: entry.lines
+        });
       }
     }
-    // Find duplicates
-    for (const [line, count] of Object.entries(lineCount)) {
-      if (count > 1) {
-        duplicates.push(line);
-      }
-    }
+
+    // Sort to make the most common duplicates appear first
+    duplicates.sort((a, b) => b.lines.length - a.lines.length);
     return duplicates;
   }
   /**
@@ -531,36 +961,113 @@ export class QualityValidator {
     let score = 100;
     const lines = content.split('\n');
     const nonEmptyLines = lines.filter(line => line.trim().length > 0);
+    const breakdown = [];
+
     // Penalize based on file length
     if (nonEmptyLines.length > 200) {
       score -= 20;
+      breakdown.push({
+        type: 'file-length',
+        severity: 'medium',
+        message: `File has ${nonEmptyLines.length} non-empty lines (target <= 200)` ,
+        recommendation: 'Split large files into focused modules to contain scope'
+      });
     } else if (nonEmptyLines.length > 100) {
       score -= 10;
+      breakdown.push({
+        type: 'file-length',
+        severity: 'low',
+        message: `File has ${nonEmptyLines.length} non-empty lines (target <= 100 for lean modules)`,
+        recommendation: 'Consider extracting helper utilities to keep modules concise'
+      });
     }
-    // Penalize based on complexity
+
+    // Penalize based on complexity and highlight hotspots
     const complexity = this.calculateCyclomaticComplexity(content);
+    const hotspots = this.extractComplexityHotspots(lines);
+    const significantHotspots = hotspots.filter(h => h.score >= 2).slice(0, 3);
     if (complexity > 15) {
       score -= 30;
+      breakdown.push({
+        type: 'complexity',
+        severity: 'high',
+        message: `Cyclomatic complexity ${complexity} exceeds recommended limit of 15`,
+        lines: significantHotspots.map(h => h.line),
+        snippet: significantHotspots.map(h => `${h.line} -> ${h.snippet}`).join(' | '),
+        recommendation: 'Decompose conditional logic into smaller functions or early returns'
+      });
     } else if (complexity > 10) {
       score -= 15;
+      breakdown.push({
+        type: 'complexity',
+        severity: 'medium',
+        message: `Cyclomatic complexity ${complexity} is above comfort range (> 10)`,
+        lines: significantHotspots.map(h => h.line),
+        snippet: significantHotspots.map(h => `${h.line} -> ${h.snippet}`).join(' | '),
+        recommendation: 'Review highlighted branches and consider extracting helpers'
+      });
     } else if (complexity > 5) {
       score -= 5;
+      breakdown.push({
+        type: 'complexity',
+        severity: 'low',
+        message: `Cyclomatic complexity ${complexity} trending upward (> 5)`,
+        lines: significantHotspots.map(h => h.line),
+        snippet: significantHotspots.map(h => `${h.line} -> ${h.snippet}`).join(' | '),
+        recommendation: 'Keep branching shallow by collapsing trivial conditions'
+      });
     }
+
     // Penalize for lack of comments
     const commentLines = lines.filter(line => {
       const trimmed = line.trim();
       return trimmed.startsWith('//') || trimmed.startsWith('*') || trimmed.startsWith('/*');
     });
     const commentRatio = nonEmptyLines.length > 0 ? commentLines.length / nonEmptyLines.length : 0;
-    if (commentRatio < 0.1) {
-      score -= 15;
-    } else if (commentRatio < 0.05) {
+    if (commentRatio < 0.05) {
       score -= 25;
+      breakdown.push({
+        type: 'documentation',
+        severity: 'medium',
+        message: `Comment density ${(commentRatio * 100).toFixed(1)}% is below minimum target of 5%`,
+        recommendation: 'Add inline explanations for complex branches and exported functions'
+      });
+    } else if (commentRatio < 0.1) {
+      score -= 15;
+      breakdown.push({
+        type: 'documentation',
+        severity: 'low',
+        message: `Comment density ${(commentRatio * 100).toFixed(1)}% is below guidance threshold of 10%`,
+        recommendation: 'Document intent of non-trivial logic paths'
+      });
     }
-    // Penalize for technical debt indicators
-    const debtIndicators = (content.match(/TODO:|FIXME:|HACK:|XXX:/gi) || []).length;
-    score -= Math.min(debtIndicators * 5, 20);
-    return Math.max(0, Math.min(100, score));
+
+    // Penalize for technical debt indicators with specific lines
+    const debtIndicators = this.analyzeTechnicalDebtIndicators(content, this.getTechnicalDebtPatterns());
+    if (debtIndicators.total > 0) {
+      const penalty = Math.min(debtIndicators.total * 5, 20);
+      score -= penalty;
+      const topIndicators = debtIndicators.indicators.slice(0, 3);
+      breakdown.push({
+        type: 'technical-debt',
+        severity: debtIndicators.total > 4 ? 'high' : debtIndicators.total > 2 ? 'medium' : 'low',
+        message: `${debtIndicators.total} technical debt indicator${debtIndicators.total === 1 ? '' : 's'} found (penalty ${penalty})`,
+        lines: topIndicators.map(indicator => indicator.line),
+        snippet: topIndicators.map(indicator => `${indicator.line} -> ${indicator.snippet}`).join(' | '),
+        recommendation: 'Resolve highlighted markers or convert them into tracked work items'
+      });
+    }
+
+    const boundedScore = Math.max(0, Math.min(100, score));
+    return {
+      score: boundedScore,
+      breakdown,
+      metrics: {
+        lineCount: nonEmptyLines.length,
+        complexity,
+        commentRatio
+      }
+    };
   }
   /**
    * Resolve and filter scoped files using shared helpers
@@ -584,33 +1091,18 @@ export class QualityValidator {
    * Resolve project scope using shared helper with simple caching
    */
   async resolveProjectScope(projectInfo, scopeConfig, options = {}) {
-    const projectPath = projectInfo?.path || process.cwd();
-    const cacheKey = JSON.stringify({
-      projectPath,
-      scopeConfig: scopeConfig || {},
-      options
-    });
-    if (this._scopeCache && this._scopeCache.key === cacheKey) {
-      return this._scopeCache.value;
-    }
-    try {
-      const scopeResult = await resolveScopedFiles(projectPath, scopeConfig || {}, options);
-      this._scopeCache = { key: cacheKey, value: scopeResult };
-      return scopeResult;
-    } catch (error) {
-      console.log(`      Warning: Error resolving scope: ${error.message}`);
-      const fallback = {
-        root: projectPath,
-        files: [],
-        relativeFiles: [],
-        patternMatches: new Map(),
-        totalSize: 0,
-        warnings: [`Scope resolution failed: ${error.message}`],
-        patterns: []
-      };
-      this._scopeCache = { key: cacheKey, value: fallback };
-      return fallback;
-    }
+    const cacheAdapter = {
+      get: cacheKey => {
+        if (this._scopeCache && this._scopeCache.key === cacheKey) {
+          return this._scopeCache.value;
+        }
+        return undefined;
+      },
+      set: (cacheKey, value) => {
+        this._scopeCache = { key: cacheKey, value };
+      }
+    };
+    return resolveSharedProjectScope(projectInfo, scopeConfig, options, cacheAdapter);
   }
   /**
    * Get validator capabilities
@@ -723,3 +1215,5 @@ export class QualityValidator {
   }
 }
 export default QualityValidator;
+
+

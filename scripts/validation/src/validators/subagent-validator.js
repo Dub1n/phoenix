@@ -203,8 +203,12 @@ export class SubagentValidator {
       // Pattern-Info: { approach: "scope-based-validation", alternatives: "hardcoded-paths", trade-offs: "flexibility-vs-simplicity" }
 
       // Determine paths to check based on scope configuration
+      // TODO[VALIDATION-FILE-DISCOVERY]: Adopt the shared scope discovery utility (planned alongside the UI/lint TODOs)
+      //   so this validator converts glob patterns to concrete directories/files via resolveScopedFiles + filterScopedFiles
+      //   rather than hand-trimming pattern strings. Reuse safeJoin/normalize behaviour from Templum/src/utils/path-utils.ts
+      //   to keep traversal bounded when scanning agent handoff folders.
       let pathsToCheck = ['.claude/agents', '.claude/handoff', 'src/agents'];
-      
+
       if (scopeConfig && scopeConfig.patterns && scopeConfig.patterns.length > 0) {
         // Extract directory paths from scope patterns
         const scopePaths = scopeConfig.patterns

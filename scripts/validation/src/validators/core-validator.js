@@ -24,21 +24,11 @@ import path from 'path';
 import { execSync } from 'child_process';
 import { resolveScopedFiles, appendScopeEvidence, filterScopedFiles } from '../core/scope-utils.js';
 
-// TODO: [TASK-VAL-CORE-FIX-001] Pattern: recursive-traversal-safety | Complexity: 8 | Dependencies: fs,path
-// Context: Fix infinite recursion bug in core validator directory traversal with comprehensive safety measures
-// Validation-Required: timeout-protection, cycle-detection, depth-limits, scope-compliance
-// Pattern-Info: { approach: "bounded-traversal-with-cycle-detection", alternatives: "glob-library", trade-offs: "custom-implementation-vs-dependency" }
-
 // Safety constants for directory traversal and file operations
 const MAX_TRAVERSAL_DEPTH = 10;
 const MAX_FILE_COUNT = 1000;
 const FILE_READ_TIMEOUT = 5000; // 5 seconds
 const DIRECTORY_OPERATION_TIMEOUT = 10000; // 10 seconds
-
-// TODO: [TASK-VAL-CORE-FIX-001] Pattern: performance-optimization-exclusions | Complexity: 4 | Dependencies: file-system-traversal
-// Context: Add directory exclusions to prevent scanning unnecessary directories that cause performance issues
-// Validation-Required: performance-improvement, exclusion-compliance
-// Pattern-Info: { approach: \"exclude-list\", alternatives: \"regex-matching\", trade-offs: \"performance-vs-completeness\" }
 
 // Directories to exclude during traversal for performance optimization
 const EXCLUDED_DIRECTORIES = [

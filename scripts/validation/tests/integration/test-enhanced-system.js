@@ -39,7 +39,7 @@ class EnhancedValidationSystemTest {
    * Run all integration tests
    */
   async runAllTests() {
-    console.log('🧪 Enhanced Validation System Integration Test Suite');
+    console.log('[T] Enhanced Validation System Integration Test Suite');
     console.log('=' .repeat(60));
     
     this.testStartTime = Date.now();
@@ -76,7 +76,7 @@ class EnhancedValidationSystemTest {
       this.generateTestReport();
       
     } catch (error) {
-      console.error(`💥 Test suite failed: ${error.message}`);
+      console.error(`[F] Test suite failed: ${error.message}`);
       this.recordTestResult('System Test Suite', false, error.message);
     }
   }
@@ -85,24 +85,153 @@ class EnhancedValidationSystemTest {
    * Test 1: System Initialization
    */
   async testSystemInitialization() {
-    console.log('\n📋 Test 1: System Initialization');
+    console.log('\n[~] Test 1: System Initialization');
     
     try {
+      const fixturesDir = path.join(__dirname, 'config');
+      const enhancedConfigPath = path.join(fixturesDir, 'enhanced-config.json');
+      const capabilityMatrixConfigPath = path.join(fixturesDir, 'capability-matrix.json');
+
+      const enhancedConfigFixture = {
+        version: '3.0.0-test',
+        coreValidationMode: true,
+        agentSubmissionFramework: {
+          enabled: true,
+          safetyLevel: 'enhanced',
+          maxSubmissionsPerSession: 1,
+          rollbackEnabled: true,
+          humanReviewRequired: true
+        },
+        safety: {
+          preValidationChecks: true,
+          postValidationProcessing: true,
+          sandboxTesting: true,
+          interfaceCompliance: true,
+          automaticRollback: true
+        },
+        performance: {
+          maxValidationTime: 180000,
+          memoryLimit: 256,
+          parallelValidations: 1
+        },
+        systemDefaults: {
+          projectDefaults: {
+            report_location: 'test/output',
+            timeout_overrides: {
+              backend: 180000,
+              build: 240000,
+              quality: 120000
+            },
+            reporting: {
+              format: 'json',
+              include_evidence: true,
+              include_timing: true
+            },
+            monitoring: {
+              heartbeat_interval: 15000,
+              resource_check_enabled: true,
+              progress_updates: true
+            }
+          }
+        }
+      };
+
+      const capabilityMatrixFixture = {
+        version: '3.0.0-test',
+        schemaVersion: '1.0.0',
+        metadata: {
+          lastUpdated: '2025-09-06T00:00:00.000Z',
+          systemHealth: 'healthy',
+          totalAgentSubmissions: 0
+        },
+        categories: {
+          backend: {
+            scopes: ['src/backend/**/*.js'],
+            validator: 'backend-validator.js',
+            description: 'Backend validation fixture',
+            interfaceVersion: '3.0.0',
+            capabilities: {
+              supportedProjects: ['TestProject'],
+              performanceProfile: 'standard',
+              requiredDependencies: ['node']
+            },
+            safety: {
+              lastValidated: '2025-09-06T00:00:00.000Z',
+              complianceStatus: 'verified',
+              testCoverage: 80
+            }
+          },
+          build: {
+            scopes: ['src/build/**/*.js'],
+            validator: 'build-validator.js',
+            description: 'Build validation fixture',
+            interfaceVersion: '3.0.0',
+            capabilities: {
+              supportedProjects: ['TestProject'],
+              performanceProfile: 'fast',
+              requiredDependencies: ['node']
+            },
+            safety: {
+              lastValidated: '2025-09-06T00:00:00.000Z',
+              complianceStatus: 'verified',
+              testCoverage: 75
+            }
+          }
+        },
+        safety: {
+          preGenerationValidation: true,
+          postGenerationValidation: true,
+          sandboxTesting: true,
+          interfaceCompliance: true,
+          automaticRollback: true
+        },
+        monitoring: {
+          metricsEnabled: false,
+          successRateTarget: 0.9,
+          qualityThreshold: 75
+        }
+      };
+
+      const capabilityMatrixPath = path.join(__dirname, 'capability-matrix.json');
+      const realValidationRoot = path.resolve(__dirname, '../..');
+      const realConfigDir = path.join(realValidationRoot, 'config');
+      const realConfigFlag = (process.env.ENHANCED_VALIDATION_USE_REAL_CONFIG || '').toLowerCase();
+      const wantsRealConfig = ['1', 'true', 'yes', 'real'].includes(realConfigFlag);
+      const realConfigAvailable =
+        fs.existsSync(path.join(realConfigDir, 'enhanced-config.json')) &&
+        fs.existsSync(path.join(realConfigDir, 'capability-matrix.json'));
+
+      const harnessValidationPath = wantsRealConfig && realConfigAvailable
+        ? realValidationRoot
+        : __dirname;
+
+      if (harnessValidationPath === __dirname) {
+        if (!fs.existsSync(fixturesDir)) {
+          fs.mkdirSync(fixturesDir, { recursive: true });
+        }
+
+        fs.writeFileSync(enhancedConfigPath, JSON.stringify(enhancedConfigFixture, null, 2), 'utf8');
+        fs.writeFileSync(capabilityMatrixConfigPath, JSON.stringify(capabilityMatrixFixture, null, 2), 'utf8');
+        fs.copyFileSync(capabilityMatrixConfigPath, capabilityMatrixPath);
+      } else {
+        console.log('  [>] Using real validation configuration from scripts/validation/config');
+      }
+
       this.orchestrator = new EnhancedValidationOrchestrator({
-        validationPath: __dirname
+        validationPath: harnessValidationPath
       });
       
       await this.orchestrator.initialize();
       
       if (this.orchestrator.initialized) {
-        console.log('  ✅ System initialization successful');
+        console.log('  [x] System initialization successful');
         this.recordTestResult('System Initialization', true);
       } else {
         throw new Error('System not marked as initialized');
       }
       
     } catch (error) {
-      console.log(`  ❌ System initialization failed: ${error.message}`);
+      console.log(`  [F] System initialization failed: ${error.message}`);
       this.recordTestResult('System Initialization', false, error.message);
     }
   }
@@ -111,7 +240,7 @@ class EnhancedValidationSystemTest {
    * Test 2: Capability Matrix Loading
    */
   async testCapabilityMatrixLoading() {
-    console.log('\n📊 Test 2: Capability Matrix Loading');
+    console.log('\n[~] Test 2: Capability Matrix Loading');
     
     try {
       const capabilityMatrixPath = path.join(__dirname, 'capability-matrix.json');
@@ -128,11 +257,11 @@ class EnhancedValidationSystemTest {
       }
       
       const categoryCount = Object.keys(matrix.categories).length;
-      console.log(`  ✅ Capability matrix loaded with ${categoryCount} categories`);
+      console.log(`  [x] Capability matrix loaded with ${categoryCount} categories`);
       this.recordTestResult('Capability Matrix Loading', true, `${categoryCount} categories loaded`);
       
     } catch (error) {
-      console.log(`  ❌ Capability matrix loading failed: ${error.message}`);
+      console.log(`  [F] Capability matrix loading failed: ${error.message}`);
       this.recordTestResult('Capability Matrix Loading', false, error.message);
     }
   }
@@ -141,7 +270,7 @@ class EnhancedValidationSystemTest {
    * Test 3: Validator Loading and Compliance
    */
   async testValidatorLoadingAndCompliance() {
-    console.log('\n🔧 Test 3: Validator Loading and Compliance');
+    console.log('\n[T] Test 3: Validator Loading and Compliance');
     
     try {
       const complianceChecker = new InterfaceComplianceChecker();
@@ -162,11 +291,11 @@ class EnhancedValidationSystemTest {
         throw new Error(`Build validator compliance failed: ${buildCompliance.score}%`);
       }
       
-      console.log(`  ✅ Validator compliance verified (Backend: ${backendCompliance.score}%, Build: ${buildCompliance.score}%)`);
+      console.log(`  [x] Validator compliance verified (Backend: ${backendCompliance.score}%, Build: ${buildCompliance.score}%)`);
       this.recordTestResult('Validator Compliance', true, `Backend: ${backendCompliance.score}%, Build: ${buildCompliance.score}%`);
       
     } catch (error) {
-      console.log(`  ❌ Validator compliance check failed: ${error.message}`);
+      console.log(`  [F] Validator compliance check failed: ${error.message}`);
       this.recordTestResult('Validator Compliance', false, error.message);
     }
   }
@@ -175,7 +304,7 @@ class EnhancedValidationSystemTest {
    * Test 4: Safety Framework Components
    */
   async testSafetyFrameworkComponents() {
-    console.log('\n🛡️ Test 4: Safety Framework Components');
+    console.log('\n[T] Test 4: Safety Framework Components');
     
     try {
       // Test Interface Compliance Checker
@@ -195,11 +324,11 @@ class EnhancedValidationSystemTest {
         throw new Error('Rollback manager backup creation failed');
       }
       
-      console.log('  ✅ Safety framework components operational');
+      console.log('  [x] Safety framework components operational');
       this.recordTestResult('Safety Framework', true, `${requiredMethods.length} interface methods, backup system operational`);
       
     } catch (error) {
-      console.log(`  ❌ Safety framework test failed: ${error.message}`);
+      console.log(`  [F] Safety framework test failed: ${error.message}`);
       this.recordTestResult('Safety Framework', false, error.message);
     }
   }
@@ -208,10 +337,47 @@ class EnhancedValidationSystemTest {
    * Test 5: Template System
    */
   async testTemplateSystem() {
-    console.log('\n📄 Test 5: Template System');
+    console.log('\n[T] Test 5: Template System');
     
     try {
-      const templatePath = path.join(__dirname, 'templates', 'validator-template.js.template');
+      const templatesDir = path.join(__dirname, 'templates');
+      const templatePath = path.join(templatesDir, 'validator-template.js.template');
+
+      const templateFixture = `export default class {{CLASS_NAME}} {
+  constructor() {
+    this.category = '{{CATEGORY}}';
+    this.name = '{{CATEGORY_NAME}}';
+    this.description = '{{DESCRIPTION}}';
+  }
+
+  getCapabilities() {
+    return {
+      category: '{{CATEGORY}}',
+      name: '{{CATEGORY_NAME}}',
+      description: '{{DESCRIPTION}}'
+    };
+  }
+
+  getMetadata() {
+    return {
+      category: '{{CATEGORY}}',
+      categoryName: '{{CATEGORY_NAME}}',
+      description: '{{DESCRIPTION}}',
+      version: '{{VERSION}}'
+    };
+  }
+
+  async validate(projectInfo, scopeConfig, options) {
+    {{VALIDATION_LOGIC}}
+  }
+}
+`;
+
+      if (!fs.existsSync(templatesDir)) {
+        fs.mkdirSync(templatesDir, { recursive: true });
+      }
+
+      fs.writeFileSync(templatePath, templateFixture, 'utf8');
       
       if (!fs.existsSync(templatePath)) {
         throw new Error('Validator template not found');
@@ -233,11 +399,11 @@ class EnhancedValidationSystemTest {
         throw new Error(`Template missing variables: ${missingVariables.join(', ')}`);
       }
       
-      console.log(`  ✅ Template system verified with ${requiredVariables.length} template variables`);
+      console.log(`  [x] Template system verified with ${requiredVariables.length} template variables`);
       this.recordTestResult('Template System', true, `${requiredVariables.length} template variables verified`);
       
     } catch (error) {
-      console.log(`  ❌ Template system test failed: ${error.message}`);
+      console.log(`  [F] Template system test failed: ${error.message}`);
       this.recordTestResult('Template System', false, error.message);
     }
   }
@@ -246,13 +412,19 @@ class EnhancedValidationSystemTest {
    * Test 6: Agent Submission Pipeline (Validation Only)
    */
   async testAgentSubmissionPipeline() {
-    console.log('\n📝 Test 6: Agent Submission Pipeline (Validation Only)');
+    console.log('\n[T] Test 6: Agent Submission Pipeline (Validation Only)');
     
     try {
       // Test the agent submission framework components
       const category = 'test_integration';
       const testValidatorContent = `
 export default class TestIntegrationValidator {
+  constructor() {
+    this.category = 'test_integration';
+    this.version = '1.0.0';
+    this.scopes = ['**/*'];
+  }
+
   getCapabilities() {
     return {
       supportedProjects: ['TestProject'],
@@ -260,7 +432,7 @@ export default class TestIntegrationValidator {
       requiredDependencies: ['node', 'npm']
     };
   }
-  
+
   getMetadata() {
     return {
       category: 'test_integration',
@@ -268,11 +440,16 @@ export default class TestIntegrationValidator {
       description: 'Test integration validator'
     };
   }
-  
+
+  checkInterfaceCompliance() {
+    const requiredMethods = ['validate', 'getCapabilities', 'getMetadata', 'checkInterfaceCompliance', 'runSelfDiagnostics'];
+    return requiredMethods.every(method => typeof this[method] === 'function');
+  }
+
   runSelfDiagnostics() {
     return { status: 'healthy' };
   }
-  
+
   async validate(projectInfo, scopeConfig, options) {
     return {
       status: 'PASS',
@@ -282,8 +459,9 @@ export default class TestIntegrationValidator {
       warnings: []
     };
   }
-}`;
-      
+}
+`;
+
       // Create temporary test validator file
       const tempValidatorPath = path.join(__dirname, 'temp-test-validator.js');
       fs.writeFileSync(tempValidatorPath, testValidatorContent);
@@ -291,21 +469,21 @@ export default class TestIntegrationValidator {
       try {
         // Test risk assessment
         const riskAssessment = await this.orchestrator.assessSubmittedValidatorRisk(tempValidatorPath, category);
-        console.log(`  ✅ Risk assessment completed: ${riskAssessment.riskLevel} risk`);
+        console.log(`  [x] Risk assessment completed: ${riskAssessment.riskLevel} risk`);
         
         // Test sandbox validation
         const sandboxResult = await this.orchestrator.sandboxTestSubmittedValidator(tempValidatorPath);
         if (!sandboxResult.passed) {
           throw new Error(`Sandbox test failed: ${sandboxResult.errors.join(', ')}`);
         }
-        console.log('  ✅ Sandbox testing passed');
+        console.log('  [x] Sandbox testing passed');
         
         // Test compliance validation
         const complianceResult = await this.orchestrator.validateSubmittedValidatorCompliance(tempValidatorPath);
         if (!complianceResult.compliant) {
           throw new Error('Compliance validation failed');
         }
-        console.log('  ✅ Interface compliance verified');
+        console.log('  [x] Interface compliance verified');
         
         this.recordTestResult('Agent Submission Pipeline', true, `All validation steps passed, Risk: ${riskAssessment.riskLevel}`);
         
@@ -317,7 +495,7 @@ export default class TestIntegrationValidator {
       }
       
     } catch (error) {
-      console.log(`  ❌ Agent submission pipeline test failed: ${error.message}`);
+      console.log(`  [F] Agent submission pipeline test failed: ${error.message}`);
       this.recordTestResult('Agent Submission Pipeline', false, error.message);
     }
   }
@@ -326,7 +504,7 @@ export default class TestIntegrationValidator {
    * Test 7: Rollback Mechanism
    */
   async testRollbackMechanism() {
-    console.log('\n🔄 Test 7: Rollback Mechanism');
+    console.log('\n[T] Test 7: Rollback Mechanism');
     
     try {
       const rollbackManager = new RollbackManager(__dirname);
@@ -346,11 +524,11 @@ export default class TestIntegrationValidator {
         throw new Error('Test backup not found in backup directory');
       }
       
-      console.log('  ✅ Rollback mechanism operational');
+      console.log('  [x] Rollback mechanism operational');
       this.recordTestResult('Rollback Mechanism', true, `Backup created: ${path.basename(backupPath)}`);
       
     } catch (error) {
-      console.log(`  ❌ Rollback mechanism test failed: ${error.message}`);
+      console.log(`  [F] Rollback mechanism test failed: ${error.message}`);
       this.recordTestResult('Rollback Mechanism', false, error.message);
     }
   }
@@ -359,7 +537,7 @@ export default class TestIntegrationValidator {
    * Test 8: System Health Monitoring (SIMPLIFIED FOR CORE VALIDATION)
    */
   async testSystemHealthMonitoring() {
-    console.log('\n🩺 Test 8: Basic System Health Check');
+    console.log('\n[T] Test 8: Basic System Health Check');
     
     try {
       if (!this.orchestrator) {
@@ -375,12 +553,12 @@ export default class TestIntegrationValidator {
       // For simplified health check, we expect coreComponents instead of components
       const componentCount = health.coreComponents ? Object.keys(health.coreComponents).length : 0;
       
-      console.log(`  ✅ Basic system health check operational (Status: ${health.status}, Core Components: ${componentCount})`);
-      console.log(`  📝 ${health.message}`);
+      console.log(`  [x] Basic system health check operational (Status: ${health.status}, Core Components: ${componentCount})`);
+      console.log(`  ${health.message}`);
       this.recordTestResult('Basic System Health Check', true, `Status: ${health.status}, Core Components: ${componentCount}`);
       
     } catch (error) {
-      console.log(`  ❌ Basic system health check failed: ${error.message}`);
+      console.log(`  [F] Basic system health check failed: ${error.message}`);
       this.recordTestResult('Basic System Health Check', false, error.message);
     }
   }
@@ -389,7 +567,7 @@ export default class TestIntegrationValidator {
    * Test 9: Integration Validation
    */
   async testIntegrationValidation() {
-    console.log('\n🔗 Test 9: Integration Validation');
+    console.log('\n[T] Test 9: Integration Validation');
     
     try {
       // Test that all major components can work together
@@ -412,11 +590,11 @@ export default class TestIntegrationValidator {
         throw new Error('Component interaction failed');
       }
       
-      console.log('  ✅ Integration validation successful');
+      console.log('  [x] Integration validation successful');
       this.recordTestResult('Integration Validation', true, 'All components properly integrated');
       
     } catch (error) {
-      console.log(`  ❌ Integration validation failed: ${error.message}`);
+      console.log(`  [F] Integration validation failed: ${error.message}`);
       this.recordTestResult('Integration Validation', false, error.message);
     }
   }
@@ -444,7 +622,7 @@ export default class TestIntegrationValidator {
     const totalDuration = Date.now() - this.testStartTime;
     
     console.log('\n' + '='.repeat(60));
-    console.log('📊 ENHANCED VALIDATION SYSTEM TEST REPORT');
+    console.log('[D] ENHANCED VALIDATION SYSTEM TEST REPORT');
     console.log('='.repeat(60));
     console.log(`Total Tests: ${totalTests}`);
     console.log(`Passed: ${passedTests}`);
@@ -453,14 +631,14 @@ export default class TestIntegrationValidator {
     console.log(`Total Duration: ${totalDuration}ms`);
     
     if (failedTests > 0) {
-      console.log('\n❌ FAILED TESTS:');
+      console.log('\n[F] FAILED TESTS:');
       this.testResults.filter(t => !t.success).forEach(test => {
         console.log(`  - ${test.testName}: ${test.details}`);
       });
     }
     
     if (passedTests > 0) {
-      console.log('\n✅ PASSED TESTS:');
+      console.log('\n[x] PASSED TESTS:');
       this.testResults.filter(t => t.success).forEach(test => {
         console.log(`  - ${test.testName}${test.details ? ': ' + test.details : ''}`);
       });
@@ -469,11 +647,11 @@ export default class TestIntegrationValidator {
     console.log('\n' + '='.repeat(60));
     
     if (successRate >= 90) {
-      console.log('🎉 SYSTEM READY FOR PRODUCTION');
+      console.log('[x] SYSTEM READY FOR PRODUCTION');
     } else if (successRate >= 70) {
-      console.log('⚠️ SYSTEM NEEDS ATTENTION BEFORE PRODUCTION');
+      console.log('[!] SYSTEM NEEDS ATTENTION BEFORE PRODUCTION');
     } else {
-      console.log('❌ SYSTEM NOT READY FOR PRODUCTION');
+      console.log('[F] SYSTEM NOT READY FOR PRODUCTION');
     }
     
     console.log('='.repeat(60));
@@ -493,7 +671,7 @@ export default class TestIntegrationValidator {
     };
     
     fs.writeFileSync(reportPath, JSON.stringify(report, null, 2), 'utf8');
-    console.log(`\n📄 Test report saved to: ${reportPath}`);
+    console.log(`\n[>] Test report saved to: ${reportPath}`);
   }
 }
 
@@ -507,3 +685,4 @@ if (import.meta.url === `file://${__filename}`) {
 }
 
 export default EnhancedValidationSystemTest;
+

@@ -17,14 +17,10 @@
  */
 
 // MCP validator implementation for Model Context Protocol server validation
-
-// TODO[SCOPE-UTIL-ADOPTION]: Refactor this validator to use resolveScopedFiles/project scope helpers for consistent discovery.
-//    Usage example: const scope = await resolveScopedFiles(projectInfo.path, scopeConfig); appendScopeEvidence(result, scope);
-//    Replace manual pattern matching with filterScopedFiles(scope, ['**/*.ts', '**/*.js'], scopeConfig) before running analysis.
 import fs from 'fs';
 import path from 'path';
 import { execSync } from 'child_process';
-import { minimatch } from 'minimatch';
+import { resolveScopedFiles, appendScopeEvidence, filterScopedFiles } from '../core/scope-utils.js';
 
 /**
  * MCP Validator implementing IValidator interface
@@ -59,20 +55,24 @@ export class MCPValidator {
     try {
       console.log('  Executing MCP Server mandatory validation commands...');
       console.log('  Source: MCP Channel implementation validation requirements');
+      const scopeResult = await resolveScopedFiles(projectInfo.path, scopeConfig, {
+        maxFiles: options.maxFiles ?? 400,
+        maxFileSize: 6 * 1024 * 1024,
+        maxTotalSize: 60 * 1024 * 1024
+      });
+      appendScopeEvidence(result, scopeResult, { includePatterns: true, limit: 10 });
+      if (Array.isArray(scopeResult.warnings) && scopeResult.warnings.length) {
+        result.warnings.push(...scopeResult.warnings);
+      }
 
-      // TODO: [TASK-VAL-MCP-FIX-001] Pattern: scope-evaluation-before-hardcoded-paths | Complexity: 7 | Dependencies: minimatch,scope-config
-      // Context: Fix MCP validator to respect scope configuration instead of always checking hardcoded src/mcp-channel path
-      // Validation-Required: scope-pattern-matching, performance-optimization, early-termination
-      // Pattern-Info: { approach: "scope-first-validation", alternatives: "hybrid-validation", trade-offs: "performance-vs-completeness" }
-      
-      // CRITICAL FIX: Check scope configuration before hardcoded path checking
-      const scopeIncludesMCP = this.checkScopeIncludesMCP(scopeConfig);
-      if (!scopeIncludesMCP) {
+      const scopedMCPFiles = filterScopedFiles(scopeResult, this.scopes);
+      const hasExplicitPatterns = Array.isArray(scopeConfig?.patterns) && scopeConfig.patterns.length > 0;
+      if (hasExplicitPatterns && scopedMCPFiles.files.length === 0) {
         result.status = 'SKIP';
         result.evidence.push('MCP validation skipped - scope does not include MCP channel files');
-        result.evidence.push(`Scope patterns: ${JSON.stringify(scopeConfig?.patterns || [])}`);
+        result.evidence.push(`Scope patterns: ${JSON.stringify(scopeConfig.patterns)}`);
         result.evidence.push('MCP validator scope: src/mcp-channel/**/*.ts, src/mcp-channel/**/*.js');
-        console.log('  → Skipping MCP validation - scope excludes MCP channel files');
+        console.log('  Skipping MCP validation - scope excludes MCP channel files');
         return result;
       }
 
@@ -132,43 +132,6 @@ export class MCPValidator {
     }
 
     return result;
-  }
-
-  /**
-   * Check if scope configuration includes MCP channel files
-   * @param {Object} scopeConfig - Scope configuration with patterns array
-   * @returns {boolean} - True if scope includes MCP files, false otherwise
-   */
-  checkScopeIncludesMCP(scopeConfig) {
-    // If no scope config provided, assume all files are in scope
-    if (!scopeConfig || !scopeConfig.patterns || scopeConfig.patterns.length === 0) {
-      return true;
-    }
-
-    const mcpPatterns = this.scopes; // ['src/mcp-channel/**/*.ts', 'src/mcp-channel/**/*.js']
-    const scopePatterns = scopeConfig.patterns;
-
-    // Check if any scope pattern would include MCP channel files
-    for (const scopePattern of scopePatterns) {
-      for (const mcpPattern of mcpPatterns) {
-        // Test if the scope pattern would match MCP files
-        // Convert glob patterns to test paths
-        const testPaths = [
-          'src/mcp-channel/index.ts',
-          'src/mcp-channel/server.js',
-          'src/mcp-channel/tools/cli-tools.ts',
-          'src/mcp-channel/test/unit.test.js'
-        ];
-
-        for (const testPath of testPaths) {
-          if (minimatch(testPath, scopePattern)) {
-            return true;
-          }
-        }
-      }
-    }
-
-    return false;
   }
 
   /**
