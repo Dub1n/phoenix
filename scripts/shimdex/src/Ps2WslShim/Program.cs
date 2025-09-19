@@ -1,9 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Text.RegularExpressions;
-using System.Text;
 using System.IO;
+using System.Linq;
+using System.Text;
+using System.Text.RegularExpressions;
+using Microsoft.Win32;
 
 class Program
 {
@@ -12,9 +14,7 @@ class Program
         // bypass: set PS2WSL_BYPASS=1 to launch real PowerShell/Pwsh
         if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("PS2WSL_BYPASS")))
         {
-            var real = (Environment.ProcessPath?.EndsWith("pwsh.exe", StringComparison.OrdinalIgnoreCase) ?? false)
-                ? @"C:\\Program Files\\PowerShell\\7\\pwsh.exe"
-                : @"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe";
+            var real = ResolveRealPowerShell();
             return Run(real, args);
         }
 
@@ -219,6 +219,118 @@ class Program
         Console.Error.WriteLine("ps2wsl: set PS2WSL_BYPASS=1 to run this invocation in PowerShell.");
         return 1;
     }
+    static string ResolveRealPowerShell()
+    {
+        var candidates = new List<string>();
+
+        string? envOverride = Environment.GetEnvironmentVariable("PS2WSL_REAL_POWERSHELL");
+        if (!string.IsNullOrWhiteSpace(envOverride))
+            candidates.Add(envOverride.Trim());
+
+        string? registryPwsh = GetRegistryPwsh();
+        if (!string.IsNullOrEmpty(registryPwsh))
+            candidates.Add(registryPwsh);
+
+        candidates.AddRange(GetProgramFilesPwshCandidates());
+
+        string system32 = Environment.GetFolderPath(Environment.SpecialFolder.System);
+        if (!string.IsNullOrEmpty(system32))
+            candidates.Add(Path.Combine(system32, "WindowsPowerShell", "v1.0", "powershell.exe"));
+
+        string? pathPwsh = FindExecutableOnPath("pwsh.exe");
+        if (!string.IsNullOrEmpty(pathPwsh))
+            candidates.Add(pathPwsh);
+
+        string? pathPs = FindExecutableOnPath("powershell.exe");
+        if (!string.IsNullOrEmpty(pathPs))
+            candidates.Add(pathPs);
+
+        foreach (var candidate in candidates)
+        {
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(candidate) && File.Exists(candidate))
+                    return candidate;
+            }
+            catch
+            {
+                // ignore invalid paths
+            }
+        }
+
+        return "powershell.exe";
+    }
+
+    static string? GetRegistryPwsh()
+    {
+        if (!OperatingSystem.IsWindows())
+            return null;
+
+        try
+        {
+            foreach (var view in new[] { RegistryView.Registry64, RegistryView.Registry32 })
+            {
+                using var baseKey = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, view);
+                using var key = baseKey.OpenSubKey("SOFTWARE\\Microsoft\\PowerShellCore");
+                var installPath = key?.GetValue("InstallPath") as string;
+                if (!string.IsNullOrWhiteSpace(installPath))
+                {
+                    var exe = Path.Combine(installPath, "pwsh.exe");
+                    if (File.Exists(exe))
+                        return exe;
+                }
+            }
+        }
+        catch
+        {
+            // registry access not available or unexpected; ignore
+        }
+        return null;
+    }
+
+    static IEnumerable<string> GetProgramFilesPwshCandidates()
+    {
+        if (!OperatingSystem.IsWindows())
+            yield break;
+
+        var roots = new[]
+        {
+            Environment.GetEnvironmentVariable("ProgramW6432"),
+            Environment.GetEnvironmentVariable("ProgramFiles"),
+            Environment.GetEnvironmentVariable("ProgramFiles(x86)")
+        };
+
+        foreach (var root in roots)
+        {
+            if (string.IsNullOrWhiteSpace(root))
+                continue;
+            yield return Path.Combine(root, "PowerShell", "7", "pwsh.exe");
+            yield return Path.Combine(root, "PowerShell", "pwsh.exe");
+        }
+    }
+
+    static string? FindExecutableOnPath(string exeName)
+    {
+        try
+        {
+            var pathEnv = Environment.GetEnvironmentVariable("PATH");
+            if (string.IsNullOrWhiteSpace(pathEnv)) return null;
+            foreach (var segment in pathEnv.Split(';', StringSplitOptions.RemoveEmptyEntries))
+            {
+                string trimmed = segment.Trim();
+                if (trimmed.Length == 0) continue;
+                var candidate = Path.Combine(trimmed, exeName);
+                if (File.Exists(candidate))
+                    return candidate;
+            }
+        }
+        catch
+        {
+            // PATH might contain malformed entries; ignore
+        }
+        return null;
+    }
+
     static string ToWslPath(string winPath)
     {
         if (string.IsNullOrWhiteSpace(winPath)) return winPath;

@@ -1,15 +1,155 @@
-# ps2wsl PowerShell Shim
+# shimdex PowerShell Shim
 
-Location: `scripts/Ps2Wsl` relative to the repository root.
+Location: `scripts/shimdex` relative to the repository root.
 
-This folder contains the build of the `powershell.exe` shim that redirects Codex CLI command execution into WSL, along with utility binaries for enabling or disabling the shim by manipulating the user `PATH`.
+This folder contains the build of the `powershell.exe` shim that redirects Codex CLI command execution into WSL, along with utilities for enabling or disabling the shim by manipulating the user `PATH`.
 
 ## Layout
 
-* Runtime-ready binaries live directly in `scripts/Ps2Wsl` (`powershell.exe`, `EnableShim.exe`, `DisableShim.exe`).
-* All source projects sit under `scripts/Ps2Wsl/src`.
+* Runtime-ready binaries live directly in `scripts/shimdex` (`powershell.exe`, `EnableShim.exe`, `DisableShim.exe`).
+* All source projects sit under `scripts/shimdex/src`.
   * `src/Ps2WslShim/` produces the shim binary and renames it to `powershell.exe` during publish.
-  * `src/EnableShim/` and `src/DisableShim/` build the toggle utilities.
+  * `src/EnableShim/` and `src/DisableShim/` build the optional toggle utilities (still available if you prefer self-contained executables).
+
+## Getting started
+
+1. Ensure you are on Windows with WSL available at `wsl.exe`, and install the .NET 8.0 SDK (LTS).
+2. From this directory, launch the helper menu:
+
+   ```powershell
+   .\shimdex.ps1
+   ```
+
+   The menu drives every common task:
+   * `1` builds the shim (`powershell.exe` + `Ps2WslShim.pdb`).
+   * `2` builds the optional toggle executables (`EnableShim.exe`, `DisableShim.exe`).
+   * `3` toggles whether enable/disable operations prefer those executables or inline PATH edits.
+   * `4` / `5` enable or disable the shim globally for the current user.
+   * `6` installs or updates the workspace-scoped profile snippet (with a built-in fallback if the toggle executables are missing).
+   * `7` installs a global `shimdex` function so you can launch the menu from any PowerShell session.
+   * `8` removes the workspace snippet and the alias from both your profile and the current session.
+   * `9` shows diagnostics; `0` exits the helper.
+
+   Preferences are stored in `.shimdex-settings.json` next to this script.
+
+### Manual build commands
+
+If you prefer to run the `dotnet` commands yourself, the helper’s first two menu items are equivalent to:
+
+```powershell
+dotnet publish src/Ps2WslShim/Ps2WslShim.csproj -c Release
+dotnet publish src/EnableShim/EnableShim.csproj -c Release
+dotnet publish src/DisableShim/DisableShim.csproj -c Release
+```
+
+The shim publish drops `powershell.exe` and `Ps2WslShim.pdb` into `scripts\shimdex`. The toggle publishes create `EnableShim.exe`/`DisableShim.exe` alongside them.
+
+### Enable or disable manually (no toggle executables)
+
+```powershell
+$shimDir = (Resolve-Path scripts\shimdex).Path
+
+# Enable
+setx PATH "$shimDir;$env:PATH"
+$env:PATH = "$shimDir;$env:PATH"
+
+# Disable
+$filtered = ($env:PATH -split ';' | Where-Object { $_ -and ($_ -ne $shimDir) }) -join ';'
+setx PATH $filtered
+$env:PATH = $filtered
+```
+
+`setx` updates the user-scoped PATH for new shells, while the `$env:PATH` assignments adjust the current session immediately.
+
+### Choosing the real PowerShell host
+
+The shim discovers the native host in this order:
+
+* `PS2WSL_REAL_POWERSHELL` environment variable (set it to an absolute path if you need a custom build).
+* PowerShell 7 (`pwsh.exe`) from the registry or common `Program Files` locations.
+* Any `pwsh.exe` / `powershell.exe` already on `PATH`.
+* Built-in Windows PowerShell (`%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe`).
+
+The discovery runs on every bypass and before handing control back to native PowerShell.
+
+### Optional: scope the shim to a specific workspace
+
+Menu option `6` writes a PowerShell profile snippet that automatically enables the shim when you start inside a chosen directory tree and disables it elsewhere. If you prefer to manage the snippet yourself, the helper writes the following template—replace the placeholders and append it to `$PROFILE`:
+
+```powershell
+$shimDir = 'C:\path\to\repo\scripts\shimdex'
+$workspace = 'C:\Projects\YourWorkspace'
+
+$snippet = @"
+# >>> shimdex workspace start
+function Invoke-ShimdexEnable {
+    param([string]`$ShimDir)
+    `$exe = Join-Path `$ShimDir 'EnableShim.exe'
+    if (Test-Path `$exe) {
+        & `$exe | Out-Null
+    }
+    else {
+        `$entries = ([Environment]::GetEnvironmentVariable('PATH','User') -split ';' | Where-Object { `$_ -and (`$_ -ne `$ShimDir) })
+        `$newPath = (@(`$ShimDir) + `$entries) -join ';'
+        [Environment]::SetEnvironmentVariable('PATH', `$newPath, 'User')
+        `$processEntries = (`$env:PATH -split ';' | Where-Object { `$_ -and (`$_ -ne `$ShimDir) })
+        `$env:PATH = (@(`$ShimDir) + `$processEntries | Select-Object -Unique) -join ';'
+    }
+}
+
+function Invoke-ShimdexDisable {
+    param([string]`$ShimDir)
+    `$exe = Join-Path `$ShimDir 'DisableShim.exe'
+    if (Test-Path `$exe) {
+        & `$exe | Out-Null
+    }
+    else {
+        `$entries = ([Environment]::GetEnvironmentVariable('PATH','User') -split ';' | Where-Object { `$_ -and (`$_ -ne `$ShimDir) })
+        `$newPath = (`$entries | Select-Object -Unique) -join ';'
+        [Environment]::SetEnvironmentVariable('PATH', `$newPath, 'User')
+        `$processEntries = (`$env:PATH -split ';' | Where-Object { `$_ -and (`$_ -ne `$ShimDir) })
+        `$env:PATH = (`$processEntries | Select-Object -Unique) -join ';'
+    }
+}
+
+$__shimdexShimDir = '$shimDir'
+$__shimdexWorkspace = '$workspace'
+$__shimdexCurrent = [System.IO.Path]::GetFullPath((Get-Location).Path)
+
+if ($__shimdexCurrent.StartsWith($__shimdexWorkspace, [System.StringComparison]::OrdinalIgnoreCase)) {
+    Invoke-ShimdexEnable -ShimDir $__shimdexShimDir
+    Register-EngineEvent PowerShell.Exiting -Action { Invoke-ShimdexDisable -ShimDir '$shimDir' } | Out-Null
+}
+else {
+    Invoke-ShimdexDisable -ShimDir $__shimdexShimDir
+}
+
+Remove-Item Variable:__shimdexShimDir,Variable:__shimdexWorkspace,Variable:__shimdexCurrent -ErrorAction SilentlyContinue
+# <<< shimdex workspace end
+"@
+
+New-Item -ItemType Directory -Path (Split-Path $PROFILE) -ErrorAction SilentlyContinue | Out-Null
+Add-Content -Path $PROFILE -Value $snippet
+```
+
+Menu option `7` installs an alias so `shimdex` launches this helper from any PowerShell session. To add it manually:
+
+```powershell
+$shimScript = 'C:\path\to\repo\scripts\shimdex\shimdex.ps1'
+$aliasSnippet = @"
+# >>> shimdex alias start
+function shimdex {
+    param([Parameter(ValueFromRemainingArguments=`$true)]`$args)
+    & '$shimScript' @args
+}
+# <<< shimdex alias end
+"@
+
+Set-Item -Path Function:shimdex -Value ([ScriptBlock]::Create("param([Parameter(ValueFromRemainingArguments=`$true)]`$args)`n& '$shimScript' @args")) -Force
+Add-Content -Path $PROFILE -Value $aliasSnippet
+```
+
+The helper’s removal option (`8`) undoes both snippets and clears the session alias.
 
 ## What the shim does
 
@@ -86,7 +226,7 @@ Import-Module SomeModule / Remove-Item foo.txt
 
 Plain commands that happen to work in both shells (e.g. `echo hi`, `dir`) continue to run in bash unless they match the heuristic patterns above.
 
-If you actually need those PowerShell commands, either set `PS2WSL_BYPASS=1` before invoking them or run `scripts\Ps2Wsl\DisableShim.exe` to restore native PowerShell resolution.
+If you actually need those PowerShell commands, either set `PS2WSL_BYPASS=1` before invoking them or run `scripts\shimdex\DisableShim.exe` to restore native PowerShell resolution.
 
 ## Utility binaries
 
@@ -108,7 +248,7 @@ Both utilities update the user-scoped `PATH` **and** the current process `PATH`,
 2. Enable the shim for the current user (from this directory):
 
    ```powershell
-   scripts\Ps2Wsl\EnableShim.exe
+   scripts\shimdex\EnableShim.exe
    ```
 
 3. Launch Codex CLI / shells as normal. Any `powershell.exe` resolution that hits this directory first will now execute through WSL.
@@ -122,7 +262,7 @@ Both utilities update the user-scoped `PATH` **and** the current process `PATH`,
 5. To disable the shim and restore the prior `PATH` ordering:
 
    ```powershell
-   scripts\Ps2Wsl\DisableShim.exe
+   scripts\shimdex\DisableShim.exe
    ```
 
 ## Diagrams
@@ -130,7 +270,7 @@ Both utilities update the user-scoped `PATH` **and** the current process `PATH`,
 ```mermaid
 flowchart TD
     PS[Agent/tool invokes powershell.exe]
-    SHIM[ps2wsl shim (scripts/Ps2Wsl/powershell.exe)]
+    SHIM[ps2wsl shim (scripts/shimdex/powershell.exe)]
     CHECK{PS2WSL_BYPASS set?}
     REAL[Launch real PowerShell]
     PARSE[Parse CLI flags]
@@ -154,12 +294,12 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-    subgraph Toggle Utilities (scripts/Ps2Wsl)
+    subgraph Toggle Utilities (scripts/shimdex)
         EN[EnableShim.exe]
         DI[DisableShim.exe]
     end
-    EN -->|Add scripts\Ps2Wsl to user PATH (front)| PATH[(User PATH)]
-    DI -->|Remove scripts\Ps2Wsl from user PATH| PATH
+    EN -->|Add scripts\shimdex to user PATH (front)| PATH[(User PATH)]
+    DI -->|Remove scripts\shimdex from user PATH| PATH
     PATH -->|Resolution order| RES[tools resolving powershell.exe]
     RES -->|Finds shim first?| SHIM[ps2wsl shim binaries]
 ```
@@ -182,14 +322,15 @@ flowchart LR
 * Adjust path translation in `ToWslPath` if additional mount patterns appear in your environment.
 * When editing the shim, rebuild to refresh `powershell.exe` so the latest logic is available to tooling.
 * The toggle utilities assume they live in the same directory as `powershell.exe`; if you relocate files, rebuild or adjust their logic accordingly.
+* Override the native host by setting `PS2WSL_REAL_POWERSHELL` to an absolute executable path when the automatic discovery order does not match your setup.
 
 ## Troubleshooting
 
 * **Shim not triggered** - ensure this folder is the first match for `powershell.exe` on `PATH`. Run `where powershell` to confirm resolution order.
 * **Command rejected with bypass message** - the heuristics detected PowerShell-specific syntax. Either set `PS2WSL_BYPASS=1` for that call or refine `LooksLikePowerShellScript` if the false positive is acceptable in WSL.
 * **WSL path translation errors** - verify that the Windows working directory you start from exists inside WSL (especially for new drives or UNC paths). Extend `ToWslPath` as required.
-* **Need native PowerShell** - temporarily disable via `scripts\Ps2Wsl\DisableShim.exe` or export `PS2WSL_BYPASS=1` before launching tools.
+* **Need native PowerShell** - temporarily disable via `scripts\shimdex\DisableShim.exe` or export `PS2WSL_BYPASS=1` before launching tools.
 
 ---
 
-All binaries here target .NET 10.0 (preview on this workstation). Keep the SDK updated or adjust the `<TargetFramework>` if you standardise on a different runtime.
+All binaries here target .NET 8.0 (LTS). Keep the SDK updated or adjust the `<TargetFramework>` if you standardise on a different runtime.

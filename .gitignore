@@ -1,6 +1,8 @@
 # Dependencies
 node_modules/
 package-lock.json
+**/bin/
+**/obj/
 
 # Build outputs and compiled files
 dist/
@@ -101,3 +103,66 @@ attachments/
 
 # Excluded files
 docs/00-QMS/Docs/
+
+# .NET tooling and packages
+.vs/
+*.user
+*.userosscache
+*.suo
+*.sln.docstates
+*.psess
+*.vsp
+*.vspx
+*.coverage
+*.coveragexml
+TestResults/
+artifacts/
+packages/
+*.nupkg
+*.snupkg
+
+# NuGet generated files
+*.nuget.props
+*.nuget.targets
+
+# JavaScript/TypeScript package managers and tooling
+jspm_packages/
+bower_components/
+.yarn/
+.yarn-cache/
+.pnp.cjs
+.pnp.loader.mjs
+.pnpdata/
+.pnpm-store/
+.pmpm-store/
+.pnpm-debug.log*
+typings/
+
+# Editor settings
+.vscode/
+*.code-workspace
+
+# Python virtual environments and caches
+.venv/
+venv/
+env/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.eggs/
+.tox/
+.nox/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+.coverage
+coverage.xml
+
+# PowerShell tooling
+ScriptAnalyzer*.cache
+Pester.xml
+
+# WSL/Linux misc
+lost+found/
+.Trash-*/
