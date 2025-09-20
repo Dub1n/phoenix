@@ -58,6 +58,3 @@ The legacy toggle helper projects (`src/EnableShim`, `src/DisableShim`) and thei
 
 - `tests/Shimdex.Tests.ps1` imports the module with `%APPDATA%` redirected to the Pester `$TestDrive`, asserts default configuration creation, verifies `Set-ShimdexMode -Persist:$false` updates the current environment, and checks `Get-ShimdexStatus` output.
 - Future work: add integration tests that spawn shimmed child processes under different `SHIMDEX_MODE` values to confirm routing without touching the global PATH.
-
-
-
