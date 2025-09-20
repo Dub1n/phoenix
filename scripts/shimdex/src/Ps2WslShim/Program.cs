@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -9,19 +9,31 @@ using Microsoft.Win32;
 
 class Program
 {
+    enum ShimdexMode
+    {
+        Disabled,
+        Auto,
+        Force
+    }
+
     static int Main(string[] args)
     {
-        // bypass: set PS2WSL_BYPASS=1 to launch real PowerShell/Pwsh
         if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("PS2WSL_BYPASS")))
         {
             var real = ResolveRealPowerShell();
             return Run(real, args);
         }
 
-        // parse powershell flags and capture -Command / -c / -C / -File payload
-        string mode = "interactive"; // or "command"
-        string payload = "";         // what we'll run inside bash -lc
-        bool fromEnc = false;        // was payload provided via -EncodedCommand?
+        var shimMode = GetShimdexMode();
+        if (shimMode == ShimdexMode.Disabled)
+        {
+            var real = ResolveRealPowerShell();
+            return Run(real, args);
+        }
+
+        string invocationMode = "interactive"; // or "command"
+        string payload = string.Empty;
+        bool fromEnc = false;
         for (int i = 0; i < args.Length; i++)
         {
             string a = args[i];
@@ -36,24 +48,21 @@ class Program
                     string b64 = args[i + 1].Trim();
                     try
                     {
-                        // PowerShell EncodedCommand is UTF-16LE (a.k.a. "Unicode" on Windows)
                         byte[] bytes = Convert.FromBase64String(b64);
                         string decoded = Encoding.Unicode.GetString(bytes);
                         payload = decoded;
                         fromEnc = true;
-                        mode = "command";
-                        break; // captured the command payload; stop parsing flags
+                        invocationMode = "command";
+                        break;
                     }
                     catch (FormatException)
                     {
-                        // not valid Base64; skip token and continue gracefully
                         i++;
                         continue;
                     }
                 }
                 else
                 {
-                    // malformed invocation; ignore and continue
                     continue;
                 }
             }
@@ -61,7 +70,7 @@ class Program
             if (Eq(a, "-Command") || Eq(a, "-c") || Eq(a, "-C"))
             {
                 payload = string.Join(" ", args.Skip(i + 1));
-                mode = "command";
+                invocationMode = "command";
                 break;
             }
 
@@ -85,25 +94,23 @@ class Program
                 string scriptWsl = ToWslPath(scriptPath);
                 string suffix = string.IsNullOrEmpty(rest) ? string.Empty : $" {rest}";
                 payload = $"cd \"{cwdWsl}\" && bash \"{scriptWsl}\"{suffix}";
-                mode = "command";
+                invocationMode = "command";
                 break;
             }
         }
 
-        // if no command, drop into an interactive bash login shell
-        if (mode == "interactive")
+        if (invocationMode == "interactive")
             return RunWsl("bash", "-l");
 
-        // normalize payload (skip de-escaping if it came from -EncodedCommand)
         string cmd = fromEnc ? payload.Trim() : DePs(payload).Trim();
 
         if (string.IsNullOrWhiteSpace(cmd))
             return RunWsl("bash", "-l");
 
-        if (!fromEnc && LooksLikePowerShellScript(cmd))
+        bool enforcePowerShellGuard = shimMode != ShimdexMode.Force;
+        if (enforcePowerShellGuard && !fromEnc && LooksLikePowerShellScript(cmd))
             return AdvisePowerShellBypass(cmd);
 
-        // fast-path: if payload already uses wsl/bash, avoid double-wrapping
         if (cmd.StartsWith("wsl ", StringComparison.OrdinalIgnoreCase))
         {
             var after = cmd.Substring(3).Trim();
@@ -114,17 +121,26 @@ class Program
             return RunWslArgsString(cmd, preserveQuotes: fromEnc);
         }
 
-        // default: run inside bash -lc, cd into repo for consistency
         string cwd = ToWslPath(Environment.CurrentDirectory);
         string wrapped = $"cd \"{cwd}\" && {cmd}";
         return RunWsl("bash", "-lc", wrapped);
     }
 
-    // ----- helpers ---------------------------------------------------------
+    static ShimdexMode GetShimdexMode()
+    {
+        string value = Environment.GetEnvironmentVariable("SHIMDEX_MODE");
+        if (string.IsNullOrWhiteSpace(value))
+            return ShimdexMode.Auto;
+
+        if (string.Equals(value, "disabled", StringComparison.OrdinalIgnoreCase))
+            return ShimdexMode.Disabled;
+        if (string.Equals(value, "force", StringComparison.OrdinalIgnoreCase))
+            return ShimdexMode.Force;
+        return ShimdexMode.Auto;
+    }
 
     static bool Eq(string a, string b) => string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
 
-    // minimal de-escaping for payloads that came through PowerShell JSON/quotes
     static string DePs(string s)
     {
         if (string.IsNullOrEmpty(s)) return s;
@@ -174,20 +190,16 @@ class Program
         return p?.ExitCode ?? 0;
     }
 
-    // Accept a single string like "bash -lc \"echo hi\"" and split conservatively.
-    // For our use cases (bash -lc <payload>), a simple split on first two tokens is robust.
     static int RunWslArgsString(string s, bool preserveQuotes = false)
     {
         if (string.IsNullOrWhiteSpace(s)) return RunWsl("bash", "-l");
         s = s.Trim();
-        // if it already starts with bash -lc, extract the payload portion preserving quotes
         if (Regex.IsMatch(s, @"^bash\s+-lc\s+", RegexOptions.IgnoreCase))
         {
             var after = s.Substring(s.IndexOf("-lc", StringComparison.OrdinalIgnoreCase) + 3).Trim();
             var payload = preserveQuotes ? after : TrimOneLayer(after);
             return RunWsl("bash", "-lc", payload);
         }
-        // otherwise, best effort split: first token + remainder
         var parts = s.Split(new[] { ' ' }, 2, StringSplitOptions.RemoveEmptyEntries);
         if (parts.Length == 1) return RunWsl(parts[0]);
         return RunWsl(parts[0], parts[1]);
@@ -201,7 +213,6 @@ class Program
             return x.Substring(1, x.Length - 2);
         return x;
     }
-
 
     static bool LooksLikePowerShellScript(string text)
     {
@@ -219,6 +230,7 @@ class Program
         Console.Error.WriteLine("ps2wsl: set PS2WSL_BYPASS=1 to run this invocation in PowerShell.");
         return 1;
     }
+
     static string ResolveRealPowerShell()
     {
         var candidates = new List<string>();
@@ -254,7 +266,6 @@ class Program
             }
             catch
             {
-                // ignore invalid paths
             }
         }
 
@@ -283,7 +294,6 @@ class Program
         }
         catch
         {
-            // registry access not available or unexpected; ignore
         }
         return null;
     }
@@ -326,7 +336,6 @@ class Program
         }
         catch
         {
-            // PATH might contain malformed entries; ignore
         }
         return null;
     }
@@ -345,7 +354,6 @@ class Program
         }
         catch
         {
-            // fall back to the original string if GetFullPath cannot handle the input
         }
 
         normalized = normalized.Replace('\\', '/');
@@ -372,10 +380,6 @@ class Program
         return normalized;
     }
 }
-
-
-
-
 
 
 
