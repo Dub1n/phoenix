@@ -1,0 +1,621 @@
+{
+  "generated_at": "2025-09-21T19:13:24Z",
+  "root": "VDL_Vault",
+  "patterns": [
+    "README.md",
+    "README*.md",
+    "*readme*.md",
+    "architecture.md",
+    "architecture*.md",
+    "*architecture*.md",
+    "dev.md",
+    "dev*.md",
+    "*dev*.md",
+    "index.md",
+    "INDEX.md",
+    "*index*.md"
+  ],
+  "match_mode": "name-only",
+  "exclude_dirs": [],
+  "exclude_globs": [
+    ".git/*",
+    ".venv/*",
+    ".idea/*",
+    ".vscode/*",
+    ".claude/*",
+    ".continue/*",
+    ".cursor/*",
+    "build/*",
+    "DSS/*",
+    "docs/*",
+    "prompts/*",
+    "**/node_modules/*",
+    "**/target/*",
+    "**/dist/*",
+    "**/validation-results/**",
+    "**/fixes/**",
+    "**/terminal-completer/*",
+    "**/markdown-formatter/*",
+    "**/refactor_protocol/*",
+    "**/01-roadmap/*",
+    "**/Claude-Code/*",
+    "**/architecture-specialist.md"
+  ],
+  "case_sensitive": false,
+  "counts": {
+    "Haruspex": 3,
+    "phoenix-code-lite": 8,
+    "scripts": 8,
+    "Templum": 12
+  },
+  "files": [
+    {
+      "path": "Haruspex/dev/03-debugging/05.5-Agent-Debugging-Architecture.md",
+      "filename": "05.5-Agent-Debugging-Architecture.md",
+      "folder": "Haruspex",
+      "kind": "architecture",
+      "lines": 542,
+      "bytes": 17642,
+      "sha1": "9dce23a8de5599c4c9f4ef357ea6a7ed69fb6e23"
+    },
+    {
+      "path": "Haruspex/docs/00-Spec/Haruspex-0.1-enhanced-architecture.md",
+      "filename": "Haruspex-0.1-enhanced-architecture.md",
+      "folder": "Haruspex",
+      "kind": "architecture",
+      "lines": 1492,
+      "bytes": 62092,
+      "sha1": "8374d7d1fc6e50818adb654adf8c37e020f3ccf1"
+    },
+    {
+      "path": "Haruspex/docs/01-ClaudeCode-Integration/01-Claude-Code-Integration-Architecture.md",
+      "filename": "01-Claude-Code-Integration-Architecture.md",
+      "folder": "Haruspex",
+      "kind": "architecture",
+      "lines": 706,
+      "bytes": 27921,
+      "sha1": "0b5caf6e3c7bf32b8065a9fbc7acb5b326e87c70"
+    },
+    {
+      "path": "phoenix-code-lite/docs/CLI-INTERACTION-DECOUPLING-ARCHITECTURE.md",
+      "filename": "CLI-INTERACTION-DECOUPLING-ARCHITECTURE.md",
+      "folder": "phoenix-code-lite",
+      "kind": "architecture",
+      "lines": 597,
+      "bytes": 20853,
+      "sha1": "f06ed9aa3123cf27b951dcffeef4c9656970843f"
+    },
+    {
+      "path": "phoenix-code-lite/docs/CLI-MENU-SEPARATOR-ARCHITECTURE.md",
+      "filename": "CLI-MENU-SEPARATOR-ARCHITECTURE.md",
+      "folder": "phoenix-code-lite",
+      "kind": "architecture",
+      "lines": 248,
+      "bytes": 8702,
+      "sha1": "6f31fe8bcb50b13ad62da7535145c9f543b9126a"
+    },
+    {
+      "path": "phoenix-code-lite/docs/index/ARCHITECTURE-DIAGRAM.md",
+      "filename": "ARCHITECTURE-DIAGRAM.md",
+      "folder": "phoenix-code-lite",
+      "kind": "architecture",
+      "lines": 750,
+      "bytes": 30873,
+      "sha1": "baae10d79bdceedccc2ab9d577b206149d16cb4f"
+    },
+    {
+      "path": "phoenix-code-lite/docs/index/CODEBASE-INDEX.md",
+      "filename": "CODEBASE-INDEX.md",
+      "folder": "phoenix-code-lite",
+      "kind": "index",
+      "lines": 948,
+      "bytes": 34965,
+      "sha1": "43c3a1c0f7f6c545bd3f0dca047c2238e829f52d"
+    },
+    {
+      "path": "phoenix-code-lite/docs/PHOENIX-CODE-LITE-ARCHITECTURE-needs-validation.md",
+      "filename": "PHOENIX-CODE-LITE-ARCHITECTURE-needs-validation.md",
+      "folder": "phoenix-code-lite",
+      "kind": "architecture",
+      "lines": 750,
+      "bytes": 31623,
+      "sha1": "66be5bea600cdd3ce76b83ad17379f1d65c17474"
+    },
+    {
+      "path": "phoenix-code-lite/docs/PHOENIX-CODE-LITE-INDEX-needs-validation.md",
+      "filename": "PHOENIX-CODE-LITE-INDEX-needs-validation.md",
+      "folder": "phoenix-code-lite",
+      "kind": "index",
+      "lines": 948,
+      "bytes": 34965,
+      "sha1": "43c3a1c0f7f6c545bd3f0dca047c2238e829f52d"
+    },
+    {
+      "path": "phoenix-code-lite/docs/UNIFIED-LAYOUT-ARCHITECTURE.md",
+      "filename": "UNIFIED-LAYOUT-ARCHITECTURE.md",
+      "folder": "phoenix-code-lite",
+      "kind": "architecture",
+      "lines": 445,
+      "bytes": 14527,
+      "sha1": "90dfcc8d60d7bce5f1118074ddddacd0daa5df44"
+    },
+    {
+      "path": "phoenix-code-lite/README.md",
+      "filename": "README.md",
+      "folder": "phoenix-code-lite",
+      "kind": "readme",
+      "lines": 34,
+      "bytes": 764,
+      "sha1": "4a9b261d1dce6d8a66d4d61aa5c20a162ad066f2"
+    },
+    {
+      "path": "scripts/shimdex/ARCHITECTURE.md",
+      "filename": "ARCHITECTURE.md",
+      "folder": "scripts",
+      "kind": "architecture",
+      "lines": 63,
+      "bytes": 3626,
+      "sha1": "e4739c66c4bbdbedee85f66d178563de9feef8dc"
+    },
+    {
+      "path": "scripts/shimdex/dev.md",
+      "filename": "dev.md",
+      "folder": "scripts",
+      "kind": "dev",
+      "lines": 78,
+      "bytes": 5019,
+      "sha1": "bdf8fd00b47caea8dea57a6fd3391a12116c921f"
+    },
+    {
+      "path": "scripts/shimdex/README.md",
+      "filename": "README.md",
+      "folder": "scripts",
+      "kind": "readme",
+      "lines": 144,
+      "bytes": 6225,
+      "sha1": "43409e00ffbedc4a00c111f5bdd5c4f32dc6556f"
+    },
+    {
+      "path": "scripts/validation/AGENT-ARCHITECTURE-IMPLEMENTATION-SUMMARY.md",
+      "filename": "AGENT-ARCHITECTURE-IMPLEMENTATION-SUMMARY.md",
+      "folder": "scripts",
+      "kind": "architecture",
+      "lines": 101,
+      "bytes": 3941,
+      "sha1": "af01eeeaf2df4afa1c75e89e2107fb354b1b71dd"
+    },
+    {
+      "path": "scripts/validation/docs/architecture/VALIDATION-SYSTEM-ARCHITECTURE-README.md",
+      "filename": "VALIDATION-SYSTEM-ARCHITECTURE-README.md",
+      "folder": "scripts",
+      "kind": "readme",
+      "lines": 133,
+      "bytes": 8308,
+      "sha1": "aeb1acdf3bb306669176fa59539b43f2ca0cb61b"
+    },
+    {
+      "path": "scripts/validation/docs/guides/CORE-VALIDATION-README.md",
+      "filename": "CORE-VALIDATION-README.md",
+      "folder": "scripts",
+      "kind": "readme",
+      "lines": 175,
+      "bytes": 5986,
+      "sha1": "c5c563115ab613df4cd420faab17ff2e0edea0b1"
+    },
+    {
+      "path": "scripts/validation/README-ValidationSystem.md",
+      "filename": "README-ValidationSystem.md",
+      "folder": "scripts",
+      "kind": "readme",
+      "lines": 372,
+      "bytes": 15111,
+      "sha1": "c04aeed22f123bcd0faf814dacbe8554757d881a"
+    },
+    {
+      "path": "scripts/validation/templates/README.md",
+      "filename": "README.md",
+      "folder": "scripts",
+      "kind": "readme",
+      "lines": 215,
+      "bytes": 6816,
+      "sha1": "6fde89379c24956854cbd2d35b7d2a552ca5167b"
+    },
+    {
+      "path": "Templum/dev/architecture/architecture-restructuring-plan.md",
+      "filename": "architecture-restructuring-plan.md",
+      "folder": "Templum",
+      "kind": "architecture",
+      "lines": 595,
+      "bytes": 17278,
+      "sha1": "1b08b7a73337813745ef404fc166ef186d7cb845"
+    },
+    {
+      "path": "Templum/dev/auto/pty-mcp-server/README.md",
+      "filename": "README.md",
+      "folder": "Templum",
+      "kind": "readme",
+      "lines": 523,
+      "bytes": 28106,
+      "sha1": "e914f27609fa5d0534d899b3f3d3c599842f55d3"
+    },
+    {
+      "path": "Templum/dev/CLI/CLI-current-architecture-data-flow.md",
+      "filename": "CLI-current-architecture-data-flow.md",
+      "folder": "Templum",
+      "kind": "architecture",
+      "lines": 667,
+      "bytes": 20834,
+      "sha1": "be24c6658c8b69dd24132eeb189f1657c44a0c8b"
+    },
+    {
+      "path": "Templum/dev/CLI/CLI-design-2.1-architecture-data-flow.md",
+      "filename": "CLI-design-2.1-architecture-data-flow.md",
+      "folder": "Templum",
+      "kind": "architecture",
+      "lines": 991,
+      "bytes": 34345,
+      "sha1": "4277f1ea3f83c9a37759a64976cac4b6f3efb30c"
+    },
+    {
+      "path": "Templum/dev/pattern-index.md",
+      "filename": "pattern-index.md",
+      "folder": "Templum",
+      "kind": "index",
+      "lines": 182,
+      "bytes": 8770,
+      "sha1": "510184ae1ec2407ec6fdf02687cdd580e8f4b973"
+    },
+    {
+      "path": "Templum/dev/patterns/abstraction-layer-architecture.md",
+      "filename": "abstraction-layer-architecture.md",
+      "folder": "Templum",
+      "kind": "architecture",
+      "lines": 147,
+      "bytes": 5605,
+      "sha1": "e2a4d8a5164787246c9bb65dbb742bdc6a3d4967"
+    },
+    {
+      "path": "Templum/dev/patterns/hybrid-cli-development-testing.md",
+      "filename": "hybrid-cli-development-testing.md",
+      "folder": "Templum",
+      "kind": "dev",
+      "lines": 385,
+      "bytes": 12384,
+      "sha1": "dbd8ea2917466f22700bfcab509800ed75699636"
+    },
+    {
+      "path": "Templum/dev/patterns/README.md",
+      "filename": "README.md",
+      "folder": "Templum",
+      "kind": "readme",
+      "lines": 303,
+      "bytes": 27643,
+      "sha1": "8e8ced8f3a696204ec3e395746fe87fe81f0a6b5"
+    },
+    {
+      "path": "Templum/examples/README.md",
+      "filename": "README.md",
+      "folder": "Templum",
+      "kind": "readme",
+      "lines": 249,
+      "bytes": 8333,
+      "sha1": "5a4b56d95fdad710a2b77470fc3bc9a052763687"
+    },
+    {
+      "path": "Templum/mcp-server/README-pty-mcp-server.md",
+      "filename": "README-pty-mcp-server.md",
+      "folder": "Templum",
+      "kind": "readme",
+      "lines": 168,
+      "bytes": 4636,
+      "sha1": "eb95443e9556936093b7c4118724b97eccde0fd1"
+    },
+    {
+      "path": "Templum/src/mcp-channel/README-mcp-channel.md",
+      "filename": "README-mcp-channel.md",
+      "folder": "Templum",
+      "kind": "readme",
+      "lines": 320,
+      "bytes": 6616,
+      "sha1": "65712ef8f35bfc35765bcc5fa012c4be40ba3a94"
+    },
+    {
+      "path": "Templum/src/mcp-channel/README.md",
+      "filename": "README.md",
+      "folder": "Templum",
+      "kind": "readme",
+      "lines": 164,
+      "bytes": 6026,
+      "sha1": "b95ffe8e8c7819d5f74b453d29102807048e8fd7"
+    }
+  ],
+  "by_folder": {
+    "Haruspex": [
+      {
+        "path": "Haruspex/dev/03-debugging/05.5-Agent-Debugging-Architecture.md",
+        "filename": "05.5-Agent-Debugging-Architecture.md",
+        "folder": "Haruspex",
+        "kind": "architecture",
+        "lines": 542,
+        "bytes": 17642,
+        "sha1": "9dce23a8de5599c4c9f4ef357ea6a7ed69fb6e23"
+      },
+      {
+        "path": "Haruspex/docs/00-Spec/Haruspex-0.1-enhanced-architecture.md",
+        "filename": "Haruspex-0.1-enhanced-architecture.md",
+        "folder": "Haruspex",
+        "kind": "architecture",
+        "lines": 1492,
+        "bytes": 62092,
+        "sha1": "8374d7d1fc6e50818adb654adf8c37e020f3ccf1"
+      },
+      {
+        "path": "Haruspex/docs/01-ClaudeCode-Integration/01-Claude-Code-Integration-Architecture.md",
+        "filename": "01-Claude-Code-Integration-Architecture.md",
+        "folder": "Haruspex",
+        "kind": "architecture",
+        "lines": 706,
+        "bytes": 27921,
+        "sha1": "0b5caf6e3c7bf32b8065a9fbc7acb5b326e87c70"
+      }
+    ],
+    "phoenix-code-lite": [
+      {
+        "path": "phoenix-code-lite/docs/CLI-INTERACTION-DECOUPLING-ARCHITECTURE.md",
+        "filename": "CLI-INTERACTION-DECOUPLING-ARCHITECTURE.md",
+        "folder": "phoenix-code-lite",
+        "kind": "architecture",
+        "lines": 597,
+        "bytes": 20853,
+        "sha1": "f06ed9aa3123cf27b951dcffeef4c9656970843f"
+      },
+      {
+        "path": "phoenix-code-lite/docs/CLI-MENU-SEPARATOR-ARCHITECTURE.md",
+        "filename": "CLI-MENU-SEPARATOR-ARCHITECTURE.md",
+        "folder": "phoenix-code-lite",
+        "kind": "architecture",
+        "lines": 248,
+        "bytes": 8702,
+        "sha1": "6f31fe8bcb50b13ad62da7535145c9f543b9126a"
+      },
+      {
+        "path": "phoenix-code-lite/docs/index/ARCHITECTURE-DIAGRAM.md",
+        "filename": "ARCHITECTURE-DIAGRAM.md",
+        "folder": "phoenix-code-lite",
+        "kind": "architecture",
+        "lines": 750,
+        "bytes": 30873,
+        "sha1": "baae10d79bdceedccc2ab9d577b206149d16cb4f"
+      },
+      {
+        "path": "phoenix-code-lite/docs/index/CODEBASE-INDEX.md",
+        "filename": "CODEBASE-INDEX.md",
+        "folder": "phoenix-code-lite",
+        "kind": "index",
+        "lines": 948,
+        "bytes": 34965,
+        "sha1": "43c3a1c0f7f6c545bd3f0dca047c2238e829f52d"
+      },
+      {
+        "path": "phoenix-code-lite/docs/PHOENIX-CODE-LITE-ARCHITECTURE-needs-validation.md",
+        "filename": "PHOENIX-CODE-LITE-ARCHITECTURE-needs-validation.md",
+        "folder": "phoenix-code-lite",
+        "kind": "architecture",
+        "lines": 750,
+        "bytes": 31623,
+        "sha1": "66be5bea600cdd3ce76b83ad17379f1d65c17474"
+      },
+      {
+        "path": "phoenix-code-lite/docs/PHOENIX-CODE-LITE-INDEX-needs-validation.md",
+        "filename": "PHOENIX-CODE-LITE-INDEX-needs-validation.md",
+        "folder": "phoenix-code-lite",
+        "kind": "index",
+        "lines": 948,
+        "bytes": 34965,
+        "sha1": "43c3a1c0f7f6c545bd3f0dca047c2238e829f52d"
+      },
+      {
+        "path": "phoenix-code-lite/docs/UNIFIED-LAYOUT-ARCHITECTURE.md",
+        "filename": "UNIFIED-LAYOUT-ARCHITECTURE.md",
+        "folder": "phoenix-code-lite",
+        "kind": "architecture",
+        "lines": 445,
+        "bytes": 14527,
+        "sha1": "90dfcc8d60d7bce5f1118074ddddacd0daa5df44"
+      },
+      {
+        "path": "phoenix-code-lite/README.md",
+        "filename": "README.md",
+        "folder": "phoenix-code-lite",
+        "kind": "readme",
+        "lines": 34,
+        "bytes": 764,
+        "sha1": "4a9b261d1dce6d8a66d4d61aa5c20a162ad066f2"
+      }
+    ],
+    "scripts": [
+      {
+        "path": "scripts/shimdex/ARCHITECTURE.md",
+        "filename": "ARCHITECTURE.md",
+        "folder": "scripts",
+        "kind": "architecture",
+        "lines": 63,
+        "bytes": 3626,
+        "sha1": "e4739c66c4bbdbedee85f66d178563de9feef8dc"
+      },
+      {
+        "path": "scripts/shimdex/dev.md",
+        "filename": "dev.md",
+        "folder": "scripts",
+        "kind": "dev",
+        "lines": 78,
+        "bytes": 5019,
+        "sha1": "bdf8fd00b47caea8dea57a6fd3391a12116c921f"
+      },
+      {
+        "path": "scripts/shimdex/README.md",
+        "filename": "README.md",
+        "folder": "scripts",
+        "kind": "readme",
+        "lines": 144,
+        "bytes": 6225,
+        "sha1": "43409e00ffbedc4a00c111f5bdd5c4f32dc6556f"
+      },
+      {
+        "path": "scripts/validation/AGENT-ARCHITECTURE-IMPLEMENTATION-SUMMARY.md",
+        "filename": "AGENT-ARCHITECTURE-IMPLEMENTATION-SUMMARY.md",
+        "folder": "scripts",
+        "kind": "architecture",
+        "lines": 101,
+        "bytes": 3941,
+        "sha1": "af01eeeaf2df4afa1c75e89e2107fb354b1b71dd"
+      },
+      {
+        "path": "scripts/validation/docs/architecture/VALIDATION-SYSTEM-ARCHITECTURE-README.md",
+        "filename": "VALIDATION-SYSTEM-ARCHITECTURE-README.md",
+        "folder": "scripts",
+        "kind": "readme",
+        "lines": 133,
+        "bytes": 8308,
+        "sha1": "aeb1acdf3bb306669176fa59539b43f2ca0cb61b"
+      },
+      {
+        "path": "scripts/validation/docs/guides/CORE-VALIDATION-README.md",
+        "filename": "CORE-VALIDATION-README.md",
+        "folder": "scripts",
+        "kind": "readme",
+        "lines": 175,
+        "bytes": 5986,
+        "sha1": "c5c563115ab613df4cd420faab17ff2e0edea0b1"
+      },
+      {
+        "path": "scripts/validation/README-ValidationSystem.md",
+        "filename": "README-ValidationSystem.md",
+        "folder": "scripts",
+        "kind": "readme",
+        "lines": 372,
+        "bytes": 15111,
+        "sha1": "c04aeed22f123bcd0faf814dacbe8554757d881a"
+      },
+      {
+        "path": "scripts/validation/templates/README.md",
+        "filename": "README.md",
+        "folder": "scripts",
+        "kind": "readme",
+        "lines": 215,
+        "bytes": 6816,
+        "sha1": "6fde89379c24956854cbd2d35b7d2a552ca5167b"
+      }
+    ],
+    "Templum": [
+      {
+        "path": "Templum/dev/architecture/architecture-restructuring-plan.md",
+        "filename": "architecture-restructuring-plan.md",
+        "folder": "Templum",
+        "kind": "architecture",
+        "lines": 595,
+        "bytes": 17278,
+        "sha1": "1b08b7a73337813745ef404fc166ef186d7cb845"
+      },
+      {
+        "path": "Templum/dev/auto/pty-mcp-server/README.md",
+        "filename": "README.md",
+        "folder": "Templum",
+        "kind": "readme",
+        "lines": 523,
+        "bytes": 28106,
+        "sha1": "e914f27609fa5d0534d899b3f3d3c599842f55d3"
+      },
+      {
+        "path": "Templum/dev/CLI/CLI-current-architecture-data-flow.md",
+        "filename": "CLI-current-architecture-data-flow.md",
+        "folder": "Templum",
+        "kind": "architecture",
+        "lines": 667,
+        "bytes": 20834,
+        "sha1": "be24c6658c8b69dd24132eeb189f1657c44a0c8b"
+      },
+      {
+        "path": "Templum/dev/CLI/CLI-design-2.1-architecture-data-flow.md",
+        "filename": "CLI-design-2.1-architecture-data-flow.md",
+        "folder": "Templum",
+        "kind": "architecture",
+        "lines": 991,
+        "bytes": 34345,
+        "sha1": "4277f1ea3f83c9a37759a64976cac4b6f3efb30c"
+      },
+      {
+        "path": "Templum/dev/pattern-index.md",
+        "filename": "pattern-index.md",
+        "folder": "Templum",
+        "kind": "index",
+        "lines": 182,
+        "bytes": 8770,
+        "sha1": "510184ae1ec2407ec6fdf02687cdd580e8f4b973"
+      },
+      {
+        "path": "Templum/dev/patterns/abstraction-layer-architecture.md",
+        "filename": "abstraction-layer-architecture.md",
+        "folder": "Templum",
+        "kind": "architecture",
+        "lines": 147,
+        "bytes": 5605,
+        "sha1": "e2a4d8a5164787246c9bb65dbb742bdc6a3d4967"
+      },
+      {
+        "path": "Templum/dev/patterns/hybrid-cli-development-testing.md",
+        "filename": "hybrid-cli-development-testing.md",
+        "folder": "Templum",
+        "kind": "dev",
+        "lines": 385,
+        "bytes": 12384,
+        "sha1": "dbd8ea2917466f22700bfcab509800ed75699636"
+      },
+      {
+        "path": "Templum/dev/patterns/README.md",
+        "filename": "README.md",
+        "folder": "Templum",
+        "kind": "readme",
+        "lines": 303,
+        "bytes": 27643,
+        "sha1": "8e8ced8f3a696204ec3e395746fe87fe81f0a6b5"
+      },
+      {
+        "path": "Templum/examples/README.md",
+        "filename": "README.md",
+        "folder": "Templum",
+        "kind": "readme",
+        "lines": 249,
+        "bytes": 8333,
+        "sha1": "5a4b56d95fdad710a2b77470fc3bc9a052763687"
+      },
+      {
+        "path": "Templum/mcp-server/README-pty-mcp-server.md",
+        "filename": "README-pty-mcp-server.md",
+        "folder": "Templum",
+        "kind": "readme",
+        "lines": 168,
+        "bytes": 4636,
+        "sha1": "eb95443e9556936093b7c4118724b97eccde0fd1"
+      },
+      {
+        "path": "Templum/src/mcp-channel/README-mcp-channel.md",
+        "filename": "README-mcp-channel.md",
+        "folder": "Templum",
+        "kind": "readme",
+        "lines": 320,
+        "bytes": 6616,
+        "sha1": "65712ef8f35bfc35765bcc5fa012c4be40ba3a94"
+      },
+      {
+        "path": "Templum/src/mcp-channel/README.md",
+        "filename": "README.md",
+        "folder": "Templum",
+        "kind": "readme",
+        "lines": 164,
+        "bytes": 6026,
+        "sha1": "b95ffe8e8c7819d5f74b453d29102807048e8fd7"
+      }
+    ]
+  }
+}

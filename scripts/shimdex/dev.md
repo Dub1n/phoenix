@@ -5,6 +5,8 @@
 - Introduced a new configuration file at `%APPDATA%\Shimdex\config.json` plus a profile helper that applies workspace rules on every session start.
 - Updated the shim (`Ps2WslShim`) to honour the `SHIMDEX_MODE` environment variable before intercepting calls and to support a `Force` mode that skips PowerShell heuristics.
 - Added Pester smoke tests that exercise the module with a temporary APPDATA location.
+- Normalised incoming command text by converting CRLF to LF before passing payloads to bash so heredocs and multi-line scripts behave consistently.”
+- “Prerequisite helper functions (`Test-ShimdexShimPresent`, `Get-ShimdexPrerequisiteStatus`, `Test-ShimdexOperationAllowed`, session-state cache) now exist; menu wiring still pending.”
 
 ## Highlights
 

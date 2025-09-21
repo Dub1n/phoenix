@@ -43,6 +43,7 @@ The legacy toggle helper projects (`src/EnableShim`, `src/DisableShim`) and thei
     ```
   
 6. `Invoke-ShimdexProfile` loads config, evaluates the current directory against workspace rules, sets `SHIMDEX_MODE`, reinstalls the alias if requested, and (when enabled) manages PATH in-process.
+7. `Get-ShimdexPrerequisiteStatus` + `Test-ShimdexOperationAllowed` expose shim/profile readiness for the menu so it can gate actions.
 
 ## Shim Contract
 
@@ -53,6 +54,8 @@ The legacy toggle helper projects (`src/EnableShim`, `src/DisableShim`) and thei
 - `Force` → always forwards into WSL/bash and skips the heuristics.
 
 `PS2WSL_BYPASS=1` still bypasses the shim unconditionally.`r`n`r`nIncoming command text is normalised from CRLF to LF before being passed to bash so multi-line heredocs and scripts behave the same way under Windows or WSL.
+
+Before invoking bash, the shim normalises CRLF to LF in the payload to keep heredocs and multi-line scripts consistent across platforms.
 
 ## Testing
 

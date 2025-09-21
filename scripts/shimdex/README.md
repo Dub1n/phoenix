@@ -33,19 +33,19 @@ User configuration is stored at `%APPDATA%\Shimdex\config.json` (created on firs
    ```
 
    Menu options (backed by module functions):
-   * `1` – Build the shim (`dotnet publish` for `Ps2WslShim`).
-   * `2` – Enable the shim directory on PATH (user scope).
-   * `3` – Remove the shim directory from PATH (user scope).
-   * `4` – Toggle automatic PATH management in the config file.
-   * `5` – Set the default `SHIMDEX_MODE` persisted in config (`Disabled`, `Auto`, or `Force`).
-   * `6` – Configure a workspace root (inside/outside modes).
-   * `7` – Clear workspace configuration.
-   * `8` – Install the profile snippet (imports the module and calls `Invoke-ShimdexProfile`).
-   * `9` – Remove the profile snippet.
-   * `10` – Install the `shimdex` function alias.
-   * `11` – Remove the alias.
-   * `12` – Display diagnostics from `Get-ShimdexStatus`.
-   * `0` – Exit the helper.
+   - `1` – Build the shim (`dotnet publish` for `Ps2WslShim`).
+   - `2` – Enable the shim directory on PATH (user scope).
+   - `3` – Remove the shim directory from PATH (user scope).
+   - `4` – Toggle automatic PATH management in the config file.
+   - `5` – Set the default `SHIMDEX_MODE` persisted in config (`Disabled`, `Auto`, or `Force`).
+   - `6` – Configure a workspace root (inside/outside modes).
+   - `7` – Clear workspace configuration.
+   - `8` – Install the profile snippet (imports the module and calls `Invoke-ShimdexProfile`).
+   - `9` – Remove the profile snippet.
+   - `10` – Install the `shimdex` function alias.
+   - `11` – Remove the alias.
+   - `12` – Display diagnostics from `Get-ShimdexStatus`.
+   - `0` – Exit the helper.
 
    All persistent state (mode, workspace roots, alias preference, auto PATH flag) is stored in `%APPDATA%\Shimdex\config.json` and read by the module on every import.
 
@@ -119,6 +119,8 @@ Tests temporarily redirect `%APPDATA%` to the Pester `$TestDrive` so they do not
 | `Auto` (default) | Intercepts and applies PowerShell heuristics (`LooksLikePowerShellScript`). |
 | `Force` | Always forwards into WSL/bash; heuristics are skipped. |
 
+Commands routed through the shim have their line endings normalised from CRLF to LF before reaching bash, so heredocs and multi-line scripts behave the same on Windows or WSL.
+
 `PS2WSL_BYPASS=1` still hard-bypasses the shim regardless of `SHIMDEX_MODE`.
 
 The rest of the shim pipeline is unchanged from earlier revisions: it parses common PowerShell flags, normalises working directories, and executes the resulting payload inside `bash -lc` (fast-pathing invocations that already call `wsl`/`bash`).
@@ -133,12 +135,10 @@ The rest of the shim pipeline is unchanged from earlier revisions: it parses com
 
 ## Maintenance tips
 
-* Prefer `bash -lc` when editing files to avoid the shim unless `SHIMDEX_MODE` is already `Disabled`.
-* See scripts/shimdex/bash-vs-powershell.md for shell selection guidance.
-* Run `Set-ShimdexMode -Mode 'Disabled' -Persist:$false` before running large PowerShell maintenance scripts to keep behaviour predictable, then restore the previous mode.
-* When editing the shim, rebuild via menu option `1` so the new binary lands in `scripts/shimdex/powershell.exe` immediately.
-* Keep `%APPDATA%\Shimdex` under version control’s ignore list—only the module should touch it.
-* Use `Get-ShimdexStatus` (menu option 12) as the single source of truth for diagnostics: it reports config defaults, current environment mode, PATH presence (user + process), profile snippet state, alias state, and the resolved shim executable path.
-
-
-
+- Prefer `bash -lc` when editing files to avoid the shim unless `SHIMDEX_MODE` is already `Disabled`.
+- See scripts/shimdex/bash-vs-powershell.md for shell selection guidance.
+- Run `Set-ShimdexMode -Mode 'Disabled' -Persist:$false` before running large PowerShell maintenance scripts to keep behaviour predictable, then restore the previous mode.
+- When editing the shim, rebuild via menu option `1` so the new binary lands in `scripts/shimdex/powershell.exe` immediately.
+- Keep `%APPDATA%\Shimdex` under version control’s ignore list—only the module should touch it.
+- Use `Get-ShimdexStatus` (menu option 12) as the single source of truth for diagnostics: it reports config defaults, current environment mode, PATH presence (user + process), profile snippet state, alias state, and the resolved shim executable path.
+- See `scripts/shimdex/bash-vs-powershell.md` for shell-selection guidance (Bash versus PowerShell).
