@@ -1,19 +1,24 @@
 # context index
 
-- generated: `2025-09-21T19:13:24Z`
+- generated: `2025-09-21T23:04:02Z`
 - root: `VDL_Vault`
 - match: `name-only`
 - case-sensitive: `False`
 - patterns: `README.md, README*.md, *readme*.md, architecture.md, architecture*.md, *architecture*.md, dev.md, dev*.md, *dev*.md, index.md, INDEX.md, *index*.md`
 - exclude-dirs: ``
 - exclude-globs: `.git/*, .venv/*, .idea/*, .vscode/*, .claude/*, .continue/*, .cursor/*, build/*, DSS/*, docs/*, prompts/*, **/node_modules/*, **/target/*, **/dist/*, **/validation-results/**, **/fixes/**, **/terminal-completer/*, **/markdown-formatter/*, **/refactor_protocol/*, **/01-roadmap/*, **/Claude-Code/*, **/architecture-specialist.md`
-- totals: Haruspex=3, Templum=12, phoenix-code-lite=8, scripts=8
+- paths-hash: `fd9055dab52adee8d8c986644e20a75ec1755991`
+- totals: Haruspex=3, Templum=12, meta=1, phoenix-code-lite=8, scripts=8
 
 ## Haruspex
 
 - `Haruspex/dev/03-debugging/05.5-Agent-Debugging-Architecture.md`  (lines: 542, sha1: 9dce23a8de)
 - `Haruspex/docs/00-Spec/Haruspex-0.1-enhanced-architecture.md`  (lines: 1492, sha1: 8374d7d1fc)
 - `Haruspex/docs/01-ClaudeCode-Integration/01-Claude-Code-Integration-Architecture.md`  (lines: 706, sha1: 0b5caf6e3c)
+
+## meta
+
+- `meta/context_index.md`  (lines: 58, sha1: 0e702439eb)
 
 ## phoenix-code-lite
 
@@ -51,3 +56,4 @@
 - `Templum/mcp-server/README-pty-mcp-server.md`  (lines: 168, sha1: eb95443e95)
 - `Templum/src/mcp-channel/README-mcp-channel.md`  (lines: 320, sha1: 65712ef8f3)
 - `Templum/src/mcp-channel/README.md`  (lines: 164, sha1: b95ffe8e8c)
+

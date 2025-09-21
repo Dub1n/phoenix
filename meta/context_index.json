@@ -1,5 +1,5 @@
 {
-  "generated_at": "2025-09-21T19:13:24Z",
+  "generated_at": "2025-09-21T23:04:02Z",
   "root": "VDL_Vault",
   "patterns": [
     "README.md",
@@ -42,8 +42,10 @@
     "**/architecture-specialist.md"
   ],
   "case_sensitive": false,
+  "paths_hash": "fd9055dab52adee8d8c986644e20a75ec1755991",
   "counts": {
     "Haruspex": 3,
+    "meta": 1,
     "phoenix-code-lite": 8,
     "scripts": 8,
     "Templum": 12
@@ -75,6 +77,15 @@
       "lines": 706,
       "bytes": 27921,
       "sha1": "0b5caf6e3c7bf32b8065a9fbc7acb5b326e87c70"
+    },
+    {
+      "path": "meta/context_index.md",
+      "filename": "context_index.md",
+      "folder": "meta",
+      "kind": "other",
+      "lines": 58,
+      "bytes": 3517,
+      "sha1": "0e702439eb924bd269d89fbd94cedf80e55c2f47"
     },
     {
       "path": "phoenix-code-lite/docs/CLI-INTERACTION-DECOUPLING-ARCHITECTURE.md",
@@ -357,6 +368,17 @@
         "lines": 706,
         "bytes": 27921,
         "sha1": "0b5caf6e3c7bf32b8065a9fbc7acb5b326e87c70"
+      }
+    ],
+    "meta": [
+      {
+        "path": "meta/context_index.md",
+        "filename": "context_index.md",
+        "folder": "meta",
+        "kind": "other",
+        "lines": 58,
+        "bytes": 3517,
+        "sha1": "0e702439eb924bd269d89fbd94cedf80e55c2f47"
       }
     ],
     "phoenix-code-lite": [

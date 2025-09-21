@@ -1,5 +1,9 @@
 # AGENTS.md
 
+GitHub repo link: `https://github.com/Dub1n/phoenix`
+
+Repo entry point: `~/meta/context_index.md` (or for JSON: `context_index.json`)
+
 ## placeholders
 
 - NEVER write mocks or placeholders unless explicitly asked to.
