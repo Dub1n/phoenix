@@ -6,6 +6,8 @@ Purpose: Simple agent interface for agent-driven validation system - Usage Guide
 
 ## Quick Start
 
+> ⚠️ **Verification Reminder:** The command references below assume the orchestrator remains compatible with the current Node toolchain and project scripts. Re-run smoke tests for each project before relying on the defaults.
+
 ### Validation & Extension Commands
 
 ```bash
@@ -83,17 +85,21 @@ Each project can have custom validation settings in `config/projects/{project}-v
 ### Configuration Fields
 
 #### Project Section
+
 - **name**: Internal project identifier (lowercase, matches config filename)
 - **display_name**: Human-readable project name for reports
 - **project_directory**: Path to project root (relative to validation system or absolute)
 
 #### Validation Section  
+
 - **report_location**: Directory for validation reports (relative to project_directory)
 - **timeout_overrides**: Custom timeouts per validation category (milliseconds)
 - **commands**: Command definitions for validators (fallback to package.json scripts)
 
 #### Commands Configuration
+
 Commands are used by validators that need to execute project-specific operations:
+
 - **build**: Build/compilation command (used by build validator)  
 - **test**: Test execution command (used by test validators)
 - **lint**: Code linting command (used by quality validators)
@@ -254,7 +260,7 @@ The system provides:
 #### "Project configuration missing"
 
 - **Expected behavior** - No project config file exists yet
-- **Check**: `config/projects/{project}-valconfig.json` 
+- **Check**: `config/projects/{project}-valconfig.json`
 - **Action**: Copy and customize `config/project-template.json`
 
 #### "Report directory does not exist"

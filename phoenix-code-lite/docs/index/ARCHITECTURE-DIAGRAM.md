@@ -17,6 +17,15 @@ description: [Visual architecture documentation with Mermaid diagrams covering s
 
 This document provides comprehensive visual documentation of the Phoenix Code Lite architecture using Mermaid diagrams. The diagrams follow the **C4 Model** approach with **Diagrams-as-Code** best practices for maintainable architecture documentation.
 
+## Current State Snapshot *(2025-09 — in-transition)*
+
+> ⚠️ **Important:** The diagrams below still depict the original TDD-oriented, Claude-integrated workflow. Phoenix Code Lite is mid-transition to a QMS-first product. Treat all agent-generation components as **legacy** unless verified in the source. Consult `docs/03-PCL-QMS/` for the target-state design; those documents supersede the workflow descriptions shown here.
+
+- **Legacy features present in code:** TDD orchestrator, Claude Code client, CLI menus. These require decommissioning or adaptation for regulated QMS use. > ⚠️ Needs Update.
+- **QMS modules:** Traceability models, document processors, and compliance validators exist primarily as documentation and partial scaffolding. Implementation coverage must be audited before use. > ⚠️ Needs Verification.
+- **Skin integration:** No production skin exporter exists yet. Templum integration remains a roadmap item; UI code still renders directly. > ⚠️ Needs Implementation.
+- **Validation hooks:** The ValidationSystem integration is expected to replace bespoke quality gates; code-level wiring has not started. > ⚠️ Needs Implementation.
+
 ## System Context Diagram
 
 ```mermaid

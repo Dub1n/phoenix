@@ -14,7 +14,6 @@
 
 import fs from 'fs';
 import path from 'path';
-import os from 'os';
 import { fileURLToPath, pathToFileURL } from 'url';
 
 // Get current directory for ES modules

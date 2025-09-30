@@ -29,6 +29,17 @@ The defining characteristic of Templum 1.2 is its **skin-driven backend architec
 - **Connection factory** creates appropriate connections based on backend configuration
 - **Zero code changes required** in Templum for new backend integration
 
+## Current State Snapshot *(2025-09 — needs continuous verification)*
+
+> ⚠️ **Reality Check:** Much of the enterprise narrative below reflects the intended 1.2 target. The implementation currently in the repo only partially meets it. Items flagged "Needs Verification" require hands-on validation before treating them as delivered capabilities.
+
+- **Backend discovery & routing:** `ServiceDiscovery` + `ConnectionFactory` successfully enumerate locally-registered backends in smoke tests from Sept 2025. Health checks and priority routing logic still need regression validation after recent refactors. > ⚠️ Needs Verification.
+- **Skin ingestion:** End-to-end skin-driven rendering is **not yet proven**. PCL/Haruspex do not emit production skins, and the renderer contains TODOs for windowed TUI semantics. Treat skin-complete status as aspirational until backed by integration tests. > ⚠️ Needs Verification.
+- **Interfaces:** VSCode extension scaffolding exists, but WebView initialisation has known load failures tracked in `dev/03-debugging`. CLI refactor is mid-flight; command generation currently mixes hardcoded menus with skin stubs. > ⚠️ Needs Update.
+- **Process separation:** CLI/daemon split is drafted (`cli-entry.ts`, process-handshake utilities) yet requires live run verification. No automated coverage ensures the IPC contract is stable. > ⚠️ Needs Verification.
+- **Observability & resource management:** Logging, metrics, and circuit-breaker utilities are specified in `dev/patterns`, but implementation coverage is inconsistent. Confirm presence before relying on them for compliance reporting. > ⚠️ Needs Verification.
+- **Backends in scope:** Only Haruspex is actively targeting Templum integration; Phoenix Code Lite has not yet produced a compliant skin. Expect manual configuration for interim demos.
+
 ### Production Readiness
 
 Templum 1.2 delivers enterprise-grade capabilities including dependency injection, observability infrastructure, resource management, error recovery, and comprehensive monitoring. The system supports all three interface modalities (VSCode Extension, CLI, Command-line) with **CLI process separation** enabling headless service deployment and multi-terminal CLI access, plus shared state management and cross-interface synchronization.

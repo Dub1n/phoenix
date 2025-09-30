@@ -10,13 +10,24 @@ requires: [nodejs_runtime, typescript, http_protocol, templum_1_2, analysis_libr
 **Version:** 2.1  
 **Architecture Type:** Pure Backend Analysis Service with Templum Integration  
 **Context:** HTTP-First Architecture for Templum 1.2 Compatibility  
-**Implementation Status:** **READY FOR IMPLEMENTATION** ✅
+**Implementation Status:** **In migration — implementation incomplete, verification required** ⚠️
 
 ---
 
 ## Overview
 
 Haruspex 2.1 is a pure backend analysis and prediction service specifically designed for seamless integration with Templum 1.2's universal interface orchestrator. Built on an HTTP-first architecture with comprehensive auto-registration capabilities, Haruspex 2.1 provides advanced code analysis, pattern detection, and predictive insights through Templum's self-describing backend system.
+
+> 🚧 **Strategic Update (2025-09):** Predictive/agentic features are being deprioritized. The immediate goal is a deterministic analysis and documentation assistant that surfaces repository insights via Templum skins. Any references to ML prediction pipelines below should be treated as future work unless tagged otherwise.
+
+## Current State Snapshot *(Needs Validation)*
+
+- **Backend entry point (`src/backend-main.ts`)** compiles and boots, exposing HTTP/WebSocket/IPC listeners with configurable ports. Actual handlers still depend on VSCode-era services and contain placeholder analysis responses. > ⚠️ Needs Verification.
+- **Skin generation** is **not implemented**. No runtime currently emits a `UniversalSkinDefinition`; integration plan lives in documentation only. > ⚠️ Needs Implementation.
+- **Analysis pipeline** reuses extension-era modules. They focus on documentation tree extraction, not full-program analysis. Applies partial stubs for diagnostics and uses hard-coded samples in several providers. > ⚠️ Needs Audit/Replacement.
+- **Frontmatter enrichment** exists as planned capability but lacks a concrete job runner. Identify or implement modules responsible for editing files before relying on this behaviour.
+- **VSCode components** remain in the repo; pruning is required to complete the pure-backend transition. Current builds may still require VSCode APIs indirectly. > ⚠️ Needs Verification.
+- **Debug CLI** scaffolding (`dev/03-debugging`) is design-complete yet unimplemented; no automated coverage ensures IPC state inspection flows work end-to-end.
 
 ### Key Architectural Evolution from 2.0
 
@@ -26,6 +37,8 @@ Haruspex 2.1 is a pure backend analysis and prediction service specifically desi
 - **Universal Skin Definition**: Self-describing interface capabilities via standardized skin definitions
 - **Enhanced Service Discovery**: Automatic registration with Templum's multi-strategy discovery system
 - **Pure Backend Separation**: Zero UI concerns, all interface definitions provided via skin
+
+> ⚠️ **Prediction Modules:** References to `Prediction Engine` and ML model orchestration remain from the earlier roadmap. These components should be disabled or refactored to focus on deterministic analytics before GA.
 
 ## Core Architecture: Templum-Compatible Backend Service
 

@@ -82,6 +82,7 @@
 ## Communication
 
 - Exclude emojis, filler, hype, or conversational transitions; stay directive, suppress engagement/sentiment cues, and focus on reinforcing the user’s independent reasoning.
+- **No need** to include line numbers in summaries
 
 ## Teaching
 

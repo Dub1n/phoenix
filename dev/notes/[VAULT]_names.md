@@ -1,12 +1,12 @@
-> [Publisher] Infotopology - < >
-> [Interface] Templum - <Universal interface orchestrator for multi-backend services>
-> [Prediction] Haruspex - < >
-    > [Mapping] Eviscera - < >
-    > [Planning] Augury - < >
-    > [Doing] Observance - < >
-    > [Committing] Offering - < >
-> [Context] Litany (-> Talmud?) - < >
-> [Building] PCL (-> Doxa) - < >
+- > [Publisher] Infotopology - < >
+- > [Interface] Templum - <Universal interface orchestrator for multi-backend services>
+- > [Prediction] Haruspex - < >
+  - > [Mapping] Eviscera - < >
+  - > [Planning] Augury - < >
+  - > [Doing] Observance - < >
+  - > [Committing] Offering - < >
+- > [Context] Litany (-> Talmud?) - < >
+- > [Building] PCL (-> Doxa) - < >
 
 *Templum* [Interface] : the sacred, ritually-defined place on the ground or in the sky where the reading took place. It was the frame for observation. - The UI is the Templum: the dedicated space whethe codebase is laid out, contained, and observed according to set rules
 
@@ -29,3 +29,15 @@
 *Litany* : a litany is a lengthy, repetitive recital. this name frames the continuous, automated checks of the "truth matrix" as a ritualistic litany that ensures project purity.
 
 *Parametron* : a portmanteau of parametric and "-tron". it suggests a machine or entity whose existence is defined by the parameters of the code it analyzes
+
+---
+
+|      x      | resonance   | spectrum   | palimpsest | aether    | fugue      | glyph       | echo      |
+|-------------|-------------|------------|------------|-----------|------------|-------------|-----------|
+| spire       | bell-tower  | prism      | scrollwork | lantern   | carillon   | steeplemark | belfry    |
+| labyrinth   | whispering  | kaleidos   | codex      | maze-wind | chorale    | sigilpath   | chamber   |
+|constellation| harmonics   | prismatics | starlore   | firmament | ounterpoint| astraglyph  | reverie   |
+| mycelium    | humus       | chromatide | undertext  | breathweb | polyphony  | rootmark    | murmur    |
+| horizon     | soundline   | aurora     | palinode   | skyveil   | cadence    | sealmarch   | surf      |
+| keystone    | chime-arch  | spectrel   | ledger     | vaultair  | canon      | runestone   | tympanum  |
+| archipelago | seastill    | isochrome  | drifttext  | cloudreach| tidefugue  | islemark    | surfchor  |

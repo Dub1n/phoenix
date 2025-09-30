@@ -1,0 +1,16 @@
+repos:
+  - repo: local
+    hooks:
+      - id: generate-context-index
+        name: generate context index
+        entry: bash
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+        args:
+          - -c
+          - |
+            set -euo pipefail
+            python scripts/IDE-manager/generate-context-index.py
+            git add meta/context_index.md meta/context_index.json || true

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2025-09-21T23:04:02Z",
+  "generated_at": "2025-09-30T18:10:55Z",
   "root": "VDL_Vault",
   "patterns": [
     "README.md",
@@ -42,10 +42,10 @@
     "**/architecture-specialist.md"
   ],
   "case_sensitive": false,
-  "paths_hash": "fd9055dab52adee8d8c986644e20a75ec1755991",
+  "paths_hash": "46acbd9397d004020d54e3099c10cd1687fcbdbd",
   "counts": {
     "Haruspex": 3,
-    "meta": 1,
+    "meta": 3,
     "phoenix-code-lite": 8,
     "scripts": 8,
     "Templum": 12
@@ -61,7 +61,7 @@
       "sha1": "9dce23a8de5599c4c9f4ef357ea6a7ed69fb6e23"
     },
     {
-      "path": "Haruspex/docs/00-Spec/Haruspex-0.1-enhanced-architecture.md",
+      "path": "Haruspex/docs/00-Spec/archive/Haruspex-0.1-enhanced-architecture.md",
       "filename": "Haruspex-0.1-enhanced-architecture.md",
       "folder": "Haruspex",
       "kind": "architecture",
@@ -79,13 +79,31 @@
       "sha1": "0b5caf6e3c7bf32b8065a9fbc7acb5b326e87c70"
     },
     {
+      "path": "meta/ARCHITECTURE.md",
+      "filename": "ARCHITECTURE.md",
+      "folder": "meta",
+      "kind": "architecture",
+      "lines": 288,
+      "bytes": 23284,
+      "sha1": "51e08459ef8046b05ad6717298c6fdf5bd426fcc"
+    },
+    {
       "path": "meta/context_index.md",
       "filename": "context_index.md",
       "folder": "meta",
       "kind": "other",
-      "lines": 58,
-      "bytes": 3517,
-      "sha1": "0e702439eb924bd269d89fbd94cedf80e55c2f47"
+      "lines": 61,
+      "bytes": 3667,
+      "sha1": "2169e23e7bfbd843abfb427c280d2d386e4c4b2a"
+    },
+    {
+      "path": "meta/context_index_raw.md",
+      "filename": "context_index_raw.md",
+      "folder": "meta",
+      "kind": "other",
+      "lines": 53,
+      "bytes": 3552,
+      "sha1": "cb5635bde60b4d74102de6fe5894c07cf7c5eeef"
     },
     {
       "path": "phoenix-code-lite/docs/CLI-INTERACTION-DECOUPLING-ARCHITECTURE.md",
@@ -110,9 +128,9 @@
       "filename": "ARCHITECTURE-DIAGRAM.md",
       "folder": "phoenix-code-lite",
       "kind": "architecture",
-      "lines": 750,
-      "bytes": 30873,
-      "sha1": "baae10d79bdceedccc2ab9d577b206149d16cb4f"
+      "lines": 759,
+      "bytes": 32050,
+      "sha1": "cbc504971d771c103630bb6fc9f5116a41371d02"
     },
     {
       "path": "phoenix-code-lite/docs/index/CODEBASE-INDEX.md",
@@ -218,9 +236,9 @@
       "filename": "README-ValidationSystem.md",
       "folder": "scripts",
       "kind": "readme",
-      "lines": 372,
-      "bytes": 15111,
-      "sha1": "c04aeed22f123bcd0faf814dacbe8554757d881a"
+      "lines": 378,
+      "bytes": 15343,
+      "sha1": "c98497ddee16915e3400fcddb30aa663d3d35d6b"
     },
     {
       "path": "scripts/validation/templates/README.md",
@@ -352,7 +370,7 @@
         "sha1": "9dce23a8de5599c4c9f4ef357ea6a7ed69fb6e23"
       },
       {
-        "path": "Haruspex/docs/00-Spec/Haruspex-0.1-enhanced-architecture.md",
+        "path": "Haruspex/docs/00-Spec/archive/Haruspex-0.1-enhanced-architecture.md",
         "filename": "Haruspex-0.1-enhanced-architecture.md",
         "folder": "Haruspex",
         "kind": "architecture",
@@ -372,13 +390,31 @@
     ],
     "meta": [
       {
+        "path": "meta/ARCHITECTURE.md",
+        "filename": "ARCHITECTURE.md",
+        "folder": "meta",
+        "kind": "architecture",
+        "lines": 288,
+        "bytes": 23284,
+        "sha1": "51e08459ef8046b05ad6717298c6fdf5bd426fcc"
+      },
+      {
         "path": "meta/context_index.md",
         "filename": "context_index.md",
         "folder": "meta",
         "kind": "other",
-        "lines": 58,
-        "bytes": 3517,
-        "sha1": "0e702439eb924bd269d89fbd94cedf80e55c2f47"
+        "lines": 61,
+        "bytes": 3667,
+        "sha1": "2169e23e7bfbd843abfb427c280d2d386e4c4b2a"
+      },
+      {
+        "path": "meta/context_index_raw.md",
+        "filename": "context_index_raw.md",
+        "folder": "meta",
+        "kind": "other",
+        "lines": 53,
+        "bytes": 3552,
+        "sha1": "cb5635bde60b4d74102de6fe5894c07cf7c5eeef"
       }
     ],
     "phoenix-code-lite": [
@@ -405,9 +441,9 @@
         "filename": "ARCHITECTURE-DIAGRAM.md",
         "folder": "phoenix-code-lite",
         "kind": "architecture",
-        "lines": 750,
-        "bytes": 30873,
-        "sha1": "baae10d79bdceedccc2ab9d577b206149d16cb4f"
+        "lines": 759,
+        "bytes": 32050,
+        "sha1": "cbc504971d771c103630bb6fc9f5116a41371d02"
       },
       {
         "path": "phoenix-code-lite/docs/index/CODEBASE-INDEX.md",
@@ -515,9 +551,9 @@
         "filename": "README-ValidationSystem.md",
         "folder": "scripts",
         "kind": "readme",
-        "lines": 372,
-        "bytes": 15111,
-        "sha1": "c04aeed22f123bcd0faf814dacbe8554757d881a"
+        "lines": 378,
+        "bytes": 15343,
+        "sha1": "c98497ddee16915e3400fcddb30aa663d3d35d6b"
       },
       {
         "path": "scripts/validation/templates/README.md",
