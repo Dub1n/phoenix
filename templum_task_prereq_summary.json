@@ -1,0 +1,247 @@
+{
+  "audit-hooks.md": {
+    "prerequisites": [
+      "[ ] [?] Structured metrics and logging in place (observability blueprint documented; confirm runtime wiring). — Audit streaming depends on the observability transport being verified so compliance records can piggyback on the same telemetry channel."
+    ],
+    "blocked_actions": [
+      "[ ] None."
+    ]
+  },
+  "backend-contract-fixtures.md": {
+    "prerequisites": [
+      "[~] Haruspex integration path defined (backend pending skin output). — align Haruspex fixture exports with the final documented contract once the integration path stabilises.",
+      "[ ] Phoenix Code Lite skin ingestion validated. — use the validated ingestion flow to confirm the PCL fixture payload and command catalogue."
+    ],
+    "blocked_actions": [
+      "[ ] Capture the canonical Haruspex contract export once the integration path finalises, update the fixture baseline, and rerun regression tests to record the new checksum.",
+      "[ ] Run the validated ingestion pipeline to serialise the latest PCL skin definition, update the corresponding fixture, and ensure ingestion tests load the shared snapshot rather than in-test literals."
+    ]
+  },
+  "change-management-adoption.md": {
+    "prerequisites": [
+      "[ ] Production runbooks and on-call handoff prepared (incident flows, escalation matrix). - Communications must reference the finalized escalation matrix and response owners.",
+      "[ ] Support/training materials delivered to operations and partner teams. - Launch messaging links to the completed enablement bundle and attendee tracking surfaced there."
+    ],
+    "blocked_actions": [
+      "[ ] Merge the finalized escalation matrix and incident contact rotation from `docs/current/runbooks/on-call-handoff.md` into the communications timeline and stakeholder briefings inside `docs/current/change-management-adoption-plan.md`.",
+      "[ ] Publish launch communications (emails, town halls, enablement invites) referencing the finished training artefacts; archive outbound messages and feedback summaries within `docs/current/change-management-adoption-plan.md` and mirror durable assets under `docs/archive/launch/`."
+    ]
+  },
+  "cli-skin-generator.md": {
+    "prerequisites": [
+      "[ ] Skin payload consumption powering full UI without hardcoding (see dev/tasks/skin-payload-consumption.md) — ensures the orchestrator delivers complete skin descriptors to CLI consumers."
+    ],
+    "blocked_actions": [
+      "[ ] Finalize fallback removal and legacy template deletion once the metadata-to-CLI pipeline is proven stable in tests.",
+      "[ ] Wire CLI generator output into `TemplumUniversalSessionManager` to keep CLI state in sync with other adapters using shared skin-derived descriptors."
+    ]
+  },
+  "connection-lifecycle-events.md": {
+    "prerequisites": [
+      "[ ] None."
+    ],
+    "blocked_actions": [
+      "[ ] None."
+    ]
+  },
+  "developer-doc-consolidation.md": {
+    "prerequisites": [
+      "[ ] None."
+    ],
+    "blocked_actions": [
+      "[ ] None."
+    ]
+  },
+  "extensible-adapter-contract.md": {
+    "prerequisites": [
+      "[ ] None."
+    ],
+    "blocked_actions": [
+      "[ ] None."
+    ]
+  },
+  "feature-flags-enterprise.md": {
+    "prerequisites": [
+      "[ ] None."
+    ],
+    "blocked_actions": [
+      "[ ] Once compliance audit hooks land, map the audit-related feature flag to the finalized sinks so toggling updates `src/commands/universal-command-registry.ts` audit pipelines and compliance reporters."
+    ]
+  },
+  "final-uat-stakeholder-acceptance.md": {
+    "prerequisites": [
+      "[ ] \"[ ] Release pipeline hardening and packaging verification (artifact signing, CI gating, rollback paths).\" — ensures the release candidate used for UAT is produced by a hardened pipeline.",
+      "[ ] \"[ ] Unified go/no-go checklist with compliance, security, and partner sign-offs.\" — provides the decision framework and approvers needed for UAT sign-off meetings.",
+      "[ ] \"[ ] Security and compliance validation sign-off (threat model, audit evidence packaged).\" — guarantees risk owners have approved controls before stakeholders sign."
+    ],
+    "blocked_actions": [
+      "[ ] Schedule and record the joint UAT walkthrough, capturing signed approvals in `docs/current/UAT-runbook.md` and archiving the output under `reports/uat/` once the checklist owners confirm readiness."
+    ]
+  },
+  "go-no-go-checklist.md": {
+    "prerequisites": [
+      "[ ] Release pipeline hardening and packaging verification (artifact signing, CI gating, rollback paths). — Go/no-go gating must pull its pass/fail signals from the hardened pipeline before we can treat the checklist as authoritative.",
+      "[ ] Security and compliance validation sign-off (threat model, audit evidence packaged). — The checklist needs the curated evidence bundle and formal approvals produced here.",
+      "[~] Haruspex integration path defined (backend pending skin output). — Partner approval for Haruspex depends on this integration path reaching a production-ready state.",
+      "[ ] Phoenix Code Lite skin ingestion validated. — Partner approval for PCL requires the ingestion flow to clear validation."
+    ],
+    "blocked_actions": [
+      "[ ] Once the hardened pipeline is available, pipe the go/no-go summary status into the release gate configuration (`.github/workflows/*` or equivalent) so the checklist completion is required before publishing artifacts.",
+      "[ ] After the sign-off package lands, link the threat model, audit evidence bundle, and validation run IDs inside `docs/current/go-no-go-checklist.md` under the compliance/security sections created earlier.",
+      "[ ] Capture Haruspex partner approval by embedding the finalized service readiness checklist and sign-off contact in the partner section once `src/backend/backend-service-router.ts:218` targets the production connection path.",
+      "[ ] Record the Phoenix Code Lite sign-off by referencing the ingestion validation evidence (`src/skin/pcl-rendering-adapter.ts:25` + associated tests) and storing the approval signature in the partner section."
+    ]
+  },
+  "haruspex-integration.md": {
+    "prerequisites": [
+      "[~] Zero-knowledge backend registry with auto-discovery (needs verification in latest build). -- Auto-registration must publish the Haruspex IPC manifest before the integration path can rely on it.",
+      "[~] Versioned skin contract enforcement (schema validation pending integration tests; see dev/tasks/versioned-skin-contract.md). -- Haruspex skin payloads must pass the shared contract validation before we treat them as source-of-truth.",
+      "[ ] Skin payload consumption powering full UI (see dev/tasks/skin-payload-consumption.md). -- End-to-end verification of the Haruspex skin requires the renderer to consume backend-provided layouts."
+    ],
+    "blocked_actions": [
+      "[ ] Once the renderer consumes backend skins, walk through VSCode/CLI end-to-end with the Haruspex payload, capture artefacts under `Templum/docs/current/integration-evidence/haruspex/`, and link them in the integration guide.",
+      "[ ] After UI consumption lands, replace the temporary fallback logic in `Templum/src/backend/backend-service-router.ts:2163` so real Haruspex skins drive command registration and retire the Universal Skin Engine fallback for that backend."
+    ]
+  },
+  "manual-override-flow.md": {
+    "prerequisites": [
+      "[ ] [~] Zero-knowledge backend registry with auto-discovery (needs verification in latest build). *(see `dev/tasks/zero-knowledge-registry.md`)* — ensures manual overrides operate on the verified discovery registry without introducing hardcoded backend knowledge."
+    ],
+    "blocked_actions": [
+      "[ ] After the registry verification lands, exercise the override flow against the real `.templum/services` watcher (drop a manual manifest, assert overrides apply/clear via file events) and capture the results plus any operational guidance in `docs/current/1.2-Backend-Integration-Guide.md`."
+    ]
+  },
+  "multi-protocol-auto-registration.md": {
+    "prerequisites": [
+      "[ ] None."
+    ],
+    "blocked_actions": [
+      "[ ] None."
+    ]
+  },
+  "observability-instrumentation.md": {
+    "prerequisites": [
+      "[ ] None."
+    ],
+    "blocked_actions": []
+  },
+  "pcl-skin-ingestion.md": {
+    "prerequisites": [
+      "[~] Zero-knowledge backend registry with auto-discovery (needs verification in latest build). — Ingestion must ride the discovery path exposed by `ServiceDiscovery` before we can treat validation as production-real.",
+      "[~] Versioned skin contract enforcement (schema validation pending integration tests; see dev/tasks/versioned-skin-contract.md). — Contract enforcement needs to flag incompatible PCL payloads during ingestion.",
+      "[ ] Skin payload consumption powering full UI without hardcoding (see dev/tasks/skin-payload-consumption.md). — UI validation across adapters depends on the renderer consuming skins end-to-end."
+    ],
+    "blocked_actions": [
+      "[ ] Swap the direct `.templum/services` write in the ingestion script for discovery-first validation: drop the exported manifest via the registry watcher (`src/backend/service-discovery.ts:611`) and assert the new test observes live discovery events.",
+      "[ ] Once schema enforcement lands, update the ingestion tests to exercise version mismatches and confirm `validateSkinDefinition` rejects outdated PCL payloads before they reach `PCLMenuRegistry`.",
+      "[ ] After the renderer is fully skin-driven, add cross-adapter smoke tests in `tests/e2e/e2e-complete-workflows.test.ts` that manually execute the Phoenix Code Lite workflows exposed via the ingested skin, capturing CLI/VSCode parity metrics in the training artefacts."
+    ]
+  },
+  "procedural-windowed-tui.md": {
+    "prerequisites": [
+      "[ ] Skin payload consumption powering full UI without hardcoding (see dev/tasks/skin-payload-consumption.md). — Skin metadata must reach the CLI renderer to drive procedural window layout."
+    ],
+    "blocked_actions": [
+      "[ ] Final CLI end-to-end validation in `tests/e2e/e2e-complete-workflows.test.ts` asserting loaded skins drive windowed layouts without fallback logic.",
+      "[ ] Removal of legacy hardcoded CLI windows/menu scaffolds after upstream payload flow is proven stable."
+    ]
+  },
+  "production-runbooks-handoff.md": {
+    "prerequisites": [
+      "[ ] \"[?] Structured metrics and logging in place (observability blueprint documented; confirm runtime wiring).\" -- runbooks must reference real alert streams and dashboards once observability wiring is verified.",
+      "[ ] \"[ ] Release pipeline hardening and packaging verification (artifact signing, CI gating, rollback paths).\" -- escalation and rollback sections rely on the hardened release flow and signed artifacts produced by that requirement."
+    ],
+    "blocked_actions": [
+      "[ ] Once \"[?] Structured metrics and logging in place (observability blueprint documented; confirm runtime wiring).\" is complete, attach live dashboard URLs and alert routing IDs to the runbooks and incident summary script output.",
+      "[ ] After \"[ ] Release pipeline hardening and packaging verification (artifact signing, CI gating, rollback paths).\" lands, embed the signed artefact locations and rollback verification steps into `templum-production-runbook.md` and the handoff summary."
+    ]
+  },
+  "release-pipeline-hardening.md": {
+    "prerequisites": [
+      "[ ] \"[ ] Test architecture consolidation and coverage governance (unit/integration/e2e thresholds codified).\" — release gating depends on the consolidated coverage commands and suite-specific thresholds."
+    ],
+    "blocked_actions": [
+      "[ ] Integrate the orchestrator with the production signing service (swap the local PEM loader for the approved KMS/secret manager endpoint and capture audit evidence) once security hands off the official key management runbook."
+    ]
+  },
+  "security-compliance-validation.md": {
+    "prerequisites": [
+      "[ ] Audit hooks aligned with compliance requirements. — The evidence bundle must ingest the structured audit events emitted once the audit service wiring is complete.",
+      "[ ] Release pipeline hardening and packaging verification (artifact signing, CI gating, rollback paths). — Sign-off depends on producing signed artifacts and pipeline reports that the security review references."
+    ],
+    "blocked_actions": [
+      "[ ] Replace mocked audit ingest in `compliance-evidence-collector` with the real audit trail service, include retention proofs, and attach hash manifests for `.templum/audit/` once audit hooks emit production-ready events.",
+      "[ ] Wire `security:validate` into the hardened release orchestrator (`scripts/release/run-release-verification.js`) so the pipeline archives `reports/security/templum-security-report.json` and rejects builds lacking fresh evidence signatures."
+    ]
+  },
+  "skin-asset-validation.md": {
+    "prerequisites": [
+      "[ ] None."
+    ],
+    "blocked_actions": [
+      "[ ] None."
+    ]
+  },
+  "skin-payload-consumption.md": {
+    "prerequisites": [
+      "[~] Versioned skin contract enforcement (schema validation pending integration tests; see dev/tasks/versioned-skin-contract.md). — Guarantees payload shape and version gating before substituting runtime rendering."
+    ],
+    "blocked_actions": [
+      "[ ] None."
+    ]
+  },
+  "support-training-materials.md": {
+    "prerequisites": [
+      "[ ] Production runbooks and on-call handoff prepared (incident flows, escalation matrix). — Ops training references the escalation flows, incident artefacts, and `reports/operations` outputs produced here.",
+      "[ ] Change management & post-launch adoption plan executed (communications, feedback loop). — Training delivery cadence and attendee tracking depend on the comms schedule and feedback mechanisms this requirement establishes.",
+      "[~] Haruspex integration path defined (backend pending skin output). — Partner enablement for Haruspex must describe the production integration steps once this path is finalized.",
+      "[ ] Phoenix Code Lite skin ingestion validated. — PCL partner materials need the validated ingestion workflow and evidence from this requirement."
+    ],
+    "blocked_actions": [
+      "[ ] Once runbooks land, weave the escalation matrix and remediation scripts into `templum-operations-playbook.md`, and embed links to `docs/current/runbooks/` plus the generated `reports/operations/incident-log.json` examples inside the training artefacts.",
+      "[ ] After the adoption plan is approved, add the training delivery calendar, feedback intake links, and attendee tracking tables to `docs/current/training/templum-operations-playbook.md` and surface the plan in `partner-enablement.md` so sessions align with org-wide communications.",
+      "[ ] Replace the provisional Haruspex onboarding notes with the finalized connection checklist (service endpoints, skin payload expectations, validation commands) and attach evidence from the integration path once stabilized.",
+      "[ ] Augment the PCL section with the validated ingestion walkthrough, captured output from `src/skin/pcl-rendering-adapter.ts:25` integration tests, and partner sign-off templates once the ingestion requirement is closed."
+    ]
+  },
+  "test-architecture-governance.md": {
+    "prerequisites": [
+      "[ ] None."
+    ],
+    "blocked_actions": [
+      "[ ] None."
+    ]
+  },
+  "unified-session-layer.md": {
+    "prerequisites": [
+      "[ ] None."
+    ],
+    "blocked_actions": [
+      "[ ] None."
+    ]
+  },
+  "versioned-skin-contract.md": {
+    "prerequisites": [
+      "[ ] None."
+    ],
+    "blocked_actions": [
+      "[ ] None."
+    ]
+  },
+  "vscode-initialisation-stability.md": {
+    "prerequisites": [
+      "[ ] None."
+    ],
+    "blocked_actions": [
+      "[ ] None."
+    ]
+  },
+  "zero-knowledge-registry.md": {
+    "prerequisites": [
+      "[ ] [?] Multi-protocol auto-registration with health checks (documented; requires runtime validation). — ensures discovery verification spans the health-scored manifests emitted by each protocol."
+    ],
+    "blocked_actions": [
+      "[ ] After the auto-registration requirement is validated, add cross-protocol coverage (IPC/WebSocket) in `src/tests/backend/generic-backend-integration.test.ts` that drops manifests for Haruspex/Litany backends and confirms discovery confidence + health priority ordering."
+    ]
+  }
+}

@@ -43,7 +43,7 @@ This phase implements the core Universal Interface Orchestration principle by cr
 - **Component Reuse Matrix**: `../architecture/component-reuse-matrix.md` - PCL component transfer guidance
 - **Component Transfer Manifest**: `../migration-scripts/component-transfer-manifest.md` - Detailed transfer specifications
 - **Phase 1 Analysis Results**: `Phase-01-Component-Extraction-Analysis.md` - Previous phase findings
-- **Templum 1.0 Specification**: `../../../Templum/Templum-1.0-spec.md` - Target architecture requirements
+- **Templum 1.0 Specification**: `../../../Templum/docs/archive/Templum-1.0-spec.md` - Target architecture requirements
 - **PCL Source Components**: `../../../phoenix-code-lite/src/` - Source code for understanding patterns
 
 ### Validation Commands

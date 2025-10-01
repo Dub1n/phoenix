@@ -1,5 +1,5 @@
 {
-  "generated_at": "2025-09-30T18:10:55Z",
+  "generated_at": "2025-10-01T09:06:02Z",
   "root": "VDL_Vault",
   "patterns": [
     "README.md",
@@ -13,7 +13,9 @@
     "*dev*.md",
     "index.md",
     "INDEX.md",
-    "*index*.md"
+    "*index*.md",
+    "*spec*.md",
+    "*SPEC*.md"
   ],
   "match_mode": "name-only",
   "exclude_dirs": [],
@@ -39,16 +41,17 @@
     "**/refactor_protocol/*",
     "**/01-roadmap/*",
     "**/Claude-Code/*",
-    "**/architecture-specialist.md"
+    "**/architecture-specialist.md",
+    "**/archive/*"
   ],
   "case_sensitive": false,
-  "paths_hash": "46acbd9397d004020d54e3099c10cd1687fcbdbd",
+  "paths_hash": "a9adcbb27dc5d57688145df2d668dafffffcd7ca",
   "counts": {
     "Haruspex": 3,
-    "meta": 3,
-    "phoenix-code-lite": 8,
+    "meta": 5,
+    "phoenix-code-lite": 7,
     "scripts": 8,
-    "Templum": 12
+    "Templum": 16
   },
   "files": [
     {
@@ -61,52 +64,79 @@
       "sha1": "9dce23a8de5599c4c9f4ef357ea6a7ed69fb6e23"
     },
     {
-      "path": "Haruspex/docs/00-Spec/archive/Haruspex-0.1-enhanced-architecture.md",
-      "filename": "Haruspex-0.1-enhanced-architecture.md",
+      "path": "Haruspex/dev/04-Separation-Roadmap/ipc-protocol-specification.md",
+      "filename": "ipc-protocol-specification.md",
       "folder": "Haruspex",
-      "kind": "architecture",
-      "lines": 1492,
-      "bytes": 62092,
-      "sha1": "8374d7d1fc6e50818adb654adf8c37e020f3ccf1"
+      "kind": "other",
+      "lines": 997,
+      "bytes": 28578,
+      "sha1": "652440db5942eb8b3011e02bade438d62ef1b6e3"
     },
     {
-      "path": "Haruspex/docs/01-ClaudeCode-Integration/01-Claude-Code-Integration-Architecture.md",
-      "filename": "01-Claude-Code-Integration-Architecture.md",
+      "path": "Haruspex/docs/current/architecture-spec.md",
+      "filename": "architecture-spec.md",
       "folder": "Haruspex",
       "kind": "architecture",
-      "lines": 706,
-      "bytes": 27921,
-      "sha1": "0b5caf6e3c7bf32b8065a9fbc7acb5b326e87c70"
+      "lines": 67,
+      "bytes": 3599,
+      "sha1": "1cb1ac03686e0bf06fd69458cd4015f8bddc1d9f"
     },
     {
       "path": "meta/ARCHITECTURE.md",
       "filename": "ARCHITECTURE.md",
       "folder": "meta",
       "kind": "architecture",
-      "lines": 288,
-      "bytes": 23284,
-      "sha1": "51e08459ef8046b05ad6717298c6fdf5bd426fcc"
+      "lines": 296,
+      "bytes": 24129,
+      "sha1": "0f9a7b0e231eec44c29ddcae847c45014f70b07b"
     },
     {
       "path": "meta/context_index.md",
       "filename": "context_index.md",
       "folder": "meta",
       "kind": "other",
-      "lines": 61,
-      "bytes": 3667,
-      "sha1": "2169e23e7bfbd843abfb427c280d2d386e4c4b2a"
+      "lines": 63,
+      "bytes": 3870,
+      "sha1": "2da8bd5c00f352739c835ae2175dcaea4be76a99"
     },
     {
       "path": "meta/context_index_raw.md",
       "filename": "context_index_raw.md",
       "folder": "meta",
       "kind": "other",
-      "lines": 53,
-      "bytes": 3552,
-      "sha1": "cb5635bde60b4d74102de6fe5894c07cf7c5eeef"
+      "lines": 59,
+      "bytes": 3945,
+      "sha1": "a44979f5f4b6154962df2cb64cc591cca0e57940"
     },
     {
-      "path": "phoenix-code-lite/docs/CLI-INTERACTION-DECOUPLING-ARCHITECTURE.md",
+      "path": "meta/templates/architecture-spec.md",
+      "filename": "architecture-spec.md",
+      "folder": "meta",
+      "kind": "architecture",
+      "lines": 53,
+      "bytes": 1828,
+      "sha1": "512fa639cba4732f10fead6923db09747bb3a40a"
+    },
+    {
+      "path": "meta/workflows/README.md",
+      "filename": "README.md",
+      "folder": "meta",
+      "kind": "readme",
+      "lines": 29,
+      "bytes": 1880,
+      "sha1": "f6b8bc5fd5419bd7d17048fe453a734ebaa8388f"
+    },
+    {
+      "path": "phoenix-code-lite/dev/architecture/UNIFIED-LAYOUT-ARCHITECTURE.md",
+      "filename": "UNIFIED-LAYOUT-ARCHITECTURE.md",
+      "folder": "phoenix-code-lite",
+      "kind": "architecture",
+      "lines": 445,
+      "bytes": 14527,
+      "sha1": "90dfcc8d60d7bce5f1118074ddddacd0daa5df44"
+    },
+    {
+      "path": "phoenix-code-lite/dev/cli/CLI-INTERACTION-DECOUPLING-ARCHITECTURE.md",
       "filename": "CLI-INTERACTION-DECOUPLING-ARCHITECTURE.md",
       "folder": "phoenix-code-lite",
       "kind": "architecture",
@@ -115,7 +145,7 @@
       "sha1": "f06ed9aa3123cf27b951dcffeef4c9656970843f"
     },
     {
-      "path": "phoenix-code-lite/docs/CLI-MENU-SEPARATOR-ARCHITECTURE.md",
+      "path": "phoenix-code-lite/dev/cli/CLI-MENU-SEPARATOR-ARCHITECTURE.md",
       "filename": "CLI-MENU-SEPARATOR-ARCHITECTURE.md",
       "folder": "phoenix-code-lite",
       "kind": "architecture",
@@ -124,7 +154,16 @@
       "sha1": "6f31fe8bcb50b13ad62da7535145c9f543b9126a"
     },
     {
-      "path": "phoenix-code-lite/docs/index/ARCHITECTURE-DIAGRAM.md",
+      "path": "phoenix-code-lite/docs/current/architecture-spec.md",
+      "filename": "architecture-spec.md",
+      "folder": "phoenix-code-lite",
+      "kind": "architecture",
+      "lines": 67,
+      "bytes": 3536,
+      "sha1": "70217ae740529369b373e6cb6977c4770bda1356"
+    },
+    {
+      "path": "phoenix-code-lite/docs/current/index/ARCHITECTURE-DIAGRAM.md",
       "filename": "ARCHITECTURE-DIAGRAM.md",
       "folder": "phoenix-code-lite",
       "kind": "architecture",
@@ -133,40 +172,13 @@
       "sha1": "cbc504971d771c103630bb6fc9f5116a41371d02"
     },
     {
-      "path": "phoenix-code-lite/docs/index/CODEBASE-INDEX.md",
+      "path": "phoenix-code-lite/docs/current/index/CODEBASE-INDEX.md",
       "filename": "CODEBASE-INDEX.md",
       "folder": "phoenix-code-lite",
       "kind": "index",
       "lines": 948,
       "bytes": 34965,
       "sha1": "43c3a1c0f7f6c545bd3f0dca047c2238e829f52d"
-    },
-    {
-      "path": "phoenix-code-lite/docs/PHOENIX-CODE-LITE-ARCHITECTURE-needs-validation.md",
-      "filename": "PHOENIX-CODE-LITE-ARCHITECTURE-needs-validation.md",
-      "folder": "phoenix-code-lite",
-      "kind": "architecture",
-      "lines": 750,
-      "bytes": 31623,
-      "sha1": "66be5bea600cdd3ce76b83ad17379f1d65c17474"
-    },
-    {
-      "path": "phoenix-code-lite/docs/PHOENIX-CODE-LITE-INDEX-needs-validation.md",
-      "filename": "PHOENIX-CODE-LITE-INDEX-needs-validation.md",
-      "folder": "phoenix-code-lite",
-      "kind": "index",
-      "lines": 948,
-      "bytes": 34965,
-      "sha1": "43c3a1c0f7f6c545bd3f0dca047c2238e829f52d"
-    },
-    {
-      "path": "phoenix-code-lite/docs/UNIFIED-LAYOUT-ARCHITECTURE.md",
-      "filename": "UNIFIED-LAYOUT-ARCHITECTURE.md",
-      "folder": "phoenix-code-lite",
-      "kind": "architecture",
-      "lines": 445,
-      "bytes": 14527,
-      "sha1": "90dfcc8d60d7bce5f1118074ddddacd0daa5df44"
     },
     {
       "path": "phoenix-code-lite/README.md",
@@ -214,16 +226,16 @@
       "sha1": "af01eeeaf2df4afa1c75e89e2107fb354b1b71dd"
     },
     {
-      "path": "scripts/validation/docs/architecture/VALIDATION-SYSTEM-ARCHITECTURE-README.md",
-      "filename": "VALIDATION-SYSTEM-ARCHITECTURE-README.md",
+      "path": "scripts/validation/docs/current/architecture-spec.md",
+      "filename": "architecture-spec.md",
       "folder": "scripts",
-      "kind": "readme",
-      "lines": 133,
-      "bytes": 8308,
-      "sha1": "aeb1acdf3bb306669176fa59539b43f2ca0cb61b"
+      "kind": "architecture",
+      "lines": 65,
+      "bytes": 3668,
+      "sha1": "eafd20803688a8d1568d6b0e4ad5bd189ff97d48"
     },
     {
-      "path": "scripts/validation/docs/guides/CORE-VALIDATION-README.md",
+      "path": "scripts/validation/docs/current/guides/CORE-VALIDATION-README.md",
       "filename": "CORE-VALIDATION-README.md",
       "folder": "scripts",
       "kind": "readme",
@@ -232,13 +244,13 @@
       "sha1": "c5c563115ab613df4cd420faab17ff2e0edea0b1"
     },
     {
-      "path": "scripts/validation/README-ValidationSystem.md",
-      "filename": "README-ValidationSystem.md",
+      "path": "scripts/validation/README.md",
+      "filename": "README.md",
       "folder": "scripts",
       "kind": "readme",
-      "lines": 378,
-      "bytes": 15343,
-      "sha1": "c98497ddee16915e3400fcddb30aa663d3d35d6b"
+      "lines": 3,
+      "bytes": 174,
+      "sha1": "7a8b8f5c50ca63442253ed6054a8e1d43cb7ca86"
     },
     {
       "path": "scripts/validation/templates/README.md",
@@ -286,6 +298,15 @@
       "sha1": "4277f1ea3f83c9a37759a64976cac4b6f3efb30c"
     },
     {
+      "path": "Templum/dev/CLI/templum-cli-user-specification.md",
+      "filename": "templum-cli-user-specification.md",
+      "folder": "Templum",
+      "kind": "other",
+      "lines": 341,
+      "bytes": 10522,
+      "sha1": "916666139615c470bca9a25f47f3cbc3933023e6"
+    },
+    {
       "path": "Templum/dev/pattern-index.md",
       "filename": "pattern-index.md",
       "folder": "Templum",
@@ -320,6 +341,33 @@
       "lines": 303,
       "bytes": 27643,
       "sha1": "8e8ced8f3a696204ec3e395746fe87fe81f0a6b5"
+    },
+    {
+      "path": "Templum/dev/tasks/developer-doc-consolidation.md",
+      "filename": "developer-doc-consolidation.md",
+      "folder": "Templum",
+      "kind": "dev",
+      "lines": 39,
+      "bytes": 3072,
+      "sha1": "a7b49a4d2ed54c5dcf692d79fd7330de454b028a"
+    },
+    {
+      "path": "Templum/dev/tasks/test-architecture-governance.md",
+      "filename": "test-architecture-governance.md",
+      "folder": "Templum",
+      "kind": "architecture",
+      "lines": 34,
+      "bytes": 2559,
+      "sha1": "b07c22ffc9dbf7407ab9e699cecd650d2a5ff623"
+    },
+    {
+      "path": "Templum/docs/current/architecture-spec.md",
+      "filename": "architecture-spec.md",
+      "folder": "Templum",
+      "kind": "architecture",
+      "lines": 77,
+      "bytes": 4654,
+      "sha1": "e857debe84b9307691f0e8b2678274bda8740245"
     },
     {
       "path": "Templum/examples/README.md",
@@ -370,22 +418,22 @@
         "sha1": "9dce23a8de5599c4c9f4ef357ea6a7ed69fb6e23"
       },
       {
-        "path": "Haruspex/docs/00-Spec/archive/Haruspex-0.1-enhanced-architecture.md",
-        "filename": "Haruspex-0.1-enhanced-architecture.md",
+        "path": "Haruspex/dev/04-Separation-Roadmap/ipc-protocol-specification.md",
+        "filename": "ipc-protocol-specification.md",
         "folder": "Haruspex",
-        "kind": "architecture",
-        "lines": 1492,
-        "bytes": 62092,
-        "sha1": "8374d7d1fc6e50818adb654adf8c37e020f3ccf1"
+        "kind": "other",
+        "lines": 997,
+        "bytes": 28578,
+        "sha1": "652440db5942eb8b3011e02bade438d62ef1b6e3"
       },
       {
-        "path": "Haruspex/docs/01-ClaudeCode-Integration/01-Claude-Code-Integration-Architecture.md",
-        "filename": "01-Claude-Code-Integration-Architecture.md",
+        "path": "Haruspex/docs/current/architecture-spec.md",
+        "filename": "architecture-spec.md",
         "folder": "Haruspex",
         "kind": "architecture",
-        "lines": 706,
-        "bytes": 27921,
-        "sha1": "0b5caf6e3c7bf32b8065a9fbc7acb5b326e87c70"
+        "lines": 67,
+        "bytes": 3599,
+        "sha1": "1cb1ac03686e0bf06fd69458cd4015f8bddc1d9f"
       }
     ],
     "meta": [
@@ -394,32 +442,59 @@
         "filename": "ARCHITECTURE.md",
         "folder": "meta",
         "kind": "architecture",
-        "lines": 288,
-        "bytes": 23284,
-        "sha1": "51e08459ef8046b05ad6717298c6fdf5bd426fcc"
+        "lines": 296,
+        "bytes": 24129,
+        "sha1": "0f9a7b0e231eec44c29ddcae847c45014f70b07b"
       },
       {
         "path": "meta/context_index.md",
         "filename": "context_index.md",
         "folder": "meta",
         "kind": "other",
-        "lines": 61,
-        "bytes": 3667,
-        "sha1": "2169e23e7bfbd843abfb427c280d2d386e4c4b2a"
+        "lines": 63,
+        "bytes": 3870,
+        "sha1": "2da8bd5c00f352739c835ae2175dcaea4be76a99"
       },
       {
         "path": "meta/context_index_raw.md",
         "filename": "context_index_raw.md",
         "folder": "meta",
         "kind": "other",
+        "lines": 59,
+        "bytes": 3945,
+        "sha1": "a44979f5f4b6154962df2cb64cc591cca0e57940"
+      },
+      {
+        "path": "meta/templates/architecture-spec.md",
+        "filename": "architecture-spec.md",
+        "folder": "meta",
+        "kind": "architecture",
         "lines": 53,
-        "bytes": 3552,
-        "sha1": "cb5635bde60b4d74102de6fe5894c07cf7c5eeef"
+        "bytes": 1828,
+        "sha1": "512fa639cba4732f10fead6923db09747bb3a40a"
+      },
+      {
+        "path": "meta/workflows/README.md",
+        "filename": "README.md",
+        "folder": "meta",
+        "kind": "readme",
+        "lines": 29,
+        "bytes": 1880,
+        "sha1": "f6b8bc5fd5419bd7d17048fe453a734ebaa8388f"
       }
     ],
     "phoenix-code-lite": [
       {
-        "path": "phoenix-code-lite/docs/CLI-INTERACTION-DECOUPLING-ARCHITECTURE.md",
+        "path": "phoenix-code-lite/dev/architecture/UNIFIED-LAYOUT-ARCHITECTURE.md",
+        "filename": "UNIFIED-LAYOUT-ARCHITECTURE.md",
+        "folder": "phoenix-code-lite",
+        "kind": "architecture",
+        "lines": 445,
+        "bytes": 14527,
+        "sha1": "90dfcc8d60d7bce5f1118074ddddacd0daa5df44"
+      },
+      {
+        "path": "phoenix-code-lite/dev/cli/CLI-INTERACTION-DECOUPLING-ARCHITECTURE.md",
         "filename": "CLI-INTERACTION-DECOUPLING-ARCHITECTURE.md",
         "folder": "phoenix-code-lite",
         "kind": "architecture",
@@ -428,7 +503,7 @@
         "sha1": "f06ed9aa3123cf27b951dcffeef4c9656970843f"
       },
       {
-        "path": "phoenix-code-lite/docs/CLI-MENU-SEPARATOR-ARCHITECTURE.md",
+        "path": "phoenix-code-lite/dev/cli/CLI-MENU-SEPARATOR-ARCHITECTURE.md",
         "filename": "CLI-MENU-SEPARATOR-ARCHITECTURE.md",
         "folder": "phoenix-code-lite",
         "kind": "architecture",
@@ -437,7 +512,16 @@
         "sha1": "6f31fe8bcb50b13ad62da7535145c9f543b9126a"
       },
       {
-        "path": "phoenix-code-lite/docs/index/ARCHITECTURE-DIAGRAM.md",
+        "path": "phoenix-code-lite/docs/current/architecture-spec.md",
+        "filename": "architecture-spec.md",
+        "folder": "phoenix-code-lite",
+        "kind": "architecture",
+        "lines": 67,
+        "bytes": 3536,
+        "sha1": "70217ae740529369b373e6cb6977c4770bda1356"
+      },
+      {
+        "path": "phoenix-code-lite/docs/current/index/ARCHITECTURE-DIAGRAM.md",
         "filename": "ARCHITECTURE-DIAGRAM.md",
         "folder": "phoenix-code-lite",
         "kind": "architecture",
@@ -446,40 +530,13 @@
         "sha1": "cbc504971d771c103630bb6fc9f5116a41371d02"
       },
       {
-        "path": "phoenix-code-lite/docs/index/CODEBASE-INDEX.md",
+        "path": "phoenix-code-lite/docs/current/index/CODEBASE-INDEX.md",
         "filename": "CODEBASE-INDEX.md",
         "folder": "phoenix-code-lite",
         "kind": "index",
         "lines": 948,
         "bytes": 34965,
         "sha1": "43c3a1c0f7f6c545bd3f0dca047c2238e829f52d"
-      },
-      {
-        "path": "phoenix-code-lite/docs/PHOENIX-CODE-LITE-ARCHITECTURE-needs-validation.md",
-        "filename": "PHOENIX-CODE-LITE-ARCHITECTURE-needs-validation.md",
-        "folder": "phoenix-code-lite",
-        "kind": "architecture",
-        "lines": 750,
-        "bytes": 31623,
-        "sha1": "66be5bea600cdd3ce76b83ad17379f1d65c17474"
-      },
-      {
-        "path": "phoenix-code-lite/docs/PHOENIX-CODE-LITE-INDEX-needs-validation.md",
-        "filename": "PHOENIX-CODE-LITE-INDEX-needs-validation.md",
-        "folder": "phoenix-code-lite",
-        "kind": "index",
-        "lines": 948,
-        "bytes": 34965,
-        "sha1": "43c3a1c0f7f6c545bd3f0dca047c2238e829f52d"
-      },
-      {
-        "path": "phoenix-code-lite/docs/UNIFIED-LAYOUT-ARCHITECTURE.md",
-        "filename": "UNIFIED-LAYOUT-ARCHITECTURE.md",
-        "folder": "phoenix-code-lite",
-        "kind": "architecture",
-        "lines": 445,
-        "bytes": 14527,
-        "sha1": "90dfcc8d60d7bce5f1118074ddddacd0daa5df44"
       },
       {
         "path": "phoenix-code-lite/README.md",
@@ -529,16 +586,16 @@
         "sha1": "af01eeeaf2df4afa1c75e89e2107fb354b1b71dd"
       },
       {
-        "path": "scripts/validation/docs/architecture/VALIDATION-SYSTEM-ARCHITECTURE-README.md",
-        "filename": "VALIDATION-SYSTEM-ARCHITECTURE-README.md",
+        "path": "scripts/validation/docs/current/architecture-spec.md",
+        "filename": "architecture-spec.md",
         "folder": "scripts",
-        "kind": "readme",
-        "lines": 133,
-        "bytes": 8308,
-        "sha1": "aeb1acdf3bb306669176fa59539b43f2ca0cb61b"
+        "kind": "architecture",
+        "lines": 65,
+        "bytes": 3668,
+        "sha1": "eafd20803688a8d1568d6b0e4ad5bd189ff97d48"
       },
       {
-        "path": "scripts/validation/docs/guides/CORE-VALIDATION-README.md",
+        "path": "scripts/validation/docs/current/guides/CORE-VALIDATION-README.md",
         "filename": "CORE-VALIDATION-README.md",
         "folder": "scripts",
         "kind": "readme",
@@ -547,13 +604,13 @@
         "sha1": "c5c563115ab613df4cd420faab17ff2e0edea0b1"
       },
       {
-        "path": "scripts/validation/README-ValidationSystem.md",
-        "filename": "README-ValidationSystem.md",
+        "path": "scripts/validation/README.md",
+        "filename": "README.md",
         "folder": "scripts",
         "kind": "readme",
-        "lines": 378,
-        "bytes": 15343,
-        "sha1": "c98497ddee16915e3400fcddb30aa663d3d35d6b"
+        "lines": 3,
+        "bytes": 174,
+        "sha1": "7a8b8f5c50ca63442253ed6054a8e1d43cb7ca86"
       },
       {
         "path": "scripts/validation/templates/README.md",
@@ -603,6 +660,15 @@
         "sha1": "4277f1ea3f83c9a37759a64976cac4b6f3efb30c"
       },
       {
+        "path": "Templum/dev/CLI/templum-cli-user-specification.md",
+        "filename": "templum-cli-user-specification.md",
+        "folder": "Templum",
+        "kind": "other",
+        "lines": 341,
+        "bytes": 10522,
+        "sha1": "916666139615c470bca9a25f47f3cbc3933023e6"
+      },
+      {
         "path": "Templum/dev/pattern-index.md",
         "filename": "pattern-index.md",
         "folder": "Templum",
@@ -637,6 +703,33 @@
         "lines": 303,
         "bytes": 27643,
         "sha1": "8e8ced8f3a696204ec3e395746fe87fe81f0a6b5"
+      },
+      {
+        "path": "Templum/dev/tasks/developer-doc-consolidation.md",
+        "filename": "developer-doc-consolidation.md",
+        "folder": "Templum",
+        "kind": "dev",
+        "lines": 39,
+        "bytes": 3072,
+        "sha1": "a7b49a4d2ed54c5dcf692d79fd7330de454b028a"
+      },
+      {
+        "path": "Templum/dev/tasks/test-architecture-governance.md",
+        "filename": "test-architecture-governance.md",
+        "folder": "Templum",
+        "kind": "architecture",
+        "lines": 34,
+        "bytes": 2559,
+        "sha1": "b07c22ffc9dbf7407ab9e699cecd650d2a5ff623"
+      },
+      {
+        "path": "Templum/docs/current/architecture-spec.md",
+        "filename": "architecture-spec.md",
+        "folder": "Templum",
+        "kind": "architecture",
+        "lines": 77,
+        "bytes": 4654,
+        "sha1": "e857debe84b9307691f0e8b2678274bda8740245"
       },
       {
         "path": "Templum/examples/README.md",

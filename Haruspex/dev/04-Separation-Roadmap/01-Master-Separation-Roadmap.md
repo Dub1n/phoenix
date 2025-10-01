@@ -133,8 +133,8 @@ cd phoenix-code-lite && npm test    # PCL tests pass
 cd ../Haruspex && npm test          # Haruspex tests pass
 
 # Verify architectural specification files
-ls Templum/Templum-1.0-spec.md     # Templum specification accessible
-ls Haruspex/docs/00-Spec/Haruspex-2.0-spec.md  # Target architecture defined
+ls Templum/docs/archive/Templum-1.0-spec.md     # Templum specification accessible
+ls Haruspex/docs/archive/Haruspex-2.0-spec.md  # Target architecture defined
 ```
 
 ### Phase Execution Order

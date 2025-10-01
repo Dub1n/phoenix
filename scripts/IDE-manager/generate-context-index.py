@@ -18,19 +18,46 @@ from pathlib import Path
 from typing import Iterable, List, Dict, Any, Optional, Tuple
 
 DEFAULT_PATTERNS: List[str] = [
-    "README.md","README*.md","*readme*.md",
-    "architecture.md","architecture*.md","*architecture*.md",
-    "dev.md","dev*.md","*dev*.md",
-    "index.md","INDEX.md","*index*.md",
+    "README.md",
+    "README*.md",
+    "*readme*.md",
+    "architecture.md",
+    "architecture*.md",
+    "*architecture*.md",
+    "dev.md",
+    "dev*.md",
+    "*dev*.md",
+    "index.md",
+    "INDEX.md",
+    "*index*.md",
+    "*spec*.md",
+    "*SPEC*.md",
 ]
 DEFAULT_EXCLUDE_DIRS: List[str] = []
 DEFAULT_EXCLUDE_GLOBS: List[str] = [
-    ".git/*",".venv/*",".idea/*",".vscode/*",".claude/*",".continue/*",".cursor/*",
-    "build/*","DSS/*","docs/*","prompts/*",
-    "**/node_modules/*","**/target/*","**/dist/*",
-    "**/validation-results/**","**/fixes/**",
-    "**/terminal-completer/*","**/markdown-formatter/*","**/refactor_protocol/*",
-    "**/01-roadmap/*","**/Claude-Code/*","**/architecture-specialist.md",
+    ".git/*",
+    ".venv/*",
+    ".idea/*",
+    ".vscode/*",
+    ".claude/*",
+    ".continue/*",
+    ".cursor/*",
+    "build/*",
+    "DSS/*",
+    "docs/*",
+    "prompts/*",
+    "**/node_modules/*",
+    "**/target/*",
+    "**/dist/*",
+    "**/validation-results/**",
+    "**/fixes/**",
+    "**/terminal-completer/*",
+    "**/markdown-formatter/*",
+    "**/refactor_protocol/*",
+    "**/01-roadmap/*",
+    "**/Claude-Code/*",
+    "**/architecture-specialist.md",
+    "**/archive/*",
 ]
 
 KIND_RULES = [
@@ -40,11 +67,13 @@ KIND_RULES = [
     (r"(?i)\bindex\b", "index"),
 ]
 
+
 def infer_kind(name: str) -> str:
     for pat, kind in KIND_RULES:
         if re.search(pat, name):
             return kind
     return "other"
+
 
 def sha1_of_file(p: Path) -> str:
     h = hashlib.sha1()
@@ -53,12 +82,14 @@ def sha1_of_file(p: Path) -> str:
             h.update(chunk)
     return h.hexdigest()
 
+
 def line_count(p: Path) -> int:
     try:
         with open(p, "r", encoding="utf-8", errors="ignore") as f:
             return sum(1 for _ in f)
     except Exception:
         return -1
+
 
 def writeln(f, s: str = "") -> None:
     """Write a line ensuring a single trailing newline."""
@@ -68,6 +99,7 @@ def writeln(f, s: str = "") -> None:
     else:
         f.write(s + "\n")
 
+
 def git_ls_files(root: Path, raw: bool = False):
     try:
         out = subprocess.check_output(["git", "-C", str(root), "ls-files"], text=True)
@@ -76,6 +108,7 @@ def git_ls_files(root: Path, raw: bool = False):
         return [root / p.strip() for p in out.splitlines() if p.strip()]
     except Exception:
         return None
+
 
 def walk_filesystem(root: Path, exclude_dir_globs: Iterable[str]) -> List[Path]:
     files: List[Path] = []
@@ -93,7 +126,10 @@ def walk_filesystem(root: Path, exclude_dir_globs: Iterable[str]) -> List[Path]:
             files.append(Path(dirpath) / fn)
     return files
 
-def match_any_pattern(subject: str, patterns: Iterable[str], case_sensitive: bool = False) -> bool:
+
+def match_any_pattern(
+    subject: str, patterns: Iterable[str], case_sensitive: bool = False
+) -> bool:
     subj = subject.replace("\\", "/")
     if not case_sensitive:
         subj = subj.lower()
@@ -103,21 +139,33 @@ def match_any_pattern(subject: str, patterns: Iterable[str], case_sensitive: boo
             return True
     return False
 
+
 def relpath_for(p: Path, root: Path, absolute: bool) -> str:
     return str(p.resolve()) if absolute else str(p.relative_to(root)).replace("\\", "/")
+
 
 def first_folder_for(p: Path, root: Path) -> str:
     rp_rel = str(p.relative_to(root)).replace("\\", "/")
     return rp_rel.split("/", 1)[0] if "/" in rp_rel else "."
 
+
 # ===== fast path hashing =====
 def compile_globs(patterns: Iterable[str], case_sensitive: bool) -> List[re.Pattern]:
     flags = 0 if case_sensitive else re.IGNORECASE
+
     def to_regex(pat: str) -> re.Pattern:
         return re.compile(_fn.translate(pat), flags)
+
     return [to_regex(p) for p in patterns]
 
-def iter_matching_paths_fast(root: Path, patterns: Iterable[str], exclude_globs: Iterable[str], name_only: bool, case_sensitive: bool) -> Iterable[str]:
+
+def iter_matching_paths_fast(
+    root: Path,
+    patterns: Iterable[str],
+    exclude_globs: Iterable[str],
+    name_only: bool,
+    case_sensitive: bool,
+) -> Iterable[str]:
     rels = git_ls_files(root, raw=True)
     if rels is None:
         rels = []
@@ -135,31 +183,49 @@ def iter_matching_paths_fast(root: Path, patterns: Iterable[str], exclude_globs:
         if any(rx.fullmatch(subject) for rx in inc_res):
             yield rp
 
-def paths_hash(root: Path, patterns: Iterable[str], exclude_globs: Iterable[str], name_only: bool, case_sensitive: bool) -> str:
-    items = sorted(iter_matching_paths_fast(root, patterns, exclude_globs, name_only, case_sensitive))
+
+def paths_hash(
+    root: Path,
+    patterns: Iterable[str],
+    exclude_globs: Iterable[str],
+    name_only: bool,
+    case_sensitive: bool,
+) -> str:
+    items = sorted(
+        iter_matching_paths_fast(
+            root, patterns, exclude_globs, name_only, case_sensitive
+        )
+    )
     h = hashlib.sha1()
     for rp in items:
         h.update(rp.encode("utf-8"))
         h.update(b"\n")
     return h.hexdigest()
 
+
 # ===== git origin parsing for raw base =====
 def git_current_branch(root: Path) -> Optional[str]:
     try:
-        out = subprocess.check_output(["git", "-C", str(root), "rev-parse", "--abbrev-ref", "HEAD"], text=True).strip()
+        out = subprocess.check_output(
+            ["git", "-C", str(root), "rev-parse", "--abbrev-ref", "HEAD"], text=True
+        ).strip()
         return out if out else None
     except Exception:
         return None
 
+
 def git_origin_url(root: Path) -> Optional[str]:
     for remote in ("origin",):
         try:
-            out = subprocess.check_output(["git", "-C", str(root), "remote", "get-url", remote], text=True).strip()
+            out = subprocess.check_output(
+                ["git", "-C", str(root), "remote", "get-url", remote], text=True
+            ).strip()
             if out:
                 return out
         except Exception:
             pass
     return None
+
 
 def parse_github_owner_repo(remote_url: str) -> Optional[Tuple[str, str]]:
     # handles:
@@ -171,7 +237,10 @@ def parse_github_owner_repo(remote_url: str) -> Optional[Tuple[str, str]]:
         return m.group("owner"), m.group("repo")
     return None
 
-def build_raw_base(root: Path, override_base: Optional[str], override_branch: Optional[str]) -> Optional[str]:
+
+def build_raw_base(
+    root: Path, override_base: Optional[str], override_branch: Optional[str]
+) -> Optional[str]:
     if override_base:
         return override_base.rstrip("/")
     origin = git_origin_url(root)
@@ -183,6 +252,7 @@ def build_raw_base(root: Path, override_base: Optional[str], override_branch: Op
     owner, repo = parsed
     branch = override_branch or git_current_branch(root) or "main"
     return f"https://raw.githubusercontent.com/{owner}/{repo}/{branch}".rstrip("/")
+
 
 def main() -> None:
     ap = argparse.ArgumentParser(description="Generate context index for LLMs.")
@@ -198,9 +268,21 @@ def main() -> None:
     ap.add_argument("--exclude-globs", nargs="*", default=DEFAULT_EXCLUDE_GLOBS)
     ap.add_argument("--case-sensitive", action="store_true")
     # new: raw link output controls
-    ap.add_argument("--raw-md-name", default="context_index_raw.md", help="Filename for raw-links markdown (default: context_index_raw.md)")
-    ap.add_argument("--raw-base", default=None, help="Override raw base URL, e.g. https://raw.githubusercontent.com/Owner/Repo/branch")
-    ap.add_argument("--raw-branch", default=None, help="Override branch for raw base if auto-detected")
+    ap.add_argument(
+        "--raw-md-name",
+        default="context_index_raw.md",
+        help="Filename for raw-links markdown (default: context_index_raw.md)",
+    )
+    ap.add_argument(
+        "--raw-base",
+        default=None,
+        help="Override raw base URL, e.g. https://raw.githubusercontent.com/Owner/Repo/branch",
+    )
+    ap.add_argument(
+        "--raw-branch",
+        default=None,
+        help="Override branch for raw base if auto-detected",
+    )
     args = ap.parse_args()
 
     root = Path(args.root).resolve()
@@ -212,7 +294,10 @@ def main() -> None:
     raw_md_path = outdir / args.raw_md_name
 
     # fast-hash skip: only skip if both md files already match this hash
-    p_hash = paths_hash(root, args.patterns, args.exclude_globs, args.name_only, args.case_sensitive)
+    p_hash = paths_hash(
+        root, args.patterns, args.exclude_globs, args.name_only, args.case_sensitive
+    )
+
     def header_hash(path: Path) -> Optional[str]:
         try:
             with open(path, "r", encoding="utf-8", errors="ignore") as f:
@@ -235,7 +320,9 @@ def main() -> None:
         if not p.is_file():
             continue
         rp = relpath_for(p, root, args.absolute)
-        if args.exclude_globs and any(match_any_pattern(rp, [g], args.case_sensitive) for g in args.exclude_globs):
+        if args.exclude_globs and any(
+            match_any_pattern(rp, [g], args.case_sensitive) for g in args.exclude_globs
+        ):
             continue
         subject = p.name if args.name_only else rp
         if match_any_pattern(subject, args.patterns, args.case_sensitive):
@@ -243,15 +330,17 @@ def main() -> None:
                 size = p.stat().st_size
             except Exception:
                 size = -1
-            entries.append({
-                "path": rp,
-                "filename": p.name,
-                "folder": first_folder_for(p, root),
-                "kind": infer_kind(p.name),
-                "lines": line_count(p),
-                "bytes": size,
-                "sha1": sha1_of_file(p),
-            })
+            entries.append(
+                {
+                    "path": rp,
+                    "filename": p.name,
+                    "folder": first_folder_for(p, root),
+                    "kind": infer_kind(p.name),
+                    "lines": line_count(p),
+                    "bytes": size,
+                    "sha1": sha1_of_file(p),
+                }
+            )
 
     entries.sort(key=lambda e: e["path"].lower())
     by_folder: Dict[str, List[Dict[str, Any]]] = {}
@@ -287,14 +376,20 @@ def main() -> None:
         writeln(f, f"- exclude-dirs: `{', '.join(args.exclude_dirs)}`")
         writeln(f, f"- exclude-globs: `{', '.join(args.exclude_globs)}`")
         writeln(f, f"- paths-hash: `{p_hash}`")
-        writeln(f, "- totals: " + ", ".join(f"{k}={len(v)}" for k, v in sorted(by_folder.items())))
+        writeln(
+            f,
+            "- totals: "
+            + ", ".join(f"{k}={len(v)}" for k, v in sorted(by_folder.items())),
+        )
         writeln(f)  # blank line after header block
         for folder in sorted(by_folder.keys(), key=lambda s: s.lower()):
             header = folder if folder != "." else "(root)"
             writeln(f, f"## {header}")
             writeln(f)  # blank line after section header
             for e in by_folder[folder]:
-                writeln(f, f"- `{e['path']}` (lines: {e['lines']}, sha1: {e['sha1'][:10]})")
+                writeln(
+                    f, f"- `{e['path']}` (lines: {e['lines']}, sha1: {e['sha1'][:10]})"
+                )
             writeln(f)  # blank line between sections
 
     # write RAW-URL markdown
@@ -308,7 +403,10 @@ def main() -> None:
         if raw_base:
             writeln(f, f"- raw-base: `{raw_base}`")
         else:
-            writeln(f, "> NOTE: Could not auto-detect GitHub raw base. Provide `--raw-base https://raw.githubusercontent.com/<owner>/<repo>/<branch>`")
+            writeln(
+                f,
+                "> NOTE: Could not auto-detect GitHub raw base. Provide `--raw-base https://raw.githubusercontent.com/<owner>/<repo>/<branch>`",
+            )
         writeln(f)  # blank line after header block
         for folder in sorted(by_folder.keys(), key=lambda s: s.lower()):
             header = folder if folder != "." else "(root)"
@@ -317,13 +415,13 @@ def main() -> None:
             for e in by_folder[folder]:
                 if raw_base:
                     url = f"{raw_base}/{e['path']}"
-                    writeln(f, url)              # bare URL, one per line
+                    writeln(f, url)  # bare URL, one per line
                 else:
-                    writeln(f, e['path'])        # bare relative path
+                    writeln(f, e["path"])  # bare relative path
             writeln(f)  # blank line between sections
 
-
     print(f"[ok] wrote {json_path}, {md_path}, and {raw_md_path}")
+
 
 if __name__ == "__main__":
     main()

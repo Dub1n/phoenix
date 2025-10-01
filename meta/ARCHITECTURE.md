@@ -76,12 +76,14 @@
   - Discovery code depending on file system state not aligned with current dev setups.
   - Lack of verified skins could hide misalignments in renderer assumptions.
 
-- **Current-State Spec:** `Templum/docs/Templum-1.2-spec.md` (updated with reality checks; verify flagged sections before assuming production readiness).
+- **Current-State Spec:** `Templum/docs/current/architecture-spec.md` (updated with reality checks; verify flagged sections before assuming production readiness).
+- **Progress Tracker:** `Templum/docs/current/progress.md` (status of ideal requirements; update alongside spec).
+- **Task Logs:** `Templum/dev/tasks/` (e.g., `unified-session-layer.md`).
 - **Ideal-State References:** `Templum/dev/architecture/` plans and `Templum/dev/CLI/` flows document the end goal. Keep in sync with the spec when implementation progresses.
 - **Pending Review / Verification Files:**
   - `Templum/dev/patterns/README.md` — needs refresh to reflect latest pattern consolidation.
-  - `Templum/docs/ValidationSystem-V3C-Documentation.md` — confirm whether content belongs in Validation System canonical docs.
-  - `Templum/docs/observability-infrastructure.md` & `Templum/docs/TEST-HEALTH-MONITORING.md` — validate against current telemetry stack once instrumentation is in place.
+  - `Templum/docs/target/ValidationSystem-V3C-Documentation.md` — confirm which V3C features will ship and sync with Validation System team.
+  - `Templum/docs/archive/observability-infrastructure.md` & `Templum/docs/archive/TEST-HEALTH-MONITORING.md` — historical detail retained; revisit after verifying observability rollout.
 
 ### 2. Phoenix Code Lite (QMS edition)
 
@@ -126,12 +128,14 @@
   - Potential security/compliance gaps if old agent features remain active.
   - Lack of clarity on how Rust/web deliverable interfaces with PCL services.
 
-- **Current-State Spec:** `phoenix-code-lite/docs/index/ARCHITECTURE-DIAGRAM.md` (now annotated with transition warnings).
+- **Current-State Spec:** `phoenix-code-lite/docs/current/architecture-spec.md` (summarises QMS pivot and outstanding work).
+- **Supplemental Diagrams:** `phoenix-code-lite/docs/current/index/ARCHITECTURE-DIAGRAM.md` (legacy context diagrams—see spec for current caveats).
+- **Progress Tracker:** `phoenix-code-lite/docs/current/progress.md` (mirrors QMS requirements status).
+- **Task Logs:** `phoenix-code-lite/dev/tasks/` (e.g., `skin-exporter.md`).
 - **Ideal-State References:** `docs/03-PCL-QMS/` (notably `09-Current-State.md`, `03-QMS-via-PCL.md`) capture the regulated target model.
 - **Pending Review / Verification Files:**
-  - `phoenix-code-lite/docs/Phoenix-Code-Lite-Specification.md` — still Claude/TDD oriented; reconcile with QMS scope.
-  - `phoenix-code-lite/docs/PHOENIX-CODE-LITE-ARCHITECTURE-needs-validation.md`, `PHOENIX-CODE-LITE-API-needs-validation.md`, `PHOENIX-CODE-LITE-INDEX-needs-validation.md` — determine whether to retire or restate for QMS use.
-  - `phoenix-code-lite/docs/CLI-IMPLEMENTATION-SUMMARY.md` — confirm applicability once CLI is skin-driven.
+  - `phoenix-code-lite/docs/archive/Phoenix-Code-Lite-Specification.md` — legacy Claude/TDD spec kept for reference; confirm if any sections need porting to QMS docs.
+  - `phoenix-code-lite/dev/cli/CLI-IMPLEMENTATION-SUMMARY.md` — confirm applicability once CLI is skin-driven.
   - `phoenix-code-lite/src/claude/` & related agent modules — audit for deprecation during QMS migration.
 
 ### 3. Haruspex
@@ -176,11 +180,13 @@
   - Placeholder data providing false sense of readiness.
   - Model/prediction pipelines unspecified or missing.
 
-- **Current-State Spec:** `Haruspex/docs/00-Spec/Haruspex-2.1-spec.md` (updated with migration caveats).
+- **Current-State Spec:** `Haruspex/docs/current/architecture-spec.md` (updated with migration caveats).
+- **Progress Tracker:** `Haruspex/docs/current/progress.md` (tracks migration readiness of backend).
+- **Task Logs:** `Haruspex/dev/tasks/` (e.g., `backend-skin-generator.md`).
 - **Ideal-State References:** `Haruspex/dev/architecture/` & `dev/03-debugging/` documents outline the desired backend + tooling experience.
 - **Pending Review / Verification Files:**
-  - `Haruspex/docs/00-Spec/Haruspex-2.0-spec.md` — decide whether any content aids the migration notes.
-  - `Haruspex/docs/01-ClaudeCode-Integration/` directory — likely obsolete once Claude-specific flows are retired.
+  - `Haruspex/docs/archive/Haruspex-2.0-spec.md` — decide whether any content aids the migration notes.
+  - `Haruspex/docs/archive/01-Claude-Code-Integration-Architecture.md` — legacy integration doc kept for historical reference; ensure new backend fully decouples from Claude.
   - `Haruspex/src/extension.ts`, `Haruspex/src/extension-enhanced.ts` — evaluate for removal after backend separation.
   - `Haruspex/src/providers/` and `Haruspex/src/components/` that emit WebViews — confirm which can be replaced by skin outputs.
 
@@ -223,8 +229,10 @@
   - Lack of automated tests ensuring orchestrator compatibility with evolving Node versions.
   - Missing coverage for new Templum/Haruspex workflows (e.g., skin validation).
 
-- **Current-State Spec:** `scripts/validation/README-ValidationSystem.md` (callouts added for re-validation of command assumptions).
-- **Ideal-State References:** `scripts/validation/docs/architecture/VALIDATION-SYSTEM-ARCHITECTURE-README.md` + `docs/guides/CORE-VALIDATION-README.md` describe the intended modular validator ecosystem.
+- **Current-State Spec:** `scripts/validation/docs/current/architecture-spec.md` (callouts added for re-validation of command assumptions).
+- **Progress Tracker:** `scripts/validation/docs/current/progress.md` (status of validator ecosystem goals).
+- **Task Logs:** `scripts/validation/dev/tasks/` (e.g., `policy-engine.md`).
+- **Ideal-State References:** `scripts/validation/docs/target/architecture/VALIDATION-SYSTEM-ARCHITECTURE-README.md` + `scripts/validation/docs/current/guides/CORE-VALIDATION-README.md` describe the intended modular validator ecosystem.
 - **Pending Review / Verification Files:**
   - `scripts/validation/templates/README.md` — confirm templates still match orchestrator expectations.
   - `scripts/validation/config/` project manifests — audit for drift once per project integration resumes.

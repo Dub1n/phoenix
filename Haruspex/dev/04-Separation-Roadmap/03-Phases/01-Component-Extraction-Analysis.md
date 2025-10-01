@@ -37,9 +37,9 @@ This phase implements the component analysis principle from the separation archi
 
 - **Component Reuse Matrix**: `../architecture/component-reuse-matrix.md` - Transfer analysis and reuse percentages
 - **Component Transfer Manifest**: `../migration-scripts/component-transfer-manifest.md` - Detailed transfer specifications
-- **Haruspex 1.2 Specification**: `../../docs/00-Spec/Haruspex-1.2-spec.md` - Current state analysis
-- **Haruspex 2.0 Specification**: `../../docs/00-Spec/Haruspex-2.0-spec.md` - Target backend architecture
-- **Templum 1.0 Specification**: `../../../Templum/Templum-1.0-spec.md` - Target interface architecture
+- **Haruspex 2.1 Specification**: `../../docs/current/architecture-spec.md` - Current state analysis
+- **Haruspex 2.0 Specification**: `../../docs/archive/Haruspex-2.0-spec.md` - Target backend architecture
+- **Templum 1.0 Specification**: `../../../Templum/docs/archive/Templum-1.0-spec.md` - Target interface architecture
 - **PCL Source Components**: `../../../phoenix-code-lite/src/cli/` - Source components for transfer
 
 ### Validation Commands
@@ -50,9 +50,9 @@ cd phoenix-code-lite && npm test && npm run build
 cd ../Haruspex && npm test && npm run build
 
 # Verify specification files are current
-ls Haruspex/docs/00-Spec/Haruspex-1.2-spec.md
-ls Haruspex/docs/00-Spec/Haruspex-2.0-spec.md  
-ls Templum/Templum-1.0-spec.md
+ls Haruspex/docs/current/architecture-spec.md
+ls Haruspex/docs/archive/Haruspex-2.0-spec.md  
+ls Templum/docs/archive/Templum-1.0-spec.md
 ```
 
 ### Expected Results

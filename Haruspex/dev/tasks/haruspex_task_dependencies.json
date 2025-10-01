@@ -1,0 +1,47 @@
+{
+  "access-controls.md": [
+    "http-server-refactor.md"
+  ],
+  "analysis-skin-workflows.md": [
+    "backend-skin-generator.md",
+    "programmatic-analyses.md"
+  ],
+  "auditable-logs.md": [],
+  "backend-skin-generator.md": [],
+  "codebase-ingestion-pipeline.md": [
+    "structural-representations.md"
+  ],
+  "diagram-generation.md": [
+    "codebase-ingestion-pipeline.md",
+    "structural-representations.md"
+  ],
+  "dual-interface-sync.md": [
+    "analysis-skin-workflows.md",
+    "backend-skin-generator.md",
+    "skin-navigation-workflows.md"
+  ],
+  "extension-hooks.md": [
+    "codebase-ingestion-pipeline.md",
+    "programmatic-analyses.md"
+  ],
+  "frontmatter-enrichment.md": [],
+  "http-server-refactor.md": [
+    "codebase-ingestion-pipeline.md",
+    "structural-representations.md"
+  ],
+  "job-scheduling.md": [
+    "http-server-refactor.md"
+  ],
+  "programmatic-analyses.md": [
+    "codebase-ingestion-pipeline.md",
+    "structural-representations.md"
+  ],
+  "query-interface.md": [
+    "programmatic-analyses.md",
+    "structural-representations.md"
+  ],
+  "skin-navigation-workflows.md": [
+    "backend-skin-generator.md"
+  ],
+  "structural-representations.md": []
+}

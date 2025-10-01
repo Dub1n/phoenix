@@ -1,0 +1,231 @@
+# Task Template Parameter Combinations
+
+Use these entries to fill in the placeholders in `task_template_prompt.md` when delegating work. Each requirement is listed exactly as it appears in the project’s `docs/current/progress.md`, along with the suggested task file path.
+
+## Templum (`PROJECT_NAME=Templum`, `PROJECT_PATH=Templum`)
+
+- `[x] Zero-knowledge backend registry with auto-discovery (needs verification in latest build).`
+  - `PROJECT_NAME=Templum`, `PROJECT_PATH=Templum`
+  - `TASK_PATH=Templum/dev/tasks/zero-knowledge-registry.md`
+- `[x] Versioned skin contract enforcement (schema validation pending integration tests).`
+  - `PROJECT_NAME=Templum`, `PROJECT_PATH=Templum`
+  - `TASK_PATH=Templum/dev/tasks/versioned-skin-contract.md`
+- `[x] Unified session/context layer across adapters.`
+  - `PROJECT_NAME=Templum`, `PROJECT_PATH=Templum`
+  - `TASK_PATH=Templum/dev/tasks/unified-session-layer.md`
+- `[x] Multi-protocol auto-registration with health checks (documented; requires runtime validation).`
+  - `PROJECT_NAME=Templum`, `PROJECT_PATH=Templum`
+  - `TASK_PATH=Templum/dev/tasks/multi-protocol-auto-registration.md`
+- `[x] Connection lifecycle event broadcasting to interfaces/logs.`
+  - `PROJECT_NAME=Templum`, `PROJECT_PATH=Templum`
+  - `TASK_PATH=Templum/dev/tasks/connection-lifecycle-events.md`
+- `[x] Manual override flow without breaking zero-knowledge behaviour.`
+  - `PROJECT_NAME=Templum`, `PROJECT_PATH=Templum`
+  - `TASK_PATH=Templum/dev/tasks/manual-override-flow.md`
+- `[x] Skin payload consumption powering full UI without hardcoding.`
+  - `PROJECT_NAME=Templum`, `PROJECT_PATH=Templum`
+  - `TASK_PATH=Templum/dev/tasks/skin-payload-consumption.md`
+- `[x] Procedural windowed TUI layout from skin descriptors.`
+  - `PROJECT_NAME=Templum`, `PROJECT_PATH=Templum`
+  - `TASK_PATH=Templum/dev/tasks/procedural-windowed-tui.md`
+- `[x] Asset validation (media/localisation/command bindings).`
+  - `PROJECT_NAME=Templum`, `PROJECT_PATH=Templum`
+  - `TASK_PATH=Templum/dev/tasks/skin-asset-validation.md`
+- `[x] VSCode extension initialisation stable (known WebView load issues).`
+  - `PROJECT_NAME=Templum`, `PROJECT_PATH=Templum`
+  - `TASK_PATH=Templum/dev/tasks/vscode-initialisation-stability.md`
+- `[x] CLI generator uses skin metadata (partially wired, needs full migration).`
+  - `PROJECT_NAME=Templum`, `PROJECT_PATH=Templum`
+  - `TASK_PATH=Templum/dev/tasks/cli-skin-generator.md`
+- `[x] Extensible adapter contract exercised beyond CLI/VSCode.`
+  - `PROJECT_NAME=Templum`, `PROJECT_PATH=Templum`
+  - `TASK_PATH=Templum/dev/tasks/extensible-adapter-contract.md`
+- `[x] Test architecture consolidation and coverage governance (unit/integration/e2e thresholds codified).`
+  - `PROJECT_NAME=Templum`, `PROJECT_PATH=Templum`
+  - `TASK_PATH=Templum/dev/tasks/test-architecture-governance.md`
+- `[x] Release pipeline hardening and packaging verification (artifact signing, CI gating, rollback paths).`
+  - `PROJECT_NAME=Templum`, `PROJECT_PATH=Templum`
+  - `TASK_PATH=Templum/dev/tasks/release-pipeline-hardening.md`
+- `[x] Unified go/no-go checklist with compliance, security, and partner sign-offs.`
+  - `PROJECT_NAME=Templum`, `PROJECT_PATH=Templum`
+  - `TASK_PATH=Templum/dev/tasks/go-no-go-checklist.md`
+- `[x] Final UAT and stakeholder acceptance recorded.`
+  - `PROJECT_NAME=Templum`, `PROJECT_PATH=Templum`
+  - `TASK_PATH=Templum/dev/tasks/final-uat-stakeholder-acceptance.md`
+- `[x] Developer documentation consolidation for post-migration workflows (API surface, adapter guides, onboarding).`
+  - `PROJECT_NAME=Templum`, `PROJECT_PATH=Templum`
+  - `TASK_PATH=Templum/dev/tasks/developer-doc-consolidation.md`
+- `[x] Security and compliance validation sign-off (threat model, audit evidence packaged).`
+  - `PROJECT_NAME=Templum`, `PROJECT_PATH=Templum`
+  - `TASK_PATH=Templum/dev/tasks/security-compliance-validation.md`
+- `[x] Production runbooks and on-call handoff prepared (incident flows, escalation matrix).`
+  - `PROJECT_NAME=Templum`, `PROJECT_PATH=Templum`
+  - `TASK_PATH=Templum/dev/tasks/production-runbooks-handoff.md`
+- `[x] Support/training materials delivered to operations and partner teams.`
+  - `PROJECT_NAME=Templum`, `PROJECT_PATH=Templum`
+  - `TASK_PATH=Templum/dev/tasks/support-training-materials.md`
+- `[x] Change management & post-launch adoption plan executed (communications, feedback loop).`
+  - `PROJECT_NAME=Templum`, `PROJECT_PATH=Templum`
+  - `TASK_PATH=Templum/dev/tasks/change-management-adoption.md`
+- `[x] Structured metrics and logging in place (observability blueprint documented; confirm runtime wiring).`
+  - `PROJECT_NAME=Templum`, `PROJECT_PATH=Templum`
+  - `TASK_PATH=Templum/dev/tasks/observability-instrumentation.md`
+- `[x] Audit hooks aligned with compliance requirements.`
+  - `PROJECT_NAME=Templum`, `PROJECT_PATH=Templum`
+  - `TASK_PATH=Templum/dev/tasks/audit-hooks.md`
+- `[x] Feature flags for scaling enterprise options.`
+  - `PROJECT_NAME=Templum`, `PROJECT_PATH=Templum`
+  - `TASK_PATH=Templum/dev/tasks/feature-flags-enterprise.md`
+- `[x] Haruspex integration path defined (backend pending skin output).`
+  - `PROJECT_NAME=Templum`, `PROJECT_PATH=Templum`
+  - `TASK_PATH=Templum/dev/tasks/haruspex-integration.md`
+- `[x] Phoenix Code Lite skin ingestion validated.`
+  - `PROJECT_NAME=Templum`, `PROJECT_PATH=Templum`
+  - `TASK_PATH=Templum/dev/tasks/pcl-skin-ingestion.md`
+- `[x] Backend contract fixture library for regression coverage.`
+  - `PROJECT_NAME=Templum`, `PROJECT_PATH=Templum`
+  - `TASK_PATH=Templum/dev/tasks/backend-contract-fixtures.md`
+
+## Phoenix Code Lite (`PROJECT_NAME=Phoenix Code Lite`, `PROJECT_PATH=phoenix-code-lite`)
+
+- `[x] Design inputs/requirements/risk traceability (data structures drafted; confirm implementation coverage).`
+  - `PROJECT_NAME=Phoenix Code Lite`, `PROJECT_PATH=phoenix-code-lite`
+  - `TASK_PATH=phoenix-code-lite/dev/tasks/design-traceability-model.md`
+- `[x] Release package export with immutable audit history.`
+  - `PROJECT_NAME=Phoenix Code Lite`, `PROJECT_PATH=phoenix-code-lite`
+  - `TASK_PATH=phoenix-code-lite/dev/tasks/release-package-export.md`
+- `[x] Regulatory metadata catalog (standards clauses, owners, timestamps) live in system.`
+  - `PROJECT_NAME=Phoenix Code Lite`, `PROJECT_PATH=phoenix-code-lite`
+  - `TASK_PATH=phoenix-code-lite/dev/tasks/regulatory-metadata-catalog.md`
+- `[x] Lifecycle orchestration with gated transitions and signatures.`
+  - `PROJECT_NAME=Phoenix Code Lite`, `PROJECT_PATH=phoenix-code-lite`
+  - `TASK_PATH=phoenix-code-lite/dev/tasks/lifecycle-orchestration.md`
+- `[x] Automated artifact generation (forms, reports) from data model.`
+  - `PROJECT_NAME=Phoenix Code Lite`, `PROJECT_PATH=phoenix-code-lite`
+  - `TASK_PATH=phoenix-code-lite/dev/tasks/artifact-generation.md`
+- `[x] Validation System integration blocking promotions on failed checks.`
+  - `PROJECT_NAME=Phoenix Code Lite`, `PROJECT_PATH=phoenix-code-lite`
+  - `TASK_PATH=phoenix-code-lite/dev/tasks/validation-system-integration.md`
+- `[x] Template variants for different release types.`
+  - `PROJECT_NAME=Phoenix Code Lite`, `PROJECT_PATH=phoenix-code-lite`
+  - `TASK_PATH=phoenix-code-lite/dev/tasks/release-template-variants.md`
+- `[x] Skin exporter generating dashboards/boards/report views for Templum *(see dev/tasks/skin-exporter.md)*.`
+  - `PROJECT_NAME=Phoenix Code Lite`, `PROJECT_PATH=phoenix-code-lite`
+  - `TASK_PATH=phoenix-code-lite/dev/tasks/skin-exporter.md`
+- `[x] Contextual SOP references wired into skin definitions.`
+  - `PROJECT_NAME=Phoenix Code Lite`, `PROJECT_PATH=phoenix-code-lite`
+  - `TASK_PATH=phoenix-code-lite/dev/tasks/skin-sop-references.md`
+- `[x] Role-based menu sets derived from skin metadata.`
+  - `PROJECT_NAME=Phoenix Code Lite`, `PROJECT_PATH=phoenix-code-lite`
+  - `TASK_PATH=phoenix-code-lite/dev/tasks/role-based-menus.md`
+- `[x] API/CLI endpoints for ingesting external repo data.`
+  - `PROJECT_NAME=Phoenix Code Lite`, `PROJECT_PATH=phoenix-code-lite`
+  - `TASK_PATH=phoenix-code-lite/dev/tasks/external-ingest-endpoints.md`
+- `[x] Plug-in validator/adapters configuration.`
+  - `PROJECT_NAME=Phoenix Code Lite`, `PROJECT_PATH=phoenix-code-lite`
+  - `TASK_PATH=phoenix-code-lite/dev/tasks/plugin-validator-adapters.md`
+- `[x] Audit logging hooks for compliance.`
+  - `PROJECT_NAME=Phoenix Code Lite`, `PROJECT_PATH=phoenix-code-lite`
+  - `TASK_PATH=phoenix-code-lite/dev/tasks/audit-logging-hooks.md`
+- `[x] Startup configuration validation (validators/templates/storage paths).`
+  - `PROJECT_NAME=Phoenix Code Lite`, `PROJECT_PATH=phoenix-code-lite`
+  - `TASK_PATH=phoenix-code-lite/dev/tasks/startup-config-validation.md`
+- `[x] Offline/online sync strategy implemented.`
+  - `PROJECT_NAME=Phoenix Code Lite`, `PROJECT_PATH=phoenix-code-lite`
+  - `TASK_PATH=phoenix-code-lite/dev/tasks/offline-sync-strategy.md`
+- `[x] Release package generator (zip/pdf) verified.`
+  - `PROJECT_NAME=Phoenix Code Lite`, `PROJECT_PATH=phoenix-code-lite`
+  - `TASK_PATH=phoenix-code-lite/dev/tasks/release-package-generator.md`
+
+## Haruspex (`PROJECT_NAME=Haruspex`, `PROJECT_PATH=Haruspex`)
+
+- `[x] Codebase ingestion pipeline (static analysis modules partially migrated from extension; verify pure backend operation).`
+  - `PROJECT_NAME=Haruspex`, `PROJECT_PATH=Haruspex`
+  - `TASK_PATH=Haruspex/dev/tasks/codebase-ingestion-pipeline.md`
+- `[x] Structural representations (module graphs, dependency matrices) generated without VSCode dependencies.`
+  - `PROJECT_NAME=Haruspex`, `PROJECT_PATH=Haruspex`
+  - `TASK_PATH=Haruspex/dev/tasks/structural-representations.md`
+- `[x] Frontmatter enrichment workflow (deterministic, auditable) operational.`
+  - `PROJECT_NAME=Haruspex`, `PROJECT_PATH=Haruspex`
+  - `TASK_PATH=Haruspex/dev/tasks/frontmatter-enrichment.md`
+- `[x] Programmatic analyses (architecture drift, coupling metrics, risk flags) exposed via API.`
+  - `PROJECT_NAME=Haruspex`, `PROJECT_PATH=Haruspex`
+  - `TASK_PATH=Haruspex/dev/tasks/programmatic-analyses.md`
+- `[x] Diagram generation (Mermaid/graph data) driven by backend results.`
+  - `PROJECT_NAME=Haruspex`, `PROJECT_PATH=Haruspex`
+  - `TASK_PATH=Haruspex/dev/tasks/diagram-generation.md`
+- `[x] Query interface (filters vs. free-form chat) available.`
+  - `PROJECT_NAME=Haruspex`, `PROJECT_PATH=Haruspex`
+  - `TASK_PATH=Haruspex/dev/tasks/query-interface.md`
+- `[x] HTTP server boots (handlers still tied to legacy components; replace with backend-native logic).`
+  - `PROJECT_NAME=Haruspex`, `PROJECT_PATH=Haruspex`
+  - `TASK_PATH=Haruspex/dev/tasks/http-server-refactor.md`
+- `[x] Job scheduling/progress tracking/cancellation implemented.`
+  - `PROJECT_NAME=Haruspex`, `PROJECT_PATH=Haruspex`
+  - `TASK_PATH=Haruspex/dev/tasks/job-scheduling.md`
+- `[x] Skin definition emission for dashboards/code navigation *(see dev/tasks/backend-skin-generator.md)*.`
+  - `PROJECT_NAME=Haruspex`, `PROJECT_PATH=Haruspex`
+  - `TASK_PATH=Haruspex/dev/tasks/backend-skin-generator.md`
+- `[x] Navigation workflows encoded in skin payloads.`
+  - `PROJECT_NAME=Haruspex`, `PROJECT_PATH=Haruspex`
+  - `TASK_PATH=Haruspex/dev/tasks/skin-navigation-workflows.md`
+- `[x] Analysis launch/approval/export flows mediated by Templum.`
+  - `PROJECT_NAME=Haruspex`, `PROJECT_PATH=Haruspex`
+  - `TASK_PATH=Haruspex/dev/tasks/analysis-skin-workflows.md`
+- `[x] Dual interface sync (CLI/VSCode) validated.`
+  - `PROJECT_NAME=Haruspex`, `PROJECT_PATH=Haruspex`
+  - `TASK_PATH=Haruspex/dev/tasks/dual-interface-sync.md`
+- `[x] Auditable logs for analyses and approvals.`
+  - `PROJECT_NAME=Haruspex`, `PROJECT_PATH=Haruspex`
+  - `TASK_PATH=Haruspex/dev/tasks/auditable-logs.md`
+- `[x] Access controls for write operations.`
+  - `PROJECT_NAME=Haruspex`, `PROJECT_PATH=Haruspex`
+  - `TASK_PATH=Haruspex/dev/tasks/access-controls.md`
+- `[x] Extension hooks for additional static analysis engines.`
+  - `PROJECT_NAME=Haruspex`, `PROJECT_PATH=Haruspex`
+  - `TASK_PATH=Haruspex/dev/tasks/extension-hooks.md`
+
+## Validation System (`PROJECT_NAME=Validation System`, `PROJECT_PATH=scripts/validation`)
+
+- `[x] Core execution loop deterministic across projects (requires recent smoke tests).`
+  - `PROJECT_NAME=Validation System`, `PROJECT_PATH=scripts/validation`
+  - `TASK_PATH=scripts/validation/dev/tasks/core-execution-determinism.md`
+- `[x] Validator dependency graph support (pre/post checks, shared resources).`
+  - `PROJECT_NAME=Validation System`, `PROJECT_PATH=scripts/validation`
+  - `TASK_PATH=scripts/validation/dev/tasks/validator-dependency-graph.md`
+- `[x] Configuration discovery with schema validation (ensure configs align with new structure).`
+  - `PROJECT_NAME=Validation System`, `PROJECT_PATH=scripts/validation`
+  - `TASK_PATH=scripts/validation/dev/tasks/config-discovery.md`
+- `[x] Baseline categories (backend/ui/core/build/quality) maintained; re-run to confirm outputs.`
+  - `PROJECT_NAME=Validation System`, `PROJECT_PATH=scripts/validation`
+  - `TASK_PATH=scripts/validation/dev/tasks/baseline-validator-revalidation.md`
+- `[x] New validator contract documentation and enforcement.`
+  - `PROJECT_NAME=Validation System`, `PROJECT_PATH=scripts/validation`
+  - `TASK_PATH=scripts/validation/dev/tasks/validator-contract.md`
+- `[x] Machine-readable result exports (JSON/JUnit) standardised.`
+  - `PROJECT_NAME=Validation System`, `PROJECT_PATH=scripts/validation`
+  - `TASK_PATH=scripts/validation/dev/tasks/validator-result-exports.md`
+- `[x] API/CLI interface for embedding in PCL workflows (roadmap item).`
+  - `PROJECT_NAME=Validation System`, `PROJECT_PATH=scripts/validation`
+  - `TASK_PATH=scripts/validation/dev/tasks/pcl-embedding-interface.md`
+- `[x] Artifact production for PCL traceability (align with QMS design).`
+  - `PROJECT_NAME=Validation System`, `PROJECT_PATH=scripts/validation`
+  - `TASK_PATH=scripts/validation/dev/tasks/pcl-artifact-production.md`
+- `[ ] Remote execution triggers (CI/agent workflows) with idempotent reruns.`
+  - `PROJECT_NAME=Validation System`, `PROJECT_PATH=scripts/validation`
+  - `TASK_PATH=scripts/validation/dev/tasks/remote-execution-triggers.md`
+- `[ ] Audit logging of executions with environment metadata.`
+  - `PROJECT_NAME=Validation System`, `PROJECT_PATH=scripts/validation`
+  - `TASK_PATH=scripts/validation/dev/tasks/validator-audit-logging.md`
+- `[ ] Validator health/performance monitoring.`
+  - `PROJECT_NAME=Validation System`, `PROJECT_PATH=scripts/validation`
+  - `TASK_PATH=scripts/validation/dev/tasks/validator-health-monitoring.md`
+- `[ ] Policy engine for required validators per release type *(see dev/tasks/policy-engine.md)*.`
+  - `PROJECT_NAME=Validation System`, `PROJECT_PATH=scripts/validation`
+  - `TASK_PATH=scripts/validation/dev/tasks/policy-engine.md`
+- `[ ] Skin metadata for Templum visualisation (future goal).`
+  - `PROJECT_NAME=Validation System`, `PROJECT_PATH=scripts/validation`
+  - `TASK_PATH=scripts/validation/dev/tasks/templum-skin-metadata.md`
+- `[ ] Streaming/subscription hooks for progress updates.`
+  - `PROJECT_NAME=Validation System`, `PROJECT_PATH=scripts/validation`
+  - `TASK_PATH=scripts/validation/dev/tasks/streaming-hooks.md`

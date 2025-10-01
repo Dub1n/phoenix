@@ -89,7 +89,7 @@ This phase implements the complete Universal Skin System described in the Templu
 
 - **Component Reuse Matrix**: `../01-Architecture/01-component-reuse-matrix.md` - Skin system reuse guidance and patterns
 - **Phase 4 Backend Results**: `04-Backend-Service-Transformation.md` - Previous phase findings and API contracts
-- **Templum 1.0 Specification**: `../../../Templum/Templum-1.0-spec.md` - Target skin system architecture
+- **Templum 1.0 Specification**: `../../../Templum/docs/archive/Templum-1.0-spec.md` - Target skin system architecture
 - **PCL Skin Examples**: `../../../phoenix-code-lite/src/cli/skins/` - Reference skin implementations
 - **Haruspex Skin Provider**: Results from Phase 4 skin provider interface implementation
 
