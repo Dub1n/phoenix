@@ -406,7 +406,17 @@ export class AdaptiveCLIIntegration extends EventEmitter {
       }
 
       // Step 3: Initialize navigation system based on capabilities
-      await this.initializeNavigationSystem(result);
+      try {
+        await this.initializeNavigationSystem(result);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        result.errors?.push(`Navigation system initialization failed: ${message}`);
+
+        const fallbackWarning = 'Falling back to original CLI adapter due to integration issues';
+        if (this.config.mcpPreservation?.fallbackToOriginal && !result.warnings?.includes(fallbackWarning)) {
+          await this.fallbackToOriginal(result);
+        }
+      }
 
       // Step 4: Apply adaptive configuration based on detection results
       await this.applyAdaptiveConfiguration(result);
@@ -414,7 +424,8 @@ export class AdaptiveCLIIntegration extends EventEmitter {
       // Step 5: Finalize integration
       await this.finalizeIntegration(result);
 
-      result.success = true;
+      result.fallbacksActive = Array.from(this.state.activeFallbacks);
+      result.success = !(result.errors && result.errors.length > 0);
       this.emit('initializationCompleted', result);
 
     } catch (error) {
@@ -440,9 +451,10 @@ export class AdaptiveCLIIntegration extends EventEmitter {
   ): Promise<void> {
     this.emit('compatibilityDetectionStarted');
 
-    this.state.compatibilitySystem = createTerminalCompatibilitySystem();
-    
-    const compatibilityResult = await this.state.compatibilitySystem.initialize(forceRefresh);
+    const compatibilitySystem = this.getCompatibilitySystem();
+    this.state.compatibilitySystem = compatibilitySystem;
+
+    const compatibilityResult = await compatibilitySystem.initialize(forceRefresh);
     this.state.compatibilityResult = compatibilityResult;
     this.state.capabilities = compatibilityResult.capabilities;
     this.state.lastDetectionTime = new Date();
@@ -451,9 +463,12 @@ export class AdaptiveCLIIntegration extends EventEmitter {
     result.compatibilityScore = compatibilityResult.score;
 
     if (compatibilityResult.fallbacksRequired.length > 0) {
-      result.fallbacksActive = compatibilityResult.fallbacksRequired;
       this.state.activeFallbacks = new Set(compatibilityResult.fallbacksRequired);
+    } else {
+      this.state.activeFallbacks.clear();
     }
+
+    result.fallbacksActive = Array.from(this.state.activeFallbacks);
 
     if (compatibilityResult.overall === 'poor' || compatibilityResult.overall === 'incompatible') {
       result.warnings?.push('Terminal compatibility is limited, enabling enhanced fallback modes');
@@ -510,8 +525,10 @@ export class AdaptiveCLIIntegration extends EventEmitter {
         result.warnings?.push(...navigationResult.warnings);
       }
 
-      if (navigationResult.errors) {
-        result.errors?.push(...navigationResult.errors);
+      if (navigationResult.errors && navigationResult.errors.length > 0) {
+        navigationResult.errors.forEach(errorMessage => {
+          result.errors?.push(`Navigation system initialization failed: ${errorMessage}`);
+        });
       }
 
       // Update fallbacks if navigation system required additional ones
@@ -525,8 +542,15 @@ export class AdaptiveCLIIntegration extends EventEmitter {
       this.emit('navigationSystemInitializationCompleted', navigationResult);
 
     } catch (error) {
-      result.errors?.push(`Navigation system initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      throw error;
+      const message = `Navigation system initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
+      result.errors?.push(message);
+      this.state.navigationInitialized = false;
+      result.navigationSystemActive = false;
+      this.emit('navigationSystemInitializationFailed', error);
+
+      if (this.config.mcpPreservation?.fallbackToOriginal) {
+        await this.fallbackToOriginal(result);
+      }
     }
   }
 
@@ -582,7 +606,17 @@ export class AdaptiveCLIIntegration extends EventEmitter {
   private async applyAdaptiveConfiguration(result: AdaptiveCLIResult): Promise<void> {
     // Determine optimal mode
     const optimalMode = this.determineOptimalMode();
-    this.state.currentMode = optimalMode;
+
+    if (
+      optimalMode === 'original' &&
+      this.config.mcpPreservation?.fallbackToOriginal &&
+      this.state.mcpValidationResult &&
+      !this.state.mcpValidationResult.success
+    ) {
+      await this.fallbackToOriginal(result);
+    } else {
+      this.state.currentMode = optimalMode;
+    }
 
     // Generate recommended settings
     result.recommendedSettings = {
@@ -696,7 +730,10 @@ export class AdaptiveCLIIntegration extends EventEmitter {
     this.state.currentMode = 'original';
     this.state.isEnhanced = false;
     
-    result.warnings?.push('Falling back to original CLI adapter due to integration issues');
+    const warningMessage = 'Falling back to original CLI adapter due to integration issues';
+    if (!result.warnings?.includes(warningMessage)) {
+      result.warnings?.push(warningMessage);
+    }
     this.emit('fallbackActivated', 'original');
   }
 
@@ -724,7 +761,10 @@ export class AdaptiveCLIIntegration extends EventEmitter {
   /**
    * Get compatibility system if available
    */
-  getCompatibilitySystem(): TerminalCompatibilitySystem | null {
+  getCompatibilitySystem(): TerminalCompatibilitySystem {
+    if (!this.state.compatibilitySystem) {
+      this.state.compatibilitySystem = createTerminalCompatibilitySystem();
+    }
     return this.state.compatibilitySystem;
   }
 
@@ -765,7 +805,7 @@ export class AdaptiveCLIIntegration extends EventEmitter {
     try {
       this.state.currentMode = mode;
       
-      if (mode === 'enhanced' && !this.state.isEnhanced && this.state.navigationSystem) {
+      if (mode === 'enhanced' && this.state.navigationSystem) {
         await this.enhanceOriginalAdapter();
         this.state.isEnhanced = true;
       } else if (mode !== 'enhanced' && this.state.isEnhanced) {
@@ -806,7 +846,11 @@ export class AdaptiveCLIIntegration extends EventEmitter {
    */
   async cleanup(): Promise<void> {
     if (this.state.navigationSystem) {
-      await this.state.navigationSystem.cleanup();
+      try {
+        await this.state.navigationSystem.cleanup();
+      } catch (error) {
+        this.emit('cleanupWarning', error);
+      }
     }
 
     this.removeAllListeners();

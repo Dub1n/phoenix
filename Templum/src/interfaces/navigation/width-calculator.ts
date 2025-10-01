@@ -24,7 +24,7 @@ tags: [cli, navigation, sizing, responsive]
  * Pattern-Info: { approach: "content-analysis", alternatives: "fixed-width", trade-offs: "computation-overhead" }
  */
 
-import * as chalk from 'chalk';
+import chalk from 'chalk';
 import { BorderCapabilityDetector } from './border-renderer';
 import { StringUtils, StringWidthUtils } from '../../utils/chainable-string-utils';
 

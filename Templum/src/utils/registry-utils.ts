@@ -154,7 +154,12 @@ export abstract class BaseRegistry<TComponent, TConfig = unknown> extends EventE
     const start = Date.now();
     this.logger.info('Initializing registry', { config: this.config });
 
-    await handleAsync(this.onBeforeInitialize(config), 'registry.beforeInitialize');
+    await handleAsync(
+      (async () => {
+        await this.onBeforeInitialize(config);
+      })(),
+      'registry.beforeInitialize'
+    );
 
     for (const registration of this.registrations.values()) {
       if (registration.lifecycle?.eager) {
@@ -174,7 +179,12 @@ export abstract class BaseRegistry<TComponent, TConfig = unknown> extends EventE
       this.scheduleIntelligenceUpdates();
     }
 
-    await handleAsync(this.onAfterInitialize(config), 'registry.afterInitialize');
+    await handleAsync(
+      (async () => {
+        await this.onAfterInitialize(config);
+      })(),
+      'registry.afterInitialize'
+    );
     this.logger.info('Registry initialization completed', { durationMs: Date.now() - start });
     this.emit('initialized', { config, durationMs: Date.now() - start });
   }
@@ -189,7 +199,12 @@ export abstract class BaseRegistry<TComponent, TConfig = unknown> extends EventE
       this.intelligenceTimer = undefined;
     }
 
-    await handleAsync(this.onBeforeDispose(), 'registry.beforeDispose');
+    await handleAsync(
+      (async () => {
+        await this.onBeforeDispose();
+      })(),
+      'registry.beforeDispose'
+    );
 
     for (const [name, component] of this.components) {
       const registration = this.registrations.get(name);
@@ -206,7 +221,12 @@ export abstract class BaseRegistry<TComponent, TConfig = unknown> extends EventE
     this.metrics.disposedAt = Date.now();
     this.initialized = false;
 
-    await handleAsync(this.onAfterDispose(), 'registry.afterDispose');
+    await handleAsync(
+      (async () => {
+        await this.onAfterDispose();
+      })(),
+      'registry.afterDispose'
+    );
     this.emit('disposed');
   }
 

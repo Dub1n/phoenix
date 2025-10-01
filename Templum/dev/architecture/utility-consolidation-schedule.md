@@ -12,17 +12,17 @@ dependencies: ['utility-consolidation-playbook', 'utility-consolidation-onboardi
 
 ## Execution Grid — Cohort A (Data Management)
 
-| Slot A                         | Slot B          | Slot C                         |
-| ------------------------------ | --------------- | ------------------------------ |
-| [x] P:10, S:0–1                | [x] P:11, S:0–1 | [x] P:12, S:0–1                |
-| -                              | -               | [x] P:12, S:2                  |
-| -                              | -               | [~] P:12, S:2.5 (0a[x], 0b[~]) |
-| [x] P:10, S:2                  | -               | [~] P:12, S:3                  |
-| [~] P:10, S:2.5 (0a[ ], 0b[ ]) | [x] P:11, S:2   | [ ] P:12, S:4                  |
-| [ ] P:10, S:3                  | [ ] P:11, S:2.5 | -                              |
-| [ ] P:10, S:4                  | [ ] P:11, S:3   | [ ] P:12, S:C                  |
-| [ ] P:10, S:C                  | [ ] P:11, S:4   | [ ] A Closeout                 |
-| -                              | [ ] P:11, S:C   | -                              |
+| Slot A                         | Slot B                                | Slot C                         |
+| ------------------------------ | ------------------------------------- | ------------------------------ |
+| [x] P:10, S:0–1                | [x] P:11, S:0–1                       | [x] P:12, S:0–1                |
+| -                              | -                                     | [x] P:12, S:2                  |
+| -                              | -                                     | [x] P:12, S:2.5 (0a[x], 0b[x]) |
+| [x] P:10, S:2                  | -                                     | [x] P:12, S:3                  |
+| [x] P:10, S:2.5 (0a[x], 0b[x]) | [x] P:11, S:2                         | [x] P:12, S:4                  |
+| [~] P:10, S:3                  | [~] P:11, S:2.5 (0a[~], 0b[~], 0c[ ]) | -                              |
+| [ ] P:10, S:4                  | [ ] P:11, S:3                         | [ ] P:12, S:C                  |
+| [ ] P:10, S:C                  | [ ] P:11, S:4                         | [ ] A Closeout                 |
+| -                              | [ ] P:11, S:C                         | -                              |
 
 ## Execution Grid — Cohort B (Display & Terminal)
 
@@ -50,7 +50,8 @@ Give coordinators an initial cohort plan that balances throughput with low colli
 - Only two utilities may sit in **Stage 2** simultaneously. Begin the next utility’s Stage 2 only after an existing one advances to Stage 2.5.
 - Treat Stage **2.5** as the hub for Phase 0 work: break remediation tasks into parallel Phase 0a/0b/0c lanes, list them in this schedule using `[ ]`, `[~]`, `[x]`, or `[B]`, and keep the plan/playbook entries in sync.
 - Stage **2.5** must show all Phase 0 lanes at `[x]` before any Stage 3 migrations begin; verify the pattern plan checkboxes are ticked first.
-- Stage **3** is a living phase. Only one utility per cohort should advance into Stage 3 migrations at a time, but completed phases stay checked while new blockers are routed back through Stage 2.5.
+- Stage **2.5** must show all Phase 0 lanes at `[x]` before any Stage 3 migrations begin; verify the pattern plan checkboxes are ticked first. Phases 1–4 can proceed in parallel once Phase 0 lanes are complete—each agent keeps their glyph at `[x]` when their deliverables/tests are done and documents any dependencies on sibling phases in plan/log notes.
+- Stage **3** is a living phase. Only one utility per cohort should advance into Stage 3 migrations at a time, but completed phases stay checked while new blockers are routed back through Stage 2.5. If validation hinges on a parallel phase, leave the completed phase marker at `[x]` and annotate the dependency rather than downgrading status.
 - Hand-offs occur after Stages 1, 2, 2.5, and 3. Each hand-off requires an updated plan (`utility-consolidation-plans/pattern-{{Pattern}}.md`) and activity-log entry.
 
 ## Cohort Overview
@@ -72,5 +73,5 @@ Give coordinators an initial cohort plan that balances throughput with low colli
 - When a Phase 0 lane finishes, flip its glyph to `[x]` here, in the pattern plan, and in `safe-consolidation-candidates.md`. If a lane becomes blocked, mark `[B]`, capture the issue in the activity log, and revisit Stage 2.5 planning.
 - When a utility advances to Stage 3, verify that no other cohort is scheduled to migrate the same consumers; reschedule if clashes emerge. Leave previously completed phases checked while new blockers route back through Stage 2.5.
 - Upon closing a cohort, archive a brief retrospective entry in the activity log referencing this schedule (e.g., “Cohort A closed — schedule updated to reflect completion”).
-- 2025-10-01: Pattern 12 Stage 3 validation blocked — `npm run phase6-health` fails on legacy TypeScript errors (interface-adapter-registry, event/protocol/resilience/registry utils, type-guards) and navigation Jest suites fail on missing theme/emoji helpers; re-run once upstream fixes land.
+- 2025-10-02: Pattern 12 Phase 0b remediation complete — TypeScript build and navigation Jest suites now passing; `npm run phase6-health` now succeeds using the mock-backed `phoenix-code-lite` `start:service` (delegates to `Templum/tests/integration/mocks/pcl-mock-service.ts` while Haruspex stays skipped by default).
 - If additional cohorts are required, clone the grid structure, align patterns by category, and append to this document. Apply the same Phase 0 lane notation for new Stage 2.5 entries.

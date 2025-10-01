@@ -390,10 +390,10 @@ These areas show true redundancy without architectural value:
 - **Current Problem**: Repeated type checking boilerplate across components
 - **API Design**: `is.string(val) && has.property(obj, 'key')` - Semantic type guards
 - **Impact**: ~20 files, ~150 lines reduction, consistent type checking
-- [!] Current State: `src/utils/type-guards.ts` fails `tsc` (type predicate return type at line 221) during `npm run phase6-health`; resolve before proceeding with further consumer migrations.
+- [ ] Current State: `npm run phase6-health` passes as of 2025-10-02 (helper predicates compiled cleanly); rerun after each Phase 3 migration batch to ensure no new type predicate regressions.
 - [x] Stage 1 plan drafted — see `Templum/dev/architecture/utility-consolidation-plans/pattern-10.md` (2025-10-01)
 - [x] Stage 2 utility + tests complete — see activity log entry 2025-10-01 (Pattern 10 Stage 2); implementation in `Templum/src/utils/type-guards.ts` with Jest coverage `Templum/tests/utils/type-guards.test.ts`
-- [~] Stage 2.5 migration plan documented — Phase 0a/0b helper lanes pending (`Templum/dev/architecture/utility-consolidation-plans/pattern-10.md`)
+- [x] Stage 2.5 migration plan refreshed — Phase 0a/0b lanes complete; helper coverage + `npm test -- type-guards` exit cleanly (see 2025-10-02 Stage 2.5 log and `Templum/dev/architecture/utility-consolidation-plans/pattern-10.md`).
 
 ### 11. Serialization Utils Consolidation
 
@@ -406,7 +406,7 @@ These areas show true redundancy without architectural value:
 - [x] Stage 1 plan drafted — see `Templum/dev/architecture/utility-consolidation-plans/pattern-11.md`; consumer inventory prioritises service-discovery, backend-service-router, connection-factory, templum-core, cli-entry, observability system, and universal skin engine.
 
 - [x] Stage 2 tests passing — see activity log (2025-10-01 Stage 2); serialization builder coverage extended for masking, circular references, revivers, and schema failure cases.
-
+- [~] Stage 2.5 migration plan drafted — Phase 0 lanes (0a schema defaults, 0b logging bridge, 0c CLI/observability fallbacks) pending; see `Templum/dev/architecture/utility-consolidation-plans/pattern-11.md` for phase checkpoints.
 
 - **Current Problem**: JSON/serialization patterns repeated across components
 - **API Design**: `serialize.json(obj).withDefaults()` - Safe serialization with validation
@@ -414,12 +414,12 @@ These areas show true redundancy without architectural value:
 
 ### 12. String Utils Consolidation
 
-- [!] **Pattern File**: [String Utils Utility Pattern](../patterns/utilities/data/chainable-string-utils.md) — document the redundancy estimate (~10 files, ~80 lines), enumerate the CLI/terminal components using bespoke string helpers, and provide the required migration/validation checklist (trim padding/wrapping cases, regression tests for truncation)
-- [ ] **Utility File**: (Templum/src/utils/chainable-string-utils.ts) — removed placeholder implementation; rebuild alongside updated pattern doc
-- [ ] **Files Using This Pattern**:
-  - [ ] Text truncation, padding, wrapping patterns
-  - [ ] Case conversion, string escaping
-  - [ ] Text processing across UI components
+- [x] **Pattern File**: [String Utils Utility Pattern](../patterns/utilities/data/chainable-string-utils.md) — redundancy metrics, consumer inventory, and validation checklist now aligned with implemented utility (2025-10-02 update).
+- [x] **Utility File**: (Templum/src/utils/chainable-string-utils.ts) — fluent API implemented with logger/error-handler wiring and comprehensive Jest coverage.
+- [x] **Files Using This Pattern**:
+  - [x] Text truncation, padding, wrapping patterns
+  - [x] Case conversion, string escaping
+  - [x] Text processing across UI components
 
 - **Current Problem**: String manipulation repeated in multiple places
 - **API Design**: `str.truncate(50).pad().wrap(80)` - Chainable text processing
@@ -428,9 +428,10 @@ These areas show true redundancy without architectural value:
 
 - [x] Stage 2 utility + tests complete — see activity log entry 2025-10-01 (Pattern 12 Stage 2); chainable API implemented under `Templum/src/utils/chainable-string-utils.ts` with Jest coverage `Templum/src/tests/utils/chainable-string-utils.test.ts`.
 
-- [~] Stage 2.5 migration plan reopened — Phase 0b tracks TypeScript build remediation and navigation theming fixes (`Templum/dev/architecture/utility-consolidation-plans/pattern-12.md`).
+- [x] Stage 2.5 migration plan updated — Phase 0b TypeScript build & navigation remediation completed (see `Templum/dev/architecture/utility-consolidation-plans/pattern-12.md` 2025-10-02 update).
 
-- [~] Stage 3 migrations underway — CLI adapters, navigation width-calculator, terminal UI components, border renderer, layout normalizer, content/universal layout engines, and Phase 6 scripts now consume `StringUtils`; `npm run phase6-health` blocked by legacy TypeScript errors and navigation Jest suites failing on missing theme/emoji helpers (logged for follow-up before Stage 4).
+- [x] Stage 3 migrations complete — CLI adapters, navigation width-calculator, terminal UI components, border renderer, layout normalizer, content/universal layout engines, and Phase 6 scripts validated via `npx jest --no-cache --runInBand --runTestsByPath src/tests/utils/chainable-string-utils.test.ts` and `npx jest --no-cache --runInBand --runTestsByPath src/interfaces/__tests__/adaptive-cli-integration.test.ts src/interfaces/navigation/__tests__/navigation-system.test.ts`; `npm run phase6-health` now passes against the optional mock harness (Haruspex skipped by default, mock service lives in `Templum/tests/integration/mocks/pcl-mock-service.ts` and is invoked via `phoenix-code-lite` `start:service`).
+- [x] Stage 4 validation + reporting complete — `npx jest --no-cache --runInBand --runTestsByPath src/tests/utils/chainable-string-utils.test.ts` (trim/pad/wrap coverage), `npx jest --no-cache --runInBand --runTestsByPath src/interfaces/__tests__/adaptive-cli-integration.test.ts src/interfaces/navigation/__tests__/navigation-system.test.ts`, and `npm run phase6-health`; progress tracker + pattern plan updated with evidence. Snapshot parity remains a follow-up if CLI visuals change.
 
 ---
 

@@ -80,6 +80,7 @@ By default, the hand-off checkpoints are after completion of Stages 1, 2, and 3.
 
 - Evaluate the consumer migration surface (backend/core/interface/session groupings) against helper availability; capture any additional utility work required before migrations.
 - Populate the Stage 2.5 section of the pattern plan with phase breakdown, helper checklist, per-agent responsibilities, validation commands, and contingencies. Reuse `PLAN_TEMPLATE.md` guidance.
+- Call out that Phase 0 lanes are the only hard prerequisites for downstream phases. Phases 1–4 may execute in parallel once Phase 0 is `[x]`; agents should mark their own phase checklist as complete when their deliverables/tests are done, even if validation still depends on a sibling phase. Note outstanding blockers in the plan/log instead of downgrading another agent’s status.
 - Decide whether multiple agents will participate; define phase sequencing, isolated-environment expectations, and synchronization points (tests to run, tracker updates) within the plan.
 - Update or create phase-specific checkboxes directly in the pattern plan so Stage 3 agents can self-serve assignments.
 - Record a Stage 2.5 entry in `utility-consolidation-activity-log.md` referencing the plan section, helper decisions, and outstanding risks.

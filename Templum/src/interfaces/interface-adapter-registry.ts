@@ -30,7 +30,7 @@ export interface InterfaceAdapterRegistryInitializeConfig
   orchestrator: ITemplumOrchestrator;
 }
 
-interface AdapterRegistrationMetadata {
+interface AdapterRegistrationMetadata extends Record<string, unknown> {
   interfaceType: InterfaceType;
   eager: boolean;
 }

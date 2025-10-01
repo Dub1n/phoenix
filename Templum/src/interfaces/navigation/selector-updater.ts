@@ -109,7 +109,7 @@ export class AdaptiveSelector {
   constructor(config: Partial<SelectorConfig> = {}) {
     this.config = {
       character: SELECTOR_CHARACTERS.standard,
-      selectedCharacter: SELECTOR_CHARACTERS.selected,
+      selectedCharacter: SELECTOR_CHARACTERS.standard,
       spacing: 1,
       alignment: 'left',
       theme: DefaultColorThemes.default,
@@ -118,6 +118,11 @@ export class AdaptiveSelector {
       accessibilityMode: false,
       ...config
     };
+
+    // Ensure selected character defaults to the active character when not provided
+    if (!this.config.selectedCharacter) {
+      this.config.selectedCharacter = this.config.character;
+    }
 
     this.terminalSupportsUnicode = this.detectUnicodeSupport();
     
@@ -241,8 +246,12 @@ export class AdaptiveSelector {
         this.config.selectedCharacter = SELECTOR_CHARACTERS.accessibleSelected;
       } else {
         this.config.character = SELECTOR_CHARACTERS.standard;
-        this.config.selectedCharacter = SELECTOR_CHARACTERS.selected;
+        this.config.selectedCharacter = SELECTOR_CHARACTERS.standard;
       }
+    }
+
+    if (!this.config.selectedCharacter) {
+      this.config.selectedCharacter = this.config.character;
     }
   }
 

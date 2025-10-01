@@ -1,8 +1,8 @@
 # context index (raw links)
 
-- generated: `2025-10-01T09:06:02Z`
+- generated: `2025-10-01T21:08:59Z`
 - root: `VDL_Vault`
-- paths-hash: `a9adcbb27dc5d57688145df2d668dafffffcd7ca`
+- paths-hash: `492a340c842ddd89a9f90873f1163c31a37bbbd7`
 - raw-base: `https://raw.githubusercontent.com/Dub1n/phoenix/main`
 
 ## Haruspex
@@ -15,7 +15,6 @@ https://raw.githubusercontent.com/Dub1n/phoenix/main/Haruspex/docs/current/archi
 
 https://raw.githubusercontent.com/Dub1n/phoenix/main/meta/ARCHITECTURE.md
 https://raw.githubusercontent.com/Dub1n/phoenix/main/meta/context_index.md
-https://raw.githubusercontent.com/Dub1n/phoenix/main/meta/context_index_raw.md
 https://raw.githubusercontent.com/Dub1n/phoenix/main/meta/templates/architecture-spec.md
 https://raw.githubusercontent.com/Dub1n/phoenix/main/meta/workflows/README.md
 
@@ -34,7 +33,6 @@ https://raw.githubusercontent.com/Dub1n/phoenix/main/phoenix-code-lite/README.md
 https://raw.githubusercontent.com/Dub1n/phoenix/main/scripts/shimdex/ARCHITECTURE.md
 https://raw.githubusercontent.com/Dub1n/phoenix/main/scripts/shimdex/dev.md
 https://raw.githubusercontent.com/Dub1n/phoenix/main/scripts/shimdex/README.md
-https://raw.githubusercontent.com/Dub1n/phoenix/main/scripts/validation/AGENT-ARCHITECTURE-IMPLEMENTATION-SUMMARY.md
 https://raw.githubusercontent.com/Dub1n/phoenix/main/scripts/validation/docs/current/architecture-spec.md
 https://raw.githubusercontent.com/Dub1n/phoenix/main/scripts/validation/docs/current/guides/CORE-VALIDATION-README.md
 https://raw.githubusercontent.com/Dub1n/phoenix/main/scripts/validation/README.md

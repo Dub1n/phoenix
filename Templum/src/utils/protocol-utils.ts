@@ -178,7 +178,7 @@ const DEFAULT_VALIDATOR: ProtocolMessageValidator = (message, config) => {
   };
 };
 
-const DEFAULT_CONFIG: Pick<ProtocolConfig, 'timeoutMs' | 'retries' | 'autoReconnect' | 'idleTimeoutMs'> = {
+const DEFAULT_CONFIG: Required<Pick<ProtocolConfig, 'timeoutMs' | 'retries' | 'autoReconnect' | 'idleTimeoutMs'>> = {
   timeoutMs: TIMEOUTS.NORMAL,
   retries: 3,
   autoReconnect: true,
@@ -380,6 +380,9 @@ export class ProtocolSession extends EventEmitter {
     }
 
     const next = this.pendingQueue[0];
+    if (!next) {
+      return;
+    }
     try {
       await this.send(next.message);
       next.resolve();

@@ -1,6 +1,30 @@
 export * from './logger';
-export * from './error-handler';
-export * from './async-utils';
+export {
+  ErrorHandler,
+  handle,
+  handleError,
+  handleAsync,
+  wrap,
+  wrapAsync,
+  withFallback,
+  withFallbackAsync,
+  retry as retryWithErrorHandler
+} from './error-handler';
+export type { AsyncErrorOptions, RetryOptions as ErrorHandlerRetryOptions } from './error-handler';
+export {
+  AsyncUtils,
+  withTimeout,
+  retry,
+  sleep,
+  debounce,
+  throttle,
+  raceWithTimeout,
+  allWithTimeout,
+  delay,
+  cleanup,
+  TIMEOUTS
+} from './async-utils';
+export type { RetryOptions } from './async-utils';
 export * from './terminal-formatter';
 export * from './window-utils';
 export * from './event-utils';

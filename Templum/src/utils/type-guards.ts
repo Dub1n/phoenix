@@ -25,6 +25,14 @@ export const TypeGuards = {
   isObject(value: unknown): value is Record<string, unknown> {
     return typeof value === 'object' && value !== null && !Array.isArray(value);
   },
+  isPlainObject(value: unknown): value is Record<string, unknown> {
+    if (!TypeGuards.isObject(value)) {
+      return false;
+    }
+
+    const prototype = Object.getPrototypeOf(value);
+    return prototype === Object.prototype || prototype === null;
+  },
   isArray(value: unknown): value is unknown[] {
     return Array.isArray(value);
   },
@@ -86,6 +94,10 @@ export interface PropertyValidationOptions {
   allowNull?: boolean;
   typeGuard?: (value: unknown) => boolean;
   customValidator?: (value: unknown) => boolean;
+}
+
+export interface SemanticValidationOptions extends PropertyValidationOptions {
+  minimumConfidence?: number;
 }
 
 export class PropertyGuards {
@@ -214,6 +226,68 @@ export class SemanticValidators {
       });
       return result.exists && result.confidence >= 80;
     });
+  }
+
+  static hasFunction(
+    obj: unknown,
+    propertyPath: string,
+    options: SemanticValidationOptions = {},
+  ): boolean {
+    const {
+      minimumConfidence = 80,
+      required = true,
+      allowUndefined = false,
+      allowNull = false,
+      typeGuard,
+      ...rest
+    } = options;
+
+    const result = PropertyGuards.validateProperty(obj, propertyPath, {
+      ...rest,
+      required,
+      allowUndefined,
+      allowNull,
+      typeGuard: (value: unknown) =>
+        TypeGuards.isFunction(value) && (typeof typeGuard === 'function' ? typeGuard(value) : true),
+    });
+
+    return result.exists && result.confidence >= minimumConfidence;
+  }
+
+  static hasArrayOf<T>(
+    obj: unknown,
+    propertyPath: string,
+    elementGuard: TypeGuard<T>,
+    options: SemanticValidationOptions = {},
+  ): boolean {
+    const {
+      minimumConfidence = 80,
+      required = true,
+      allowUndefined = false,
+      allowNull = false,
+      typeGuard,
+      ...rest
+    } = options;
+
+    const result = PropertyGuards.validateProperty(obj, propertyPath, {
+      ...rest,
+      required,
+      allowUndefined,
+      allowNull,
+      typeGuard: (value: unknown) => {
+        if (!TypeValidators.isArrayOf(value, elementGuard)) {
+          return false;
+        }
+
+        if (typeof typeGuard === 'function') {
+          return typeGuard(value);
+        }
+
+        return true;
+      },
+    });
+
+    return result.exists && result.confidence >= minimumConfidence;
   }
 
   static isValidStructure<T extends Record<string, unknown>>(

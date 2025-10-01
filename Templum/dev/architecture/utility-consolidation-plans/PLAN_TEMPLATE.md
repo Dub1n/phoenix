@@ -56,6 +56,7 @@
 - [ ] Phase 3 — Interface & navigation migration complete (tests run: ___)
 - [ ] Phase 4 — Session & utilities migration complete (tests run: ___)
 - _If any checkbox is blocked, set the Stage 2.5 status back to `[~]`, capture the blocker below, and refresh the plan before checking the item again; previously completed phases stay complete unless the updated plan says otherwise._
+- _Phases 1–4 can run in parallel once Phase 0 lanes are `[x]`. When you finish your deliverables/tests, mark your box `[x]` and document any dependencies on sibling phases in the coordination notes instead of reverting another agent’s status._
 
 ### Validation Artefacts & Commands
 

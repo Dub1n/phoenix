@@ -8,7 +8,7 @@ description: [Terminal UI components for progress indication, user interaction, 
 ---
 **/
 
-import * as chalk from 'chalk';
+import chalk, { Chalk } from 'chalk';
 import * as readline from 'readline';
 import { EventEmitter } from 'events';
 import { StringUtils, StringWidthUtils } from '../utils/chainable-string-utils';
@@ -27,14 +27,14 @@ import { StringUtils, StringWidthUtils } from '../utils/chainable-string-utils';
  */
 export interface TerminalColorTheme {
   name: string;
-  primary: chalk.Chalk;
-  secondary: chalk.Chalk;
-  success: chalk.Chalk;
-  warning: chalk.Chalk;
-  error: chalk.Chalk;
-  info: chalk.Chalk;
-  accent: chalk.Chalk;
-  muted: chalk.Chalk;
+  primary: Chalk;
+  secondary: Chalk;
+  success: Chalk;
+  warning: Chalk;
+  error: Chalk;
+  info: Chalk;
+  accent: Chalk;
+  muted: Chalk;
 }
 
 export const DefaultColorThemes: Record<string, TerminalColorTheme> = {

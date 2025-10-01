@@ -22,7 +22,7 @@
  * @since 2025-09-13
  */
 
-import * as chalk from 'chalk';
+import chalk from 'chalk';
 import { HealthStatus, HealthCheckResult } from './health-monitor';
 import { ProgressiveTimeoutManager } from './progressive-timeout-manager';
 

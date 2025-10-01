@@ -1,10 +1,10 @@
 ---
 date-created: 2025-09-14T00:00:00Z
-last-updated: 2025-09-14T19:55:00Z
+last-updated: 2025-10-02T20:23:30Z
 name: chainable-string-utils
 description: Chainable string utility unifying truncation, padding, wrapping, and casing for CLI and renderer outputs.
 status:
-  - "[!]"
+  - "[x]"
 category: data-management
 use-when:
   - CLI or renderer code needs consistent trimming, padding, or wrapping behaviour without bespoke helpers.
@@ -113,11 +113,11 @@ export interface StringUtils {
 
 ## Validation & Regression Checklist
 
-- [ ] Cover trimming permutations (`trimStart`, `trimEnd`, `trimBoth`) including ANSI-colour strings.
-- [ ] Validate padding alignment for even/odd widths and double-width Unicode characters.
-- [ ] Exercise wrapping for hard-break and soft-break modes (e.g., long URLs, command descriptions).
-- [ ] Add regression tests ensuring truncation preserves ellipsis width, never overflows configured column, and handles strings shorter than `maxWidth`.
-- [ ] Snapshot CLI outputs (service status tables, validation run summaries) before/after migration to confirm visual parity.
+- [x] Cover trimming permutations (`trimStart`, `trimEnd`, `trimBoth`) including ANSI-colour strings (`src/tests/utils/chainable-string-utils.test.ts`).
+- [x] Validate padding alignment for even/odd widths and double-width Unicode characters (see `pad respects double-width glyphs` test in `chainable-string-utils.test.ts`).
+- [x] Exercise wrapping for hard-break and soft-break modes (utility + integration suites for CLI/navigation).
+- [x] Add regression tests ensuring truncation preserves ellipsis width, never overflows configured column, and handles strings shorter than `maxWidth` (unit coverage + `truncate leaves shorter strings untouched`).
+- [ ] Snapshot CLI outputs (service status tables, validation run summaries) before/after migration to confirm visual parity — existing integration suites assert runtime behaviour; snapshot refresh still pending if CLI redesign triggers deltas.
 
 ## Test Strategy
 

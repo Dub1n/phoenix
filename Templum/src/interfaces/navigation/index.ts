@@ -41,10 +41,14 @@ import { createWindowStack } from './window-stack';
 import { createBreadcrumbManager } from './breadcrumb-manager';
 import { createExitHandler } from './exit-handler';
 import { createSelectorUpdater } from './selector-updater';
+import type { SelectorConfig } from './selector-updater';
 import { createAccessibilityManager } from './accessibility-enhancements';
 
 // Core rendering components
 export {
+  BorderRenderer,
+  AccessibleBorderRenderer,
+  BorderCapabilityDetector,
   createBorderRenderer,
   createAccessibleBorderRenderer,
   UNICODE_BORDERS,
@@ -52,63 +56,56 @@ export {
 } from './border-renderer';
 
 export type {
-  BorderRenderer,
-  AccessibleBorderRenderer,
   WindowBorderConfig,
-  BorderCapabilityDetector
+  BorderCharacterSet
 } from './border-renderer';
 
 export {
+  WidthCalculator,
+  ResponsiveWidthCalculator,
+  ContentAnalyzer,
+  PaddingManager,
   createWidthCalculator,
   createResponsiveWidthCalculator
 } from './width-calculator';
 
 export type {
-  WidthCalculator,
-  ResponsiveWidthCalculator,
-  ContentAnalyzer,
-  PaddingManager,
   WidthCalculationOptions,
   WidthCalculationResult
 } from './width-calculator';
 
-export {
-  StringWidthUtils
-} from '../../utils/chainable-string-utils';
+export { StringWidthUtils } from '../../utils/chainable-string-utils';
 
 // Window and navigation management
 export {
+  WindowStack,
+  EnhancedWindowStack,
   createWindowStack,
   createEnhancedWindowStack
 } from './window-stack';
 
 export type {
-  WindowStack,
-  EnhancedWindowStack,
   WindowDefinition,
   NavigationContext,
   BreadcrumbEntry
 } from './window-stack';
 
 export {
+  BreadcrumbManager,
+  PathTracker,
+  NavigationRenderer,
   createBreadcrumbManager,
   createBreadcrumbEntry
 } from './breadcrumb-manager';
 
-export type {
-  BreadcrumbManager,
-  PathTracker,
-  NavigationRenderer
-} from './breadcrumb-manager';
-
 export {
+  ExitHandler,
+  SessionAwareExitHandler,
   createExitHandler,
   createSessionAwareExitHandler
 } from './exit-handler';
 
 export type {
-  ExitHandler,
-  SessionAwareExitHandler,
   ExitConfirmationDialog,
   CleanupManager,
   ExitConfirmationConfig,
@@ -120,6 +117,9 @@ export type {
 // EmojiRemover functionality removed
 
 export {
+  SelectorUpdater,
+  AdaptiveSelector,
+  MenuFormatter,
   createSelectorUpdater,
   applySelector,
   batchApplySelectors,
@@ -127,11 +127,10 @@ export {
 } from './selector-updater';
 
 export type {
-  SelectorUpdater,
-  AdaptiveSelector,
-  MenuFormatter,
   SelectorConfig,
-  SelectionState
+  SelectionState,
+  SelectorFormatOptions,
+  MenuFormatResult
 } from './selector-updater';
 
 // Terminal compatibility and accessibility
@@ -346,11 +345,16 @@ export class NavigationSystem {
       // Initialize exit handler
       this.exitHandler = createExitHandler(this.config.exitHandling);
 
-      this.selectorUpdater = createSelectorUpdater({
+      const selectorConfig: Partial<SelectorConfig> = {
         character: capabilities?.supportsUnicode ? '›' : '>',
-        accessibilityMode: !capabilities?.supportsUnicode,
-        theme: capabilities?.supportsColor ? undefined : DefaultColorThemes.monochrome
-      });
+        accessibilityMode: !capabilities?.supportsUnicode
+      };
+
+      if (capabilities && !capabilities.supportsColor) {
+        selectorConfig.theme = DefaultColorThemes.monochrome;
+      }
+
+      this.selectorUpdater = createSelectorUpdater(selectorConfig);
 
       // Initialize accessibility manager
       if (this.config.accessibility?.enableKeyboardNavigation || 

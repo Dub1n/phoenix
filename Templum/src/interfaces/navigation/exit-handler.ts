@@ -600,7 +600,11 @@ export class ExitHandler extends EventEmitter implements TypedEventEmitter<ExitH
       process.removeListener(signal as any, handler);
     });
 
-    // Exit process
+    // Avoid terminating the process when running under automated tests
+    if (process.env.JEST_WORKER_ID || process.env.NODE_ENV === 'test') {
+      return;
+    }
+
     process.exit(code);
   }
 

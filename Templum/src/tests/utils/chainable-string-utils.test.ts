@@ -74,6 +74,38 @@ describe('Chainable String Utils', () => {
     expect(result.width).toBe(7);
   });
 
+  test('trim modes handle targeted whitespace and preserve ANSI sequences', () => {
+    const startTrimmed = StringUtils.chain('   templum', { trim: 'start' }).value();
+    const endTrimmed = StringUtils.chain('templum   ', { trim: 'end' }).value();
+    const ansiValue = '  \u001b[31m templum \u001b[0m  ';
+    const ansiTrimmed = StringUtils.chain(ansiValue, { trim: 'both' }).value();
+
+    expect(startTrimmed).toBe('templum');
+    expect(endTrimmed).toBe('templum');
+    const stripped = ansiTrimmed.replace(/\u001b\[[0-9;]*m/g, '');
+
+    expect(ansiTrimmed.startsWith('\u001b[31m')).toBe(true);
+    expect(ansiTrimmed.endsWith('\u001b[0m')).toBe(true);
+    expect(stripped).toBe(' templum ');
+  });
+
+  test('pad respects double-width glyphs for terminal output', () => {
+    const result = StringUtils.chain('渋谷', { mode: 'terminal' }).pad(6).inspect();
+
+    expect(result.value).toBe('渋谷  ');
+    expect(result.width).toBe(6);
+    expect(result.truncated).toBe(false);
+  });
+
+  test('truncate leaves shorter strings untouched and preserves width budget', () => {
+    const value = 'templum';
+    const result = StringUtils.chain(value).truncate(10).inspect();
+
+    expect(result.value).toBe(value);
+    expect(result.truncated).toBe(false);
+    expect(result.width).toBeLessThanOrEqual(10);
+  });
+
   test('convenience helpers delegate through chain for consistency', () => {
     expect(StringUtils.truncate('TemplumUtility', 9)).toBe('TemplumU…');
     expect(StringUtils.pad('Templum', 10)).toBe('Templum   ');

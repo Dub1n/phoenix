@@ -33,6 +33,15 @@ describe('TypeGuards', () => {
     expect(TypeGuards.isInteger(10)).toBe(true);
     expect(TypeGuards.isInteger(10.5)).toBe(false);
   });
+
+  it('detects plain objects accurately', () => {
+    expect(TypeGuards.isPlainObject({})).toBe(true);
+    expect(TypeGuards.isPlainObject(Object.create(null))).toBe(true);
+    expect(TypeGuards.isPlainObject([])).toBe(false);
+    expect(TypeGuards.isPlainObject(new Date())).toBe(false);
+    class Example {}
+    expect(TypeGuards.isPlainObject(new Example())).toBe(false);
+  });
 });
 
 describe('TypeValidators', () => {
@@ -114,6 +123,55 @@ describe('SemanticValidators', () => {
     const response = { success: true, data: { value: 1 } };
     expect(SemanticValidators.isValidAPIResponse(response)).toBe(true);
     expect(SemanticValidators.isValidAPIResponse({ success: 'yes' })).toBe(false);
+  });
+
+  it('reports function presence with confidence thresholds', () => {
+    const candidate = {
+      registry: {
+        bootstrap: () => true,
+      },
+    };
+
+    expect(
+      SemanticValidators.hasFunction(candidate, 'registry.bootstrap', {
+        minimumConfidence: 70,
+      }),
+    ).toBe(true);
+
+    expect(
+      SemanticValidators.hasFunction({ registry: { bootstrap: 'nope' } }, 'registry.bootstrap'),
+    ).toBe(false);
+
+    expect(
+      SemanticValidators.hasFunction({}, 'registry.bootstrap', {
+        required: false,
+        allowUndefined: true,
+      }),
+    ).toBe(false);
+  });
+
+  it('validates array payloads using semantic helpers', () => {
+    const candidate = {
+      payloads: {
+        adapters: ['cli', 'ui'],
+      },
+    };
+
+    expect(
+      SemanticValidators.hasArrayOf(candidate, 'payloads.adapters', TypeGuards.isString),
+    ).toBe(true);
+
+    expect(
+      SemanticValidators.hasArrayOf(candidate, 'payloads.adapters', TypeGuards.isNumber),
+    ).toBe(false);
+
+    expect(
+      SemanticValidators.hasArrayOf(
+        { payloads: { adapters: ['cli', 42] } },
+        'payloads.adapters',
+        TypeGuards.isString,
+      ),
+    ).toBe(false);
   });
 });
 

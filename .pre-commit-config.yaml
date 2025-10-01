@@ -12,5 +12,8 @@ repos:
           - -c
           - |
             set -euo pipefail
-            python scripts/IDE-manager/generate-context-index.py
-            git add meta/context_index.md meta/context_index.json || true
+            if command -v python3 >/dev/null 2>&1; then
+              python3 scripts/IDE-manager/generate-context-index.py
+            else
+              python scripts/IDE-manager/generate-context-index.py
+            fi

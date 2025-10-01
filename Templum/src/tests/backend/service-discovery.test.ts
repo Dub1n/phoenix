@@ -190,6 +190,24 @@ describe('ServiceDiscovery', () => {
       // Should not throw and should return empty array
       expect(discovered).toEqual([]);
     });
+
+    it('should emit strategyError when strategy is missing discover implementation', async () => {
+      const invalidStrategy = { name: 'invalid-strategy', priority: 50 } as unknown as DiscoveryStrategy;
+      const errorSpy = jest.fn();
+      serviceDiscovery.on('strategyError', errorSpy);
+
+      serviceDiscovery.addStrategy(invalidStrategy);
+
+      const discovered = await serviceDiscovery.discoverServices();
+
+      expect(discovered).toEqual([]);
+      expect(errorSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          strategy: 'invalid-strategy',
+          error: expect.any(Error),
+        }),
+      );
+    });
   });
 
   describe('RegistryBasedDiscoveryStrategy', () => {
@@ -292,6 +310,40 @@ describe('ServiceDiscovery', () => {
 
       await expect(strategy.discover()).rejects.toThrow();
     });
+
+    it('should skip services with non-numeric pid values in services directory', async () => {
+      mockFs.existsSync.mockImplementation((target: fs.PathLike) => {
+        const value = target.toString();
+        if (value.endsWith('service-registry.json')) {
+          return false;
+        }
+        return value.includes('services');
+      });
+
+      mockFs.readdirSync.mockReturnValue(['service.json']);
+      (mockFs.readFileSync as jest.Mock).mockImplementation((filePath: fs.PathOrFileDescriptor) => {
+        if (filePath.toString().endsWith('service.json')) {
+          return JSON.stringify({
+            id: 'svc',
+            endpoint: 'http://localhost:4100',
+            pid: 'not-a-number',
+            protocol: 'http'
+          });
+        }
+        return '';
+      });
+
+      const mockRequest = { on: jest.fn() } as any;
+      mockHttp.get.mockImplementation((_url: any, callback: any) => {
+        callback({ statusCode: 200 });
+        return mockRequest;
+      });
+
+      const discovered = await strategy.discover();
+
+      expect(discovered).toHaveLength(0);
+      expect(mockFs.unlinkSync).not.toHaveBeenCalled();
+    });
   });
 
   describe('ConfigurationBasedDiscoveryStrategy', () => {
@@ -372,6 +424,19 @@ describe('ServiceDiscovery', () => {
 
       expect(discovered).toHaveLength(1);
       expect(discovered[0].config.service).toBe('valid-service');
+    });
+
+    it('should ignore non-object entries in configuration backends array', async () => {
+      const config = {
+        backends: ['just-a-string', null, 42]
+      };
+
+      mockFs.existsSync.mockReturnValue(true);
+      mockFs.readFileSync.mockReturnValue(JSON.stringify(config));
+
+      const discovered = await strategy.discover();
+
+      expect(discovered).toHaveLength(0);
     });
 
     it('should return empty array when configuration file does not exist', async () => {

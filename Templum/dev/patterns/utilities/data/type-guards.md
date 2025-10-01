@@ -66,6 +66,9 @@ export const TypeGuards = {
   // Object type validation
   isObject: (value: unknown): value is Record<string, unknown> => 
     typeof value === 'object' && value !== null && !Array.isArray(value),
+  isPlainObject: (value: unknown): value is Record<string, unknown> =>
+    TypeGuards.isObject(value) &&
+    (Object.getPrototypeOf(value) === Object.prototype || Object.getPrototypeOf(value) === null),
   isArray: (value: unknown): value is unknown[] => Array.isArray(value),
   isEmptyObject: (value: unknown): value is Record<string, never> =>
     TypeGuards.isObject(value) && Object.keys(value).length === 0,
@@ -270,6 +273,8 @@ export class PropertyGuards {
 /**
  * High-level semantic API for common validation patterns
  */
+type SemanticValidationOptions = PropertyValidationOptions & { minimumConfidence?: number };
+
 export class SemanticValidators {
   /**
    * Validates object has all required properties with high confidence
@@ -288,6 +293,49 @@ export class SemanticValidators {
       });
       return result.exists && result.confidence >= 80;
     });
+  }
+
+  /**
+   * Ensures the specified property path resolves to a callable with confidence thresholds
+   */
+  static hasFunction(
+    obj: unknown,
+    propertyPath: string,
+    options: SemanticValidationOptions = {}
+  ): boolean {
+    const { minimumConfidence = 80, ...rest } = options;
+    const result = PropertyGuards.validateProperty(obj, propertyPath, {
+      ...rest,
+      required: rest.required ?? true,
+      allowUndefined: rest.allowUndefined ?? false,
+      allowNull: rest.allowNull ?? false,
+      typeGuard: (value: unknown) =>
+        TypeGuards.isFunction(value) && (!rest.typeGuard || rest.typeGuard(value)),
+    });
+
+    return result.exists && result.confidence >= minimumConfidence;
+  }
+
+  /**
+   * Validates array-typed properties using downstream element guards
+   */
+  static hasArrayOf<T>(
+    obj: unknown,
+    propertyPath: string,
+    elementGuard: (value: unknown) => value is T,
+    options: SemanticValidationOptions = {}
+  ): boolean {
+    const { minimumConfidence = 80, ...rest } = options;
+    const result = PropertyGuards.validateProperty(obj, propertyPath, {
+      ...rest,
+      required: rest.required ?? true,
+      allowUndefined: rest.allowUndefined ?? false,
+      allowNull: rest.allowNull ?? false,
+      typeGuard: (value: unknown) =>
+        TypeValidators.isArrayOf(value, elementGuard) && (!rest.typeGuard || rest.typeGuard(value)),
+    });
+
+    return result.exists && result.confidence >= minimumConfidence;
   }
   
   /**

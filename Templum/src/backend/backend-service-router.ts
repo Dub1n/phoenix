@@ -41,6 +41,7 @@ import { ServiceDiscovery, ServiceDiscoveryOptions } from './service-discovery';
 // Available via require('./backend-integration-config') if needed in future
 import { ITemplumOrchestrator } from '../interfaces/templum-orchestrator-interface';
 // Migration Note (2025-09-01): TemplumSkinDefinition alias no longer needed with unified types
+import { SemanticValidators, TypeGuards, TypeValidators } from '../utils/type-guards';
 
 // IPC Protocol Types (Based on Haruspex IPC Protocol)
 export type IPCMessageType = 
@@ -1024,8 +1025,15 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
   private async queryServiceCapabilities(serviceId: string, connection: BackendConnection): Promise<string[]> {
     // STEP 1: Check capabilities from skin definition (single source of truth)
     const backendConfig = this.backendConfigs.get(serviceId);
-    if (backendConfig?.capabilities && Array.isArray(backendConfig.capabilities) && backendConfig.capabilities.length > 0) {
-      console.log(`[SKIN-CAPABILITIES] Using capabilities from skin definition for ${serviceId}:`, backendConfig.capabilities);
+    if (
+      backendConfig?.capabilities &&
+      TypeValidators.isArrayOf(backendConfig.capabilities, TypeGuards.isNonEmptyString) &&
+      backendConfig.capabilities.length > 0
+    ) {
+      console.log(
+        `[SKIN-CAPABILITIES] Using capabilities from skin definition for ${serviceId}:`,
+        backendConfig.capabilities,
+      );
       return backendConfig.capabilities;
     }
     
@@ -1035,9 +1043,16 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
         console.log(`[API-CAPABILITIES] Calling explicit capabilitiesEndpoint for ${serviceId}: ${backendConfig.capabilitiesEndpoint}`);
         const response = await this.callBackendServiceAPI(connection, 'getCapabilities', {});
         
-        if (response && response.capabilities && Array.isArray(response.capabilities)) {
-          console.log(`[API-CAPABILITIES] Retrieved capabilities from endpoint for ${serviceId}:`, response.capabilities);
-          return response.capabilities;
+        if (
+          TypeGuards.isPlainObject(response) &&
+          SemanticValidators.hasArrayOf(response, 'capabilities', TypeGuards.isNonEmptyString, {
+            required: true,
+            minimumConfidence: 75,
+          })
+        ) {
+          const capabilityList = (response as { capabilities: string[] }).capabilities;
+          console.log(`[API-CAPABILITIES] Retrieved capabilities from endpoint for ${serviceId}:`, capabilityList);
+          return capabilityList;
         }
       } catch (error) {
         console.warn(`[API-CAPABILITIES] Failed to query capabilities endpoint for ${serviceId}:`, error);

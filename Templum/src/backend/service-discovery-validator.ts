@@ -16,6 +16,7 @@ import { ServiceDiscovery, DiscoveredService } from './service-discovery';
 import { BackendDependencyResolver, DependencyResolutionResult } from './backend-dependency-resolver';
 import { BackendConfig } from '../types/universal-skin-engine-types';
 import { createTemplumError } from '../types/templum-types';
+import { SemanticValidators, TypeGuards, TypeValidators } from '../utils/type-guards';
 
 export interface ServiceValidationResult {
   serviceId: string;
@@ -435,8 +436,14 @@ export class ServiceDiscoveryValidator extends EventEmitter {
         
         if (response.ok) {
           const capabilityData = await response.json();
-          if (capabilityData.capabilities && Array.isArray(capabilityData.capabilities)) {
-            capabilities.push(...capabilityData.capabilities);
+          if (
+            TypeGuards.isPlainObject(capabilityData) &&
+            SemanticValidators.hasArrayOf(capabilityData, 'capabilities', TypeGuards.isNonEmptyString, {
+              required: true,
+              minimumConfidence: 75,
+            })
+          ) {
+            capabilities.push(...(capabilityData as { capabilities: string[] }).capabilities);
           }
         }
       }
@@ -451,8 +458,14 @@ export class ServiceDiscoveryValidator extends EventEmitter {
           
           if (skinResponse.ok) {
             const skinData = await skinResponse.json();
-            if (skinData.capabilities && Array.isArray(skinData.capabilities)) {
-              capabilities.push(...skinData.capabilities);
+            if (
+              TypeGuards.isPlainObject(skinData) &&
+              SemanticValidators.hasArrayOf(skinData, 'capabilities', TypeGuards.isNonEmptyString, {
+                required: true,
+                minimumConfidence: 70,
+              })
+            ) {
+              capabilities.push(...(skinData as { capabilities: string[] }).capabilities);
             }
           }
         } catch {

@@ -55,10 +55,13 @@ class Phase6ValidationCLI {
   private validationSuite?: Phase6IntegrationValidationSuite;
   private config: ValidationConfig;
   private outputDir: string;
+  private useRealBackends: boolean;
 
   constructor() {
     this.config = this.loadDefaultConfig();
     this.outputDir = DEFAULT_OUTPUT_DIR;
+    this.useRealBackends = this.parseEnvUseRealBackends();
+    this.configureBackendEnv(this.useRealBackends);
   }
 
   /**
@@ -89,6 +92,7 @@ class Phase6ValidationCLI {
       .option('--no-production', 'Disable production readiness validation')
       .option('--services <services>', 'Comma-separated list of services to test (haruspex,pcl,templum)', 'haruspex,pcl,templum')
       .option('--format <format>', 'Report format (json|html|markdown|all)', 'all')
+      .option('--use-real-backends', 'Run validation against real backend services (default: mocks)')
       .option('-v, --verbose', 'Enable verbose logging')
       .action(async (options) => {
         await this.executeValidation(options);
@@ -99,6 +103,7 @@ class Phase6ValidationCLI {
       .command('health')
       .description('Check system health and service availability')
       .option('-c, --config <file>', 'Configuration file path', DEFAULT_CONFIG_FILE)
+      .option('--use-real-backends', 'Check health using real backend services (default: mocks)')
       .option('-v, --verbose', 'Enable verbose logging')
       .action(async (options) => {
         await this.executeHealthCheck(options);
@@ -112,6 +117,7 @@ class Phase6ValidationCLI {
         program.createCommand('start')
           .description('Start all backend services')
           .option('-s, --service <name>', 'Start specific service (haruspex|pcl|templum)')
+          .option('--use-real-backends', 'Start real backend processes instead of mocks')
           .action(async (options) => {
             await this.manageServices('start', options);
           })
@@ -120,6 +126,7 @@ class Phase6ValidationCLI {
         program.createCommand('stop')
           .description('Stop all backend services')
           .option('-s, --service <name>', 'Stop specific service (haruspex|pcl|templum)')
+          .option('--use-real-backends', 'Stop real backend processes')
           .action(async (options) => {
             await this.manageServices('stop', options);
           })
@@ -127,8 +134,9 @@ class Phase6ValidationCLI {
       .addCommand(
         program.createCommand('status')
           .description('Check service status')
-          .action(async () => {
-            await this.checkServiceStatus();
+          .option('--use-real-backends', 'Show status for real backend processes')
+          .action(async (options) => {
+            await this.checkServiceStatus(options);
           })
       );
 
@@ -167,7 +175,9 @@ class Phase6ValidationCLI {
 
       // Initialize validation suite
       console.log('📋 Initializing Phase 6 validation suite...');
-      this.validationSuite = new Phase6IntegrationValidationSuite();
+      const useRealBackends = this.shouldUseRealBackends(options);
+      this.configureBackendEnv(useRealBackends);
+      this.validationSuite = new Phase6IntegrationValidationSuite({ useRealBackends });
       
       // Setup progress monitoring
       this.setupProgressMonitoring();
@@ -229,7 +239,9 @@ class Phase6ValidationCLI {
       }
 
       // Initialize validation suite for health check
-      this.validationSuite = new Phase6IntegrationValidationSuite();
+      const useRealBackends = this.shouldUseRealBackends(options);
+      this.configureBackendEnv(useRealBackends);
+      this.validationSuite = new Phase6IntegrationValidationSuite({ useRealBackends });
       await this.validationSuite.initialize();
 
       // Check service health
@@ -283,7 +295,15 @@ class Phase6ValidationCLI {
     console.log(`${action === 'start' ? '🚀' : '🛑'} ${action.charAt(0).toUpperCase() + action.slice(1)}ing services...\n`);
 
     try {
-      this.validationSuite = new Phase6IntegrationValidationSuite();
+      const useRealBackends = this.shouldUseRealBackends(options);
+      if (!useRealBackends) {
+        console.log('ℹ️ Service management commands require real backend processes. Use --use-real-backends to enable them.');
+        process.exit(0);
+        return;
+      }
+
+      this.configureBackendEnv(useRealBackends);
+      this.validationSuite = new Phase6IntegrationValidationSuite({ useRealBackends });
       await this.validationSuite.initialize();
 
       if (action === 'start') {
@@ -310,11 +330,13 @@ class Phase6ValidationCLI {
   /**
    * Check service status
    */
-  private async checkServiceStatus(): Promise<void> {
+  private async checkServiceStatus(options: any = {}): Promise<void> {
     console.log('📊 Service Status Check\n');
 
     try {
-      this.validationSuite = new Phase6IntegrationValidationSuite();
+      const useRealBackends = this.shouldUseRealBackends(options);
+      this.configureBackendEnv(useRealBackends);
+      this.validationSuite = new Phase6IntegrationValidationSuite({ useRealBackends });
       await this.validationSuite.initialize();
 
       const services = await this.validationSuite.getAllServiceStatuses();
@@ -372,6 +394,30 @@ class Phase6ValidationCLI {
     }
   }
 
+  private parseEnvUseRealBackends(): boolean {
+    const env = process.env.PHASE6_USE_REAL_BACKENDS;
+    if (env === undefined) {
+      return false;
+    }
+    return !['0', 'false', 'False', 'FALSE'].includes(env);
+  }
+
+  private shouldUseRealBackends(options?: any): boolean {
+    if (options && Object.prototype.hasOwnProperty.call(options, 'useRealBackends')) {
+      return !!options.useRealBackends;
+    }
+    if (typeof this.useRealBackends === 'boolean') {
+      return this.useRealBackends;
+    }
+    return this.parseEnvUseRealBackends();
+  }
+
+  private configureBackendEnv(useReal: boolean): void {
+    this.useRealBackends = useReal;
+    process.env.PHASE6_USE_REAL_BACKENDS = useReal ? '1' : '0';
+    process.env.PHASE6_SKIP_HARUSPEX = useReal ? '0' : '1';
+  }
+
   /**
    * Apply CLI options to configuration
    */
@@ -382,6 +428,10 @@ class Phase6ValidationCLI {
       this.config.services.haruspex.enabled = enabledServices.includes('haruspex');
       this.config.services.pcl.enabled = enabledServices.includes('pcl');
       this.config.services.templum.enabled = enabledServices.includes('templum');
+    }
+
+    if (Object.prototype.hasOwnProperty.call(options, 'useRealBackends')) {
+      this.useRealBackends = !!options.useRealBackends;
     }
 
     // Override validation settings

@@ -29,6 +29,7 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` not started · `[!]` broken · 
 ## Backend Connectivity
 
 - [?] [Multi-protocol auto-registration with health checks](../../dev/tasks/multi-protocol-auto-registration.md) (documented; requires runtime validation)
+- [~] [Optional backend mock harness for integration suite](../../dev/tasks/optional-backend-mock-harness.md) (mock run: `npm run phase6-validation`; dual run: `PHASE6_RUN_REAL=1 npm run phase6-validation:full`; contract assertions now guard mock payloads)
 - [ ] [Connection lifecycle event broadcasting to interfaces/logs](../../dev/tasks/connection-lifecycle-events.md)
 - [ ] [Manual override flow without breaking zero-knowledge behaviour](../../dev/tasks/manual-override-flow.md)
 
@@ -47,6 +48,8 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` not started · `[!]` broken · 
 ## Quality & Release Readiness
 
 - [ ] [Test architecture consolidation and coverage governance](../../dev/tasks/test-architecture-governance.md) (unit/integration/e2e thresholds codified)
+- [x] [Chainable String Utils consolidation (Pattern 12) Stage 4](../../dev/architecture/utility-consolidation-plans/pattern-12.md) (final validation via targeted Jest suites + `npm run phase6-health`; snapshot refresh still optional)
+- [ ] [Process signal listener consolidation](../../dev/tasks/process-signal-listener-consolidation.md) (deduplicate CLI/navigation signal + stdin handlers to eliminate recurring MaxListeners warnings and enforce teardown discipline)
 - [ ] [Utility consolidation execution playbook rollout](../../dev/architecture/utility-consolidation-playbook.md) (playbook published; onboard agents and begin logging activity at ../../dev/architecture/utility-consolidation-activity-log.md)
 - [ ] [Release pipeline hardening and packaging verification](../../dev/tasks/release-pipeline-hardening.md) (artifact signing, CI gating, rollback paths)
 - [ ] [Unified go/no-go checklist with compliance, security, and partner sign-offs](../../dev/tasks/go-no-go-checklist.md)

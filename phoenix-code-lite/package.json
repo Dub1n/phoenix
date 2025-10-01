@@ -16,6 +16,7 @@
     "test:watch": "jest --watch",
     "lint": "eslint src/**/*.ts",
     "start": "node dist/index.js",
+    "start:service": "ts-node ../Templum/tests/integration/mocks/pcl-mock-service.ts",
     "prepublishOnly": "npm run build"
   },
   "keywords": [

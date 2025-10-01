@@ -58,6 +58,26 @@ last_updated: 2025-09-22
 - **Deployment:** Supports headless daemon + separate CLI/VSCode interfaces once process separation stabilises.
 - **Compliance:** Must provide traceable logs and health reports for regulated workflows; integrate with Validation System once categories are defined.
 
+### Phase 6 Validation CLI Reference
+
+| Command | Purpose | Defaults | Real Backend Trigger |
+|---------|---------|----------|----------------------|
+| `npm run phase6-validation` | Build artifacts then execute the Phase 6 suite against mock backends with contract enforcement. | Sets `PHASE6_USE_REAL_BACKENDS=0`, `PHASE6_SKIP_HARUSPEX=1`; fails fast on payload drift via mock harness schemas. | Opt in later with env or flags when needed. |
+| `npm run phase6-validation:full` | Dual-run helper that always executes the mock pass and, when enabled, immediately repeats against live services. | Respects `PHASE6_SKIP_BUILD=1` / `--no-build` to reuse dist output. | Set `PHASE6_RUN_REAL=1` (or pass `--real`/`--with-real`) to append the real backend pass; exports `PHASE6_USE_REAL_BACKENDS=1`, `PHASE6_SKIP_HARUSPEX=0` automatically. |
+| `npm run phase6-validation:real` | Direct real-backend sweep without the mock pre-run (pipelines that already trust mocks). | Rebuilds before execution; expects services reachable. | Always runs with real backends; mock harness unused. |
+| `npm run phase6-health` | Health probe sequence against mock services (contract-validated). | Same default env as `phase6-validation`. | Use `--use-real-backends` flag or env override to hit live services. |
+| `npm run phase6-health:real` | Health probe sequence against live services. | Rebuilds before execution. | Always targets real services. |
+| `node dist/src/scripts/run-phase6-integration-validation.js run --use-real-backends` | Low-level entry point for custom automation. | Caller manages env flags. | Passing `--use-real-backends` (or setting `PHASE6_USE_REAL_BACKENDS=1`) enables real services; pair with `PHASE6_SKIP_HARUSPEX=0` once Haruspex availability is confirmed. |
+
+**Environment knobs:**
+
+- `PHASE6_USE_REAL_BACKENDS` — boolean-like flag parsed by the CLI (`1`/`true` vs `0`/`false`).
+- `PHASE6_SKIP_HARUSPEX` — temporary guard; defaults to `1` during mock runs until the Haruspex harness is reinstated.
+- `PHASE6_RUN_REAL` — toggles the real segment inside `phase6-validation:full`.
+- `PHASE6_SKIP_BUILD` — skip the build step for dual runs when dist artifacts are current.
+
+Mock orchestration now validates request/response contracts via `Templum/src/tests/mock-backend-contracts.ts`; any mismatch surfaces as a `Mock contract violation` before real services are touched.
+
 ## 5. Outstanding Work & Risks
 
 - Full skin-driven UI and CLI refactor remain the largest blockers.

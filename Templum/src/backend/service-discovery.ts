@@ -23,6 +23,7 @@ import * as net from 'net';
 import { BackendConfig } from '../types/universal-skin-engine-types';
 import { backendIntegrationConfig } from './backend-integration-config';
 import { createTemplumError } from '../types/templum-types';
+import { SemanticValidators, TypeGuards, TypeValidators } from '../utils/type-guards';
 // Unused import removed: isTemplumError
 
 export interface DiscoveredService {
@@ -67,6 +68,117 @@ export interface ServiceDiscoveryOptions {
   configurationPath?: string;
   timeout?: number;
   maxRetries?: number;
+}
+
+const SUPPORTED_PROTOCOLS: ReadonlyArray<BackendConfig['protocol']> = ['ipc', 'http', 'websocket'];
+
+interface ParsedServiceDescriptor {
+  service: DiscoveredService;
+  pid?: number;
+}
+
+interface ServiceDescriptorContext {
+  logPrefix: string;
+  filePath: string;
+  timeout: number;
+  enforceHealthCheck: boolean;
+  removeOnStale?: boolean;
+  isProcessRunning: (pid: number) => boolean;
+  validateServiceHealth: (healthEndpoint?: string) => Promise<boolean>;
+}
+
+async function parseServiceDescriptor(
+  descriptor: unknown,
+  context: ServiceDescriptorContext,
+): Promise<ParsedServiceDescriptor | null> {
+  if (!TypeGuards.isPlainObject(descriptor)) {
+    console.warn(`${context.logPrefix} Invalid service file ${context.filePath}: expected object payload`);
+    return null;
+  }
+
+  const record = descriptor as Record<string, unknown>;
+  const serviceId = record.id;
+  const endpoint = record.endpoint;
+
+  if (!TypeGuards.isNonEmptyString(serviceId) || !TypeGuards.isNonEmptyString(endpoint)) {
+    console.warn(`${context.logPrefix} Invalid service file ${context.filePath}: missing id or endpoint`);
+    return null;
+  }
+
+  const pidValue = record.pid;
+  if (TypeGuards.isNumber(pidValue)) {
+    if (!context.isProcessRunning(pidValue)) {
+      console.log(
+        `${context.logPrefix} Process ${pidValue} not running${context.removeOnStale ? ', removing stale service file' : ''}`,
+      );
+      if (context.removeOnStale) {
+        fs.unlinkSync(context.filePath);
+      }
+      return null;
+    }
+  } else if (pidValue !== undefined) {
+    console.warn(`${context.logPrefix} Service ${serviceId} has non-numeric pid; skipping entry`);
+    return null;
+  }
+
+  const healthSource = TypeGuards.isNonEmptyString(record.health)
+    ? (record.health as string)
+    : `${endpoint}/health`;
+
+  if (context.enforceHealthCheck) {
+    const isHealthy = await context.validateServiceHealth(healthSource);
+    if (!isHealthy) {
+      console.log(`${context.logPrefix} Service ${serviceId} failed health check`);
+      return null;
+    }
+  }
+
+  const protocolCandidate = record.protocol;
+  const protocol =
+    TypeGuards.isNonEmptyString(protocolCandidate) &&
+    SUPPORTED_PROTOCOLS.includes(protocolCandidate as BackendConfig['protocol'])
+      ? (protocolCandidate as BackendConfig['protocol'])
+      : 'http';
+
+  const version = TypeGuards.isNonEmptyString(record.version) ? (record.version as string) : '1.0.0';
+  const authentication = TypeGuards.isPlainObject(record.authentication)
+    ? (record.authentication as BackendConfig['authentication'])
+    : { type: 'none' };
+
+  const config: BackendConfig = {
+    service: serviceId,
+    version,
+    protocol,
+    endpoint,
+    timeout: context.timeout,
+    retries: 2,
+    keepAlive: true,
+    authentication,
+    healthEndpoint: healthSource,
+  };
+
+  if (TypeValidators.isArrayOf(record.capabilities, TypeGuards.isNonEmptyString)) {
+    config.capabilities = record.capabilities;
+  }
+
+  if (TypeGuards.isNonEmptyString(record.capabilitiesEndpoint)) {
+    config.capabilitiesEndpoint = record.capabilitiesEndpoint as string;
+  }
+
+  if (TypeGuards.isNonEmptyString(record.versionEndpoint)) {
+    config.versionEndpoint = record.versionEndpoint as string;
+  }
+
+  return {
+    service: {
+      id: serviceId,
+      config,
+      discoveryMethod: 'registry',
+      confidence: 0.95,
+      timestamp: Date.now(),
+    },
+    pid: TypeGuards.isNumber(pidValue) ? pidValue : undefined,
+  };
 }
 
 /**
@@ -152,6 +264,19 @@ export class ServiceDiscovery extends EventEmitter {
     const allDiscoveredServices: DiscoveredService[] = [];
     const discoveryPromises = this.strategies.map(async (strategy) => {
       try {
+        if (!SemanticValidators.hasFunction(strategy, 'discover', { required: true, minimumConfidence: 80 })) {
+          const error = createTemplumError(
+            `Discovery strategy '${strategy.name}' is missing a discover implementation`,
+            'STRATEGY_VALIDATION_ERROR',
+            'validation',
+            { strategy: strategy.name },
+          );
+
+          console.warn(`[SERVICE_DISCOVERY] Strategy ${strategy.name} failed runtime validation: missing discover()`);
+          this.emit('strategyError', { strategy: strategy.name, error });
+          return [];
+        }
+
         console.log(`[SERVICE_DISCOVERY] Running ${strategy.name} strategy (priority: ${strategy.priority})`);
         const services = await strategy.discover();
         console.log(`[SERVICE_DISCOVERY] ${strategy.name} discovered ${services.length} services`);
@@ -339,61 +464,31 @@ export class ServiceDiscovery extends EventEmitter {
    */
   private async handleServiceFileChange(filePath: string, eventType: 'add' | 'change'): Promise<void> {
     try {
-      const serviceData = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
-      
-      // Validate required fields
-      if (!serviceData.id || !serviceData.endpoint) {
-        console.warn(`[FILE_WATCHER] Invalid service file ${filePath}: missing id or endpoint`);
-        return;
-      }
+      const rawDescriptor = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
 
-      // Check if process is still running (if pid provided)
-      if (serviceData.pid && !this.isProcessRunning(serviceData.pid)) {
-        console.log(`[FILE_WATCHER] Process ${serviceData.pid} not running, ignoring stale service file`);
-        return;
-      }
-
-      // Validate health endpoint if available and health checks are enabled
-      const healthEndpoint = serviceData.health || `${serviceData.endpoint}/health`;
-      if (this.options.enableHealthChecks) {
-        const isHealthy = await this.validateServiceHealth(healthEndpoint);
-        if (!isHealthy) {
-          console.log(`[FILE_WATCHER] Service ${serviceData.id} failed health check`);
-          return;
-        }
-      }
-
-      const config: BackendConfig = {
-        service: serviceData.id,
-        version: serviceData.version || '1.0.0',
-        protocol: serviceData.protocol || 'http',
-        endpoint: serviceData.endpoint,
+      const descriptor = await parseServiceDescriptor(rawDescriptor, {
+        logPrefix: '[FILE_WATCHER]',
+        filePath,
         timeout: this.options.timeout,
-        retries: 2,
-        keepAlive: true,
-        authentication: serviceData.authentication || { type: 'none' },
-        healthEndpoint: healthEndpoint
-      };
-
-      const discoveredService: DiscoveredService = {
-        id: serviceData.id,
-        config,
-        discoveryMethod: 'registry',
-        confidence: 0.95, // Very high confidence for file-based discovery
-        timestamp: Date.now()
-      };
-
-      // Update internal cache
-      this.discoveredServices.set(serviceData.id, discoveredService);
-
-      // Emit discovery event
-      console.log(`[FILE_WATCHER] Service ${eventType}: ${serviceData.id} (PID: ${serviceData.pid})`);
-      this.emit('serviceDiscovered', {
-        service: discoveredService,
-        eventType,
-        filePath
+        enforceHealthCheck: this.options.enableHealthChecks,
+        isProcessRunning: (pid) => this.isProcessRunning(pid),
+        validateServiceHealth: (healthEndpoint) => this.validateServiceHealth(healthEndpoint),
       });
 
+      if (!descriptor) {
+        return;
+      }
+
+      const { service, pid } = descriptor;
+
+      this.discoveredServices.set(service.id, service);
+
+      console.log(`[FILE_WATCHER] Service ${eventType}: ${service.id} (PID: ${pid ?? 'n/a'})`);
+      this.emit('serviceDiscovered', {
+        service,
+        eventType,
+        filePath,
+      });
     } catch (error) {
       console.warn(`[FILE_WATCHER] Failed to process service file ${filePath}:`, error);
     }
@@ -619,55 +714,27 @@ export class RegistryBasedDiscoveryStrategy implements DiscoveryStrategy {
       console.log(`[REGISTRY_DISCOVERY] Scanning ${serviceFiles.length} service files in ${servicesDir}`);
 
       for (const filePath of serviceFiles) {
-        try {
-          const serviceData = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
-          
-          // Validate required fields
-          if (!serviceData.id || !serviceData.endpoint) {
-            console.warn(`[REGISTRY_DISCOVERY] Invalid service file ${filePath}: missing id or endpoint`);
-            continue;
-          }
+        const rawDescriptor = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
 
-          // Check if process is still running (if pid provided)
-          if (serviceData.pid && !this.isProcessRunning(serviceData.pid)) {
-            console.log(`[REGISTRY_DISCOVERY] Process ${serviceData.pid} not running, removing stale service file`);
-            fs.unlinkSync(filePath); // Auto-cleanup dead services
-            continue;
-          }
+        const descriptor = await parseServiceDescriptor(rawDescriptor, {
+          logPrefix: '[REGISTRY_DISCOVERY]',
+          filePath,
+          timeout: this.options.timeout,
+          enforceHealthCheck: true,
+          removeOnStale: true,
+          isProcessRunning: (pid) => this.isProcessRunning(pid),
+          validateServiceHealth: (healthEndpoint) => this.validateServiceHealth(healthEndpoint),
+        });
 
-          // Validate health endpoint if available
-          const healthEndpoint = serviceData.health || `${serviceData.endpoint}/health`;
-          const isHealthy = await this.validateServiceHealth(healthEndpoint);
-          if (!isHealthy) {
-            console.log(`[REGISTRY_DISCOVERY] Service ${serviceData.id} failed health check`);
-            continue;
-          }
-
-          const config: BackendConfig = {
-            service: serviceData.id,
-            version: serviceData.version || '1.0.0',
-            protocol: serviceData.protocol || 'http',
-            endpoint: serviceData.endpoint,
-            timeout: this.options.timeout,
-            retries: 2,
-            keepAlive: true,
-            authentication: serviceData.authentication || { type: 'none' },
-            healthEndpoint: healthEndpoint
-          };
-
-          services.push({
-            id: serviceData.id,
-            config,
-            discoveryMethod: 'registry',
-            confidence: 0.95, // Very high confidence for active process-based discovery
-            timestamp: Date.now()
-          });
-
-          console.log(`[REGISTRY_DISCOVERY] Discovered ${serviceData.id} via services directory (PID: ${serviceData.pid})`);
-
-        } catch (error) {
-          console.warn(`[REGISTRY_DISCOVERY] Failed to parse service file ${filePath}:`, error);
+        if (!descriptor) {
+          continue;
         }
+
+        services.push(descriptor.service);
+
+        console.log(
+          `[REGISTRY_DISCOVERY] Discovered ${descriptor.service.id} via services directory (PID: ${descriptor.pid ?? 'n/a'})`,
+        );
       }
     } catch (error) {
       console.warn(`[REGISTRY_DISCOVERY] Directory discovery failed for ${servicesDir}: ${error instanceof Error ? error.message : String(error)}`);
@@ -730,12 +797,19 @@ export class ConfigurationBasedDiscoveryStrategy implements DiscoveryStrategy {
       const configData = JSON.parse(fs.readFileSync(this.options.configurationPath, 'utf-8'));
       const now = Date.now();
 
-      if (!configData.backends || !Array.isArray(configData.backends)) {
+      if (!TypeGuards.isPlainObject(configData)) {
         console.warn(`[CONFIG_DISCOVERY] Invalid configuration format in ${this.options.configurationPath}`);
         return services;
       }
 
-      for (const backendConfig of configData.backends) {
+      const backends = (configData as Record<string, unknown>).backends;
+
+      if (!TypeValidators.isArrayOf(backends, TypeGuards.isPlainObject)) {
+        console.warn(`[CONFIG_DISCOVERY] Invalid configuration backends list in ${this.options.configurationPath}`);
+        return services;
+      }
+
+      for (const backendConfig of backends) {
         if (!this.validateBackendConfig(backendConfig)) {
           console.warn(`[CONFIG_DISCOVERY] Invalid backend configuration:`, backendConfig);
           continue;
@@ -777,12 +851,38 @@ export class ConfigurationBasedDiscoveryStrategy implements DiscoveryStrategy {
   }
 
   private validateBackendConfig(config: unknown): config is BackendConfig {
-    return typeof config === 'object' &&
-           config !== null &&
-           typeof (config as any).service === 'string' &&
-           typeof (config as any).protocol === 'string' &&
-           typeof (config as any).endpoint === 'string' &&
-           ['http', 'websocket', 'ipc'].includes((config as any).protocol);
+    if (!TypeGuards.isPlainObject(config)) {
+      return false;
+    }
+
+    const candidate = config as Record<string, unknown>;
+    const { service, protocol, endpoint, capabilities, capabilitiesEndpoint, healthEndpoint } = candidate;
+
+    if (!TypeGuards.isNonEmptyString(service) || !TypeGuards.isNonEmptyString(endpoint)) {
+      return false;
+    }
+
+    if (!TypeGuards.isNonEmptyString(protocol)) {
+      return false;
+    }
+
+    if (!SUPPORTED_PROTOCOLS.includes(protocol as BackendConfig['protocol'])) {
+      return false;
+    }
+
+    if (capabilities !== undefined && !TypeValidators.isArrayOf(capabilities, TypeGuards.isNonEmptyString)) {
+      return false;
+    }
+
+    if (capabilitiesEndpoint !== undefined && !TypeGuards.isNonEmptyString(capabilitiesEndpoint)) {
+      return false;
+    }
+
+    if (healthEndpoint !== undefined && !TypeGuards.isNonEmptyString(healthEndpoint)) {
+      return false;
+    }
+
+    return true;
   }
 }
 

@@ -24,7 +24,7 @@ tags: [cli, navigation, borders, accessibility]
  * Pattern-Info: { approach: "progressive-enhancement", alternatives: "ascii-fallback", trade-offs: "unicode-compatibility" }
  */
 
-import * as chalk from 'chalk';
+import chalk from 'chalk';
 import { TerminalColorTheme, DefaultColorThemes } from '../terminal-ui-components';
 import { StringUtils, StringWidthUtils } from '../../utils/chainable-string-utils';
 

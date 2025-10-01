@@ -6,6 +6,8 @@ export interface TypedEventMap {
   [event: string]: (...args: any[]) => any;
 }
 
+type EventKey<TEventMap extends TypedEventMap> = Extract<keyof TEventMap, string>;
+
 export type UnsubscribeFn = () => void;
 
 export interface SubscriptionOptions {
@@ -15,8 +17,8 @@ export interface SubscriptionOptions {
 }
 
 export interface BatchSubscription<TEventMap extends TypedEventMap> {
-  event: keyof TEventMap;
-  handler: TEventMap[keyof TEventMap];
+  event: EventKey<TEventMap>;
+  handler: TEventMap[EventKey<TEventMap>];
   options?: SubscriptionOptions;
 }
 
@@ -30,18 +32,29 @@ export interface EventDiagnostics {
 export interface ScopedEventBus<TEventMap extends TypedEventMap> {
   emitter: TypedEventEmitter<TEventMap>;
   scope: string;
-  emit<K extends keyof TEventMap>(event: K, ...args: Parameters<TEventMap[K]>): boolean;
-  subscribe<K extends keyof TEventMap>(event: K, handler: TEventMap[K], options?: SubscriptionOptions): UnsubscribeFn;
+  emit<K extends EventKey<TEventMap>>(event: K, ...args: Parameters<TEventMap[K]>): boolean;
+  subscribe<K extends EventKey<TEventMap>>(event: K, handler: TEventMap[K], options?: SubscriptionOptions): UnsubscribeFn;
   cleanup(): void;
-  getListenerCount<K extends keyof TEventMap>(event: K): number;
-  getEventNames(): (keyof TEventMap)[];
+  getListenerCount<K extends EventKey<TEventMap>>(event: K): number;
+  getEventNames(): EventKey<TEventMap>[];
 }
 
-export type TypedEventEmitter<TEventMap extends TypedEventMap> = EventEmitter<TEventMap>;
+export type TypedEventEmitter<TEventMap extends TypedEventMap> = EventEmitter & {
+  emit<K extends EventKey<TEventMap>>(event: K, ...args: Parameters<TEventMap[K]>): boolean;
+  on<K extends EventKey<TEventMap>>(event: K, listener: TEventMap[K]): TypedEventEmitter<TEventMap>;
+  once<K extends EventKey<TEventMap>>(event: K, listener: TEventMap[K]): TypedEventEmitter<TEventMap>;
+  off<K extends EventKey<TEventMap>>(event: K, listener: TEventMap[K]): TypedEventEmitter<TEventMap>;
+  removeListener<K extends EventKey<TEventMap>>(event: K, listener: TEventMap[K]): TypedEventEmitter<TEventMap>;
+  removeAllListeners(event?: EventKey<TEventMap>): TypedEventEmitter<TEventMap>;
+  listenerCount(event: EventKey<TEventMap>): number;
+  prependListener<K extends EventKey<TEventMap>>(event: K, listener: TEventMap[K]): TypedEventEmitter<TEventMap>;
+  prependOnceListener<K extends EventKey<TEventMap>>(event: K, listener: TEventMap[K]): TypedEventEmitter<TEventMap>;
+  eventNames(): EventKey<TEventMap>[];
+};
 
 export class EventUtils {
   private static logger: Logger = createLogger('event-utils');
-  private static globalEmitter: EventEmitter<Record<string, (...args: any[]) => unknown>> = new EventEmitter();
+  private static globalEmitter: EventEmitter = new EventEmitter();
   private static activeEmitters: WeakSet<EventEmitter> = new WeakSet();
   private static subscriptions: Map<string, Set<UnsubscribeFn>> = new Map();
 
@@ -50,13 +63,17 @@ export class EventUtils {
   }
 
   static createTypedEmitter<TEventMap extends TypedEventMap>(): TypedEventEmitter<TEventMap> {
-    const emitter = new EventEmitter<TEventMap>();
+    const emitter = new EventEmitter();
     emitter.setMaxListeners(50);
     this.activeEmitters.add(emitter);
 
+    const typedEmitter = emitter as TypedEventEmitter<TEventMap>;
     const originalEmit = emitter.emit.bind(emitter);
 
-    emitter.emit = ((event: keyof TEventMap, ...args: Parameters<TEventMap[keyof TEventMap]>) => {
+    typedEmitter.emit = (<K extends EventKey<TEventMap>>(
+      event: K,
+      ...args: Parameters<TEventMap[K]>
+    ) => {
       try {
         return originalEmit(event, ...args);
       } catch (error) {
@@ -69,10 +86,10 @@ export class EventUtils {
       }
     }) as TypedEventEmitter<TEventMap>['emit'];
 
-    return emitter;
+    return typedEmitter;
   }
 
-  static subscribe<TEventMap extends TypedEventMap, K extends keyof TEventMap>(
+  static subscribe<TEventMap extends TypedEventMap, K extends EventKey<TEventMap>>(
     emitter: TypedEventEmitter<TEventMap>,
     event: K,
     handler: TEventMap[K],
@@ -105,7 +122,7 @@ export class EventUtils {
     return unsubscribe;
   }
 
-  static emit<TEventMap extends TypedEventMap, K extends keyof TEventMap>(
+  static emit<TEventMap extends TypedEventMap, K extends EventKey<TEventMap>>(
     emitter: TypedEventEmitter<TEventMap>,
     event: K,
     ...args: Parameters<TEventMap[K]>
@@ -145,7 +162,7 @@ export class EventUtils {
         this.subscribe(emitter, event, handler, { ...options, context: scope }),
       cleanup: () => this.cleanupContext(scope),
       getListenerCount: event => emitter.listenerCount(event),
-      getEventNames: () => emitter.eventNames() as (keyof TEventMap)[]
+      getEventNames: () => emitter.eventNames() as EventKey<TEventMap>[]
     };
   }
 
@@ -162,15 +179,20 @@ export class EventUtils {
   static forward<TEventMap extends TypedEventMap>(
     from: TypedEventEmitter<TEventMap>,
     to: TypedEventEmitter<TEventMap>,
-    events: (keyof TEventMap)[],
+    events: EventKey<TEventMap>[],
     context?: string
   ): UnsubscribeFn[] {
-    return events.map(event =>
-      this.subscribe(from, event, (...args) => this.emit(to, event, ...args), { context })
-    );
+    const forwardSingle = <K extends EventKey<TEventMap>>(event: K): UnsubscribeFn => {
+      const forwarder = ((...args: Parameters<TEventMap[K]>) => {
+        this.emit(to, event, ...args);
+      }) as TEventMap[K];
+      return this.subscribe(from, event, forwarder, { context });
+    };
+
+    return events.map(event => forwardSingle(event));
   }
 
-  static waitForEvent<TEventMap extends TypedEventMap, K extends keyof TEventMap>(
+  static waitForEvent<TEventMap extends TypedEventMap, K extends EventKey<TEventMap>>(
     emitter: TypedEventEmitter<TEventMap>,
     event: K,
     timeoutMs = 5000

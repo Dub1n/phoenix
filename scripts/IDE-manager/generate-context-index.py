@@ -149,6 +149,67 @@ def first_folder_for(p: Path, root: Path) -> str:
     return rp_rel.split("/", 1)[0] if "/" in rp_rel else "."
 
 
+def ensure_index_lock_available(
+    root: Path,
+    wait_timeout: float = 2.0,
+    poll_interval: float = 0.1,
+    stale_age: float = 300.0,
+) -> None:
+    """Block until the git index lock is available; clear stale locks when safe."""
+
+    lock_path = root / ".git" / "index.lock"
+    if not lock_path.exists():
+        return
+
+    deadline = time.time() + wait_timeout
+    while lock_path.exists() and time.time() < deadline:
+        time.sleep(poll_interval)
+
+    if not lock_path.exists():
+        return
+
+    age = time.time() - lock_path.stat().st_mtime
+    if age >= stale_age:
+        lock_path.unlink()
+        print(f"[warn] removed stale git index lock at {lock_path}")
+        return
+
+    raise RuntimeError(
+        "git index.lock is currently held by another process; "
+        "resolve the lock or retry later before staging context index outputs."
+    )
+
+
+def stage_outputs(root: Path, files: Iterable[Path], retries: int = 5, retry_delay: float = 0.2) -> None:
+    """Stage generated files, handling transient index.lock contention gracefully."""
+
+    rel_files = [str(Path(f).relative_to(root)).replace("\\", "/") for f in files]
+    if not rel_files:
+        return
+
+    ensure_index_lock_available(root)
+
+    cmd = ["git", "-C", str(root), "add", "--", *rel_files]
+
+    for attempt in range(1, retries + 1):
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        if result.returncode == 0:
+            return
+
+        stderr = (result.stderr or "").strip()
+        stdout = (result.stdout or "").strip()
+
+        if "index.lock" in stderr and attempt < retries:
+            time.sleep(retry_delay)
+            ensure_index_lock_available(root)
+            continue
+
+        details = stderr or stdout or "unknown git add failure"
+        raise RuntimeError(
+            f"failed to stage context index outputs (attempt {attempt}/{retries}): {details}"
+        )
+
+
 # ===== fast path hashing =====
 def compile_globs(patterns: Iterable[str], case_sensitive: bool) -> List[re.Pattern]:
     flags = 0 if case_sensitive else re.IGNORECASE
@@ -420,6 +481,7 @@ def main() -> None:
                     writeln(f, e["path"])  # bare relative path
             writeln(f)  # blank line between sections
 
+    stage_outputs(root, [json_path, md_path, raw_md_path])
     print(f"[ok] wrote {json_path}, {md_path}, and {raw_md_path}")
 
 
