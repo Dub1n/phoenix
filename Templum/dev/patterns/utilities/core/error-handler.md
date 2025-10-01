@@ -1,9 +1,9 @@
 ---
-date-created: 2025-09-14T181000Z
-last-updated: 2025-09-14T181000Z
+date-created: 2025-09-14T18:10:00Z
+last-updated: 2025-09-14T18:10:00Z
 name: error-handler
 description: Centralized error handling to standardize 695 catch blocks with consistent error wrapping, recovery strategies, and minimal usage footprint
-status: established
+status: "[x]"
 category: core-infrastructure
 use-when:
   - Standardizing scattered try/catch blocks across components

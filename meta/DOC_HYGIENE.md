@@ -20,6 +20,7 @@ Project/
 │  ├ current/
 │  │  ├ architecture-spec.md (canonical)
 │  │  ├ progress.md (status tracker)
+│  │  ├ pattern-taxonomy.md (frontmatter category enum)
 │  │  ├ CHANGELOG.md
 │  │  └ supporting references (api.md, operations.md, etc.)
 │  ├ target/
@@ -42,6 +43,8 @@ Project/
 
 Promote docs from `dev/` into `docs/current/` only after implementation matches reality. Archive superseded material immediately.
 Use the templates in `meta/templates/` (`architecture-spec.md`, `progress.md`, `task-log.md`) when creating or refreshing documents to keep structure consistent.
+Keep each project's `pattern-taxonomy.md` in sync with its frontmatter schema and consult it before adding or updating pattern documentation.
+Validate frontmatter using `meta/scripts/validate_frontmatter.py` (points to `meta/templates/schema/frontmatter.json` by default) before committing significant documentation changes.
 
 ### Progress Tracking
 

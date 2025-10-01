@@ -26,6 +26,7 @@ import {
   SearchResult,
   DefaultColorThemes 
 } from './terminal-ui-components';
+import { StringUtils } from '../utils/chainable-string-utils';
 
 export interface CLIAdapter {
   type: 'cli';
@@ -117,6 +118,15 @@ export class CLIInterfaceAdapter extends EventEmitter implements CLIAdapter {
   private isInteractiveMode = false;
   private terminalUI: any; // TerminalUI instance
   private searchableItems: SearchableItem[] = [];
+
+  private formatColumn(
+    value: unknown,
+    width: number,
+    alignment: 'left' | 'right' | 'center' = 'right'
+  ): string {
+    const text = value === null || value === undefined ? '' : String(value);
+    return StringUtils.chain(text, { mode: 'terminal' }).pad(width, alignment).value();
+  }
 
   constructor(
     commandRegistry: UniversalCommandRegistry,
@@ -1125,15 +1135,16 @@ export class CLIInterfaceAdapter extends EventEmitter implements CLIAdapter {
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       
       for (const [serviceId, status] of Object.entries(backends)) {
-        const statusIcon = status.connected 
-          ? (status.health === 'healthy' ? '[CONNECTED]  ' : '[WARN]        ') 
+        const statusIcon = status.connected
+          ? (status.health === 'healthy' ? '[CONNECTED]  ' : '[WARN]        ')
           : '[OFFLINE]     ';
-        const health = (status.health || 'Unknown').padEnd(10);
-        const skinStatus = (status as any).skinLoaded ? '[OK] Yes ' : '[NO] No  ';
+        const health = this.formatColumn(status.health || 'Unknown', 10);
+        const skinStatus = this.formatColumn((status as any).skinLoaded ? '[OK] Yes' : '[NO] No', 10);
+        const serviceColumn = this.formatColumn(serviceId, 14);
         const capabilityCount = status.capabilities?.length || 0;
         const commandInfo = capabilityCount > 0 ? `${capabilityCount} available` : 'None loaded';
         
-        console.log(`${serviceId.padEnd(14)} ${statusIcon} ${health} ${skinStatus} ${commandInfo}`);
+        console.log(`${serviceColumn} ${statusIcon} ${health} ${skinStatus} ${commandInfo}`);
       }
       
       const connectedCount = Object.values(backends).filter((b: any) => b.connected).length;
@@ -1334,12 +1345,13 @@ export class CLIInterfaceAdapter extends EventEmitter implements CLIAdapter {
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       
       for (const [serviceId, status] of Object.entries(backends)) {
-        const conn = status.connected ? '[CONNECTED] ' : '[DISCONNECTED]';
-        const health = status.health || 'Unknown';
-        const responseTime = status.responseTime ? `${status.responseTime}ms` : 'N/A';
+        const conn = this.formatColumn(status.connected ? '[CONNECTED]' : '[DISCONNECTED]', 12);
+        const health = this.formatColumn(status.health || 'Unknown', 9);
+        const responseTime = this.formatColumn(status.responseTime ? `${status.responseTime}ms` : 'N/A', 10);
         const capabilities = status.capabilities?.slice(0, 2).join(', ') || 'None';
+        const serviceColumn = this.formatColumn(serviceId, 12);
         
-        console.log(`${serviceId.padEnd(12)} ${conn.padEnd(12)} ${health.padEnd(9)} ${responseTime.padEnd(10)} ${capabilities}`);
+        console.log(`${serviceColumn} ${conn} ${health} ${responseTime} ${capabilities}`);
       }
       
       const connectedCount = Object.values(backends).filter((b: any) => b.connected).length;

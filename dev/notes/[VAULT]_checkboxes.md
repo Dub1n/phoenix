@@ -2,15 +2,18 @@
 
 ## templum-tracker-data
 
+- [ ] **to-do** - the standard, unstarted task
 - [x] **complete** - Verified working (confirmed functional with real backend evidence)
 - [~] **in-progress** - Under development (e.g. works with placeholder implementations)
 - [-] **cancelled** - Task is no longer relevant or has been dropped
 - [!] **priority** - Issue (e.g. Fake success: reported working but uses mocks/placeholders)
 - [>] **forwarded** - Task has been moved to another location (e.g. different project)
 - [<] **scheduled** - Not implemented (confirmed missing or completely placeholder)
-- [?] **blocked** - the task requires more information or is blocked by something else
+- [?] **blocked** - Rhe task requires more information or is blocked by something else
 - [B] **implemented-broken** - Core logic done but build failures prevent verification
-- [T] **implemented-testing** - Ccompiles but needs functional validation
+- [T] **implemented-testing** - Compiles but needs functional validation
+- [D] **documenting** - Compiles and functionality validated, ready for documentation
+- [F] **failure**
 
 ## templum-active-tasks
 
@@ -36,7 +39,6 @@
 [<] scheduled: the task has been scheduled for a future date or sometimes today's date
 [?] question / blocked: the task requires more information or is blocked by something else.
 [!] important / must-do: marks a task as a priority. an asterisk [*] is also sometimes used.
-[o] event / appointment: sometimes used to denote a calendar event rather than a task.
 [B] implemented-broken: core logic done but compilation/tests failing (requires structural fix)
 [T] implemented-testing: compiles but needs functional validation
 [D] documenting: compiles and functionality validated, ready for documentation

@@ -17,33 +17,33 @@ Steps:
    - For partially blocked work, split the checklist into **Unblocked Actions** and **Blocked Actions (pending [Requirement Name])**.
 3. Draft the task file at `{{TASK_PATH}}` with the following sections:
 
-```markdown
-# Task: <short requirement restatement>
-
-## Requirement Summary
-- Status: `[ ]` / `[~]` / etc. (copy from progress)
-- Requirement text: "..."
-
-## Prerequisites
-- [ ] Requirement label — explanation (if none, state "None.")
-
-## Implementation Steps
-### Unblocked Actions
-- [ ] Specific code/test/doc updates (reference files, e.g., `src/...`).
-
-### Blocked Actions (if any)
-- [ ] Work that must wait on prerequisite completion.
-
-## Definition of Done
-- Tests to run (`npm test`, unit files, etc.).
-- Validation/commands (e.g., Validation System category).
-- Documentation to update (progress.md, architecture-spec sections, changelog).
-
-## References
-- Progress entry: `docs/current/progress.md` (line/section).
-- Architecture spec sections.
-- Related task files if applicable.
-```
+   ```markdown
+   # Task: <short requirement restatement>
+   
+   ## Requirement Summary
+   - Status: `[ ]` / `[~]` / etc. (copy from progress)
+   - Requirement text: "..."
+   
+   ## Prerequisites
+   - [ ] Requirement label — explanation (if none, state "None.")
+   
+   ## Implementation Steps
+   ### Unblocked Actions
+   - [ ] Specific code/test/doc updates (reference files, e.g., `src/...`).
+   
+   ### Blocked Actions (if any)
+   - [ ] Work that must wait on prerequisite completion.
+   
+   ## Definition of Done
+   - Tests to run (`npm test`, unit files, etc.).
+   - Validation/commands (e.g., Validation System category).
+   - Documentation to update (progress.md, architecture-spec sections, changelog).
+   
+   ## References
+   - Progress entry: `docs/current/progress.md` (line/section).
+   - Architecture spec sections.
+   - Related task files if applicable.
+   ```
 
 4. Update `{{PROJECT_PATH}}/docs/current/progress.md` so the requirement line includes a link to the task file, e.g., `(see dev/tasks/<filename>.md)` while preserving the existing status marker and notes.
 5. Do not modify other requirements or files.

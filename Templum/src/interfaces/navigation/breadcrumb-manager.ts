@@ -26,7 +26,7 @@ tags: [cli, navigation, breadcrumbs, user-experience]
 
 import { EventEmitter } from 'events';
 import { TerminalColorTheme, DefaultColorThemes } from '../terminal-ui-components';
-import { StringWidthUtils } from './width-calculator';
+import { StringUtils, StringWidthUtils } from '../../utils/chainable-string-utils';
 
 /**
  * Utility type to convert event function signatures to parameter arrays for EventEmitter compatibility
@@ -472,10 +472,10 @@ export class NavigationRenderer {
         break;
     }
 
-    // Truncate if necessary
-    if (title.length > maxLength) {
-      title = title.substring(0, maxLength - 1) + '…';
-    }
+    const safeMaxLength = Math.max(1, maxLength);
+    title = StringUtils.chain(title, { mode: 'terminal' })
+      .truncate(safeMaxLength)
+      .value();
 
     // Apply styling
     if (entry.isActive) {

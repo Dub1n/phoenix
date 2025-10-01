@@ -322,7 +322,6 @@ export class AdaptiveCLIIntegration extends EventEmitter {
       navigation: {
         compatibility: { detectCapabilities: true },
         accessibility: { enableKeyboardNavigation: true },
-        textProcessing: { removeEmojis: true }
       },
       compatibility: {
         enableDetection: true,
@@ -868,8 +867,7 @@ export async function setupEnhancedCLI(
     },
     navigation: {
       compatibility: { detectCapabilities: true },
-      accessibility: { enableKeyboardNavigation: true },
-      textProcessing: { removeEmojis: true }
+      accessibility: { enableKeyboardNavigation: true }
     }
   });
 

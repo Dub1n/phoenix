@@ -1,714 +1,207 @@
 ---
-date: "2025-09-14T120000Z"
-name: "registry-utils"
-TASK-ID: ["TASK-REGISTRY-001"]
-category: "Core Infrastructure Utility"
-status: ["[x]"]
-patterns: ["Dependency Injection", "Lifecycle Management", "Validation Framework", "Intelligence Briefing"]
-components: ["Base Registry Class", "Validation System", "Lifecycle Orchestrator", "Intelligence Analyzer"]
-dependencies: ["EventEmitter", "Validation Framework", "Error Handling System"]
-tags: ["registry", "utility", "validation", "lifecycle", "intelligence", "confidence", "dependency-injection"]
+date-created: 2025-09-14T12:00:00Z
+last-updated: 2025-09-15T12:00:00Z
+name: registry-utils
+description: Confidence-validated registry foundation replacing bespoke lifecycle, validation, and duplicate detection logic scattered across interface and command registries
+status:
+  - [x]
+category: core-infrastructure
+use-when:
+  - You need to register and lazily resolve components while enforcing consistent lifecycle hooks
+  - Duplicate registry code exists across command, menu, adapter, or service registries
+  - Validation, duplicate detection, and health insights must be standardized without bespoke wiring
+keywords:
+  - registry-utils
+  - lifecycle-management
+  - dependency-injection
+  - confidence-scoring
+prerequisites:
+  - logger
+  - error-handler
+  - async-utils
+related-patterns:
+  - factory-utils
+  - service-utils
+  - dependency-injection-unified
 ---
 
-# Registry Utils Utility Pattern
+# Registry Utils Utility Consolidation Pattern
 
-## Intelligence Briefing
+## Consolidation Snapshot
 
-### Pattern Analysis Summary
-
-Comprehensive analysis of registry patterns across VDL_Vault ecosystem reveals three primary registry archetypes:
-
-1. **Dependency Injection Registry** (Templum/adapter-registry.ts)
-   - Complex multi-phase lifecycle management
-   - Confidence validation through 4-stage validation pipeline
-   - Component adapter pattern with real implementation wrapping
-   - Circular dependency detection and resolution
-
-2. **Command Registry** (Universal/PCL command registries)
-   - Multi-backend command routing with interface support
-   - Session context integration with audit logging
-   - Performance metrics and health monitoring
-   - Cross-interface compatibility validation
-
-3. **Service Registry** (Backend service registries)
-   - Dynamic service discovery and registration
-   - Health monitoring with automatic failover
-   - Resource allocation and cleanup management
-   - Protocol-agnostic communication patterns
-
-### Intelligence Insights
-
-- **Confidence Validation**: All production registries implement 3+ validation phases
-- **Lifecycle Orchestration**: Critical success factor is proper initialization ordering
-- **Performance Monitoring**: Sub-50ms response times are achievable with proper caching
-- **Error Recovery**: Graceful degradation patterns prevent cascade failures
-- **Cross-System Integration**: Registry-to-registry communication enables complex workflows
+- **Redundancy**: ~200 duplicated lines across 5 registry implementations (`universal-command`, `universal-menu`, `pcl-command`, `pcl-menu`, `interface-adapter`)
+- **Hotspots**: Manual lifecycle phases, duplicate detection, validation reports, and telemetry wiring repeated in each registry
+- **Impact**: One shared registry foundation eliminates bespoke `Map` plumbing, reduces error handling divergence, and unlocks cross-registry telemetry
+- **Priority**: MEDIUM — enables downstream consolidation for factories, services, and adapter orchestration
 
 ## Problem Statement
 
-Registry implementations across large codebases often reinvent the same lifecycle management, validation, and intelligence patterns, leading to inconsistent behavior, validation gaps, and maintenance overhead. Teams need a confidence-validated base registry class with standardized lifecycle management and built-in intelligence analysis.
+Hand-rolled registries mix event emitters, lifecycle ordering, duplicate detection, and ad-hoc metrics. The result is inconsistent initialization, divergent validation logic, and limited reuse. For example:
+
+```typescript
+// src/commands/universal-command-registry.ts
+private handlers = new Map<string, UniversalCommandHandler>();
+
+async registerCommand(command: UniversalCommandHandler): Promise<void> {
+  if (this.handlers.has(command.id)) {
+    throw new Error(`Command ${command.id} already registered`);
+  }
+  this.handlers.set(command.id, command);
+  this.emit('commandRegistered', command.id);
+  // ... bespoke validation, audit logging, and lifecycle wiring ...
+}
+
+async dispose(): Promise<void> {
+  for (const handler of this.handlers.values()) {
+    await handler.dispose?.();
+  }
+  this.handlers.clear();
+}
+```
+
+Similar blocks appear in menu registries and adapter registries, each reimplementing lifecycle, validation, caching, and logging. Duplication drives drift in validation rigor (strict vs. permissive), makes intelligence reporting inconsistent, and stretches maintenance across multiple files.
 
 ## Solution Overview
 
-A comprehensive registry utility pattern providing:
+Adopt the shared `BaseRegistry` from `Templum/src/utils/registry-utils.ts` to centralize lifecycle orchestration, component validation, and telemetry. Consumers extend the base when they need custom wiring, or instantiate a builder for simple cases.
 
-- **Base Registry Class**: Confidence-validated foundation with standardized lifecycle
-- **Intelligence Analyzer**: Real-time registry health and performance intelligence
-- **Validation Framework**: Multi-phase validation with confidence scoring
-- **Lifecycle Orchestrator**: Standardized initialization, wiring, and disposal patterns
-
-## Core Implementation
-
-### Confidence-Validated Base Registry Class
+### Minimal Usage API
 
 ```typescript
-/**
- * Base Registry Class with Confidence Validation and Lifecycle Management
- * Extracted from analysis of Templum TemplumAdapterRegistry and Universal Command Registry patterns
- */
+import { createRegistry } from '../../utils/registry-utils';
 
-import { EventEmitter } from 'events';
-
-// Intelligence and Validation Types
-export interface RegistryIntelligence {
-  healthScore: number; // 0-100 confidence score
-  performanceMetrics: PerformanceMetrics;
-  validationReport: ValidationReport;
-  systemInsights: SystemInsight[];
-  recommendedActions: RecommendedAction[];
-  confidenceLevel: 'high' | 'medium' | 'low';
-}
-
-export interface ValidationReport {
-  timestamp: number;
-  overallValid: boolean;
-  validationLevel: 'strict' | 'standard' | 'relaxed';
-  componentValidation: ComponentValidationStatus[];
-  dependencyWiring: DependencyWiringStatus[];
-  integrityValidation: IntegrityValidation;
-  recommendations: string[];
-  executionTime: number;
-  confidenceScore: number;
-}
-
-export interface ComponentValidationStatus {
-  name: string;
-  valid: boolean;
-  issues: string[];
-  interfaceCompliance: boolean;
-  methodAvailability: boolean;
-  initializationStatus: 'pending' | 'initialized' | 'failed';
-  confidenceScore: number;
-}
-
-export interface SystemInsight {
-  category: 'performance' | 'reliability' | 'security' | 'maintainability';
-  severity: 'info' | 'warning' | 'error' | 'critical';
-  message: string;
-  recommendation?: string;
-  confidenceLevel: number; // 0-1 scale
-}
-
-// Lifecycle Management Types
-export interface LifecycleConfiguration {
-  enableValidation: boolean;
-  validationLevel: 'strict' | 'standard' | 'relaxed';
-  enableIntelligence: boolean;
-  intelligenceUpdateInterval: number;
-  enablePerformanceMonitoring: boolean;
-  lifecycleTimeout: number;
-}
-
-/**
- * Confidence-Validated Base Registry Class
- * Provides standardized lifecycle management, validation, and intelligence analysis
- */
-export abstract class BaseRegistry<TComponent, TConfig = any> extends EventEmitter {
-  protected components = new Map<string, TComponent>();
-  protected config: LifecycleConfiguration;
-  protected intelligence: RegistryIntelligence | null = null;
-  protected validationReport: ValidationReport | null = null;
-  protected lifecycleState: 'uninitialized' | 'initializing' | 'initialized' | 'disposing' | 'disposed' = 'uninitialized';
-  protected performanceMetrics = new Map<string, number>();
-  
-  constructor(config: Partial<LifecycleConfiguration> = {}) {
-    super();
-    this.config = {
-      enableValidation: true,
-      validationLevel: 'standard',
-      enableIntelligence: true,
-      intelligenceUpdateInterval: 30000,
-      enablePerformanceMonitoring: true,
-      lifecycleTimeout: 10000,
-      ...config
-    };
-  }
-
-  /**
-   * PHASE 1: Initialize Registry with Confidence Validation
-   * Orchestrates the complete initialization lifecycle with intelligence analysis
-   */
-  async initialize(): Promise<void> {
-    if (this.lifecycleState !== 'uninitialized') {
-      throw new Error(`Cannot initialize registry in state: ${this.lifecycleState}`);
-    }
-
-    this.lifecycleState = 'initializing';
-    const startTime = Date.now();
-
-    try {
-      // Phase 1.1: Pre-initialization validation
-      await this.validatePreInitialization();
-      
-      // Phase 1.2: Create component instances
-      await this.createComponents();
-      
-      // Phase 1.3: Wire component dependencies
-      await this.wireComponentDependencies();
-      
-      // Phase 1.4: Initialize components in order
-      await this.initializeComponents();
-      
-      // Phase 1.5: Post-initialization validation
-      if (this.config.enableValidation) {
-        await this.validatePostInitialization();
-      }
-      
-      // Phase 1.6: Generate intelligence report
-      if (this.config.enableIntelligence) {
-        await this.generateIntelligenceReport();
-      }
-
-      this.lifecycleState = 'initialized';
-      this.emit('initialized', {
-        timestamp: Date.now(),
-        duration: Date.now() - startTime,
-        componentCount: this.components.size,
-        confidenceScore: this.intelligence?.healthScore || 0
-      });
-
-    } catch (error) {
-      this.lifecycleState = 'uninitialized';
-      this.emit('initializationFailed', { error, timestamp: Date.now() });
-      throw error;
-    }
-  }
-
-  /**
-   * PHASE 2: Component Registration with Confidence Validation
-   */
-  async register<K extends string>(
-    name: K, 
-    component: TComponent, 
-    options: { validate?: boolean; updateIntelligence?: boolean } = {}
-  ): Promise<void> {
-    const { validate = true, updateIntelligence = true } = options;
-    
-    if (this.components.has(name)) {
-      throw new Error(`Component '${name}' already registered`);
-    }
-
-    // Validate component before registration
-    if (validate && this.config.enableValidation) {
-      const validation = await this.validateComponent(name, component);
-      if (!validation.valid && this.config.validationLevel === 'strict') {
-        throw new Error(`Component validation failed: ${validation.issues.join(', ')}`);
-      }
-    }
-
-    this.components.set(name, component);
-    this.emit('componentRegistered', { name, timestamp: Date.now() });
-
-    // Update intelligence after registration
-    if (updateIntelligence && this.config.enableIntelligence && this.lifecycleState === 'initialized') {
-      await this.updateIntelligence();
-    }
-  }
-
-  /**
-   * PHASE 3: Component Retrieval with Confidence Checks
-   */
-  getComponent<K extends string>(name: K): TComponent | null {
-    return this.components.get(name) || null;
-  }
-
-  /**
-   * PHASE 4: Intelligence Analysis and Reporting
-   */
-  async generateIntelligenceReport(): Promise<RegistryIntelligence> {
-    const startTime = Date.now();
-    
-    // Analyze component health
-    const healthScore = await this.calculateHealthScore();
-    
-    // Generate performance metrics
-    const performanceMetrics = this.getPerformanceMetrics();
-    
-    // Create validation report
-    const validationReport = await this.createValidationReport();
-    
-    // Generate system insights
-    const systemInsights = await this.analyzeSystemInsights();
-    
-    // Generate recommendations
-    const recommendedActions = this.generateRecommendations(systemInsights, validationReport);
-    
-    // Determine overall confidence level
-    const confidenceLevel = this.determineConfidenceLevel(healthScore, validationReport);
-
-    this.intelligence = {
-      healthScore,
-      performanceMetrics,
-      validationReport,
-      systemInsights,
-      recommendedActions,
-      confidenceLevel
-    };
-
-    this.emit('intelligenceUpdated', {
-      intelligence: this.intelligence,
-      generationTime: Date.now() - startTime
-    });
-
-    return this.intelligence;
-  }
-
-  /**
-   * PHASE 5: Lifecycle Disposal with Confidence Validation
-   */
-  async dispose(): Promise<void> {
-    if (this.lifecycleState === 'disposed' || this.lifecycleState === 'disposing') {
-      return;
-    }
-
-    this.lifecycleState = 'disposing';
-    const startTime = Date.now();
-
-    try {
-      // Dispose components in reverse order
-      const componentEntries = Array.from(this.components.entries()).reverse();
-      
-      for (const [name, component] of componentEntries) {
-        try {
-          await this.disposeComponent(name, component);
-        } catch (error) {
-          this.emit('componentDisposalError', { name, error });
-        }
-      }
-
-      this.components.clear();
-      this.performanceMetrics.clear();
-      this.intelligence = null;
-      this.validationReport = null;
-      
-      this.lifecycleState = 'disposed';
-      this.emit('disposed', {
-        timestamp: Date.now(),
-        duration: Date.now() - startTime
-      });
-      
-      this.removeAllListeners();
-
-    } catch (error) {
-      this.emit('disposalFailed', { error, timestamp: Date.now() });
-      throw error;
-    }
-  }
-
-  // Abstract Methods - Must be implemented by concrete registries
-  protected abstract createComponents(): Promise<void>;
-  protected abstract wireComponentDependencies(): Promise<void>;
-  protected abstract initializeComponents(): Promise<void>;
-  protected abstract validateComponent(name: string, component: TComponent): Promise<ComponentValidationStatus>;
-  protected abstract disposeComponent(name: string, component: TComponent): Promise<void>;
-
-  // Intelligence Analysis Methods
-  private async calculateHealthScore(): Promise<number> {
-    let score = 100;
-    
-    // Component health analysis
-    for (const [name, component] of this.components) {
-      const validation = await this.validateComponent(name, component);
-      if (!validation.valid) {
-        score -= 10; // Deduct points for invalid components
-      }
-      if (!validation.interfaceCompliance) {
-        score -= 5; // Deduct points for interface issues
-      }
-    }
-    
-    // Performance analysis
-    const avgPerformance = Array.from(this.performanceMetrics.values())
-      .reduce((sum, time) => sum + time, 0) / this.performanceMetrics.size;
-    
-    if (avgPerformance > 100) score -= 10; // Deduct for slow performance
-    if (avgPerformance > 500) score -= 20; // Heavy penalty for very slow performance
-    
-    return Math.max(0, Math.min(100, score));
-  }
-
-  private getPerformanceMetrics(): PerformanceMetrics {
-    const metrics = Array.from(this.performanceMetrics.values());
+const registry = createRegistry<CommandHandler>('command-registry')
+  .withValidation(async (component, registration) => {
+    const valid = typeof component.handler === 'function';
     return {
-      averageResponseTime: metrics.reduce((sum, time) => sum + time, 0) / metrics.length || 0,
-      maxResponseTime: Math.max(...metrics) || 0,
-      minResponseTime: Math.min(...metrics) || 0,
-      totalOperations: metrics.length
-    };
-  }
-
-  private async createValidationReport(): Promise<ValidationReport> {
-    const startTime = Date.now();
-    const componentValidations: ComponentValidationStatus[] = [];
-    
-    for (const [name, component] of this.components) {
-      const validation = await this.validateComponent(name, component);
-      componentValidations.push(validation);
-    }
-    
-    const overallValid = componentValidations.every(v => v.valid);
-    const avgConfidenceScore = componentValidations.reduce((sum, v) => sum + v.confidenceScore, 0) / componentValidations.length;
-    
-    return {
-      timestamp: Date.now(),
-      overallValid,
-      validationLevel: this.config.validationLevel,
-      componentValidation: componentValidations,
-      dependencyWiring: [], // Implementation specific
-      integrityValidation: {
-        allRequiredPresent: true,
-        noDuplicateInstances: true,
-        circularDependencies: [],
-        initializationOrder: true
-      },
-      recommendations: [],
-      executionTime: Date.now() - startTime,
-      confidenceScore: avgConfidenceScore
-    };
-  }
-
-  private async analyzeSystemInsights(): Promise<SystemInsight[]> {
-    const insights: SystemInsight[] = [];
-    
-    // Performance insights
-    const avgPerf = this.getPerformanceMetrics().averageResponseTime;
-    if (avgPerf > 50) {
-      insights.push({
-        category: 'performance',
-        severity: avgPerf > 200 ? 'error' : 'warning',
-        message: `Average response time (${avgPerf.toFixed(1)}ms) exceeds baseline`,
-        recommendation: 'Consider optimizing component initialization or adding caching',
-        confidenceLevel: 0.9
-      });
-    }
-    
-    // Reliability insights
-    if (this.validationReport && !this.validationReport.overallValid) {
-      insights.push({
-        category: 'reliability',
-        severity: 'warning',
-        message: 'Component validation issues detected',
-        recommendation: 'Review component implementations for interface compliance',
-        confidenceLevel: 0.85
-      });
-    }
-    
-    return insights;
-  }
-
-  private generateRecommendations(insights: SystemInsight[], validation: ValidationReport): RecommendedAction[] {
-    const actions: RecommendedAction[] = [];
-    
-    // Generate recommendations based on insights
-    for (const insight of insights) {
-      if (insight.recommendation) {
-        actions.push({
-          priority: insight.severity === 'error' ? 'high' : 'medium',
-          category: insight.category,
-          description: insight.recommendation,
-          confidenceLevel: insight.confidenceLevel
-        });
-      }
-    }
-    
-    return actions;
-  }
-
-  private determineConfidenceLevel(healthScore: number, validation: ValidationReport): 'high' | 'medium' | 'low' {
-    if (healthScore >= 90 && validation.overallValid) return 'high';
-    if (healthScore >= 70) return 'medium';
-    return 'low';
-  }
-
-  // Utility methods for implementation
-  private async validatePreInitialization(): Promise<void> {
-    // Override in concrete implementations
-  }
-
-  private async validatePostInitialization(): Promise<void> {
-    // Override in concrete implementations
-  }
-
-  private async updateIntelligence(): Promise<void> {
-    if (this.config.enableIntelligence) {
-      await this.generateIntelligenceReport();
-    }
-  }
-
-  // Public Intelligence API
-  public getIntelligence(): RegistryIntelligence | null {
-    return this.intelligence;
-  }
-
-  public getHealthScore(): number {
-    return this.intelligence?.healthScore || 0;
-  }
-
-  public getValidationReport(): ValidationReport | null {
-    return this.validationReport;
-  }
-
-  public isHealthy(): boolean {
-    return this.getHealthScore() >= 70 && this.lifecycleState === 'initialized';
-  }
-}
-
-// Supporting Types
-interface PerformanceMetrics {
-  averageResponseTime: number;
-  maxResponseTime: number;
-  minResponseTime: number;
-  totalOperations: number;
-}
-
-interface DependencyWiringStatus {
-  sourceComponent: string;
-  targetComponent: string;
-  wiringValid: boolean;
-  issues: string[];
-  circularDependency: boolean;
-  interfaceCompatibility: boolean;
-}
-
-interface IntegrityValidation {
-  allRequiredPresent: boolean;
-  noDuplicateInstances: boolean;
-  circularDependencies: string[];
-  initializationOrder: boolean;
-}
-
-interface RecommendedAction {
-  priority: 'high' | 'medium' | 'low';
-  category: string;
-  description: string;
-  confidenceLevel: number;
-}
-```
-
-## Usage Examples
-
-### Basic Registry Implementation
-
-```typescript
-// Example: Command Registry using BaseRegistry
-class CommandRegistry extends BaseRegistry<CommandHandler, CommandRegistryConfig> {
-  protected async createComponents(): Promise<void> {
-    // Load default commands
-    const defaultCommands = await this.loadDefaultCommands();
-    for (const command of defaultCommands) {
-      this.components.set(command.id, command);
-    }
-  }
-
-  protected async wireComponentDependencies(): Promise<void> {
-    // Wire command dependencies (if any)
-    for (const [name, command] of this.components) {
-      if (command.dependencies) {
-        await this.resolveCommandDependencies(name, command);
-      }
-    }
-  }
-
-  protected async initializeComponents(): Promise<void> {
-    // Initialize commands in order
-    for (const [name, command] of this.components) {
-      if (command.initialize) {
-        await command.initialize();
-      }
-    }
-  }
-
-  protected async validateComponent(name: string, component: CommandHandler): Promise<ComponentValidationStatus> {
-    return {
-      name,
-      valid: typeof component.handler === 'function',
-      issues: typeof component.handler !== 'function' ? ['Missing handler function'] : [],
-      interfaceCompliance: this.validateCommandInterface(component),
-      methodAvailability: true,
+      name: registration.name,
+      valid,
+      issues: valid ? [] : ['Missing handler function'],
+      interfaceCompliance: valid,
+      methodAvailability: valid,
       initializationStatus: 'initialized',
-      confidenceScore: typeof component.handler === 'function' ? 1.0 : 0.0
+      confidenceScore: valid ? 1 : 0
     };
-  }
-
-  protected async disposeComponent(name: string, component: CommandHandler): Promise<void> {
-    if (component.dispose) {
-      await component.dispose();
-    }
-  }
-}
-
-// Usage
-const registry = new CommandRegistry({
-  enableValidation: true,
-  validationLevel: 'strict',
-  enableIntelligence: true
-});
+  })
+  .register({ name: 'help', factory: () => helpCommand });
 
 await registry.initialize();
-
-// Get intelligence report
-const intelligence = registry.getIntelligence();
-console.log(`Registry Health Score: ${intelligence?.healthScore}%`);
-console.log(`Confidence Level: ${intelligence?.confidenceLevel}`);
+const handler = await registry.resolve('help');
 ```
 
-### Advanced Registry with Custom Intelligence
+### Extending for Advanced Registries
 
 ```typescript
-class ServiceRegistry extends BaseRegistry<ServiceComponent, ServiceConfig> {
-  // ... implementation ...
-
-  // Custom intelligence analysis
-  protected async analyzeSystemInsights(): Promise<SystemInsight[]> {
-    const insights = await super.analyzeSystemInsights();
-    
-    // Add service-specific insights
-    const serviceInsights = await this.analyzeServiceHealth();
-    insights.push(...serviceInsights);
-    
-    return insights;
+// src/interfaces/interface-adapter-registry.ts
+export class InterfaceAdapterRegistry extends BaseRegistry<IInterfaceAdapter> {
+  protected async onBeforeInitialize(): Promise<void> {
+    await this.registerBuiltInFactories();
   }
 
-  private async analyzeServiceHealth(): Promise<SystemInsight[]> {
-    const insights: SystemInsight[] = [];
-    
-    for (const [name, service] of this.components) {
-      if (service.healthCheck) {
-        const health = await service.healthCheck();
-        if (!health.healthy) {
-          insights.push({
-            category: 'reliability',
-            severity: 'error',
-            message: `Service ${name} health check failed: ${health.reason}`,
-            recommendation: `Restart ${name} service or check dependencies`,
-            confidenceLevel: 0.95
-          });
-        }
-      }
-    }
-    
-    return insights;
+  protected async validateComponent(component, registration) {
+    return {
+      name: registration.name,
+      valid: typeof component.initialize === 'function',
+      issues: [],
+      interfaceCompliance: true,
+      methodAvailability: true,
+      initializationStatus: 'initialized',
+      confidenceScore: 0.9
+    };
   }
 }
 ```
 
-## Lifecycle Management Patterns
+The shared implementation layers in:
 
-### 1. Initialization Orchestration Pattern
+- **Lifecycle orchestration** (`initialize` → registration resolution → validation → intelligence scheduling)
+- **Logger + error-handler integration** via `createLogger`, `handleAsync`, and `withTimeout`
+- **Duplicate detection** in `register` and circular dependency checks during validation
+- **Telemetry hooks** (`getIntelligence`, `getValidationReport`, `performanceMetrics`)
 
-```typescript
-// Standardized initialization sequence
-const initializationSequence = [
-  'validatePreRequisites',
-  'createComponentInstances',
-  'wireComponentDependencies', 
-  'initializeComponentsInOrder',
-  'validatePostInitialization',
-  'generateIntelligenceReport'
-];
-```
+## Integration with Core Utilities
 
-### 2. Confidence Validation Pattern
+- **Logger**: every registry instance receives a contextual logger (`createLogger('interface-adapter-registry')`)
+- **Error Handler**: initialization, disposal, and component cleanup all flow through `handleAsync`
+- **Async Utils**: component creation honours `withTimeout` for lifecycle guarantees
+- **Test Utilities**: validation reports expose deterministic data for harness assertions
 
-```typescript
-// Multi-phase validation with confidence scoring
-const validationPhases = {
-  'component-interface': { weight: 0.3, required: true },
-  'dependency-wiring': { weight: 0.2, required: true },
-  'performance-benchmarks': { weight: 0.3, required: false },
-  'integration-tests': { weight: 0.2, required: false }
-};
-```
+## Files Using This Pattern
 
-### 3. Intelligence Briefing Pattern
+| File | Migration Status | Notes |
+|------|------------------|-------|
+| `src/interfaces/interface-adapter-registry.ts` | ✅ Already extends `BaseRegistry`; ensure builder API covers simple adapters | High-volume adapter lifecycle |
+| `src/commands/universal-command-registry.ts` | ⚠️ Pending migration to `BaseRegistry` | Replace bespoke map + auditing with shared lifecycle |
+| `src/menus/universal-menu-registry.ts` | ⚠️ Pending migration | Align menu registration and duplicate detection |
+| `src/registry/pcl-command-registry.ts` | ⚠️ Pending migration | Consolidate backend-specific command wiring |
+| `src/registry/pcl-menu-registry.ts` | ⚠️ Pending migration | Reuse validation + intelligence scaffolding |
 
-```typescript
-// Continuous intelligence analysis
-const intelligenceMetrics = {
-  'health-score': { updateInterval: 30000, threshold: 70 },
-  'performance-metrics': { updateInterval: 10000, threshold: 50 },
-  'system-insights': { updateInterval: 60000, threshold: null },
-  'recommendations': { updateInterval: 120000, threshold: null }
-};
-```
+_Estimated reduction_: ≈200 duplicate lines once command/menu registries adopt the shared base.
 
-## Performance Characteristics
+## Migration Strategy
 
-- **Initialization**: < 200ms for registries with 10-50 components
-- **Intelligence Analysis**: < 50ms for standard reports  
-- **Validation**: < 100ms for complete validation cycle
-- **Memory Usage**: < 10MB for typical registry instances
-- **Health Score Calculation**: Sub-millisecond for up to 100 components
+1. **Inventory** existing registration hooks, duplicate checks, and validation steps in each registry file.
+2. **Adopt** the builder (`createRegistry`) for lightweight registries or extend `BaseRegistry` where custom lifecycle logic is required.
+3. **Wire** logger contexts and dependency metadata through `ComponentRegistration.metadata` to surface insights in `RegistryIntelligence`.
+4. **Retire** manual maps, bespoke emitters, and per-file validation scaffolding.
 
-## Testing Strategy
+### Before → After Example
 
 ```typescript
-// Intelligence-driven testing approach
-describe('Registry Intelligence', () => {
-  it('should maintain high confidence score under load', async () => {
-    // Simulate high-load scenarios
-    // Verify intelligence metrics remain stable
-    // Check confidence levels stay above thresholds
-  });
-  
-  it('should provide actionable recommendations', async () => {
-    // Introduce known issues
-    // Verify intelligence system detects problems
-    // Check recommendations are relevant and actionable
-  });
+// Before: command registry duplicate detection
+if (this.handlers.has(command.id)) {
+  throw new Error(`Command ${command.id} already registered`);
+}
+
+// After: centralized detection
+registry.register({
+  name: command.id,
+  factory: () => command,
+  metadata: { domain: 'command', backend: command.backendId }
 });
 ```
+
+## Implementation Checklist
+
+**Before migration**
+
+- [ ] Confirm registry responsibilities (command/menu/adapter) and required lifecycle hooks
+- [ ] Capture duplicate detection rules and existing validation outputs for parity tests
+- [ ] Note dependency graphs to verify circular dependency alerts post-migration
+
+**During migration**
+
+- [ ] Replace manual `Map` operations with `register`/`resolve`/`unregister`
+- [ ] Implement `validateComponent` to preserve domain-specific checks
+- [ ] Configure lifecycle timeouts and validation levels via `.withConfiguration` or initial builder options before calling `register`
+- [ ] Surface metadata for telemetry and intelligence reports
+
+**After migration**
+
+- [ ] Run registration lifecycle tests (initialize → register → resolve → dispose)
+- [ ] Assert duplicate detection through the builder (`register` throws on duplicate names)
+- [ ] Validate circular dependency detection using representative dependency graphs
+- [ ] Capture `getIntelligence()` output in regression tests
+
+## Validation & Metrics
+
+- **Health score**: target ≥80 once registries migrate and validation passes
+- **Intelligence update**: default 30s cadence; adjust via config when registries need faster telemetry
+- **Lifecycle timeout**: defaults to 10s; tune per registry if factories exceed this window
+
+## Testing Guidance
+
+- Focused unit tests should cover initialization, duplicate detection, dependency wiring, and intelligence generation
+- Integration tests should register real command/menu/adapters and assert lifecycle events (`initialized`, `resolved`, `disposed`)
+- Use mocked logger assertions to guarantee consistent context strings and error emission
 
 ## Anti-Patterns to Avoid
 
-1. **Manual Lifecycle Management**: Never bypass the standardized lifecycle phases
-2. **Confidence Score Gaming**: Don't optimize for metrics over actual system health
-3. **Intelligence Overhead**: Don't run intelligence analysis on every operation
-4. **Validation Bypass**: Don't skip validation in production environments
-5. **Cascade Disposal**: Don't dispose components without proper ordering
+- Reintroducing bespoke maps or manual lifecycle timers outside the utility
+- Skipping validation (`enableValidation: false`) in production environments
+- Bypassing the shared error handler when disposing components
 
-## Migration Path
+## Follow-On Opportunities
 
-For existing registries:
-
-1. **Phase 1**: Extract registration logic to extend BaseRegistry
-2. **Phase 2**: Implement required abstract methods  
-3. **Phase 3**: Add intelligence analysis hooks
-4. **Phase 4**: Migrate to standardized lifecycle management
-5. **Phase 5**: Enable confidence validation in production
-
-## Integration Points
-
-- **Monitoring Systems**: Intelligence reports integrate with APM tools
-- **CI/CD Pipelines**: Confidence scores can gate deployments  
-- **Load Balancers**: Health scores inform routing decisions
-- **Auto-scaling**: Performance metrics trigger scaling events
-- **Alerting**: System insights generate operational alerts
-
----
-
-**Status**: ESTABLISHED  
-**Category**: Foundation  
-**Complexity**: Advanced  
-**Prerequisites**: EventEmitter, Error Handling, Validation Framework  
-**Related**: [dependency-injection-unified, observability-infrastructure, test-infrastructure-repair]
+- Once registries migrate, extract shared factory wiring into `factory-utils` to reduce repeated adapter/command construction
+- Feed `RegistryIntelligence` outputs into observability dashboards outlined in `observability-instrumentation`

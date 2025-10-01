@@ -26,6 +26,7 @@ import {
   DisplayStandardsCalculator,
   ContentDimensions 
 } from './display-standards-calculator';
+import { StringUtils } from '../utils/chainable-string-utils';
 
 /**
  * Alignment types for content positioning
@@ -515,11 +516,10 @@ export class LayoutNormalizer {
       const content = String(row[header] || '');
       const width = columnWidths[index];
       
-      // Truncate if necessary
-      let cellContent = content.length > width ? content.substring(0, width - 1) + '…' : content;
-      
-      // Pad to column width
-      cellContent = cellContent.padEnd(width);
+      const cellContent = StringUtils.chain(content, { mode: 'terminal' })
+        .truncate(width, '…')
+        .pad(width)
+        .value();
       
       return cellPadding + cellContent + cellPadding;
     });

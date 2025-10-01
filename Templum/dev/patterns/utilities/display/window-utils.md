@@ -1,15 +1,15 @@
 ---
-date-created: 2025-09-15T100000Z
-last-updated: 2025-09-15T100000Z
+date-created: 2025-09-15T10:00:00Z
+last-updated: 2025-09-15T10:00:00Z
 name: window-utils
-description: Centralized window utilities to consolidate scattered border rendering, window layout logic, and general window management across CLI components.
-status: proposed
+description: Chainable window utilities to consolidate border rendering, window layout logic, and modal composition across CLI components
+status: established
 category: display-ui
 use-when:
-  - Consolidating redundant border rendering and window layout logic.
-  - Needing consistent window management across various terminal UI components.
-  - Implementing chainable APIs for defining and rendering window properties.
-  - Requiring standardized handling of window dimensions and content placement.
+  - Replacing duplicated border rendering and window layout helpers
+  - Building consistent modal/panel shells across terminal components
+  - Applying standardized window dimensions, padding, and title alignment
+  - Integrating window chrome with the shared formatter and display utilities
 keywords:
   - window-utilities
   - ui-consistency
@@ -17,339 +17,237 @@ keywords:
   - layout-management
   - terminal-ui
 prerequisites:
-  - logger
+  - display-utils
   - terminal-formatter
+  - logger
 related-patterns:
   - display-utils
+  - terminal-formatter
   - terminal-ui-components
 ---
 
-### Window Utils Utility Consolidation Pattern
+# Window Utils Utility Consolidation Pattern
 
-**Problem**: Border rendering and window layout logic are duplicated across various CLI components, leading to inconsistent UI presentation and increased maintenance overhead. Components like `src/rendering/content-layout-system.ts` and `src/interfaces/terminal-ui-components.ts` contain repetitive code for drawing borders, calculating window dimensions, and managing content placement.
+## Consolidation Snapshot
 
-**Current State Examples**:
+- **Redundancy count**: Border/layout helpers repeated in ≈15 files (source: `safe-consolidation-candidates.md`).
+- **Target reduction**: ≈300 lines of manual window chrome code.
+- **Priority**: HIGH within the display group – essential for CLI layout cohesion.
+
+## Problem Statement
+
+Window borders, titles, and modal shells are implemented ad hoc throughout CLI modules. Files such as `src/rendering/content-layout-system.ts` and `src/interfaces/terminal-ui-components.ts` duplicate border characters, padding rules, and width calculations, producing inconsistent visuals and inflating maintenance effort.
+
+### Current State Examples
 
 ```typescript
-// In content-layout-system.ts or similar
 class BorderRenderer {
   renderBorder(width: number, height: number, title: string, borderStyle: string): string {
     // Manual border drawing logic with character arrays
   }
 }
 
-class WindowLayout {
-  calculateContentArea(windowWidth: number, windowHeight: number): { x: number; y: number; width: number; height: number } {
-    // Manual calculation of inner content area considering borders and padding
-  }
-}
-
-// In terminal-ui-components.ts
 function drawModal(content: string[], title: string): string {
   const terminalWidth = process.stdout.columns || 80;
   const modalWidth = Math.min(terminalWidth - 10, content[0].length + 4);
-  const borderChar = '#'; // Inconsistent border character
-  // ... manual border and content placement ...
+  const borderChar = '#';
+  // Manual border and content placement...
 }
 ```
 
-**Solution**: Centralized `WindowUtils` with a fluent, chainable API for defining and rendering window elements, ensuring minimal usage footprint and consistent window management across all UI components. This utility integrates with existing logging and formatting utilities to provide a robust and easy-to-use solution.
+## Solution Overview
 
-#### Window Utils Implementation
+Provide a fluent `WindowUtils` builder that composes with `DisplayUtils` and `TerminalFormatter` to render windows in ≤3 calls. The utility must:
 
-**Core WindowUtils Class** (Minimal Usage Design):
+- expose `WindowUtils.builder()` returning a chainable builder for width, padding, style, and title options,
+- default to ANSI-safe borders and alignment,
+- delegate width calculations to `DisplayUtils` where appropriate,
+- emit structured debug logs for layout choices.
+
+### Core API Sketch
 
 ```typescript
-import { createLogger } from '../core/logger';
-import { SemanticFormatter } from '../display/terminal-formatter';
-import { DisplayUtils } from '../display/display-utils';
+import { createLogger } from './logger';
+import { DisplayUtils } from './display-utils';
+import { TerminalFormatter } from './terminal-formatter';
+
+type WindowBorderStyle = 'single' | 'double' | 'dashed';
+
+const BORDER_SETS = {
+  single: { horizontal: '─', vertical: '│', topLeft: '┌', topRight: '┐', bottomLeft: '└', bottomRight: '┘' },
+  double: { horizontal: '═', vertical: '║', topLeft: '╔', topRight: '╗', bottomLeft: '╚', bottomRight: '╝' },
+  dashed: { horizontal: '-', vertical: '|', topLeft: '+', topRight: '+', bottomLeft: '+', bottomRight: '+' }
+} as const;
+
+const TITLE_ALIGNERS = {
+  left: (title: string, width: number) => title.padEnd(width, ' '),
+  center: (title: string, width: number) => {
+    const trimmed = title.trim();
+    const excess = Math.max(width - trimmed.length, 0);
+    const leftPad = Math.floor(excess / 2);
+    const rightPad = excess - leftPad;
+    return `${' '.repeat(leftPad)}${trimmed}${' '.repeat(rightPad)}`;
+  },
+  right: (title: string, width: number) => title.padStart(width, ' ')
+} as const;
+
+interface WindowRenderOptions {
+  width?: number;
+  height?: number;
+  padding?: number;
+  style?: WindowBorderStyle;
+  title?: string;
+  alignTitle?: 'left' | 'center' | 'right';
+}
+
+class WindowBuilder {
+  private config: WindowRenderOptions = {};
+
+  width(width: number): this {
+    this.config.width = Math.max(1, width);
+    return this;
+  }
+
+  autoWidth(): this {
+    this.config.width = DisplayUtils.standards.terminalWidth - 4;
+    return this;
+  }
+
+  padding(padding: number): this {
+    this.config.padding = Math.max(0, padding);
+    return this;
+  }
+
+  style(style: WindowBorderStyle): this {
+    this.config.style = style;
+    return this;
+  }
+
+  title(title: string, align: 'left' | 'center' | 'right' = 'center'): this {
+    this.config.title = title;
+    this.config.alignTitle = align;
+    return this;
+  }
+
+  render(content: string[]): string {
+    return WindowUtils.render({ ...this.config, content });
+  }
+}
 
 export class WindowUtils {
   private static logger = createLogger('window-utils');
-  private static formatter = new SemanticFormatter(); // Using SemanticFormatter
+  private static formatter = new TerminalFormatter();
 
-  // Fluent API for window creation and rendering
   static builder(): WindowBuilder {
     return new WindowBuilder();
   }
 
-  // Helper for quick border rendering
-  static renderBorder(options: BorderOptions): string {
-    const { width, height, title = '', style = 'single', padding = 1 } = options;
-    const { borderChars, corners } = this.getBorderStyle(style);
-    
-    const topBottom = corners.topLeft + borderChars.horizontal.repeat(width - 2) + corners.topRight;
-    const middle = borderChars.vertical + ' '.repeat(width - 2) + borderChars.vertical;
-    
-    let result = [topBottom];
-    for (let i = 0; i < height - 2; i++) {
-      result.push(middle);
-    }
-    result.push(topBottom.replace(corners.topLeft, corners.bottomLeft).replace(corners.topRight, corners.bottomRight)); // Bottom border
-    
-    // Add title if present
-    if (title) {
-      const titleText = ` ${title} `;
-      const titleStart = Math.floor((width - titleText.length) / 2);
-      result[0] = result[0].substring(0, titleStart) + titleText + result[0].substring(titleStart + titleText.length);
+  static render({ content, width, height, padding = 1, style = 'single', title, alignTitle = 'center' }: WindowRenderOptions & { content: string[] }): string {
+    const chars = BORDER_SETS[style];
+    const resolvedWidth = Math.max(width ?? DisplayUtils.responsiveWidth(content, { padding }), 4);
+    const innerWidth = Math.max(resolvedWidth - 2, 1);
+
+    const header = this.composeHeader(innerWidth, chars, title, alignTitle);
+    const body = this.composeBody({ content, innerWidth, padding, vertical: chars.vertical, requestedHeight: height });
+    const footer = `${chars.bottomLeft}${chars.horizontal.repeat(innerWidth)}${chars.bottomRight}`;
+
+    this.logger.debug('Rendered window', { width: resolvedWidth, height: body.length + 2, style, padding, titleLength: title?.length ?? 0 });
+    return [header, ...body, footer].join('\n');
+  }
+
+  private static composeHeader(innerWidth: number, chars: typeof BORDER_SETS[WindowBorderStyle], title?: string, align: 'left' | 'center' | 'right' = 'center'): string {
+    if (!title || title.trim().length === 0) {
+      return `${chars.topLeft}${chars.horizontal.repeat(innerWidth)}${chars.topRight}`;
     }
 
-    this.logger.debug('Rendered border', { width, height, title });
-    return result.join('\n');
+    const aligned = TITLE_ALIGNERS[align](title, innerWidth).slice(0, innerWidth);
+    const separator = this.stripAnsi(this.formatter.ui.separator(innerWidth, 'solid'));
+    const merged = this.mergeTitle(separator, aligned);
+    return `${chars.topLeft}${merged}${chars.topRight}`;
   }
 
-  private static getBorderStyle(style: string) {
-    switch (style) {
-      case 'double':
-        return {
-          borderChars: { horizontal: '═', vertical: '║' },
-          corners: { topLeft: '╔', topRight: '╗', bottomLeft: '╚', bottomRight: '╝' },
-        };
-      case 'rounded':
-        return {
-          borderChars: { horizontal: '─', vertical: '│' },
-          corners: { topLeft: '╭', topRight: '╮', bottomLeft: '╰', bottomRight: '╯' },
-        };
-      case 'single':
-      default:
-        return {
-          borderChars: { horizontal: '─', vertical: '│' },
-          corners: { topLeft: '┌', topRight: '┐', bottomLeft: '└', bottomRight: '┘' },
-        };
-    }
-  }
-}
+  private static composeBody({ content, innerWidth, padding, vertical, requestedHeight }: { content: string[]; innerWidth: number; padding: number; vertical: string; requestedHeight?: number }): string[] {
+    const usableWidth = Math.max(innerWidth - padding * 2, 1);
+    const lines = content.map(line => `${vertical}${' '.repeat(padding)}${this.padLine(line, usableWidth)}${' '.repeat(padding)}${vertical}`);
 
-// Fluent Window Builder API
-class WindowBuilder {
-  private _width: number = 0;
-  private _height: number = 0;
-  private _title: string = '';
-  private _content: string[] = [];
-  private _borderStyle: BorderStyle = 'single';
-  private _padding: number = 1;
-
-  width(w: number): this {
-    this._width = w;
-    return this;
-  }
-
-  height(h: number): this {
-    this._height = h;
-    return this;
-  }
-
-  title(t: string): this {
-    this._title = t;
-    return this;
-  }
-
-  content(c: string | string[]): this {
-    this._content = Array.isArray(c) ? c : [c];
-    return this;
-  }
-
-  border(style: BorderStyle): this {
-    this._borderStyle = style;
-    return this;
-  }
-
-  padding(p: number): this {
-    this._padding = p;
-    return this;
-  }
-
-  render(): string {
-    // Determine effective width and height, potentially from terminal
-    const actualWidth = this._width || DisplayUtils.standards.terminalWidth - (this._padding * 2);
-    const actualHeight = this._height || this._content.length + (this._padding * 2) + 2; // +2 for borders
-
-    const border = WindowUtils.renderBorder({
-      width: actualWidth,
-      height: actualHeight,
-      title: this._title,
-      style: this._borderStyle,
-      padding: this._padding,
-    });
-
-    // Overlay content onto the border
-    const borderLines = border.split('\n');
-    const contentStartY = 1 + this._padding; // After top border and top padding
-    const contentStartX = 1 + this._padding; // After left border and left padding
-
-    for (let i = 0; i < this._content.length; i++) {
-      if (contentStartY + i < actualHeight - (1 + this._padding)) { // Ensure content fits within bottom border and padding
-        const line = this._content[i];
-        const strippedLine = DisplayUtils.stripAnsi(line);
-        const paddedLine = strippedLine.padEnd(actualWidth - (contentStartX * 2), ' '); // Pad content to fit
-        
-        const lineToModify = borderLines[contentStartY + i];
-        if (lineToModify) {
-            borderLines[contentStartY + i] = 
-              lineToModify.substring(0, contentStartX) + 
-              paddedLine.substring(0, actualWidth - (contentStartX * 2)) + // Ensure content doesn't overflow
-              lineToModify.substring(actualWidth - contentStartX);
-        }
+    if (requestedHeight && requestedHeight > lines.length) {
+      const filler = `${vertical}${' '.repeat(innerWidth)}${vertical}`;
+      while (lines.length < requestedHeight) {
+        lines.push(filler);
       }
     }
 
-    return borderLines.join('\n');
+    return lines;
+  }
+
+  private static mergeTitle(separator: string, title: string): string {
+    if (title.length >= separator.length) {
+      return title.slice(0, separator.length);
+    }
+    const start = Math.max(Math.floor((separator.length - title.length) / 2), 0);
+    const prefix = separator.slice(0, start);
+    const suffix = separator.slice(start + title.length);
+    return `${prefix}${title}${suffix}`;
+  }
+
+  private static padLine(value: string, width: number): string {
+    const stripped = this.stripAnsi(value);
+    if (stripped.length > width) {
+      const truncated = stripped.slice(0, Math.max(width - 3, 0));
+      return `${truncated}${width >= 3 ? '...' : ''}`.padEnd(width, ' ');
+    }
+    return stripped.padEnd(width, ' ');
+  }
+
+  private static stripAnsi(value: string): string {
+    return value.replace(/\u001b\[[0-9;]*m/g, '');
   }
 }
+```
 
-// Types
-type BorderStyle = 'single' | 'double' | 'rounded';
+### Migration Example
 
-interface BorderOptions {
-  width: number;
-  height: number;
-  title?: string;
-  style?: BorderStyle;
-  padding?: number;
+```typescript
+// Before
+function drawModal(content: string[], title: string): string {
+  // manual width + border management
 }
 
-// Convenience exports
-export const { builder: windowBuilder, renderBorder } = WindowUtils;
-```
-
-#### Usage Examples (Minimal Footprint)
-
-**Before** (Current scattered approach):
-
-```typescript
-// In content-layout-system.ts (multiple files affected)
-const renderer = new BorderRenderer();
-const borderBox = renderer.renderBorder(80, 10, 'My Window', 'double');
-
-// In terminal-ui-components.ts
-const terminalWidth = process.stdout.columns || 80;
-const title = 'System Status';
-const content = ['CPU: 45%', 'RAM: 60%'];
-let windowContent = '';
-// ... complex manual calculations for border, padding, and content positioning ...
-```
-
-**After** (One-line consolidated):
-
-```typescript
-// Simple border rendering
-const simpleBorder = windowBuilder().width(60).height(5).title('Alert!').border('single').render();
-console.log(simpleBorder);
-
-// Window with content
-const windowWithContent = windowBuilder()
+// After
+const modal = WindowUtils.builder()
   .autoWidth()
-  .height(10)
-  .title('Application Log')
-  .border('double')
-  .content([
-    'Line 1: Initializing...',
-    'Line 2: Loading modules...',
-    'Line 3: Connection established.',
-  ])
   .padding(2)
-  .render();
-console.log(windowWithContent);
-
-// Complex window layout
-const menuItems = ['Option A', 'Option B', 'Option C'];
-const menuWindow = windowBuilder()
-  .width(40)
-  .height(menuItems.length + 4) // Content lines + padding + borders
-  .title('Main Menu')
-  .border('rounded')
-  .content(DisplayUtils.formatItems(menuItems, { numbered: true, width: 30 }))
-  .render();
-console.log(menuWindow);
+  .style('double')
+  .title('Services')
+  .render(contentLines);
 ```
 
-#### Files Using This Pattern
+## Files Using This Pattern
 
-**Rendering and UI Components**:
+| Component | Migration Focus | Estimated Helpers |
+|-----------|-----------------|-------------------|
+| `src/rendering/content-layout-system.ts` | Replace `BorderRenderer` + layout math with `WindowUtils.builder()` | 8 helpers |
+| `src/interfaces/terminal-ui-components.ts` | Standardize modal/panel rendering | 5 helpers |
+| CLI dialog components (≈8 files) | Remove bespoke border characters + padding logic | ≈120 lines |
 
-- [ ] `src/rendering/content-layout-system.ts` → Replace `BorderRenderer` and `WindowLayout` with `WindowUtils.builder()`
-- [ ] `src/interfaces/terminal-ui-components.ts` → Consolidate manual window and modal drawing logic with `WindowUtils.builder()`
-- [ ] `src/interfaces/interactive-menu-renderer.ts` → Use `WindowUtils` for consistent menu framing and borders
-- [ ] Any other CLI components with manual border drawing or window layout logic.
+## Expected Impact
 
-**Impact**: ~15 files, ~300 lines reduction, consistent window management.
+- **Lines reduced**: ≈300 across terminal UI.
+- **Usage footprint**: Window shells rendered in ≤3 chained calls.
+- **Consistency**: Shared border styles and title alignment across CLI components.
 
-#### Expected Impact
+## Implementation Checklist
 
-**Quantitative Benefits**:
+**Before migration**
+- [ ] Capture existing border styles, title placements, and padding defaults.
+- [ ] Identify shared content formatting needs (wrapping, truncation).
 
-- **Files Affected**: ~15 files with duplicated window and border logic.
-- **Lines Reduced**: ~300 lines of manual border drawing and layout calculation code.
-- **Components Unified**: BorderRenderer, WindowLayout, and scattered modal/window drawing functions.
-- **Consistency**: 100% consistent window borders, titles, and content placement across all CLI components.
+**During migration**
+- [ ] Replace manual border builders with `WindowUtils.builder()`.
+- [ ] Route width calculations through `DisplayUtils.responsiveWidth`.
+- [ ] Use formatter-provided characters for all borders.
 
-**Qualitative Benefits**:
-
-- **Fluent API**: Chainable window builder simplifies complex UI element creation.
-- **Standardized Appearance**: Ensures a uniform look and feel for all terminal windows and dialogs.
-- **Reduced Boilerplate**: Eliminates repetitive border drawing and layout calculations.
-- **Improved Maintainability**: Centralized logic for easier updates and bug fixes.
-- **Developer Experience**: Intuitive API reduces the learning curve for new UI development.
-
-#### Integration with Other Utilities
-
-**Display Utils Integration**:
-
-```typescript
-// WindowUtils leverages DisplayUtils for width calculations and content formatting
-const window = windowBuilder()
-  .autoWidth()
-  .content(DisplayUtils.formatItems(someData, { numbered: true }))
-  .render();
-```
-
-**Logger Integration**:
-
-```typescript
-// Automatic logging of window rendering decisions or errors.
-WindowUtils.builder().title('Error').content('Something went wrong!').render(); // Logs rendering process
-```
-
-**Terminal Formatter Integration**:
-
-```typescript
-// Window content can be pre-formatted using TerminalFormatter
-const formattedContent = WindowUtils.formatter.status.error('Critical Error: Disk full!'); // Using SemanticFormatter's API
-const errorWindow = windowBuilder().title('System Alert').content([formattedContent]).render();
-```
-
-#### Implementation Validation
-
-**Before Migration**:
-
-- [ ] Catalog all instances of manual border drawing and window layout logic.
-- [ ] Identify components responsible for modal and dialog rendering.
-- [ ] Map all disparate implementations of terminal window management.
-
-**During Migration**:
-
-- [ ] Replace custom `BorderRenderer` and `WindowLayout` classes with `WindowUtils.builder()`.
-- [ ] Convert manual modal/dialog drawing functions to use the `WindowUtils` API.
-- [ ] Standardize all window titles, border styles, and padding using the fluent API.
-
-**After Migration**:
-
-- [ ] Verify consistent border rendering and window layouts across all CLI components.
-- [ ] Confirm proper content placement and padding within rendered windows.
-- [ ] Test window responsiveness to different terminal sizes.
-
-#### Anti-Patterns
-
-- **X** Don't manually draw borders with character arrays; use `WindowUtils.renderBorder()` or `WindowUtils.builder().border()`.
-- **X** Don't manually calculate content areas within windows; leverage `WindowUtils.builder()` for automatic layout.
-- **X** Don't use inconsistent border characters or styles; standardize with `WindowUtils` presets.
-- **X** Avoid ad-hoc title placement logic; use `WindowUtils.builder().title()` for centralized handling.
-
-#### Pattern Metadata
-
-**Used By Active Tasks**: Phase 2 Utility Consolidation
-**Implementation Priority**: HIGH (UI consistency critical)
-**Dependencies**: Logger Utility (for debug logging), Terminal Formatter Utility (for integration), Display Utils Utility (for width calculations and formatting)
-**Integration Points**: All CLI interface components, terminal rendering, interactive menus, modal dialogs.
-**Migration Complexity**: Medium (requires refactoring existing UI rendering logic).
-**Performance Impact**: Positive (eliminates redundant calculations, streamlined rendering).
+**After migration**
+- [ ] Validate modal rendering in a narrow and wide terminal.
+- [ ] Confirm debug logging is only emitted at `DEBUG` level.
+- [ ] Update consolidation checklist for window utilities.

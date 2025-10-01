@@ -185,7 +185,7 @@ export class ResilienceManager {
   private active = false;
 
   constructor(private readonly componentId: string, private readonly interfaceType: string) {
-    this.logger = createLogger('resilience-manager').child({ componentId, interfaceType });
+    this.logger = createLogger('resilience-manager').child(`${componentId}:${interfaceType}`);
     this.metrics = {
       componentId,
       interfaceType,
@@ -433,11 +433,14 @@ export class ResilienceManager {
       this.metrics.state = 'failing';
       this.events.emitFallbackTriggered(fallbackResult);
       this.events.emitStateChanged(this.metrics.state);
-      this.logger.error('Fallback strategy failed', {
-        strategyId: strategy.id,
-        error: error instanceof Error ? error.message : String(error),
-        cause: cause instanceof Error ? cause.message : String(cause)
-      });
+      this.logger.error(
+        'Fallback strategy failed',
+        error instanceof Error ? error : undefined,
+        {
+          strategyId: strategy.id,
+          cause: cause instanceof Error ? cause.message : String(cause)
+        }
+      );
       return fallbackResult;
     }
   }
@@ -456,9 +459,14 @@ export class ResilienceManager {
         }
         this.events.emitMetricsUpdated(this.metrics);
       } catch (error) {
-        this.logger.error('Error during resilience monitoring', {
-          error: error instanceof Error ? error.message : String(error)
-        });
+        this.logger.error(
+          'Error during resilience monitoring',
+          error instanceof Error ? error : undefined,
+          {
+            componentId: this.componentId,
+            interfaceType: this.interfaceType
+          }
+        );
       }
     }, this.monitoringConfig.samplingIntervalMs);
   }

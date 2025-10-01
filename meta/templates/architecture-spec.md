@@ -1,4 +1,5 @@
 ---
+doc-type: architecture-spec
 title: [Project Name] Architecture Specification
 tags: [project, architecture, current-state]
 status: current

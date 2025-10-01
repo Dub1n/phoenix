@@ -12,6 +12,7 @@
 
 import chalk from 'chalk';
 import { InterfaceType } from '../types/templum-types';
+import { StringUtils, StringWidthUtils } from '../utils/chainable-string-utils';
 import { 
   ContentLayoutSystem, 
   WindowContent, 
@@ -171,6 +172,23 @@ export class UniversalLayoutEngine {
 
   constructor() {
     this.contentLayoutSystem = new ContentLayoutSystem();
+  }
+
+  private normalizeWidth(width: number): number {
+    return Math.max(1, Math.floor(width));
+  }
+
+  private formatCell(
+    value: string,
+    width: number,
+    alignment: 'left' | 'right' | 'center' = 'left',
+    ellipsis = '…'
+  ): string {
+    const targetWidth = this.normalizeWidth(width);
+    return StringUtils.chain(String(value), { mode: 'terminal' })
+      .truncate(targetWidth, ellipsis)
+      .pad(targetWidth, alignment)
+      .value();
   }
 
   /**
@@ -574,8 +592,13 @@ export class UniversalLayoutEngine {
     const topBorder = '┌' + borderChar.repeat(windowWidth - 2) + '┐';
     const bottomBorder = '└' + borderChar.repeat(windowWidth - 2) + '┘';
     const promptText = 'Select an option: (Use arrow keys)';
-    const paddedPrompt = '│ ' + promptText.padEnd(windowWidth - 4) + ' │';
-    
+    const innerWidth = Math.max(1, windowWidth - 4);
+    const formattedPrompt = StringUtils.chain(promptText, { mode: 'terminal' })
+      .truncate(innerWidth, '...')
+      .pad(innerWidth)
+      .value();
+    const paddedPrompt = `│ ${formattedPrompt} │`;
+
     return [topBorder, paddedPrompt, bottomBorder].join('\n');
   }
 
@@ -1248,10 +1271,10 @@ export class UniversalLayoutEngine {
     table += `├─────┼──────────────┼──────────────┼──────────────┤\n`;
     
     for (const item of skinDefinition.items) {
-      const id = item.id.padEnd(3).substr(0, 3);
-      const label = item.label.padEnd(12).substr(0, 12);
-      const desc = (item.description || '').padEnd(12).substr(0, 12);
-      const type = item.type.padEnd(12).substr(0, 12);
+      const id = this.formatCell(item.id, 3, 'left', '…');
+      const label = this.formatCell(item.label, 12, 'left', '…');
+      const desc = this.formatCell(item.description || '', 12, 'left', '…');
+      const type = this.formatCell(item.type, 12, 'left', '…');
       table += `│ ${id} │ ${label} │ ${desc} │ ${type} │\n`;
     }
     
@@ -1267,9 +1290,15 @@ export class UniversalLayoutEngine {
     output += '\n';
     
     skinDefinition.items.forEach((item, index) => {
-      output += `${index + 1}. ${item.label}`;
+      const formattedLabel = StringUtils.chain(item.label, { mode: 'terminal' })
+        .truncate(40, '...')
+        .value();
+      output += `${index + 1}. ${formattedLabel}`;
       if (item.description) {
-        output += ` - ${item.description}`;
+        const formattedDescription = StringUtils.chain(item.description, { mode: 'terminal' })
+          .truncate(80, '...')
+          .value();
+        output += ` - ${formattedDescription}`;
       }
       output += '\n';
     });
@@ -1449,9 +1478,13 @@ export class UniversalLayoutEngine {
     if (adaptations.enableTruncation) {
       adaptedSkin.items = adaptedSkin.items?.map(item => ({
         ...item,
-        label: item.label.length > 40 ? item.label.substring(0, 37) + '...' : item.label,
-        description: item.description && item.description.length > 60 
-          ? item.description.substring(0, 57) + '...' 
+        label: StringUtils.chain(item.label, { mode: 'terminal' })
+          .truncate(40, '...')
+          .value(),
+        description: item.description
+          ? StringUtils.chain(item.description, { mode: 'terminal' })
+              .truncate(60, '...')
+              .value()
           : item.description
       }));
     }

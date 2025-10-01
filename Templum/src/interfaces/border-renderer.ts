@@ -15,7 +15,9 @@ tags: [border-rendering, window-layout, cli-compliance]
  * 
  * Implements structured window borders with proper nesting and text standardization.
  * Provides fallback support for terminals that don't support box-drawing characters.
- */
+*/
+
+import { StringUtils, StringWidthUtils } from '../utils/chainable-string-utils';
 
 export interface BorderCharacters {
   topLeft: string;
@@ -179,25 +181,23 @@ export class WindowLayout {
    * Measure the actual display width of a line (handles formatting)
    */
   private measureLineWidth(line: string): number {
-    // Remove ANSI escape codes for accurate measurement
-    const cleanLine = line.replace(/\u001b\[[0-9;]*m/g, '');
-    return cleanLine.length;
+    return StringWidthUtils.getDisplayWidth(line);
   }
   
   /**
    * Apply padding to content lines
    */
   applyPadding(content: string[], width: number): string[] {
-    const availableWidth = width - this.config.padding * 2 - 2; // subtract borders
+    const availableWidth = Math.max(1, width - this.config.padding * 2 - 2); // subtract borders
     const paddingStr = ' '.repeat(this.config.padding);
-    
+
     return content.map(line => {
-      const truncated = line.length > availableWidth 
-        ? line.substring(0, availableWidth - 3) + '...'
-        : line;
-      
-      const padded = truncated.padEnd(availableWidth);
-      return paddingStr + padded + paddingStr;
+      const formatted = StringUtils.chain(line, { mode: 'terminal' })
+        .truncate(availableWidth, '...')
+        .pad(availableWidth)
+        .value();
+
+      return paddingStr + formatted + paddingStr;
     });
   }
 }
@@ -228,12 +228,7 @@ export class ContentAnalyzer {
    * Measure text width accounting for formatting and multi-byte characters
    */
   private measureText(text: string): number {
-    // Remove ANSI escape codes
-    const cleanText = text.replace(/\u001b\[[0-9;]*m/g, '');
-    
-    // Handle multi-byte characters (basic implementation)
-    // In a real implementation, you might use a library like 'string-width'
-    return cleanText.length;
+    return StringWidthUtils.getDisplayWidth(text);
   }
   
   /**
@@ -241,33 +236,8 @@ export class ContentAnalyzer {
    */
   wrapText(text: string, maxWidth: number): string[] {
     if (maxWidth <= 0) return [text];
-    
-    const words = text.split(' ');
-    const lines: string[] = [];
-    let currentLine = '';
-    
-    for (const word of words) {
-      const potentialLine = currentLine ? `${currentLine} ${word}` : word;
-      
-      if (this.measureText(potentialLine) <= maxWidth) {
-        currentLine = potentialLine;
-      } else {
-        if (currentLine) {
-          lines.push(currentLine);
-          currentLine = word;
-        } else {
-          // Single word exceeds width - force break
-          lines.push(word.substring(0, maxWidth));
-          currentLine = word.substring(maxWidth);
-        }
-      }
-    }
-    
-    if (currentLine) {
-      lines.push(currentLine);
-    }
-    
-    return lines;
+
+    return StringUtils.wrap(text, Math.max(1, Math.floor(maxWidth)));
   }
 }
 
@@ -381,21 +351,13 @@ export class BorderRenderer {
    */
   private renderTitleBorder(title: string, width: number): string {
     const innerWidth = width - 2;
-    const titleText = ` ${title} `;
-    
-    if (titleText.length >= innerWidth) {
-      // Title too long, use simple border
-      return this.renderTopBorder(width);
-    }
-    
-    const remainingWidth = innerWidth - titleText.length;
-    const leftPadding = Math.floor(remainingWidth / 2);
-    const rightPadding = remainingWidth - leftPadding;
-    
+    const formattedTitle = StringUtils.chain(` ${title} `, { mode: 'terminal' })
+      .truncate(innerWidth, '…')
+      .pad(innerWidth, 'center')
+      .value();
+
     return this.characters.topLeft +
-           this.characters.horizontal.repeat(leftPadding) +
-           titleText +
-           this.characters.horizontal.repeat(rightPadding) +
+           formattedTitle +
            this.characters.topRight;
   }
   
@@ -404,9 +366,12 @@ export class BorderRenderer {
    */
   private renderContentLine(content: string, width: number): string {
     const innerWidth = width - 2;
-    const paddedContent = content.padEnd(innerWidth).substring(0, innerWidth);
-    
-    return this.characters.vertical + paddedContent + this.characters.vertical;
+    const formatted = StringUtils.chain(content, { mode: 'terminal' })
+      .truncate(innerWidth, '…')
+      .pad(innerWidth)
+      .value();
+
+    return this.characters.vertical + formatted + this.characters.vertical;
   }
   
   /**

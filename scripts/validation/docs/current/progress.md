@@ -1,3 +1,11 @@
+---
+doc-type: progress
+title: Validation System Progress Tracker
+tags: [validation-system, progress]
+status: current
+last_updated: 2025-09-22
+---
+
 # Validation System Progress Tracker
 
 Legend: `[x]` done · `[~]` in progress · `[ ]` not started · `[!]` broken · `[?]` verify · `[P]` pending investigation

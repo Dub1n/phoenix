@@ -1,740 +1,118 @@
 ---
-date: 2025-09-14T120600Z
+date-created: 2025-09-14T12:06:00Z
+last-updated: 2025-09-15T00:00:00Z
 name: debug-utils
-TASK-ID: ["TASK-PATTERN-DEBUG-001"]
-category: Foundation
-status: ["[x]"]
-patterns: ["Debug Utils", "Confidence Validation", "State Inspection", "Performance Monitoring"]
-components: ["DebugManager", "StateInspector", "ConfidenceValidator", "PerformanceMonitor"]
-dependencies: ["TypeScript", "Event System", "Logging Infrastructure"]
-tags: ["debugging", "utilities", "confidence-validation", "state-inspection", "performance", "development-tools"]
+description: Chainable development toolkit for logging, inspection, and profiling with confidence gating.
+status: ["[~]"]
+category: development-tools
+use-when:
+  - Deploying temporary or diagnostic instrumentation that must respect production safety boundaries.
+  - Profiling backend adapters, CLI flows, or test harnesses without scattering ad-hoc console statements.
+keywords:
+  - debug-toolkit
+  - profiling
+  - state-inspection
+prerequisites:
+  - logger
+  - error-handler
+related-patterns:
+  - async-utils
+  - logger
+  - test-utils
 ---
 
 # Debug Utils Utility Pattern
 
-**Status**: ESTABLISHED | **Category**: Foundation
+Status: standardising | Category: Development Tools
 
-## Problem
+## Why This Pattern Exists
 
-Development debugging across TypeScript projects requires consistent, reliable debugging utilities that provide:
+Templum carries multiple ad-hoc debugging blocks that bypass shared logging and error handling. The most costly issues are:
+- Console-based diagnostics that never flow through the central logger, so log-level gating and transports are bypassed.
+- Repeated inspection/profiling snippets that must be manually wired (particularly in backend service routing and CLI adapters).
+- No shared teardown for timers/intervals created during debugging, leading to lingering resources in long-running sessions and tests.
+- Missing regression coverage for instrumentation helpers, so fixes regress silently.
 
-- **Confidence Validation**: Ensure debug operations don't interfere with production systems
-- **State Inspection**: Real-time monitoring and analysis of application state
-- **Performance Monitoring**: Track resource usage and operation metrics
-- **Cross-Project Reusability**: Standardized debugging interfaces across Haruspex, Phoenix Code Lite, and Templum
-- **Developer Experience**: Enhanced debugging workflows with comprehensive diagnostics
+## Redundancy Snapshot
 
-### Current Pain Points
+| Area | File | Statements flagged (`rg "console\\."`) | Risk |
+| --- | --- | --- | --- |
+| Backend router | `Templum/src/backend/backend-service-router.ts` | 37 debug/warn lines | Skips central logger + level gating |
+| CLI adapter | `Templum/src/cli-entry.ts` | 9 debug/warn lines | Hard-coded terminal output, no teardown |
+| State sync | `Templum/src/state/state-sync-foundation.ts` | 2 debug/warn lines | No shared inspection context |
+| Session management | `Templum/src/session/session-context-foundation.ts` | 3 debug lines | Interval cleanup only via console message |
+| Test harness | `Templum/src/tests/backend/comprehensive-backend-validation.test.ts` | 16 console logs | Test noise hides real failures |
 
-1. **Scattered Debugging Logic**: Debug functionality spread across multiple files without standardization
-2. **Lack of Confidence Validation**: Debug operations run without safety checks
-3. **Inconsistent State Inspection**: Different approaches to state monitoring across projects
-4. **Performance Blind Spots**: Limited visibility into resource usage and bottlenecks
-5. **Duplicate Debug Code**: Similar debugging patterns reimplemented across projects
+Total: **67 console-based debug statements across five hotspots**, exceeding the ~60-line redundancy budget in the consolidation plan and blocking consistent instrumentation.
 
-## Solution
+## Solution Overview
 
-A comprehensive Debug Utils Utility Pattern that provides confidence-validated debugging utilities with standardized interfaces for state inspection, performance monitoring, and development workflow optimization.
+Introduce `createDebugToolkit` in `Templum/src/utils/debug-utils.ts` as the single entry point for development diagnostics. The toolkit delivers a fluent API so callers can collapse verbose debugging chains into one-liners while inheriting logging, error handling, and lifecycle control.
 
-### Core Architecture
+```ts
+import { createDebugToolkit, LogLevel } from '../utils/debug-utils';
 
-```typescript
-/**
- * Confidence-validated debug utilities with inspection support optimization
- */
-export interface DebugUtils {
-  // Core debugging interface
-  logger: ConfidenceValidatedLogger;
-  stateInspector: StateInspector;
-  performanceMonitor: PerformanceMonitor;
-  diagnosticReporter: DiagnosticReporter;
-  
-  // Confidence validation
-  validateOperation: (operation: DebugOperation) => ConfidenceResult;
-  safeExecute: <T>(operation: () => T, fallback: T) => T;
-  
-  // Integration utilities
-  createDebugContext: (component: string) => DebugContext;
-  attachToExisting: (system: any) => DebugAdapter;
-}
-```
+const debug = createDebugToolkit({ namespace: 'backend-router', level: LogLevel.DEBUG });
 
-## Implementation
+debug
+  .log('service-connected', { data: { backendId } })
+  .inspect(stateSnapshot, { label: 'state-sync' });
 
-### Core Debug Manager
-
-Based on successful implementation in Haruspex (`haruspex-debug-manager.ts`):
-
-```typescript
-/**
- * Core debug manager with confidence validation
- */
-export class ConfidenceValidatedDebugManager {
-  private outputChannel: OutputChannel;
-  private stateHistory: StateSnapshot[] = [];
-  private performanceMetrics: PerformanceMetrics;
-  private confidenceThreshold: number = 0.8;
-  
-  constructor(
-    private context: ExtensionContext | SessionContext,
-    private config: DebugConfiguration = {}
-  ) {
-    this.outputChannel = this.createOutputChannel();
-    this.performanceMetrics = new PerformanceMetrics();
-    this.validateConfiguration();
-  }
-
-  /**
-   * Confidence-validated logging with safety checks
-   */
-  log(message: string, level: LogLevel = 'info', confidence: number = 1.0): void {
-    const operation: DebugOperation = {
-      type: 'log',
-      data: { message, level },
-      confidence,
-      timestamp: Date.now()
-    };
-
-    const validation = this.validateOperation(operation);
-    if (!validation.safe) {
-      this.handleUnsafeOperation(operation, validation);
-      return;
-    }
-
-    this.executeLog(message, level, confidence);
-  }
-
-  /**
-   * State inspection with confidence validation
-   */
-  async inspectState<T>(
-    target: T, 
-    inspector: StateInspector<T>,
-    confidence: number = 0.9
-  ): Promise<StateInspectionResult<T>> {
-    const operation: DebugOperation = {
-      type: 'state_inspection',
-      target: this.sanitizeTarget(target),
-      confidence,
-      timestamp: Date.now()
-    };
-
-    const validation = this.validateOperation(operation);
-    if (!validation.safe) {
-      return this.createSafeStateResult(target, validation);
-    }
-
-    return inspector.inspect(target, {
-      includePrivateProperties: this.config.includePrivateProperties,
-      maxDepth: this.config.maxInspectionDepth || 3,
-      performanceTracking: true
-    });
-  }
-
-  /**
-   * Performance monitoring with optimization insights
-   */
-  measurePerformance<T>(
-    operation: () => T | Promise<T>,
-    operationName: string,
-    confidence: number = 0.95
-  ): Promise<PerformanceResult<T>> {
-    return this.safeExecute(async () => {
-      const startTime = performance.now();
-      const memoryBefore = process.memoryUsage();
-      
-      const result = await operation();
-      
-      const duration = performance.now() - startTime;
-      const memoryAfter = process.memoryUsage();
-      
-      const performanceData: PerformanceResult<T> = {
-        result,
-        metrics: {
-          duration,
-          memoryDelta: this.calculateMemoryDelta(memoryBefore, memoryAfter),
-          operationName,
-          timestamp: Date.now(),
-          confidence
-        }
-      };
-
-      this.performanceMetrics.record(performanceData.metrics);
-      return performanceData;
-    }, this.createFallbackPerformanceResult());
-  }
-}
-```
-
-### State Inspector Utility
-
-Based on successful implementation in Haruspex (`state-inspector.ts`):
-
-```typescript
-/**
- * Real-time state inspection with confidence validation
- */
-export class ConfidenceValidatedStateInspector<T> {
-  private watchers = new Map<string, PropertyWatcher<T>>();
-  private snapshotHistory: StateSnapshot<T>[] = [];
-  private changeListeners: StateChangeListener<T>[] = [];
-
-  constructor(
-    private target: T,
-    private config: StateInspectorConfig = {}
-  ) {
-    this.config = {
-      maxHistorySize: 100,
-      changeThreshold: 0.01,
-      safetyChecks: true,
-      ...config
-    };
-  }
-
-  /**
-   * Create state snapshot with confidence validation
-   */
-  async createSnapshot(confidence: number = 0.9): Promise<StateSnapshot<T>> {
-    if (!this.validateSnapshotOperation(confidence)) {
-      return this.createSafeSnapshot();
-    }
-
-    const snapshot: StateSnapshot<T> = {
-      timestamp: Date.now(),
-      state: this.deepCloneState(this.target),
-      metadata: {
-        confidence,
-        inspectionMethod: 'direct',
-        safetyValidated: true
-      }
-    };
-
-    this.addToHistory(snapshot);
-    return snapshot;
-  }
-
-  /**
-   * Watch property changes with confidence validation
-   */
-  watchProperty<K extends keyof T>(
-    property: K,
-    callback: PropertyChangeCallback<T[K]>,
-    options: PropertyWatchOptions = {}
-  ): string {
-    const watchId = this.generateWatchId();
-    const watcher: PropertyWatcher<T> = {
-      id: watchId,
-      property,
-      callback: this.wrapCallbackWithSafety(callback),
-      options: {
-        confidence: 0.8,
-        validateChanges: true,
-        ...options
-      }
-    };
-
-    this.watchers.set(watchId, watcher);
-    this.setupPropertyWatching(watcher);
-    
-    return watchId;
-  }
-
-  /**
-   * Detect state changes with optimization insights
-   */
-  detectChanges(
-    previousSnapshot: StateSnapshot<T>,
-    currentSnapshot: StateSnapshot<T>
-  ): StateChangeDiff<T> {
-    const changes: StateChange<T>[] = [];
-    const optimizationHints: OptimizationHint[] = [];
-
-    // Deep comparison with performance tracking
-    const comparisonStart = performance.now();
-    const detectedChanges = this.deepCompareStates(
-      previousSnapshot.state,
-      currentSnapshot.state
-    );
-    const comparisonDuration = performance.now() - comparisonStart;
-
-    // Add optimization hints based on comparison performance
-    if (comparisonDuration > 10) {
-      optimizationHints.push({
-        type: 'performance',
-        severity: 'warning',
-        message: `State comparison took ${comparisonDuration.toFixed(2)}ms - consider reducing state complexity`,
-        suggestion: 'Implement state segmentation or shallow comparison for large objects'
-      });
-    }
-
-    return {
-      changes: detectedChanges,
-      optimizationHints,
-      metadata: {
-        comparisonDuration,
-        changeCount: detectedChanges.length,
-        confidence: this.calculateChangeConfidence(detectedChanges)
-      }
-    };
-  }
-}
-```
-
-### Performance Monitor Utility
-
-```typescript
-/**
- * Performance monitoring with confidence validation and optimization insights
- */
-export class ConfidenceValidatedPerformanceMonitor {
-  private metrics: PerformanceMetric[] = [];
-  private thresholds: PerformanceThresholds;
-  private optimizationDetector: OptimizationDetector;
-
-  constructor(config: PerformanceMonitorConfig = {}) {
-    this.thresholds = {
-      responseTime: config.responseTimeThreshold || 1000,
-      memoryUsage: config.memoryThreshold || 100 * 1024 * 1024, // 100MB
-      cpuUsage: config.cpuThreshold || 80,
-      ...config.thresholds
-    };
-    
-    this.optimizationDetector = new OptimizationDetector(this.thresholds);
-  }
-
-  /**
-   * Track operation performance with confidence validation
-   */
-  async trackOperation<T>(
-    operation: () => T | Promise<T>,
-    operationName: string,
-    expectedConfidence: number = 0.9
-  ): Promise<PerformanceTrackingResult<T>> {
-    const trackingContext = this.createTrackingContext(operationName);
-    
-    try {
-      const result = await this.measureWithConfidence(
-        operation,
-        trackingContext,
-        expectedConfidence
-      );
-
-      // Detect optimization opportunities
-      const optimizations = this.optimizationDetector.analyze(result.metrics);
-      
-      return {
-        ...result,
-        optimizations,
-        recommendations: this.generateRecommendations(result.metrics, optimizations)
-      };
-    } catch (error) {
-      return this.handleTrackingError(error, trackingContext);
-    }
-  }
-
-  /**
-   * Generate performance insights and optimization recommendations
-   */
-  generatePerformanceReport(): PerformanceReport {
-    const recentMetrics = this.metrics.slice(-100); // Last 100 operations
-    
-    return {
-      summary: this.calculateSummaryStats(recentMetrics),
-      trends: this.analyzeTrends(recentMetrics),
-      bottlenecks: this.identifyBottlenecks(recentMetrics),
-      optimizations: this.suggestOptimizations(recentMetrics),
-      confidence: this.calculateReportConfidence(recentMetrics)
-    };
-  }
-}
-```
-
-### Diagnostic Reporter
-
-Based on successful implementation in Haruspex and Phoenix Code Lite:
-
-```typescript
-/**
- * Comprehensive diagnostic reporting with confidence validation
- */
-export class ConfidenceValidatedDiagnosticReporter {
-  private diagnosticHistory: DiagnosticReport[] = [];
-  private validators: DiagnosticValidator[] = [];
-
-  constructor(
-    private debugManager: ConfidenceValidatedDebugManager,
-    private stateInspector: ConfidenceValidatedStateInspector<any>,
-    private performanceMonitor: ConfidenceValidatedPerformanceMonitor
-  ) {
-    this.setupValidators();
-  }
-
-  /**
-   * Generate comprehensive diagnostic report with confidence validation
-   */
-  async generateReport(): Promise<DiagnosticReport> {
-    const reportContext = this.createReportContext();
-    
-    const [
-      systemHealth,
-      performanceMetrics,
-      stateAnalysis,
-      optimizationInsights
-    ] = await Promise.all([
-      this.analyzeSystemHealth(),
-      this.performanceMonitor.generatePerformanceReport(),
-      this.stateInspector.analyzeCurrentState(),
-      this.generateOptimizationInsights()
-    ]);
-
-    const report: DiagnosticReport = {
-      timestamp: Date.now(),
-      systemHealth,
-      performance: performanceMetrics,
-      state: stateAnalysis,
-      optimizations: optimizationInsights,
-      recommendations: this.generateRecommendations({
-        systemHealth,
-        performance: performanceMetrics,
-        state: stateAnalysis
-      }),
-      confidence: this.calculateReportConfidence({
-        systemHealth,
-        performance: performanceMetrics,
-        state: stateAnalysis
-      })
-    };
-
-    this.validateReport(report);
-    this.addToHistory(report);
-    
-    return report;
-  }
-
-  /**
-   * Export diagnostic data for analysis
-   */
-  exportDiagnostics(format: 'json' | 'csv' | 'html' = 'json'): string {
-    switch (format) {
-      case 'json':
-        return JSON.stringify({
-          reports: this.diagnosticHistory,
-          metadata: this.getExportMetadata()
-        }, null, 2);
-      
-      case 'csv':
-        return this.generateCSVReport();
-      
-      case 'html':
-        return this.generateHTMLReport();
-      
-      default:
-        throw new Error(`Unsupported export format: ${format}`);
-    }
-  }
-}
-```
-
-## Integration Patterns
-
-### Haruspex Integration
-
-```typescript
-/**
- * Integration with Haruspex debugging system
- */
-export class HaruspexDebugIntegration {
-  static adapt(existingDebugManager: HaruspexDebugManager): DebugUtils {
-    return {
-      logger: new ConfidenceValidatedLogger(existingDebugManager),
-      stateInspector: new StateInspectorAdapter(existingDebugManager),
-      performanceMonitor: new PerformanceMonitorAdapter(existingDebugManager),
-      diagnosticReporter: new DiagnosticReporterAdapter(existingDebugManager),
-      
-      validateOperation: (operation) => this.validateWithHaruspex(operation),
-      safeExecute: (operation, fallback) => this.safeExecuteWithHaruspex(operation, fallback),
-      
-      createDebugContext: (component) => this.createHaruspexContext(component),
-      attachToExisting: (system) => new HaruspexDebugAdapter(system)
-    };
-  }
-}
-```
-
-### Phoenix Code Lite Integration
-
-```typescript
-/**
- * Integration with Phoenix Code Lite debug renderer
- */
-export class PhoenixDebugIntegration {
-  static enhance(debugRenderer: DebugRenderer): DebugUtils {
-    return {
-      logger: new ConfidenceValidatedLogger(debugRenderer),
-      stateInspector: new CLIStateInspector(debugRenderer),
-      performanceMonitor: new CLIPerformanceMonitor(debugRenderer),
-      diagnosticReporter: new CLIDiagnosticReporter(debugRenderer),
-      
-      validateOperation: (operation) => this.validateForCLI(operation),
-      safeExecute: (operation, fallback) => this.safeExecuteForCLI(operation, fallback),
-      
-      createDebugContext: (component) => this.createCLIContext(component),
-      attachToExisting: (system) => new CLIDebugAdapter(system)
-    };
-  }
-}
-```
-
-## Usage Examples
-
-### Basic Debug Utils Setup
-
-```typescript
-// Create debug utils instance
-const debugUtils = new DebugUtils({
-  confidenceThreshold: 0.8,
-  enablePerformanceTracking: true,
-  enableStateInspection: true,
-  outputFormat: 'structured'
+await debug.profile('hydrate-skin', async () => loadSkin(backendId), {
+  metadata: { backendId, attempt },
+  onError: (error) => report(error)
 });
-
-// Log with confidence validation
-debugUtils.logger.log('Operation started', 'info', 0.9);
-
-// Monitor performance
-const result = await debugUtils.performanceMonitor.trackOperation(
-  async () => await heavyOperation(),
-  'heavy-operation',
-  0.85
-);
-
-console.log(`Operation completed in ${result.metrics.duration}ms`);
-console.log('Optimization suggestions:', result.optimizations);
 ```
 
-### State Inspection Usage
+## Core Capabilities
 
-```typescript
-// Create state inspector for component
-const stateInspector = debugUtils.createStateInspector(myComponent);
+- **Log level gating**: honours toolkit-level thresholds before doing work, preventing expensive inspection/profiling when only warnings should surface.
+- **Chainable diagnostics**: `log().inspect().profile()` returns the same toolkit instance, keeping call-sites compact and enforcing the minimal-footprint mandate.
+- **Context-aware logging**: delegates to `logger.child(namespace)` so messages inherit structured prefixes (`[backend-router:adapter] …`).
+- **Confidence-validated profiling**: wraps async/sync operations, records timing metadata, and routes failures through `error-handler` before rethrowing or falling back.
+- **Structured history**: retains a bounded in-memory history (`historyLimit`, default 50) for assertions and post-run assertions without polluting production logs.
+- **Deterministic teardown**: `onTeardown` registers cleanup hooks and `teardown()` guarantees idempotent disposal, logging handler failures through the shared error path.
 
-// Watch for critical state changes
-const watchId = stateInspector.watchProperty('isHealthy', (oldValue, newValue) => {
-  if (!newValue) {
-    debugUtils.logger.log('Component health degraded', 'warning', 0.95);
-  }
-}, { confidence: 0.9 });
+## API Contract
 
-// Take periodic snapshots
-setInterval(async () => {
-  const snapshot = await stateInspector.createSnapshot(0.8);
-  debugUtils.analyzeStateChanges(snapshot);
-}, 5000);
-```
+| Method | Purpose | Notes |
+| --- | --- | --- |
+| `log(message, { level, data, scope })` | Emit structured debug/info/warn/error entries | Default `level = DEBUG`; scopes append `namespace:scope` |
+| `inspect(target, { label, level, scope, maxDepth })` | Snapshot state safely | Uses `util.inspect` with bounded depth |
+| `profile(label, operation, { metadata, level, swallowError, fallbackValue, onError, scope })` | Time operations with automatic error delegation | Logs success as provided level; failures emit at `ERROR` |
+| `onTeardown(handler)` | Register cleanup hooks | Late-bound handlers execute immediately after disposal |
+| `teardown()` | Flush and dispose instrumentation | Clears history and executes handlers exactly once |
+| `withContext(segment)` | Fork toolkit with nested namespace | Shares history + teardown registry for coordinated cleanup |
+| `getHistory()` | Returns immutable snapshot of recorded events | Enables targeted assertions in tests |
 
-### Diagnostic Reporting
+## Integration Requirements
 
-```typescript
-// Generate comprehensive diagnostic report
-const report = await debugUtils.diagnosticReporter.generateReport();
-
-if (report.confidence < 0.7) {
-  console.warn('Low confidence diagnostic report - investigate system health');
-}
-
-// Export for analysis
-const exportedData = debugUtils.diagnosticReporter.exportDiagnostics('json');
-fs.writeFileSync('diagnostic-report.json', exportedData);
-```
-
-## Confidence Validation Framework
-
-### Validation Criteria
-
-```typescript
-export interface ConfidenceValidationCriteria {
-  // Operation safety
-  operationSafety: {
-    noSideEffects: boolean;
-    readOnlyAccess: boolean;
-    resourceBounded: boolean;
-  };
-  
-  // Data reliability
-  dataReliability: {
-    sourceAuthenticity: number; // 0.0 - 1.0
-    dataIntegrity: number;
-    temporalRelevance: number;
-  };
-  
-  // System stability
-  systemStability: {
-    systemLoad: number;
-    memoryPressure: number;
-    errorRate: number;
-  };
-}
-```
-
-### Confidence Calculation
-
-```typescript
-export class ConfidenceCalculator {
-  static calculateOperationConfidence(
-    operation: DebugOperation,
-    criteria: ConfidenceValidationCriteria
-  ): ConfidenceResult {
-    const weights = {
-      safety: 0.4,
-      reliability: 0.3,
-      stability: 0.3
-    };
-
-    const safetyScore = this.calculateSafetyScore(criteria.operationSafety);
-    const reliabilityScore = this.calculateReliabilityScore(criteria.dataReliability);
-    const stabilityScore = this.calculateStabilityScore(criteria.systemStability);
-
-    const confidence = 
-      (safetyScore * weights.safety) +
-      (reliabilityScore * weights.reliability) +
-      (stabilityScore * weights.stability);
-
-    return {
-      confidence,
-      safe: confidence >= 0.7,
-      recommendations: this.generateRecommendations(confidence, criteria),
-      breakdown: {
-        safety: safetyScore,
-        reliability: reliabilityScore,
-        stability: stabilityScore
-      }
-    };
-  }
-}
-```
-
-## Evidence & Success Metrics
-
-### Implementation Evidence
-
-**Haruspex Implementation Success**:
-
-- `haruspex-debug-manager.ts`: 1000+ lines of production debugging infrastructure
-- Real-time diagnostic reports with HTML output
-- IPC-based command execution with connection testing
-- Comprehensive state monitoring and error tracking
-
-**Phoenix Code Lite Implementation Success**:
-
-- `debug-renderer.ts`: 687 lines of enhanced CLI debugging
-- Command history tracking and execution trace analysis
-- Interactive debug commands with context inspection
-- Dual-mode support (interactive/command) with comprehensive logging
-
-**State Management Excellence**:
-
-- `state-inspector.ts`: 683 lines of real-time state monitoring
-- Property watching with confidence validation
-- Performance trend analysis and optimization insights
-- Event-driven architecture with comprehensive state diffing
-
-### Performance Improvements
-
-1. **Debug Operation Safety**: 95%+ confidence validation success rate
-2. **Performance Monitoring**: Real-time tracking with <1ms overhead
-3. **State Inspection**: Property change detection with 99.9% accuracy
-4. **Diagnostic Reporting**: Comprehensive system health analysis in <100ms
-
-### Developer Experience Enhancements
-
-1. **Unified Interface**: Consistent debugging API across all projects
-2. **Confidence Validation**: Automated safety checks prevent debugging interference
-3. **Optimization Insights**: Proactive performance recommendations
-4. **Rich Diagnostics**: HTML, JSON, and CSV export formats for analysis
-
-## Dependencies
-
-### Required Dependencies
-
-- **TypeScript**: Type safety and interface definitions
-- **Event System**: Node.js EventEmitter or browser Events API
-- **Performance APIs**: `performance.now()`, `process.memoryUsage()`
-- **Logging Infrastructure**: Console, file, or structured logging system
-
-### Optional Integrations
-
-- **VSCode Extension API**: For VSCode extension debugging
-- **Node.js Process APIs**: For system-level performance monitoring
-- **File System APIs**: For diagnostic report export
-- **IPC Systems**: For cross-process debugging coordination
+- **Logger**: relies on `Templum/src/utils/logger.ts`; inject custom transports via config or allow default structured logging.
+- **Error handler**: defaults to `Templum/src/utils/error-handler.ts::handle`. Failures during profiling or teardown propagate as wrapped `TemplumError`s.
+- **Async utilities**: profile blocks accept async functions; pair with `async-utils` when coordinating timeouts or retries.
+- **Consumers**: replace ad-hoc console usage in:
+  - `Templum/src/backend/backend-service-router.ts` (health monitor + recovery logging)
+  - `Templum/src/cli-entry.ts` (CLI adapter diagnostics)
+  - `Templum/src/state/state-sync-foundation.ts` + `Templum/src/session/session-context-foundation.ts`
+  - Integration harnesses under `Templum/src/tests/backend/`
 
 ## Implementation Checklist
 
-### Phase 1: Core Infrastructure (2-3 hours)
+- [x] Provide `createDebugToolkit` with chainable `log`, `inspect`, and `profile` APIs wired to the shared logger.
+- [x] Enforce log-level gating before serialization/profiling work; expose `historyLimit` for bounded retention.
+- [x] Route operation failures through `error-handler` and emit structured error payloads (includes `phase`, `durationMs`).
+- [x] Implement deterministic teardown: `onTeardown`, `teardown`, and guarded handler invocation.
+- [x] Ship coverage: `Templum/tests/development-tools/debug-utils.test.ts` exercises chaining, gating, profiling, error delegation, teardown, and namespace forking.
 
-- [ ] Implement `ConfidenceValidatedDebugManager`
-- [ ] Create confidence validation framework
-- [ ] Setup basic logging with safety checks
-- [ ] Implement performance monitoring foundation
+## Validation & Adoption Steps
 
-### Phase 2: State Inspection (1-2 hours)
+1. Replace console instrumentation in the listed hotspots with toolkit calls, starting with backend routing where 37 debug lines exist.
+2. Update CLI adapters and session/state managers to share a `debug` instance scoped per component, ensuring tear-down of timers and intervals.
+3. Wrap test harness logging with toolkit + capture history for assertions, cutting the 16 console statements to a single toolkit instance.
+4. Extend regression suites: add targeted assertions using `getHistory()` once consumers migrate.
 
-- [ ] Implement `ConfidenceValidatedStateInspector`
-- [ ] Create property watching system
-- [ ] Add state change detection and diffing
-- [ ] Implement snapshot management
+## Evidence & References
 
-### Phase 3: Diagnostic Reporting (1-2 hours)
-
-- [ ] Implement `ConfidenceValidatedDiagnosticReporter`
-- [ ] Create comprehensive system health analysis
-- [ ] Add export functionality (JSON, CSV, HTML)
-- [ ] Implement optimization recommendations
-
-### Phase 4: Integration Adapters (1 hour)
-
-- [ ] Create Haruspex integration adapter
-- [ ] Create Phoenix Code Lite integration adapter
-- [ ] Implement cross-project compatibility layer
-- [ ] Add migration utilities for existing debug systems
-
-## Optimization Opportunities
-
-### Performance Optimizations
-
-1. **Lazy Initialization**: Create debug components only when needed
-2. **Buffered Logging**: Batch log operations for better performance
-3. **Selective State Watching**: Monitor only critical state properties
-4. **Async Diagnostics**: Run comprehensive analysis in background
-
-### Memory Optimizations
-
-1. **History Size Limits**: Automatic cleanup of old snapshots and metrics
-2. **Weak References**: Use WeakMap for object watching to prevent memory leaks
-3. **Streaming Exports**: Large diagnostic exports via streaming APIs
-4. **Compression**: Compress stored diagnostic data and snapshots
-
-### Developer Experience Optimizations
-
-1. **Auto-Configuration**: Detect optimal settings based on system capabilities
-2. **Interactive Setup**: CLI wizard for debug configuration
-3. **IDE Integration**: VSCode extension for visual debugging interface
-4. **Hot Reload**: Live updates to debug configuration without restart
-
----
-
-## Status Updates
-
-**ESTABLISHED** (2025-09-14): Pattern created with comprehensive debugging utilities, confidence validation framework, and integration adapters for Haruspex and Phoenix Code Lite systems. Evidence-based implementation using successful patterns from production debugging infrastructure.
-
-**Implementation Evidence**:
-
-- Haruspex: 1000+ lines production debugging (haruspex-debug-manager.ts, state-inspector.ts)
-- Phoenix Code Lite: 687 lines enhanced CLI debugging (debug-renderer.ts)
-- Cross-project applicability validated through pattern analysis
-
-**Next Enhancement Opportunities**:
-
-- VSCode extension integration for visual debugging interface
-- Real-time collaboration features for team debugging
-- AI-powered optimization recommendations based on performance patterns
+- Haruspex and Phoenix Code Lite already operate confidence-validated debugging stacks (see `haruspex-debug-manager.ts`, `debug-renderer.ts`); the toolkit mirrors their fluent ergonomics while matching Templum's logger/error-handler contracts.
+- Redundancy data collected with `rg "console\\."` on 2025-09-15; revisit counts after migrations and update this table.
+- Implementation lives at `Templum/src/utils/debug-utils.ts`; tests at `Templum/tests/development-tools/debug-utils.test.ts` guarantee behavioural parity during consolidation.

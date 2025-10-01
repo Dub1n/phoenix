@@ -1,560 +1,162 @@
 ---
-date-created: 2025-09-14T000000Z
-last-updated: 2025-09-14T000000Z
+date-created: 2025-09-14T00:00:00Z
+last-updated: 2025-10-01T11:09:36Z
 name: serialization-utils
-description: Safe JSON processing utilities with confidence-validated defaults, schema validation integration, and backend communication pattern support
-status: NEW
-category: Foundation
+description: Fluent JSON serialization helpers with schema-aware parsing, confidence defaults, and fallback recovery for multi-protocol payloads
+status: ['[x]']
+category: data-management
 use-when:
-  - Processing untrusted JSON data from backend services
-  - Implementing robust serialization for multi-protocol communication
-  - Requiring confidence-validated fallback values for data integrity
-  - Integrating schema validation with serialization workflows
-  - Building resilient backend communication layers
+  - Handling backend payloads that move between IPC, HTTP, and WebSocket adapters.
+  - Persisting or reloading configuration files that must obey shared schemas.
+  - Shipping skin definitions or interface state snapshots between runtimes.
 keywords:
   - serialization
   - json-safety
-  - confidence-validation
-  - schema-integration
-  - error-recovery
-  - backend-communication
+  - schema-validation
+  - fallback-orchestration
 prerequisites:
-  - Unified Type System
-  - Error Recovery Pattern
-  - Backend Service Integration
+  - logger
+  - error-handler
+  - validator
+  - type-guards
 related-patterns:
+  - configuration-utils
+  - resilience-utils
   - backend-service-integration-unified
-  - unified-type-system
-  - error-recovery
-  - circuit-breaker-resilience
-  - enhanced-validation-testing
+  - error-handler
 ---
 
-# Serialization Utils Safe Processing Pattern
+# Serialization Utils Consolidation Pattern
 
-**Problem**: Unsafe JSON processing in backend communication leads to runtime errors, data corruption, and system instability when handling untrusted or malformed data from multiple backend services.
+## Consolidation Snapshot
 
-**Solution**: Comprehensive serialization utilities providing safe JSON processing, confidence-validated defaults, integrated schema validation, and resilient backend communication patterns with comprehensive error recovery.
+- **Redundancy confirmed**: 75 direct `JSON.parse` / `JSON.stringify` invocations across 29 production files (2025-10-01 run of `rg --no-heading -c "JSON\.(stringify|parse)" Templum/src`). The top 15 hotspots account for **60 calls**, matching the phase dossier's ≈15 files / ≈100 lines duplicate estimate.
+- **Primary hotspots**: Backend transport (`backend-service-router.ts`, `connection-factory.ts`, `service-discovery.ts`), config persistence (`templum-core.ts`, `cli-entry.ts`), and skin/runtime serialization (`skin/universal-skin-engine.ts`, MCP channel utilities).
+- **Impact goal**: Replace ad-hoc parsing with fluent helpers to drop ~100 lines of manual error handling while guaranteeing logger + error-handler integration for every serialization path.
+- **Confidence coverage**: Provide defaults/fallbacks + schema validation to keep adapters resilient when backends misbehave.
 
-## Core Architecture
+## Problem Statement
 
-### Safe Serializer Foundation
+Manual JSON blocks mingle parsing, validation, and logging, causing inconsistent behaviour under failure. For example:
 
 ```typescript
-/**
- * Safe serialization utilities with confidence validation and error recovery
- */
-interface SerializationConfig {
-  maxDepth: number;
-  maxSize: number; // bytes
-  circularRefStrategy: 'error' | 'ignore' | 'placeholder';
-  confidenceThreshold: number; // 0-1
-  fallbackStrategy: 'default' | 'null' | 'throw';
-}
-
-interface SerializationResult<T> {
-  success: boolean;
-  data?: T;
-  error?: SerializationError;
-  confidence: number;
-  metadata: {
-    processingTime: number;
-    dataSize: number;
-    validationPassed: boolean;
-  };
-}
-
-class SafeSerializer {
-  private config: SerializationConfig;
-  private circularRefs = new WeakSet();
-  
-  constructor(config: Partial<SerializationConfig> = {}) {
-    this.config = {
-      maxDepth: 10,
-      maxSize: 1024 * 1024, // 1MB
-      circularRefStrategy: 'placeholder',
-      confidenceThreshold: 0.8,
-      fallbackStrategy: 'default',
-      ...config
-    };
-  }
+// Templum/src/backend/service-discovery.ts:342
+const serviceData = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+if (!serviceData.id || !serviceData.endpoint) {
+  console.warn(`[FILE_WATCHER] Invalid service file ${filePath}: missing id or endpoint`);
+  return;
 }
 ```
 
-### Confidence Validation System
+```typescript
+// Templum/src/backend/backend-service-router.ts:971
+const message = JSON.parse(data.toString()) as IPCMessage | IPCResponse;
+...
+ws.send(JSON.stringify({ type: 'ping', timestamp: Date.now() }));
+```
+
+Each call repeats:
+
+- ad-hoc try/catch wrappers (or none at all),
+- manual console logging instead of the shared logger,
+- bespoke fallbacks or "ignore" comments instead of tracked defaults,
+- duplicated size / circular reference handling logic.
+
+## Target Solution
+
+### Minimal Usage API
 
 ```typescript
-/**
- * Confidence-validated defaults with schema integration
- */
-interface ConfidenceValidationResult<T> {
-  value: T;
-  confidence: number;
-  source: 'provided' | 'default' | 'fallback';
-  validationErrors: string[];
-}
+import { serialization } from '../../utils/serialization-utils';
 
-class ConfidenceValidator<T> {
-  constructor(
-    private schema: ZodSchema<T>,
-    private defaults: Partial<T>,
-    private confidenceRules: ConfidenceRule[]
-  ) {}
-  
-  validate(input: unknown): ConfidenceValidationResult<T> {
-    const startTime = performance.now();
-    
-    try {
-      // Attempt primary validation
-      const parsed = this.schema.parse(input);
-      return {
-        value: parsed,
-        confidence: 1.0,
-        source: 'provided',
-        validationErrors: []
-      };
-    } catch (error) {
-      // Apply confidence-validated defaults
-      return this.applyConfidenceDefaults(input, error);
-    }
-  }
-  
-  private applyConfidenceDefaults(
-    input: unknown, 
-    error: ZodError
-  ): ConfidenceValidationResult<T> {
-    const confidence = this.calculateConfidence(input, error);
-    
-    if (confidence >= this.config.confidenceThreshold) {
-      // Use partial data with defaults
-      const mergedData = this.mergeWithDefaults(input);
-      return {
-        value: mergedData,
-        confidence,
-        source: 'default',
-        validationErrors: error.errors.map(e => e.message)
-      };
-    }
-    
-    // Fallback to complete defaults
-    return {
-      value: this.defaults as T,
-      confidence: 0.5,
-      source: 'fallback',
-      validationErrors: error.errors.map(e => e.message)
-    };
-  }
+// Emit JSON with auto masking + limits
+const payload = serialization
+  .json(handshakePayload)
+  .context('backend:ws-handshake')
+  .maxBytes(2048)
+  .mask(['token', 'secret'])
+  .fallback('{}')
+  .stringify();
+
+// Parse responses with schema + defaults
+const result = serialization
+  .fromJson(rawMessage)
+  .context('backend:ws-handshake')
+  .withSchema(handshakeSchema)
+  .withDefaults(defaultHandshake)
+  .fallback(defaultHandshake)
+  .parse();
+
+if (!result.ok || result.status !== 'success') {
+  log.warn('Handshake payload degraded', { status: result.status, warnings: result.meta.warnings });
 }
 ```
 
-## Implementation Steps
+### Integration Guarantees
 
-### Step 1: Safe JSON Processing Implementation
+- **Logger + error handler**: All failures route through `createLogger('serialization-utils')` and `ErrorHandler.handle`, producing consistent `TemplumError` envelopes.
+- **Confidence states**: Outcomes expose `status: 'success' | 'defaults' | 'fallback' | 'error'` with metadata (`bytes`, `durationMs`, `warnings`, `maskedFields`). Callers can branch on status while enjoying single-line usage.
+- **Schema-aware validation**: Accepts any object exposing `parse` and optional `safeParse` (Zod recommended). Defaults/fallbacks keep pipelines live when validation fails.
+- **Safe writers**: Circular references collapse to `"[Circular]"`, secret fields mask to `"[masked]"`, and optional size caps prevent unbounded payloads.
 
-```typescript
-/**
- * Memory-safe JSON processing with circular reference detection
- */
-class SafeJSONProcessor {
-  safeStringify(
-    obj: unknown, 
-    config: SerializationConfig
-  ): SerializationResult<string> {
-    const startTime = performance.now();
-    const visited = new WeakSet();
-    
-    try {
-      const result = JSON.stringify(obj, (key, value) => {
-        // Size limit check
-        if (JSON.stringify(value).length > config.maxSize) {
-          throw new SerializationError('Data size exceeds limit');
-        }
-        
-        // Circular reference detection
-        if (typeof value === 'object' && value !== null) {
-          if (visited.has(value)) {
-            return this.handleCircularRef(config.circularRefStrategy);
-          }
-          visited.add(value);
-        }
-        
-        return value;
-      });
-      
-      return {
-        success: true,
-        data: result,
-        confidence: 1.0,
-        metadata: {
-          processingTime: performance.now() - startTime,
-          dataSize: result.length,
-          validationPassed: true
-        }
-      };
-    } catch (error) {
-      return this.handleStringifyError(error, startTime);
-    }
-  }
-  
-  safeParse<T>(
-    json: string, 
-    validator: ConfidenceValidator<T>
-  ): SerializationResult<T> {
-    const startTime = performance.now();
-    
-    try {
-      const parsed = JSON.parse(json);
-      const validated = validator.validate(parsed);
-      
-      return {
-        success: validated.confidence >= validator.config.confidenceThreshold,
-        data: validated.value,
-        confidence: validated.confidence,
-        metadata: {
-          processingTime: performance.now() - startTime,
-          dataSize: json.length,
-          validationPassed: validated.validationErrors.length === 0
-        }
-      };
-    } catch (error) {
-      return this.handleParseError(error, startTime, validator);
-    }
-  }
-}
-```
+## Files Using This Pattern
 
-### Step 2: Backend Communication Integration
+| File | JSON Calls | Migration Notes |
+|------|------------|-----------------|
+| `Templum/src/backend/backend-service-router.ts` | 11 | Replace ping/pong + IPC handlers with `serialization.json(...)` / `.fromJson(...)`, feed warnings into router logger. |
+| `Templum/src/backend/service-discovery.ts` | 9 | Unify registry/config file loads and WebSocket payloads; leverage defaults for optional fields. |
+| `Templum/src/core/templum-core.ts` | 5 | Standardise config persistence and status reporting. |
+| `Templum/src/scripts/run-phase6-integration-validation.ts` | 4 | Swap CLI script serialization for shared helpers to align logging + failure handling. |
+| `Templum/src/cli-entry.ts` | 4 | Convert CLI state snapshots and config writes. |
+| `Templum/src/backend/connection-factory.ts` | 4 | Wrap protocol payloads and health probes with schema-backed parsing. |
+| `Templum/src/skin/universal-skin-engine.ts` | 3 | Guard cache metrics + overrides with size limits, provide defaults on parse.
+| `Templum/src/observability/templum-observability-system.ts` | 3 | Unify metric export JSON with fallback reporting. |
+| `Templum/src/mcp-channel/src/visual-feedback-system.ts` | 3 | Use fluent defaults for visual feedback payloads. |
+| `Templum/src/mcp-channel/src/service-registration.ts` | 3 | Harden registration messages with schema + fallback. |
+| `Templum/src/interfaces/cli-adapter-abstracted.ts` | 3 | Replace console logging + parse with minimal API. |
+| `Templum/src/validation/hybrid-validation-system-v3c.ts` | 2 | Centralise validation harness serialization. |
+| `Templum/src/skin/skin-version-manager.ts` | 2 | Enforce size limits on version manifests. |
+| `Templum/src/rendering/universal-layout-engine.ts` | 2 | Mask layout payload secrets and reuse defaults. |
+| `Templum/src/interfaces/navigation/window-stack.ts` | 2 | Use builder for navigation state persistence. |
+| _Other production files (14)_ | 15 | Apply during rollout using inventory from the `rg` command above. |
 
-```typescript
-/**
- * Backend communication adapter with serialization safety
- */
-class SerializationCommunicationAdapter {
-  constructor(
-    private serializer: SafeJSONProcessor,
-    private validator: ConfidenceValidator<any>
-  ) {}
-  
-  async sendRequest<T>(
-    endpoint: string,
-    data: unknown,
-    protocol: 'http' | 'websocket' | 'ipc'
-  ): Promise<SerializationResult<T>> {
-    // Safe serialization of request data
-    const serialized = this.serializer.safeStringify(data, this.config);
-    
-    if (!serialized.success) {
-      return {
-        success: false,
-        error: new SerializationError('Failed to serialize request data'),
-        confidence: 0,
-        metadata: serialized.metadata
-      };
-    }
-    
-    try {
-      // Protocol-specific sending
-      const response = await this.sendByProtocol(
-        endpoint, 
-        serialized.data!, 
-        protocol
-      );
-      
-      // Safe deserialization of response
-      return this.serializer.safeParse(response, this.validator);
-    } catch (error) {
-      return this.handleCommunicationError(error);
-    }
-  }
-  
-  private async sendByProtocol(
-    endpoint: string, 
-    data: string, 
-    protocol: string
-  ): Promise<string> {
-    switch (protocol) {
-      case 'http':
-        return this.sendHTTP(endpoint, data);
-      case 'websocket':
-        return this.sendWebSocket(endpoint, data);
-      case 'ipc':
-        return this.sendIPC(endpoint, data);
-      default:
-        throw new Error(`Unsupported protocol: ${protocol}`);
-    }
-  }
-}
-```
+## Migration Blueprint
 
-### Step 3: Schema Validation Integration
+1. **Inventory** each target file (`rg "JSON\\.(stringify|parse)" <file>`). Annotate context string to feed into `serialization.context()` (e.g., `backend:ws-handshake`).
+2. **Replace writers**: `JSON.stringify` → `serialization.json(value).context(...).maxBytes(...).mask([...]).stringify()`.
+3. **Replace readers**: `JSON.parse` → `serialization.fromJson(raw).context(...).withSchema(schema).withDefaults(defaults).fallback(default).parse()`.
+4. **Propagate metadata**: Use `result.meta.warnings` and `result.status` to surface degraded states to existing loggers / telemetry.
+5. **Remove manual try/catch** once handlers are updated; rely on `ErrorHandler` for escalation and on returned `status` for branching.
+6. **Update tests** to assert outcomes rather than raw JSON; refer to `Templum/src/tests/utils/serialization-utils.test.ts` for harness patterns.
 
-```typescript
-/**
- * Schema validation integration with confidence scoring
- */
-class SchemaIntegratedSerializer<T> {
-  constructor(
-    private schema: ZodSchema<T>,
-    private processor: SafeJSONProcessor,
-    private defaults: T
-  ) {}
-  
-  serializeWithValidation(data: T): SerializationResult<string> {
-    // Pre-serialization validation
-    try {
-      const validated = this.schema.parse(data);
-      return this.processor.safeStringify(validated, this.config);
-    } catch (error) {
-      // Apply confidence defaults and retry
-      const withDefaults = this.applyDefaults(data, error);
-      return this.processor.safeStringify(withDefaults, this.config);
-    }
-  }
-  
-  deserializeWithValidation(json: string): SerializationResult<T> {
-    const parseResult = this.processor.safeParse(json, new ConfidenceValidator(
-      this.schema,
-      this.defaults,
-      this.confidenceRules
-    ));
-    
-    if (parseResult.success && parseResult.confidence < 0.8) {
-      // Log confidence warning but continue
-      console.warn(
-        `Low confidence serialization: ${parseResult.confidence}`,
-        parseResult.metadata
-      );
-    }
-    
-    return parseResult;
-  }
-}
-```
+## Validation Checklist
 
-### Step 4: Error Recovery and Circuit Breaker Integration
+**Before migration**
+- [ ] Confirm schema availability (or plan quick Zod schema extraction) for each consuming module.
+- [ ] Document acceptable fallbacks/defaults per payload in module notes.
+- [ ] Set byte thresholds for large payloads (e.g., skin definitions, telemetry dumps).
 
-```typescript
-/**
- * Error recovery with circuit breaker pattern
- */
-class ResilientSerializationManager {
-  private circuitBreaker = new CircuitBreaker({
-    threshold: 5,
-    timeout: 30000,
-    resetTimeout: 60000
-  });
-  
-  async processWithResilience<T>(
-    operation: () => Promise<SerializationResult<T>>,
-    fallbackValue: T
-  ): Promise<SerializationResult<T>> {
-    try {
-      if (this.circuitBreaker.isOpen()) {
-        return this.createFallbackResult(fallbackValue);
-      }
-      
-      const result = await this.circuitBreaker.execute(operation);
-      
-      if (!result.success && result.confidence < 0.5) {
-        // Log failure and prepare circuit breaker for potential opening
-        this.circuitBreaker.recordFailure();
-        return this.createFallbackResult(fallbackValue);
-      }
-      
-      this.circuitBreaker.recordSuccess();
-      return result;
-    } catch (error) {
-      this.circuitBreaker.recordFailure();
-      return this.handleResilienceError(error, fallbackValue);
-    }
-  }
-  
-  private createFallbackResult<T>(fallbackValue: T): SerializationResult<T> {
-    return {
-      success: true,
-      data: fallbackValue,
-      confidence: 0.3, // Low confidence for fallback
-      metadata: {
-        processingTime: 0,
-        dataSize: JSON.stringify(fallbackValue).length,
-        validationPassed: false
-      }
-    };
-  }
-}
-```
+**During migration**
+- [ ] Replace every raw `JSON.parse`/`JSON.stringify` with the fluent API.
+- [ ] Log or forward `result.meta.warnings` and `result.status !== 'success'` to module-specific loggers.
+- [ ] Ensure masked fields lists cover secrets/tokens previously redacted manually.
 
-## Usage Guidelines
+**After migration**
+- [ ] Run integration scripts (`Templum/src/scripts/run-phase6-integration-validation.ts`, CLI smoke flows) to confirm no regression.
+- [ ] Capture serialized payload metrics (`bytes`, `durationMs`) for dashboards if applicable.
+- [ ] Tick the consolidation checklist entry in `safe-consolidation-candidates.md` and record migrated files.
 
-### Basic Safe JSON Processing
+## Testing Strategy
 
-```typescript
-// Initialize safe processor with configuration
-const processor = new SafeJSONProcessor();
-const config: SerializationConfig = {
-  maxDepth: 8,
-  maxSize: 512 * 1024, // 512KB
-  circularRefStrategy: 'placeholder',
-  confidenceThreshold: 0.8,
-  fallbackStrategy: 'default'
-};
+- **Unit tests**: `Templum/src/tests/utils/serialization-utils.test.ts` covers happy path, max-size fallback, schema defaults, and invalid JSON recovery. Extend with edge cases (streaming, revivers) as new scenarios appear.
+- **Integration tests**: Add assertions within backend router/service discovery suites once callers migrate (e.g., ensure `status: 'success'` for healthy paths and `'fallback'` for degraded responses).
+- **Observability**: Monitor logger output for `serialization-utils` to catch unexpected fallback spikes.
 
-// Safe stringification
-const stringifyResult = processor.safeStringify(complexObject, config);
-if (stringifyResult.success) {
-  console.log('Serialized safely:', stringifyResult.data);
-} else {
-  console.error('Serialization failed:', stringifyResult.error);
-}
-```
+## Success Metrics
 
-### Backend Communication with Validation
+- ✅ Minimal usage footprint: single-line `.stringify()` / `.parse()` replacements with contextual metadata.
+- ✅ Schema-driven validation and automatic defaults restore consistent behaviour.
+- ✅ Logger/error-handler alignment eliminates console noise and ignored parse errors.
+- ✅ Masked fields + byte limits mitigate data leakage and runaway payloads.
 
-```typescript
-// Define schema and defaults
-const userSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  email: z.string().email(),
-  preferences: z.object({
-    theme: z.enum(['light', 'dark']),
-    notifications: z.boolean()
-  })
-});
-
-const defaults = {
-  preferences: {
-    theme: 'light' as const,
-    notifications: true
-  }
-};
-
-// Create integrated serializer
-const serializer = new SchemaIntegratedSerializer(
-  userSchema,
-  processor,
-  defaults
-);
-
-// Use in backend communication
-const adapter = new SerializationCommunicationAdapter(processor, validator);
-const result = await adapter.sendRequest<User>(
-  '/api/users',
-  userData,
-  'http'
-);
-```
-
-### Resilient Processing with Circuit Breaker
-
-```typescript
-const resilientManager = new ResilientSerializationManager();
-
-const result = await resilientManager.processWithResilience(
-  async () => {
-    return serializer.deserializeWithValidation(jsonData);
-  },
-  defaultUser // Fallback value
-);
-
-if (result.confidence < 0.8) {
-  console.warn('Used fallback or low-confidence data');
-}
-```
-
-## Performance Considerations
-
-### Memory Management
-
-```typescript
-/**
- * Memory-efficient streaming serialization for large datasets
- */
-class StreamingSerializer {
-  async serializeStream<T>(
-    data: AsyncIterable<T>,
-    writer: WritableStream
-  ): Promise<void> {
-    const encoder = new TextEncoder();
-    
-    for await (const chunk of data) {
-      const serialized = this.processor.safeStringify(chunk, this.config);
-      
-      if (serialized.success) {
-        await writer.write(encoder.encode(serialized.data!));
-      }
-      
-      // Memory cleanup
-      if (global.gc) global.gc();
-    }
-  }
-}
-```
-
-## Integration with Existing Patterns
-
-### Backend Service Integration
-
-- Integrates directly with `backend-service-integration-unified` for safe protocol communication
-- Provides serialization layer for multi-protocol backend connections
-- Supports confidence-based fallback for service failures
-
-### Error Recovery Pattern
-
-- Uses `circuit-breaker-resilience` for handling serialization failures
-- Implements graceful degradation with confidence-validated defaults
-- Provides comprehensive error reporting and recovery mechanisms
-
-### Type System Integration
-
-- Works with `unified-type-system` for type-safe serialization
-- Supports TypeScript strict mode compilation
-- Provides runtime type validation with Zod integration
-
-## Validation and Testing
-
-### Unit Testing Strategy
-
-```typescript
-describe('SafeSerializer', () => {
-  test('handles circular references safely', () => {
-    const obj: any = { name: 'test' };
-    obj.self = obj;
-    
-    const result = serializer.safeStringify(obj, config);
-    expect(result.success).toBe(true);
-    expect(result.data).toContain('"self":"[Circular]"');
-  });
-  
-  test('respects size limits', () => {
-    const largeObj = { data: 'x'.repeat(2 * 1024 * 1024) }; // 2MB
-    const config = { ...defaultConfig, maxSize: 1024 * 1024 }; // 1MB limit
-    
-    const result = serializer.safeStringify(largeObj, config);
-    expect(result.success).toBe(false);
-    expect(result.error?.message).toContain('size exceeds limit');
-  });
-});
-```
-
-## Related Patterns
-
-- **Backend Service Integration Unified**: Primary consumer of serialization utilities
-- **Circuit Breaker Resilience**: Provides error recovery framework
-- **Unified Type System**: Ensures type safety across serialization boundaries
-- **Enhanced Validation Testing**: Validates serialization behavior comprehensively
-- **Error Recovery**: Handles serialization failures gracefully
-
-## Implementation Priority
-
-**Difficulty**: 🟡 Medium (3-4 hours)
-**Prerequisites**: Unified Type System, Error Recovery Pattern
-**Blocks**: Backend communication reliability, data integrity validation
-**Usage Priority**: High - foundational utility for all backend communication
-
-## Status
-
-**Current Status**: NEW (2025-09-14)
-**Implementation Ready**: Yes
-**Testing Requirements**: Comprehensive unit tests, integration tests with backend services
-**Documentation**: Complete implementation guide provided
+Delivering on this pattern means the new `Templum/src/utils/serialization-utils.ts` is the authoritative implementation, and all subsequent migrations should conform to the API and validation requirements detailed above.

@@ -1,14 +1,10 @@
 ---
-date: 2025-09-14T213145Z
+date-created: 2025-09-14T21:31:45Z
+last-updated: 2025-09-14T21:31:45Z
 name: protocol-utils
-TASK-ID: ["TASK-UTIL-005"]
-category: core-infrastructure-utility
-status: ["[x]"]
-patterns: ["utility-consolidation", "protocol-management", "connection-optimization", "confidence-validation"]
-components: ["protocol-utils", "connection-manager", "message-validator", "protocol-adapters", "health-monitor"]
-dependencies: ["logger-utility", "error-handler-utility", "event-utils", "async-utils"]
-tags: ["protocols", "ipc", "http", "websocket", "connection-management", "optimization", "confidence-validation"]
 description: Unified protocol utilities for IPC/HTTP/WebSocket connection management optimization with confidence-validated message processing and shared protocol abstractions
+status: ["[x]"]
+category: core-infrastructure-utility
 use-when:
   - Multiple protocol implementations with duplicated connection logic
   - Need for unified protocol abstraction across IPC/HTTP/WebSocket

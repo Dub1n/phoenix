@@ -1,6 +1,6 @@
 ---
-date-created: 2025-09-15T100000Z
-last-updated: 2025-09-15T100000Z
+date-created: 2025-09-15T10:00:00Z
+last-updated: 2025-09-15T10:00:00Z
 name: validator
 description: Centralized validation utility to consolidate scattered validation logic, repeated patterns, and inconsistent data checks across data management components.
 status: proposed

@@ -1,3 +1,11 @@
+---
+doc-type: progress
+title: Phoenix Code Lite (QMS) Progress Tracker
+tags: [phoenix-code-lite, progress]
+status: current
+last_updated: 2025-09-22
+---
+
 # Phoenix Code Lite (QMS) Progress Tracker
 
 Legend: `[x]` done · `[~]` in progress · `[ ]` not started · `[!]` broken · `[?]` verify · `[P]` pending investigation

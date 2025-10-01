@@ -34,5 +34,7 @@ Legend: `[ ]` pending · `[x]` complete
 - [ ] Ensure content is sourced from verified behaviour (or clearly marked otherwise).
 - [ ] Update archive index if deprecating files.
 - [ ] Alert owners of dependent docs if follow-up needed.
+- [ ] If pattern categories change, sync `docs/current/pattern-taxonomy.md`, the schema enum, and `meta/templates/pattern-taxonomy-template.md`.
+- [ ] Validate affected docs with `meta/scripts/validate_frontmatter.py` (override `--schema` if a project-specific variant is required).
 
 Keep this checklist lean—add project-specific items adjacent to the relevant requirement task logs if needed.

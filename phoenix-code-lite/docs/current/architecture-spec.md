@@ -1,8 +1,10 @@
 ---
+doc-type: architecture-spec
 title: Phoenix Code Lite Architecture Specification
 tags: [phoenix-code-lite, qms, architecture]
 status: current
 last_updated: 2025-09-22
+---
 ---
 
 # Phoenix Code Lite — Architecture Specification (Current State)

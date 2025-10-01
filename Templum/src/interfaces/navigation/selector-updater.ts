@@ -25,7 +25,6 @@ tags: [cli, navigation, selector-character, menu-formatting]
  */
 
 import { TerminalColorTheme, DefaultColorThemes } from '../terminal-ui-components';
-import { StringWidthUtils } from './width-calculator';
 
 // TODO: [TASK-ID-012] Pattern: selector-updating | Complexity: 3 | Dependencies: accessibility
 // Context: Accessibility-compliant selector implementation with screen reader support

@@ -1,0 +1,12 @@
+- [ ] **to-do** - the standard, unstarted task
+- [x] **complete** - Verified working (confirmed functional with real backend evidence)
+- [~] **in-progress** - Under development (e.g. works with placeholder implementations)
+- [-] **cancelled** - Task is no longer relevant or has been dropped
+- [!] **priority** - Issue (e.g. Fake success: reported working but uses mocks/placeholders)
+- [>] **forwarded** - Task has been moved to another location (e.g. different project)
+- [<] **scheduled** - Not implemented (confirmed missing or completely placeholder)
+- [?] **blocked** - Rhe task requires more information or is blocked by something else
+- [B] **implemented-broken** - Core logic done but build failures prevent verification
+- [T] **implemented-testing** - Compiles but needs functional validation
+- [D] **documenting** - Compiles and functionality validated, ready for documentation
+- [F] **failure**

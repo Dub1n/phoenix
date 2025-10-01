@@ -1,3 +1,11 @@
+---
+doc-type: progress
+title: Templum Progress Tracker
+tags: [templum, progress]
+status: current
+last_updated: 2025-09-15
+---
+
 # Templum Progress Tracker
 
 ## Pre-Consolidation Advisory
@@ -39,6 +47,7 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` not started · `[!]` broken · 
 ## Quality & Release Readiness
 
 - [ ] [Test architecture consolidation and coverage governance](../../dev/tasks/test-architecture-governance.md) (unit/integration/e2e thresholds codified)
+- [ ] [Utility consolidation execution playbook rollout](../../dev/architecture/utility-consolidation-playbook.md) (playbook published; onboard agents and begin logging activity at ../../dev/architecture/utility-consolidation-activity-log.md)
 - [ ] [Release pipeline hardening and packaging verification](../../dev/tasks/release-pipeline-hardening.md) (artifact signing, CI gating, rollback paths)
 - [ ] [Unified go/no-go checklist with compliance, security, and partner sign-offs](../../dev/tasks/go-no-go-checklist.md)
 - [ ] [Final UAT and stakeholder acceptance recorded](../../dev/tasks/final-uat-stakeholder-acceptance.md)

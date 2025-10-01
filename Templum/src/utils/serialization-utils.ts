@@ -1,297 +1,426 @@
-import { performance } from 'perf_hooks';
-import { createTemplumError } from '../types/templum-types';
-import { handle as handleError } from './error-handler';
+import { createLogger } from './logger';
+import { ErrorHandler } from './error-handler';
+import { createTemplumError, TemplumError } from '../types/templum-types';
 
-export type CircularRefStrategy = 'error' | 'ignore' | 'placeholder';
-export type FallbackStrategy = 'default' | 'null' | 'throw';
+type JsonReplacer = (this: unknown, key: string, value: unknown) => unknown;
+type JsonReviver = (this: unknown, key: string, value: unknown) => unknown;
 
-export interface SerializationConfig {
-  maxDepth: number;
-  maxSize: number;
-  circularRefStrategy: CircularRefStrategy;
-  confidenceThreshold: number;
-  fallbackStrategy: FallbackStrategy;
+type SafeParseResult<T> = { success: true; data: T } | { success: false; error: unknown };
+
+type PlainObject = Record<string, unknown>;
+
+export type SerializationStatus = 'success' | 'defaults' | 'fallback' | 'error';
+
+export interface SerializationMeta {
+  context: string;
+  bytes: number;
+  durationMs: number;
+  warnings: string[];
+  maskedFields: string[];
 }
 
-export interface SerializationMetadata {
-  processingTime: number;
-  dataSize: number;
-  validationPassed: boolean;
+export interface SerializationOutcome<T> {
+  ok: boolean;
+  status: SerializationStatus;
+  value?: T;
+  error?: TemplumError;
+  meta: SerializationMeta;
 }
 
-export interface SerializationResult<T> {
-  success: boolean;
-  data?: T;
-  error?: SerializationError;
-  confidence: number;
-  metadata: SerializationMetadata;
+export interface JsonStringifyOptions {
+  context?: string;
+  pretty?: boolean | number;
+  maxBytes?: number;
+  maskFields?: string[];
+  fallback?: string;
+  replacer?: JsonReplacer;
 }
 
-export interface SchemaValidator<T> {
+export interface JsonParseOptions<T> {
+  context?: string;
+  schema?: JsonSchema<T>;
+  defaults?: Partial<T>;
+  fallback?: T;
+  reviver?: JsonReviver;
+  maxBytes?: number;
+}
+
+export interface JsonSchema<T> {
   parse(data: unknown): T;
   safeParse?(data: unknown): { success: boolean; data?: T; error?: unknown };
 }
 
-export interface ParseOptions<T> {
-  schema?: SchemaValidator<T>;
-  fallback?: T;
-  confidence?: number;
-}
+const logger = createLogger('serialization-utils');
 
-const DEFAULT_CONFIG: SerializationConfig = {
-  maxDepth: 10,
-  maxSize: 1024 * 1024,
-  circularRefStrategy: 'placeholder',
-  confidenceThreshold: 0.8,
-  fallbackStrategy: 'default'
-};
+class JsonStringifyBuilder<T> {
+  private readonly maskedFieldsUsed = new Set<string>();
 
-export class SerializationError extends Error {
-  constructor(message: string, public readonly details?: unknown) {
-    super(message);
-    this.name = 'SerializationError';
-  }
-}
+  constructor(
+    private readonly value: T,
+    private readonly options: JsonStringifyOptions = {}
+  ) {}
 
-export class SerializationUtils {
-  private static config: SerializationConfig = { ...DEFAULT_CONFIG };
-
-  static configure(overrides: Partial<SerializationConfig>): void {
-    this.config = { ...this.config, ...overrides };
+  context(context: string): this {
+    this.options.context = context;
+    return this;
   }
 
-  static stringify(value: unknown, overrides: Partial<SerializationConfig> = {}): SerializationResult<string> {
-    const config = { ...this.config, ...overrides };
-    const start = performance.now();
-    const seen = new WeakSet();
-    let size = 0;
+  pretty(space: number = 2): this {
+    this.options.pretty = space;
+    return this;
+  }
+
+  maxBytes(limit: number): this {
+    this.options.maxBytes = limit;
+    return this;
+  }
+
+  mask(fields: string[] | string): this {
+    const list = Array.isArray(fields) ? fields : [fields];
+    const existing = new Set(this.options.maskFields ?? []);
+    list.forEach(field => existing.add(field));
+    this.options.maskFields = Array.from(existing);
+    return this;
+  }
+
+  fallback(value: string): this {
+    this.options.fallback = value;
+    return this;
+  }
+
+  replacer(replacer: JsonReplacer): this {
+    this.options.replacer = replacer;
+    return this;
+  }
+
+  stringify(): SerializationOutcome<string> {
+    const context = this.options.context ?? 'serialization.json.stringify';
+    const meta: SerializationMeta = {
+      context,
+      bytes: 0,
+      durationMs: 0,
+      warnings: [],
+      maskedFields: []
+    };
+    const start = Date.now();
 
     try {
-      const json = JSON.stringify(value, (_key, current) => {
-        if (typeof current === 'object' && current !== null) {
-          if (seen.has(current)) {
-            return this.handleCircular(current, config);
-          }
-          seen.add(current);
-        }
+      const replacer = this.createReplacer();
+      const space = this.resolveSpace();
+      const serialized = JSON.stringify(this.value, replacer, space);
 
-        const segment = this.estimateSize(current);
-        size += segment;
-        if (size > config.maxSize) {
-          throw new SerializationError('Serialized content exceeds configured size limit');
-        }
+      meta.bytes = Buffer.byteLength(serialized, 'utf8');
+      meta.durationMs = Date.now() - start;
+      meta.maskedFields = Array.from(this.maskedFieldsUsed);
 
-        return current;
+      if (this.options.maxBytes && meta.bytes > this.options.maxBytes) {
+        const templumError = createTemplumError(
+          `Serialized payload exceeded ${this.options.maxBytes} bytes`,
+          'SERIALIZATION_SIZE_LIMIT_EXCEEDED',
+          'validation',
+          { bytes: meta.bytes, limit: this.options.maxBytes, context }
+        );
+        throw templumError;
+      }
+
+      return {
+        ok: true,
+        status: 'success',
+        value: serialized,
+        meta
+      };
+    } catch (error) {
+      const templumError = ErrorHandler.handle(error, context, {
+        maskFields: this.options.maskFields,
+        maxBytes: this.options.maxBytes
       });
 
-      return {
-        success: true,
-        data: json,
-        confidence: 1,
-        metadata: {
-          processingTime: performance.now() - start,
-          dataSize: size,
-          validationPassed: true
-        }
-      };
-    } catch (error) {
-      const handled = this.toSerializationError(error);
-      return {
-        success: false,
-        error: handled,
-        confidence: 0,
-        metadata: {
-          processingTime: performance.now() - start,
-          dataSize: size,
-          validationPassed: false
-        }
-      };
-    }
-  }
+      meta.durationMs = Date.now() - start;
+      meta.maskedFields = Array.from(this.maskedFieldsUsed);
 
-  static parse<T = unknown>(json: string, options: ParseOptions<T> = {}): SerializationResult<T> {
-    const start = performance.now();
-    let size = json.length;
-
-    try {
-      const parsed = JSON.parse(json);
-      this.enforceDepth(parsed, this.config.maxDepth);
-      return this.validate(parsed, options, start, size);
-    } catch (error) {
-      const handled = this.toSerializationError(error);
-      const fallback = this.resolveFallback(options.fallback, handled, options.confidence);
-
-      return {
-        success: Boolean(fallback.data),
-        data: fallback.data,
-        error: fallback.error ?? handled,
-        confidence: fallback.confidence,
-        metadata: {
-          processingTime: performance.now() - start,
-          dataSize: size,
-          validationPassed: Boolean(fallback.data)
-        }
-      };
-    }
-  }
-
-  static parseWithSchema<T>(json: string, schema: SchemaValidator<T>, options: ParseOptions<T> = {}): SerializationResult<T> {
-    return this.parse(json, { ...options, schema });
-  }
-
-  private static validate<T>(
-    parsed: unknown,
-    options: ParseOptions<T>,
-    start: number,
-    size: number
-  ): SerializationResult<T> {
-    const schema = options.schema;
-
-    if (!schema) {
-      return {
-        success: true,
-        data: parsed as T,
-        confidence: options.confidence ?? 1,
-        metadata: {
-          processingTime: performance.now() - start,
-          dataSize: size,
-          validationPassed: true
-        }
-      };
-    }
-
-    try {
-      if (schema.safeParse) {
-        const result = schema.safeParse(parsed);
-        if (result.success) {
-          return {
-            success: true,
-            data: result.data,
-            confidence: 1,
-            metadata: {
-              processingTime: performance.now() - start,
-              dataSize: size,
-              validationPassed: true
-            }
-          };
-        }
-
-        const fallback = this.resolveFallback(options.fallback, this.toSerializationError(result.error), options.confidence);
+      if (this.options.fallback !== undefined) {
+        logger.warn(`${context}: serialization failed, using fallback`, {
+          error: templumError.message
+        });
+        meta.warnings.push('Serialization failed; using fallback value');
         return {
-          success: Boolean(fallback.data),
-          data: fallback.data,
-          error: fallback.error,
-          confidence: fallback.confidence,
-          metadata: {
-            processingTime: performance.now() - start,
-            dataSize: size,
-            validationPassed: Boolean(fallback.data)
-          }
+          ok: true,
+          status: 'fallback',
+          value: this.options.fallback,
+          error: templumError,
+          meta
         };
       }
 
-      const value = schema.parse(parsed);
       return {
-        success: true,
-        data: value,
-        confidence: 1,
-        metadata: {
-          processingTime: performance.now() - start,
-          dataSize: size,
-          validationPassed: true
-        }
-      };
-    } catch (error) {
-      const fallback = this.resolveFallback(options.fallback, this.toSerializationError(error), options.confidence);
-      return {
-        success: Boolean(fallback.data),
-        data: fallback.data,
-        error: fallback.error,
-        confidence: fallback.confidence,
-        metadata: {
-          processingTime: performance.now() - start,
-          dataSize: size,
-          validationPassed: Boolean(fallback.data)
-        }
+        ok: false,
+        status: 'error',
+        error: templumError,
+        meta
       };
     }
   }
 
-  private static enforceDepth(value: unknown, maxDepth: number, currentDepth = 0): void {
-    if (typeof value !== 'object' || value === null) {
-      return;
+  private resolveSpace(): number | undefined {
+    const { pretty } = this.options;
+    if (typeof pretty === 'number') {
+      return pretty;
     }
-
-    if (currentDepth > maxDepth) {
-      throw new SerializationError('JSON depth exceeds configured limit');
+    if (pretty) {
+      return 2;
     }
-
-    for (const child of Object.values(value)) {
-      this.enforceDepth(child, maxDepth, currentDepth + 1);
-    }
+    return undefined;
   }
 
-  private static handleCircular(value: unknown, config: SerializationConfig): unknown {
-    switch (config.circularRefStrategy) {
-      case 'ignore':
-        return undefined;
-      case 'error':
-        throw new SerializationError('Circular reference detected');
-      default:
-        return '[Circular]';
-    }
-  }
+  private createReplacer(): JsonReplacer {
+    const seen = new WeakSet<object>();
+    const maskFields = new Set(this.options.maskFields ?? []);
+    const delegate = this.options.replacer;
 
-  private static resolveFallback<T>(
-    fallback: T | undefined,
-    error: SerializationError,
-    confidence = 0
-  ): { data?: T; error?: SerializationError; confidence: number } {
-    switch (this.config.fallbackStrategy) {
-      case 'default':
-        if (fallback !== undefined) {
-          return { data: fallback, confidence: confidence || this.config.confidenceThreshold };
+    return (key: string, value: unknown) => {
+      const candidate = delegate ? delegate.call(this.value, key, value) : value;
+
+      if (candidate && typeof candidate === 'object') {
+        const target = candidate as object;
+        if (seen.has(target)) {
+          return '[Circular]';
         }
-        return { error, confidence: 0 };
-      case 'null':
-        return { data: null as unknown as T, confidence: confidence || 0.5 };
-      case 'throw':
-      default:
-        handleError(error, 'serialization');
-        return { error, confidence: 0 };
-    }
-  }
+        seen.add(target);
+      }
 
-  private static toSerializationError(error: unknown): SerializationError {
-    if (error instanceof SerializationError) {
-      return error;
-    }
-    if (error instanceof Error) {
-      return new SerializationError(error.message, error);
-    }
-    return new SerializationError('Unknown serialization error', error);
-  }
+      if (maskFields.size && maskFields.has(key)) {
+        this.maskedFieldsUsed.add(key);
+        return '[masked]';
+      }
 
-  private static estimateSize(value: unknown): number {
-    if (value === null || value === undefined) {
-      return 4;
-    }
-    if (typeof value === 'string') {
-      return value.length;
-    }
-    if (typeof value === 'number' || typeof value === 'boolean') {
-      return String(value).length;
-    }
-    if (Array.isArray(value)) {
-      return value.reduce((sum, item) => sum + this.estimateSize(item) + 2, 2);
-    }
-    if (typeof value === 'object') {
-      return Object.entries(value as Record<string, unknown>).reduce((sum, [key, val]) => {
-        return sum + key.length + this.estimateSize(val) + 2;
-      }, 2);
-    }
-    return 0;
+      return candidate;
+    };
   }
 }
 
-export const { stringify, parse, parseWithSchema, configure } = SerializationUtils;
+class JsonParseBuilder<T> {
+  constructor(
+    private readonly input: string,
+    private readonly options: JsonParseOptions<T> = {}
+  ) {}
+
+  context(context: string): this {
+    this.options.context = context;
+    return this;
+  }
+
+  withSchema(schema: JsonSchema<T>): this {
+    this.options.schema = schema;
+    return this;
+  }
+
+  withDefaults(defaults: Partial<T>): this {
+    this.options.defaults = defaults;
+    return this;
+  }
+
+  fallback(value: T): this {
+    this.options.fallback = value;
+    return this;
+  }
+
+  reviver(reviver: JsonReviver): this {
+    this.options.reviver = reviver;
+    return this;
+  }
+
+  maxBytes(limit: number): this {
+    this.options.maxBytes = limit;
+    return this;
+  }
+
+  parse(): SerializationOutcome<T> {
+    const context = this.options.context ?? 'serialization.json.parse';
+    const meta: SerializationMeta = {
+      context,
+      bytes: Buffer.byteLength(this.input, 'utf8'),
+      durationMs: 0,
+      warnings: [],
+      maskedFields: []
+    };
+    const start = Date.now();
+
+    try {
+      if (this.options.maxBytes && meta.bytes > this.options.maxBytes) {
+        const templumError = createTemplumError(
+          `JSON input exceeded ${this.options.maxBytes} bytes`,
+          'SERIALIZATION_INPUT_TOO_LARGE',
+          'validation',
+          { bytes: meta.bytes, maxBytes: this.options.maxBytes, context }
+        );
+        throw templumError;
+      }
+
+      const parsed = JSON.parse(this.input, this.options.reviver);
+      return this.validateAndFinalize(parsed as T, meta, start, context);
+    } catch (error) {
+      const templumError = ErrorHandler.handle(error, context, { bytes: meta.bytes });
+      meta.durationMs = Date.now() - start;
+
+      if (this.options.fallback !== undefined) {
+        logger.warn(`${context}: parse failed, using fallback`, {
+          error: templumError.message
+        });
+        meta.warnings.push('Failed to parse JSON; using fallback value');
+        return {
+          ok: true,
+          status: 'fallback',
+          value: this.options.fallback,
+          error: templumError,
+          meta
+        };
+      }
+
+      return {
+        ok: false,
+        status: 'error',
+        error: templumError,
+        meta
+      };
+    }
+  }
+
+  private validateAndFinalize(
+    value: T,
+    meta: SerializationMeta,
+    start: number,
+    context: string
+  ): SerializationOutcome<T> {
+    let status: SerializationStatus = 'success';
+    let error: TemplumError | undefined;
+
+    if (this.options.schema) {
+      const result = safeParse(this.options.schema, value);
+      if (result.success) {
+        value = result.data;
+      } else {
+        const issues = extractIssues(result.error);
+        error = createTemplumError(
+          `${context}: schema validation failed`,
+          'SERIALIZATION_SCHEMA_INVALID',
+          'validation',
+          { issues }
+        );
+
+        if (this.options.defaults) {
+          logger.warn(`${context}: schema validation failed, applying defaults`, { issues });
+          meta.warnings.push('Schema validation failed; applied defaults');
+          value = mergeWithDefaults(this.options.defaults, value);
+          status = 'defaults';
+        } else if (this.options.fallback !== undefined) {
+          logger.warn(`${context}: schema validation failed, using fallback`, { issues });
+          meta.warnings.push('Schema validation failed; using fallback value');
+          value = this.options.fallback;
+          status = 'fallback';
+        } else {
+          meta.durationMs = Date.now() - start;
+          return {
+            ok: false,
+            status: 'error',
+            error,
+            meta
+          };
+        }
+      }
+    } else if (this.options.defaults) {
+      value = mergeWithDefaults(this.options.defaults, value);
+      status = 'defaults';
+    }
+
+    meta.durationMs = Date.now() - start;
+
+    const ok = status === 'success' || status === 'defaults' || status === 'fallback';
+
+    return {
+      ok,
+      status,
+      value,
+      error,
+      meta
+    };
+  }
+}
+
+function safeParse<T>(schema: JsonSchema<T>, data: unknown): SafeParseResult<T> {
+  if (typeof schema.safeParse === 'function') {
+    const result = schema.safeParse(data);
+    if (result && typeof result === 'object' && 'success' in result) {
+      if ((result as { success: boolean }).success) {
+        return { success: true, data: (result as { data: T }).data };
+      }
+      return { success: false, error: (result as { error: unknown }).error };
+    }
+  }
+
+  try {
+    return { success: true, data: schema.parse(data) };
+  } catch (error) {
+    return { success: false, error };
+  }
+}
+
+function extractIssues(error: unknown): string[] {
+  if (!error) {
+    return [];
+  }
+  if (Array.isArray((error as any).issues)) {
+    return (error as any).issues.map((issue: any) => {
+      if (issue && typeof issue === 'object') {
+        const path = Array.isArray(issue.path) ? issue.path.join('.') : undefined;
+        const message = issue.message ?? String(issue);
+        return path ? `${path}: ${message}` : message;
+      }
+      return String(issue);
+    });
+  }
+  if (error instanceof Error) {
+    return [error.message];
+  }
+  return [String(error)];
+}
+
+function mergeWithDefaults<T>(defaults: Partial<T>, value: unknown): T {
+  return mergeAny(defaults, value) as T;
+}
+
+function mergeAny(defaults: unknown, value: unknown): unknown {
+  if (isPlainObject(defaults) && isPlainObject(value)) {
+    const result: PlainObject = { ...(defaults as PlainObject) };
+    const valueObject = value as PlainObject;
+
+    for (const [key, currentValue] of Object.entries(valueObject)) {
+      const defaultValue = (defaults as PlainObject)[key];
+      result[key] = mergeAny(defaultValue, currentValue);
+    }
+
+    return result;
+  }
+
+  if (value === undefined || value === null) {
+    return defaults;
+  }
+
+  return value;
+}
+
+function isPlainObject(value: unknown): value is PlainObject {
+  return Boolean(
+    value && typeof value === 'object' && !Array.isArray(value)
+  );
+}
+
+export const serialization = {
+  json<T>(value: T, options?: JsonStringifyOptions): JsonStringifyBuilder<T> {
+    return new JsonStringifyBuilder(value, options);
+  },
+  fromJson<T>(input: string, options?: JsonParseOptions<T>): JsonParseBuilder<T> {
+    return new JsonParseBuilder<T>(input, options);
+  }
+};
+
+export type { JsonReplacer, JsonReviver };

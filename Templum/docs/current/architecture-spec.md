@@ -1,5 +1,6 @@
 ---
-name: Templum Architecture Specification
+doc-type: architecture-spec
+title: Templum Architecture Specification
 tags: [templum, universal_interface, architecture]
 status: current
 last_updated: 2025-09-22

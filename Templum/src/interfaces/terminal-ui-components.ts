@@ -11,6 +11,7 @@ description: [Terminal UI components for progress indication, user interaction, 
 import * as chalk from 'chalk';
 import * as readline from 'readline';
 import { EventEmitter } from 'events';
+import { StringUtils, StringWidthUtils } from '../utils/chainable-string-utils';
 
 // Import consistency framework for table formatting integration
 // TODO: [TASK-ID-006] Pattern: consistency-framework-integration | Complexity: 4 | Dependencies: cli-display-consistency-engine
@@ -542,6 +543,34 @@ export class EnhancedWindowLayoutRenderer {
     this.theme = theme;
   }
 
+  private normalizeWidth(width: number): number {
+    return Math.max(1, Math.floor(width));
+  }
+
+  private measure(value: string): number {
+    return StringWidthUtils.getDisplayWidth(value);
+  }
+
+  private truncateToWidth(value: string, width: number, ellipsis = '...'): string {
+    const targetWidth = this.normalizeWidth(width);
+    return StringUtils.chain(value, { mode: 'terminal' })
+      .truncate(targetWidth, ellipsis)
+      .value();
+  }
+
+  private formatWithinWidth(
+    value: string,
+    width: number,
+    alignment: 'left' | 'right' | 'center' = 'right',
+    ellipsis = '...'
+  ): string {
+    const targetWidth = this.normalizeWidth(width);
+    return StringUtils.chain(value, { mode: 'terminal' })
+      .truncate(targetWidth, ellipsis)
+      .pad(targetWidth, alignment)
+      .value();
+  }
+
   /**
    * Render bordered window with CLI design specification compliance
    */
@@ -666,35 +695,31 @@ export class EnhancedWindowLayoutRenderer {
 
   private calculateWindowWidth(config: WindowLayoutConfig): number {
     const { title, subtitle, content } = config;
-    let maxWidth = title.length;
-    
+    let maxWidth = this.measure(title);
+
     if (subtitle) {
-      maxWidth = Math.max(maxWidth, subtitle.length);
+      maxWidth = Math.max(maxWidth, this.measure(subtitle));
     }
-    
+
     for (const section of content) {
       if (section.heading) {
-        maxWidth = Math.max(maxWidth, section.heading.length);
+        maxWidth = Math.max(maxWidth, this.measure(section.heading));
       }
-      
+
       for (const item of section.items) {
-        const itemText = `${item.icon || ''} ${item.label}${item.description ? ` - ${item.description}` : ''}`;
-        maxWidth = Math.max(maxWidth, itemText.length);
+        const itemText = `${item.icon || ''} ${item.label}${item.description ? ` - ${item.description}` : ''}`.trim();
+        maxWidth = Math.max(maxWidth, this.measure(itemText));
       }
     }
-    
+
     // Add padding (3 characters on each side) and borders (1 character each side)
     return Math.max(maxWidth + 8, 80); // Minimum 80 characters
   }
 
   private renderTopBorder(title: string, width: number): string {
     const borderWidth = width - 2;
-    const titlePadding = Math.max(0, borderWidth - title.length);
-    const leftPadding = Math.floor(titlePadding / 2);
-    const rightPadding = titlePadding - leftPadding;
-    
-    const centeredTitle = ' '.repeat(leftPadding) + title + ' '.repeat(rightPadding);
-    
+    const centeredTitle = this.formatWithinWidth(title, borderWidth, 'center', '…');
+
     return this.theme.primary(`┌${'─'.repeat(borderWidth)}┐`) + '\n' +
            this.theme.primary(`│${centeredTitle}│`);
   }
@@ -705,14 +730,12 @@ export class EnhancedWindowLayoutRenderer {
 
   private renderContentLine(content: string, width: number): string {
     const availableWidth = width - 8; // Account for borders and padding
-    const truncatedContent = content.length > availableWidth ? content.substring(0, availableWidth - 3) + '...' : content;
-    const padding = ' '.repeat(Math.max(0, availableWidth - truncatedContent.length));
-    
-    return this.theme.primary('│') + 
-           '   ' + 
-           this.theme.secondary(truncatedContent) + 
-           padding + 
-           '   ' + 
+    const formattedContent = this.formatWithinWidth(content, availableWidth, 'left', '...');
+
+    return this.theme.primary('│') +
+           '   ' +
+           this.theme.secondary(formattedContent) +
+           '   ' +
            this.theme.primary('│');
   }
 
@@ -729,8 +752,7 @@ export class EnhancedWindowLayoutRenderer {
     const description = item.description ? ` - ${item.description}` : '';
     const fullText = itemText + description;
     
-    const truncatedText = fullText.length > availableWidth - 1 ? fullText.substring(0, availableWidth - 4) + '...' : fullText;
-    const padding = ' '.repeat(Math.max(0, availableWidth - truncatedText.length - 1));
+    const formattedText = this.formatWithinWidth(fullText, availableWidth - 1, 'left', '...');
     
     const textStyle = item.enabled ? 
       (isSelected ? this.theme.accent : this.theme.primary) : 
@@ -740,8 +762,7 @@ export class EnhancedWindowLayoutRenderer {
            '  ' + 
            (isSelected ? this.theme.accent(selector) : ' ') + 
            ' ' + 
-           textStyle(truncatedText) + 
-           padding + 
+           textStyle(formattedText) + 
            '   ' + 
            this.theme.primary('│');
   }
@@ -760,12 +781,8 @@ export class EnhancedWindowLayoutRenderer {
   private renderTextBox(width: number): string {
     const borderWidth = width - 2;
     const prompt = 'Select an option: (Use arrow keys)';
-    const promptPadding = Math.max(0, borderWidth - prompt.length);
-    const leftPadding = Math.floor(promptPadding / 2);
-    const rightPadding = promptPadding - leftPadding;
-    
-    const centeredPrompt = ' '.repeat(leftPadding) + prompt + ' '.repeat(rightPadding);
-    
+    const centeredPrompt = this.formatWithinWidth(prompt, borderWidth, 'center', '...');
+
     return this.theme.info(`┌${'─'.repeat(borderWidth)}┐`) + '\n' +
            this.theme.info(`│${centeredPrompt}│`) + '\n' +
            this.theme.info(`└${'─'.repeat(borderWidth)}┘`);
@@ -1199,6 +1216,34 @@ export class ResponsiveLayout extends EventEmitter {
     this.setupResizeListener();
   }
 
+  private normalizeWidth(width: number): number {
+    return Math.max(1, Math.floor(width));
+  }
+
+  private measure(value: string): number {
+    return StringWidthUtils.getDisplayWidth(String(value));
+  }
+
+  private formatCell(
+    value: string,
+    width: number,
+    alignment: 'left' | 'right' | 'center' = 'left',
+    ellipsis = '…'
+  ): string {
+    const targetWidth = this.normalizeWidth(width);
+    return StringUtils.chain(String(value), { mode: 'terminal' })
+      .truncate(targetWidth, ellipsis)
+      .pad(targetWidth, alignment)
+      .value();
+  }
+
+  private truncateText(value: string, width: number, ellipsis = '...'): string {
+    const targetWidth = this.normalizeWidth(width);
+    return StringUtils.chain(String(value), { mode: 'terminal' })
+      .truncate(targetWidth, ellipsis)
+      .value();
+  }
+
   getCurrentBreakpoint(): 'small' | 'medium' | 'large' {
     const width = this.currentDimensions.width;
     
@@ -1222,30 +1267,7 @@ export class ResponsiveLayout extends EventEmitter {
 
   wrapText(text: string, maxWidth?: number): string[] {
     const width = maxWidth || Math.max(this.config.minWidth, this.currentDimensions.width - 4);
-    const words = text.split(' ');
-    const lines: string[] = [];
-    let currentLine = '';
-
-    for (const word of words) {
-      if ((currentLine + ' ' + word).length > width) {
-        if (currentLine) {
-          lines.push(currentLine);
-          currentLine = word;
-        } else {
-          // Single word longer than width, force break
-          lines.push(word.substring(0, width));
-          currentLine = word.substring(width);
-        }
-      } else {
-        currentLine = currentLine ? currentLine + ' ' + word : word;
-      }
-    }
-    
-    if (currentLine) {
-      lines.push(currentLine);
-    }
-    
-    return lines;
+    return StringUtils.wrap(text, this.normalizeWidth(width));
   }
 
   createTable(data: any[], headers: string[]): string {
@@ -1284,8 +1306,8 @@ export class ResponsiveLayout extends EventEmitter {
     
     // Calculate column widths
     const colWidths = headers.map(header => {
-      const headerWidth = header.length;
-      const contentWidth = Math.max(...data.map(row => String(row[header] || '').length));
+      const headerWidth = this.measure(header);
+      const contentWidth = Math.max(...data.map(row => this.measure(row[header] || '')));
       return Math.max(headerWidth, contentWidth);
     });
     
@@ -1304,18 +1326,18 @@ export class ResponsiveLayout extends EventEmitter {
     
     // Header
     result += '┌' + colWidths.map(w => '─'.repeat(w + 2)).join('┬') + '┐\n';
-    result += '│' + headers.map((header, i) => 
-      ` ${this.config.theme.primary(header.padEnd(colWidths[i]))} `
-    ).join('│') + '│\n';
+    result += '│' + headers.map((header, i) => {
+      const formatted = this.formatCell(header, colWidths[i], 'left', '…');
+      return ` ${this.config.theme.primary(formatted)} `;
+    }).join('│') + '│\n';
     result += '├' + colWidths.map(w => '─'.repeat(w + 2)).join('┼') + '┤\n';
     
     // Rows
     data.forEach(row => {
       result += '│' + headers.map((header, i) => {
-        const value = String(row[header] || '');
-        const truncated = value.length > colWidths[i] ? 
-          value.substring(0, colWidths[i] - 1) + '…' : value;
-        return ` ${truncated.padEnd(colWidths[i])} `;
+        const value = row[header] ?? '';
+        const formatted = this.formatCell(value, colWidths[i], 'left', '…');
+        return ` ${formatted} `;
       }).join('│') + '│\n';
     });
     
@@ -1331,10 +1353,8 @@ export class ResponsiveLayout extends EventEmitter {
     // Apply standard 3-character padding as per consistency requirements
     const STANDARD_PADDING = 3;
     const colWidths = headers.map(header => {
-      const headerWidth = this.stripAnsiCodes(header).length;
-      const contentWidth = Math.max(...data.map(row => 
-        this.stripAnsiCodes(String(row[header] || '')).length
-      ));
+      const headerWidth = this.measure(header);
+      const contentWidth = Math.max(...data.map(row => this.measure(row[header] || '')));
       return Math.max(headerWidth, contentWidth);
     });
     
@@ -1365,8 +1385,8 @@ export class ResponsiveLayout extends EventEmitter {
     // Header with consistent formatting
     result += '┌' + colWidths.map(w => borderChar.repeat(w + 2)).join('┬') + '┐\n';
     result += verticalChar + headers.map((header, i) => {
-      const paddedHeader = ` ${header.padEnd(colWidths[i])} `;
-      return this.config.theme.primary(paddedHeader);
+      const formattedHeader = this.formatCell(header, colWidths[i], 'left', '…');
+      return this.config.theme.primary(` ${formattedHeader} `);
     }).join(verticalChar) + verticalChar + '\n';
     
     // Header separator (major section separator as per consistency framework)
@@ -1375,15 +1395,10 @@ export class ResponsiveLayout extends EventEmitter {
     // Data rows with consistent spacing
     data.forEach((row, rowIndex) => {
       result += verticalChar + headers.map((header, colIndex) => {
-        const value = String(row[header] || '');
+        const value = row[header] ?? '';
         const width = colWidths[colIndex];
-        
-        // Truncate with ellipsis if necessary (consistent truncation pattern)
-        let cellContent = value.length > width ? 
-          value.substring(0, width - 1) + '…' : value;
-        
-        // Apply consistent padding (1 space each side as per table cell standards)
-        return ` ${cellContent.padEnd(width)} `;
+        const cellContent = this.formatCell(value, width, 'left', '…');
+        return ` ${cellContent} `;
       }).join(verticalChar) + verticalChar + '\n';
     });
     
@@ -1391,14 +1406,6 @@ export class ResponsiveLayout extends EventEmitter {
     result += '└' + colWidths.map(w => borderChar.repeat(w + 2)).join('┴') + '┘\n';
     
     return result;
-  }
-
-  /**
-   * Strip ANSI color codes for accurate width measurement
-   * @private
-   */
-  private stripAnsiCodes(text: string): string {
-    return text.replace(/\x1b\[[0-9;]*m/g, '');
   }
 
   private setupResizeListener(): void {
@@ -2009,7 +2016,8 @@ export class InteractiveSearch extends EventEmitter {
       // Compact format for small screens
       console.log(`${this.config.theme.primary(indicator)} ${theme(result.highlightedTitle)}`);
       if (result.description) {
-        console.log(`  ${this.config.theme.muted(result.description.substring(0, 50))}${result.description.length > 50 ? '...' : ''}`);
+        const truncated = this.truncateResultText(result.description, 50, '...');
+        console.log(`  ${this.config.theme.muted(truncated)}`);
       }
     } else {
       // Full format for larger screens
@@ -2020,14 +2028,20 @@ export class InteractiveSearch extends EventEmitter {
       console.log(`${this.config.theme.primary(indicator)} ${theme(result.highlightedTitle)} ${category}${score}`);
       
       if (result.description) {
-        const desc = breakpoint === 'medium' 
-          ? result.description.substring(0, 80) + (result.description.length > 80 ? '...' : '')
+        const desc = breakpoint === 'medium'
+          ? this.truncateResultText(result.description, 80, '...')
           : result.description;
         console.log(`  ${this.config.theme.muted(desc)}`);
       }
     }
     
     console.log('');
+  }
+
+  private truncateResultText(value: string, width: number, ellipsis = '...'): string {
+    return StringUtils.chain(String(value), { mode: 'terminal' })
+      .truncate(Math.max(1, width), ellipsis)
+      .value();
   }
 
   private renderFooter(breakpoint: 'small' | 'medium' | 'large'): void {

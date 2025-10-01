@@ -40,6 +40,7 @@
   - Backend discovery/service router documented as functional; relies on priority-based scanning and chokidar observers.
   - CLI/skin rendering layer mid-refactor; enterprise feature set (multi-interface adapters, resilience utilities) may be over-scoped for immediate deliverables.
   - Utilities consolidation and logging/error handling refactors planned but not executed.
+  - Pattern taxonomy reference: `Templum/docs/current/pattern-taxonomy.md` (canonical category enum and maintenance process).
 - **Ideal Requirements (target architecture):**
   - **Universal Interface Core**
     - Maintains zero-knowledge backend registry; discovers services via auto-registration, filesystem watches, and explicit connect operations without prior schema coupling.

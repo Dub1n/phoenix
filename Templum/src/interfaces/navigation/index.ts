@@ -68,10 +68,13 @@ export type {
   ResponsiveWidthCalculator,
   ContentAnalyzer,
   PaddingManager,
-  StringWidthUtils,
   WidthCalculationOptions,
   WidthCalculationResult
 } from './width-calculator';
+
+export {
+  StringWidthUtils
+} from '../../utils/chainable-string-utils';
 
 // Window and navigation management
 export {
@@ -133,13 +136,13 @@ export type {
 
 // Terminal compatibility and accessibility
 export {
+  TerminalCompatibilitySystem,
   createTerminalCompatibilitySystem,
   checkTerminalCompatibility,
   getSafeTerminalConfig
 } from './terminal-compatibility';
 
 export type {
-  TerminalCompatibilitySystem,
   FallbackManager,
   TerminalCapabilities,
   CompatibilityTestResult
@@ -196,13 +199,6 @@ export interface NavigationSystemConfig {
     requireConfirmation?: boolean;
     doubleConfirmation?: boolean;
     confirmationTimeout?: number;
-  };
-  
-  // Text processing
-  textProcessing?: {
-    removeEmojis?: boolean;
-    preserveMeaning?: boolean;
-    enableSelectorUpdate?: boolean;
   };
   
   // Terminal compatibility
@@ -268,11 +264,6 @@ export class NavigationSystem {
         requireConfirmation: true,
         doubleConfirmation: true,
         confirmationTimeout: 30000
-      },
-      textProcessing: {
-        removeEmojis: true,
-        preserveMeaning: true,
-        enableSelectorUpdate: true
       },
       compatibility: {
         detectCapabilities: true,
@@ -355,15 +346,11 @@ export class NavigationSystem {
       // Initialize exit handler
       this.exitHandler = createExitHandler(this.config.exitHandling);
 
-      // Text processing components removed
-
-      if (this.config.textProcessing?.enableSelectorUpdate) {
-        this.selectorUpdater = createSelectorUpdater({
-          character: capabilities?.supportsUnicode ? '›' : '>',
-          accessibilityMode: !capabilities?.supportsUnicode,
-          theme: capabilities?.supportsColor ? undefined : DefaultColorThemes.monochrome
-        });
-      }
+      this.selectorUpdater = createSelectorUpdater({
+        character: capabilities?.supportsUnicode ? '›' : '>',
+        accessibilityMode: !capabilities?.supportsUnicode,
+        theme: capabilities?.supportsColor ? undefined : DefaultColorThemes.monochrome
+      });
 
       // Initialize accessibility manager
       if (this.config.accessibility?.enableKeyboardNavigation || 
@@ -463,8 +450,7 @@ export function createNavigationSystem(config?: NavigationSystemConfig): Navigat
 export async function setupBasicNavigation(): Promise<NavigationSystem> {
   const system = new NavigationSystem({
     compatibility: { detectCapabilities: true },
-    accessibility: { enableKeyboardNavigation: true },
-    textProcessing: { removeEmojis: true }
+    accessibility: { enableKeyboardNavigation: true }
   });
 
   await system.initialize();
@@ -485,10 +471,6 @@ export async function setupAccessibleNavigation(): Promise<NavigationSystem> {
       enableScreenReader: true,
       verbosityLevel: 'verbose',
       highContrastMode: true
-    },
-    textProcessing: { 
-      removeEmojis: true,
-      preserveMeaning: true
     }
   });
 

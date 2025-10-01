@@ -37,20 +37,11 @@ export interface ScopedEventBus<TEventMap extends TypedEventMap> {
   getEventNames(): (keyof TEventMap)[];
 }
 
-export interface TypedEventEmitter<TEventMap extends TypedEventMap> extends EventEmitter {
-  emit<K extends keyof TEventMap>(event: K, ...args: Parameters<TEventMap[K]>): boolean;
-  on<K extends keyof TEventMap>(event: K, listener: TEventMap[K]): this;
-  once<K extends keyof TEventMap>(event: K, listener: TEventMap[K]): this;
-  removeListener<K extends keyof TEventMap>(event: K, listener: TEventMap[K]): this;
-  removeAllListeners<K extends keyof TEventMap>(event?: K): this;
-  listenerCount<K extends keyof TEventMap>(event: K): number;
-  prependListener<K extends keyof TEventMap>(event: K, listener: TEventMap[K]): this;
-  prependOnceListener<K extends keyof TEventMap>(event: K, listener: TEventMap[K]): this;
-}
+export type TypedEventEmitter<TEventMap extends TypedEventMap> = EventEmitter<TEventMap>;
 
 export class EventUtils {
   private static logger: Logger = createLogger('event-utils');
-  private static globalEmitter: EventEmitter = new EventEmitter();
+  private static globalEmitter: EventEmitter<Record<string, (...args: any[]) => unknown>> = new EventEmitter();
   private static activeEmitters: WeakSet<EventEmitter> = new WeakSet();
   private static subscriptions: Map<string, Set<UnsubscribeFn>> = new Map();
 
@@ -59,19 +50,15 @@ export class EventUtils {
   }
 
   static createTypedEmitter<TEventMap extends TypedEventMap>(): TypedEventEmitter<TEventMap> {
-    const emitter = new EventEmitter();
+    const emitter = new EventEmitter<TEventMap>();
     emitter.setMaxListeners(50);
     this.activeEmitters.add(emitter);
 
-    const typedEmitter = emitter as TypedEventEmitter<TEventMap>;
-    const originalEmit = typedEmitter.emit.bind(typedEmitter);
+    const originalEmit = emitter.emit.bind(emitter);
 
-    typedEmitter.emit = <K extends keyof TEventMap>(
-      event: K,
-      ...args: Parameters<TEventMap[K]>
-    ): boolean => {
+    emitter.emit = ((event: keyof TEventMap, ...args: Parameters<TEventMap[keyof TEventMap]>) => {
       try {
-        return originalEmit(event as string, ...args);
+        return originalEmit(event, ...args);
       } catch (error) {
         this.logger.error('Event emission failed', undefined, {
           event: String(event),
@@ -80,9 +67,9 @@ export class EventUtils {
         handleError(error, `event-emission:${String(event)}`);
         return false;
       }
-    };
+    }) as TypedEventEmitter<TEventMap>['emit'];
 
-    return typedEmitter;
+    return emitter;
   }
 
   static subscribe<TEventMap extends TypedEventMap, K extends keyof TEventMap>(
@@ -99,18 +86,18 @@ export class EventUtils {
 
     if (once) {
       if (prepend) {
-        emitter.prependOnceListener(event as string, handler);
+        emitter.prependOnceListener(event, handler);
       } else {
-        emitter.once(event as string, handler);
+        emitter.once(event, handler);
       }
     } else if (prepend) {
-      emitter.prependListener(event as string, handler);
+      emitter.prependListener(event, handler);
     } else {
-      emitter.on(event as string, handler);
+      emitter.on(event, handler);
     }
 
     const unsubscribe: UnsubscribeFn = () => {
-      emitter.removeListener(event as string, handler);
+      emitter.off(event, handler);
       this.subscriptions.get(context)?.delete(unsubscribe);
     };
 
@@ -126,7 +113,7 @@ export class EventUtils {
     try {
       this.logger.debug('Emitting event', {
         event: String(event),
-        listeners: emitter.listenerCount(event as string)
+        listeners: emitter.listenerCount(event)
       });
       return emitter.emit(event, ...args);
     } catch (error) {
@@ -157,7 +144,7 @@ export class EventUtils {
       subscribe: (event, handler, options) =>
         this.subscribe(emitter, event, handler, { ...options, context: scope }),
       cleanup: () => this.cleanupContext(scope),
-      getListenerCount: event => emitter.listenerCount(event as string),
+      getListenerCount: event => emitter.listenerCount(event),
       getEventNames: () => emitter.eventNames() as (keyof TEventMap)[]
     };
   }
@@ -190,17 +177,17 @@ export class EventUtils {
   ): Promise<Parameters<TEventMap[K]>> {
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
-        emitter.removeListener(event as string, handler as any);
+        emitter.off(event, handler as any);
         reject(new Error(`Event '${String(event)}' not received within ${timeoutMs}ms`));
       }, timeoutMs);
 
       const handler = (...args: Parameters<TEventMap[K]>) => {
         clearTimeout(timer);
-        emitter.removeListener(event as string, handler as any);
+        emitter.off(event, handler as any);
         resolve(args);
       };
 
-      emitter.once(event as string, handler as any);
+      emitter.once(event, handler as any);
     });
   }
 
@@ -278,4 +265,3 @@ export interface BackendServiceEvents {
   serviceError: (serviceName: string, error: Error) => void;
   healthCheck: (status: 'healthy' | 'degraded' | 'unhealthy') => void;
 }
-

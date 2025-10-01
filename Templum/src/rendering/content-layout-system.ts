@@ -41,6 +41,7 @@ tags:
 
 import chalk from 'chalk';
 import { EventEmitter } from 'events';
+import { StringUtils, StringWidthUtils } from '../utils/chainable-string-utils';
 
 // Terminal capability detection
 export interface TerminalCapabilities {
@@ -423,6 +424,23 @@ export class BorderRenderer {
     this.layout = new WindowLayout();
   }
 
+  private normalizeWidth(width: number): number {
+    return Math.max(1, Math.floor(width));
+  }
+
+  private formatWithinWidth(
+    text: string,
+    width: number,
+    alignment: 'left' | 'right' | 'center' = 'left',
+    ellipsis = '...'
+  ): string {
+    const targetWidth = this.normalizeWidth(width);
+    return StringUtils.chain(text, { mode: 'terminal' })
+      .truncate(targetWidth, ellipsis)
+      .pad(targetWidth, alignment)
+      .value();
+  }
+
   renderWindow(
     content: WindowContent,
     config: WindowLayoutConfig = {
@@ -558,23 +576,16 @@ export class BorderRenderer {
     emphasized: boolean = false
   ): string {
     const { borderChars, contentWidth, padding, supportsColors } = layout;
-    
-    // Apply emphasis if needed
+
     let processedText = text;
     if (emphasized && supportsColors) {
       processedText = chalk.bold(text);
     }
-    
-    // Truncate if too long
+
     const availableWidth = contentWidth - (padding.length * 2);
-    if (this.getDisplayWidth(processedText) > availableWidth) {
-      processedText = this.truncateText(processedText, availableWidth - 3) + '...';
-    }
-    
-    // Pad to fill width
-    const paddedText = processedText.padEnd(availableWidth);
-    
-    return borderChars.vertical + padding + paddedText + padding + borderChars.vertical;
+    const formatted = this.formatWithinWidth(processedText, availableWidth, 'left', '...');
+
+    return borderChars.vertical + padding + formatted + padding + borderChars.vertical;
   }
 
   /**
@@ -589,13 +600,7 @@ export class BorderRenderer {
       processedText = chalk.bold(text);
     }
     
-    // Calculate centering
-    const textWidth = this.getDisplayWidth(processedText);
-    const availableWidth = contentWidth;
-    const leftPadding = Math.max(0, Math.floor((availableWidth - textWidth) / 2));
-    const rightPadding = Math.max(0, availableWidth - textWidth - leftPadding);
-    
-    const centeredText = ' '.repeat(leftPadding) + processedText + ' '.repeat(rightPadding);
+    const centeredText = this.formatWithinWidth(processedText, contentWidth, 'center', '...');
     
     return borderChars.vertical + centeredText + borderChars.vertical;
   }
@@ -620,18 +625,13 @@ export class BorderRenderer {
     // Calculate available width accounting for nesting
     const nestedOffset = isNested ? 1 : 0;
     const availableWidth = contentWidth - (padding.length * 2) - nestedOffset;
-    
-    if (this.getDisplayWidth(processedText) > availableWidth) {
-      processedText = this.truncateText(processedText, availableWidth - 3) + '...';
-    }
-    
-    // Pad to fill width
-    const paddedText = processedText.padEnd(availableWidth);
-    
+
+    const formatted = this.formatWithinWidth(processedText, availableWidth, 'left', '...');
+
     if (isNested) {
-      return borderChars.vertical + ' ' + borderChars.vertical + padding + paddedText + padding + borderChars.vertical;
+      return borderChars.vertical + ' ' + borderChars.vertical + padding + formatted + padding + borderChars.vertical;
     } else {
-      return borderChars.vertical + padding + paddedText + padding + borderChars.vertical;
+      return borderChars.vertical + padding + formatted + padding + borderChars.vertical;
     }
   }
 
@@ -741,27 +741,8 @@ export class BorderRenderer {
     return borderChars.vertical + padding + emptyContent + padding + borderChars.vertical;
   }
 
-  private truncateText(text: string, maxWidth: number): string {
-    if (this.getDisplayWidth(text) <= maxWidth) {
-      return text;
-    }
-    
-    // Simple truncation for now - could be enhanced with word breaking
-    let truncated = '';
-    for (const char of text) {
-      if (this.getDisplayWidth(truncated + char) > maxWidth) {
-        break;
-      }
-      truncated += char;
-    }
-    
-    return truncated;
-  }
-
   private getDisplayWidth(text: string): number {
-    // Strip ANSI codes and get actual display width
-    const stripped = text.replace(/\u001b\[[0-9;]*m/g, '');
-    return stripped.length; // Simplified - could use string-width
+    return StringWidthUtils.getDisplayWidth(text);
   }
 
   forceCapabilities(capabilities: Partial<TerminalCapabilities>): void {

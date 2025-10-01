@@ -73,6 +73,21 @@ export interface TerminalTheme {
   muted: ColorSpec;
 }
 
+export interface FormatterCacheStats {
+  entries: number;
+  hits: number;
+  misses: number;
+  hitRate: number;
+}
+
+const STATUS_GLYPHS: Record<keyof TerminalTheme['status'], { unicode: string; fallback: string }> = {
+  success: { unicode: '✔', fallback: '[OK]' },
+  error: { unicode: '✖', fallback: '[ERROR]' },
+  warning: { unicode: '⚠', fallback: '[WARN]' },
+  info: { unicode: 'ℹ', fallback: '[INFO]' },
+  debug: { unicode: '…', fallback: '[DEBUG]' }
+};
+
 const DEFAULT_THEME: TerminalTheme = {
   status: {
     success: { fg: '#4caf50', modifiers: ['bold'] },
@@ -171,8 +186,12 @@ function unicodeOrFallback(capabilities: TerminalCapabilities, unicode: string, 
 }
 
 export class TerminalFormatter {
+  private static readonly MAX_CACHE_SIZE = 200;
   private readonly capabilities: TerminalCapabilities;
   private readonly theme: TerminalTheme;
+  private readonly cache = new Map<string, string>();
+  private cacheHits = 0;
+  private cacheMisses = 0;
 
   constructor(theme: Partial<TerminalTheme> = {}, capabilities?: TerminalCapabilities) {
     this.capabilities = capabilities ?? TerminalFormatter.detectCapabilities();
@@ -217,15 +236,46 @@ export class TerminalFormatter {
     version: (value: string) => this.formatSystem('version', value)
   };
 
+  getCapabilities(): TerminalCapabilities {
+    return { ...this.capabilities };
+  }
+
+  clearCache(): void {
+    this.cache.clear();
+    this.cacheHits = 0;
+    this.cacheMisses = 0;
+  }
+
+  getCacheStats(): FormatterCacheStats {
+    const total = this.cacheHits + this.cacheMisses;
+    const hitRate = total === 0 ? 0 : this.cacheHits / total;
+
+    return {
+      entries: this.cache.size,
+      hits: this.cacheHits,
+      misses: this.cacheMisses,
+      hitRate
+    };
+  }
+
   private formatStatus(kind: keyof TerminalTheme['status'], message: string): string {
     const spec = this.theme.status[kind];
-    return applySpec(message, spec, this.capabilities);
+    const glyph = unicodeOrFallback(this.capabilities, STATUS_GLYPHS[kind].unicode, STATUS_GLYPHS[kind].fallback);
+    const text = glyph ? `${glyph} ${message}` : message;
+
+    return this.formatCached(
+      `status:${kind}:${message}`,
+      () => applySpec(text, spec, this.capabilities)
+    );
   }
 
   private formatHeader(message: string, level: 1 | 2 | 3): string {
     const spec = this.theme.ui.header[level - 1];
     const prefix = unicodeOrFallback(this.capabilities, '❯', '>');
-    return applySpec(`${prefix} ${message}`, spec, this.capabilities);
+    return this.formatCached(
+      `ui:header:${level}:${message}`,
+      () => applySpec(`${prefix} ${message}`, spec, this.capabilities)
+    );
   }
 
   private formatSeparator(length: number, style: 'solid' | 'dashed' | 'double'): string {
@@ -236,8 +286,15 @@ export class TerminalFormatter {
     } as const;
 
     const char = palette[style];
-    const separator = char.repeat(Math.max(1, Math.min(length, this.capabilities.width)));
-    return applySpec(separator, this.theme.ui.separator, this.capabilities);
+    const key = `ui:separator:${style}:${length}`;
+
+    return this.formatCached(
+      key,
+      () => {
+        const separator = char.repeat(Math.max(1, Math.min(length, this.capabilities.width)));
+        return applySpec(separator, this.theme.ui.separator, this.capabilities);
+      }
+    );
   }
 
   private formatMenu(items: MenuItem[], selectedIndex: number): string {
@@ -267,15 +324,21 @@ export class TerminalFormatter {
       : type === 'select'
         ? unicodeOrFallback(this.capabilities, '⏷', 'v')
         : ':';
-
-    return applySpec(`${question} ${suffix}`, this.theme.ui.prompt, this.capabilities);
+    return this.formatCached(
+      `ui:prompt:${type}:${question}`,
+      () => applySpec(`${question} ${suffix}`, this.theme.ui.prompt, this.capabilities)
+    );
   }
 
   private formatBreadcrumb(segments: string[]): string {
     const separator = unicodeOrFallback(this.capabilities, ' › ', ' > ');
-    return segments
-      .map(segment => applySpec(segment, this.theme.ui.breadcrumb, this.capabilities))
-      .join(separator);
+    return this.formatCached(
+      `ui:breadcrumb:${segments.join('>')}`,
+      () =>
+        segments
+          .map(segment => applySpec(segment, this.theme.ui.breadcrumb, this.capabilities))
+          .join(separator)
+    );
   }
 
   private formatTable(rows: unknown[], options: TableOptions): string {
@@ -356,13 +419,24 @@ export class TerminalFormatter {
 
   private formatCode(snippet: string, language: string): string {
     const header = language ? `(${language}) ` : '';
-    return applySpec(`${header}${snippet}`, this.theme.data.code, this.capabilities);
+    return this.formatCached(
+      `data:code:${language}:${snippet}`,
+      () => applySpec(`${header}${snippet}`, this.theme.data.code, this.capabilities),
+      snippet.length <= 120
+    );
   }
 
   private formatSelection(text: string, isSelected: boolean): string {
-    return isSelected
-      ? applySpec(text, this.theme.interactive.selection, this.capabilities)
-      : applySpec(text, this.theme.ui.menu, this.capabilities);
+    const key = `interactive:selection:${isSelected}:${text}`;
+
+    return this.formatCached(
+      key,
+      () => (isSelected
+        ? applySpec(text, this.theme.interactive.selection, this.capabilities)
+        : applySpec(text, this.theme.ui.menu, this.capabilities)
+      ),
+      text.length <= 120
+    );
   }
 
   private formatNavigation(direction: 'up' | 'down' | 'left' | 'right'): string {
@@ -372,7 +446,10 @@ export class TerminalFormatter {
       left: unicodeOrFallback(this.capabilities, '←', '<'),
       right: unicodeOrFallback(this.capabilities, '→', '>')
     };
-    return applySpec(arrows[direction], this.theme.interactive.navigation, this.capabilities);
+    return this.formatCached(
+      `interactive:navigation:${direction}`,
+      () => applySpec(arrows[direction], this.theme.interactive.navigation, this.capabilities)
+    );
   }
 
   private formatFeedback(type: 'loading' | 'thinking' | 'processing', message?: string): string {
@@ -382,11 +459,19 @@ export class TerminalFormatter {
       processing: unicodeOrFallback(this.capabilities, '⚙️', '*')
     };
     const base = `${symbols[type]}${message ? ` ${message}` : ''}`;
-    return applySpec(base, this.theme.interactive.feedback, this.capabilities);
+    return this.formatCached(
+      `interactive:feedback:${type}:${message ?? ''}`,
+      () => applySpec(base, this.theme.interactive.feedback, this.capabilities),
+      (message ?? '').length <= 120
+    );
   }
 
   private formatSystem(kind: keyof TerminalTheme['system'], value: string): string {
-    return applySpec(value, this.theme.system[kind], this.capabilities);
+    return this.formatCached(
+      `system:${kind}:${value}`,
+      () => applySpec(value, this.theme.system[kind], this.capabilities),
+      value.length <= 120
+    );
   }
 
   private static mergeTheme(theme: Partial<TerminalTheme>): TerminalTheme {
@@ -437,6 +522,47 @@ export class TerminalFormatter {
     const caps = capabilities ?? this.detectCapabilities();
     return caps.supportsColor || caps.supportsUnicode ? text : fallback;
   }
+
+  private formatCached(key: string, compute: () => string, cacheable = true): string {
+    if (!cacheable) {
+      this.cacheMisses++;
+      return compute();
+    }
+
+    const scopedKey = `${this.cacheKeyPrefix()}:${key}`;
+
+    if (this.cache.has(scopedKey)) {
+      this.cacheHits++;
+      return this.cache.get(scopedKey)!;
+    }
+
+    this.cacheMisses++;
+    const value = compute();
+
+    if (this.cache.size >= TerminalFormatter.MAX_CACHE_SIZE) {
+      this.evictCacheEntries();
+    }
+
+    this.cache.set(scopedKey, value);
+    return value;
+  }
+
+  private cacheKeyPrefix(): string {
+    return `${this.capabilities.supportsColor ? 'color' : 'mono'}-${this.capabilities.supportsUnicode ? 'unicode' : 'ascii'}`;
+  }
+
+  private evictCacheEntries(): void {
+    const removeCount = Math.ceil(TerminalFormatter.MAX_CACHE_SIZE * 0.1);
+    let removed = 0;
+
+    for (const key of this.cache.keys()) {
+      this.cache.delete(key);
+      removed++;
+      if (removed >= removeCount) {
+        break;
+      }
+    }
+  }
 }
 
 export const createFormatter = (theme: Partial<TerminalTheme> = {}, capabilities?: TerminalCapabilities) =>
@@ -454,4 +580,3 @@ function formatCell(value: unknown): string {
   }
   return inspect(value, { depth: 2 });
 }
-

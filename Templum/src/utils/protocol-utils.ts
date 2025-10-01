@@ -213,6 +213,9 @@ export class ProtocolSession extends EventEmitter {
   private idleTimer?: NodeJS.Timeout;
   private isShuttingDown = false;
   private readonly validator: ProtocolMessageValidator;
+  private transportMessageHandler?: (payload: unknown) => void;
+  private transportErrorHandler?: (error: unknown) => void;
+  private transportCloseHandler?: () => void;
 
   constructor(adapter: ProtocolAdapter, transport: ProtocolTransport, config: ProtocolConfig, logger: Logger) {
     super();
@@ -220,7 +223,7 @@ export class ProtocolSession extends EventEmitter {
     this.type = config.type;
     this.adapter = adapter;
     this.transport = transport;
-    this.logger = logger.child({ context: `protocol:${this.type}`, connectionId: this.id });
+    this.logger = logger.child(`protocol:${this.type}:${this.id}`);
     this.config = {
       ...DEFAULT_CONFIG,
       ...config,
@@ -301,10 +304,14 @@ export class ProtocolSession extends EventEmitter {
       this.metrics.sent += 1;
       this.metrics.failed += 1;
       this.state.lastErrorAt = Date.now();
-      this.logger.error('Failed to send protocol message', {
-        error: error instanceof Error ? error.message : String(error),
-        messageType: message.type
-      });
+      this.logger.error(
+        'Failed to send protocol message',
+        error instanceof Error ? error : undefined,
+        {
+          messageType: message.type,
+          connectionId: this.id
+        }
+      );
       this.emit('sendFailed', { message, error });
 
       if (this.config.autoReconnect) {
@@ -402,25 +409,33 @@ export class ProtocolSession extends EventEmitter {
     this.state.lastMessageAt = undefined;
 
     if (transport.on) {
-      transport.on('message', payload => {
+      this.transportMessageHandler = (payload: unknown) => {
         this.metrics.received += 1;
         this.state.lastMessageAt = Date.now();
         this.emit('messageReceived', payload);
         this.resetIdleTimer();
-      });
-      transport.on('error', error => {
+      };
+      this.transportErrorHandler = (error: unknown) => {
         this.state.lastErrorAt = Date.now();
         this.metrics.failed += 1;
         this.emit('error', error);
-        this.logger.error('Protocol transport error', {
-          error: error instanceof Error ? error.message : String(error)
-        });
-      });
-      transport.on('close', () => {
+        this.logger.error(
+          'Protocol transport error',
+          error instanceof Error ? error : undefined,
+          {
+            connectionId: this.id
+          }
+        );
+      };
+      this.transportCloseHandler = () => {
         this.metrics.disconnects += 1;
         this.setStatus('disconnected');
         this.emit('disconnected');
-      });
+      };
+
+      transport.on('message', this.transportMessageHandler);
+      transport.on('error', this.transportErrorHandler);
+      transport.on('close', this.transportCloseHandler);
     }
 
     this.resetIdleTimer();
@@ -438,9 +453,18 @@ export class ProtocolSession extends EventEmitter {
     if (!this.transport || !this.transport.off) {
       return;
     }
-    this.transport.off('message', () => undefined);
-    this.transport.off('error', () => undefined);
-    this.transport.off('close', () => undefined);
+    if (this.transportMessageHandler) {
+      this.transport.off('message', this.transportMessageHandler);
+      this.transportMessageHandler = undefined;
+    }
+    if (this.transportErrorHandler) {
+      this.transport.off('error', this.transportErrorHandler);
+      this.transportErrorHandler = undefined;
+    }
+    if (this.transportCloseHandler) {
+      this.transport.off('close', this.transportCloseHandler);
+      this.transportCloseHandler = undefined;
+    }
   }
 
   private setStatus(status: ProtocolStatus): void {
@@ -471,9 +495,14 @@ export class ProtocolSession extends EventEmitter {
       this.setStatus('connected');
       this.emit('reconnected');
     } catch (error) {
-      this.logger.error('Failed to reconnect protocol transport', {
-        error: error instanceof Error ? error.message : String(error)
-      });
+      this.logger.error(
+        'Failed to reconnect protocol transport',
+        error instanceof Error ? error : undefined,
+        {
+          reason,
+          connectionId: this.id
+        }
+      );
       this.emit('reconnectFailed', error);
       this.setStatus('disconnected');
     }
@@ -650,7 +679,7 @@ export class ProtocolUtils extends EventEmitter {
   private resolveAdapter(type: ProtocolType): ProtocolAdapter | undefined {
     const adapter = this.adapters.get(type) ?? this.adapters.get('custom' as ProtocolType);
     if (!adapter) {
-      this.logger.error('No protocol adapter registered', { type });
+      this.logger.error('No protocol adapter registered', undefined, { type });
     }
     return adapter;
   }

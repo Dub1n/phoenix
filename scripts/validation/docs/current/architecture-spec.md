@@ -1,8 +1,10 @@
 ---
+doc-type: architecture-spec
 title: Validation System Architecture Specification
 tags: [validation-system, architecture]
 status: current
 last_updated: 2025-09-22
+---
 ---
 
 # Validation System — Architecture Specification (Current State)

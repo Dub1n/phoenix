@@ -12,6 +12,7 @@ import { program } from 'commander';
 import * as fs from 'fs';
 import * as path from 'path';
 import { performance } from 'perf_hooks';
+import { formatColumn } from './cli-string-formatting';
 
 // Simplified interfaces for working validation
 interface ServiceHealth {
@@ -498,7 +499,10 @@ program
       console.log('─'.repeat(40));
       Object.entries(report.serviceHealth).forEach(([service, health]) => {
         const status = health.operational ? '✅ HEALTHY' : '❌ UNHEALTHY';
-        console.log(`${service.toUpperCase().padEnd(10)} ${status.padEnd(15)} ${health.responseTime.toFixed(1)}ms`);
+        const serviceColumn = formatColumn(service.toUpperCase(), 10);
+        const statusColumn = formatColumn(status, 15);
+        const responseColumn = formatColumn(`${health.responseTime.toFixed(1)}ms`, 10);
+        console.log(`${serviceColumn} ${statusColumn} ${responseColumn}`);
       });
       
       const overallHealthy = Object.values(report.serviceHealth).every(h => h.operational);

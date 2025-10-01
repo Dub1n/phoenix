@@ -32,6 +32,7 @@ import {
   ResponsiveLayout,
   createDefaultTerminalUI
 } from './terminal-ui-components';
+import { StringUtils } from '../utils/chainable-string-utils';
 import chalk from 'chalk';
 import { 
   InteractiveMenuRenderer, 
@@ -320,6 +321,15 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
   private interactionMode: 'menu' | 'command' = 'menu';
   private sessionManager: CLISessionManager;
   private consistencyEngine: CLIDisplayConsistencyEngine;
+
+  private formatColumn(
+    value: unknown,
+    width: number,
+    alignment: 'left' | 'right' | 'center' = 'right'
+  ): string {
+    const text = value === null || value === undefined ? '' : String(value);
+    return StringUtils.chain(text, { mode: 'terminal' }).pad(width, alignment).value();
+  }
 
   constructor(config?: Partial<CLIAdapterConfig>) {
     super();
@@ -1852,8 +1862,10 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
     Object.entries(backendConnections.backends).forEach(([serviceId, status]) => {
       const statusTyped = status as any;
       const icon = statusTyped.connected ? '🟢' : '🔴';
+      const serviceColumn = this.formatColumn(serviceId, 20);
+      const connectionState = this.formatColumn(statusTyped.connected ? 'Connected' : 'Disconnected', 12);
       const health = statusTyped.health || 'Unknown';
-      console.log(`${icon} ${serviceId.padEnd(20)} ${statusTyped.connected ? 'Connected' : 'Disconnected'} | ${health}`);
+      console.log(`${icon} ${serviceColumn} ${connectionState} | ${health}`);
     });
     
     console.log('━'.repeat(60));

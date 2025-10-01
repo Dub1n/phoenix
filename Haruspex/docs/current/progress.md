@@ -1,3 +1,11 @@
+---
+doc-type: progress
+title: Haruspex Progress Tracker
+tags: [haruspex, progress]
+status: current
+last_updated: 2025-09-22
+---
+
 # Haruspex Progress Tracker
 
 Legend: `[x]` done · `[~]` in progress · `[ ]` not started · `[!]` broken · `[?]` verify · `[P]` pending investigation

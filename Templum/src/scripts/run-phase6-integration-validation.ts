@@ -12,6 +12,7 @@ import { program } from 'commander';
 import * as fs from 'fs';
 import * as path from 'path';
 import { Phase6IntegrationValidationSuite, Phase6ValidationReport } from '../tests/integration-validation-framework';
+import { formatColumn } from './cli-string-formatting';
 
 // CLI Configuration
 const CLI_VERSION = '1.0.0';
@@ -242,8 +243,13 @@ class Phase6ValidationCLI {
         const responseTime = `${health.responseTime.toFixed(1)}ms`;
         const memoryUsage = `${health.memoryUsage.toFixed(1)}MB`;
         const errorRate = `${(health.errorRate * 100).toFixed(1)}%`;
-        
-        console.log(`${service.toUpperCase().padEnd(10)} ${status.padEnd(15)} Response: ${responseTime.padEnd(10)} Memory: ${memoryUsage.padEnd(10)} Errors: ${errorRate}`);
+
+        const serviceColumn = formatColumn(service.toUpperCase(), 10);
+        const statusColumn = formatColumn(status, 15);
+        const responseColumn = formatColumn(responseTime, 10);
+        const memoryColumn = formatColumn(memoryUsage, 10);
+
+        console.log(`${serviceColumn} ${statusColumn} Response: ${responseColumn} Memory: ${memoryColumn} Errors: ${errorRate}`);
       });
 
       console.log('─'.repeat(50));
@@ -317,13 +323,14 @@ class Phase6ValidationCLI {
       console.log('─'.repeat(40));
       
       services.forEach(service => {
-        const status = service.status.toUpperCase().padEnd(10);
+        const nameColumn = formatColumn(service.name.toUpperCase(), 10);
+        const statusColumn = formatColumn(service.status.toUpperCase(), 10);
         const ports = Object.entries(service.ports)
           .filter(([, port]) => port)
           .map(([type, port]) => `${type}:${port}`)
           .join(', ') || 'none';
-        
-        console.log(`${service.name.toUpperCase().padEnd(10)} ${status} Ports: ${ports}`);
+
+        console.log(`${nameColumn} ${statusColumn} Ports: ${ports}`);
       });
 
       await this.validationSuite.shutdown();

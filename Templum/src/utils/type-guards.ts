@@ -1,8 +1,77 @@
-import {
-  createTemplumError,
-  isTemplumError,
-  TemplumError
-} from '../types/templum-types';
+import { createTemplumError } from '../types/templum-types';
+
+export type TypeGuard<T> = (value: unknown) => value is T;
+
+export const TypeGuards = {
+  isString(value: unknown): value is string {
+    return typeof value === 'string';
+  },
+  isNumber(value: unknown): value is number {
+    return typeof value === 'number' && !Number.isNaN(value);
+  },
+  isBoolean(value: unknown): value is boolean {
+    return typeof value === 'boolean';
+  },
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  isFunction(value: unknown): value is Function {
+    return typeof value === 'function';
+  },
+  isUndefined(value: unknown): value is undefined {
+    return typeof value === 'undefined';
+  },
+  isNull(value: unknown): value is null {
+    return value === null;
+  },
+  isObject(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
+  },
+  isArray(value: unknown): value is unknown[] {
+    return Array.isArray(value);
+  },
+  isEmptyObject(value: unknown): value is Record<string, never> {
+    return TypeGuards.isObject(value) && Object.keys(value).length === 0;
+  },
+  isEmptyArray(value: unknown): value is [] {
+    return TypeGuards.isArray(value) && value.length === 0;
+  },
+  isNonEmptyString(value: unknown): value is string {
+    return TypeGuards.isString(value) && value.trim().length > 0;
+  },
+  isPositiveNumber(value: unknown): value is number {
+    return TypeGuards.isNumber(value) && value > 0;
+  },
+  isNonNegativeNumber(value: unknown): value is number {
+    return TypeGuards.isNumber(value) && value >= 0;
+  },
+  isInteger(value: unknown): value is number {
+    return TypeGuards.isNumber(value) && Number.isInteger(value);
+  },
+};
+
+export class TypeValidators {
+  static isArrayOf<T>(value: unknown, elementGuard: TypeGuard<T>): value is T[] {
+    return TypeGuards.isArray(value) && value.every((item) => elementGuard(item));
+  }
+
+  static matchesShape<T extends Record<string, unknown>>(
+    value: unknown,
+    shapeValidator: (candidate: Record<string, unknown>) => candidate is T,
+  ): value is T {
+    return TypeGuards.isObject(value) && shapeValidator(value);
+  }
+
+  static isInstanceOf<T>(value: unknown, constructor: new (...args: any[]) => T): value is T {
+    return value instanceof constructor;
+  }
+
+  static isOneOf<T1, T2>(
+    value: unknown,
+    guard1: TypeGuard<T1>,
+    guard2: TypeGuard<T2>,
+  ): value is T1 | T2 {
+    return guard1(value) || guard2(value);
+  }
+}
 
 export interface PropertyValidationResult {
   exists: boolean;
@@ -19,86 +88,16 @@ export interface PropertyValidationOptions {
   customValidator?: (value: unknown) => boolean;
 }
 
-export const TypeGuards = {
-  isString(value: unknown): value is string {
-    return typeof value === 'string';
-  },
-  isNonEmptyString(value: unknown): value is string {
-    return typeof value === 'string' && value.trim().length > 0;
-  },
-  isNumber(value: unknown): value is number {
-    return typeof value === 'number' && !Number.isNaN(value);
-  },
-  isPositiveNumber(value: unknown): value is number {
-    return TypeGuards.isNumber(value) && value > 0;
-  },
-  isNonNegativeNumber(value: unknown): value is number {
-    return TypeGuards.isNumber(value) && value >= 0;
-  },
-  isInteger(value: unknown): value is number {
-    return TypeGuards.isNumber(value) && Number.isInteger(value);
-  },
-  isBoolean(value: unknown): value is boolean {
-    return typeof value === 'boolean';
-  },
-  isFunction(value: unknown): value is (...args: any[]) => unknown {
-    return typeof value === 'function';
-  },
-  isUndefined(value: unknown): value is undefined {
-    return typeof value === 'undefined';
-  },
-  isNull(value: unknown): value is null {
-    return value === null;
-  },
-  isArray(value: unknown): value is unknown[] {
-    return Array.isArray(value);
-  },
-  isEmptyArray(value: unknown): value is [] {
-    return Array.isArray(value) && value.length === 0;
-  },
-  isObject(value: unknown): value is Record<string, unknown> {
-    return typeof value === 'object' && value !== null && !Array.isArray(value);
-  },
-  isEmptyObject(value: unknown): value is Record<string, never> {
-    return TypeGuards.isObject(value) && Object.keys(value).length === 0;
-  }
-};
-
-export class TypeValidators {
-  static isArrayOf<T>(value: unknown, guard: (item: unknown) => item is T): value is T[] {
-    return TypeGuards.isArray(value) && value.every(guard);
-  }
-
-  static matchesShape<T extends Record<string, unknown>>(
-    value: unknown,
-    validator: (candidate: Record<string, unknown>) => candidate is T
-  ): value is T {
-    return TypeGuards.isObject(value) && validator(value);
-  }
-
-  static isInstanceOf<T>(value: unknown, ctor: new (...args: any[]) => T): value is T {
-    return value instanceof ctor;
-  }
-
-  static isOneOf<T1, T2>(
-    value: unknown,
-    guard1: (candidate: unknown) => candidate is T1,
-    guard2: (candidate: unknown) => candidate is T2
-  ): value is T1 | T2 {
-    return guard1(value) || guard2(value);
-  }
-}
-
 export class PropertyGuards {
   static validateProperty(
     obj: unknown,
     propertyPath: string,
-    options: PropertyValidationOptions = {}
+    options: PropertyValidationOptions = {},
   ): PropertyValidationResult {
     const result: PropertyValidationResult = {
       exists: false,
       confidence: 0,
-      issues: []
+      issues: [],
     };
 
     if (!TypeGuards.isObject(obj)) {
@@ -106,26 +105,26 @@ export class PropertyGuards {
       return result;
     }
 
-    const parts = propertyPath.split('.');
-    let current: any = obj;
-    let path = '';
+    const pathSegments = propertyPath.split('.');
+    let current: unknown = obj;
+    let traversedPath = '';
 
-    for (const segment of parts) {
-      path = path ? `${path}.${segment}` : segment;
+    for (const segment of pathSegments) {
+      traversedPath = traversedPath ? `${traversedPath}.${segment}` : segment;
 
       if (!TypeGuards.isObject(current)) {
-        result.issues.push(`Path '${path}' is not navigable`);
+        result.issues.push(`Path '${traversedPath}' is not navigable`);
         return result;
       }
 
       if (!(segment in current)) {
         if (options.required) {
-          result.issues.push(`Required property '${path}' is missing`);
+          result.issues.push(`Required property '${traversedPath}' is missing`);
         }
         return result;
       }
 
-      current = current[segment];
+      current = (current as Record<string, unknown>)[segment];
     }
 
     result.exists = true;
@@ -133,7 +132,7 @@ export class PropertyGuards {
     result.confidence = 90;
 
     if (options.typeGuard && !options.typeGuard(current)) {
-      result.confidence -= 30;
+      result.confidence -= 60;
       result.issues.push(`Property '${propertyPath}' failed type validation`);
     }
 
@@ -152,28 +151,47 @@ export class PropertyGuards {
       result.issues.push(`Property '${propertyPath}' is undefined but not allowed`);
     }
 
+    result.confidence = Math.max(result.confidence, 0);
     return result;
   }
 
   static validateProperties(
     obj: unknown,
-    specs: Record<string, PropertyValidationOptions>
-  ): { allValid: boolean; overallConfidence: number; results: Record<string, PropertyValidationResult> } {
+    propertySpecs: Record<string, PropertyValidationOptions>,
+  ): {
+    allValid: boolean;
+    overallConfidence: number;
+    results: Record<string, PropertyValidationResult>;
+  } {
     const results: Record<string, PropertyValidationResult> = {};
-    let totalConfidence = 0;
+    let confidenceAccumulator = 0;
     let validCount = 0;
 
-    for (const [property, options] of Object.entries(specs)) {
-      const result = this.validateProperty(obj, property, options);
-      results[property] = result;
+    for (const [path, spec] of Object.entries(propertySpecs)) {
+      const result = PropertyGuards.validateProperty(obj, path, spec);
+      const required = spec.required === true;
+      results[path] = result;
+
+      if (!result.exists && !required) {
+        confidenceAccumulator += 100;
+        validCount += 1;
+        continue;
+      }
+
       if (result.exists && result.confidence > 50) {
-        totalConfidence += result.confidence;
+        confidenceAccumulator += result.confidence;
         validCount += 1;
       }
     }
 
-    const overallConfidence = validCount > 0 ? totalConfidence / validCount : 0;
-    const allValid = Object.values(results).every(r => r.exists && r.confidence > 50);
+    const overallConfidence = validCount > 0 ? confidenceAccumulator / validCount : 0;
+    const allValid = Object.entries(results).every(([path, entry]) => {
+      const required = propertySpecs[path]?.required === true;
+      if (!entry.exists) {
+        return !required;
+      }
+      return entry.confidence > 50;
+    });
 
     return { allValid, overallConfidence, results };
   }
@@ -182,25 +200,25 @@ export class PropertyGuards {
 export class SemanticValidators {
   static hasRequiredProperties<T extends Record<string, unknown>>(
     obj: unknown,
-    required: (keyof T)[]
+    requiredProps: (keyof T)[],
   ): obj is T {
     if (!TypeGuards.isObject(obj)) {
       return false;
     }
 
-    return required.every(property => {
-      const result = PropertyGuards.validateProperty(obj, String(property), {
+    return requiredProps.every((prop) => {
+      const result = PropertyGuards.validateProperty(obj, String(prop), {
         required: true,
+        allowUndefined: false,
         allowNull: false,
-        allowUndefined: false
       });
       return result.exists && result.confidence >= 80;
     });
   }
 
-  static isValidStructure<T>(
+  static isValidStructure<T extends Record<string, unknown>>(
     obj: unknown,
-    validator: (candidate: Record<string, unknown>) => candidate is T
+    validator: (candidate: Record<string, unknown>) => candidate is T,
   ): obj is T {
     return TypeGuards.isObject(obj) && validator(obj);
   }
@@ -209,16 +227,14 @@ export class SemanticValidators {
     return PropertyGuards.validateProperty(obj, 'type', {
       required: true,
       typeGuard: TypeGuards.isNonEmptyString,
-      allowUndefined: false,
-      allowNull: false
     });
   }
 
   static isValidAPIResponse(obj: unknown): boolean {
     const validation = PropertyGuards.validateProperties(obj, {
       success: { required: true, typeGuard: TypeGuards.isBoolean },
-      data: { allowUndefined: true },
-      error: { allowUndefined: true }
+      data: { required: false, allowUndefined: true },
+      error: { required: false, allowUndefined: true },
     });
 
     return validation.allValid && validation.overallConfidence >= 75;
@@ -228,87 +244,99 @@ export class SemanticValidators {
 export class TypeAssertions {
   static assertWithConfidence<T>(
     value: unknown,
-    guard: (candidate: unknown) => candidate is T,
+    guard: TypeGuard<T>,
     errorMessage: string,
-    minimumConfidence = 90
+    minimumConfidence = 90,
   ): asserts value is T {
     if (!guard(value)) {
       throw createTemplumError(
         `Type assertion failed: ${errorMessage}`,
-        'TypeValidationError',
-        'validation'
+        'TYPE_VALIDATION_ERROR',
+        'validation',
+        { minimumConfidence },
       );
-    }
-    if (minimumConfidence > 100 || minimumConfidence < 0) {
-      throw new Error('Invalid confidence threshold supplied');
     }
   }
 
   static assertPropertyExists(
     obj: unknown,
     propertyPath: string,
-    options: PropertyValidationOptions = {}
+    options: PropertyValidationOptions = {},
   ): asserts obj is Record<string, unknown> {
     const result = PropertyGuards.validateProperty(obj, propertyPath, {
       required: true,
-      ...options
+      allowNull: false,
+      allowUndefined: false,
+      ...options,
     });
 
     if (!result.exists || result.confidence < 80) {
-      const issues = result.issues.join('; ') || 'Unknown issue';
       throw createTemplumError(
-        `Property assertion failed for '${propertyPath}': ${issues}`,
-        'PropertyValidationError',
-        'validation'
+        `Property assertion failed for '${propertyPath}': ${result.issues.join('; ')}`,
+        'PROPERTY_VALIDATION_ERROR',
+        'validation',
+        { propertyPath, issues: result.issues },
       );
     }
   }
 
-  static safeCast<T>(value: unknown, guard: (candidate: unknown) => candidate is T, fallback: T): T {
+  static safeCast<T>(value: unknown, guard: TypeGuard<T>, fallback: T): T {
     return guard(value) ? value : fallback;
   }
 
-  static narrowType<T>(value: unknown, guard: (candidate: unknown) => candidate is T, context: string): T {
+  static narrowType<T>(value: unknown, guard: TypeGuard<T>, context: string): T {
     if (!guard(value)) {
       throw createTemplumError(
         `Type narrowing failed in context: ${context}`,
-        'TypeNarrowingError',
-        'validation'
+        'TYPE_NARROWING_ERROR',
+        'validation',
+        { context },
       );
     }
     return value;
   }
 }
 
+export interface BulkValidationStats {
+  validCount: number;
+  invalidCount: number;
+  confidence: number;
+}
+
+export interface BulkValidationResult<T> {
+  valid: T[];
+  invalid: unknown[];
+  stats: BulkValidationStats;
+}
+
 export class PerformanceTypeGuards {
   private static typeCache = new Map<string, boolean>();
 
   static cachedTypeCheck(value: unknown, typeName: string, validator: () => boolean): boolean {
-    const key = `${typeName}:${typeof value}`;
-    if (this.typeCache.has(key)) {
-      return this.typeCache.get(key)!;
+    const cacheKey = `${typeName}:${typeof value}`;
+
+    if (PerformanceTypeGuards.typeCache.has(cacheKey)) {
+      return PerformanceTypeGuards.typeCache.get(cacheKey)!;
     }
+
     const result = validator();
-    this.typeCache.set(key, result);
+    PerformanceTypeGuards.typeCache.set(cacheKey, result);
     return result;
   }
 
-  static bulkValidate<T>(
-    values: unknown[],
-    guard: (candidate: unknown) => candidate is T
-  ): { valid: T[]; invalid: unknown[]; stats: { validCount: number; invalidCount: number; confidence: number } } {
+  static bulkValidate<T>(items: unknown[], guard: TypeGuard<T>): BulkValidationResult<T> {
     const valid: T[] = [];
     const invalid: unknown[] = [];
 
-    for (const value of values) {
-      if (guard(value)) {
-        valid.push(value);
+    for (const item of items) {
+      if (guard(item)) {
+        valid.push(item);
       } else {
-        invalid.push(value);
+        invalid.push(item);
       }
     }
 
-    const confidence = values.length > 0 ? (valid.length / values.length) * 100 : 0;
+    const confidence = items.length > 0 ? (valid.length / items.length) * 100 : 0;
 
     return {
       valid,
@@ -316,62 +344,12 @@ export class PerformanceTypeGuards {
       stats: {
         validCount: valid.length,
         invalidCount: invalid.length,
-        confidence
-      }
+        confidence,
+      },
     };
   }
 
   static clearCache(): void {
-    this.typeCache.clear();
+    PerformanceTypeGuards.typeCache.clear();
   }
 }
-
-export class TypeGuardErrorHandlers {
-  static handleValidationError(error: unknown, context: string): TemplumError {
-    const base = `Type validation failed in ${context}`;
-
-    if (isTemplumError(error)) {
-      return error;
-    }
-
-    if (error instanceof Error) {
-      return createTemplumError(`${base}: ${error.message}`, 'TypeValidationError', 'validation');
-    }
-
-    return createTemplumError(`${base}: Unknown error`, 'TypeValidationError', 'validation');
-  }
-
-  static safeValidate<T>(
-    value: unknown,
-    guard: (candidate: unknown) => candidate is T,
-    context: string
-  ): { success: boolean; result?: T; error?: TemplumError } {
-    try {
-      if (guard(value)) {
-        return { success: true, result: value };
-      }
-
-      return {
-        success: false,
-        error: createTemplumError(
-          `Type validation failed for ${context}`,
-          'TypeValidationError',
-          'validation'
-        )
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: this.handleValidationError(error, context)
-      };
-    }
-  }
-}
-
-export const typeGuards = TypeGuards;
-export const typeValidators = TypeValidators;
-export const propertyGuards = PropertyGuards;
-export const semanticValidators = SemanticValidators;
-export const typeAssertions = TypeAssertions;
-export const performanceTypeGuards = PerformanceTypeGuards;
-export const typeGuardErrorHandlers = TypeGuardErrorHandlers;

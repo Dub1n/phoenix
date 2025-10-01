@@ -1,8 +1,10 @@
----
-date-created: 2025-09-14T180000Z
-last-updated: 2025-09-14T180000Z
+date-created: 2025-09-14T18:00:00Z
+last-updated: 2025-10-01T12:43:40Z
+name: type-guards
 description: Comprehensive type guards utility system with semantic API design, confidence-validated property existence checks, and runtime type safety patterns
-status: established
+status:
+  - '[ ]'
+category: data-management
 use-when:
   - Need runtime type validation with TypeScript integration
   - Require confidence-based property existence validation
@@ -26,7 +28,6 @@ related-patterns:
   - comprehensive-type-system
   - templum-error-integration
   - performance-validation
-complexity: Medium
 ---
 
 # Type Guards Utility Pattern
@@ -34,6 +35,16 @@ complexity: Medium
 **Problem**: VDL_Vault ecosystem needs comprehensive runtime type validation with semantic APIs, confidence-based property validation, and TypeScript-integrated type safety patterns for robust multi-project development.
 
 **Solution**: Complete type guards utility system with semantic method naming, confidence-validated property checks, runtime type safety patterns, and integration with existing error handling systems.
+
+## Redundancy & Impact Summary
+
+- **Redundancy Volume**: ~150 duplicated lines across ~20 source files performing ad-hoc `typeof` checks, `Array.isArray` cascades, and manual property existence validation.
+- **Primary Hotspots** (from `redundancy-report.md` and `component-dependency-map.md`):
+  - Backend orchestration: `Templum/src/backend/service-discovery.ts`, `Templum/src/backend/backend-service-router.ts`, `Templum/src/backend/service-discovery-validator.ts`
+  - Core registries/configuration: `Templum/src/core/adapter-registry.ts`, `Templum/src/core/templum-core.ts`, `Templum/src/core/templum-config-manager.ts`
+  - Interface stack: `Templum/src/interfaces/cli-adapter.ts`, `Templum/src/interfaces/cli-display-consistency-engine.ts`, `Templum/src/interfaces/terminal-ui-components.ts`, `Templum/src/interfaces/navigation/selector-updater.ts`
+  - Session and navigation flows: `Templum/src/session/templum-universal-session-manager.ts`, `Templum/src/navigation/skin-navigation-parser.ts`, `Templum/src/navigation/content-driven-navigation.ts`
+- **Impact Goals**: Replace bespoke guards with semantic API calls, reduce copy/paste logic and improve runtime safety instrumentation shared with Logger/Error Handler utilities.
 
 ## Core Type Guards API
 
@@ -615,14 +626,22 @@ function processUserData(data: unknown) {
 
 ## Validation Checklist
 
-- [ ] All basic type guards implemented with proper TypeScript integration
-- [ ] Property validation supports nested paths and confidence scoring
-- [ ] Complex type validators handle generic types and union validation
-- [ ] Semantic API provides intuitive method names for common patterns
-- [ ] Runtime assertions integrate with existing TemplumError system
-- [ ] Performance optimizations include caching and bulk validation
-- [ ] Error handling provides comprehensive context and categorization
-- [ ] Usage examples demonstrate real-world integration patterns
+### Before Implementation
+- [ ] Confirm redundancy metrics (~150 LOC / ~20 files) remain accurate; update plan if new hotspots discovered
+- [ ] Enumerate target consumers across backend, core, interfaces, and session modules with migration checkpoints logged
+- [ ] Align API surface with logger/error-handler integration requirements and dependency-injection boundaries
+
+### During Implementation
+- [ ] Implement basic and complex guards with full TypeScript narrowing semantics
+- [ ] Provide confidence-scored property validation with nested path support and composable options
+- [ ] Integrate runtime assertions with `TemplumError` categories and logger metadata without violating SOLID thresholds
+- [ ] Maintain performance optimisations (memoised guards, batch validation helpers) under the <10ms SLA for complex objects
+
+### After Implementation
+- [ ] Backfill Jest suites for happy-path, failure-path, and confidence-threshold behaviours with ≥80% coverage
+- [ ] Validate consumer migrations via targeted smoke scripts and document evidence in activity log
+- [ ] Verify semantic API usage examples stay current with final implementation
+- [ ] Update `safe-consolidation-candidates.md` checklist state and archive learnings in this plan file
 
 ## Implementation Feedback
 
@@ -633,4 +652,24 @@ function processUserData(data: unknown) {
 **Used By Active Tasks**: Universal utility pattern for all projects
 **Successfully Applied**: Foundation pattern for type safety across VDL_Vault ecosystem  
 **Integration Points**: [unified-type-system], [comprehensive-type-system], [templum-error-integration]
-**Files Using This Pattern**: Cross-project utility for TypeScript applications requiring runtime type safety
+**Files Using This Pattern**:
+- [ ] `Templum/src/backend/service-discovery.ts`
+- [ ] `Templum/src/backend/backend-service-router.ts`
+- [ ] `Templum/src/backend/service-discovery-validator.ts`
+- [ ] `Templum/src/core/adapter-registry.ts`
+- [ ] `Templum/src/core/templum-config-manager.ts`
+- [ ] `Templum/src/core/universal-interface-manager.ts`
+- [ ] `Templum/src/interfaces/cli-adapter.ts`
+- [ ] `Templum/src/interfaces/cli-display-consistency-engine.ts`
+- [ ] `Templum/src/interfaces/navigation/selector-updater.ts`
+- [ ] `Templum/src/interfaces/navigation/width-calculator.ts`
+- [ ] `Templum/src/interfaces/terminal-ui-components.ts`
+- [ ] `Templum/src/interfaces/layout-normalizer.ts`
+- [ ] `Templum/src/navigation/skin-navigation-parser.ts`
+- [ ] `Templum/src/navigation/content-driven-navigation.ts`
+- [ ] `Templum/src/registry/pcl-command-registry.ts`
+- [ ] `Templum/src/commands/universal-command-registry.ts`
+- [ ] `Templum/src/session/templum-universal-session-manager.ts`
+- [ ] `Templum/src/utils/service-utils.ts`
+- [ ] `Templum/src/utils/terminal-formatter.ts`
+- [ ] `Templum/src/utils/protocol-utils.ts`

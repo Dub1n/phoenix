@@ -26,6 +26,7 @@ tags: [cli, navigation, borders, accessibility]
 
 import * as chalk from 'chalk';
 import { TerminalColorTheme, DefaultColorThemes } from '../terminal-ui-components';
+import { StringUtils, StringWidthUtils } from '../../utils/chainable-string-utils';
 
 // TODO: [TASK-ID-001] Pattern: border-rendering | Complexity: 4 | Dependencies: terminal-detection
 // Context: Terminal capability detection system for Unicode box-drawing character support
@@ -325,49 +326,23 @@ export class BorderRenderer {
    * Process content to fit within specified width
    */
   private processContent(content: string[], maxWidth: number): string[] {
-    const processed: string[] = [];
-    
-    for (const line of content) {
-      if (line.length <= maxWidth) {
-        processed.push(line);
-      } else {
-        // Word wrap long lines
-        const wrapped = this.wrapLine(line, maxWidth);
-        processed.push(...wrapped);
-      }
+    if (maxWidth <= 0) {
+      return content.map(() => '');
     }
-    
-    return processed;
-  }
 
-  /**
-   * Word wrap a line to fit within specified width
-   */
-  private wrapLine(line: string, maxWidth: number): string[] {
-    const words = line.split(' ');
-    const wrapped: string[] = [];
-    let currentLine = '';
-    
-    for (const word of words) {
-      if ((currentLine + ' ' + word).trim().length <= maxWidth) {
-        currentLine = currentLine ? currentLine + ' ' + word : word;
-      } else {
-        if (currentLine) {
-          wrapped.push(currentLine);
-          currentLine = word;
-        } else {
-          // Single word longer than maxWidth, force break
-          wrapped.push(word.substring(0, maxWidth));
-          currentLine = word.substring(maxWidth);
-        }
+    const processed: string[] = [];
+
+    for (const rawLine of content) {
+      const line = rawLine ?? '';
+      if (StringWidthUtils.getDisplayWidth(line) <= maxWidth) {
+        processed.push(line);
+        continue;
       }
+
+      processed.push(...StringUtils.wrap(line, maxWidth));
     }
-    
-    if (currentLine) {
-      wrapped.push(currentLine);
-    }
-    
-    return wrapped;
+
+    return processed;
   }
 
   /**
@@ -398,23 +373,29 @@ export class BorderRenderer {
     return theme.primary(border);
   }
 
+  private normalizeInteriorContent(value: string, width: number): string {
+    if (width <= 0) {
+      return '';
+    }
+
+    return StringUtils.chain(value, { mode: 'terminal' })
+      .truncate(width)
+      .pad(width)
+      .value();
+  }
+
   /**
    * Render title line within border
    */
   private renderTitleLine(title: string, config: WindowBorderConfig): string {
     const { theme, width, padding } = config;
     const availableWidth = width - 2 - (padding * 2); // -2 for border chars
-    
-    const truncatedTitle = title.length > availableWidth 
-      ? title.substring(0, availableWidth - 1) + '…'
-      : title;
-    
-    const paddedTitle = truncatedTitle.padEnd(availableWidth);
+    const normalizedTitle = this.normalizeInteriorContent(title, availableWidth);
     const paddingStr = ' '.repeat(padding);
     
     return theme.primary(this.borderChars.vertical) +
            paddingStr +
-           theme.accent(paddedTitle) +
+           theme.accent(normalizedTitle) +
            paddingStr +
            theme.primary(this.borderChars.vertical);
   }
@@ -425,17 +406,12 @@ export class BorderRenderer {
   private renderSubtitleLine(subtitle: string, config: WindowBorderConfig): string {
     const { theme, width, padding } = config;
     const availableWidth = width - 2 - (padding * 2); // -2 for border chars
-    
-    const truncatedSubtitle = subtitle.length > availableWidth 
-      ? subtitle.substring(0, availableWidth - 1) + '…'
-      : subtitle;
-    
-    const paddedSubtitle = truncatedSubtitle.padEnd(availableWidth);
+    const normalizedSubtitle = this.normalizeInteriorContent(subtitle, availableWidth);
     const paddingStr = ' '.repeat(padding);
     
     return theme.primary(this.borderChars.vertical) +
            paddingStr +
-           theme.muted(paddedSubtitle) +
+           theme.muted(normalizedSubtitle) +
            paddingStr +
            theme.primary(this.borderChars.vertical);
   }
@@ -460,17 +436,12 @@ export class BorderRenderer {
   private renderContentLine(content: string, config: WindowBorderConfig): string {
     const { theme, width, padding } = config;
     const availableWidth = width - 2 - (padding * 2); // -2 for border chars
-    
-    const truncatedContent = content.length > availableWidth 
-      ? content.substring(0, availableWidth - 1) + '…'
-      : content;
-    
-    const paddedContent = truncatedContent.padEnd(availableWidth);
+    const normalizedContent = this.normalizeInteriorContent(content, availableWidth);
     const paddingStr = ' '.repeat(padding);
     
     return theme.primary(this.borderChars.vertical) +
            paddingStr +
-           paddedContent +
+           normalizedContent +
            paddingStr +
            theme.primary(this.borderChars.vertical);
   }
@@ -482,7 +453,7 @@ export class BorderRenderer {
     // Find longest line
     let maxContentWidth = 0;
     for (const line of content) {
-      maxContentWidth = Math.max(maxContentWidth, line.length);
+      maxContentWidth = Math.max(maxContentWidth, StringWidthUtils.getDisplayWidth(line));
     }
     
     // Add padding and border space
@@ -502,15 +473,19 @@ export class BorderRenderer {
       totalHeight += 1; // Separator line
     }
     
-    const contentWidth = totalWidth - (this.config.padding * 2) - 2;
+    const contentWidth = Math.max(0, totalWidth - (this.config.padding * 2) - 2);
     for (const line of content) {
-      if (line.length <= contentWidth) {
+      if (contentWidth <= 0) {
         totalHeight += 1;
-      } else {
-        // Count wrapped lines
-        const wrappedLines = this.wrapLine(line, contentWidth);
-        totalHeight += wrappedLines.length;
+        continue;
       }
+
+      if (StringWidthUtils.getDisplayWidth(line) <= contentWidth) {
+        totalHeight += 1;
+        continue;
+      }
+
+      totalHeight += StringUtils.wrap(line, contentWidth).length;
     }
     
     return { width: totalWidth, height: totalHeight };

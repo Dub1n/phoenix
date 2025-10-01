@@ -39,8 +39,6 @@ import {
   AccessibilityManager,
   createBorderRenderer,
   createWidthCalculator,
-  removeEmojis,
-  hasEmojis,
   applySelector
 } from '../index';
 
@@ -189,36 +187,6 @@ describe('Navigation System Integration Tests', () => {
       
       expect(shortResult.calculatedWidth).toBeGreaterThanOrEqual(50);
       expect(longResult.calculatedWidth).toBeLessThanOrEqual(100);
-    });
-  });
-
-  describe('Emoji Removal', () => {
-    test('should remove emojis and replace with text', () => {
-      const textWithEmojis = '🔗 Connected to server ⚡ Fast mode enabled 📊 Stats';
-      const cleaned = removeEmojis(textWithEmojis);
-      
-      expect(cleaned).not.toContain('🔗');
-      expect(cleaned).not.toContain('⚡');
-      expect(cleaned).not.toContain('📊');
-      expect(cleaned).toContain('Connected to server');
-    });
-
-    test('should detect emojis in text', () => {
-      expect(hasEmojis('Hello 🌍 World')).toBe(true);
-      expect(hasEmojis('Hello World')).toBe(false);
-      expect(hasEmojis('🔥')).toBe(true);
-      expect(hasEmojis('')).toBe(false);
-    });
-
-    test('should preserve meaning in text processing', () => {
-      // Text processing logic removed
-      
-      const text = '✅ Success ❌ Error ⚠️ Warning';
-      const processed = emojiRemover.removeEmojis(text);
-      
-      expect(processed).toContain('Success');
-      expect(processed).toContain('Error');
-      expect(processed).toContain('Warning');
     });
   });
 
@@ -399,26 +367,25 @@ describe('Navigation System Integration Tests', () => {
 
     test('should handle special characters', () => {
       const text = 'Test with \n newlines \t tabs and \x1b[31m ANSI codes \x1b[0m';
-      const cleaned = removeEmojis(text);
-      
-      expect(typeof cleaned).toBe('string');
-      expect(cleaned.length).toBeGreaterThan(0);
+      const calculator = createWidthCalculator();
+      const result = calculator.calculateWidth([text]);
+
+      expect(result.calculatedWidth).toBeGreaterThan(0);
     });
 
     test('should maintain performance with large datasets', () => {
-      const startTime = Date.now();
-      const largeTexts = Array.from({ length: 1000 }, (_, i) => 
+      const calculator = createWidthCalculator();
+      const largeTexts = Array.from({ length: 1000 }, (_, i) =>
         `Line ${i} with 🎉 emoji and special chars 🔥`
       );
-      
+
+      const startTime = Date.now();
       for (const text of largeTexts) {
-        emojiRemover.removeEmojis(text);
+        calculator.calculateWidth([text]);
       }
-      
-      const endTime = Date.now();
-      const duration = endTime - startTime;
-      
-      // Should process 1000 lines in under 1 second
+      const duration = Date.now() - startTime;
+
+      // Should process 1000 width calculations in under 1 second
       expect(duration).toBeLessThan(1000);
     });
   });
@@ -426,18 +393,22 @@ describe('Navigation System Integration Tests', () => {
   describe('Configuration and Customization', () => {
     test('should allow configuration updates', () => {
       const system = createNavigationSystem({
-        textProcessing: { removeEmojis: false }
+        navigation: {
+          accessibility: { enableKeyboardNavigation: false }
+        }
       });
-      
+
       const config = system.getConfig();
-      expect(config.textProcessing?.removeEmojis).toBe(false);
-      
+      expect(config.navigation?.accessibility?.enableKeyboardNavigation).toBe(false);
+
       system.updateConfig({
-        textProcessing: { removeEmojis: true }
+        navigation: {
+          accessibility: { enableKeyboardNavigation: true }
+        }
       });
-      
+
       const updatedConfig = system.getConfig();
-      expect(updatedConfig.textProcessing?.removeEmojis).toBe(true);
+      expect(updatedConfig.navigation?.accessibility?.enableKeyboardNavigation).toBe(true);
     });
 
     test('should support different navigation modes', async () => {
@@ -456,26 +427,23 @@ describe('Navigation System Integration Tests', () => {
     test('should support complete navigation workflow', async () => {
       const system = await setupBasicNavigation();
       const components = system.getComponents();
-      
+
       // Create a window with emoji content
       const windowStack = components.windowStack!;
-      const emojiRemover = components.emojiRemover!;
       const selectorUpdater = components.selectorUpdater!;
-      
-      // Add window with emoji content
+
       const rawContent = ['🏠 Home Menu', '⚙️ Settings', '📊 Statistics'];
-      const cleanedContent = rawContent.map(line => emojiRemover.removeEmojis(line));
-      const menuResult = selectorUpdater.updateSelectors(cleanedContent.join('\n'));
-      
+      const menuResult = selectorUpdater.updateSelectors(rawContent.join('\n'));
+
       windowStack.pushWindow({
         title: 'Main Menu',
         content: menuResult.formattedText.split('\n')
       });
-      
+
       const currentWindow = windowStack.getCurrentWindow();
       expect(currentWindow?.title).toBe('Main Menu');
       expect(currentWindow?.content.some(line => line.includes('›'))).toBe(true);
-      expect(currentWindow?.content.some(line => line.includes('🏠'))).toBe(false);
+      expect(currentWindow?.content.some(line => line.includes('🏠'))).toBe(true);
     });
 
     test('should handle system cleanup properly', async () => {
@@ -495,8 +463,7 @@ describe('Navigation System Integration Tests', () => {
 // Export test utilities for use in other test files
 export const TestUtils = {
   createTestNavigationSystem: () => createNavigationSystem({
-    compatibility: { detectCapabilities: false }, // Skip detection for faster tests
-    textProcessing: { removeEmojis: true }
+    compatibility: { detectCapabilities: false } // Skip detection for faster tests
   }),
   
   createTestContent: (count: number = 5) => 
@@ -509,11 +476,6 @@ export const TestUtils = {
     '🔍 Search',
     '❌ Exit'
   ],
-  
-  expectNoEmojis: (text: string) => {
-    const emojiPattern = /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/u;
-    expect(emojiPattern.test(text)).toBe(false);
-  },
   
   expectHasSelectors: (text: string) => {
     expect(text.includes('›') || text.includes('>')).toBe(true);

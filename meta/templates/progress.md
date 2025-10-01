@@ -1,3 +1,11 @@
+---
+doc-type: progress
+title: [Project Name] Progress Tracker
+tags: [project, progress]
+status: draft
+last_updated: TODO-YYYY-MM-DD
+---
+
 # [Project Name] Progress Tracker
 
 Legend: `[x]` done · `[~]` in progress · `[ ]` not started · `[!]` broken · `[?]` verify · `[P]` pending investigation

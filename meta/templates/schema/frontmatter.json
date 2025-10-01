@@ -1,0 +1,234 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://vdl-vault.dev/schemas/frontmatter.json",
+  "title": "Repository Frontmatter",
+  "description": "Validates YAML frontmatter across documentation types. The expected field set varies by document type (pattern, architecture-spec, progress).",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "doc-type": {
+      "type": "string",
+      "enum": ["pattern", "architecture-spec", "progress"],
+      "description": "Optional document type hint used to select the correct validation branch."
+    },
+    "date-created": {
+      "type": "string",
+      "description": "Timestamp indicating when the pattern was first authored.",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+    },
+    "last-updated": {
+      "type": "string",
+      "description": "Timestamp capturing the most recent substantive update for pattern docs.",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+    },
+    "name": {
+      "type": "string",
+      "description": "Human-readable identifier used by some legacy docs."
+    },
+    "title": {
+      "type": "string",
+      "description": "Document title used by architecture/progress specs.",
+      "minLength": 3
+    },
+    "description": {
+      "type": "string",
+      "description": "Single sentence summary of the document scope.",
+      "minLength": 10,
+      "maxLength": 280
+    },
+    "status": {
+      "description": "Pattern docs use glyph arrays; other docs use lifecycle keywords.",
+      "anyOf": [
+        { "$ref": "#/$defs/patternStatus" },
+        { "$ref": "#/$defs/docLifecycleStatus" }
+      ]
+    },
+    "category": {
+      "type": "string",
+      "description": "Primary classification for pattern docs. Must match the canonical taxonomy documented at `Project/docs/current/pattern-taxonomy.md`.",
+      "$comment": "Keep categories lowercase kebab-case and in sync with the project-specific taxonomy file.",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "use-when": {
+      "type": "array",
+      "description": "Scenarios describing when to apply the pattern.",
+      "items": {
+        "type": "string",
+        "minLength": 10
+      },
+      "minItems": 1
+    },
+    "keywords": {
+      "type": "array",
+      "description": "Search keywords supporting discovery.",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+      },
+      "minItems": 3
+    },
+    "prerequisites": {
+      "type": "array",
+      "description": "Patterns or utilities that must be in place first.",
+      "items": {
+        "type": "string",
+        "pattern": "^(none|[a-z0-9]+(?:-[a-z0-9]+)*)$"
+      },
+      "minItems": 1
+    },
+    "related-patterns": {
+      "type": "array",
+      "description": "Complementary or dependent patterns.",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+      },
+      "minItems": 1
+    },
+    "tags": {
+      "type": "array",
+      "description": "Lowercase tags used by architecture/progress docs.",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9_-]+$"
+      },
+      "minItems": 1
+    },
+    "last_updated": {
+      "type": "string",
+      "description": "ISO date (YYYY-MM-DD) for architecture/progress docs.",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    }
+  },
+  "$defs": {
+    "patternStatus": {
+      "description": "Pattern status glyph (`[ ]`, `[x]`, etc.). Legacy string statuses are temporarily accepted for backfill migration.",
+      "anyOf": [
+        {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["[ ]", "[x]", "[~]", "[-]", "[!]", "[>]", "[<]", "[?]", "[B]", "[T]", "[D]", "[F]"]
+          },
+          "minItems": 1,
+          "maxItems": 1
+        },
+        {
+          "type": "string",
+          "enum": [
+            "established",
+            "ESTABLISHED",
+            "experimental",
+            "pending",
+            "proposed",
+            "deprecated",
+            "NEW"
+          ]
+        }
+      ]
+    },
+    "docLifecycleStatus": {
+      "type": "string",
+      "description": "Lifecycle status for architecture/progress docs.",
+      "enum": ["current", "planned", "in-review", "draft", "deprecated", "archived"]
+    },
+    "pattern": {
+      "type": "object",
+      "required": [
+        "date-created",
+        "last-updated",
+        "name",
+        "description",
+        "status",
+        "category",
+        "use-when",
+        "keywords",
+        "prerequisites",
+        "related-patterns"
+      ],
+      "properties": {
+        "doc-type": {
+          "type": "string",
+          "enum": ["pattern"],
+          "description": "Optional explicit marker for pattern docs."
+        },
+        "status": { "$ref": "#/$defs/patternStatus" }
+      }
+    },
+    "architectureSpec": {
+      "type": "object",
+      "required": ["title", "tags", "status", "last_updated"],
+      "properties": {
+        "doc-type": {
+          "type": "string",
+          "enum": ["architecture-spec"],
+          "description": "Optional explicit marker for architecture specs."
+        },
+        "status": { "$ref": "#/$defs/docLifecycleStatus" }
+      }
+    },
+    "progress": {
+      "type": "object",
+      "required": ["doc-type", "title", "tags", "status", "last_updated"],
+      "properties": {
+        "doc-type": {
+          "type": "string",
+          "const": "progress"
+        },
+        "status": { "$ref": "#/$defs/docLifecycleStatus" }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "doc-type": { "const": "pattern" }
+        },
+        "required": ["doc-type"]
+      },
+      "then": { "$ref": "#/$defs/pattern" }
+    },
+    {
+      "if": {
+        "properties": {
+          "doc-type": { "const": "architecture-spec" }
+        },
+        "required": ["doc-type"]
+      },
+      "then": { "$ref": "#/$defs/architectureSpec" }
+    },
+    {
+      "if": {
+        "properties": {
+          "doc-type": { "const": "progress" }
+        },
+        "required": ["doc-type"]
+      },
+      "then": { "$ref": "#/$defs/progress" }
+    },
+    {
+      "if": {
+        "required": ["date-created", "last-updated"]
+      },
+      "then": { "$ref": "#/$defs/pattern" }
+    },
+    {
+      "if": {
+        "required": ["title", "tags", "status", "last_updated"],
+        "properties": {
+          "status": { "type": "string" },
+          "doc-type": {
+            "not": { "const": "progress" }
+          }
+        }
+      },
+      "then": { "$ref": "#/$defs/architectureSpec" }
+    }
+  ],
+  "anyOf": [
+    { "$ref": "#/$defs/pattern" },
+    { "$ref": "#/$defs/architectureSpec" },
+    { "$ref": "#/$defs/progress" }
+  ]
+}

@@ -1,533 +1,139 @@
 ---
-date-created: 2025-09-14-0000
-last-updated: 2025-09-14-0000
+date-created: 2025-09-14T00:00:00Z
+last-updated: 2025-09-14T19:55:00Z
 name: chainable-string-utils
-description: Chainable text processing API with confidence-validated patterns for truncation, padding, wrapping, and case conversion optimization
-status: experimental
-category: foundation
+description: Chainable string utility unifying truncation, padding, wrapping, and casing for CLI and renderer outputs.
+status:
+  - "[!]"
+category: data-management
 use-when:
-  - Need high-performance string manipulation with confidence metrics
-  - Require chainable API for complex text processing operations
-  - Want validated text operations with performance tracking
-  - Building text processing pipelines with quality assurance
-  - Need consistent string formatting across different interfaces
+  - CLI or renderer code needs consistent trimming, padding, or wrapping behaviour without bespoke helpers.
+  - Service or skin adapters must format text for fixed-width layouts while keeping call sites terse.
+  - Validation or logging pipelines require deterministic casing or truncation before display.
 keywords:
-  - string-processing
+  - string-utils
   - chainable-api
-  - confidence-validation
-  - performance-optimization
-  - text-manipulation
-  - fluent-interface
-  - builder-pattern
-  - truncation
-  - padding
-  - wrapping
-  - case-conversion
-prerequisites: 
-  - unified-type-system
+  - text-formatting
+  - cli-output
+prerequisites:
+  - logger
+  - error-handler
+  - terminal-formatter
 related-patterns:
-  - terminal-ui-components
-  - progressive-enhancement-terminal-ui
-  - accessibility-compliance-cli-interfaces
-  - performance-validation
+  - display-utils
+  - validator
+  - terminal-formatter
 ---
 
-# Chainable String Utils with Confidence Validation Pattern
+# Chainable String Utils Utility Pattern
 
-**Problem**: String processing operations across the system lack consistency, performance optimization, and confidence validation, leading to unpredictable text formatting behavior and potential quality issues in user interfaces.
+## Consolidation Snapshot
 
-**Solution**: Comprehensive chainable text processing API with confidence-validated patterns for truncation, padding, wrapping, and case conversion optimization, providing consistent high-quality string manipulation with performance metrics.
+- **Redundancy count**: ≈10 TypeScript files repeat home-grown string helpers (~80 duplicated LOC) per `safe-consolidation-candidates.md`.
+- **Primary offenders**: `src/interfaces/cli-adapter.ts`, `src/interfaces/terminal-ui-components.ts`, `src/interfaces/border-renderer.ts`, `src/interfaces/navigation/border-renderer.ts`, `src/interfaces/layout-normalizer.ts`, `src/interfaces/navigation/width-calculator.ts`, `src/rendering/universal-layout-engine.ts`, `src/rendering/content-layout-system.ts`, `src/scripts/run-phase6-integration-validation.ts`, `src/scripts/simple-phase6-validation.ts`.
+- **Drift symptoms**: inconsistent ellipsis width, ad-hoc padding, missing double-width protection, and silent column overflow in terminal layouts.
+- **Target outcome**: one fluent helper covers truncation, padding, wrapping, casing, whitespace normalisation, and safe display width detection with logger-driven diagnostics.
 
-#### Chainable String Utils Pattern: Implementation Steps
+## Problem Statement
 
-**Step 1**: Core Types and Interfaces
+CLI and renderer layers frequently reshape strings before display. Each module performs manual `padStart`, `padEnd`, `slice`, and regex trimming, often forgetting to strip ANSI codes or apply consistent ellipses. Differences between terminal width assumptions (60, 80, 120 columns) lead to uneven tables and clipped prompts, while duplicated fallback code obscures regressions and complicates localisation.
+
+## Solution Overview
+
+Provide a minimal-footprint `StringUtils` module exposing chainable operations and one-line convenience methods. The module must:
+
+1. Preserve fluent chaining so call sites read as mini pipelines (`stringy(label).trim().truncate(24).pad(28, 'right').value()`).
+2. Normalise width calculations using `terminal-formatter` for ANSI-aware length detection and Unicode-safe truncation.
+3. Emit structured logs when operations modify text beyond configured thresholds (e.g., truncation ellipsis applied), surfacing drift through the shared logger.
+4. Share error taxonomy with `error-handler` for predictable failure handling in validation and rendering flows.
+5. Export TypeScript types so consumers can extend behaviour (e.g., supply custom wrappers) without breaking substitution.
+
+## Minimal Footprint API
 
 ```typescript
-// Core types for confidence-validated string processing
-interface StringProcessorConfig {
-  enablePerformanceTracking?: boolean;
-  confidenceThreshold?: number;
-  cacheResults?: boolean;
-  maxOperations?: number;
+export interface ChainOptions {
+  mode?: 'terminal' | 'plain';
+  ellipsis?: string;
+  trim?: 'none' | 'start' | 'end' | 'both';
 }
 
-interface ProcessingResult {
+export interface ChainResult {
   value: string;
-  confidence: number;
-  operations: ProcessingOperation[];
-  performanceMetrics: PerformanceMetrics;
-  warnings: string[];
+  truncated: boolean;
+  wrapped: boolean;
+  width: number;
 }
 
-interface ProcessingOperation {
-  type: 'truncate' | 'pad' | 'wrap' | 'case' | 'validate';
-  input: string;
-  output: string;
-  confidence: number;
-  duration: number;
-  parameters: Record<string, any>;
+export interface StringChain {
+  truncate(maxWidth: number, ellipsis?: string): StringChain;
+  pad(width: number, alignment?: 'left' | 'right' | 'center'): StringChain;
+  wrap(width: number, options?: { hard?: boolean; indent?: number }): StringChain;
+  convertCase(style: 'upper' | 'lower' | 'title' | 'sentence'): StringChain;
+  collapseWhitespace(mode?: 'spaces' | 'all'): StringChain;
+  ensureSuffix(suffix: string): StringChain;
+  value(): string;
+  inspect(): ChainResult;
 }
 
-interface PerformanceMetrics {
-  totalDuration: number;
-  operationCount: number;
-  cacheHits: number;
-  averageConfidence: number;
-  memoryUsage?: number;
-}
-
-interface ConfidenceValidation {
-  isValid: boolean;
-  confidence: number;
-  issues: string[];
-  recommendations: string[];
+export interface StringUtils {
+  chain(input: string, options?: ChainOptions): StringChain;
+  truncate(input: string, width: number, ellipsis?: string): string;
+  pad(input: string, width: number, alignment?: 'left' | 'right' | 'center'): string;
+  wrap(input: string, width: number, options?: { hard?: boolean; indent?: number }): string[];
 }
 ```
 
-**Step 2**: Chainable String Processor Core
+- `StringUtils.chain` is the fluent entry point.
+- Convenience helpers (`truncate`, `pad`, `wrap`) call into the chain under the hood for consistency.
+- Operations are ANSI-safe and rely on a shared width calculator that strips escape codes before measuring.
 
-```typescript
-class StringProcessor {
-  private operations: ProcessingOperation[] = [];
-  private currentValue: string;
-  private config: StringProcessorConfig;
-  private startTime: number;
-  private cache: Map<string, ProcessingResult> = new Map();
+## Implementation Blueprint
 
-  constructor(input: string, config: StringProcessorConfig = {}) {
-    this.currentValue = input;
-    this.config = {
-      enablePerformanceTracking: true,
-      confidenceThreshold: 0.85,
-      cacheResults: true,
-      maxOperations: 20,
-      ...config
-    };
-    this.startTime = performance.now();
-  }
+1. **Width & Glyph Awareness**: Use `terminal-formatter` to detect terminal capabilities and capture printable width (`stripAnsi` + `wcwidth`). Provide fallbacks when capabilities are unavailable (e.g., non-TTY). Cache width detectors per mode.
+2. **Builder Composition**: Represent each step as a pure function in an internal pipeline. The chain stores the latest value plus metadata flags to report truncation/wrapping decisions.
+3. **Logging & Diagnostics**: Inject `createLogger('string-utils')`; log at `debug` when operations alter text length or casing beyond defaults, and `warn` when truncation removed >30% content or wrap overflow occurs.
+4. **Error Surface**: Push fatal configuration issues (e.g., negative widths) through `error-handler`. Consumer code should never throw raw `RangeError` or `TypeError`.
+5. **Type-Safe Extensions**: Expose `StringChain` as an interface and return plain objects so future mixins (e.g., `ansiStyle()`) can compose without breaking substitution.
+6. **Batch Operations**: Provide helper to process arrays (`formatList(items, config)`) to support CLI menus previously assembling strings manually.
 
-  // Chainable truncation with confidence validation
-  truncate(maxLength: number, ellipsis: string = '...'): StringProcessor {
-    const operation = this.createOperation('truncate', { maxLength, ellipsis });
-    
-    if (this.currentValue.length <= maxLength) {
-      operation.confidence = 1.0; // No truncation needed
-      operation.output = this.currentValue;
-    } else {
-      const truncated = this.currentValue.slice(0, maxLength - ellipsis.length) + ellipsis;
-      operation.confidence = this.calculateTruncationConfidence(
-        this.currentValue, 
-        truncated, 
-        maxLength
-      );
-      operation.output = truncated;
-      this.currentValue = truncated;
-    }
+## Integration Contracts
 
-    this.operations.push(operation);
-    return this;
-  }
+- **Display Utils**: `display-utils.ts` obtains layout widths. Replace manual padding with `StringUtils.chain` to guarantee consistent separators.
+- **Terminal Formatter**: share width detection and fallback glyphs for ellipses (`…` vs `...`).
+- **Validator**: leverage `StringUtils.truncate` before logging validation messages to keep CLI summary columns aligned.
+- **Logger/Error Handler**: all warnings/errors route through existing utilities for observability.
 
-  // Chainable padding with confidence validation
-  pad(targetLength: number, direction: 'left' | 'right' | 'both' = 'right', char: string = ' '): StringProcessor {
-    const operation = this.createOperation('pad', { targetLength, direction, char });
-    
-    if (this.currentValue.length >= targetLength) {
-      operation.confidence = 1.0; // No padding needed
-      operation.output = this.currentValue;
-    } else {
-      const paddingNeeded = targetLength - this.currentValue.length;
-      let padded: string;
+## Migration Plan
 
-      switch (direction) {
-        case 'left':
-          padded = char.repeat(paddingNeeded) + this.currentValue;
-          break;
-        case 'both':
-          const leftPad = Math.floor(paddingNeeded / 2);
-          const rightPad = paddingNeeded - leftPad;
-          padded = char.repeat(leftPad) + this.currentValue + char.repeat(rightPad);
-          break;
-        default: // 'right'
-          padded = this.currentValue + char.repeat(paddingNeeded);
-      }
+1. Replace ad-hoc helpers with `StringUtils` in identified files, starting with `cli-adapter` and renderer modules that drive terminal output.
+2. Centralise constants for ellipsis (`'…'`) and padding widths via the utility configuration rather than scattering numeric literals.
+3. Introduce `formatTableCell` helper wrapping `StringUtils.chain().truncate().pad()` for table builders.
+4. Remove duplicated regex-based trim/pad implementations after successful adoption.
+5. Document new API usage in component-level README or inline references to this pattern.
 
-      operation.confidence = this.calculatePaddingConfidence(char, direction, paddingNeeded);
-      operation.output = padded;
-      this.currentValue = padded;
-    }
+## Validation & Regression Checklist
 
-    this.operations.push(operation);
-    return this;
-  }
+- [ ] Cover trimming permutations (`trimStart`, `trimEnd`, `trimBoth`) including ANSI-colour strings.
+- [ ] Validate padding alignment for even/odd widths and double-width Unicode characters.
+- [ ] Exercise wrapping for hard-break and soft-break modes (e.g., long URLs, command descriptions).
+- [ ] Add regression tests ensuring truncation preserves ellipsis width, never overflows configured column, and handles strings shorter than `maxWidth`.
+- [ ] Snapshot CLI outputs (service status tables, validation run summaries) before/after migration to confirm visual parity.
 
-  // Chainable word wrapping with confidence validation
-  wrap(maxWidth: number, breakWords: boolean = false): StringProcessor {
-    const operation = this.createOperation('wrap', { maxWidth, breakWords });
-    
-    const lines = this.performWordWrap(this.currentValue, maxWidth, breakWords);
-    const wrapped = lines.join('\n');
-    
-    operation.confidence = this.calculateWrapConfidence(lines, maxWidth, breakWords);
-    operation.output = wrapped;
-    this.currentValue = wrapped;
-    this.operations.push(operation);
-    
-    return this;
-  }
+## Test Strategy
 
-  // Chainable case conversion with confidence validation
-  convertCase(caseType: 'upper' | 'lower' | 'title' | 'camel' | 'pascal' | 'snake' | 'kebab'): StringProcessor {
-    const operation = this.createOperation('case', { caseType });
-    
-    const converted = this.performCaseConversion(this.currentValue, caseType);
-    operation.confidence = this.calculateCaseConfidence(this.currentValue, converted, caseType);
-    operation.output = converted;
-    this.currentValue = converted;
-    this.operations.push(operation);
-    
-    return this;
-  }
+- Unit tests live under `tests/interfaces` covering each public method with examples drawn from CLI adapters, including ANSI and plain text cases.
+- Property-based tests (optional) ensure random strings never exceed requested width when truncated/padded.
+- Integration smoke tests reuse existing CLI rendering snapshots; add gating to fail if width calculations exceed terminal width from `display-utils`.
 
-  // Confidence validation method
-  validate(): ConfidenceValidation {
-    const avgConfidence = this.operations.reduce((sum, op) => sum + op.confidence, 0) / this.operations.length;
-    const issues: string[] = [];
-    const recommendations: string[] = [];
+## Success Metrics
 
-    // Check confidence threshold
-    if (avgConfidence < this.config.confidenceThreshold!) {
-      issues.push(`Average confidence ${avgConfidence.toFixed(2)} below threshold ${this.config.confidenceThreshold}`);
-      recommendations.push('Review processing parameters or input quality');
-    }
+- Reduce bespoke `padStart`, `padEnd`, `slice`, and regex helpers by ≥80 lines across the ten identified modules.
+- Achieve one-line usage for the 12 highest-traffic call sites measured in `pattern-usage-analysis.md`.
+- Eliminate column overflow bugs recorded in `observability-instrumentation` dashboard for CLI outputs.
+- Maintain ≥90% unit test coverage for the utility module; add CLI snapshot baselines for regression detection.
 
-    // Check operation complexity
-    if (this.operations.length > this.config.maxOperations!) {
-      issues.push(`Operation count ${this.operations.length} exceeds maximum ${this.config.maxOperations}`);
-      recommendations.push('Consider breaking into smaller processing chains');
-    }
+## Future Extensions
 
-    // Check for problematic operation sequences
-    const lowConfidenceOps = this.operations.filter(op => op.confidence < 0.7);
-    if (lowConfidenceOps.length > 0) {
-      issues.push(`${lowConfidenceOps.length} operations have low confidence`);
-      recommendations.push('Review low-confidence operations for parameter optimization');
-    }
-
-    return {
-      isValid: issues.length === 0,
-      confidence: avgConfidence,
-      issues,
-      recommendations
-    };
-  }
-
-  // Final execution with full result
-  execute(): ProcessingResult {
-    const endTime = performance.now();
-    const validation = this.validate();
-    
-    return {
-      value: this.currentValue,
-      confidence: validation.confidence,
-      operations: this.operations,
-      performanceMetrics: {
-        totalDuration: endTime - this.startTime,
-        operationCount: this.operations.length,
-        cacheHits: 0, // TODO: Implement caching metrics
-        averageConfidence: validation.confidence,
-      },
-      warnings: validation.issues
-    };
-  }
-
-  // Private helper methods
-  private createOperation(type: ProcessingOperation['type'], parameters: Record<string, any>): ProcessingOperation {
-    const opStart = performance.now();
-    
-    return {
-      type,
-      input: this.currentValue,
-      output: '', // Will be set by operation
-      confidence: 0, // Will be calculated by operation
-      duration: 0, // Will be set after operation
-      parameters
-    };
-  }
-
-  private calculateTruncationConfidence(original: string, truncated: string, maxLength: number): number {
-    if (original.length <= maxLength) return 1.0;
-    
-    const truncationRatio = truncated.length / original.length;
-    const wordBoundaryBonus = this.endsOnWordBoundary(original, truncated) ? 0.1 : 0;
-    
-    return Math.min(0.9, truncationRatio + wordBoundaryBonus);
-  }
-
-  private calculatePaddingConfidence(char: string, direction: string, paddingNeeded: number): number {
-    // Higher confidence for standard padding characters and reasonable amounts
-    const charConfidence = [' ', '0', '-', '_'].includes(char) ? 1.0 : 0.8;
-    const lengthConfidence = paddingNeeded < 20 ? 1.0 : Math.max(0.5, 20 / paddingNeeded);
-    
-    return charConfidence * lengthConfidence;
-  }
-
-  private calculateWrapConfidence(lines: string[], maxWidth: number, breakWords: boolean): number {
-    let confidence = 1.0;
-    
-    // Reduce confidence for lines that exceed max width (when breaking words is disabled)
-    if (!breakWords) {
-      const overflowLines = lines.filter(line => line.length > maxWidth);
-      if (overflowLines.length > 0) {
-        confidence *= Math.max(0.3, 1 - (overflowLines.length / lines.length));
-      }
-    }
-
-    // Reduce confidence for excessive line count
-    if (lines.length > 50) {
-      confidence *= Math.max(0.6, 50 / lines.length);
-    }
-
-    return confidence;
-  }
-
-  private calculateCaseConfidence(original: string, converted: string, caseType: string): number {
-    // Simple heuristic: higher confidence if conversion makes sense for input type
-    const hasLetters = /[a-zA-Z]/.test(original);
-    if (!hasLetters) return 0.5; // Low confidence for non-alphabetic strings
-
-    // Check if conversion was meaningful
-    const wasAlreadyCorrectCase = original === converted;
-    return wasAlreadyCorrectCase ? 1.0 : 0.95;
-  }
-
-  private endsOnWordBoundary(original: string, truncated: string): boolean {
-    if (truncated.length >= original.length) return true;
-    
-    const nextChar = original[truncated.length - 3]; // Before ellipsis
-    return /\s/.test(nextChar);
-  }
-
-  private performWordWrap(text: string, maxWidth: number, breakWords: boolean): string[] {
-    const lines: string[] = [];
-    const words = text.split(/\s+/);
-    let currentLine = '';
-
-    for (const word of words) {
-      if (currentLine.length + word.length + 1 <= maxWidth) {
-        currentLine = currentLine ? `${currentLine} ${word}` : word;
-      } else {
-        if (currentLine) lines.push(currentLine);
-        
-        if (word.length > maxWidth && breakWords) {
-          // Break long word across multiple lines
-          let remainingWord = word;
-          while (remainingWord.length > maxWidth) {
-            lines.push(remainingWord.slice(0, maxWidth));
-            remainingWord = remainingWord.slice(maxWidth);
-          }
-          currentLine = remainingWord;
-        } else {
-          currentLine = word;
-        }
-      }
-    }
-    
-    if (currentLine) lines.push(currentLine);
-    return lines;
-  }
-
-  private performCaseConversion(text: string, caseType: string): string {
-    switch (caseType) {
-      case 'upper':
-        return text.toUpperCase();
-      case 'lower':
-        return text.toLowerCase();
-      case 'title':
-        return text.replace(/\w\S*/g, (txt) => 
-          txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase()
-        );
-      case 'camel':
-        return text.replace(/(?:^\w|[A-Z]|\b\w)/g, (word, index) => 
-          index === 0 ? word.toLowerCase() : word.toUpperCase()
-        ).replace(/\s+/g, '');
-      case 'pascal':
-        return text.replace(/(?:^\w|[A-Z]|\b\w)/g, (word) => 
-          word.toUpperCase()
-        ).replace(/\s+/g, '');
-      case 'snake':
-        return text.replace(/\W+/g, ' ')
-          .split(/ |\B(?=[A-Z])/)
-          .map(word => word.toLowerCase())
-          .join('_');
-      case 'kebab':
-        return text.replace(/\W+/g, ' ')
-          .split(/ |\B(?=[A-Z])/)
-          .map(word => word.toLowerCase())
-          .join('-');
-      default:
-        return text;
-    }
-  }
-}
-```
-
-**Step 3**: Factory and Utility Functions
-
-```typescript
-// Factory function for string processing
-export function processString(input: string, config?: StringProcessorConfig): StringProcessor {
-  return new StringProcessor(input, config);
-}
-
-// Utility functions for common patterns
-export const StringUtils = {
-  // Quick truncation with confidence check
-  safeTruncate(text: string, maxLength: number, ellipsis: string = '...'): ProcessingResult {
-    return processString(text)
-      .truncate(maxLength, ellipsis)
-      .execute();
-  },
-
-  // Intelligent word wrapping
-  smartWrap(text: string, maxWidth: number): ProcessingResult {
-    return processString(text)
-      .wrap(maxWidth, false)
-      .execute();
-  },
-
-  // Title case with validation
-  toTitleCase(text: string): ProcessingResult {
-    return processString(text)
-      .convertCase('title')
-      .execute();
-  },
-
-  // Complex formatting chain
-  formatDisplayText(
-    text: string, 
-    maxLength: number, 
-    targetWidth: number
-  ): ProcessingResult {
-    return processString(text)
-      .truncate(maxLength)
-      .convertCase('title')
-      .pad(targetWidth, 'both')
-      .execute();
-  }
-};
-```
-
-**Step 4**: Usage Examples
-
-```typescript
-// ✅ CORRECT - Basic chainable usage
-const result = processString("  hello world from templum  ")
-  .convertCase('title')
-  .truncate(20)
-  .pad(25, 'both', '-')
-  .execute();
-
-console.log(result.value); // "---Hello World From---"
-console.log(result.confidence); // 0.95
-console.log(result.warnings); // []
-
-// ✅ CORRECT - Complex text processing with validation
-const complexResult = processString("This is a very long string that needs comprehensive processing")
-  .wrap(15, false)
-  .convertCase('title')
-  .validate();
-
-if (complexResult.isValid) {
-  console.log('Processing completed successfully');
-} else {
-  console.log('Issues found:', complexResult.issues);
-  console.log('Recommendations:', complexResult.recommendations);
-}
-
-// ✅ CORRECT - Performance-aware processing
-const performanceConfig: StringProcessorConfig = {
-  enablePerformanceTracking: true,
-  confidenceThreshold: 0.9,
-  cacheResults: true,
-  maxOperations: 10
-};
-
-const perfResult = processString("performance test string", performanceConfig)
-  .truncate(50)
-  .pad(60)
-  .execute();
-
-console.log('Duration:', perfResult.performanceMetrics.totalDuration);
-console.log('Operations:', perfResult.performanceMetrics.operationCount);
-```
-
-**Step 5**: Integration with Terminal UI
-
-```typescript
-// Integration with terminal UI components
-export class TerminalStringFormatter {
-  private processor: StringProcessor;
-
-  constructor(private maxWidth: number = 80) {}
-
-  formatForDisplay(text: string): ProcessingResult {
-    return processString(text)
-      .wrap(this.maxWidth - 4, false) // Account for borders
-      .convertCase('title')
-      .execute();
-  }
-
-  formatTableCell(text: string, columnWidth: number): ProcessingResult {
-    return processString(text)
-      .truncate(columnWidth - 3)
-      .pad(columnWidth, 'left')
-      .execute();
-  }
-
-  formatProgressLabel(label: string, maxLength: number): ProcessingResult {
-    return processString(label)
-      .truncate(maxLength, '...')
-      .pad(maxLength + 2, 'right')
-      .execute();
-  }
-}
-```
-
-#### Performance Characteristics
-
-- **Memory Efficiency**: Lazy evaluation with operation chaining
-- **Cache Support**: Built-in result caching for repeated operations  
-- **Confidence Metrics**: Quality assurance for all transformations
-- **Performance Tracking**: Detailed metrics for optimization
-
-#### Quality Gates
-
-- All operations must achieve minimum confidence threshold (default 0.85)
-- Performance tracking for operations exceeding duration limits
-- Validation warnings for complex operation chains
-- Memory usage monitoring for large text processing
-
-#### Anti-Patterns to Avoid
-
-```typescript
-// ❌ WRONG - Direct string manipulation without confidence
-const result = text.slice(0, 20) + '...';
-
-// ❌ WRONG - Nested string operations without validation  
-const formatted = text.toUpperCase().padEnd(30).slice(0, 25);
-
-// ❌ WRONG - No performance tracking for complex operations
-const wrapped = text.split(' ').reduce((acc, word) => {
-  // Complex wrapping logic without metrics
-});
-
-// ✅ CORRECT - Use chainable API with confidence validation
-const result = processString(text)
-  .truncate(20)
-  .convertCase('upper') 
-  .pad(30)
-  .execute();
-```
-
-This pattern provides comprehensive string processing capabilities with confidence validation, performance optimization, and seamless integration with terminal UI components.
+- Optional `localize()` hook to integrate with localisation pipelines without rewriting the formatter.
+- Potential `StringChain.segment()` add-on using `Intl.Segmenter` when environments support it, defaulting to current wrap logic.
+- Hooks for analytics instrumentation to log frequent truncation scenarios for UX tuning.

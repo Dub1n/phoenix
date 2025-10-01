@@ -1,0 +1,124 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://templum.dev/schemas/pattern-frontmatter.json",
+  "title": "Pattern Frontmatter",
+  "description": "Schema validating pattern documentation frontmatter blocks used across the repo.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "date-created",
+    "last-updated",
+    "name",
+    "description",
+    "status",
+    "category",
+    "use-when",
+    "keywords",
+    "prerequisites",
+    "related-patterns"
+  ],
+  "properties": {
+    "date-created": {
+      "type": "string",
+      "description": "Timestamp indicating when the pattern was first authored.",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+    },
+    "last-updated": {
+      "type": "string",
+      "description": "Timestamp capturing the most recent substantive update.",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+    },
+    "name": {
+      "type": "string",
+      "description": "Kebab-case pattern identifier.",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "description": {
+      "type": "string",
+      "description": "Single sentence summary of the pattern scope.",
+      "minLength": 10,
+      "maxLength": 280
+    },
+    "status": {
+      "description": "Single status glyph following the consolidated status system (see `meta/templates/status-glyphs.md`). Legacy string statuses are temporarily accepted while backfilling documentation.",
+      "anyOf": [
+        {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "[ ]",
+              "[x]",
+              "[~]",
+              "[-]",
+              "[!]",
+              "[>]",
+              "[<]",
+              "[?]",
+              "[B]",
+              "[T]",
+              "[D]",
+              "[F]"
+            ]
+          },
+          "minItems": 1,
+          "maxItems": 1
+        },
+        {
+          "type": "string",
+          "enum": [
+            "established",
+            "ESTABLISHED",
+            "experimental",
+            "pending",
+            "proposed",
+            "deprecated",
+            "NEW"
+          ]
+        }
+      ]
+    },
+    "category": {
+      "type": "string",
+      "description": "Primary classification for the pattern. Must match the canonical taxonomy documented at `Project/docs/current/pattern-taxonomy.md`.",
+      "$comment": "Keep categories lowercase kebab-case and in sync with the project-specific taxonomy file.",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "use-when": {
+      "type": "array",
+      "description": "Scenarios describing when to apply the pattern.",
+      "items": {
+        "type": "string",
+        "minLength": 10
+      },
+      "minItems": 1
+    },
+    "keywords": {
+      "type": "array",
+      "description": "Search keywords supporting discovery.",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+      },
+      "minItems": 3
+    },
+    "prerequisites": {
+      "type": "array",
+      "description": "Patterns or utilities that must be in place first.",
+      "items": {
+        "type": "string",
+        "pattern": "^(none|[a-z0-9]+(?:-[a-z0-9]+)*)$"
+      },
+      "minItems": 1
+    },
+    "related-patterns": {
+      "type": "array",
+      "description": "Complementary or dependent patterns.",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+      },
+      "minItems": 1
+    }
+  }
+}

@@ -1,8 +1,10 @@
 ---
+doc-type: architecture-spec
 title: Haruspex Architecture Specification
 tags: [haruspex, analysis_backend, architecture]
 status: current
 last_updated: 2025-09-22
+---
 ---
 
 # Haruspex — Architecture Specification (Current State)

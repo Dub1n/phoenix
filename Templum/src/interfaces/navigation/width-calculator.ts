@@ -26,149 +26,12 @@ tags: [cli, navigation, sizing, responsive]
 
 import * as chalk from 'chalk';
 import { BorderCapabilityDetector } from './border-renderer';
+import { StringUtils, StringWidthUtils } from '../../utils/chainable-string-utils';
 
 // TODO: [TASK-ID-003] Pattern: content-measurement | Complexity: 3 | Dependencies: string-width
 // Context: Multi-byte character width calculation for accurate content measurement
 // Validation-Required: unicode-character-support, emoji-handling, performance-testing
 // Pattern-Info: { approach: "string-width-library", alternatives: "custom-calculation", trade-offs: "dependency-management" }
-
-/**
- * String width utilities for multi-byte character support
- */
-export class StringWidthUtils {
-  /**
-   * Get display width of a string accounting for multi-byte characters, ANSI codes, and formatting
-   */
-  static getDisplayWidth(text: string): number {
-    // Remove ANSI color codes first
-    const strippedText = this.stripAnsi(text);
-    
-    // Handle multi-byte characters
-    return this.calculateRealWidth(strippedText);
-  }
-
-  /**
-   * Strip ANSI escape sequences from text
-   */
-  static stripAnsi(text: string): string {
-    // ANSI escape sequence regex
-    const ansiRegex = /\u001b\[[0-9;]*[a-zA-Z]/g;
-    return text.replace(ansiRegex, '');
-  }
-
-  /**
-   * Calculate real display width accounting for multi-byte characters
-   */
-  static calculateRealWidth(text: string): number {
-    let width = 0;
-    
-    for (const char of text) {
-      const codePoint = char.codePointAt(0);
-      if (!codePoint) continue;
-      
-      // Control characters and combining marks have zero width
-      if (codePoint < 32 || (codePoint >= 0x7F && codePoint < 0xA0)) {
-        continue;
-      }
-      
-      // Wide characters (CJK, emojis, etc.) take 2 spaces
-      if (this.isWideCharacter(codePoint)) {
-        width += 2;
-      } else if (this.isZeroWidth(codePoint)) {
-        // Zero-width characters (combining marks, etc.)
-        width += 0;
-      } else {
-        // Regular characters
-        width += 1;
-      }
-    }
-    
-    return width;
-  }
-
-  /**
-   * Check if character is wide (takes 2 terminal columns)
-   */
-  private static isWideCharacter(codePoint: number): boolean {
-    // CJK ranges
-    if ((codePoint >= 0x1100 && codePoint <= 0x115F) || // Hangul Jamo
-        (codePoint >= 0x2E80 && codePoint <= 0x2EFF) || // CJK Radicals Supplement
-        (codePoint >= 0x2F00 && codePoint <= 0x2FDF) || // Kangxi Radicals
-        (codePoint >= 0x3000 && codePoint <= 0x303F) || // CJK Symbols and Punctuation
-        (codePoint >= 0x3040 && codePoint <= 0x309F) || // Hiragana
-        (codePoint >= 0x30A0 && codePoint <= 0x30FF) || // Katakana
-        (codePoint >= 0x3100 && codePoint <= 0x312F) || // Bopomofo
-        (codePoint >= 0x3130 && codePoint <= 0x318F) || // Hangul Compatibility Jamo
-        (codePoint >= 0x3190 && codePoint <= 0x319F) || // Kanbun
-        (codePoint >= 0x31A0 && codePoint <= 0x31BF) || // Bopomofo Extended
-        (codePoint >= 0x31C0 && codePoint <= 0x31EF) || // CJK Strokes
-        (codePoint >= 0x31F0 && codePoint <= 0x31FF) || // Katakana Phonetic Extensions
-        (codePoint >= 0x3200 && codePoint <= 0x32FF) || // Enclosed CJK Letters and Months
-        (codePoint >= 0x3300 && codePoint <= 0x33FF) || // CJK Compatibility
-        (codePoint >= 0x3400 && codePoint <= 0x4DBF) || // CJK Extension A
-        (codePoint >= 0x4E00 && codePoint <= 0x9FFF) || // CJK Unified Ideographs
-        (codePoint >= 0xA000 && codePoint <= 0xA48F) || // Yi Syllables
-        (codePoint >= 0xA490 && codePoint <= 0xA4CF) || // Yi Radicals
-        (codePoint >= 0xAC00 && codePoint <= 0xD7AF) || // Hangul Syllables
-        (codePoint >= 0xF900 && codePoint <= 0xFAFF) || // CJK Compatibility Ideographs
-        (codePoint >= 0xFE10 && codePoint <= 0xFE1F) || // Vertical Forms
-        (codePoint >= 0xFE30 && codePoint <= 0xFE4F) || // CJK Compatibility Forms
-        (codePoint >= 0xFE50 && codePoint <= 0xFE6F) || // Small Form Variants
-        (codePoint >= 0xFF00 && codePoint <= 0xFFEF) || // Halfwidth and Fullwidth Forms
-        (codePoint >= 0x1F100 && codePoint <= 0x1F2FF) || // Enclosed Alphanumeric Supplement
-        (codePoint >= 0x1F300 && codePoint <= 0x1F9FF) || // Emoji blocks
-        (codePoint >= 0x20000 && codePoint <= 0x2FFFF) || // CJK Extension B-F
-        (codePoint >= 0x30000 && codePoint <= 0x3FFFF)) { // CJK Extension G
-      return true;
-    }
-    
-    return false;
-  }
-
-  /**
-   * Check if character has zero width (combining marks, etc.)
-   */
-  private static isZeroWidth(codePoint: number): boolean {
-    // Combining marks and other zero-width characters
-    return (codePoint >= 0x0300 && codePoint <= 0x036F) || // Combining Diacritical Marks
-           (codePoint >= 0x1AB0 && codePoint <= 0x1AFF) || // Combining Diacritical Marks Extended
-           (codePoint >= 0x1DC0 && codePoint <= 0x1DFF) || // Combining Diacritical Marks Supplement
-           (codePoint >= 0x20D0 && codePoint <= 0x20FF) || // Combining Diacritical Marks for Symbols
-           (codePoint >= 0xFE20 && codePoint <= 0xFE2F) || // Combining Half Marks
-           codePoint === 0x200B || // Zero Width Space
-           codePoint === 0x200C || // Zero Width Non-Joiner
-           codePoint === 0x200D || // Zero Width Joiner
-           codePoint === 0xFEFF;   // Zero Width No-Break Space
-  }
-
-  /**
-   * Truncate text to fit within specified width, accounting for multi-byte characters
-   */
-  static truncateToWidth(text: string, maxWidth: number, ellipsis = '…'): string {
-    if (this.getDisplayWidth(text) <= maxWidth) {
-      return text;
-    }
-
-    const ellipsisWidth = this.getDisplayWidth(ellipsis);
-    const targetWidth = maxWidth - ellipsisWidth;
-    
-    let result = '';
-    let currentWidth = 0;
-    
-    for (const char of text) {
-      const charWidth = this.getDisplayWidth(char);
-      
-      if (currentWidth + charWidth > targetWidth) {
-        break;
-      }
-      
-      result += char;
-      currentWidth += charWidth;
-    }
-    
-    return result + ellipsis;
-  }
-}
 
 /**
  * Content analysis for menu and text measurement
@@ -306,12 +169,18 @@ export class PaddingManager {
     }
     
     // Content with horizontal padding
+    const innerPadding = ' '.repeat(this.config.inner);
+    const textWidth = Math.max(0, contentWidth - this.config.inner * 2);
+
     for (const line of lines) {
-      const truncatedLine = StringWidthUtils.truncateToWidth(line, contentWidth);
-      const paddedLine = ' '.repeat(this.config.inner) + 
-                         truncatedLine.padEnd(contentWidth - this.config.inner * 2) + 
-                         ' '.repeat(this.config.inner);
-      paddedLines.push(paddedLine);
+      const contentSegment = textWidth > 0
+        ? StringUtils.chain(line, { mode: 'terminal' })
+            .truncate(textWidth)
+            .pad(textWidth)
+            .value()
+        : '';
+
+      paddedLines.push(`${innerPadding}${contentSegment}${innerPadding}`);
     }
     
     // Bottom padding

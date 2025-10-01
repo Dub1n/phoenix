@@ -97,6 +97,20 @@ export interface RegistryMetrics {
   cacheMisses: number;
 }
 
+type MaybePromise<T> = T | Promise<T>;
+
+export type ComponentValidationFn<TComponent> = (
+  component: TComponent,
+  registration: ComponentRegistration<TComponent>
+) => MaybePromise<ComponentValidationStatus>;
+
+export interface RegistryLifecycleHooks<TConfig> {
+  beforeInitialize?: (config?: TConfig) => MaybePromise<void>;
+  afterInitialize?: (config?: TConfig) => MaybePromise<void>;
+  beforeDispose?: () => MaybePromise<void>;
+  afterDispose?: () => MaybePromise<void>;
+}
+
 const DEFAULT_CONFIGURATION: LifecycleConfiguration = {
   enableValidation: true,
   validationLevel: 'standard',
@@ -180,7 +194,11 @@ export abstract class BaseRegistry<TComponent, TConfig = unknown> extends EventE
     for (const [name, component] of this.components) {
       const registration = this.registrations.get(name);
       if (registration?.lifecycle?.dispose) {
-        await handleAsync(Promise.resolve(registration.lifecycle.dispose(component)), 'registry.disposeComponent');
+        const disposeResult = registration.lifecycle.dispose(component);
+        await handleAsync(
+          Promise.resolve(disposeResult).then(() => undefined),
+          'registry.disposeComponent'
+        );
       }
     }
 
@@ -437,11 +455,176 @@ export abstract class BaseRegistry<TComponent, TConfig = unknown> extends EventE
       void this.generateIntelligence().then(intelligence => {
         this.intelligence = intelligence;
       }).catch(error => {
-        this.logger.error('Failed to generate registry intelligence', {
-          error: error instanceof Error ? error.message : String(error)
-        });
+        this.logger.error(
+          'Failed to generate registry intelligence',
+          error instanceof Error ? error : undefined,
+          {
+            stage: 'intelligence-update'
+          }
+        );
       });
     }, this.config.intelligenceUpdateInterval);
   }
+}
+
+const defaultValidation: ComponentValidationFn<unknown> = (_component, registration) => ({
+  name: registration.name,
+  valid: true,
+  issues: [],
+  interfaceCompliance: true,
+  methodAvailability: true,
+  initializationStatus: 'initialized',
+  confidenceScore: 1
+});
+
+interface ConfigurableRegistryHooks<TComponent, TConfig> {
+  getValidation: () => ComponentValidationFn<TComponent>;
+  lifecycle: RegistryLifecycleHooks<TConfig>;
+}
+
+class ConfigurableRegistry<TComponent, TConfig> extends BaseRegistry<TComponent, TConfig> {
+  constructor(
+    configuration: Partial<LifecycleConfiguration> | undefined,
+    context: string,
+    private readonly hooks: ConfigurableRegistryHooks<TComponent, TConfig>
+  ) {
+    super(configuration ?? {}, context);
+  }
+
+  protected onBeforeInitialize(config?: TConfig): Promise<void> | void {
+    return this.hooks.lifecycle.beforeInitialize?.(config);
+  }
+
+  protected onAfterInitialize(config?: TConfig): Promise<void> | void {
+    return this.hooks.lifecycle.afterInitialize?.(config);
+  }
+
+  protected onBeforeDispose(): Promise<void> | void {
+    return this.hooks.lifecycle.beforeDispose?.();
+  }
+
+  protected onAfterDispose(): Promise<void> | void {
+    return this.hooks.lifecycle.afterDispose?.();
+  }
+
+  protected validateComponent(
+    component: TComponent,
+    registration: ComponentRegistration<TComponent>
+  ): MaybePromise<ComponentValidationStatus> {
+    return this.hooks.getValidation()(component, registration);
+  }
+}
+
+export interface CreateRegistryOptions<TComponent, TConfig> {
+  configuration?: Partial<LifecycleConfiguration>;
+  validation?: ComponentValidationFn<TComponent>;
+  lifecycle?: RegistryLifecycleHooks<TConfig>;
+}
+
+export interface RegistryBuilder<TComponent, TConfig = unknown> {
+  withValidation(validation: ComponentValidationFn<TComponent>): RegistryBuilder<TComponent, TConfig>;
+  withLifecycle(hooks: RegistryLifecycleHooks<TConfig>): RegistryBuilder<TComponent, TConfig>;
+  withConfiguration(configuration: Partial<LifecycleConfiguration>): RegistryBuilder<TComponent, TConfig>;
+  register(registration: ComponentRegistration<TComponent>): RegistryBuilder<TComponent, TConfig>;
+  unregister(name: string): RegistryBuilder<TComponent, TConfig>;
+  initialize(config?: TConfig): Promise<void>;
+  resolve(name: string, config?: TConfig): Promise<TComponent>;
+  dispose(): Promise<void>;
+  getRegistry(): BaseRegistry<TComponent, TConfig>;
+  getValidationReport(): ValidationReport | null;
+  getIntelligence(): RegistryIntelligence | null;
+}
+
+export function createRegistry<TComponent, TConfig = unknown>(
+  context = 'registry-utils',
+  options: CreateRegistryOptions<TComponent, TConfig> = {}
+): RegistryBuilder<TComponent, TConfig> {
+  let configOverrides = { ...options.configuration };
+  const lifecycleHooks: RegistryLifecycleHooks<TConfig> = { ...options.lifecycle };
+  let validationFn: ComponentValidationFn<TComponent> = options.validation ?? (defaultValidation as ComponentValidationFn<TComponent>);
+
+  const hooks: ConfigurableRegistryHooks<TComponent, TConfig> = {
+    getValidation: () => validationFn,
+    lifecycle: lifecycleHooks
+  };
+
+  let instance: ConfigurableRegistry<TComponent, TConfig> | null = null;
+
+  const ensureInstance = (): ConfigurableRegistry<TComponent, TConfig> => {
+    if (!instance) {
+      instance = new ConfigurableRegistry<TComponent, TConfig>(configOverrides, context, hooks);
+    }
+    return instance;
+  };
+
+  const builder: RegistryBuilder<TComponent, TConfig> = {
+    withValidation(validation) {
+      validationFn = validation;
+      return this;
+    },
+
+    withLifecycle(hooksUpdate) {
+      if (hooksUpdate.beforeInitialize !== undefined) {
+        lifecycleHooks.beforeInitialize = hooksUpdate.beforeInitialize;
+      }
+      if (hooksUpdate.afterInitialize !== undefined) {
+        lifecycleHooks.afterInitialize = hooksUpdate.afterInitialize;
+      }
+      if (hooksUpdate.beforeDispose !== undefined) {
+        lifecycleHooks.beforeDispose = hooksUpdate.beforeDispose;
+      }
+      if (hooksUpdate.afterDispose !== undefined) {
+        lifecycleHooks.afterDispose = hooksUpdate.afterDispose;
+      }
+      return this;
+    },
+
+    withConfiguration(configuration) {
+      if (instance) {
+        throw new Error('Cannot update registry configuration after the registry has been created. Configure before registering components.');
+      }
+      configOverrides = { ...configOverrides, ...configuration };
+      return this;
+    },
+
+    register(registration) {
+      ensureInstance().register(registration);
+      return this;
+    },
+
+    unregister(name) {
+      ensureInstance().unregister(name);
+      return this;
+    },
+
+    async initialize(config) {
+      await ensureInstance().initialize(config);
+    },
+
+    resolve(name, config) {
+      return ensureInstance().resolve(name, config);
+    },
+
+    async dispose() {
+      if (!instance) {
+        return;
+      }
+      await instance.dispose();
+    },
+
+    getRegistry() {
+      return ensureInstance();
+    },
+
+    getValidationReport() {
+      return ensureInstance().getValidationReport();
+    },
+
+    getIntelligence() {
+      return ensureInstance().getIntelligence();
+    }
+  };
+
+  return builder;
 }
 

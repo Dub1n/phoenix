@@ -1,14 +1,10 @@
 ---
-date: 2025-09-14T213000Z
+date-created: 2025-09-14T21:30:00Z
+last-updated: 2025-09-14T21:30:00Z
 name: event-utils
-TASK-ID: ["TASK-UTIL-003"]
-category: core-infrastructure-utility
-status: ["[x]"]
-patterns: ["utility-consolidation", "event-management", "type-safety", "auto-cleanup"]
-components: ["event-utils", "typed-emitter", "event-bus", "subscription-manager"]
-dependencies: ["logger-utility", "error-handler-utility"]
-tags: ["events", "emitter", "consolidation", "typescript", "cleanup", "minimal-api"]
 description: Centralized event utilities to eliminate 528 EventEmitter uses with typed event management, automatic cleanup, and minimal-footprint API design
+category: core-infrastructure-utility
+status: "[x]"
 use-when:
   - Eliminating scattered EventEmitter instantiation across components
   - Need for consistent typed event management

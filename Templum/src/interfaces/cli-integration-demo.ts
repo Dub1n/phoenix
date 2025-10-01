@@ -352,10 +352,6 @@ export class CLIIntegrationDemo extends EventEmitter {
           compatibility: {
             forceAscii: true,
             enableFallbacks: true
-          },
-          textProcessing: {
-            removeEmojis: true,
-            preserveMeaning: true
           }
         };
         break;

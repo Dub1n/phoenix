@@ -24,6 +24,12 @@ export interface InterfaceAdapterRegistryInitializeOptions {
   registerBuiltIns?: boolean;
 }
 
+export interface InterfaceAdapterRegistryInitializeConfig
+  extends InterfaceAdapterRegistryInitializeOptions
+{
+  orchestrator: ITemplumOrchestrator;
+}
+
 interface AdapterRegistrationMetadata {
   interfaceType: InterfaceType;
   eager: boolean;
@@ -45,7 +51,7 @@ const DEFAULT_LIFECYCLE_CONFIGURATION: Partial<LifecycleConfiguration> = {
  * ensuring consistent validation, intelligence reporting, and lifecycle management across all registries.
  */
 export class InterfaceAdapterRegistry
-  extends BaseRegistry<IInterfaceAdapter, InterfaceAdapterRegistryInitializeOptions>
+  extends BaseRegistry<IInterfaceAdapter, InterfaceAdapterRegistryInitializeConfig>
   implements IInterfaceAdapterFactory
 {
   private orchestrator: ITemplumOrchestrator | null = null;
@@ -62,8 +68,7 @@ export class InterfaceAdapterRegistry
    * Initialize the registry with orchestrator abstraction and optional built-in factories.
    */
   async initialize(
-    orchestrator: ITemplumOrchestrator,
-    options: InterfaceAdapterRegistryInitializeOptions = {}
+    config?: InterfaceAdapterRegistryInitializeConfig
   ): Promise<void> {
     if (this.registryReady) {
       this.logger.warn('InterfaceAdapterRegistry: Already initialized');
@@ -71,14 +76,22 @@ export class InterfaceAdapterRegistry
     }
 
     try {
-      this.orchestrator = orchestrator;
-      const shouldRegisterBuiltIns = options.registerBuiltIns ?? true;
+      if (!config?.orchestrator) {
+        throw createTemplumError(
+          'InterfaceAdapterRegistry requires an orchestrator to initialize',
+          'MISSING_DEPENDENCY',
+          'configuration'
+        );
+      }
+
+      this.orchestrator = config.orchestrator;
+      const shouldRegisterBuiltIns = config.registerBuiltIns ?? true;
 
       if (shouldRegisterBuiltIns && !this.builtInsRegistered) {
         await this.registerBuiltInFactories();
       }
 
-      await super.initialize(options);
+      await super.initialize(config);
       this.registryReady = true;
 
       this.emit('initialized', {
@@ -104,8 +117,9 @@ export class InterfaceAdapterRegistry
         severity: 'critical'
       };
 
-      this.logger.error('InterfaceAdapterRegistry: Initialization failed', {
-        error: payload.error.message
+      this.logger.error('InterfaceAdapterRegistry: Initialization failed', payload.error, {
+        context: payload.source,
+        severity: payload.severity
       });
 
       throw payload.error;
@@ -259,7 +273,7 @@ export class InterfaceAdapterRegistry
       this.logger.info('InterfaceAdapterRegistry: Disposal complete');
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
-      this.logger.error('InterfaceAdapterRegistry: Disposal failed', { error: message });
+      this.logger.error('InterfaceAdapterRegistry: Disposal failed', undefined, { error: message });
       throw error;
     }
   }
