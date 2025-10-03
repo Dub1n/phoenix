@@ -1,5 +1,6 @@
 import { createLogger } from './logger';
-import { ErrorHandler } from './error-handler';
+import { createTemplumError } from '../types/templum-types';
+import { TypeAssertions, TypeGuards } from './type-guards';
 
 const logger = createLogger('service-utils');
 
@@ -70,6 +71,32 @@ export interface ServiceAssessment {
   pick(ids: string[]): ServiceSnapshot[];
 }
 
+export type ThemeFallbackMode = 'unicode' | 'ascii' | 'simple';
+
+export interface ThemeUsageRecord {
+  id: string;
+  theme: string;
+  applied: boolean;
+  fallbackMode: ThemeFallbackMode;
+  capabilities: {
+    supportsColor: boolean;
+    supportsUnicode: boolean;
+  };
+  overrides?: string[];
+}
+
+export interface ThemeMetricsSummary {
+  total: number;
+  applied: number;
+  fallbackModes: Record<ThemeFallbackMode, number>;
+  overridesApplied: number;
+  capabilityScore: {
+    average: number;
+    min: number;
+    max: number;
+  };
+}
+
 const HEALTH_SCORE: Record<ServiceHealth, number> = {
   healthy: 1,
   degraded: 0.65,
@@ -86,11 +113,23 @@ export function assessServices(inputs: ServiceLike[], options: AssessServicesOpt
   const safeInputs = Array.isArray(inputs) ? inputs : [];
   const mergedOptions = { ...DEFAULT_OPTIONS, ...options };
 
-  const normalized = dedupeServices(safeInputs, mergedOptions);
+  const isNowFunction = (value: unknown): value is () => number =>
+    TypeGuards.isFunction(value);
+
+  const sanitizedOptions: Required<Omit<AssessServicesOptions, 'context'>> = {
+    now: TypeAssertions.safeCast(mergedOptions.now, isNowFunction, DEFAULT_OPTIONS.now),
+    lowConfidenceThreshold: TypeAssertions.safeCast(
+      mergedOptions.lowConfidenceThreshold,
+      TypeGuards.isNumber,
+      DEFAULT_OPTIONS.lowConfidenceThreshold,
+    ),
+  };
+
+  const normalized = dedupeServices(safeInputs, sanitizedOptions);
   const ordered = orderServices(normalized, options.context);
 
   const byId = new Map(ordered.map((service) => [service.id, service]));
-  const summary = buildSummary(ordered, mergedOptions);
+  const summary = buildSummary(ordered, sanitizedOptions);
   const partitions = partitionServices(ordered);
 
   return {
@@ -105,40 +144,36 @@ export function assessServices(inputs: ServiceLike[], options: AssessServicesOpt
 function dedupeServices(inputs: ServiceLike[], options: Required<Omit<AssessServicesOptions, 'context'>>): ServiceSnapshot[] {
   const map = new Map<string, ServiceSnapshot>();
 
-  for (const input of inputs) {
-    try {
-      const snapshot = normalizeService(input, options);
-      const existing = map.get(snapshot.id);
+  inputs.forEach((input, index) => {
+    const validatedInput = ensureServiceRecord(input, index);
+    const snapshot = normalizeService(validatedInput, options);
+    const existing = map.get(snapshot.id);
 
-      if (!existing) {
-        map.set(snapshot.id, snapshot);
-        continue;
-      }
-
-      const preferred = pickPreferred(existing, snapshot);
-      map.set(snapshot.id, preferred);
-    } catch (error) {
-      const templumError = ErrorHandler.handle(error, 'service-utils.normalize');
-      logger.warn('Failed to normalise service record', { error: templumError.message, id: input?.id });
+    if (!existing) {
+      map.set(snapshot.id, snapshot);
+      return;
     }
-  }
+
+    const preferred = pickPreferred(existing, snapshot);
+    map.set(snapshot.id, preferred);
+  });
 
   return Array.from(map.values());
 }
 
 function normalizeService(input: ServiceLike, options: Required<Omit<AssessServicesOptions, 'context'>>): ServiceSnapshot {
-  if (!input?.id) {
-    throw new Error('Service record must include an id');
-  }
-
-  const name = typeof input.name === 'string' && input.name.trim() ? input.name.trim() : input.id;
+  const name = TypeGuards.isNonEmptyString(input.name) ? input.name.trim() : input.id;
   const connected = Boolean(input.connected);
   const health = normaliseHealth(input.health);
-  const priority = Number.isFinite(input.priority) ? Math.max(0, Number(input.priority)) : 0;
+  const priority = TypeGuards.isNumber(input.priority)
+    ? Math.max(0, input.priority)
+    : 0;
   const responseTime = normaliseResponseTime(input.responseTime);
-  const confidence = clamp(typeof input.confidence === 'number' ? input.confidence : 0.5, 0, 1);
-  const lastCheck = typeof input.lastCheck === 'number' ? input.lastCheck : options.now();
-  const tags = Array.isArray(input.tags) ? Array.from(new Set(input.tags.filter(Boolean))) : [];
+  const confidence = clamp(TypeGuards.isNumber(input.confidence) ? input.confidence : 0.5, 0, 1);
+  const lastCheck = TypeGuards.isNumber(input.lastCheck) ? input.lastCheck : options.now();
+  const tags = Array.isArray(input.tags)
+    ? Array.from(new Set(input.tags.filter((tag): tag is string => TypeGuards.isNonEmptyString(tag))))
+    : [];
   const score = scoreService({ connected, health, priority, responseTime, confidence });
 
   return {
@@ -165,10 +200,50 @@ function normaliseHealth(value?: ServiceHealth): ServiceHealth {
 }
 
 function normaliseResponseTime(value: number | null | undefined): number | null {
-  if (typeof value !== 'number' || Number.isNaN(value)) {
+  if (!TypeGuards.isNumber(value) || Number.isNaN(value)) {
     return null;
   }
   return Math.max(0, value);
+}
+
+function ensureServiceRecord(input: ServiceLike, index: number): ServiceLike {
+  if (!TypeGuards.isNonEmptyString(input?.id)) {
+    throw createTemplumError(
+      'Service record must include an id',
+      'SERVICE_UTILS_INVALID_INPUT',
+      'validation',
+      { index, missingField: 'id' }
+    );
+  }
+
+  if (input.priority !== undefined && !TypeGuards.isNumber(input.priority)) {
+    throw createTemplumError(
+      'Service record priority must be a number when provided',
+      'SERVICE_UTILS_INVALID_INPUT',
+      'validation',
+      { index, field: 'priority', value: input.priority }
+    );
+  }
+
+  if (input.responseTime !== undefined && input.responseTime !== null && !TypeGuards.isNumber(input.responseTime)) {
+    throw createTemplumError(
+      'Service record responseTime must be numeric when provided',
+      'SERVICE_UTILS_INVALID_INPUT',
+      'validation',
+      { index, field: 'responseTime', value: input.responseTime }
+    );
+  }
+
+  if (input.confidence !== undefined && !TypeGuards.isNumber(input.confidence)) {
+    throw createTemplumError(
+      'Service record confidence must be numeric when provided',
+      'SERVICE_UTILS_INVALID_INPUT',
+      'validation',
+      { index, field: 'confidence', value: input.confidence }
+    );
+  }
+
+  return input;
 }
 
 function scoreService(record: {
@@ -311,6 +386,160 @@ function buildSummary(services: ServiceSnapshot[], options: Required<Omit<Assess
 function pickServices(ids: string[], ordered: ServiceSnapshot[]): ServiceSnapshot[] {
   const requested = new Set(ids);
   return ordered.filter((service) => requested.has(service.id));
+}
+
+export function summariseThemeUsage(records: ThemeUsageRecord[]): ThemeMetricsSummary {
+  const fallbackCounts: Record<ThemeFallbackMode, number> = {
+    unicode: 0,
+    ascii: 0,
+    simple: 0,
+  };
+
+  const deduped = new Map<string, { record: ThemeUsageRecord; score: number }>();
+  const safeRecords = Array.isArray(records) ? records : [];
+
+  safeRecords.forEach((raw, index) => {
+    const normalised = normaliseThemeUsage(raw, index);
+    if (!normalised) {
+      return;
+    }
+
+    const score = computeThemeCapabilityScore(normalised);
+    const current = deduped.get(normalised.id);
+
+    if (!current || shouldReplaceThemeRecord(normalised, score, current.record, current.score)) {
+      deduped.set(normalised.id, { record: normalised, score });
+    }
+  });
+
+  if (deduped.size === 0) {
+    return {
+      total: 0,
+      applied: 0,
+      fallbackModes: fallbackCounts,
+      overridesApplied: 0,
+      capabilityScore: { average: 0, min: 0, max: 0 },
+    };
+  }
+
+  let applied = 0;
+  let overridesApplied = 0;
+  let totalScore = 0;
+  let minScore = Number.POSITIVE_INFINITY;
+  let maxScore = Number.NEGATIVE_INFINITY;
+
+  for (const { record, score } of deduped.values()) {
+    fallbackCounts[record.fallbackMode] += 1;
+    if (record.applied) {
+      applied += 1;
+    }
+    overridesApplied += record.overrides?.length ?? 0;
+    totalScore += score;
+    minScore = Math.min(minScore, score);
+    maxScore = Math.max(maxScore, score);
+  }
+
+  const averageScore = clamp(totalScore / deduped.size, 0, 1);
+
+  return {
+    total: deduped.size,
+    applied,
+    fallbackModes: fallbackCounts,
+    overridesApplied,
+    capabilityScore: {
+      average: averageScore,
+      min: clamp(minScore, 0, 1),
+      max: clamp(maxScore, 0, 1),
+    },
+  };
+}
+
+function normaliseThemeUsage(raw: ThemeUsageRecord, index: number): ThemeUsageRecord | null {
+  if (!TypeGuards.isNonEmptyString(raw?.id)) {
+    logger.warn('Skipping theme usage record with invalid id', { index, record: raw });
+    return null;
+  }
+
+  const theme = TypeGuards.isNonEmptyString(raw.theme) ? raw.theme : 'default';
+  const fallback = raw.fallbackMode;
+  const fallbackMode: ThemeFallbackMode = fallback === 'ascii' || fallback === 'simple' ? fallback : 'unicode';
+
+  const supportsColor = Boolean(raw.capabilities?.supportsColor);
+  const supportsUnicode = Boolean(raw.capabilities?.supportsUnicode);
+
+  const overrides = Array.isArray(raw.overrides)
+    ? raw.overrides.filter((value): value is string => TypeGuards.isNonEmptyString(value))
+    : [];
+
+  return {
+    id: raw.id,
+    theme,
+    applied: Boolean(raw.applied),
+    fallbackMode,
+    capabilities: {
+      supportsColor,
+      supportsUnicode,
+    },
+    overrides,
+  };
+}
+
+function shouldReplaceThemeRecord(
+  candidate: ThemeUsageRecord,
+  candidateScore: number,
+  current: ThemeUsageRecord,
+  currentScore: number,
+): boolean {
+  if (candidate.applied !== current.applied) {
+    return candidate.applied;
+  }
+
+  if (candidateScore !== currentScore) {
+    return candidateScore > currentScore;
+  }
+
+  const candidatePreference = fallbackPreference(candidate.fallbackMode);
+  const currentPreference = fallbackPreference(current.fallbackMode);
+  if (candidatePreference !== currentPreference) {
+    return candidatePreference > currentPreference;
+  }
+
+  return true;
+}
+
+function fallbackPreference(mode: ThemeFallbackMode): number {
+  switch (mode) {
+    case 'unicode':
+      return 3;
+    case 'ascii':
+      return 2;
+    case 'simple':
+    default:
+      return 1;
+  }
+}
+
+function computeThemeCapabilityScore(record: ThemeUsageRecord): number {
+  let score = 0;
+  if (record.capabilities.supportsColor) {
+    score += 0.4;
+  }
+  if (record.capabilities.supportsUnicode) {
+    score += 0.4;
+  }
+  if (record.applied) {
+    score += 0.15;
+  }
+
+  if (record.fallbackMode === 'unicode') {
+    score += 0.05;
+  } else if (record.fallbackMode === 'ascii') {
+    score -= 0.1;
+  } else {
+    score -= 0.2;
+  }
+
+  return clamp(score, 0, 1);
 }
 
 function average(values: number[]): number {

@@ -1,4 +1,9 @@
-import { assessServices } from '../../utils/service-utils';
+import {
+  assessServices,
+  summariseThemeUsage,
+  ThemeUsageRecord,
+} from '../../utils/service-utils';
+import { isTemplumError } from '../../types/templum-types';
 
 describe('ServiceUtils', () => {
   const sample = () => [
@@ -96,4 +101,74 @@ describe('ServiceUtils', () => {
     const selection = pick(required);
     expect(selection.map(service => service.id)).toEqual(['haruspex', 'templum-core']);
   });
+
+  test('throws templum error when a service record is missing a valid id', () => {
+    try {
+      assessServices([
+        {
+          name: 'Broken Service',
+        } as any,
+      ]);
+      fail('Expected assessServices to throw');
+    } catch (error) {
+      expect(isTemplumError(error)).toBe(true);
+      if (isTemplumError(error)) {
+        expect(error.code).toBe('SERVICE_UTILS_INVALID_INPUT');
+        expect(error.context).toMatchObject({ missingField: 'id' });
+      }
+    }
+  });
+
+  test('sanitises invalid assessment options using type guard fallbacks', () => {
+    const result = assessServices(sample(), {
+      now: 'not-a-function' as any,
+      lowConfidenceThreshold: 'untrusted' as any,
+    } as any);
+
+    expect(typeof result.summary.updatedAt).toBe('number');
+    expect(result.summary.confidence.lowConfidence).toContain('phoenix-lite');
+  });
+
+  describe('theme metrics', () => {
+    const themeRecord = (
+      partial: Partial<ThemeUsageRecord> & Pick<ThemeUsageRecord, 'id'>,
+    ): ThemeUsageRecord => ({
+      theme: 'default',
+      applied: true,
+      fallbackMode: 'unicode',
+      capabilities: { supportsColor: true, supportsUnicode: true },
+      overrides: [],
+      ...partial,
+    });
+
+    test('deduplicates theme usage records and reports fallback counts', () => {
+      const summary = summariseThemeUsage([
+        themeRecord({ id: 'cli', theme: 'default-light' }),
+        themeRecord({
+          id: 'cli',
+          applied: false,
+          fallbackMode: 'ascii',
+          capabilities: { supportsColor: false, supportsUnicode: false },
+        }),
+        themeRecord({
+          id: 'window',
+          theme: 'high-contrast',
+          fallbackMode: 'ascii',
+          capabilities: { supportsColor: true, supportsUnicode: false },
+          overrides: ['border'],
+        }),
+      ]);
+
+      expect(summary.total).toBe(2);
+      expect(summary.applied).toBe(2);
+      expect(summary.fallbackModes.unicode).toBe(1);
+      expect(summary.fallbackModes.ascii).toBe(1);
+      expect(summary.fallbackModes.simple).toBe(0);
+      expect(summary.overridesApplied).toBe(1);
+      expect(summary.capabilityScore.max).toBeCloseTo(1, 5);
+      expect(summary.capabilityScore.min).toBeCloseTo(0.45, 5);
+      expect(summary.capabilityScore.average).toBeCloseTo(0.725, 5);
+    });
+  });
+
 });
