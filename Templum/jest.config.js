@@ -22,5 +22,6 @@ module.exports = {
     'html'
   ],
   setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
+  globalTeardown: '<rootDir>/tests/globalTeardown.ts',
   testTimeout: 10000
 };

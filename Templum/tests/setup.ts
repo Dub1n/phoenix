@@ -1,3 +1,10 @@
+import {
+  createFallbackFormatter,
+  createFormatterCapabilities,
+  createFormatterFixture,
+} from '../src/tests/helpers/terminal-formatter-fixtures';
+import { resetDisplayStack } from '../src/utils/display-stack';
+
 /**---
  * title: [Test Setup - Global Test Configuration]
  * tags: [Testing, Setup, Jest, Environment]
@@ -108,7 +115,11 @@ jest.mock('vscode', () => mockVSCode, { virtual: true });
         resolve(data);
       });
     });
-  }
+  },
+
+  createFormatterFixture,
+  createFallbackFormatter,
+  createFormatterCapabilities,
 };
 
 // Setup global test environment
@@ -118,4 +129,8 @@ beforeAll(() => {
 
 afterAll(() => {
   jest.restoreAllMocks();
+});
+
+afterEach(() => {
+  resetDisplayStack();
 });
