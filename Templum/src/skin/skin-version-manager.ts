@@ -41,6 +41,8 @@ import {
 
 
 } from '../types/templum-types';
+import { serialization, type SerializationOutcome } from '../utils/serialization-utils';
+import { emitSerializationWarnings } from '../backend/backend-serialization-log';
 
 /**
  * Comprehensive skin version management with semantic versioning support
@@ -444,7 +446,10 @@ export class SkinVersionManager implements ISkinVersionManager {
       }
 
       // Prerelease version conflict
-      else if (JSON.stringify(existingVersion.prerelease) !== JSON.stringify(newVersion.prerelease)) {
+      else if (
+        this.normalizePrerelease(existingVersion.prerelease, 'skin:version-manager:prerelease:existing') !==
+        this.normalizePrerelease(newVersion.prerelease, 'skin:version-manager:prerelease:new')
+      ) {
         conflicts.push({
           skinId: existingSkin.id,
           existingVersion: existingSkin.version,
@@ -1213,7 +1218,7 @@ export class SkinVersionManager implements ISkinVersionManager {
     const performanceWarnings: string[] = [];
 
     // Estimate skin size
-    const skinSize = JSON.stringify(skin).length;
+    const skinSize = this.measureSkinBytes(skin, 'skin:version-manager:performance-evaluation');
     const skinSizeWithinLimits = !constraints.maxSkinSize || skinSize <= constraints.maxSkinSize;
 
     // Estimate render time (simplified calculation)
@@ -1569,5 +1574,21 @@ export class SkinVersionManager implements ISkinVersionManager {
       performanceWarnings: [],
       score: 100
     };
+  }
+
+  private normalizePrerelease(prerelease: string[] | undefined, context: string): string {
+    const outcome = this.serializeWithMetrics(prerelease ?? [], context);
+    return outcome.value ?? '[]';
+  }
+
+  private measureSkinBytes(skin: UniversalSkinDefinition, context: string): number {
+    return this.serializeWithMetrics(skin, context).meta.bytes;
+  }
+
+  private serializeWithMetrics(value: unknown, context: string): SerializationOutcome<string> {
+    const builder = serialization.json(value).context(context).fallback('{}');
+    const outcome = builder.stringify();
+    emitSerializationWarnings(context, outcome);
+    return outcome;
   }
 }

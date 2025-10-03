@@ -16,6 +16,9 @@ import {
   MetricsSignalPayload,
   PerformanceMetrics 
 } from '../types/templum-types';
+import { createObservabilityFallbackLog } from '../backend/defaults/serialization-defaults';
+import { serialization, type SerializationOutcome } from '../utils/serialization-utils';
+import { emitSerializationWarnings } from '../backend/backend-serialization-log';
 
 // TODO: [TASK-NEW-038] Enhanced metrics correlation across interface adapters
 // Priority: Medium | Complexity: 6
@@ -258,7 +261,7 @@ export class ObservabilityLogger {
   }
   
   private outputAsJSON(entry: LogEntry): void {
-    console.log(JSON.stringify(entry));
+    console.log(this.safeJsonStringify(entry, entry, 'log-entry'));
   }
   
   private outputStructured(entry: LogEntry): void {
@@ -277,16 +280,148 @@ export class ObservabilityLogger {
         message: entry.error.message
       } : undefined
     };
-    console.log(JSON.stringify(structured));
+    console.log(this.safeJsonStringify(entry, structured, 'structured-log'));
   }
   
   private outputToFile(entry: LogEntry): void {
     // TODO: [TASK-NEW-040] File output implementation with log rotation
     // Priority: Medium | Complexity: 4
     // Dependencies: File system access, log rotation policies
-    console.log(`FILE_LOG: ${JSON.stringify(entry)}`);
+    const payload = this.safeJsonStringify(entry, entry, 'file-log');
+    console.log(`FILE_LOG: ${payload}`);
   }
-  
+
+  private safeJsonStringify(entry: LogEntry, payload: unknown, target: string): string {
+    const context = `observability:${target}`;
+    const initialOutcome = serialization
+      .json(payload)
+      .context(context)
+      .fallback('{}')
+      .stringify();
+
+    this.updateEntrySerializationMeta(entry, target, initialOutcome);
+    emitSerializationWarnings(context, initialOutcome);
+
+    if (!initialOutcome.ok || initialOutcome.status === 'fallback' || !initialOutcome.value) {
+      return this.serializeFallback(entry, target, initialOutcome);
+    }
+
+    const payloadWithMeta = this.attachSerializationMeta(entry, payload, target, initialOutcome);
+    const decoratedContext = `${context}:decorated`;
+    const decoratedOutcome = serialization
+      .json(payloadWithMeta)
+      .context(decoratedContext)
+      .fallback('{}')
+      .stringify();
+
+    emitSerializationWarnings(decoratedContext, decoratedOutcome);
+
+    if (!decoratedOutcome.ok || decoratedOutcome.status === 'fallback' || !decoratedOutcome.value) {
+      return this.serializeFallback(entry, target, decoratedOutcome);
+    }
+
+    return decoratedOutcome.value;
+  }
+
+  private updateEntrySerializationMeta(
+    entry: LogEntry,
+    target: string,
+    outcome: SerializationOutcome<unknown>
+  ): void {
+    const serializationMeta = {
+      context: outcome.meta.context,
+      bytes: outcome.meta.bytes,
+      durationMs: outcome.meta.durationMs,
+      warnings: [...outcome.meta.warnings],
+      maskedFields: [...outcome.meta.maskedFields],
+      status: outcome.status,
+      target
+    };
+
+    entry.metadata = {
+      ...(entry.metadata ?? {}),
+      serializationMeta
+    };
+  }
+
+  private attachSerializationMeta(
+    entry: LogEntry,
+    payload: unknown,
+    target: string,
+    outcome: SerializationOutcome<unknown>
+  ): unknown {
+    if (payload === entry) {
+      return entry;
+    }
+
+    if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
+      return {
+        ...(payload as Record<string, unknown>),
+        serializationMeta: {
+          context: outcome.meta.context,
+          bytes: outcome.meta.bytes,
+          durationMs: outcome.meta.durationMs,
+          warnings: [...outcome.meta.warnings],
+          maskedFields: [...outcome.meta.maskedFields],
+          status: outcome.status,
+          target
+        }
+      };
+    }
+
+    return {
+      value: payload,
+      serializationMeta: {
+        context: outcome.meta.context,
+        bytes: outcome.meta.bytes,
+        durationMs: outcome.meta.durationMs,
+        warnings: [...outcome.meta.warnings],
+        maskedFields: [...outcome.meta.maskedFields],
+        status: outcome.status,
+        target
+      }
+    };
+  }
+
+  private serializeFallback(
+    entry: LogEntry,
+    target: string,
+    outcome: SerializationOutcome<unknown>
+  ): string {
+    const fallbackContext = `observability:${target}:fallback`;
+    const fallback = createObservabilityFallbackLog({
+      source: entry.source,
+      message: entry.message,
+      metadata: {
+        ...(entry.metadata ?? {}),
+        serializationTarget: target
+      },
+      error: outcome.error,
+      correlationId: entry.correlationId,
+      sessionId: entry.sessionId,
+      interfaceType: entry.interfaceType
+    });
+
+    const fallbackWithContext = {
+      ...fallback,
+      metadata: {
+        ...fallback.metadata,
+        originalLevel: entry.level,
+        originalMessage: entry.message
+      }
+    };
+
+    const fallbackOutcome = serialization
+      .json(fallbackWithContext)
+      .context(fallbackContext)
+      .fallback('{"serialization-fallback":"observability"}')
+      .stringify();
+
+    emitSerializationWarnings(fallbackContext, fallbackOutcome);
+
+    return fallbackOutcome.value ?? '{"serialization-fallback":"observability"}';
+  }
+
   // Buffer management
   getLogBuffer(): LogEntry[] {
     return [...this.buffer];

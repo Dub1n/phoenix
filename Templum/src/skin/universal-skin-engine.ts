@@ -63,6 +63,9 @@ import {
 
 // Import Skin Version Manager
 import { SkinVersionManager } from './skin-version-manager';
+import { serialization, type SerializationOutcome } from '../utils/serialization-utils';
+import { emitSerializationWarnings } from '../backend/backend-serialization-log';
+import { summariseThemeUsage, ThemeMetricsSummary, ThemeUsageRecord, ThemeFallbackMode } from '../utils/service-utils';
 
 // All type definitions imported from types files - removing duplicates
 
@@ -908,6 +911,24 @@ export class UniversalSkinEngine extends EventEmitter {
     const renderResult = await this.renderSkin(skinId, interfaceType, themeName, {
       optimization: this.config.performanceMode === 'production' ? 'size' : 'quality'
     });
+
+    const fallbackMode: ThemeFallbackMode = renderResult.metadata.fallbackUsed ? 'ascii' : 'unicode';
+    const overrides = Object.keys(renderResult.customization ?? {})
+      .filter((key): key is string => typeof key === 'string' && key.length > 0);
+
+    const themeRecord: ThemeUsageRecord = {
+      id: `${skinId}:${interfaceType}`,
+      theme: themeName,
+      applied: renderResult.success !== false,
+      fallbackMode,
+      capabilities: {
+        supportsColor: true,
+        supportsUnicode: fallbackMode === 'unicode',
+      },
+      overrides,
+    };
+
+    renderResult.metadata.themeMetrics = summariseThemeUsage([themeRecord]);
 
     // Apply to interface adapter
     const adapter = this.interfaceAdapters.get(interfaceType);
@@ -1814,7 +1835,7 @@ export class UniversalSkinEngine extends EventEmitter {
       skinVersion = skin?.version || 'unknown';
     }
     
-    const optionsHash = options ? JSON.stringify(options) : '';
+    const optionsHash = options ? this.serializeCacheOptions(options) : '';
     return `${skinId}:${skinVersion}-${interfaceType}-${themeName}-${optionsHash}`;
   }
 
@@ -1951,7 +1972,7 @@ export class UniversalSkinEngine extends EventEmitter {
   }
 
   private calculateOutputSize(output: any): number {
-    return JSON.stringify(output).length;
+    return this.serializeWithMetrics(output, 'skin:universal-engine:output-size').meta.bytes;
   }
 
   private extractUsedFeatures(output: any): string[] {
@@ -1973,10 +1994,30 @@ export class UniversalSkinEngine extends EventEmitter {
       // Remove oldest entries (simple LRU)
       const entries = Array.from(this.renderCache.entries());
       entries.sort((a, b) => a[1].performance.renderTime - b[1].performance.renderTime);
-      
+
       const toRemove = entries.slice(0, this.renderCache.size - this.config.maxCacheSize);
       toRemove.forEach(([key]) => this.renderCache.delete(key));
     }
+  }
+
+  private serializeCacheOptions(options: unknown): string {
+    const outcome = this.serializeWithMetrics(options, 'skin:universal-engine:cache-key:options');
+    return outcome.value ?? '{}';
+  }
+
+  private serializeWithMetrics(
+    value: unknown,
+    context: string,
+    prettySpacing?: number
+  ): SerializationOutcome<string> {
+    const builder = serialization.json(value).context(context);
+    if (typeof prettySpacing === 'number') {
+      builder.pretty(prettySpacing);
+    }
+    builder.fallback('{}');
+    const outcome = builder.stringify();
+    emitSerializationWarnings(context, outcome);
+    return outcome;
   }
 
   private async selectBestSkinForInterface(interfaceType: string, themeName: string): Promise<string> {
@@ -2084,7 +2125,8 @@ export class UniversalSkinEngine extends EventEmitter {
     improvementPotential: number;
     techniques: string[];
   } {
-    const currentSize = JSON.stringify(skin).length;
+    const sizeOutcome = this.serializeWithMetrics(skin, 'skin:universal-engine:performance-analysis');
+    const currentSize = sizeOutcome.meta.bytes;
     const techniques: string[] = [];
     let optimizedSize = currentSize;
 

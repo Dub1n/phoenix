@@ -16,6 +16,11 @@ import {
   createTemplumError,
   ErrorSignalPayload 
 } from '../types/templum-types';
+import { TypeGuards } from '../utils/type-guards';
+import { 
+  serialization,
+  type SerializationOutcome 
+} from '../utils/serialization-utils';
 
 // Enhanced Templum Configuration Schema
 export const TemplumConfigSchema = z.object({
@@ -655,6 +660,10 @@ export class TemplumConfigManager extends EventEmitter {
    * Register configuration change callback
    */
   public onConfigChange(id: string, callback: (config: TemplumConfig) => void): void {
+    if (!TypeGuards.isFunction(callback)) {
+      throw createTemplumError('Config change callback must be a function', 'CONFIG_CALLBACK_INVALID', 'validation', { subscriberId: id });
+    }
+
     this.callbacks.set(id, callback);
   }
 
@@ -672,16 +681,29 @@ export class TemplumConfigManager extends EventEmitter {
     try {
       await fs.access(this.configPath);
       const content = await fs.readFile(this.configPath, 'utf-8');
-      const configData = JSON.parse(content);
-      
-      // Validate and parse
-      const parsedConfig = TemplumConfigSchema.parse(configData);
+      const defaults: TemplumConfig = { ...this.config };
+      const outcome = serialization.fromJson<TemplumConfig>(content, {
+        context: 'core:config:load',
+        schema: TemplumConfigSchema,
+        defaults,
+        fallback: defaults
+      }).parse();
+
+      const parsedConfig = this.handleSerializationOutcome('Templum configuration load', outcome);
+      if (!parsedConfig) {
+        throw createTemplumError(
+          'Failed to parse configuration file',
+          'CONFIG_PARSE_FAILED',
+          'validation'
+        );
+      }
+
       this.config = parsedConfig;
       
       // Update last modified time
       const stats = await fs.stat(this.configPath);
       this.lastModified = stats.mtime;
-      
+
       return true;
     } catch (error) {
       if ((error as any).code === 'ENOENT') {
@@ -697,13 +719,52 @@ export class TemplumConfigManager extends EventEmitter {
   private async saveToFile(): Promise<void> {
     // Ensure directory exists
     await fs.mkdir(dirname(this.configPath), { recursive: true });
-    
-    const content = JSON.stringify(this.config, null, 2);
-    await fs.writeFile(this.configPath, content, 'utf-8');
+    const stringifyOutcome = serialization
+      .json(this.config, { context: 'core:config:save', pretty: 2 })
+      .stringify();
+
+    const serializedContent = this.handleSerializationOutcome('Templum configuration save', stringifyOutcome);
+    if (!serializedContent) {
+      throw createTemplumError(
+        'Failed to serialize configuration to disk',
+        'CONFIG_SERIALIZE_FAILED',
+        'configuration'
+      );
+    }
+
+    await fs.writeFile(this.configPath, serializedContent, 'utf-8');
     
     // Update last modified time
     const stats = await fs.stat(this.configPath);
     this.lastModified = stats.mtime;
+  }
+
+  private handleSerializationOutcome<T>(
+    context: string,
+    outcome: SerializationOutcome<T>
+  ): T | null {
+    const meta = {
+      context: outcome.meta.context,
+      status: outcome.status,
+      warnings: outcome.meta.warnings,
+      bytes: outcome.meta.bytes,
+      maskedFields: outcome.meta.maskedFields
+    };
+
+    if (!outcome.ok) {
+      console.error(`✗ ${context} failed`, outcome.error, meta);
+      return null;
+    }
+
+    if (outcome.status === 'defaults') {
+      console.warn(`⚠️  ${context} applied defaults`, meta);
+    } else if (outcome.status === 'fallback') {
+      console.warn(`⚠️  ${context} used fallback`, meta);
+    } else if (outcome.meta.warnings.length > 0) {
+      console.warn(`⚠️  ${context} completed with warnings`, meta);
+    }
+
+    return outcome.value as T;
   }
 
   /**
@@ -769,11 +830,13 @@ export class TemplumConfigManager extends EventEmitter {
     const merged = { ...base };
     
     for (const [key, value] of Object.entries(updates)) {
-      if (value && typeof value === 'object' && !Array.isArray(value)) {
+      if (TypeGuards.isPlainObject(value)) {
+        const existing = merged[key as keyof TemplumConfig];
+        const base = TypeGuards.isPlainObject(existing) ? (existing as Record<string, unknown>) : {};
         merged[key as keyof TemplumConfig] = {
-          ...merged[key as keyof TemplumConfig] as any,
-          ...value
-        };
+          ...base,
+          ...value,
+        } as any;
       } else {
         (merged as any)[key] = value;
       }
@@ -790,13 +853,13 @@ export class TemplumConfigManager extends EventEmitter {
     
     const checkSection = (section: string, oldSection: any, newSection: any) => {
       for (const key in newSection) {
-        if (typeof newSection[key] === 'object' && newSection[key] !== null) {
-          // Handle nested objects
-          if (oldSection[key] && typeof oldSection[key] === 'object') {
-            checkSection(`${section}.${key}`, oldSection[key], newSection[key]);
-          }
-        } else if (oldSection[key] !== newSection[key]) {
-          changes.push(`${section}.${key}: ${oldSection[key]} -> ${newSection[key]}`);
+        const newValue = newSection[key];
+        const oldValue = oldSection[key];
+
+        if (TypeGuards.isPlainObject(newValue) && TypeGuards.isPlainObject(oldValue)) {
+          checkSection(`${section}.${key}`, oldValue, newValue);
+        } else if (oldValue !== newValue) {
+          changes.push(`${section}.${key}: ${oldValue} -> ${newValue}`);
         }
       }
     };

@@ -10,7 +10,8 @@
  * Generated: 2025-08-21
  */
 
-import chalk from 'chalk';
+import { createFormatter, TerminalFormatter } from '../utils/terminal-formatter';
+import { DisplayUtils } from '../utils/display-utils';
 import { InterfaceType } from '../types/templum-types';
 import { StringUtils, StringWidthUtils } from '../utils/chainable-string-utils';
 import { 
@@ -20,6 +21,7 @@ import {
   ContentItem,
   WindowLayoutConfig 
 } from './content-layout-system';
+import { computeDisplayLayout } from '../interfaces/display-utils-layout';
 
 // Re-export InterfaceType for other modules
 export type { InterfaceType };
@@ -169,8 +171,10 @@ export interface RenderResult {
 export class UniversalLayoutEngine {
   private performanceMetrics: Map<string, number> = new Map();
   private contentLayoutSystem: ContentLayoutSystem;
+  private readonly formatter: TerminalFormatter;
 
-  constructor() {
+  constructor(formatter: TerminalFormatter = createFormatter()) {
+    this.formatter = formatter;
     this.contentLayoutSystem = new ContentLayoutSystem();
   }
 
@@ -472,31 +476,37 @@ export class UniversalLayoutEngine {
         navigationHistory: layout.interfaceSpecific?.navigationHistory || []
       };
       const windowContent = this.convertToWindowContentWithDesignSpec(skinDefinition, navigationContext);
-      
-      // Use content-driven width calculation from CLI Design Spec
       const cliSpecific = layout.interfaceSpecific?.cli;
-      const contentWidth = cliSpecific?.minContentWidth || 40;
-      const paddingChars = 3; // CLI Design Spec requirement
-      const borderWidth = 2;
-      const optimalWidth = contentWidth + (paddingChars * 2) + borderWidth;
-      
-      // Configure layout options for CLI Design Spec compliance  
-      const layoutConfig: Partial<WindowLayoutConfig> = {
-        minWidth: Math.max(40, optimalWidth),
-        maxWidth: Math.min(process.stdout.columns - 4 || 100, optimalWidth + 10),
-        padding: paddingChars, // Exact 3-character padding as per spec
-        borderStyle: 'unicode', // Use ┌─┐ style borders
-        enableColors: true
+      const minWidth = Math.max(
+        DisplayUtils.standards.minWidth,
+        cliSpecific?.minContentWidth || 0
+      );
+      const maxWidth = Math.min(
+        DisplayUtils.standards.maxWidth,
+        cliSpecific?.maxContentWidth ?? DisplayUtils.standards.maxWidth
+      );
+
+      const samples = this.collectWindowSamples(windowContent, skinDefinition);
+      const layoutMetrics = computeDisplayLayout(samples, {
+        padding: DisplayUtils.standards.defaultPadding,
+        minWidth,
+        maxWidth,
+        borderWidth: DisplayUtils.standards.borderWidth,
+      });
+
+      const layoutConfig: WindowLayoutConfig = {
+        minWidth: Math.max(minWidth, layoutMetrics.windowWidth),
+        maxWidth: Math.max(minWidth, layoutMetrics.windowWidth),
+        padding: layoutMetrics.padding,
+        borderStyle: 'unicode',
+        enableColors: true,
       };
-      
-      // Render with enhanced content layout system
+
       const result = this.contentLayoutSystem.renderContent(windowContent, layoutConfig);
-      
-      // Add CLI Design Spec footer with input prompt box
       const renderedOutput = result.output;
-      const promptBox = this.createDesignSpecFooter(layout.totalWidth || optimalWidth);
-      
-      return renderedOutput + '\n\n' + promptBox;
+      const promptBox = this.createDesignSpecFooter(layoutMetrics.windowWidth);
+
+      return `${renderedOutput}\n\n${promptBox}`;
       
     } catch (error) {
       console.warn('Enhanced CLI rendering failed, falling back to original:', error);
@@ -582,6 +592,58 @@ export class UniversalLayoutEngine {
       sections,
       footer: undefined // Footer handled separately for input prompt box
     };
+  }
+
+  private collectWindowSamples(
+    windowContent: WindowContent,
+    skinDefinition: UniversalSkinMenuDefinition | PCLSkinMenuDefinition,
+  ): string[] {
+    const samples: string[] = [];
+
+    if (skinDefinition.title) {
+      samples.push(skinDefinition.title);
+    }
+
+    if (skinDefinition.subtitle) {
+      samples.push(skinDefinition.subtitle);
+    }
+
+    if (windowContent.title && windowContent.title !== skinDefinition.title) {
+      samples.push(windowContent.title);
+    }
+
+    if (windowContent.subtitle && windowContent.subtitle !== skinDefinition.subtitle) {
+      samples.push(windowContent.subtitle);
+    }
+
+    for (const section of windowContent.sections) {
+      if (section.heading) {
+        samples.push(section.heading);
+      }
+
+      for (const item of section.items) {
+        samples.push(item.label);
+        if (item.description) {
+          samples.push(item.description);
+        }
+        if (item.prefix) {
+          samples.push(item.prefix);
+        }
+      }
+    }
+
+    if (windowContent.navigationItems) {
+      for (const navItem of windowContent.navigationItems) {
+        samples.push(navItem.label);
+        if (navItem.description) {
+          samples.push(navItem.description);
+        }
+      }
+    }
+
+    return samples
+      .filter(sample => sample !== undefined && sample !== null)
+      .map(sample => String(sample));
   }
 
   /**
@@ -737,7 +799,8 @@ export class UniversalLayoutEngine {
     
     // Render static textbox area
     output += layout.theme.separatorColor('─'.repeat(layout.separatorLength)) + '\n';
-    output += chalk.blue('* ') + layout.theme.descriptionStyle(this.generateHint(context)) + '\n';
+    const hintPrefix = this.formatter.palette.primary('* ');
+    output += `${hintPrefix}${layout.theme.descriptionStyle(this.generateHint(context))}\n`;
     output += '\n'; // Space for command prompt
     
     return output;
@@ -1069,38 +1132,59 @@ export class UniversalLayoutEngine {
     longestItemLength: number;
     totalItems: number;
     estimatedLines: number;
+    samples: string[];
   } {
-    const titleLength = this.stripAnsi(menuDef.title).length;
+    const samples: string[] = [];
+    const titleLength = this.stripAnsi(menuDef.title || '').length;
     const subtitleLength = menuDef.subtitle ? this.stripAnsi(menuDef.subtitle).length : 0;
-    
+
+    if (menuDef.title) {
+      samples.push(menuDef.title);
+    }
+
+    if (menuDef.subtitle) {
+      samples.push(menuDef.subtitle);
+    }
+
     let longestItemLength = 0;
     let totalItems = 0;
-    
+
     for (const item of menuDef.items) {
       totalItems++;
-      // Always account for procedural numbering
       const displayLabel = `${totalItems}. ${item.label}`;
       const itemText = `  ${displayLabel}${item.description ? ` - ${item.description}` : ''}`;
       longestItemLength = Math.max(longestItemLength, this.stripAnsi(itemText).length);
+      samples.push(displayLabel);
+      if (item.description) {
+        samples.push(item.description);
+      }
     }
-    
+
     const estimatedLines = 4 + totalItems + (menuDef.subtitle ? 1 : 0); // title + separator + subtitle + blank + items
-    
+
     return {
       titleLength: Math.max(titleLength, subtitleLength),
       longestItemLength,
       totalItems,
-      estimatedLines
+      estimatedLines,
+      samples
     };
   }
 
   private calculateOptimalWidth(measurements: any, constraints: LayoutConstraints): number {
-    const contentWidth = Math.max(measurements.titleLength, measurements.longestItemLength);
-    const calculatedWidth = Math.floor(contentWidth * 1.1) + 5; // 10% padding + 5 chars buffer
-    
+    const samples: string[] = Array.isArray(measurements.samples) && measurements.samples.length > 0
+      ? measurements.samples
+      : [''];
+
+    const responsiveWidth = DisplayUtils.responsiveWidth(samples, {
+      padding: DisplayUtils.standards.defaultPadding,
+      minWidth: constraints.minWidth,
+      maxWidth: constraints.maxWidth
+    });
+
     return Math.max(
       constraints.minWidth,
-      Math.min(constraints.maxWidth, calculatedWidth)
+      Math.min(constraints.maxWidth, responsiveWidth)
     );
   }
 
@@ -1124,16 +1208,13 @@ export class UniversalLayoutEngine {
     };
   }
 
-  private resolveTheme(skinTheme?: SkinTheme): ResolvedTheme {
-    const primaryColor = skinTheme?.primaryColor || 'red';
-    const accentColor = skinTheme?.accentColor || 'gray';
-    
+  private resolveTheme(_skinTheme?: SkinTheme): ResolvedTheme {
     return {
-      titleStyle: chalk[primaryColor].bold,
-      headingStyle: chalk[accentColor].bold,
-      itemStyle: chalk.green,
-      descriptionStyle: chalk.gray,
-      separatorColor: chalk.gray
+      titleStyle: (text: string) => this.formatter.palette.accent(text),
+      headingStyle: (text: string) => this.formatter.palette.primary(text),
+      itemStyle: (text: string) => this.formatter.palette.primary(text),
+      descriptionStyle: (text: string) => this.formatter.palette.muted(text),
+      separatorColor: (text: string) => this.formatter.palette.muted(text)
     };
   }
 

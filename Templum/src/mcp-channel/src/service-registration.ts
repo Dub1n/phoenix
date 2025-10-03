@@ -15,6 +15,8 @@ import * as os from 'os';
 import { CLIMCPServer } from './cli-mcp-server';
 import { PTYManager } from './pty-manager';
 import { ProgressiveTimeoutManager, createOperationSpecificTimeoutManager } from './progressive-timeout-manager';
+import { serialization, type SerializationOutcome } from '../../utils/serialization-utils';
+import { emitSerializationWarnings } from '../../backend/backend-serialization-log';
 
 export interface MCPServiceConfig {
   id: string;
@@ -252,7 +254,7 @@ export class MCPServiceRegistration {
         this.config.lastSeen = Date.now();
         
         // Update service file
-        fs.writeFileSync(this.serviceFilePath, JSON.stringify(this.config, null, 2));
+        this.writeConfigToFile(this.serviceFilePath, 'mcp:service-registration:health-update');
         
         console.log(`[MCP_HEALTH] Health updated: ${this.config.id} (${new Date(this.config.lastSeen).toISOString()})`);
       } else {
@@ -387,8 +389,13 @@ export class MCPServiceRegistration {
     try {
       const packagePath = path.join(__dirname, '..', 'package.json');
       if (fs.existsSync(packagePath)) {
-        const packageData = JSON.parse(fs.readFileSync(packagePath, 'utf-8'));
-        return packageData.version || '1.0.0';
+        const packageData = this.readJsonFile<Record<string, unknown>>(
+          packagePath,
+          'mcp:service-registration:package-json',
+          {}
+        );
+        const version = packageData?.version;
+        return typeof version === 'string' && version.length > 0 ? version : '1.0.0';
       }
     } catch (_error) {
       // Ignore and use default
@@ -500,7 +507,7 @@ export class MCPServiceRegistration {
       
       // Write service registration file atomically
       const tempFilePath = `${this.serviceFilePath}.tmp`;
-      fs.writeFileSync(tempFilePath, JSON.stringify(this.config, null, 2));
+      this.writeConfigToFile(tempFilePath, 'mcp:service-registration:temp-config');
       fs.renameSync(tempFilePath, this.serviceFilePath);
       
       console.log('[MCP_REGISTRATION] Service registration file written successfully');
@@ -540,6 +547,43 @@ export class MCPServiceRegistration {
       this.progressiveTimeoutManager.resetOperationContext(`service-registration-${this.config.id}`);
       console.log('[MCP_REGISTRATION] Progressive timeout context reset');
     }
+  }
+
+  private writeConfigToFile(filePath: string, context: string): void {
+    const outcome = this.serializeWithMetrics(this.config, context, 2);
+    fs.writeFileSync(filePath, outcome.value ?? '{}');
+  }
+
+  private readJsonFile<T>(filePath: string, context: string, fallback: T): T {
+    const raw = fs.readFileSync(filePath, 'utf-8');
+    const outcome = serialization
+      .fromJson<T>(raw)
+      .context(context)
+      .fallback(fallback)
+      .parse();
+
+    emitSerializationWarnings(context, outcome);
+
+    if (!outcome.ok || outcome.value === undefined) {
+      return fallback;
+    }
+
+    return outcome.value;
+  }
+
+  private serializeWithMetrics(
+    value: unknown,
+    context: string,
+    prettySpacing?: number
+  ): SerializationOutcome<string> {
+    const builder = serialization.json(value).context(context);
+    if (typeof prettySpacing === 'number') {
+      builder.pretty(prettySpacing);
+    }
+    builder.fallback('{}');
+    const outcome = builder.stringify();
+    emitSerializationWarnings(context, outcome);
+    return outcome;
   }
 
   /**

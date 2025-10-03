@@ -27,6 +27,13 @@ import {
 import { SessionContextFoundation, SessionContext } from './session-context-foundation';
 import { TemplumBackendServiceRouter } from '../backend/backend-service-router';
 import { ITemplumOrchestrator } from '../interfaces/templum-orchestrator-interface';
+import { SemanticValidators, TypeAssertions, TypeGuards } from '../utils/type-guards';
+import {
+  summariseThemeUsage,
+  ThemeUsageRecord,
+  ThemeMetricsSummary,
+  ThemeFallbackMode,
+} from '../utils/service-utils';
 
 // Interface state synchronization types
 export interface InterfaceStateData {
@@ -121,6 +128,7 @@ export class TemplumUniversalSessionManager extends EventEmitter {
   private currentSessionId: string | null = null;
   private sessionStates: Map<string, TemplumSessionState> = new Map();
   private navigationHistory: string[] = [];
+  private themeUsage = new Map<string, ThemeUsageRecord>();
   
   // Backend Coordination (Templum-Specific Enhancement)
   private activeBackends: Set<BackendType> = new Set();
@@ -328,6 +336,51 @@ export class TemplumUniversalSessionManager extends EventEmitter {
       );
     }
 
+    const requiredHooks: Array<keyof InterfaceAdapter> = [
+      'applySkin',
+      'syncState',
+      'dispose',
+      'getStatus',
+      'getInterfaceType',
+    ];
+
+    const missingHooks = requiredHooks.filter((hook) =>
+      !SemanticValidators.hasFunction(adapter, hook, {
+        required: true,
+        allowNull: false,
+        allowUndefined: false,
+      }),
+    );
+
+    if (missingHooks.length > 0) {
+      throw createTemplumError(
+        `Interface adapter for ${interfaceType} is missing required hooks: ${missingHooks.join(', ')}`,
+        'SESSION_ADAPTER_INVALID',
+        'validation',
+        { interfaceType, missingHooks },
+      );
+    }
+
+    const adapterInterfaceType = adapter.getInterfaceType?.();
+
+    if (!TypeGuards.isString(adapterInterfaceType)) {
+      throw createTemplumError(
+        'Interface adapter must declare a valid interface type',
+        'SESSION_ADAPTER_INVALID',
+        'validation',
+        { interfaceType, adapterType: adapterInterfaceType },
+      );
+    }
+
+    if (adapterInterfaceType !== interfaceType) {
+      throw createTemplumError(
+        'Interface adapter type does not match registration target',
+        'SESSION_ADAPTER_INVALID',
+        'validation',
+        { interfaceType, adapterType: adapterInterfaceType },
+      );
+    }
+
     // Store adapter
     this.interfaceAdapters[interfaceType] = adapter;
 
@@ -462,12 +515,26 @@ export class TemplumUniversalSessionManager extends EventEmitter {
       this.loadedSkins.set(skinDefinition.metadata.id, skinDefinition);
 
       // Apply to all registered interfaces that support this skin
+      const themeName = this.resolveSkinThemeName(skinDefinition);
+      const overrides = this.extractSkinOverrides(skinDefinition);
       const compatibleInterfaces = skinDefinition.metadata.compatibleInterfaces;
       for (const interfaceType of compatibleInterfaces) {
         const adapter = this.interfaceAdapters[interfaceType];
         if (adapter) {
           try {
             await adapter.applySkin(skinDefinition);
+            const fallbackMode: ThemeFallbackMode = interfaceType === 'cli' ? 'unicode' : 'ascii';
+            this.recordThemeUsage({
+              id: `${skinDefinition.metadata.id}:${interfaceType}`,
+              theme: themeName,
+              applied: true,
+              fallbackMode,
+              capabilities: {
+                supportsColor: interfaceType !== 'command',
+                supportsUnicode: interfaceType === 'cli',
+              },
+              overrides,
+            });
             console.log(`Applied skin ${skinDefinition.metadata.id} to ${interfaceType}`);
           } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -499,6 +566,30 @@ export class TemplumUniversalSessionManager extends EventEmitter {
       console.error('Failed to load skin:', errorMessage);
       return false;
     }
+  }
+
+  private resolveSkinThemeName(skinDefinition: UniversalSkinDefinition): string {
+    const theme = (skinDefinition as any).theme;
+    if (theme && TypeGuards.isNonEmptyString(theme.id)) {
+      return theme.id;
+    }
+    if (theme && TypeGuards.isNonEmptyString(theme.name)) {
+      return theme.name;
+    }
+    const themeKeys = Object.keys(skinDefinition.themes ?? {});
+    if (themeKeys.length > 0) {
+      return themeKeys[0];
+    }
+    return 'default';
+  }
+
+  private extractSkinOverrides(skinDefinition: UniversalSkinDefinition): string[] {
+    const overrides = (skinDefinition as any).theme?.overrides;
+    if (!Array.isArray(overrides)) {
+      return [];
+    }
+
+    return overrides.filter((value: unknown): value is string => TypeGuards.isNonEmptyString(value));
   }
 
   /**
@@ -792,6 +883,7 @@ export class TemplumUniversalSessionManager extends EventEmitter {
       completionReasons: Record<string, number>;
       averageCompletedDuration: number;
     };
+    theme: ThemeMetricsSummary;
   } {
     const sessions = Array.from(this.sessionStates.values());
     const interfaceUsage: Record<InterfaceType, number> = {
@@ -856,8 +948,40 @@ export class TemplumUniversalSessionManager extends EventEmitter {
         incompleteSessions,
         completionReasons,
         averageCompletedDuration: actuallyCompletedSessions > 0 ? totalCompletedDuration / actuallyCompletedSessions : 0
-      }
+      },
+      theme: this.getThemeMetrics()
     };
+  }
+
+  getThemeMetrics(): ThemeMetricsSummary {
+    return summariseThemeUsage(Array.from(this.themeUsage.values()));
+  }
+
+  recordThemeUsage(record: ThemeUsageRecord): void {
+    if (!record || !TypeGuards.isNonEmptyString(record.id)) {
+      return;
+    }
+
+    const theme = TypeGuards.isNonEmptyString(record.theme) ? record.theme : 'default';
+    const fallback: ThemeFallbackMode = record.fallbackMode === 'ascii' || record.fallbackMode === 'simple'
+      ? record.fallbackMode
+      : 'unicode';
+
+    const overrides = Array.isArray(record.overrides)
+      ? Array.from(new Set(record.overrides.filter(TypeGuards.isNonEmptyString)))
+      : [];
+
+    this.themeUsage.set(record.id, {
+      id: record.id,
+      theme,
+      applied: Boolean(record.applied),
+      fallbackMode: fallback,
+      capabilities: {
+        supportsColor: Boolean(record.capabilities?.supportsColor),
+        supportsUnicode: Boolean(record.capabilities?.supportsUnicode),
+      },
+      overrides,
+    });
   }
 
   /**
@@ -893,6 +1017,7 @@ export class TemplumUniversalSessionManager extends EventEmitter {
       this.interfaceAdapters = {};
       this.activeBackends.clear();
       this.loadedSkins.clear();
+      this.themeUsage.clear();
       this.interfaceHistory = [];
 
       this.initialized = false;
@@ -938,9 +1063,34 @@ export class TemplumUniversalSessionManager extends EventEmitter {
       let preservedState: InterfaceStateData | null = null;
       if (fromAdapter && 'preserveState' in fromAdapter && typeof (fromAdapter as any).preserveState === 'function') {
         try {
-          preservedState = await (fromAdapter as any).preserveState();
+          const preserved = await (fromAdapter as any).preserveState();
+
+          if (preserved != null) {
+            try {
+              TypeAssertions.assertWithConfidence(
+                preserved,
+                TypeGuards.isPlainObject,
+                `Preserve state hook for ${fromInterface} returned invalid payload`,
+              );
+            } catch {
+              throw createTemplumError(
+                `Preserve state hook for ${fromInterface} returned invalid payload`,
+                'SESSION_STATE_INVALID',
+                'validation',
+                { interfaceType: fromInterface },
+              );
+            }
+
+            preservedState = { ...preserved } as InterfaceStateData;
+          } else {
+            preservedState = null;
+          }
+
           console.log(`Preserved state from ${fromInterface} interface`);
         } catch (error) {
+          if (isTemplumError(error) && error.code === 'SESSION_STATE_INVALID') {
+            throw error;
+          }
           const errorMessage = error instanceof Error ? error.message : 'Unknown error';
           console.warn(`Failed to preserve state from ${fromInterface}:`, errorMessage);
         }
@@ -958,7 +1108,27 @@ export class TemplumUniversalSessionManager extends EventEmitter {
         activeBackends: Array.from(this.activeBackends),
         preservedState: preservedState || undefined
       };
-      
+
+      try {
+        TypeAssertions.assertPropertyExists(transferData as unknown, 'sessionId', {
+          typeGuard: TypeGuards.isNonEmptyString,
+        });
+        TypeAssertions.assertPropertyExists(transferData as unknown, 'fromInterface', {
+          typeGuard: TypeGuards.isNonEmptyString,
+        });
+        TypeAssertions.assertPropertyExists(transferData as unknown, 'toInterface', {
+          typeGuard: TypeGuards.isNonEmptyString,
+        });
+      } catch (error) {
+        const reason = error instanceof Error ? error.message : 'Invalid transfer payload';
+        throw createTemplumError(
+          `Interface state transfer data invalid: ${reason}`,
+          'SESSION_STATE_INVALID',
+          'validation',
+          { reason },
+        );
+      }
+
       // Step 3: Backend state coordination
       await this.coordinateBackendState(transferData);
       
@@ -995,19 +1165,24 @@ export class TemplumUniversalSessionManager extends EventEmitter {
       console.log(`Interface state synchronization completed: ${fromInterface} → ${toInterface} (${Date.now() - startTime}ms)`);
       
     } catch (error) {
-      const errorMessage = isTemplumError(error) ? error.message : (error instanceof Error ? error.message : 'Unknown error');
-      console.error('Interface state synchronization failed:', errorMessage);
-      
-      // Emit error signal but don't throw to prevent interface switching failure
+      const templumError = isTemplumError(error)
+        ? error
+        : createTemplumError(
+            error instanceof Error ? error.message : 'Unknown error',
+            'INTERFACE_STATE_SYNC_ERROR',
+            'runtime',
+          );
+      console.error('Interface state synchronization failed:', templumError.message);
+
       const errorPayload: ErrorSignalPayload = {
         timestamp: Date.now(),
         source: 'TemplumUniversalSessionManager:SynchronizeInterfaceState',
-        error: createTemplumError(errorMessage, 'INTERFACE_STATE_SYNC_ERROR', 'runtime'),
-        severity: 'medium'
+        error: templumError,
+        severity: 'medium',
       };
-      
+
       this.emit('interfaceStateSyncError', errorPayload);
-      
+
       // TASK-NEW-039: Implement comprehensive interface state synchronization recovery
       try {
         const currentTransferData: InterfaceStateTransferData = {
@@ -1020,11 +1195,13 @@ export class TemplumUniversalSessionManager extends EventEmitter {
           loadedSkins: Array.from(this.loadedSkins.keys()),
           activeBackends: Array.from(this.activeBackends)
         };
-        await this.implementComprehensiveStateSyncRecovery(fromInterface, toInterface, currentTransferData, errorMessage);
+        await this.implementComprehensiveStateSyncRecovery(fromInterface, toInterface, currentTransferData, templumError.message);
       } catch (recoveryError) {
         console.error('Comprehensive state synchronization recovery failed:', recoveryError);
         // Don't re-throw - interface switching should continue even if recovery fails
       }
+
+      throw templumError;
     }
   }
   

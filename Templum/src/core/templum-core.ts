@@ -22,6 +22,21 @@ import {
   ErrorSignalPayload
 } from '../types/templum-types';
 import { BackendStatus } from '../backend/backend-service-router';
+import {
+  buildCliIpcRequest,
+  buildServiceRegistryDefaults,
+  type CliIpcRequestPayload
+} from '../backend/defaults/serialization-defaults';
+import {
+  serviceRegistryEntrySchema,
+  cliRequestEnvelopeSchema,
+  type ServiceRegistryEntry
+} from '../backend/schemas/serialization-registry';
+import {
+  serialization,
+  type SerializationOutcome,
+  type SerializationMeta
+} from '../utils/serialization-utils';
 
 // Import dependency injection interfaces and registry
 import { 
@@ -604,23 +619,51 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
       }
       
       // TASK-CLI-006: IPC-to-HTTP Transition - Register as IPC with HTTP readiness flag  
-      const serviceEntry = {
-        id: 'templum-core',
-        service: 'templum',
-        version: '1.0.0',
-        protocol: 'ipc' as const,
+      const now = Date.now();
+      const serviceEntryDefaults = buildServiceRegistryDefaults({
+        id: `templum-core-${process.pid}`,
         endpoint: `ipc://templum-core-${process.pid}`,
-        httpEndpoint: `http://localhost:${this.getHttpPort()}`, // Future HTTP transition
-        health: '/health',
         capabilities: this.getSupportedInterfaces(),
-        pid: process.pid,
-        registrationTime: Date.now(),
-        lastSeen: Date.now()
-      };
-      
+        version: '1.0.0',
+        registrationTime: now,
+        lastSeen: now,
+        health: '/health',
+        metadata: {
+          httpEndpoint: `http://localhost:${this.getHttpPort()}`
+        },
+        pid: process.pid
+      });
+
+      const serviceEntry: ServiceRegistryEntry = serviceRegistryEntrySchema.parse({
+        ...serviceEntryDefaults,
+        protocol: 'ipc',
+        httpEndpoint: `http://localhost:${this.getHttpPort()}`
+      });
+
       // Write service registry file
       const serviceFilePath = path.join(servicesDir, `templum-core-${process.pid}.json`);
-      require('fs').writeFileSync(serviceFilePath, JSON.stringify(serviceEntry, null, 2));
+      const serializedServiceEntry = serialization
+        .json(serviceEntry, {
+          context: 'core:service-registry:write',
+          pretty: 2,
+          maskFields: ['token', 'credentials']
+        })
+        .stringify();
+
+      const serviceEntryPayload = this.handleSerializationOutcome(
+        'Service registry entry write',
+        serializedServiceEntry
+      );
+
+      if (!serviceEntryPayload) {
+        throw createTemplumError(
+          'Failed to serialize service registry entry',
+          'CLI_REGISTRY_WRITE_FAILED',
+          'configuration'
+        );
+      }
+
+      require('fs').writeFileSync(serviceFilePath, serviceEntryPayload.value, 'utf8');
       
       console.log(`✅ Service registered for CLI discovery at: ${serviceFilePath}`);
       
@@ -881,82 +924,13 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
    * Implements fair comparison between health-enabled and minimal backends
    */
   private prioritizeBackendsTwoTier(backends: Array<{ backendId: string, status: any }>): Array<{ backendId: string, score: number, tier: 'health-enabled' | 'minimal' }> {
-    if (!this.dependencies?.backendServiceRouter) {
-      return []; // No backend router available
+    const router = this.dependencies?.backendServiceRouter as { prioritizeBackendsTwoTier?: typeof TemplumCore.prototype.prioritizeBackendsTwoTier } | undefined;
+
+    if (!router?.prioritizeBackendsTwoTier) {
+      return [];
     }
 
-    const prioritizedBackends: Array<{ backendId: string, score: number, tier: 'health-enabled' | 'minimal' }> = [];
-
-    for (const { backendId, status } of backends) {
-      // Get backend capability profile to determine tier
-      const capabilityProfile = (this.dependencies.backendServiceRouter as any).getBackendCapabilityProfile?.(backendId);
-      
-      if (capabilityProfile?.hasHealthEndpoint) {
-        // Tier 1: Health-enabled backends
-        // Formula: (health_factor * 100) + (capabilities_count * 10) + (response_time_factor * 5) + (version_factor * 2)
-        
-        const healthFactor = status.health === 'healthy' ? 1 : status.health === 'unhealthy' ? 0.5 : 0;
-        const capabilitiesCount = status.capabilities?.length || 0;
-        const responseTimeFactor = status.responseTime ? Math.max(0, (1000 - status.responseTime) / 1000) : 0.5; // Normalize response time (lower is better)
-        const versionFactor = status.version ? 1 : 0;
-
-        const score = (healthFactor * 100) + (capabilitiesCount * 10) + (responseTimeFactor * 5) + (versionFactor * 2);
-        
-        prioritizedBackends.push({
-          backendId,
-          score,
-          tier: 'health-enabled'
-        });
-
-        console.log(`[TIER1_SCORING] ${backendId}: health=${healthFactor}, caps=${capabilitiesCount}, time=${responseTimeFactor.toFixed(2)}, ver=${versionFactor} → ${score.toFixed(1)}`);
-        
-      } else {
-        // Tier 2: Minimal backends  
-        // Formula: (connection_stability * 80) + (skin_completeness * 15) + (command_count * 5)
-        
-        const connectionStability = (this.dependencies.backendServiceRouter as any).getConnectionStability?.(backendId) || 0;
-        const skinCompleteness = this.calculateSkinCompleteness(capabilityProfile?.skinDefinitionQuality || 'minimal');
-        const commandCount = status.capabilities?.length || 0;
-
-        const score = (connectionStability * 0.8) + (skinCompleteness * 15) + (commandCount * 5);
-        
-        prioritizedBackends.push({
-          backendId,
-          score,
-          tier: 'minimal'
-        });
-
-        console.log(`[TIER2_SCORING] ${backendId}: stability=${connectionStability.toFixed(1)}%, completeness=${skinCompleteness}, commands=${commandCount} → ${score.toFixed(1)}`);
-      }
-    }
-
-    // Sort by score (descending) with tier preference (health-enabled backends get slight boost)
-    prioritizedBackends.sort((a, b) => {
-      // Apply cross-tier comparison: Tier 1 scores are inherently higher due to formula design
-      // But we ensure fair comparison by normalizing scores within reasonable ranges
-      const aAdjustedScore = a.tier === 'health-enabled' ? a.score : a.score + 50; // Slight boost for tier 2 to ensure fair comparison
-      const bAdjustedScore = b.tier === 'health-enabled' ? b.score : b.score + 50;
-      return bAdjustedScore - aAdjustedScore;
-    });
-
-    if (prioritizedBackends.length > 0) {
-      const winner = prioritizedBackends[0];
-      console.log(`[BACKEND_SELECTION] Selected ${winner.backendId} (${winner.tier}) with score ${winner.score.toFixed(1)}`);
-    }
-
-    return prioritizedBackends;
-  }
-
-  /**
-   * TASK-SKIN-005: Calculate skin completeness score for minimal backends
-   */
-  private calculateSkinCompleteness(quality: string): number {
-    switch (quality) {
-      case 'complete': return 10;
-      case 'partial': return 6;
-      case 'minimal': return 3;
-      default: return 1;
-    }
+    return router.prioritizeBackendsTwoTier(backends);
   }
 
   /**
@@ -1524,6 +1498,35 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
     }
   }
 
+  private handleSerializationOutcome<T>(
+    context: string,
+    outcome: SerializationOutcome<T>
+  ): { value: T; meta: SerializationMeta } | null {
+    const payload = {
+      context: outcome.meta.context,
+      status: outcome.status,
+      warnings: [...outcome.meta.warnings],
+      bytes: outcome.meta.bytes,
+      durationMs: outcome.meta.durationMs,
+      maskedFields: [...outcome.meta.maskedFields]
+    };
+
+    if (!outcome.ok) {
+      this.logError(`${context} serialization failed`, outcome.error instanceof Error ? outcome.error : undefined, payload);
+      return null;
+    }
+
+    if (outcome.status === 'fallback') {
+      this.logWarn(`${context} serialization used fallback value`, payload);
+    } else if (outcome.status === 'defaults') {
+      this.logWarn(`${context} serialization applied defaults`, payload);
+    } else if (outcome.meta.warnings.length > 0) {
+      this.logWarn(`${context} serialization completed with warnings`, payload);
+    }
+
+    return { value: outcome.value as T, meta: outcome.meta };
+  }
+
   // ============================================================================
   // Observability Helper Methods
   // ============================================================================
@@ -1612,11 +1615,33 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
           
           try {
             const requestData = fs.readFileSync(requestPath, 'utf8');
-            const request = JSON.parse(requestData);
-            
-            // Process the IPC command request
-            this.processIPCCommandRequest(request, requestPath);
-            
+            const requestId = this.extractCliRequestId(requestFile);
+            const responseFile = path.join(tempDir, `templum-${requestId}-response.json`);
+
+            const parseOutcome = serialization.fromJson<Record<string, unknown>>(requestData, {
+              context: `core:ipc:request:${requestId}`,
+              fallback: {}
+            }).parse();
+
+            const parsedRequest = this.handleSerializationOutcome('IPC request read', parseOutcome);
+
+            if (!parsedRequest) {
+              this.logWarn('Skipping malformed IPC request', { requestFile });
+              try {
+                fs.unlinkSync(requestPath);
+              } catch (_cleanupError) {
+                // Ignore cleanup errors
+              }
+              continue;
+            }
+
+            const normalizedRequest = this.normalizeCliRequestPayload(
+              parsedRequest.value,
+              requestId,
+              responseFile
+            );
+
+            void this.processIPCCommandRequest(normalizedRequest, requestPath, parsedRequest.meta);
           } catch (error) {
             console.warn(`TemplumCore: Failed to process IPC request ${requestFile}:`, error);
             // Clean up malformed request file
@@ -1627,7 +1652,7 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
             }
           }
         }
-        
+
       } catch (_error) {
         // Continue monitoring even if directory scan fails
       }
@@ -1640,12 +1665,61 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
     setTimeout(checkForIPCRequests, 100);
   }
 
+  private extractCliRequestId(fileName: string): string {
+    const match = fileName.match(/^templum-(.+?)-request\.json$/i);
+    if (match && match[1]) {
+      return match[1];
+    }
+    return path.parse(fileName).name;
+  }
+
+  private normalizeCliRequestPayload(
+    raw: Record<string, unknown>,
+    fallbackRequestId: string,
+    fallbackResponseFile: string
+  ): CliIpcRequestPayload {
+    const requestId = typeof raw.requestId === 'string' && raw.requestId.length > 0
+      ? raw.requestId
+      : fallbackRequestId;
+
+    const responseFile = typeof raw.responseFile === 'string' && raw.responseFile.length > 0
+      ? raw.responseFile
+      : fallbackResponseFile;
+
+    const priority = raw.priority === 'low' || raw.priority === 'high' || raw.priority === 'normal'
+      ? raw.priority
+      : 'normal';
+
+    return buildCliIpcRequest({
+      type: typeof raw.type === 'string' && raw.type.length > 0 ? raw.type : 'command',
+      data: raw.data ?? {},
+      requestId,
+      responseFile,
+      clientPid: typeof raw.clientPid === 'number' ? raw.clientPid : process.pid,
+      timestamp: typeof raw.timestamp === 'number' ? raw.timestamp : Date.now(),
+      version: typeof raw.version === 'string' && raw.version.length > 0 ? raw.version : '1.1',
+      priority
+    });
+  }
+
+  private isInterfaceTypeCandidate(value: unknown): value is InterfaceType {
+    return value === 'cli' || value === 'vscode' || value === 'command';
+  }
+
+  private normalizeInterfaceType(value: unknown): InterfaceType {
+    return this.isInterfaceTypeCandidate(value) ? value : 'cli';
+  }
+
   /**
    * Process individual IPC command request from CLI
    */
-  private async processIPCCommandRequest(request: any, requestPath: string): Promise<void> {
+  private async processIPCCommandRequest(
+    request: CliIpcRequestPayload,
+    requestPath: string,
+    requestMeta: SerializationMeta
+  ): Promise<void> {
     const fs = require('fs');
-    
+
     try {
       // Validate request structure
       if (!request.type || !request.data) {
@@ -1654,18 +1728,27 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
 
       let result: any;
 
+      const payload = (request.data ?? {}) as Record<string, unknown>;
+
       // Handle different IPC message types
       switch (request.type) {
         case 'executeCommand': {
-          const { command, sourceInterface, args, context } = request.data;
+          const command = typeof payload.command === 'string' ? payload.command : undefined;
+          if (!command) {
+            throw new Error('Invalid IPC command payload: command missing');
+          }
+
+          const sourceInterface = this.normalizeInterfaceType(payload.sourceInterface);
+          const args = Array.isArray(payload.args) ? payload.args : [];
+          const context = (payload.context && typeof payload.context === 'object') ? payload.context : {};
+
           console.log(`TemplumCore: Processing IPC command '${command}' from CLI (PID: ${request.clientPid})`);
-          
-          // Execute the command using the real executeCommand method
+
           result = await this.executeCommand(
             command,
-            sourceInterface || 'cli',
-            args || [],
-            context || {}
+            sourceInterface,
+            args,
+            context
           );
           break;
         }
@@ -1677,7 +1760,11 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
         }
 
         case 'loadBackendSkin': {
-          const { backendId } = request.data;
+          const backendId = typeof payload.backendId === 'string' ? payload.backendId : undefined;
+          if (!backendId) {
+            throw new Error('Invalid loadBackendSkin payload: backendId missing');
+          }
+
           console.log(`TemplumCore: Processing IPC loadBackendSkin for '${backendId}' from CLI (PID: ${request.clientPid})`);
           
           // Use the real loadBackendSkin method through backend service router
@@ -1698,11 +1785,25 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
         success: true,
         result,
         requestId: request.requestId,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        serializationMeta: {
+          request: requestMeta
+        }
       };
 
       if (request.responseFile) {
-        fs.writeFileSync(request.responseFile, JSON.stringify(response));
+        const responseOutcome = serialization
+          .json(response, {
+            context: `core:ipc:response:${request.requestId}`,
+            maskFields: ['token', 'credentials']
+          })
+          .stringify();
+
+        const serializedResponse = this.handleSerializationOutcome('IPC response write', responseOutcome);
+
+        if (serializedResponse) {
+          fs.writeFileSync(request.responseFile, serializedResponse.value, 'utf8');
+        }
       }
 
       console.log(`TemplumCore: IPC request '${request.type}' processed successfully`);
@@ -1715,12 +1816,26 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
         success: false,
         error: error instanceof Error ? error.message : String(error),
         requestId: request.requestId,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        serializationMeta: {
+          request: requestMeta
+        }
       };
 
       try {
         if (request.responseFile) {
-          fs.writeFileSync(request.responseFile, JSON.stringify(errorResponse));
+          const errorOutcome = serialization
+            .json(errorResponse, {
+              context: `core:ipc:response:${request.requestId}:error`,
+              maskFields: ['token', 'credentials']
+            })
+            .stringify();
+
+          const serializedError = this.handleSerializationOutcome('IPC response write (error)', errorOutcome);
+
+          if (serializedError) {
+            fs.writeFileSync(request.responseFile, serializedError.value, 'utf8');
+          }
         }
       } catch (writeError) {
         console.error('TemplumCore: Failed to write error response:', writeError);

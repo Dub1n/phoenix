@@ -22,6 +22,8 @@ import {
   UniversalSkinDefinition as _TemplumSkinDefinition
 } from '../types/templum-types';
 import { SkinVersionManager } from './skin-version-manager';
+import { serialization } from '../utils/serialization-utils';
+import { emitSerializationWarnings } from '../backend/backend-serialization-log';
 
 export class UniversalSkinEngine extends EventEmitter {
   private skins: Map<string, UniversalSkinDefinition> = new Map();
@@ -222,7 +224,10 @@ export class UniversalSkinEngine extends EventEmitter {
         components,
         performance: {
           renderTime,
-          outputSize: JSON.stringify(components).length,
+          outputSize: this.computeSerializedBytes(
+            components,
+            'skin:universal-skin-engine-impl:component-output'
+          ),
           cacheHit: false
         },
         customization: {
@@ -347,5 +352,12 @@ export class UniversalSkinEngine extends EventEmitter {
       const toRemove = entries.slice(0, this.renderCache.size - this.config.maxCacheSize);
       toRemove.forEach(([key]) => this.renderCache.delete(key));
     }
+  }
+
+  private computeSerializedBytes(value: unknown, context: string): number {
+    const builder = serialization.json(value).context(context).fallback('{}');
+    const outcome = builder.stringify();
+    emitSerializationWarnings(context, outcome);
+    return outcome.meta.bytes;
   }
 }

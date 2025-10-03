@@ -8,7 +8,7 @@
  * status: ["[~]"]
  * patterns: ["real-time-feedback", "visual-status-indicators", "progressive-display"]
  * components: ["visual-feedback-system", "real-time-monitors", "status-indicators"]
- * dependencies: ["chalk", "cli-cursor", "terminal-kit"]
+ * dependencies: ["terminal-formatter", "window-utils", "cli-cursor", "terminal-kit"]
  * tags: ["mcp-integration", "visual-feedback", "real-time-monitoring"]
  * 
  * Implements comprehensive visual feedback loops for MCP integration with:
@@ -22,9 +22,51 @@
  * @since 2025-09-13
  */
 
-import chalk from 'chalk';
 import { HealthStatus, HealthCheckResult } from './health-monitor';
-import { ProgressiveTimeoutManager } from './progressive-timeout-manager';
+import { serialization, type SerializationOutcome } from '../../utils/serialization-utils';
+import { emitSerializationWarnings } from '../../backend/backend-serialization-log';
+import {
+  createFormatter,
+  TerminalFormatter,
+  type TerminalCapabilities,
+  type TerminalTheme,
+  type TerminalSeparatorStyle,
+} from '../../utils/terminal-formatter';
+import type { WindowBorderStyle } from '../../utils/window-theme-constants';
+
+import { WindowUtils, type WindowUtilsDependencies } from '../../utils/window-utils';
+
+type WindowRenderer = Pick<typeof WindowUtils, 'render'>;
+
+interface VisualFeedbackDependencies {
+  formatter?: TerminalFormatter;
+  windowRenderer?: WindowRenderer;
+}
+
+type VisualFeedbackConstructorConfig = Partial<VisualFeedbackConfig> & VisualFeedbackDependencies;
+
+type FormatterThemeOverrides = {
+  ui?: Partial<TerminalTheme['ui']>;
+  system?: Partial<TerminalTheme['system']>;
+  data?: Partial<TerminalTheme['data']>;
+};
+
+const VISUAL_FEEDBACK_THEME: FormatterThemeOverrides = {
+  ui: {
+    separator: { fg: '#26c6da' },
+  },
+  system: {
+    timestamp: { fg: '#9e9e9e' },
+    path: { fg: '#26c6da', modifiers: ['bold'] },
+    command: { fg: '#ffffff', modifiers: ['bold'] },
+    version: { fg: '#ffd54f', modifiers: ['bold'] },
+  },
+  data: {
+    highlight: { fg: '#ffd54f', modifiers: ['bold'] },
+  },
+};
+
+const ANSI_ESCAPE_PATTERN = /\u001B\[[0-9;]*m/g;
 
 export interface VisualFeedbackConfig {
   enableColors: boolean;
@@ -80,21 +122,38 @@ export class VisualFeedbackSystem {
   private refreshInterval: NodeJS.Timeout | null = null;
   private currentLine: number = 0;
   private terminalWidth: number;
+  private resizeListener?: () => void;
+  private disposed = false;
+  private readonly formatter: TerminalFormatter;
+  private readonly windowRenderer: WindowRenderer;
+  constructor(config: VisualFeedbackConstructorConfig = {}) {
+    const { formatter, windowRenderer, ...visualConfig } = config;
 
-  constructor(config?: Partial<VisualFeedbackConfig>) {
     this.config = {
       enableColors: true,
       enableProgressBars: true,
       refreshRate: 1000, // 1 second
       verbosityLevel: 'standard',
       displayWidth: 80,
-      ...config
+      ...visualConfig
     };
 
     this.indicators = [];
-    this.terminalWidth = process.stdout.columns || this.config.displayWidth;
+    const resolvedFormatter = formatter ?? createFormatter(
+      VISUAL_FEEDBACK_THEME as Partial<TerminalTheme>,
+      this.resolveCapabilities(this.config.enableColors)
+    );
 
-    // Initialize terminal settings
+    this.formatter = resolvedFormatter;
+    this.windowRenderer = windowRenderer ?? WindowUtils;
+
+    if (!windowRenderer) {
+      this.configureWindowFormatter();
+    }
+
+    const detectedWidth = this.formatter.getCapabilities?.().width;
+    this.terminalWidth = detectedWidth ?? process.stdout.columns ?? this.config.displayWidth;
+
     this.initializeTerminal();
   }
 
@@ -102,7 +161,7 @@ export class VisualFeedbackSystem {
    * Initialize terminal settings for visual feedback
    */
   private initializeTerminal(): void {
-    // TODO: [TASK-MCP-009-VISUAL-001] Pattern: terminal-initialization | Complexity: 3 | Dependencies: terminal-kit,chalk
+    // TODO: [TASK-MCP-009-VISUAL-001] Pattern: terminal-initialization | Complexity: 3 | Dependencies: terminal-kit,terminal-formatter
     // Context: Initialize terminal for optimal visual feedback display with color support
     // Validation-Required: terminal-compatibility, color-support, display-optimization
     // Pattern-Info: { approach: "terminal-detection", alternatives: "static-config,auto-detection", trade-offs: "compatibility-vs-features" }
@@ -112,17 +171,63 @@ export class VisualFeedbackSystem {
       process.env.FORCE_COLOR = '1';
     }
 
-    // Handle terminal resize events
-    process.stdout.on('resize', () => {
-      this.terminalWidth = process.stdout.columns || this.config.displayWidth;
-      this.refreshDashboard();
-    });
+    const stdout: typeof process.stdout & {
+      off?: typeof process.stdout.off;
+      removeListener?: typeof process.stdout.removeListener;
+    } = process.stdout;
+
+    if (typeof stdout?.on === 'function') {
+      this.resizeListener = () => {
+        if (this.disposed) {
+          return;
+        }
+        this.terminalWidth = stdout.columns || this.config.displayWidth;
+        this.refreshDashboard();
+      };
+      stdout.on('resize', this.resizeListener);
+    }
+  }
+
+  private resolveCapabilities(enableColors: boolean | undefined): TerminalCapabilities {
+    const capabilities = TerminalFormatter.detectCapabilities();
+
+    if (enableColors === false) {
+      return {
+        ...capabilities,
+        supportsColor: false,
+        supports256Colors: false,
+        supportsTrueColor: false,
+        supportsStyles: false
+      };
+    }
+
+    return capabilities;
+  }
+
+  private configureWindowFormatter(): void {
+    if (typeof WindowUtils.configure !== 'function') {
+      return;
+    }
+
+    const formatterAdapter: NonNullable<WindowUtilsDependencies['formatter']> = {
+      getCapabilities: () => this.formatter.getCapabilities(),
+      ui: {
+        separator: (length?: number, style?: TerminalSeparatorStyle) =>
+          this.invokeFormatterSeparator(length, style),
+      },
+    };
+
+    WindowUtils.configure({ formatter: formatterAdapter });
   }
 
   /**
    * Add status indicator with visual feedback
    */
   addIndicator(indicator: Omit<StatusIndicator, 'timestamp'>): void {
+    if (this.disposed) {
+      return;
+    }
+
     const fullIndicator: StatusIndicator = {
       ...indicator,
       timestamp: Date.now()
@@ -153,41 +258,16 @@ export class VisualFeedbackSystem {
     }
 
     const timestamp = new Date(indicator.timestamp).toISOString().substr(11, 12);
-    let coloredStatus: string;
-    let icon: string;
+    const statusText = this.formatStatusMessage(indicator.status, indicator.message);
+    const categorySegment = indicator.category ? `[${indicator.category}]` : '';
+    const line = [timestamp, statusText, categorySegment].filter(Boolean).join(' ').trim();
 
-    // Color and icon based on status
-    switch (indicator.status) {
-      case 'success':
-        coloredStatus = this.config.enableColors ? chalk.green('SUCCESS') : 'SUCCESS';
-        icon = '✓';
-        break;
-      case 'warning':
-        coloredStatus = this.config.enableColors ? chalk.yellow('WARNING') : 'WARNING';
-        icon = '⚠';
-        break;
-      case 'error':
-        coloredStatus = this.config.enableColors ? chalk.red('ERROR') : 'ERROR';
-        icon = '✗';
-        break;
-      case 'progress':
-        coloredStatus = this.config.enableColors ? chalk.blue('PROGRESS') : 'PROGRESS';
-        icon = '⏳';
-        break;
-      default:
-        coloredStatus = this.config.enableColors ? chalk.cyan('INFO') : 'INFO';
-        icon = 'ℹ';
-    }
-
-    const categoryColor = this.config.enableColors ? chalk.magenta(indicator.category) : indicator.category;
-    const message = `${timestamp} ${icon} ${coloredStatus} [${categoryColor}] ${indicator.message}`;
-
-    console.log(message);
+    console.log(line);
 
     // Show details in detailed/debug mode
     if (indicator.details && (this.config.verbosityLevel === 'detailed' || this.config.verbosityLevel === 'debug')) {
-      const detailsColor = this.config.enableColors ? chalk.gray(indicator.details) : indicator.details;
-      console.log(`   └─ ${detailsColor}`);
+      const detailsOutput = this.formatMuted(indicator.details);
+      console.log(`   └─ ${detailsOutput}`);
     }
   }
 
@@ -199,24 +279,31 @@ export class VisualFeedbackSystem {
       return;
     }
 
-    const percentage = Math.round((progress.current / progress.total) * 100);
-    const completed = Math.round((progress.current / progress.total) * 30); // 30 char width
-    const remaining = 30 - completed;
+    const normalizedProgress: ProgressBar = {
+      ...progress,
+      label: progress.label || 'Progress'
+    };
 
-    let bar = '█'.repeat(completed) + '░'.repeat(remaining);
-    
-    if (this.config.enableColors) {
-      const completedColor = percentage >= 100 ? chalk.green : chalk.blue;
-      bar = completedColor('█'.repeat(completed)) + chalk.gray('░'.repeat(remaining));
-    }
+    const baseLine = this.applyFormatter(
+      () => this.formatter.data.progress(
+        normalizedProgress.current,
+        normalizedProgress.total,
+        normalizedProgress.label
+      ),
+      this.buildPlainProgressLine(normalizedProgress)
+    );
 
-    const progressText = progress.showPercentage ? ` ${percentage}%` : '';
-    const message = `${progress.label}: [${bar}]${progressText} (${progress.current}/${progress.total})`;
+    const lineWithoutPercentage = normalizedProgress.showPercentage
+      ? baseLine
+      : baseLine.replace(/\s+\d{1,3}%/, '');
+    const counts = Number.isFinite(progress.total) && progress.total > 0
+      ? ` (${progress.current}/${progress.total})`
+      : '';
+    const message = `${lineWithoutPercentage}${counts}`.trim();
+    const constrained = this.clampToTerminalWidth(message);
 
-    // Use carriage return to update same line
-    process.stdout.write(`\r${message}`);
+    process.stdout.write(`\r${constrained}`);
 
-    // Move to next line when complete
     if (progress.current >= progress.total) {
       process.stdout.write('\n');
       this.addIndicator({
@@ -225,6 +312,11 @@ export class VisualFeedbackSystem {
         category: 'progress'
       });
     }
+  }
+
+  private formatStatusMessage(status: StatusIndicator['status'], message: string): string {
+    const rendered = this.renderStatus(status, message);
+    return this.config.enableColors ? rendered : this.stripAnsi(rendered);
   }
 
   /**
@@ -249,13 +341,17 @@ export class VisualFeedbackSystem {
       throw new Error('No dashboard configured');
     }
 
+    this.stopDashboard();
+
     this.dashboard.isActive = true;
     this.clearScreen();
     this.renderDashboard();
 
     // Set up periodic refresh
     this.refreshInterval = setInterval(() => {
-      this.refreshDashboard();
+      if (!this.disposed) {
+        this.refreshDashboard();
+      }
     }, this.dashboard.refreshRate);
 
     this.addIndicator({
@@ -298,212 +394,194 @@ export class VisualFeedbackSystem {
   }
 
   /**
-   * Render complete dashboard
+   * Render complete dashboard output
    */
   private renderDashboard(): void {
-    if (!this.dashboard) return;
-
-    let output = '';
-
-    // Header
-    const headerLine = '═'.repeat(this.terminalWidth);
-    const titleLine = this.centerText(this.dashboard.title, this.terminalWidth);
-    
-    if (this.config.enableColors) {
-      output += chalk.cyan(headerLine) + '\n';
-      output += chalk.cyan.bold(titleLine) + '\n';
-      output += chalk.cyan(headerLine) + '\n';
-    } else {
-      output += headerLine + '\n' + titleLine + '\n' + headerLine + '\n';
+    if (!this.dashboard) {
+      return;
     }
 
-    // Sections
-    for (const section of this.dashboard.sections) {
-      output += this.renderSection(section) + '\n';
+    const windowOutput = this.windowRenderer.render({
+      title: this.dashboard.title,
+      content: this.buildDashboardContent(),
+      width: this.terminalWidth,
+      style: this.resolveWindowStyle(),
+    });
+
+    console.log(windowOutput);
+  }
+
+  private buildDashboardContent(): string[] {
+    if (!this.dashboard) {
+      return [];
     }
 
-    // Footer with timestamp
-    const timestamp = new Date().toISOString();
-    const footerText = `Last updated: ${timestamp}`;
-    const footer = this.centerText(footerText, this.terminalWidth);
-    
-    if (this.config.enableColors) {
-      output += chalk.gray('─'.repeat(this.terminalWidth)) + '\n';
-      output += chalk.gray(footer) + '\n';
-    } else {
-      output += '─'.repeat(this.terminalWidth) + '\n' + footer + '\n';
-    }
+    const lines: string[] = [];
+    const pushLine = (value: string) => lines.push(this.clampToTerminalWidth(value));
 
-    console.log(output);
+    this.dashboard.sections.forEach((section, index) => {
+      this.renderSection(section).forEach(line => pushLine(line));
+
+      if (index < this.dashboard!.sections.length - 1) {
+        pushLine(this.formatSeparator(undefined, 'dashed'));
+      }
+    });
+
+    pushLine(this.formatSeparator(undefined, 'solid'));
+    pushLine(this.formatMuted(`Last updated: ${new Date().toISOString()}`));
+
+    return lines;
   }
 
   /**
    * Render individual dashboard section
    */
-  private renderSection(section: VisualSection): string {
-    let output = '';
+  private renderSection(section: VisualSection): string[] {
+    const lines: string[] = [this.formatSectionTitle(section.title)];
+    const content = this.renderSectionContent(section);
+    lines.push(...content);
+    return lines;
+  }
 
-    // Section header
-    const sectionTitle = ` ${section.title} `;
-    if (this.config.enableColors) {
-      output += chalk.yellow.bold(sectionTitle) + '\n';
-    } else {
-      output += sectionTitle + '\n';
-    }
-
-    // Section content based on type
+  private renderSectionContent(section: VisualSection): string[] {
     switch (section.type) {
       case 'health':
-        output += this.renderHealthSection(section.content);
-        break;
+        return this.renderHealthSection(section.content);
       case 'metrics':
-        output += this.renderMetricsSection(section.content);
-        break;
+        return this.renderMetricsSection(section.content);
       case 'status':
-        output += this.renderStatusSection(section.content);
-        break;
+        return this.renderStatusSection(section.content);
       case 'progress':
-        output += this.renderProgressSection(section.content);
-        break;
+        return this.renderProgressSection(section.content);
       case 'logs':
-        output += this.renderLogsSection(section.content);
-        break;
+        return this.renderLogsSection(section.content);
       default:
-        output += JSON.stringify(section.content, null, 2);
+        return [
+          this.stringifyForDisplay(
+            section.content,
+            `mcp:visual-feedback:section:${section.type}`,
+            2
+          )
+        ];
     }
-
-    return output;
   }
 
   /**
    * Render health monitoring section
    */
-  private renderHealthSection(healthStatus: HealthStatus): string {
-    let output = '';
-
-    // Overall status
-    const statusIcon = this.getHealthIcon(healthStatus.status);
-    const statusColor = this.getHealthColor(healthStatus.status);
-    
-    if (this.config.enableColors) {
-      output += `  Overall: ${statusColor(statusIcon + ' ' + healthStatus.status.toUpperCase())}\n`;
-    } else {
-      output += `  Overall: ${statusIcon} ${healthStatus.status.toUpperCase()}\n`;
+  private renderHealthSection(healthStatus: HealthStatus): string[] {
+    if (!healthStatus) {
+      return [this.formatMuted('Health status unavailable')];
     }
 
-    // Individual checks
-    const checks = healthStatus.checks;
+    const lines: string[] = [];
+    const overallLabel = `${this.getHealthIcon(healthStatus.status)} ${healthStatus.status.toUpperCase()}`;
+    lines.push(`  Overall: ${this.formatHealthStatus(healthStatus.status, overallLabel)}`);
+
+    const checks = healthStatus.checks ?? {};
     for (const [checkName, result] of Object.entries(checks)) {
-      const checkIcon = this.getHealthCheckIcon(result.status);
-      const checkColor = this.getHealthCheckColor(result.status);
-      const duration = `(${result.duration}ms)`;
-      
-      if (this.config.enableColors) {
-        output += `  ${checkName}: ${checkColor(checkIcon + ' ' + result.status)} ${chalk.gray(duration)}\n`;
-      } else {
-        output += `  ${checkName}: ${checkIcon} ${result.status} ${duration}\n`;
-      }
+      const checkLabel = `${this.getHealthCheckIcon(result.status)} ${result.status}`;
+      const formattedStatus = this.formatHealthCheck(result.status, checkLabel);
+      const duration = this.formatMuted(`(${result.duration}ms)`);
+      lines.push(`  ${checkName}: ${formattedStatus} ${duration}`);
 
       if (result.status !== 'pass' && result.message) {
-        if (this.config.enableColors) {
-          output += `    └─ ${chalk.gray(result.message)}\n`;
-        } else {
-          output += `    └─ ${result.message}\n`;
-        }
+        lines.push(`    └─ ${this.formatMuted(result.message)}`);
       }
     }
 
-    return output;
+    return lines;
   }
 
   /**
    * Render metrics section
    */
-  private renderMetricsSection(metrics: any): string {
-    let output = '';
-
-    if (typeof metrics === 'object') {
-      for (const [key, value] of Object.entries(metrics)) {
-        const formattedKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
-        let formattedValue: string;
-
-        if (typeof value === 'number') {
-          if (key.includes('Rate') || key.includes('Stability')) {
-            formattedValue = `${(value * 100).toFixed(1)}%`;
-          } else if (key.includes('Time') && value > 1000) {
-            formattedValue = `${(value / 1000).toFixed(2)}s`;
-          } else if (key.includes('Time')) {
-            formattedValue = `${value}ms`;
-          } else {
-            formattedValue = value.toString();
-          }
-        } else {
-          formattedValue = String(value);
-        }
-
-        if (this.config.enableColors) {
-          output += `  ${chalk.cyan(formattedKey)}: ${chalk.white.bold(formattedValue)}\n`;
-        } else {
-          output += `  ${formattedKey}: ${formattedValue}\n`;
-        }
-      }
+  private renderMetricsSection(metrics: any): string[] {
+    if (!metrics || typeof metrics !== 'object') {
+      return [this.formatMuted('No metrics available')];
     }
 
-    return output;
+    const lines: string[] = [];
+
+    for (const [key, value] of Object.entries(metrics)) {
+      const formattedKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+      let formattedValue: string;
+
+      if (typeof value === 'number') {
+        if (key.includes('Rate') || key.includes('Stability')) {
+          formattedValue = `${(value * 100).toFixed(1)}%`;
+        } else if (key.includes('Time') && value > 1000) {
+          formattedValue = `${(value / 1000).toFixed(2)}s`;
+        } else if (key.includes('Time')) {
+          formattedValue = `${value}ms`;
+        } else {
+          formattedValue = value.toString();
+        }
+      } else {
+        formattedValue = String(value);
+      }
+
+      const keySegment = this.formatAccent(formattedKey);
+      const valueSegment = this.formatStrong(formattedValue);
+      lines.push(`  ${keySegment}: ${valueSegment}`);
+    }
+
+    return lines;
   }
 
   /**
    * Render status section
    */
-  private renderStatusSection(status: any): string {
-    return `  ${JSON.stringify(status, null, 2)}\n`;
+  private renderStatusSection(status: any): string[] {
+    const serialized = this.stringifyForDisplay(status, 'mcp:visual-feedback:status-detail', 2);
+    return [`  ${serialized}`];
   }
 
   /**
    * Render progress section
    */
-  private renderProgressSection(progress: any): string {
-    let output = '';
+  private renderProgressSection(progress: any): string[] {
+    if (!Array.isArray(progress)) {
+      return [this.formatMuted('No progress available')];
+    }
 
-    if (Array.isArray(progress)) {
-      for (const item of progress) {
-        if (item.current !== undefined && item.total !== undefined) {
-          const percentage = Math.round((item.current / item.total) * 100);
-          const bar = this.createProgressBar(item.current, item.total, 20);
-          
-          if (this.config.enableColors) {
-            output += `  ${chalk.yellow(item.label || 'Progress')}: ${bar} ${chalk.bold(percentage + '%')}\n`;
-          } else {
-            output += `  ${item.label || 'Progress'}: ${bar} ${percentage}%\n`;
-          }
-        }
+    const lines: string[] = [];
+
+    for (const item of progress) {
+      if (item?.current !== undefined && item?.total !== undefined) {
+        const progressLine = this.applyFormatter(
+          () => this.formatter.data.progress(item.current, item.total, item.label || 'Progress'),
+          this.buildPlainProgressLine(item as ProgressBar)
+        );
+        const clamped = this.clampToTerminalWidth(progressLine);
+        lines.push(`  ${clamped}`);
       }
     }
 
-    return output;
+    return lines.length ? lines : [this.formatMuted('No progress available')];
   }
 
   /**
    * Render logs section
    */
-  private renderLogsSection(logs: StatusIndicator[]): string {
-    let output = '';
-
-    if (Array.isArray(logs)) {
-      for (const log of logs.slice(-5)) { // Show last 5 logs
-        const time = new Date(log.timestamp).toISOString().substr(11, 8);
-        const icon = this.getStatusIcon(log.status);
-        
-        if (this.config.enableColors) {
-          const statusColor = this.getStatusColor(log.status);
-          output += `  ${chalk.gray(time)} ${statusColor(icon)} ${log.message}\n`;
-        } else {
-          output += `  ${time} ${icon} ${log.message}\n`;
-        }
-      }
+  private renderLogsSection(logs: StatusIndicator[]): string[] {
+    if (!Array.isArray(logs) || logs.length === 0) {
+      return [this.formatMuted('No recent logs')];
     }
 
-    return output;
+    const lines: string[] = [];
+
+    for (const log of logs.slice(-5)) {
+      const time = new Date(log.timestamp).toISOString().substr(11, 8);
+      const icon = this.getStatusIcon(log.status);
+      const timeSegment = this.formatMuted(time);
+      const iconSegment = this.formatStatusLabel(log.status, icon);
+      const combined = `${iconSegment} ${log.message}`.trim();
+      const clampedMessage = this.clampToTerminalWidth(combined);
+      lines.push(`  ${timeSegment} ${clampedMessage}`);
+    }
+
+    return lines;
   }
 
   /**
@@ -515,24 +593,10 @@ export class VisualFeedbackSystem {
     
     const timeoutValue = [30, 60, 120, 180][level - 1] || 0;
     
-    let icon: string;
-    let color: (text: string) => string;
-
-    if (level === 1) {
-      icon = '🟢';
-      color = this.config.enableColors ? chalk.green : (t: string) => t;
-    } else if (level === 2) {
-      icon = '🟡';
-      color = this.config.enableColors ? chalk.yellow : (t: string) => t;
-    } else if (level === 3) {
-      icon = '🟠';
-      color = this.config.enableColors ? chalk.hex('#FFA500') : (t: string) => t;
-    } else {
-      icon = '🔴';
-      color = this.config.enableColors ? chalk.red : (t: string) => t;
-    }
-
-    const message = `${icon} Timeout adapted to ${color(levelName)} (${timeoutValue}s) - ${reason}`;
+    const icon = level <= 1 ? '🟢' : level === 2 ? '🟡' : level === 3 ? '🟠' : '🔴';
+    const status = this.mapTimeoutLevelToStatus(level);
+    const levelDisplay = this.formatStatusLabel(status, levelName);
+    const message = `${icon} Timeout adapted to ${levelDisplay} (${timeoutValue}s) - ${reason}`;
     console.log(message);
 
     this.addIndicator({
@@ -555,35 +619,15 @@ export class VisualFeedbackSystem {
    * Visual circuit breaker status feedback
    */
   showCircuitBreakerStatus(state: 'closed' | 'open' | 'half-open', failureRate: number, details?: string): void {
-    let icon: string;
-    let color: (text: string) => string;
-    let status: StatusIndicator['status'];
-
-    switch (state) {
-      case 'closed':
-        icon = '🟢';
-        color = this.config.enableColors ? chalk.green : (t: string) => t;
-        status = 'success';
-        break;
-      case 'half-open':
-        icon = '🟡';
-        color = this.config.enableColors ? chalk.yellow : (t: string) => t;
-        status = 'warning';
-        break;
-      case 'open':
-        icon = '🔴';
-        color = this.config.enableColors ? chalk.red : (t: string) => t;
-        status = 'error';
-        break;
-    }
-
+    const { icon, indicatorStatus } = this.mapCircuitBreakerState(state);
     const failureRateText = `${(failureRate * 100).toFixed(1)}%`;
-    const message = `${icon} Circuit Breaker: ${color(state.toUpperCase())} (failure rate: ${failureRateText})`;
+    const stateDisplay = this.formatStatusLabel(indicatorStatus, state.toUpperCase());
+    const message = `${icon} Circuit Breaker: ${stateDisplay} (failure rate: ${failureRateText})`;
     
     console.log(message);
 
     this.addIndicator({
-      status,
+      status: indicatorStatus,
       message: `Circuit breaker ${state} (${failureRateText} failure rate)`,
       details,
       category: 'circuit-breaker'
@@ -596,19 +640,42 @@ export class VisualFeedbackSystem {
   showValidationFeedback(operation: string, success: boolean, duration: number, details?: any): void {
     const icon = success ? '✅' : '❌';
     const statusText = success ? 'PASSED' : 'FAILED';
-    const color = success ? 
-      (this.config.enableColors ? chalk.green : (t: string) => t) : 
-      (this.config.enableColors ? chalk.red : (t: string) => t);
-
-    const message = `${icon} Validation ${color(statusText)}: ${operation} (${duration}ms)`;
+    const indicatorStatus: StatusIndicator['status'] = success ? 'success' : 'error';
+    const formattedStatus = this.formatStatusLabel(indicatorStatus, statusText);
+    const message = `${icon} Validation ${formattedStatus}: ${operation} (${duration}ms)`;
     console.log(message);
 
     this.addIndicator({
       status: success ? 'success' : 'error',
       message: `${operation} validation ${statusText.toLowerCase()}`,
-      details: details ? JSON.stringify(details) : undefined,
+      details: details
+        ? this.stringifyForDisplay(details, 'mcp:visual-feedback:validation-details')
+        : undefined,
       category: 'validation'
     });
+  }
+
+  dispose(): void {
+    if (this.disposed) {
+      return;
+    }
+
+    this.disposed = true;
+    this.stopDashboard();
+
+    const stdout: typeof process.stdout & {
+      off?: typeof process.stdout.off;
+      removeListener?: typeof process.stdout.removeListener;
+    } = process.stdout;
+
+    if (this.resizeListener) {
+      if (typeof stdout?.off === 'function') {
+        stdout.off('resize', this.resizeListener);
+      } else if (typeof stdout?.removeListener === 'function') {
+        stdout.removeListener('resize', this.resizeListener);
+      }
+      this.resizeListener = undefined;
+    }
   }
 
   /**
@@ -626,25 +693,54 @@ export class VisualFeedbackSystem {
     }
   }
 
+  private stringifyForDisplay(
+    content: unknown,
+    context: string,
+    prettySpacing: number = 2
+  ): string {
+    const builder = serialization.json(content).context(context);
+    if (prettySpacing > 0) {
+      builder.pretty(prettySpacing);
+    }
+    builder.fallback('{}');
+    const outcome = builder.stringify();
+    emitSerializationWarnings(context, outcome);
+
+    if (!outcome.ok || outcome.status === 'fallback' || !outcome.value) {
+      return this.buildFallbackDisplay(context, outcome);
+    }
+
+    return outcome.value;
+  }
+
+  private buildFallbackDisplay(
+    context: string,
+    outcome: SerializationOutcome<string>
+  ): string {
+    const fallbackContext = `${context}:fallback`;
+    const fallbackPayload = {
+      message: 'serialization-fallback',
+      context,
+      warnings: [...outcome.meta.warnings],
+      maskedFields: [...outcome.meta.maskedFields]
+    };
+
+    const fallbackBuilder = serialization
+      .json(fallbackPayload)
+      .context(fallbackContext)
+      .fallback('"serialization-fallback"');
+
+    const fallbackOutcome = fallbackBuilder.stringify();
+    emitSerializationWarnings(fallbackContext, fallbackOutcome);
+
+    return fallbackOutcome.value ?? '"serialization-fallback"';
+  }
+
   private centerText(text: string, width: number): string {
     const padding = Math.max(0, width - text.length);
     const leftPad = Math.floor(padding / 2);
     const rightPad = padding - leftPad;
     return ' '.repeat(leftPad) + text + ' '.repeat(rightPad);
-  }
-
-  private createProgressBar(current: number, total: number, width: number): string {
-    const completed = Math.round((current / total) * width);
-    const remaining = width - completed;
-    
-    let bar = '█'.repeat(completed) + '░'.repeat(remaining);
-    
-    if (this.config.enableColors) {
-      const completedColor = current >= total ? chalk.green : chalk.blue;
-      bar = completedColor('█'.repeat(completed)) + chalk.gray('░'.repeat(remaining));
-    }
-
-    return `[${bar}]`;
   }
 
   private getHealthIcon(status: string): string {
@@ -656,34 +752,12 @@ export class VisualFeedbackSystem {
     }
   }
 
-  private getHealthColor(status: string): (text: string) => string {
-    if (!this.config.enableColors) return (t: string) => t;
-    
-    switch (status) {
-      case 'healthy': return chalk.green;
-      case 'degraded': return chalk.yellow;
-      case 'unhealthy': return chalk.red;
-      default: return chalk.gray;
-    }
-  }
-
   private getHealthCheckIcon(status: string): string {
     switch (status) {
       case 'pass': return '✓';
       case 'warn': return '⚠';
       case 'fail': return '✗';
       default: return '?';
-    }
-  }
-
-  private getHealthCheckColor(status: string): (text: string) => string {
-    if (!this.config.enableColors) return (t: string) => t;
-    
-    switch (status) {
-      case 'pass': return chalk.green;
-      case 'warn': return chalk.yellow;
-      case 'fail': return chalk.red;
-      default: return chalk.gray;
     }
   }
 
@@ -697,16 +771,187 @@ export class VisualFeedbackSystem {
     }
   }
 
-  private getStatusColor(status: string): (text: string) => string {
-    if (!this.config.enableColors) return (t: string) => t;
-    
+  private formatTitle(text: string): string {
+    return this.formatAccent(text);
+  }
+
+  private formatSectionTitle(title: string): string {
+    const trimmed = title.trim();
+    const highlighted = this.formatHighlight(trimmed || title);
+    return ` ${highlighted} `;
+  }
+
+  private formatSeparator(length?: number, style: TerminalSeparatorStyle = 'solid'): string {
+    const capabilities = this.getFormatterCapabilities();
+    const fallbackLength = Math.max(1, capabilities.width ?? this.config.displayWidth);
+    const normalizedLength = Math.max(1, length ?? fallbackLength);
+    const fallbackChar = style === 'double' ? '=' : style === 'dashed' ? '-' : '─';
+
+    return this.applyFormatter(
+      () => this.invokeFormatterSeparator(normalizedLength, style),
+      fallbackChar.repeat(normalizedLength)
+    );
+  }
+
+  private invokeFormatterSeparator(
+    length?: number,
+    style?: TerminalSeparatorStyle
+  ): string {
+    const separator = this.formatter.ui.separator as (
+      len?: number,
+      sty?: TerminalSeparatorStyle
+    ) => string;
+    return separator(length, style);
+  }
+
+  private formatMuted(text: string): string {
+    const message = String(text);
+    const rendered = this.formatter.status.debug(message);
+    const plain = this.stripAnsi(rendered);
+    const glyphLength = Math.max(0, plain.length - message.length);
+    const glyphSegment = glyphLength > 0 ? plain.slice(0, glyphLength) : '';
+    const withoutGlyph = glyphSegment ? rendered.replace(glyphSegment, '') : rendered;
+    return this.config.enableColors ? withoutGlyph : this.stripAnsi(withoutGlyph) || message;
+  }
+
+  private formatAccent(text: string): string {
+    return this.applyFormatter(() => this.formatter.system.path(text), text);
+  }
+
+  private formatStrong(text: string): string {
+    return this.applyFormatter(() => this.formatter.system.command(text), text);
+  }
+
+  private formatHighlight(text: string): string {
+    return this.applyFormatter(() => this.formatter.data.highlight(text, text), text);
+  }
+
+  private renderStatus(status: StatusIndicator['status'], message: string): string {
     switch (status) {
-      case 'success': return chalk.green;
-      case 'warning': return chalk.yellow;
-      case 'error': return chalk.red;
-      case 'progress': return chalk.blue;
-      default: return chalk.cyan;
+      case 'success':
+        return this.formatter.status.success(message);
+      case 'warning':
+        return this.formatter.status.warning(message);
+      case 'error':
+        return this.formatter.status.error(message);
+      case 'progress':
+        return this.formatter.status.info(message);
+      default:
+        return this.formatter.status.info(message);
     }
+  }
+
+  private formatStatusLabel(status: StatusIndicator['status'], text: string): string {
+    const rendered = this.renderStatus(status, text);
+    const plain = this.stripAnsi(rendered);
+    const glyphLength = Math.max(0, plain.length - text.length);
+    const glyphSegment = glyphLength > 0 ? plain.slice(0, glyphLength) : '';
+    const withoutGlyph = glyphSegment ? rendered.replace(glyphSegment, '') : rendered;
+    return this.config.enableColors ? withoutGlyph : this.stripAnsi(withoutGlyph);
+  }
+
+  private resolveWindowStyle(): WindowBorderStyle {
+    const capabilities = this.getFormatterCapabilities();
+    return capabilities.supportsUnicode ? 'single' : 'ascii';
+  }
+
+  private formatHealthStatus(status: string, text: string): string {
+    return this.formatStatusLabel(this.mapHealthStatus(status), text);
+  }
+
+  private mapHealthStatus(status: string): StatusIndicator['status'] {
+    switch (status) {
+      case 'healthy':
+        return 'success';
+      case 'degraded':
+        return 'warning';
+      case 'unhealthy':
+        return 'error';
+      default:
+        return 'info';
+    }
+  }
+
+  private formatHealthCheck(status: string, text: string): string {
+    return this.formatStatusLabel(this.mapHealthCheckStatus(status), text);
+  }
+
+  private mapHealthCheckStatus(status: string): StatusIndicator['status'] {
+    switch (status) {
+      case 'pass':
+        return 'success';
+      case 'warn':
+        return 'warning';
+      case 'fail':
+        return 'error';
+      default:
+        return 'info';
+    }
+  }
+
+  private mapTimeoutLevelToStatus(level: number): StatusIndicator['status'] {
+    if (level <= 1) {
+      return 'success';
+    }
+    if (level === 2 || level === 3) {
+      return 'warning';
+    }
+    return 'error';
+  }
+
+  private mapCircuitBreakerState(
+    state: 'closed' | 'open' | 'half-open'
+  ): { icon: string; indicatorStatus: StatusIndicator['status'] } {
+    switch (state) {
+      case 'closed':
+        return { icon: '🟢', indicatorStatus: 'success' };
+      case 'half-open':
+        return { icon: '🟡', indicatorStatus: 'warning' };
+      case 'open':
+      default:
+        return { icon: '🔴', indicatorStatus: 'error' };
+    }
+  }
+
+  private buildPlainProgressLine(progress: ProgressBar): string {
+    const total = Math.max(0, progress.total);
+    const current = Math.max(0, Math.min(progress.current, total));
+    const width = 20;
+    const filled = total > 0 ? Math.round((current / total) * width) : 0;
+    const remaining = Math.max(0, width - filled);
+    const bar = `[${'#'.repeat(filled)}${'.'.repeat(remaining)}]`;
+    const percentage = total > 0 ? Math.round((current / total) * 100) : 0;
+    const percentageSegment = progress.showPercentage ? ` ${percentage}%` : '';
+    const label = progress.label || 'Progress';
+    const prefix = label ? `${label} ` : '';
+    return `${prefix}${bar}${percentageSegment}`.trim();
+  }
+
+  private applyFormatter(render: () => string, fallback: string): string {
+    const value = render();
+    if (this.config.enableColors) {
+      return value;
+    }
+    const plain = this.stripAnsi(value);
+    return plain || fallback;
+  }
+
+  private getFormatterCapabilities(): TerminalCapabilities {
+    return this.formatter.getCapabilities?.() ?? TerminalFormatter.detectCapabilities();
+  }
+
+  private clampToTerminalWidth(value: string): string {
+    const capabilities = this.getFormatterCapabilities();
+    const maxWidth = Math.max(1, capabilities.width ?? this.config.displayWidth);
+    const plain = this.stripAnsi(value);
+    if (plain.length <= maxWidth) {
+      return value;
+    }
+    return plain.slice(0, maxWidth);
+  }
+
+  private stripAnsi(value: string): string {
+    return typeof value === 'string' ? value.replace(ANSI_ESCAPE_PATTERN, '') : '';
   }
 
   private getRecentIndicators(count: number): StatusIndicator[] {

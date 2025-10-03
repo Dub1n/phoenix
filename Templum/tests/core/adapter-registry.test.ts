@@ -39,8 +39,10 @@ describe('TemplumAdapterRegistry', () => {
   });
 
   afterEach(async () => {
-    if (registry.isInitialized()) {
+    try {
       await registry.dispose();
+    } catch (error) {
+      console.error('Cleanup failed after test:', error);
     }
   });
 
@@ -259,6 +261,27 @@ describe('TemplumAdapterRegistry', () => {
       expect(validationReport!.integrityValidation.initializationOrder).toBe(true);
 
       await strictRegistry.dispose();
+    });
+  });
+
+  describe('Guarded configuration helpers', () => {
+    test('validateStateManagerConfig rejects non-plain objects', () => {
+      const registry = new TemplumAdapterRegistry();
+
+      expect(() => registry.validateStateManagerConfig('not-a-config')).toThrow(
+        /state manager config must be a plain object/i,
+      );
+    });
+
+    test('validateStateManagerConfig preserves known numeric options', () => {
+      const registry = new TemplumAdapterRegistry();
+      const config = registry.validateStateManagerConfig({
+        coalescingWindowMs: 250,
+        maxBatchSize: 5,
+      });
+
+      expect(config.coalescingWindowMs).toBe(250);
+      expect(config.maxBatchSize).toBe(5);
     });
   });
 

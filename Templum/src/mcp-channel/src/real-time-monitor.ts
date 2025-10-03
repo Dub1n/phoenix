@@ -26,6 +26,8 @@ import { EventEmitter } from 'events';
 import { VisualFeedbackSystem, VisualDashboard, VisualSection } from './visual-feedback-system';
 import { HealthStatus, MCPHealthMonitor } from './health-monitor';
 import { ProgressiveTimeoutManager } from './progressive-timeout-manager';
+import { serialization, type SerializationOutcome } from '../../utils/serialization-utils';
+import { emitSerializationWarnings } from '../../backend/backend-serialization-log';
 
 export interface MonitoringConfig {
   updateInterval: number;
@@ -461,7 +463,7 @@ export class RealTimeMonitor extends EventEmitter {
     this.visualFeedback.addIndicator({
       status,
       message: `${alert.type.toUpperCase()} ALERT: ${this.getAlertMessage(alert)}`,
-      details: JSON.stringify(alert.data),
+      details: this.stringifyAlertDetails(alert.data, 'mcp:real-time-monitor:alert-data'),
       category: 'alert'
     });
 
@@ -680,17 +682,65 @@ export class RealTimeMonitor extends EventEmitter {
     };
   }
 
+  private stringifyAlertDetails(
+    details: unknown,
+    context: string
+  ): string {
+    const builder = serialization.json(details).context(context).fallback('{}');
+    const outcome = builder.stringify();
+    emitSerializationWarnings(context, outcome);
+
+    if (!outcome.ok || outcome.status === 'fallback' || !outcome.value) {
+      return this.buildAlertFallback(context, outcome);
+    }
+
+    return outcome.value;
+  }
+
+  private buildAlertFallback(
+    context: string,
+    outcome: SerializationOutcome<string>
+  ): string {
+    const fallbackContext = `${context}:fallback`;
+    const fallbackPayload = {
+      message: 'serialization-fallback',
+      context,
+      warnings: [...outcome.meta.warnings],
+      maskedFields: [...outcome.meta.maskedFields]
+    };
+
+    const fallbackBuilder = serialization
+      .json(fallbackPayload)
+      .context(fallbackContext)
+      .fallback('"serialization-fallback"');
+
+    const fallbackOutcome = fallbackBuilder.stringify();
+    emitSerializationWarnings(fallbackContext, fallbackOutcome);
+
+    return fallbackOutcome.value ?? '"serialization-fallback"';
+  }
+
   /**
    * Cleanup monitoring resources
    */
   cleanup(): void {
     this.stopMonitoring();
     this.removeAllListeners();
-    
+
     this.performanceHistory = [];
     this.eventHistory = [];
     this.validationHistory = [];
     this.trendAnalysis.clear();
+
+    const disposable = this.visualFeedback as VisualFeedbackSystem & {
+      dispose?: () => void;
+    };
+
+    if (typeof disposable.dispose === 'function') {
+      disposable.dispose();
+    } else if (typeof this.visualFeedback.stopDashboard === 'function') {
+      this.visualFeedback.stopDashboard();
+    }
   }
 }
 

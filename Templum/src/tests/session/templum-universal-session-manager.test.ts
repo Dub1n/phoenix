@@ -1,0 +1,167 @@
+import { EventEmitter } from 'events';
+import { TemplumUniversalSessionManager } from '../../session/templum-universal-session-manager';
+import { ThemeUsageRecord } from '../../utils/service-utils';
+import {
+  InterfaceAdapter,
+  InterfaceType,
+  UniversalSkinDefinition,
+} from '../../types/templum-types';
+
+class FakeBackendServiceRouter extends EventEmitter {
+  readonly connections = new Map<string, unknown>();
+
+  async isServiceAvailable(): Promise<boolean> {
+    return false;
+  }
+
+  async loadBackendSkin(): Promise<UniversalSkinDefinition | null> {
+    return null;
+  }
+}
+
+class MinimalAdapter implements InterfaceAdapter {
+  constructor(private readonly type: InterfaceType) {}
+
+  getInterfaceType(): InterfaceType {
+    return this.type;
+  }
+
+  async applySkin(): Promise<void> {
+    // no-op for tests
+  }
+
+  async syncState(): Promise<void> {
+    // no-op for tests
+  }
+
+  async dispose(): Promise<void> {
+    // no-op for tests
+  }
+
+  getStatus() {
+    return { active: true };
+  }
+}
+
+describe('TemplumUniversalSessionManager', () => {
+  const managers: TemplumUniversalSessionManager[] = [];
+
+  const createManager = () => {
+    const manager = new TemplumUniversalSessionManager({}, undefined, new FakeBackendServiceRouter());
+    managers.push(manager);
+    return manager;
+  };
+
+  afterEach(async () => {
+    await Promise.all(managers.map(async (manager) => {
+      await manager.shutdown();
+    }));
+    managers.length = 0;
+  });
+
+  test('rejects interface adapters missing required hooks', async () => {
+    const manager = createManager();
+    await manager.initialize();
+
+    const brokenAdapter = {
+      getInterfaceType: () => 'cli' as InterfaceType,
+      async syncState() {
+        // no-op
+      },
+      async dispose() {
+        // no-op
+      },
+      getStatus() {
+        return { active: false };
+      },
+    } as Partial<InterfaceAdapter> as InterfaceAdapter;
+
+    await expect(manager.registerInterfaceAdapter('cli', brokenAdapter)).rejects.toMatchObject({
+      code: 'SESSION_ADAPTER_INVALID',
+      context: expect.objectContaining({ missingHooks: ['applySkin'] }),
+    });
+  });
+
+  test('accepts adapters that expose the expected hooks', async () => {
+    const manager = createManager();
+    await manager.initialize();
+
+    const adapter = new MinimalAdapter('cli');
+
+    await expect(manager.registerInterfaceAdapter('cli', adapter)).resolves.toBeUndefined();
+  });
+
+  test('emits interfaceStateSyncError when adapters return invalid preserved state', async () => {
+    const manager = createManager();
+    await manager.initialize();
+
+    const cliAdapter: InterfaceAdapter = {
+      getInterfaceType: () => 'cli',
+      async applySkin() {},
+      async syncState() {},
+      async dispose() {},
+      getStatus: () => ({ active: true }),
+      preserveState: async () => 'invalid-state' as any,
+    } as InterfaceAdapter;
+
+    const commandAdapter: InterfaceAdapter = {
+      getInterfaceType: () => 'command',
+      async applySkin() {},
+      async syncState() {},
+      async dispose() {},
+      getStatus: () => ({ active: true }),
+      restoreState: async () => {},
+    } as InterfaceAdapter;
+
+    await manager.registerInterfaceAdapter('cli', cliAdapter);
+    await manager.registerInterfaceAdapter('command', commandAdapter);
+
+    await manager.startSession('cli');
+
+    const errors: unknown[] = [];
+    manager.on('interfaceStateSyncError', (payload) => {
+      errors.push(payload);
+    });
+
+    const switched = await manager.switchInterface('command');
+
+    expect(switched).toBe(false);
+    expect(errors).not.toHaveLength(0);
+    const [firstError] = errors as Array<{ error?: { code?: string } }>;
+    expect(firstError?.error?.code).toBe('SESSION_STATE_INVALID');
+  });
+
+  test('records theme usage metrics using the shared summariser', async () => {
+    const manager = createManager();
+    await manager.initialize();
+
+    const records: ThemeUsageRecord[] = [
+      {
+        id: 'cli',
+        theme: 'default-light',
+        applied: true,
+        fallbackMode: 'unicode',
+        capabilities: { supportsColor: true, supportsUnicode: true },
+        overrides: [],
+      },
+      {
+        id: 'window',
+        theme: 'high-contrast',
+        applied: false,
+        fallbackMode: 'ascii',
+        capabilities: { supportsColor: false, supportsUnicode: false },
+        overrides: ['border'],
+      },
+    ];
+
+    records.forEach(record => manager.recordThemeUsage(record));
+
+    const metrics = manager.getSessionMetrics();
+    expect(metrics.theme.total).toBe(2);
+    expect(metrics.theme.applied).toBe(1);
+    expect(metrics.theme.fallbackModes.unicode).toBe(1);
+    expect(metrics.theme.fallbackModes.ascii).toBe(1);
+    expect(metrics.theme.overridesApplied).toBe(1);
+  });
+
+});

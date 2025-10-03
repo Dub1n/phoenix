@@ -68,6 +68,7 @@ export class IPCCoordinator extends EventEmitter {
   private processingQueue: boolean = false;
   private readonly maxQueueSize: number = 1000;
   private readonly processingIntervalMs: number = 10; // High-frequency processing for <50ms targets
+  private processingHandle?: NodeJS.Timeout;
 
   constructor() {
     super();
@@ -130,11 +131,20 @@ export class IPCCoordinator extends EventEmitter {
   }
 
   private startMessageProcessing(): void {
-    setInterval(() => {
+    this.stopMessageProcessing();
+    this.processingHandle = setInterval(() => {
       if (!this.processingQueue && this.messageQueue.size > 0) {
         this.processAllQueues();
       }
     }, this.processingIntervalMs);
+    this.processingHandle.unref?.();
+  }
+
+  private stopMessageProcessing(): void {
+    if (this.processingHandle) {
+      clearInterval(this.processingHandle);
+      this.processingHandle = undefined;
+    }
   }
 
   private async processAllQueues(): Promise<void> {
@@ -163,6 +173,12 @@ export class IPCCoordinator extends EventEmitter {
     if (messages.length === 0) {
       this.messageQueue.delete(queueKey);
     }
+  }
+
+  dispose(): void {
+    this.stopMessageProcessing();
+    this.removeAllListeners();
+    this.messageQueue.clear();
   }
 }
 
@@ -521,10 +537,19 @@ export class StatePersistence {
   }
 
   private startSnapshotTimer(): void {
+    this.stopSnapshotTimer();
     this.snapshotTimer = setInterval(() => {
       // Periodic cleanup and optimization
       this.manageMemoryUsage();
     }, this.persistenceConfig.snapshotIntervalMs);
+    this.snapshotTimer.unref?.();
+  }
+
+  private stopSnapshotTimer(): void {
+    if (this.snapshotTimer) {
+      clearInterval(this.snapshotTimer);
+      this.snapshotTimer = undefined;
+    }
   }
 
   private emitMetrics(operation: string, duration: number, operationCount: number): void {
@@ -548,6 +573,11 @@ export class StatePersistence {
       hitRatio: 0.95 // Would track actual hit ratio
     };
   }
+
+  dispose(): void {
+    this.stopSnapshotTimer();
+    this.memoryCache.clear();
+  }
 }
 
 /**
@@ -564,6 +594,7 @@ export class CrossInterfaceSync {
   
   private syncQueue: Map<string, any[]> = new Map();
   private readonly syncIntervalMs = 50; // High-frequency sync for responsive interfaces
+  private syncIntervalHandle?: NodeJS.Timeout;
 
   constructor() {
     this.startSyncProcessor();
@@ -648,9 +679,18 @@ export class CrossInterfaceSync {
   }
 
   private startSyncProcessor(): void {
-    setInterval(() => {
+    this.stopSyncProcessor();
+    this.syncIntervalHandle = setInterval(() => {
       this.processSyncQueue();
     }, this.syncIntervalMs);
+    this.syncIntervalHandle.unref?.();
+  }
+
+  private stopSyncProcessor(): void {
+    if (this.syncIntervalHandle) {
+      clearInterval(this.syncIntervalHandle);
+      this.syncIntervalHandle = undefined;
+    }
   }
 
   private async processSyncQueue(): Promise<void> {
@@ -700,6 +740,12 @@ export class CrossInterfaceSync {
       queueSizes
     };
   }
+
+  dispose(): void {
+    this.stopSyncProcessor();
+    this.interfaceRegistry.clear();
+    this.syncQueue.clear();
+  }
 }
 
 /**
@@ -721,6 +767,7 @@ export class EnhancedStateManager extends EventEmitter {
   };
   
   private readonly performanceThreshold = 30; // 30% degradation threshold from Phase 1
+  private cleanupTasks: Array<() => void> = [];
 
   constructor(config: {
     coalescingConfig?: Partial<StateCoalescingConfig>;
@@ -959,20 +1006,24 @@ export class EnhancedStateManager extends EventEmitter {
 
   private setupEventHandlers(): void {
     // Listen for performance metrics from components
-    process.on('state-sync:metrics', (metrics: any) => {
+    const metricsHandler = (metrics: any) => {
       this.updatePerformanceMetrics(metrics.operation, metrics.duration);
-    });
+    };
+    process.on('state-sync:metrics', metricsHandler);
+    this.registerCleanup(() => process.off('state-sync:metrics', metricsHandler));
 
     // Listen for errors from components
-    process.on('state-sync:error', (error: any) => {
+    const errorHandler = (error: any) => {
       this.performanceMetrics.errorCount++;
       this.emit('error', error);
-    });
+    };
+    process.on('state-sync:error', errorHandler);
+    this.registerCleanup(() => process.off('state-sync:error', errorHandler));
   }
 
   private setupPerformanceMonitoring(): void {
     // Performance monitoring integration for 30% degradation threshold
-    setInterval(() => {
+    const handle = setInterval(() => {
       const currentPerformance = this.calculateCurrentPerformance();
       
       if (currentPerformance.degradationPercentage > this.performanceThreshold) {
@@ -983,6 +1034,8 @@ export class EnhancedStateManager extends EventEmitter {
         });
       }
     }, 5000); // Check every 5 seconds
+    handle.unref?.();
+    this.registerCleanup(() => clearInterval(handle));
   }
 
   private setupComponentTransferIntegration(): void {
@@ -1068,11 +1121,30 @@ export class EnhancedStateManager extends EventEmitter {
    */
   async shutdown(): Promise<void> {
     this.emit('shutting-down', { timestamp: Date.now() });
+    this.cleanupResources();
     
     // Clean up timers and resources
     this.removeAllListeners();
     
     this.emit('shutdown-complete', { timestamp: Date.now() });
+  }
+
+  private registerCleanup(task: () => void): void {
+    this.cleanupTasks.push(task);
+  }
+
+  private cleanupResources(): void {
+    while (this.cleanupTasks.length) {
+      const task = this.cleanupTasks.pop();
+      try {
+        task?.();
+      } catch (error) {
+        console.error('EnhancedStateManager: cleanup task failed', error);
+      }
+    }
+    this.ipcCoordinator.dispose();
+    this.statePersistence.dispose();
+    this.crossInterfaceSync.dispose();
   }
 }
 

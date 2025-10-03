@@ -13,6 +13,7 @@
 
 import { EventEmitter } from 'events';
 import { UniversalLayoutEngine, UniversalSkinMenuDefinition, InterfaceType } from './universal-layout-engine';
+import { buildSkinMenuFromUniversalDefinition, coerceUniversalMenuDefinition } from './menu-definition-adapter';
 import { UniversalMenuRegistry } from '../menus/universal-menu-registry';
 import { SessionContextFoundation, SessionContext } from '../session/session-context-foundation';
 
@@ -478,70 +479,15 @@ export class UniversalSkinRenderer extends EventEmitter {
   }
 
   private adaptMenuForInterface(
-    menu: any,
+    menu: unknown,
     interfaceType: InterfaceType
   ): UniversalSkinMenuDefinition {
-    const baseDefinition: UniversalSkinMenuDefinition = {
-      title: menu.title,
-      subtitle: menu.subtitle,
-      items: this.convertMenuSectionsToItems(menu.sections || []),
-      interfaces: [interfaceType]
-    };
+    const universalMenu = coerceUniversalMenuDefinition(menu, {
+      fallbackId: `${interfaceType}-menu`,
+      fallbackTitle: 'Templum Menu'
+    });
 
-    // Add interface-specific adaptations
-    switch (interfaceType) {
-      case 'vscode':
-        baseDefinition.interfaceConfig = {
-          vscode: {
-            treeViewProvider: true,
-            webViewPanel: true,
-            commandPalette: true,
-            statusBar: true
-          }
-        };
-        break;
-
-      case 'cli':
-        baseDefinition.interfaceConfig = {
-          cli: {
-            interactive: true,
-            colorEnabled: true,
-            keyboardShortcuts: true,
-            clearScreen: true
-          }
-        };
-        break;
-
-      case 'command':
-        baseDefinition.interfaceConfig = {
-          command: {
-            directExecution: true,
-            outputFormat: 'text',
-            verbosityLevel: 'normal'
-          }
-        };
-        break;
-    }
-
-    return baseDefinition;
-  }
-
-  private convertMenuSectionsToItems(sections: any[]): any[] {
-    const items: any[] = [];
-    
-    for (const section of sections) {
-      for (const item of section.items || []) {
-        items.push({
-          id: item.id,
-          label: item.label,
-          description: item.description,
-          type: item.action?.type || 'command',
-          command: item.action?.target
-        });
-      }
-    }
-    
-    return items;
+    return buildSkinMenuFromUniversalDefinition(universalMenu, interfaceType);
   }
 
   private convertLegacyToUniversal(

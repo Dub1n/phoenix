@@ -12,14 +12,15 @@ tags: [navigation, skin-definition, dynamic-routing, performance, cli-redesign]
 ---
 */
 
-import { 
-  UniversalSkinDefinition, 
-  MenuDefinition, 
-  MenuItemDefinition, 
-  SkinCommands, 
+import {
+  UniversalSkinDefinition,
+  MenuDefinition,
+  MenuItemDefinition,
+  SkinCommands,
   CommandDefinition,
-  NavigationDefinition 
+  NavigationDefinition,
 } from '../types/universal-skin-definition';
+import { TypeGuards, TypeValidators } from '../utils/type-guards';
 
 /**
  * TODO: [TASK-MCP-009-001] Pattern: skin-navigation-parsing | Complexity: 8 | Dependencies: skin-definition,performance-optimization
@@ -354,23 +355,32 @@ export class SkinNavigationParser {
     graph: NavigationGraph, 
     parentPath: string[]
   ): void {
+    if (!TypeGuards.isPlainObject(menus)) {
+      return;
+    }
+
     // Handle main menu
-    if (menus.main) {
-      this.parseMenu(menus.main, graph, parentPath, 'main');
+    const mainMenu = this.coerceMenuDefinition(menus.main);
+    if (mainMenu) {
+      this.parseMenu(mainMenu, graph, parentPath, 'main');
     }
 
     // Handle submenus
-    if (menus.submenus) {
-      for (const [menuId, menuDef] of Object.entries(menus.submenus)) {
-        this.parseMenu(menuDef as MenuDefinition, graph, [...parentPath, menuId], menuId);
+    if (menus.submenus && TypeGuards.isPlainObject(menus.submenus)) {
+      for (const [menuId, menuDef] of Object.entries(menus.submenus as Record<string, unknown>)) {
+        const submenu = this.coerceMenuDefinition(menuDef);
+        if (submenu) {
+          this.parseMenu(submenu, graph, [...parentPath, menuId], menuId);
+        }
       }
     }
 
     // Handle legacy object-style menus
     for (const [key, value] of Object.entries(menus)) {
       if (key !== 'main' && key !== 'submenus' && key !== 'contexts') {
-        if (this.isMenuDefinition(value)) {
-          this.parseMenu(value as MenuDefinition, graph, [...parentPath, key], key);
+        const menuDef = this.coerceMenuDefinition(value);
+        if (menuDef) {
+          this.parseMenu(menuDef, graph, [...parentPath, key], key);
         }
       }
     }
@@ -385,6 +395,10 @@ export class SkinNavigationParser {
     parentPath: string[], 
     menuId: string
   ): void {
+    if (!TypeGuards.isPlainObject(menu)) {
+      return;
+    }
+
     const menuPath = [...parentPath, menuId];
     
     // Create route for the menu itself
@@ -399,8 +413,11 @@ export class SkinNavigationParser {
     graph.routes.set(menuRoute.id, menuRoute);
 
     // Parse menu items
-    if (menu.items) {
-      menu.items.forEach((item, index) => {
+    if (
+      menu.items &&
+      TypeValidators.isArrayOf(menu.items, (item): item is MenuItemDefinition => TypeGuards.isPlainObject(item))
+    ) {
+      (menu.items as MenuItemDefinition[]).forEach((item, index) => {
         this.parseMenuItem(item, graph, menuPath, index);
       });
     }
@@ -415,13 +432,15 @@ export class SkinNavigationParser {
    * Parse navigation definition for menu
    */
   private parseNavigationDefinition(navigation: any, graph: NavigationGraph, menuPath: string[]): void {
-    if (!navigation || typeof navigation !== 'object') return;
+    if (!TypeGuards.isPlainObject(navigation)) return;
 
     // Handle navigation shortcuts
     if (navigation.shortcuts) {
       Object.entries(navigation.shortcuts).forEach(([key, target]: [string, any]) => {
-        const targetId = typeof target === 'string' ? target : target.id || target.command;
-        graph.shortcuts.set(key, targetId);
+        const targetId = this.resolveTargetId(target);
+        if (targetId) {
+          graph.shortcuts.set(key, targetId);
+        }
       });
     }
 
@@ -429,9 +448,38 @@ export class SkinNavigationParser {
     if (navigation.optimizedPaths) {
       Object.entries(navigation.optimizedPaths).forEach(([pathKey, pathValue]: [string, any]) => {
         const optimizedPathId = `path:${menuPath.join(':')}:${pathKey}`;
-        graph.optimizedPaths.set(optimizedPathId, Array.isArray(pathValue) ? pathValue : [pathValue]);
+        const coercedPath = TypeValidators.isArrayOf(pathValue, (entry): entry is string => TypeGuards.isString(entry))
+          ? (pathValue as string[])
+          : TypeGuards.isString(pathValue)
+            ? [pathValue]
+            : [];
+
+        if (coercedPath.length > 0) {
+          graph.optimizedPaths.set(optimizedPathId, coercedPath);
+        }
       });
     }
+  }
+
+  private resolveTargetId(target: unknown): string | null {
+    if (TypeGuards.isNonEmptyString(target)) {
+      return target;
+    }
+
+    if (TypeGuards.isPlainObject(target)) {
+      const candidate = target as Record<string, unknown>;
+      const idValue = candidate['id'];
+      if (TypeGuards.isNonEmptyString(idValue)) {
+        return idValue;
+      }
+
+      const commandValue = candidate['command'];
+      if (TypeGuards.isNonEmptyString(commandValue)) {
+        return commandValue;
+      }
+    }
+
+    return null;
   }
 
   /**
@@ -443,6 +491,10 @@ export class SkinNavigationParser {
     parentPath: string[], 
     index: number
   ): void {
+    if (!TypeGuards.isPlainObject(item)) {
+      return;
+    }
+
     const itemId = item.id || `item-${index}`;
     const itemPath = [...parentPath, itemId];
 
@@ -471,13 +523,13 @@ export class SkinNavigationParser {
 
     // Parse submenu if present
     if (item.submenu) {
-      if (typeof item.submenu === 'string') {
+      if (TypeGuards.isNonEmptyString(item.submenu)) {
         // Reference to another menu
         route.dependencies = route.dependencies || [];
         route.dependencies.push(item.submenu);
-      } else if (Array.isArray(item.submenu)) {
+      } else if (TypeValidators.isArrayOf(item.submenu, (entry): entry is MenuItemDefinition => TypeGuards.isPlainObject(entry))) {
         // Inline submenu items
-        item.submenu.forEach((subItem, subIndex) => {
+        (item.submenu as MenuItemDefinition[]).forEach((subItem, subIndex) => {
           this.parseMenuItem(subItem, graph, itemPath, subIndex);
         });
       }
@@ -515,7 +567,7 @@ export class SkinNavigationParser {
       if (key !== 'primary' && key !== 'aliases' && key !== 'help' && key !== 'completions') {
         if (this.isCommandDefinition(value)) {
           this.parseCommand(value as CommandDefinition, graph, ['commands', key], 0);
-        } else if (Array.isArray(value) && value.every(item => this.isCommandDefinition(item))) {
+        } else if (TypeValidators.isArrayOf(value, (entry): entry is CommandDefinition => this.isCommandDefinition(entry))) {
           (value as CommandDefinition[]).forEach((cmd, index) => {
             this.parseCommand(cmd, graph, ['commands', key], index);
           });
@@ -716,16 +768,43 @@ export class SkinNavigationParser {
   }
 
   // Helper methods for type checking and calculations
-  private isMenuDefinition(value: any): boolean {
-    return value && typeof value === 'object' && (value.title || value.items);
+  private isMenuDefinition(value: unknown): value is MenuDefinition {
+    if (!TypeGuards.isPlainObject(value)) {
+      return false;
+    }
+
+    const candidate = value as Record<string, unknown>;
+    return (
+      TypeGuards.isNonEmptyString(candidate.title) ||
+      TypeValidators.isArrayOf(candidate.items, (item): item is MenuItemDefinition => TypeGuards.isPlainObject(item))
+    );
   }
 
-  private isCommandDefinition(value: any): boolean {
-    return value && typeof value === 'object' && (value.title || value.command || value.handler);
+  private coerceMenuDefinition(value: unknown): MenuDefinition | null {
+    return this.isMenuDefinition(value) ? (value as MenuDefinition) : null;
   }
 
-  private isWorkflowDefinition(value: any): boolean {
-    return value && typeof value === 'object' && (value.title || value.steps);
+  private isCommandDefinition(value: unknown): value is CommandDefinition {
+    if (!TypeGuards.isPlainObject(value)) {
+      return false;
+    }
+
+    const candidate = value as Record<string, unknown>;
+    return (
+      TypeGuards.isNonEmptyString(candidate.title) ||
+      TypeGuards.isNonEmptyString(candidate.command) ||
+      TypeGuards.isFunction(candidate.handler)
+    );
+  }
+
+  private isWorkflowDefinition(value: unknown): boolean {
+    if (!TypeGuards.isPlainObject(value)) {
+      return false;
+    }
+
+    const candidate = value as Record<string, unknown>;
+    return TypeGuards.isNonEmptyString(candidate.title) ||
+      TypeValidators.isArrayOf(candidate.steps, (step): step is Record<string, unknown> => TypeGuards.isPlainObject(step));
   }
 
   private calculateMenuWeight(menu: MenuDefinition): number {
@@ -790,7 +869,7 @@ export class SkinNavigationParser {
   private extractDependencies(item: MenuItemDefinition): string[] | undefined {
     const deps: string[] = [];
     
-    if (typeof item.submenu === 'string') {
+    if (TypeGuards.isNonEmptyString(item.submenu)) {
       deps.push(item.submenu);
     }
     

@@ -26,13 +26,14 @@ import {
   createTemplumError,
   ErrorSignalPayload
 } from '../types/templum-types';
+import { SemanticValidators, TypeAssertions, TypeGuards } from '../utils/type-guards';
 
 // Import real component implementations
 import { UniversalSkinEngine } from '../skin/universal-skin-engine';
 import { EnhancedStateManager } from '../state/enhanced-state-synchronization';
 import { PCLBackendIntegrator } from '../backend/pcl-backend-integration';
 import { TemplumBackendServiceRouter } from '../backend/backend-service-router';
-import { TemplumResourceManager } from './templum-resource-manager';
+import { ServiceHealth, TemplumResourceManager } from './templum-resource-manager';
 import { ObservabilityAdapter } from '../observability/observability-adapter';
 
 /**
@@ -48,13 +49,16 @@ export class SkinEngineAdapter implements ISkinEngine {
   async initialize(config?: any): Promise<void> {
     try {
       // Initialize Universal Skin Engine with configuration if method exists
-      if ('initialize' in this.skinEngine && typeof this.skinEngine.initialize === 'function') {
-        await this.skinEngine.initialize(config);
+      if (SemanticValidators.hasFunction(this.skinEngine, 'initialize', { required: false })) {
+        await (this.skinEngine as unknown as { initialize(config?: any): Promise<void> }).initialize(config);
       }
       
       // Set up skin engine performance monitoring if available
-      if (config?.performanceMetrics && 'enablePerformanceMonitoring' in this.skinEngine) {
-        (this.skinEngine as any).enablePerformanceMonitoring?.(true);
+      if (
+        config?.performanceMetrics &&
+        SemanticValidators.hasFunction(this.skinEngine, 'enablePerformanceMonitoring', { required: false })
+      ) {
+        (this.skinEngine as unknown as { enablePerformanceMonitoring?(enabled: boolean): void }).enablePerformanceMonitoring?.(true);
       }
       
       console.log('SkinEngineAdapter: Initialized with config', {
@@ -113,13 +117,13 @@ export class SkinEngineAdapter implements ISkinEngine {
   async dispose(): Promise<void> {
     try {
       // Clear any cached skin definitions if method exists
-      if ('clearCache' in this.skinEngine && typeof (this.skinEngine as any).clearCache === 'function') {
-        await (this.skinEngine as any).clearCache();
+      if (SemanticValidators.hasFunction(this.skinEngine, 'clearCache', { required: false })) {
+        await (this.skinEngine as unknown as { clearCache(): Promise<void> }).clearCache();
       }
-      
+
       // Dispose of skin engine resources if method exists
-      if ('dispose' in this.skinEngine && typeof (this.skinEngine as any).dispose === 'function') {
-        await (this.skinEngine as any).dispose();
+      if (SemanticValidators.hasFunction(this.skinEngine, 'dispose', { required: false })) {
+        await (this.skinEngine as unknown as { dispose(): Promise<void> }).dispose();
       }
       
       console.log('SkinEngineAdapter: Disposed with resource cleanup');
@@ -151,15 +155,17 @@ export class StateManagerAdapter implements IStateManager {
       }
       
       // Use enhanced state manager's IPC-based synchronization if available
-      if ('synchronizeState' in this.stateManager && typeof (this.stateManager as any).synchronizeState === 'function') {
-        await (this.stateManager as any).synchronizeState(stateUpdate, { 
-          targetInterface: interfaceType, 
+      if (SemanticValidators.hasFunction(this.stateManager, 'synchronizeState', { required: false })) {
+        await (this.stateManager as unknown as {
+          synchronizeState(interfaceType: any, update: any, metadata: any): Promise<void>;
+        }).synchronizeState(interfaceType, stateUpdate, {
+          targetInterface: interfaceType,
           source,
-          timestamp: Date.now() 
+          timestamp: Date.now()
         });
-      } else if ('sendMessage' in this.stateManager && typeof (this.stateManager as any).sendMessage === 'function') {
+      } else if (SemanticValidators.hasFunction(this.stateManager, 'sendMessage', { required: false })) {
         // Fallback to message-based sync
-        await (this.stateManager as any).sendMessage({
+        await (this.stateManager as unknown as { sendMessage(payload: unknown): Promise<void> }).sendMessage({
           type: 'state-sync',
           target: interfaceType,
           data: stateUpdate,
@@ -181,7 +187,7 @@ export class StateManagerAdapter implements IStateManager {
   async sendMessage(message: any): Promise<void> {
     try {
       // Validate message structure
-      if (!message || typeof message !== 'object') {
+      if (!TypeGuards.isPlainObject(message)) {
         throw createTemplumError('Invalid message format', 'INVALID_MESSAGE', 'validation');
       }
       
@@ -194,8 +200,8 @@ export class StateManagerAdapter implements IStateManager {
       };
       
       // Use enhanced state manager's IPC message sending if available
-      if ('sendMessage' in this.stateManager && typeof (this.stateManager as any).sendMessage === 'function') {
-        await (this.stateManager as any).sendMessage(enrichedMessage);
+      if (SemanticValidators.hasFunction(this.stateManager, 'sendMessage', { required: false })) {
+        await (this.stateManager as unknown as { sendMessage(payload: unknown): Promise<void> }).sendMessage(enrichedMessage);
       } else {
         console.warn('StateManagerAdapter: sendMessage not available on state manager, message queued');
       }
@@ -214,10 +220,13 @@ export class StateManagerAdapter implements IStateManager {
   getCurrentState(): any {
     try {
       // Use enhanced state manager's state retrieval if available
-      if ('getCurrentState' in this.stateManager && typeof (this.stateManager as any).getCurrentState === 'function') {
-        const currentState = (this.stateManager as any).getCurrentState();
+      if (SemanticValidators.hasFunction(this.stateManager, 'getCurrentState', { required: false })) {
+        const currentState = (this.stateManager as unknown as { getCurrentState(): unknown }).getCurrentState();
+        const enrichedState = TypeGuards.isPlainObject(currentState)
+          ? currentState
+          : { state: currentState };
         return {
-          ...currentState,
+          ...enrichedState,
           adapter: 'StateManagerAdapter',
           lastAccessed: Date.now()
         };
@@ -250,12 +259,43 @@ export class StateManagerAdapter implements IStateManager {
 
 export class BackendRouterAdapter implements IBackendRouter {
   private backendRouter: PCLBackendIntegrator;
+  private wiringContext: { stateManager?: IStateManager } = {};
+  private dependenciesSnapshot: Record<string, unknown> = {};
 
   constructor(backendRouter: PCLBackendIntegrator) {
     this.backendRouter = backendRouter;
   }
 
-  initialize(_dependencies: any): void {
+  initialize(dependencies: any): void {
+    if (TypeGuards.isObject(dependencies)) {
+      const maybeStateManager = (dependencies as { stateManager?: IStateManager }).stateManager;
+
+      if (maybeStateManager) {
+        this.wiringContext.stateManager = maybeStateManager;
+        this.dependenciesSnapshot = {
+          ...this.dependenciesSnapshot,
+          stateManager: maybeStateManager,
+        };
+
+        (this as any).stateManager = maybeStateManager;
+        (this as any).dependencies = {
+          ...(this as any).dependencies ?? {},
+          stateManager: maybeStateManager,
+        };
+
+        const routerWithDeps = this.backendRouter as any;
+        routerWithDeps.stateManager = maybeStateManager;
+        routerWithDeps.dependencies = {
+          ...(routerWithDeps.dependencies ?? {}),
+          stateManager: maybeStateManager,
+        };
+      }
+    }
+
+    if (SemanticValidators.hasFunction(this.backendRouter, 'initialize', { required: false })) {
+      (this.backendRouter as { initialize?(deps: unknown): void }).initialize?.(dependencies);
+    }
+
     // PCL Backend Integrator initialized with dependencies in constructor
     console.log('BackendRouterAdapter: Initialized with dependencies');
   }
@@ -279,8 +319,10 @@ export class BackendRouterAdapter implements IBackendRouter {
       
       // Execute command through PCL Backend Integrator if available
       let result;
-      if ('executeCommand' in this.backendRouter && typeof (this.backendRouter as any).executeCommand === 'function') {
-        result = await (this.backendRouter as any).executeCommand(command, args, enhancedContext);
+      if (SemanticValidators.hasFunction(this.backendRouter, 'executeCommand', { required: false })) {
+        result = await (this.backendRouter as unknown as {
+          executeCommand(command: string, args?: any[], context?: any): Promise<any>;
+        }).executeCommand(command, args, enhancedContext);
       } else {
         // Fallback for when PCL Backend Integrator doesn't have executeCommand
         console.warn('BackendRouterAdapter: PCL Backend Integrator executeCommand not available, using fallback');
@@ -320,20 +362,23 @@ export class BackendRouterAdapter implements IBackendRouter {
       };
       
       // Get status from PCL Backend Integrator if available
-      if ('getStatus' in this.backendRouter && typeof (this.backendRouter as any).getStatus === 'function') {
-        coreStatus = {
-          ...coreStatus,
-          ...(this.backendRouter as any).getStatus()
-        };
+      if (SemanticValidators.hasFunction(this.backendRouter, 'getStatus', { required: false })) {
+        const externalStatus = (this.backendRouter as unknown as { getStatus(): unknown }).getStatus();
+        if (TypeGuards.isPlainObject(externalStatus)) {
+          coreStatus = {
+            ...coreStatus,
+            ...externalStatus
+          };
+        }
       }
       
       return {
         ...coreStatus,
         adapter: 'BackendRouterAdapter',
         capabilities: {
-          executeCommand: 'executeCommand' in this.backendRouter,
-          getStatus: 'getStatus' in this.backendRouter,
-          shutdown: 'shutdown' in this.backendRouter
+          executeCommand: SemanticValidators.hasFunction(this.backendRouter, 'executeCommand', { required: false }),
+          getStatus: SemanticValidators.hasFunction(this.backendRouter, 'getStatus', { required: false }),
+          shutdown: SemanticValidators.hasFunction(this.backendRouter, 'shutdown', { required: false }),
         },
         initialized: true,
         timestamp: Date.now()
@@ -388,18 +433,18 @@ export class BackendServiceRouterAdapter implements IBackendServiceRouter {
       const cleanupTasks: Promise<void>[] = [];
       
       // Clean up active connections if method exists
-      if ('cleanup' in this.backendServiceRouter && typeof (this.backendServiceRouter as any).cleanup === 'function') {
-        cleanupTasks.push((this.backendServiceRouter as any).cleanup());
+      if (SemanticValidators.hasFunction(this.backendServiceRouter, 'cleanup', { required: false })) {
+        cleanupTasks.push((this.backendServiceRouter as unknown as { cleanup(): Promise<void> }).cleanup());
       }
       
       // Close any pending service connections if method exists
-      if ('disconnectAll' in this.backendServiceRouter && typeof (this.backendServiceRouter as any).disconnectAll === 'function') {
-        cleanupTasks.push((this.backendServiceRouter as any).disconnectAll());
+      if (SemanticValidators.hasFunction(this.backendServiceRouter, 'disconnectAll', { required: false })) {
+        cleanupTasks.push((this.backendServiceRouter as unknown as { disconnectAll(): Promise<void> }).disconnectAll());
       }
       
       // Clear connection caches if method exists
-      if ('clearCache' in this.backendServiceRouter && typeof (this.backendServiceRouter as any).clearCache === 'function') {
-        cleanupTasks.push((this.backendServiceRouter as any).clearCache());
+      if (SemanticValidators.hasFunction(this.backendServiceRouter, 'clearCache', { required: false })) {
+        cleanupTasks.push((this.backendServiceRouter as unknown as { clearCache(): Promise<void> }).clearCache());
       }
       
       // Execute all cleanup tasks
@@ -419,6 +464,7 @@ export class BackendServiceRouterAdapter implements IBackendServiceRouter {
 
 export class ResourceManagerAdapter implements IResourceManager {
   private resourceManager: TemplumResourceManager;
+  private registeredServices = new Map<string, ServiceHealth & { id?: string }>();
 
   constructor(resourceManager: TemplumResourceManager) {
     this.resourceManager = resourceManager;
@@ -446,14 +492,48 @@ export class ResourceManagerAdapter implements IResourceManager {
 
   async registerService(serviceId: string, type: any, metadata?: Record<string, any>): Promise<void> {
     await this.resourceManager.registerService(serviceId, type, metadata);
+
+    const health = this.resourceManager.getServiceHealthById?.(serviceId);
+    if (health) {
+      this.registeredServices.set(serviceId, { ...health, id: (health as any).id ?? health.serviceId });
+    } else {
+      this.registeredServices.set(serviceId, {
+        serviceId,
+        id: serviceId,
+        type,
+        status: 'healthy',
+        lastCheck: Date.now(),
+        responseTime: 0,
+        errorRate: 0,
+        resourceUsage: {},
+        metadata: metadata ?? {},
+      });
+    }
   }
 
   async updateServiceHealth(serviceId: string, status: any, responseTime?: number, errorRate?: number): Promise<void> {
     await this.resourceManager.updateServiceHealth(serviceId, status, responseTime, errorRate);
+
+    const health = this.resourceManager.getServiceHealthById?.(serviceId);
+    if (health) {
+      this.registeredServices.set(serviceId, { ...health, id: (health as any).id ?? health.serviceId });
+    }
   }
 
   getServiceHealth(): any[] {
-    return this.resourceManager.getServiceHealth();
+    const merged = new Map<string, ServiceHealth & { id?: string }>();
+
+    for (const entry of this.resourceManager.getServiceHealth()) {
+      merged.set(entry.serviceId, { ...entry, id: (entry as any).id ?? entry.serviceId });
+    }
+
+    for (const [serviceId, health] of this.registeredServices) {
+      if (!merged.has(serviceId)) {
+        merged.set(serviceId, health);
+      }
+    }
+
+    return Array.from(merged.values());
   }
 
   getStatus(): any {
@@ -663,7 +743,7 @@ export class TemplumAdapterRegistry extends EventEmitter {
         return status;
       }
 
-      if (typeof component !== 'object') {
+      if (!TypeGuards.isObject(component)) {
         status.valid = false;
         status.issues.push(`Component ${name} is not an object`);
         return status;
@@ -684,7 +764,7 @@ export class TemplumAdapterRegistry extends EventEmitter {
       const missingMethods: string[] = [];
 
       for (const method of requiredMethods) {
-        if (typeof component[method] === 'function') {
+        if (SemanticValidators.hasFunction(component, method, { required: false })) {
           availableMethods.push(method);
         } else {
           missingMethods.push(method);
@@ -1076,38 +1156,92 @@ export class TemplumAdapterRegistry extends EventEmitter {
     return this.validationReport;
   }
 
+  private assertPlainObject(candidate: unknown, fieldName: string): asserts candidate is Record<string, unknown> {
+    if (!TypeGuards.isPlainObject(candidate)) {
+      throw createTemplumError(`${fieldName} must be a plain object`, 'VALIDATION_ERROR', 'validation', { fieldName });
+    }
+  }
+
+  private sanitizeNumericOption(
+    target: Record<string, unknown>,
+    key: string,
+    options: { fieldName: string; min?: number; max?: number },
+  ): void {
+    if (!(key in target)) {
+      return;
+    }
+
+    const value = target[key];
+
+    try {
+      TypeAssertions.assertWithConfidence(
+        value,
+        (candidate): candidate is number => TypeGuards.isNumber(candidate),
+        `${options.fieldName} must be a number`,
+      );
+
+      const numericValue = value as number;
+
+      if ((options.min !== undefined && numericValue < options.min) || (options.max !== undefined && numericValue > options.max)) {
+        throw createTemplumError(
+          `${options.fieldName} must be between ${options.min ?? '-∞'} and ${options.max ?? '+∞'}`,
+          'NUMERIC_RANGE_VALIDATION_ERROR',
+          'validation',
+          { fieldName: options.fieldName, value: numericValue, min: options.min, max: options.max },
+        );
+      }
+    } catch (error) {
+      if (value !== undefined) {
+        console.warn(`Invalid ${options.fieldName}, removing from configuration`, { value, bounds: options });
+      }
+      delete target[key];
+    }
+  }
+
   /**
    * Configuration validation helper methods (public for factory access)
    */
-  public validateStateManagerConfig(config?: any): any {
-    if (!config || typeof config !== 'object') {
+  public validateStateManagerConfig(config?: any): Record<string, unknown> {
+    if (config === undefined) {
       return {};
     }
 
-    const validated = { ...config };
+    this.assertPlainObject(config, 'State manager config');
 
-    // Validate specific state manager configuration options
-    if (validated.coalescingWindowMs !== undefined && typeof validated.coalescingWindowMs !== 'number') {
-      console.warn('Invalid coalescingWindowMs, using default');
-      delete validated.coalescingWindowMs;
-    }
+    const validated = { ...(config as Record<string, unknown>) };
 
-    if (validated.maxBatchSize !== undefined && (typeof validated.maxBatchSize !== 'number' || validated.maxBatchSize < 1)) {
-      console.warn('Invalid maxBatchSize, using default');
-      delete validated.maxBatchSize;
-    }
+    this.sanitizeNumericOption(validated, 'coalescingWindowMs', { fieldName: 'stateManager.coalescingWindowMs', min: 0 });
+    this.sanitizeNumericOption(validated, 'maxBatchSize', { fieldName: 'stateManager.maxBatchSize', min: 1 });
 
     return validated;
   }
 
-  public validateNumericRange(value: any, min: number, max: number, defaultValue: number, fieldName: string): number {
-    if (typeof value !== 'number' || isNaN(value) || value < min || value > max) {
+  public validateNumericRange(value: unknown, min: number, max: number, defaultValue: number, fieldName: string): number {
+    try {
+      TypeAssertions.assertWithConfidence(
+        value,
+        (candidate): candidate is number => TypeGuards.isNumber(candidate),
+        `${fieldName} must be a number`,
+      );
+
+      const numericValue = value as number;
+
+      if (Number.isNaN(numericValue) || numericValue < min || numericValue > max) {
+        throw createTemplumError(
+          `${fieldName} must be between ${min} and ${max}`,
+          'NUMERIC_RANGE_VALIDATION_ERROR',
+          'validation',
+          { fieldName, value: numericValue, min, max },
+        );
+      }
+
+      return numericValue;
+    } catch (_error) {
       if (value !== undefined) {
         console.warn(`Invalid ${fieldName} (${value}), must be between ${min} and ${max}. Using default: ${defaultValue}`);
       }
       return defaultValue;
     }
-    return value;
   }
 
   public validateEnumValue<T>(value: any, allowedValues: T[], defaultValue: T, fieldName: string): T {
@@ -1120,46 +1254,32 @@ export class TemplumAdapterRegistry extends EventEmitter {
     return value;
   }
 
-  public validateResourceManagerConfig(config?: any): any {
-    if (!config || typeof config !== 'object') {
+  public validateResourceManagerConfig(config?: any): Record<string, unknown> {
+    if (config === undefined) {
       return {};
     }
 
-    const validated = { ...config };
+    this.assertPlainObject(config, 'Resource manager config');
 
-    // Validate memory limits
-    if (validated.memoryLimitMB !== undefined && (typeof validated.memoryLimitMB !== 'number' || validated.memoryLimitMB < 64)) {
-      console.warn('Invalid memoryLimitMB, using default');
-      delete validated.memoryLimitMB;
-    }
+    const validated = { ...(config as Record<string, unknown>) };
 
-    // Validate CPU limits
-    if (validated.cpuLimitPercent !== undefined && (typeof validated.cpuLimitPercent !== 'number' || validated.cpuLimitPercent < 1 || validated.cpuLimitPercent > 100)) {
-      console.warn('Invalid cpuLimitPercent, using default');
-      delete validated.cpuLimitPercent;
-    }
+    this.sanitizeNumericOption(validated, 'memoryLimitMB', { fieldName: 'resourceManager.memoryLimitMB', min: 64 });
+    this.sanitizeNumericOption(validated, 'cpuLimitPercent', { fieldName: 'resourceManager.cpuLimitPercent', min: 1, max: 100 });
 
     return validated;
   }
 
-  public validateBackendRouterConfig(config?: any): any {
-    if (!config || typeof config !== 'object') {
+  public validateBackendRouterConfig(config?: any): Record<string, unknown> {
+    if (config === undefined) {
       return {};
     }
 
-    const validated = { ...config };
+    this.assertPlainObject(config, 'Backend router config');
 
-    // Validate timeout values
-    if (validated.timeoutMs !== undefined && (typeof validated.timeoutMs !== 'number' || validated.timeoutMs < 1000)) {
-      console.warn('Invalid timeoutMs, using default');
-      delete validated.timeoutMs;
-    }
+    const validated = { ...(config as Record<string, unknown>) };
 
-    // Validate retry attempts
-    if (validated.retryAttempts !== undefined && (typeof validated.retryAttempts !== 'number' || validated.retryAttempts < 0)) {
-      console.warn('Invalid retryAttempts, using default');
-      delete validated.retryAttempts;
-    }
+    this.sanitizeNumericOption(validated, 'timeoutMs', { fieldName: 'backendRouter.timeoutMs', min: 1000 });
+    this.sanitizeNumericOption(validated, 'retryAttempts', { fieldName: 'backendRouter.retryAttempts', min: 0 });
 
     return validated;
   }
@@ -1172,6 +1292,19 @@ export class TemplumAdapterRegistry extends EventEmitter {
     if (this.initialized) {
       console.warn('TemplumAdapterRegistry: Already initialized');
       return;
+    }
+
+    if (
+      this.config.validationLevel === 'strict' &&
+      typeof this.config.validationTimeout === 'number' &&
+      this.config.validationTimeout < 50
+    ) {
+      throw createTemplumError(
+        `Validation timeout ${this.config.validationTimeout}ms is below the strict-mode minimum (50ms)`,
+        'VALIDATION_TIMEOUT_ERROR',
+        'configuration',
+        { minimum: 50, provided: this.config.validationTimeout },
+      );
     }
 
     try {
@@ -1406,8 +1539,8 @@ export class TemplumAdapterRegistry extends EventEmitter {
 
         try {
           // Check if component has initialize method
-          if ('initialize' in component && typeof component.initialize === 'function') {
-            await (component.initialize as any)();
+          if (SemanticValidators.hasFunction(component, 'initialize', { required: false })) {
+            await (component as { initialize: () => Promise<void> }).initialize();
             success = true;
             console.log(`TemplumAdapterRegistry: Initialized ${componentName}`);
             
@@ -1496,7 +1629,7 @@ export class TemplumAdapterRegistry extends EventEmitter {
     const required = ['skinEngine', 'stateManager', 'backendRouter', 'backendServiceRouter', 'resourceManager'];
     for (const dep of required) {
       if (!this.dependencies[dep as keyof ITemplumCoreDependencies]) {
-        throw createTemplumError(`Required dependency not found: ${dep}`, 'MISSING_DEPENDENCY', 'configuration');
+        throw createTemplumError(`Missing required dependency: ${dep}`, 'MISSING_DEPENDENCY', 'configuration');
       }
     }
 
@@ -1543,6 +1676,18 @@ export class TemplumAdapterRegistry extends EventEmitter {
           console.log('TemplumAdapterRegistry: Disposed backendServiceRouter');
         }
         
+        const serviceRouter = this.dependencies.backendServiceRouter as
+          | (IBackendServiceRouter & { dispose?: () => Promise<void>; cleanup?: () => Promise<void> })
+          | undefined;
+
+        if (serviceRouter?.dispose) {
+          await serviceRouter.dispose();
+          console.log('TemplumAdapterRegistry: Disposed backendServiceRouter');
+        } else if (serviceRouter?.cleanup) {
+          await serviceRouter.cleanup();
+          console.log('TemplumAdapterRegistry: Disposed backendServiceRouter');
+        }
+
         if (this.dependencies.backendRouter?.shutdown) {
           await this.dependencies.backendRouter.shutdown();
           console.log('TemplumAdapterRegistry: Disposed backendRouter');

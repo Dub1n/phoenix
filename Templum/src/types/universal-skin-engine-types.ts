@@ -26,6 +26,7 @@ import type {
   FeatureMatrix,
   PerformanceHints
 } from './universal-skin-definition';
+import type { ThemeMetricsSummary } from '../utils/service-utils';
 export type { 
   UniversalSkinDefinition,
   InterfaceType,
@@ -149,6 +150,7 @@ export interface SkinRenderResult {
     fallbackReason?: string;
     originalError?: string;
     fallbackFailed?: boolean;
+    themeMetrics?: ThemeMetricsSummary;
   };
   components: RenderedComponent[];
   performance: {

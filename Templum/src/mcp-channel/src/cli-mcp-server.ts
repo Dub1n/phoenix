@@ -12,6 +12,8 @@
  */
 
 import { PTYManager } from './pty-manager';
+import { serialization } from '../../utils/serialization-utils';
+import { emitSerializationWarnings } from '../../backend/backend-serialization-log';
 import { 
   NavigationAction,
   CLIResponse,
@@ -599,7 +601,7 @@ export class CLIMCPServer {
     }
 
     this.responseCache.set(key, {
-      result: JSON.parse(JSON.stringify(result)), // Deep copy
+      result: this.cloneWithSerialization(result, 'mcp:cli-server:cache-result'),
       timestamp: Date.now()
     });
   }
@@ -624,6 +626,30 @@ export class CLIMCPServer {
     if (expiredKeys.length > 0) {
       console.log(`[MCP_PERFORMANCE] Cleaned up ${expiredKeys.length} expired cache entries`);
     }
+  }
+
+  private cloneWithSerialization<T>(value: T, context: string): T {
+    const serializeBuilder = serialization.json(value).context(context).fallback('{}');
+    const serializeOutcome = serializeBuilder.stringify();
+    emitSerializationWarnings(context, serializeOutcome);
+
+    if (!serializeOutcome.value) {
+      return value;
+    }
+
+    const parseBuilder = serialization
+      .fromJson<T>(serializeOutcome.value)
+      .context(`${context}:parse`)
+      .fallback(value);
+
+    const parseOutcome = parseBuilder.parse();
+    emitSerializationWarnings(`${context}:parse`, parseOutcome);
+
+    if (!parseOutcome.ok || parseOutcome.value === undefined) {
+      return value;
+    }
+
+    return parseOutcome.value;
   }
 
   /**

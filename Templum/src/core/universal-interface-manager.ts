@@ -16,6 +16,7 @@ import {
 import {
   ITemplumCoreDependencies
 } from '../interfaces/core-component-interfaces';
+import { SemanticValidators, TypeGuards } from '../utils/type-guards';
 
 export interface InterfaceSwitchOptions {
   preserveSession?: boolean;
@@ -76,15 +77,51 @@ export class UniversalInterfaceManager extends EventEmitter {
    * Register an interface adapter with the manager
    */
   registerInterfaceAdapter(interfaceType: InterfaceType, adapter: InterfaceAdapter): void {
-    this.interfaceAdapters.set(interfaceType, adapter);
-    
-    // Set up adapter event listeners for state synchronization
-    if ('on' in adapter) {
-      (adapter as any).on?.('stateUpdate', (update: StateUpdate) => {
-        this.handleAdapterStateUpdate(interfaceType, update);
-      });
+    if (!TypeGuards.isObject(adapter)) {
+      throw createTemplumError(
+        `Interface adapter for ${interfaceType} must be an object`,
+        'INTERFACE_ADAPTER_INVALID',
+        'validation',
+        { interfaceType },
+      );
     }
-    
+
+    const requiredMethods: Array<keyof InterfaceAdapter> = ['getInterfaceType', 'applySkin', 'syncState', 'dispose', 'getStatus'];
+
+    for (const method of requiredMethods) {
+      if (!SemanticValidators.hasFunction(adapter, method as string, { required: true })) {
+        throw createTemplumError(
+          `Interface adapter for ${interfaceType} must implement ${String(method)}`,
+          'INTERFACE_ADAPTER_INVALID',
+          'validation',
+          { interfaceType, missingMethod: method },
+        );
+      }
+    }
+
+    const declaredType = adapter.getInterfaceType();
+    if (declaredType !== interfaceType) {
+      throw createTemplumError(
+        `Interface adapter declared type ${declaredType} does not match requested ${interfaceType}` ,
+        'INTERFACE_ADAPTER_INVALID',
+        'validation',
+        { interfaceType, declaredType },
+      );
+    }
+
+    this.interfaceAdapters.set(interfaceType, adapter);
+
+    if (SemanticValidators.hasFunction(adapter, 'on', { required: false })) {
+      (adapter as unknown as { on(event: string, handler: (payload: unknown) => void): void }).on(
+        'stateUpdate',
+        (payload: unknown) => {
+          if (this.isStateUpdate(payload)) {
+            this.handleAdapterStateUpdate(interfaceType, payload);
+          }
+        }
+      );
+    }
+
     this.emit('interfaceAdapterRegistered', { interfaceType, adapter });
   }
 
@@ -123,18 +160,24 @@ export class UniversalInterfaceManager extends EventEmitter {
         try {
           // Get current session context for state preservation
           let sessionContext = null;
-          if (this.dependencies.stateManager && 'getSessionContext' in this.dependencies.stateManager) {
+          if (
+            this.dependencies.stateManager &&
+            SemanticValidators.hasFunction(this.dependencies.stateManager, 'getSessionContext', { required: false })
+          ) {
             sessionContext = await (this.dependencies.stateManager as any).getSessionContext();
           }
           
           // Get state from current interface adapter
           const currentAdapter = this.interfaceAdapters.get(this.activeInterface);
-          if (currentAdapter && 'getState' in currentAdapter) {
+          if (currentAdapter && SemanticValidators.hasFunction(currentAdapter, 'getState', { required: false })) {
             preservedState = await (currentAdapter as any).getState();
           }
           
           // Also preserve from state manager with session context
-          if (this.dependencies.stateManager && 'getState' in this.dependencies.stateManager) {
+          if (
+            this.dependencies.stateManager &&
+            SemanticValidators.hasFunction(this.dependencies.stateManager, 'getState', { required: false })
+          ) {
             const globalState = await (this.dependencies.stateManager as any).getState();
             preservedState = { 
               ...preservedState, 
@@ -238,7 +281,7 @@ export class UniversalInterfaceManager extends EventEmitter {
           let switchResult = { success: true, preservedState: options.preserveSession || false };
           
           // Check if the skin engine is actually UniversalSkinEngine with switchInterface method
-          if ('switchInterface' in this.dependencies.skinEngine) {
+          if (SemanticValidators.hasFunction(this.dependencies.skinEngine, 'switchInterface', { required: false })) {
             switchResult = await (this.dependencies.skinEngine as any).switchInterface(
               previousInterface || 'none',
               targetInterface,
@@ -264,12 +307,15 @@ export class UniversalInterfaceManager extends EventEmitter {
           const preservedState = this.preservedStates.get(targetInterface);
           
           // Restore to target adapter
-          if ('setState' in targetAdapter) {
+          if (SemanticValidators.hasFunction(targetAdapter, 'setState', { required: false })) {
             await (targetAdapter as any).setState(preservedState);
           }
           
           // Restore to state manager with session context
-          if (this.dependencies.stateManager && 'setState' in this.dependencies.stateManager) {
+          if (
+            this.dependencies.stateManager &&
+            SemanticValidators.hasFunction(this.dependencies.stateManager, 'setState', { required: false })
+          ) {
             await (this.dependencies.stateManager as any).setState(preservedState.globalState);
           }
           
@@ -277,7 +323,10 @@ export class UniversalInterfaceManager extends EventEmitter {
           if (preservedState.sessionContext && preservedState.sessionMetadata) {
             try {
               // Update session with interface switch information
-              if (this.dependencies.stateManager && 'updateSessionInterface' in this.dependencies.stateManager) {
+              if (
+            this.dependencies.stateManager &&
+            SemanticValidators.hasFunction(this.dependencies.stateManager, 'updateSessionInterface', { required: false })
+          ) {
                 await (this.dependencies.stateManager as any).updateSessionInterface(
                   preservedState.sessionMetadata.sessionId,
                   targetInterface
@@ -285,7 +334,7 @@ export class UniversalInterfaceManager extends EventEmitter {
               }
               
               // Set session context on target adapter
-              if ('setSessionContext' in targetAdapter) {
+              if (SemanticValidators.hasFunction(targetAdapter, 'setSessionContext', { required: false })) {
                 const sessionContext = {
                   ...preservedState.sessionContext,
                   activeInterface: targetInterface,
@@ -408,6 +457,10 @@ export class UniversalInterfaceManager extends EventEmitter {
     this.emit('adapterStateUpdate', { interfaceType, update });
   }
 
+  private isStateUpdate(value: unknown): value is StateUpdate {
+    return TypeGuards.isPlainObject(value);
+  }
+
   /**
    * Comprehensive interface switching validation - TASK-NEW-048
    */
@@ -425,7 +478,7 @@ export class UniversalInterfaceManager extends EventEmitter {
         issues.push(`Interface adapter '${targetInterface}' not registered`);
       } else {
         // Check adapter status if available
-        if ('getStatus' in adapter) {
+        if (SemanticValidators.hasFunction(adapter, 'getStatus', { required: false })) {
           const status = adapter.getStatus();
           if (status && 'ready' in status && !status.ready) {
             issues.push(`Interface adapter '${targetInterface}' not ready`);
@@ -456,7 +509,10 @@ export class UniversalInterfaceManager extends EventEmitter {
       if (options.preserveSession) {
         try {
           let hasSessionContext = false;
-          if (this.dependencies.stateManager && 'getSessionContext' in this.dependencies.stateManager) {
+          if (
+            this.dependencies.stateManager &&
+            SemanticValidators.hasFunction(this.dependencies.stateManager, 'getSessionContext', { required: false })
+          ) {
             const sessionContext = await (this.dependencies.stateManager as any).getSessionContext();
             hasSessionContext = !!sessionContext;
           }
@@ -494,7 +550,10 @@ export class UniversalInterfaceManager extends EventEmitter {
 
     try {
       // Check memory usage if resource manager is available
-      if (this.dependencies.resourceManager && 'getResourceUsage' in this.dependencies.resourceManager) {
+      if (
+            this.dependencies.resourceManager &&
+            SemanticValidators.hasFunction(this.dependencies.resourceManager, 'getResourceUsage', { required: false })
+          ) {
         const resourceUsage = await (this.dependencies.resourceManager as any).getResourceUsage();
         
         if (resourceUsage && resourceUsage.memoryUsage) {
@@ -511,7 +570,7 @@ export class UniversalInterfaceManager extends EventEmitter {
       const unhealthyAdapters: string[] = [];
       for (const [interfaceType, adapter] of Array.from(this.interfaceAdapters)) {
         try {
-          if ('healthCheck' in adapter && typeof (adapter as any).healthCheck === 'function') {
+          if (SemanticValidators.hasFunction(adapter, 'healthCheck', { required: false })) {
             const health = await (adapter as any).healthCheck();
             if (!health || !health.healthy) {
               unhealthyAdapters.push(interfaceType);
@@ -545,12 +604,12 @@ export class UniversalInterfaceManager extends EventEmitter {
       }
 
       // Check if skin engine has interface-specific methods
-      if ('validateInterface' in this.dependencies.skinEngine) {
+      if (SemanticValidators.hasFunction(this.dependencies.skinEngine, 'validateInterface', { required: false })) {
         return await (this.dependencies.skinEngine as any).validateInterface(targetInterface);
       }
 
       // Check if skin engine supports the target interface
-      if ('getSupportedInterfaces' in this.dependencies.skinEngine) {
+      if (SemanticValidators.hasFunction(this.dependencies.skinEngine, 'getSupportedInterfaces', { required: false })) {
         const supportedInterfaces = await (this.dependencies.skinEngine as any).getSupportedInterfaces();
         if (Array.isArray(supportedInterfaces) && !supportedInterfaces.includes(targetInterface)) {
           return {
@@ -671,7 +730,7 @@ export class UniversalInterfaceManager extends EventEmitter {
 
       // Get any loaded skin definitions from the skin engine
       let currentSkinDefinition = null;
-      if ('getCurrentSkin' in this.dependencies.skinEngine) {
+      if (SemanticValidators.hasFunction(this.dependencies.skinEngine, 'getCurrentSkin', { required: false })) {
         currentSkinDefinition = await (this.dependencies.skinEngine as any).getCurrentSkin();
       }
 
@@ -680,7 +739,7 @@ export class UniversalInterfaceManager extends EventEmitter {
         const renderStartTime = Date.now();
         
         let renderResult = null;
-        if ('renderForInterface' in this.dependencies.skinEngine) {
+        if (SemanticValidators.hasFunction(this.dependencies.skinEngine, 'renderForInterface', { required: false })) {
           renderResult = await (this.dependencies.skinEngine as any).renderForInterface(
             currentSkinDefinition,
             targetInterface,
@@ -698,7 +757,7 @@ export class UniversalInterfaceManager extends EventEmitter {
         }
 
         // Apply the rendered skin to the target adapter
-        if (renderResult && 'applySkin' in targetAdapter) {
+        if (renderResult && SemanticValidators.hasFunction(targetAdapter, 'applySkin', { required: false })) {
           await targetAdapter.applySkin(currentSkinDefinition);
         }
 
@@ -722,11 +781,11 @@ export class UniversalInterfaceManager extends EventEmitter {
   ): Promise<void> {
     try {
       // Generate optimized HTML for WebView
-      if ('generateHTML' in adapter && typeof (adapter as any).generateHTML === 'function') {
+      if (SemanticValidators.hasFunction(adapter, 'generateHTML', { required: false })) {
         const htmlContent = await (adapter as any).generateHTML(renderResult, skinDefinition);
         
         // Performance-optimized message handling for WebView
-        if ('postMessage' in adapter && typeof (adapter as any).postMessage === 'function') {
+        if (SemanticValidators.hasFunction(adapter, 'postMessage', { required: false })) {
           await (adapter as any).postMessage({
             type: 'render_backend_skin',
             payload: {
