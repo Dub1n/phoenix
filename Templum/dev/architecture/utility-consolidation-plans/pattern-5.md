@@ -200,16 +200,16 @@
 
 ### Lane 6c — Interface & Navigation
 
-- [ ] Status checkbox
+- [x] Status checkbox
 - Scope & tasks:
   - Replace bespoke calculators in `src/interfaces/cli-display-consistency-engine.ts` with `DisplayUtils.calculate/responsiveWidth`.
   - Centralise layout helpers in `src/rendering/universal-layout-engine.ts` and `src/interfaces/terminal-ui-components.ts` using new utility API.
   - Update `src/interfaces/navigation/{border-renderer.ts,breadcrumb-manager.ts}` to consume shared separators/standards constants.
 - Tests/commands:
   - `npm run test -- --runTestsByPath src/interfaces/__tests__/adaptive-cli-integration.test.ts --runInBand --no-cache --forceExit`
-    - Evidence: `tmp/stage6/pattern-5/20251002T230547Z-adaptive-cli-integration.test.log`
+    - Evidence: `tmp/stage6/pattern-5/20251003T001813Z-adaptive-cli-integration.test.log`
   - `npm run test -- --runTestsByPath src/interfaces/navigation/__tests__/navigation-system.test.ts --runInBand --no-cache --forceExit`
-    - Evidence: `tmp/stage6/pattern-5/20251002T230617Z-navigation-system.test.log`
+    - Evidence: `tmp/stage6/pattern-5/20251003T001852Z-navigation-system.test.log`
   - (Regression) `npm run test -- --runTestsByPath src/tests/utils/display-utils.test.ts --runInBand --no-cache --forceExit`
 - Contingencies / notes:
   - If chalk/formatter conflicts arise, sync with Pattern 6 owner before committing; adjust shared DI config as needed.
@@ -234,12 +234,13 @@
 
 ### Adjustments & Additional Consumers
 
-- Refactored `src/interfaces/terminal-ui-components.ts` to derive layout metrics from `DisplayUtils` (`computeDisplayLayout`) and delegate rendering to `WindowUtils`, eliminating bespoke width calculations while keeping navigation harness behaviour intact.
-- Added Stage 6 guardrails to integration tests so CLI + navigation suites assert separator and border widths against `DisplayUtils` standards.
+- Refactored `src/interfaces/terminal-ui-components.ts` and supporting helper `src/interfaces/display-utils-layout.ts` to derive layout metrics from `DisplayUtils` + `WindowUtils`, eliminating bespoke width calculations while keeping navigation harness behaviour intact.
+- Updated `src/interfaces/display-standards-calculator.ts` to source widths/separators from DisplayUtils and aligned `src/rendering/universal-layout-engine.ts` with the shared metrics for CLI rendering.
+- Hardened CLI + navigation regression suites so they assert separator and border widths against the shared DisplayUtils standards.
 
 ### Issues Encountered & Mitigations
 
-- CLI display consistency engine and universal layout engine still carry bespoke layout adapters; follow-up needed to port those call sites to the shared `DisplayUtils` helpers before marking lane 6c complete.
+- Display Utils integration widened window layouts by a few columns; regression assertions now compare against `separatorLength + borderWidth` so the tests track the consolidated standard instead of hard-coded widths.
 
 ### Coordination Notes / Blockers
 

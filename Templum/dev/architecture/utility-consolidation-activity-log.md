@@ -27,6 +27,15 @@ If a Stage 3 phase exposes new helper or dependency work, add a fresh Stage 2.5 
 
 ## Running Log
 
+### 2025-10-03 — Display Utils (Pattern 5) — Stage 6 lane c Wrap-up
+
+- **Agent**: Codex
+- **Stage**: 6 lane c
+- **Summary**: Completed the Display Utils interface migration by delegating layout metrics to `DisplayUtils` across the stand-alone calculator and universal layout engine; refreshed the CLI/navigation harness to assert separator + border widths against the shared standard.
+- **Commands / Evidence**: `npm run test -- --runTestsByPath src/interfaces/__tests__/adaptive-cli-integration.test.ts --runInBand --no-cache --forceExit` (`tmp/stage6/pattern-5/20251003T001813Z-adaptive-cli-integration.test.log`), `npm run test -- --runTestsByPath src/interfaces/navigation/__tests__/navigation-system.test.ts --runInBand --no-cache --forceExit` (`tmp/stage6/pattern-5/20251003T001852Z-navigation-system.test.log`)
+- **Files touched**: `dev/architecture/utility-consolidation-plans/pattern-5.md`, `dev/architecture/safe-consolidation-candidates.md`, `src/interfaces/display-standards-calculator.ts`, `src/interfaces/terminal-ui-components.ts`, `src/interfaces/display-utils-layout.ts`, `src/rendering/universal-layout-engine.ts`, `src/interfaces/__tests__/adaptive-cli-integration.test.ts`, `src/interfaces/navigation/__tests__/navigation-system.test.ts`
+- **Follow-ups / Risks**: None — lane 6c checklist now green; monitor downstream cohorts for additional DisplayUtils adoption requests.
+
 ### 2025-10-12 — Terminal Formatter Utility (Pattern 7) — Stage 6 lane b
 
 - **Agent**: Codex
