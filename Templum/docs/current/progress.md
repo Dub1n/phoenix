@@ -3,7 +3,7 @@ doc-type: progress
 title: Templum Progress Tracker
 tags: [templum, progress]
 status: current
-last_updated: 2025-09-15
+last_updated: 2025-10-02
 ---
 
 # Templum Progress Tracker
@@ -48,7 +48,10 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` not started · `[!]` broken · 
 ## Quality & Release Readiness
 
 - [ ] [Test architecture consolidation and coverage governance](../../dev/tasks/test-architecture-governance.md) (unit/integration/e2e thresholds codified)
+- [!] [Phase 6 validation signal overhaul](../../dev/tasks/phase6-validation-signal.md) (readiness score still driven by mocked baselines/random delays; instrument real metrics, seed baselines, and persist raw outputs.)
+- [x] [Serialization Utils consolidation (Pattern 11) Stage 6](../../dev/architecture/utility-consolidation-plans/pattern-11.md) (serialization unit + menu adapter suites and backend Phase 2 subset revalidated 2025-10-02; `npm run phase6-health` 100% readiness; `npm run phase6-validation` 92% readiness with performance score 67/100; `phase6-services` requires `start|stop|status` subcommand)
 - [x] [Chainable String Utils consolidation (Pattern 12) Stage 4](../../dev/architecture/utility-consolidation-plans/pattern-12.md) (final validation via targeted Jest suites + `npm run phase6-health`; snapshot refresh still optional)
+- [x] [Type Guards consolidation (Pattern 10) Stage 6](../../dev/architecture/utility-consolidation-plans/pattern-10.md) (Stage 5 post-cleanup validation complete 2025-10-07 — backend/core/interface/session suites and TypeGuards harness green with leak-guard, no listener regressions).
 - [ ] [Process signal listener consolidation](../../dev/tasks/process-signal-listener-consolidation.md) (deduplicate CLI/navigation signal + stdin handlers to eliminate recurring MaxListeners warnings and enforce teardown discipline)
 - [ ] [Utility consolidation execution playbook rollout](../../dev/architecture/utility-consolidation-playbook.md) (playbook published; onboard agents and begin logging activity at ../../dev/architecture/utility-consolidation-activity-log.md)
 - [ ] [Release pipeline hardening and packaging verification](../../dev/tasks/release-pipeline-hardening.md) (artifact signing, CI gating, rollback paths)

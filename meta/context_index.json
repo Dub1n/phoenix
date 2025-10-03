@@ -1,5 +1,5 @@
 {
-  "generated_at": "2025-10-01T21:08:59Z",
+  "generated_at": "2025-10-03T00:00:38Z",
   "root": "VDL_Vault",
   "patterns": [
     "README.md",
@@ -45,13 +45,13 @@
     "**/archive/*"
   ],
   "case_sensitive": false,
-  "paths_hash": "492a340c842ddd89a9f90873f1163c31a37bbbd7",
+  "paths_hash": "dbde377f35a55584ba19e51f33572af19bd47e89",
   "counts": {
     "Haruspex": 3,
-    "meta": 4,
+    "meta": 5,
     "phoenix-code-lite": 7,
     "scripts": 7,
-    "Templum": 16
+    "Templum": 17
   },
   "files": [
     {
@@ -95,9 +95,18 @@
       "filename": "context_index.md",
       "folder": "meta",
       "kind": "other",
-      "lines": 65,
-      "bytes": 3888,
-      "sha1": "c60140dbd56a275fb82fc912eabd76b12794437b"
+      "lines": 64,
+      "bytes": 3828,
+      "sha1": "ceefb87f941084898896eadf1fdffdbdce170477"
+    },
+    {
+      "path": "meta/context_index_raw.md",
+      "filename": "context_index_raw.md",
+      "folder": "meta",
+      "kind": "other",
+      "lines": 59,
+      "bytes": 3903,
+      "sha1": "94506514872bb3c1c708153242ae578f45de0487"
     },
     {
       "path": "meta/templates/architecture-spec.md",
@@ -253,6 +262,15 @@
       "sha1": "1b08b7a73337813745ef404fc166ef186d7cb845"
     },
     {
+      "path": "Templum/dev/architecture/consolidation-state/README.md",
+      "filename": "README.md",
+      "folder": "Templum",
+      "kind": "readme",
+      "lines": 17,
+      "bytes": 1456,
+      "sha1": "64554a09994706f8e784d6bfe9591fbeccaab026"
+    },
+    {
       "path": "Templum/dev/auto/pty-mcp-server/README.md",
       "filename": "README.md",
       "folder": "Templum",
@@ -347,9 +365,9 @@
       "filename": "architecture-spec.md",
       "folder": "Templum",
       "kind": "architecture",
-      "lines": 98,
-      "bytes": 7065,
-      "sha1": "ad479ee3eda6e229a234500d4d165be4333be9da"
+      "lines": 100,
+      "bytes": 7757,
+      "sha1": "77864b7d6469e39f4301ed072f0e7942372568a7"
     },
     {
       "path": "Templum/examples/README.md",
@@ -433,9 +451,18 @@
         "filename": "context_index.md",
         "folder": "meta",
         "kind": "other",
-        "lines": 65,
-        "bytes": 3888,
-        "sha1": "c60140dbd56a275fb82fc912eabd76b12794437b"
+        "lines": 64,
+        "bytes": 3828,
+        "sha1": "ceefb87f941084898896eadf1fdffdbdce170477"
+      },
+      {
+        "path": "meta/context_index_raw.md",
+        "filename": "context_index_raw.md",
+        "folder": "meta",
+        "kind": "other",
+        "lines": 59,
+        "bytes": 3903,
+        "sha1": "94506514872bb3c1c708153242ae578f45de0487"
       },
       {
         "path": "meta/templates/architecture-spec.md",
@@ -597,6 +624,15 @@
         "sha1": "1b08b7a73337813745ef404fc166ef186d7cb845"
       },
       {
+        "path": "Templum/dev/architecture/consolidation-state/README.md",
+        "filename": "README.md",
+        "folder": "Templum",
+        "kind": "readme",
+        "lines": 17,
+        "bytes": 1456,
+        "sha1": "64554a09994706f8e784d6bfe9591fbeccaab026"
+      },
+      {
         "path": "Templum/dev/auto/pty-mcp-server/README.md",
         "filename": "README.md",
         "folder": "Templum",
@@ -691,9 +727,9 @@
         "filename": "architecture-spec.md",
         "folder": "Templum",
         "kind": "architecture",
-        "lines": 98,
-        "bytes": 7065,
-        "sha1": "ad479ee3eda6e229a234500d4d165be4333be9da"
+        "lines": 100,
+        "bytes": 7757,
+        "sha1": "77864b7d6469e39f4301ed072f0e7942372568a7"
       },
       {
         "path": "Templum/examples/README.md",

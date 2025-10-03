@@ -25,40 +25,154 @@
 - Shared files to coordinate:
 - Risks or assumptions:
 
-## Stage 2.5 — Migration Orchestration & Agent Tasking
+## Stage 2 Snapshot (Optional)
+
+- Implementation/Test summary:
+  - ...
+- Commands executed:
+  - `npm test -- ...`
+- Outstanding issues before Stage 3:
+  - ...
+
+## Stage 3 — Migration Orchestration & Coordination
 
 - **Date**: {{YYYY-MM-DD'T'HH:MM:SS'Z'}}
-- Helpers / prerequisites before migrations:
-  - [ ] {{Helper or follow-up}}
-- Phase assignments (update agent names as work is delegated):
-  - [ ] **Phase 0a — Helper Finalisation** (Agent ___): `scope/tests`
-  - [ ] **Phase 0b — Remediation Blockers** (Agent ___): `scope/tests`
-  - [ ] **Phase 0c — (Add more as needed for parallel blockers)** (Agent ___): `scope/tests`
-  - [ ] **Phase 1 — Backend Migration** (Agent ___): `scope/tests`
-  - [ ] **Phase 2 — Core Orchestration** (Agent ___): `scope/tests`
-  - [ ] **Phase 3 — Interface & Navigation** (Agent ___): `scope/tests`
-  - [ ] **Phase 4 — Session & Shared Utilities** (Agent ___): `scope/tests`
-- Coordination instructions:
-  - Logging expectations per phase (activity log, tracker updates)
-  - Shared test suites / files to monitor
-  - Contingencies or fallback actions (e.g., helper gaps, shared module blocks)
-  - Contingency trigger checklist (what sends the plan back to Stage 2.5, who owns the refresh, where to log it)
-  - Clarify that Phase 0x remediations can run in parallel where work streams are independent; document sequencing constraints so downstream phases know which 0x boxes must be checked before they proceed.
-  - Update the cohort schedule cell for this pattern with Phase 0 lane names/statuses so parallel agents can coordinate.
+- Readiness Summary:
+  - Stage 4 prerequisites defined — see Stage 4 lanes for detailed checklist/tests.
+  - Stage 5 alignment owner identified — see Stage 5 section for shared-spec expectations.
+  - Stage 6 lanes assigned — see Stage 6 subsections for scope and validation commands.
+  - Contingency triggers noted; update this summary if new blockers surface.
+- Coordination Snapshot:
+  - Tracker status: {{e.g., `safe-consolidation-candidates.md` Stage 3 `[x]`}}
+  - Activity log entry: {{timestamp/link}}
+  - Additional notes (optional): {{brief risks, cross-team coordination}}
 
-## Stage 3 Execution Log (Living Phase)
+## Stage 4 Execution Log (Prerequisites)
 
-### Phase Completion Checklist
+- _Complete all Stage 4 lanes before touching consumer migrations. Revert to Stage 3 if any lane blocks._
 
-- [ ] Phase 0 — Helper Finalisation complete (Stage 2.5 prerequisites met)
-- [ ] Phase 1 — Backend migration complete (tests run: ___)
-- [ ] Phase 2 — Core orchestration migration complete (tests run: ___)
-- [ ] Phase 3 — Interface & navigation migration complete (tests run: ___)
-- [ ] Phase 4 — Session & utilities migration complete (tests run: ___)
-- _If any checkbox is blocked, set the Stage 2.5 status back to `[~]`, capture the blocker below, and refresh the plan before checking the item again; previously completed phases stay complete unless the updated plan says otherwise._
-- _Phases 1–4 can run in parallel once Phase 0 lanes are `[x]`. When you finish your deliverables/tests, mark your box `[x]` and document any dependencies on sibling phases in the coordination notes instead of reverting another agent’s status._
+### Lane 4a — {{Helper / remediation scope}} (Agent ___)
 
-### Validation Artefacts & Commands
+- Tasks:
+  - ...
+- Tests/commands:
+  - `CI=1 npm test -- ...`
+
+### Lane 4b — {{Environment / fixture prep}} (Agent ___)
+
+- Tasks:
+  - ...
+- Tests/commands:
+  - `CI=1 npx jest --runTestsByPath ...`
+
+### Lane 4c — {{Coordination / shared dependency}} (Agent ___)
+
+- Tasks:
+  - ...
+- Tests/commands:
+  - `CI=1 npm test -- ...`
+
+### Additional lanes as required
+
+- [ ] Lane 4? — {{Purpose}} (Agent ___)
+  - Tasks:
+    - ...
+  - Tests/commands:
+    - ...
+
+### Stage 4 Handoff Block
+
+- **Shared constants / defaults**: {{terminal width, separators, etc.}}
+- **Dependency seams**: {{logger, formatter, columns provider expectations}}
+- **Reusable test helpers**: {{path to mocks/helpers}}
+- **Outstanding risks**: {{open issues for Stage 5}}
+- **Ready for Stage 5 alignment?**: `[ ]` / `[x]` — notes/owner acknowledgement
+
+## Stage 5 — Cohort Alignment & Pattern Preparation
+
+### Stage 5A — Cohort Alignment Snapshot
+
+- **Coordinator**: {{Agent handling shared spec}}
+- **Alignment artefact**: `Templum/dev/architecture/{{alignment-file}}.md`
+- **Inputs reviewed**: Stage 4 handoff blocks from Patterns {{list}}
+- **Summary of agreed values**:
+  - Terminal width defaults: ...
+  - Separator/formatting: ...
+  - DI seams / providers: ...
+  - Test helpers: ...
+- **Shared Dependencies Matrix** (copy rows from cohort spec and keep in sync):
+
+| Artefact | Owner (Pattern) | Stage checkpoints | Collision watch / notes |
+| -------- | --------------- | ----------------- | ----------------------- |
+| ...      | ...             | ...               | ...                     |
+|          |                 |                   |                         |
+
+- **Approvals / acknowledgements**:
+  - Pattern {{X}} owner: `[ ]` / `[x]` — {{initials/date}}
+  - Pattern {{Y}} owner: `[ ]` / `[x]`
+- **Outstanding risks / follow-ups**:
+  - ...
+- **Activity log entry**: {{timestamp/link}}
+
+### Stage 5B — Pattern Preparation
+
+- **Stage 6 readiness notes**:
+  - Lane checklist (`Ready`/`Blocked`) with gating suites executed for each lane: ...
+  - DI seams/config resets confirmed (include who signed off): ...
+  - Coordination requirements / owner acknowledgements: ...
+  - Shared Dependencies Matrix rows relevant to this pattern copied/linked here: ...
+- **Executed evidence**:
+  - `npm run test -- ...` (link to logs under `tmp/stage6/{{pattern}}/` or equivalent)
+- **Risks / TODOs before Stage 6**:
+  - ...
+- **Completion gate**: Stage 5B remains open until every Stage 6 lane is `Ready` with evidence attached or the blocker is escalated back through Stage 3.
+- **Activity log entry**: {{timestamp/link}}
+
+## Stage 6 Execution Log (Living Stage)
+
+- _Claim a Stage 6 lane, execute to completion, and keep tracker glyphs aligned. Return to Stage 3 if new prerequisites emerge (see playbook Stage 6 guidance on triggers such as missing DI/teardown hooks, new shared fixtures, or cross-utility constant drift)._
+
+### Lane 6a — Backend Migration
+
+- [ ] Status checkbox (mark `[x]` when deliverables/tests complete)
+- Scope & tasks:
+  - ...
+- Tests/commands:
+  - `CI=1 npm test -- ...`
+- Contingencies / notes:
+  - ...
+
+### Lane 6b — Core Orchestration
+
+- [ ] Status checkbox
+- Scope & tasks:
+  - ...
+- Tests/commands:
+  - ...
+- Contingencies / notes:
+  - ...
+
+### Lane 6c — Interface & Navigation
+
+- [ ] Status checkbox
+- Scope & tasks:
+  - ...
+- Tests/commands:
+  - ...
+- Contingencies / notes:
+  - ...
+
+### Lane 6d — Session & Shared Utilities
+
+- [ ] Status checkbox
+- Scope & tasks:
+  - ...
+- Tests/commands:
+  - ...
+- Contingencies / notes:
+  - ...
+
+### Validation Artefacts & Commands (summary)
 
 - `npm test -- ...`
 - `npm test -- ...`
@@ -75,7 +189,7 @@
 
 - ...
 
-## Stage 4 Close-Out
+## Stage 7 Close-Out
 
 - **Date**: {{YYYY-MM-DD'T'HH:MM:SS'Z'}}
 - Final validation summary:

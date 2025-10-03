@@ -13,7 +13,7 @@ last_updated: 2025-09-22
 - **Purpose:** Universal interface orchestrator that renders backend-defined skins across CLI, VSCode, and future interfaces without hardcoded knowledge.
 - **Current Status:** In migration—backend discovery works, but the skin-driven UI and shared session model still need implementation/verification.
 - **Key Dependencies:** Haruspex and Phoenix Code Lite backends; Validation System for runtime checks.
-- **Documentation Links:** `docs/current/progress.md`, `docs/target/ValidationSystem-V3C-Documentation.md`, pattern references under `dev/patterns/`.
+- **Documentation Links:** `docs/current/progress.md`, `docs/current/testing-guide.md`, `docs/target/ValidationSystem-V3C-Documentation.md`, pattern references under `dev/patterns/`.
 
 ## 1. Current State Snapshot
 >
@@ -33,6 +33,7 @@ last_updated: 2025-09-22
   - `ServiceDiscovery` + `ConnectionFactory` provide zero-knowledge backend connections (IPC/HTTP/WebSocket/gRPC).
   - `UniversalSkinEngine` is responsible for consuming `UniversalSkinDefinition` payloads (pending full implementation).
   - Interface adapters (`cli`, `vscode`, `command`) render skins and manage interaction state.
+  - Display stack utilities (`DisplayUtils`, `TerminalFormatter`, `WindowUtils`) expose dependency-injected seams via `configureDisplayStack(...)`, wrapping `DisplayUtils.configure`, `WindowUtils.configure`, and `TerminalFormatter.configure` so CLI/session surfaces share formatter, logger, and column providers without importing `chalk` directly.
 - **Data/Control Flow:** Backends publish skins → discovery registers service → connection factory establishes protocol → command router/skin engine expose functionality across adapters.
 - **Integration Points:**
   - Haruspex backend (analysis) and Phoenix Code Lite (QMS tooling) will expose skins consumed by Templum.
@@ -55,6 +56,7 @@ last_updated: 2025-09-22
 ## 4. Operational Considerations
 
 - **Observability:** Centralised logging/metrics planned (`observability/templum-observability-system.ts`); ensure instrumentation before enabling production dashboards.
+- **Display Stack Management:** Configure CLI/session layout helpers via `configureDisplayStack`/`resetDisplayStack`, which wrap `DisplayUtils.configure`, `WindowUtils.configure`, and `TerminalFormatter.configure` to keep formatter + column providers aligned with `dev/architecture/display-stack-alignment.md`.
 - **Deployment:** Supports headless daemon + separate CLI/VSCode interfaces once process separation stabilises.
 - **Compliance:** Must provide traceable logs and health reports for regulated workflows; integrate with Validation System once categories are defined.
 

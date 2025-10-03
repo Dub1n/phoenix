@@ -51,53 +51,107 @@
   - Several target files exceed 1,000 LOC; migrations will proceed in small, reviewable chunks
   - Snapshot baselines may require refresh; flag to coordinators before regenerating
 
-## Stage 2.5 — Migration Orchestration & Agent Tasking
+## Stage 3 — Migration Orchestration & Coordination
 
-- **Date**: 2025-10-02T11:40:00Z
-- Helpers / prerequisites before migrations:
-  - [x] Resolve TypeScript build failures surfaced by `npm run phase6-health` (fix typings/export issues in `src/utils/event-utils.ts`, `src/utils/registry-utils.ts`, `src/interfaces/interface-adapter-registry.ts`, `src/utils/protocol-utils.ts`, `src/utils/resilience-utils.ts`, and `src/utils/type-guards.ts`).
-  - [x] Restore navigation theming/constructor exports so `npx jest --no-cache --runTestsByPath src/interfaces/__tests__/adaptive-cli-integration.test.ts src/interfaces/navigation/__tests__/navigation-system.test.ts` passes.
-- Phase assignments (living plan — update agent names as work is delegated):
-  - [x] **Phase 0 — Helper Finalisation** (Codex): Implement shared StringUtils helpers + chainable API smoke tests.
-- [x] **Phase 0b — Build & Navigation Remediation** (Codex): Address TS build failures and navigation theming gaps blocking Phase 3 completion (consider splitting into sub-phases if different agents take the work).
-  - [x] **Phase 1 — Backend/Adapter Migrations** (Codex): `src/interfaces/cli-adapter*.ts`, supporting helpers.
-  - [x] **Phase 2 — Core Orchestration** (Codex): `src/interfaces/layout-normalizer.ts`, `src/rendering/universal-layout-engine.ts`, `src/rendering/content-layout-system.ts`.
-  - [x] **Phase 3 — Interface & Navigation** (Codex): `src/interfaces/navigation/*`, `src/interfaces/terminal-ui-components.ts` (pending Phase 0b validation).
-  - [x] **Phase 4 — Scripts & CLI Reporting** (Codex): `src/scripts/run-phase6-integration-validation.ts`, `src/scripts/simple-phase6-validation.ts`.
-- Coordination instructions:
-  - Phase 0b must complete before Stage 3 can be marked finished; once done, set Stage 2.5 tracker back to `[x]` and notify agents via activity log.
-  - Continue logging migrations per phase in activity log; reference this plan section when phases change or new blockers surface.
-  - Shared test suites to monitor: `npm run phase6-health`; `npx jest --no-cache --runTestsByPath src/interfaces/__tests__/adaptive-cli-integration.test.ts src/interfaces/navigation/__tests__/navigation-system.test.ts`.
-  - Contingency trigger checklist: any new helper/dependency gap sends us back to Stage 2.5 (update plan, trackers, and log) before phases resume.
-  - Phases 1–4 may run in parallel once Phase 0b is complete; communicate in the activity log before touching files owned by other utilities.
-  - Update the cohort schedule entry (`utility-consolidation-schedule.md`) with Phase 0 lane statuses (e.g., `0a[x]`, `0b[~]`) whenever this plan changes.
+- **Date**: 2025-10-01T21:10:00Z
+- Readiness Summary:
+  - Stage 4 lanes `[x]` (helper finalisation, build remediation, navigation prep).
+  - Stage 5 lanes defined (a–d covering CLI adapters, navigation, layouts, scripts) with owners/tests captured below.
+  - Contingencies: If new helper gaps emerge, revert to Stage 3 to add Stage 4 lanes before continuing migrations.
+- Coordination Snapshot:
+  - Tracker status: Stage 3 `[x]` — plan stored in `pattern-12.md`.
+  - Activity log entry: 2025-10-01 Stage 3 (Pattern 12) — includes evidence and follow-ups.
+  - Additional notes: Ensure CLI snapshot parity monitored during Stage 5c; document any visual diffs.
 
-## Stage 3 Updates
+## Stage 4 Execution Log (Prerequisites)
 
-- **Date**: 2025-10-02T19:20:00Z
-- Adjustments to migration plan:
-  - All planned consumers (CLI adapters, navigation stack, renderer engines, Phase 6 scripts) continue to run on the fluent StringUtils surface with no additional refactors needed; Stage 3 is ready for hand-off into Stage 4 validation once external blockers clear.
-  - Retained the shared CLI formatter helper for scripts so downstream updates stay DRY; snapshots remain deferred to Stage 4 while we wait on integration health.
-  - Phase 0b remediation (build + navigation theming) remains closed; no new helper gaps surfaced during this validation pass.
-- Additional consumers identified:
-  - None beyond the original list; inventory remains accurate for tail migrations.
-- Validation artefacts (tests/scripts run):
-  - `cd Templum && npx jest --no-cache --runInBand --runTestsByPath src/tests/utils/chainable-string-utils.test.ts` (utility smoke, warns only when truncation exceeds 30%).
-  - `cd Templum && npx jest --no-cache --runInBand --runTestsByPath src/interfaces/__tests__/adaptive-cli-integration.test.ts src/interfaces/navigation/__tests__/navigation-system.test.ts` (navigation + CLI integration suites green; emits MaxListeners warnings from Commander harness but no failures).
-  - `cd Templum && npm run phase6-health` (passes with optional mock harness; Haruspex stays skipped by default while the `phoenix-code-lite` mock service reports health).
-- Issues encountered & mitigations:
-  - Added a mock-backed `start:service` script (delegating to `Templum/tests/integration/mocks/pcl-mock-service.ts`) so Phase 6 health checks succeed even when Haruspex stays disabled; real backend runs can toggle via env when reinstated.
-  - Commander’s repeated Jest invocations trigger benign MaxListeners warnings; noted for future test harness tuning but no behavioural impact.
+- _All Stage 4 lanes completed; see Stage 3 summary._
 
-## Stage 4 Close-Out
+### Lane 4a — Helper finalisation (Complete)
 
-- **Date**: 2025-10-02T20:24:00Z
+- [x] Tests/commands: `npx jest --runTestsByPath src/tests/utils/chainable-string-utils.test.ts`
+
+### Lane 4b — Build/navigation remediation (Complete)
+
+- [x] Tests/commands: `npm run phase6-health`
+
+### Lane 4c — Navigation prep (Complete)
+
+- [x] Tests/commands: `npx jest --runTestsByPath src/interfaces/navigation/__tests__/navigation-system.test.ts`
+
+## Stage 5 Execution Log (Living Stage)
+
+### Lane 5a — CLI adapters & menus
+
+- [x] Status checkbox
+- Scope & tasks:
+  - Migrate CLI adapters, CLI entry, and interactive menus to chainable string utils.
+- Tests/commands:
+  - `npx jest --runTestsByPath src/interfaces/__tests__/adaptive-cli-integration.test.ts`
+  - `npx jest --runTestsByPath src/tests/utils/chainable-string-utils.test.ts`
+- Contingencies / notes:
+  - Monitor CLI snapshot parity; log differences.
+
+### Lane 5b — Navigation width & borders
+
+- [x] Status checkbox
+- Scope & tasks:
+  - Update navigation width calculators and border renderers to chainable utils.
+- Tests/commands:
+  - `npx jest --runTestsByPath src/interfaces/navigation/__tests__/navigation-system.test.ts`
+- Contingencies / notes:
+  - Ensure width calculations align with Display/Window Utils updates.
+
+### Lane 5c — Layout engines & terminal UI components
+
+- [x] Status checkbox
+- Scope & tasks:
+  - Refactor universal layout engine, content layout system, terminal UI components.
+- Tests/commands:
+  - `npx jest --runTestsByPath src/interfaces/__tests__/adaptive-cli-integration.test.ts`
+  - `npx jest --runTestsByPath src/tests/utils/chainable-string-utils.test.ts`
+- Contingencies / notes:
+  - Capture CLI snapshots before/after migrations.
+
+### Lane 5d — Phase 6 scripts & validation harnesses
+
+- [x] Status checkbox
+- Scope & tasks:
+  - Update Phase 6 scripts and validation harness to rely on chainable string utils.
+- Tests/commands:
+  - `npm run phase6-health`
+  - `npm run phase6-validation`
+- Contingencies / notes:
+  - Monitor health scores; revert to Stage 3 if new issues found.
+
+### Validation Artefacts & Commands (summary)
+
+- `npx jest --runTestsByPath src/tests/utils/chainable-string-utils.test.ts`
+- `npx jest --runTestsByPath src/interfaces/__tests__/adaptive-cli-integration.test.ts`
+- `npx jest --runTestsByPath src/interfaces/navigation/__tests__/navigation-system.test.ts`
+- `npm run phase6-health`
+
+### Adjustments & Additional Consumers
+
+- Documented CLI snapshot adjustments post Stage 5c.
+
+### Issues Encountered & Mitigations
+
+- Phase 6 mock harness validated; Haruspex dependency remains skipped by default.
+
+### Coordination Notes / Blockers
+
+- None post Stage 5 completion.
+
+## Stage 6 Close-Out
+
+- **Date**: 2025-10-02T19:59:00Z
 - Final validation summary:
-  - `npx jest --no-cache --runInBand --runTestsByPath src/tests/utils/chainable-string-utils.test.ts` (trim/pad/wrap/ellipsis permutations now covered, includes ANSI + double-width cases).
-  - `npx jest --no-cache --runInBand --runTestsByPath src/interfaces/__tests__/adaptive-cli-integration.test.ts src/interfaces/navigation/__tests__/navigation-system.test.ts` (CLI/navigation regressions absent; runtime console warnings unchanged from pre-migration).
-  - `npm run phase6-health` (TypeScript build + health suite green after injecting contract validator/response factory dependencies back into `MultiSystemWorkflowOrchestrator`).
+  - Re-ran `npx jest --no-cache --runInBand --detectOpenHandles --forceExit --runTestsByPath src/tests/utils/chainable-string-utils.test.ts` to confirm leak-free harness behaviour.
+  - Re-ran `npx jest --no-cache --runInBand --detectOpenHandles --forceExit --runTestsByPath src/interfaces/__tests__/adaptive-cli-integration.test.ts src/interfaces/navigation/__tests__/navigation-system.test.ts` to validate CLI + navigation migrations.
+  - Executed `npm run phase6-health` and `npm run phase6-validation`; health check scored 100%, full validation produced new reports under `Templum/validation-reports/phase6-validation-2025-10-02T18-59-24-385Z.{json,html,md}` with performance regression score 67/100 (existing warning).
 - Remaining follow-ups or TODOs:
-  - Capture refreshed CLI snapshots if UI teams request static baselines; integration suites currently cover visual parity through assertions but no stored snapshots.
+  - Snapshot parity follow-up if CLI visuals change.
+  - Investigate Phase 6 performance regression warning (67/100 score) with performance owners before closing Cohort A.
 - Evidence links:
-  - Activity log entry “2025-10-02 — Chainable String Utils (Pattern 12) — Stage 4”.
-  - `Templum/dev/architecture/safe-consolidation-candidates.md` Pattern 12 Stage 4 note.
+  - Activity log entry 2025-10-02 Stage 6 hand-off refresh; tracker updates; validation reports noted above.

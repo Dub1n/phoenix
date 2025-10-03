@@ -12,3 +12,34 @@ A benefit of using just the JSON for all the task info (it could be structured v
 This is effectively now also a similar but in some ways better, more procedural and with less context and thinking overhead, version of the DSS_Rules_Injector MCP.
 In any case, the rules injector MCP can be used as a foundation for this new server
 The workflow for using it as a rules_injector replacement will have to be worked out.
+
+---
+
+## Assistant Assessment — RGONUT MCP Concept (2025-10-11)
+
+### Applicability to Utility Consolidation Workflow
+
+- Single-source readiness data: Encoding Stage 5/Stage 6 gating commands, DI seams, evidence expectations, and tracker glyph states inside the JSON would let plans, schedules, and activity-log prompts render from one canonical record instead of duplicating edits across Markdown surfaces.
+- Guardrail dispatch: Returning pre-baked command strings or thin wrapper scripts (e.g., leak-guarded Jest invocations) directly from the MCP reduces drift, ensuring Stage 6 agents execute the exact harness mandated by Stage 5B without guessing.
+- Deterministic prompts: The MCP could enforce stage progression rules (block Stage 6 writes until Stage 5 fields populated, warn if evidence paths missing) and echo the exact next-step checklist during hand-offs, which matches the current playbook’s emphasis on pause points.
+
+### Integration Considerations
+
+- Schema first: Define JSON Schema or TypeScript contracts for stages, commands, and evidence so validation can fail fast whenever a required field is absent or malformed.
+- Generation vs. manual sync: Decide whether Markdown artefacts are generated from the JSON or simply validated against it; the benefits peak if the JSON becomes the source of truth and Markdown is derived, not co-authored.
+- Concurrency & versioning: Coordinate multiple agents. Tie MCP writes to git-aware operations (locks or transactional merges) to avoid clobbering updates when two lanes progress simultaneously.
+- Script safety: If JSON entries can execute scripts, restrict them to vetted wrappers, validate parameters, and log invocations; untrusted script execution would be a sizable risk surface.
+- Backups & recovery: Keep automated snapshots (e.g., git commits or mirrored files) so a malformed write doesn’t wipe the task registry.
+
+### Recommended Pilot Steps
+
+1. Model Pattern 5’s Stage 5/6 readiness in JSON, then render the relevant Markdown plan/schedule rows from that data to prove deduplication.
+2. Implement a read-only `GetInfo` MCP endpoint first; wire Stage 5B prompts to call it so agents consume the JSON source during planning.
+3. Add a validator that diff-checks Markdown artefacts against the JSON before Stage transitions, blocking merges when entries diverge.
+4. After the read path stabilises, layer on controlled write operations (e.g., `AddItem` with schema validation and role checks) plus optional script dispatch for leak-guard harnesses.
+
+### Precautions / Points to Watch
+
+- Avoid inflating context: ensure MCP responses stay scoped (e.g., section-level fetch) so agents aren’t pulling full documents unnecessarily.
+- Maintain parity with existing automation; don’t duplicate functionality already offered by the playbook scripts or trackers unless you retire the older path.
+- Plan for auditing: log MCP operations (who updated which item, when) to support cohort retrospectives and rollback analysis.

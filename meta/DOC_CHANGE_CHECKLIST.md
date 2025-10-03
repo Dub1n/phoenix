@@ -9,6 +9,7 @@ Legend: `[ ]` pending · `[x]` complete
 - [ ] Run required tests/validation commands.
 - [ ] Update canonical spec (`docs/current/architecture-spec.md` or equivalent) when behaviour changes.
 - [ ] Update progress tracker (`docs/current/progress.md`).
+- [ ] Update or verify `docs/current/testing-guide.md` if test commands, prerequisites, or runtimes changed.
 - [ ] Update/close requirement task log under `dev/tasks/`.
 - [ ] Archive or tag superseded docs/scripts.
 - [ ] `git status` clean except intentional changes; commit with descriptive message.

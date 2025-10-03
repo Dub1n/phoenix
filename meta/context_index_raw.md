@@ -1,8 +1,8 @@
 # context index (raw links)
 
-- generated: `2025-10-01T21:08:59Z`
+- generated: `2025-10-03T00:00:38Z`
 - root: `VDL_Vault`
-- paths-hash: `492a340c842ddd89a9f90873f1163c31a37bbbd7`
+- paths-hash: `dbde377f35a55584ba19e51f33572af19bd47e89`
 - raw-base: `https://raw.githubusercontent.com/Dub1n/phoenix/main`
 
 ## Haruspex
@@ -15,6 +15,7 @@ https://raw.githubusercontent.com/Dub1n/phoenix/main/Haruspex/docs/current/archi
 
 https://raw.githubusercontent.com/Dub1n/phoenix/main/meta/ARCHITECTURE.md
 https://raw.githubusercontent.com/Dub1n/phoenix/main/meta/context_index.md
+https://raw.githubusercontent.com/Dub1n/phoenix/main/meta/context_index_raw.md
 https://raw.githubusercontent.com/Dub1n/phoenix/main/meta/templates/architecture-spec.md
 https://raw.githubusercontent.com/Dub1n/phoenix/main/meta/workflows/README.md
 
@@ -41,6 +42,7 @@ https://raw.githubusercontent.com/Dub1n/phoenix/main/scripts/validation/template
 ## Templum
 
 https://raw.githubusercontent.com/Dub1n/phoenix/main/Templum/dev/architecture/architecture-restructuring-plan.md
+https://raw.githubusercontent.com/Dub1n/phoenix/main/Templum/dev/architecture/consolidation-state/README.md
 https://raw.githubusercontent.com/Dub1n/phoenix/main/Templum/dev/auto/pty-mcp-server/README.md
 https://raw.githubusercontent.com/Dub1n/phoenix/main/Templum/dev/CLI/CLI-current-architecture-data-flow.md
 https://raw.githubusercontent.com/Dub1n/phoenix/main/Templum/dev/CLI/CLI-design-2.1-architecture-data-flow.md

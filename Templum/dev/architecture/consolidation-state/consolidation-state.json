@@ -1,0 +1,195 @@
+{
+  "schemaVersion": "1.0.0",
+  "updatedAt": "2025-10-02T22:30:00Z",
+  "patterns": [
+    {
+      "patternId": 5,
+      "name": "Display Utils",
+      "description": "Align display-related helpers and migrate CLI consumers to shared DisplayUtils API.",
+      "stage": 6,
+      "owner": {
+        "agent": "Codex",
+        "claimedAt": "2025-10-02T16:20:00Z"
+      },
+      "dependencies": [6, 7],
+      "stageGates": {
+        "1": {
+          "status": "complete",
+          "completedAt": "2025-10-02T16:30:00Z",
+          "notes": "Plan drafted; consumer inventory captured in Stage 1 log."
+        },
+        "2": {
+          "status": "complete",
+          "completedAt": "2025-10-02T17:00:00Z",
+          "notes": "Display Utils DI seams implemented with TDD coverage."
+        },
+        "3": {
+          "status": "complete",
+          "completedAt": "2025-10-02T17:10:00Z",
+          "notes": "Orchestration plan established; Stage 4/5 dependencies recorded."
+        },
+        "4": {
+          "status": "complete",
+          "completedAt": "2025-10-09T18:45:00Z",
+          "notes": "All prerequisites satisfied; handoff block populated." }
+        ,
+        "5": {
+          "status": "ready",
+          "completedAt": "2025-10-10T14:24:00Z",
+          "notes": "Cohort alignment approvals logged; Stage 6 lanes marked Ready."
+        },
+        "6": {
+          "status": "in_progress",
+          "notes": "Lane 6a complete; remaining lanes pending migration."
+        },
+        "7": {
+          "status": "open"
+        }
+      },
+      "lanes": {
+        "6a": {
+          "status": "complete",
+          "scope": "Validate backend footprint and run consolidated backend test harness.",
+          "commands": [
+            {
+              "command": "rg -n \"DisplayUtils\" Templum/src/backend",
+              "status": "passed",
+              "executedAt": "2025-10-02T22:23:00Z",
+              "summary": "No backend matches"
+            },
+            {
+              "command": "cd Templum && npm run test -- --runTestsByPath src/tests/backend/comprehensive-backend-validation.test.ts --testNamePattern \"Display\" --runInBand --no-cache --forceExit",
+              "status": "passed",
+              "executedAt": "2025-10-02T22:25:16Z",
+              "exitCode": 0,
+              "logPath": "tmp/stage6/pattern-5/20251002T222516Z-lane6a.log",
+              "summary": "22 tests skipped (no backend Display cases)"
+            }
+          ],
+          "updatedAt": "2025-10-02T22:25:16Z",
+          "notes": "Backend scope remains N/A; rerun if new Display Utils imports appear."
+        },
+        "6b": {
+          "status": "pending",
+          "scope": "Migrate service-ordering-manager to DisplayUtils orderings and refresh related tests.",
+          "commands": [
+            {
+              "command": "cd Templum && npm run test -- --runTestsByPath src/interfaces/__tests__/service-ordering-manager.test.ts --runInBand --no-cache --forceExit",
+              "status": "pending"
+            },
+            {
+              "command": "cd Templum && npm run test -- --runTestsByPath src/tests/utils/display-utils.test.ts --runInBand --no-cache --forceExit",
+              "status": "pending"
+            }
+          ],
+          "dependencies": [
+            {
+              "patternId": 5,
+              "gate": "stage-5"
+            }
+          ]
+        },
+        "6c": {
+          "status": "pending",
+          "scope": "Centralise interface/navigation layout logic on DisplayUtils calculator.",
+          "commands": [
+            {
+              "command": "cd Templum && npm run test -- --runTestsByPath src/interfaces/__tests__/adaptive-cli-integration.test.ts --runInBand --no-cache --forceExit",
+              "status": "pending"
+            },
+            {
+              "command": "cd Templum && npm run test -- --runTestsByPath src/interfaces/navigation/__tests__/navigation-system.test.ts --runInBand --no-cache --forceExit",
+              "status": "pending"
+            }
+          ],
+          "dependencies": [
+            {
+              "patternId": 6,
+              "gate": "stage-5"
+            },
+            {
+              "patternId": 7,
+              "gate": "stage-5"
+            }
+          ]
+        },
+        "6d": {
+          "status": "pending",
+          "scope": "Audit shared utilities and documentation alignment for DisplayUtils DI seams.",
+          "commands": [
+            {
+              "command": "cd Templum && npm run test -- --runTestsByPath src/tests/utils/terminal-formatter.test.ts src/tests/utils/display-utils.test.ts --runInBand --no-cache --forceExit",
+              "status": "pending"
+            }
+          ],
+          "dependencies": [
+            {
+              "patternId": 6,
+              "gate": "lane-6c"
+            }
+          ]
+        }
+      },
+      "handoff": {
+        "guardrails": [
+          "Inject DisplayUtils columnsProvider and formatter for deterministic tests",
+          "Preserve logger severity at debug for ordering flows"
+        ],
+        "sharedFiles": [
+          "Templum/src/tests/helpers/display-columns-provider.ts",
+          "Templum/dev/architecture/display-stack-alignment.md"
+        ],
+        "acknowledgements": [
+          {
+            "agent": "Codex",
+            "timestamp": "2025-10-10T14:22:00Z",
+            "note": "Pattern 5 owner acknowledges Stage 5 alignment"
+          },
+          {
+            "agent": "Codex",
+            "timestamp": "2025-10-10T14:23:00Z",
+            "note": "Pattern 6 owner acknowledges Stage 5 alignment"
+          },
+          {
+            "agent": "Codex",
+            "timestamp": "2025-10-10T14:24:00Z",
+            "note": "Pattern 7 owner acknowledges Stage 5 alignment"
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "type": "log",
+          "path": "tmp/stage6/pattern-5/20251002T214624Z-display-utils.test.log",
+          "description": "Stage 5B gating evidence"
+        },
+        {
+          "type": "log",
+          "path": "tmp/stage6/pattern-5/20251002T222516Z-lane6a.log",
+          "description": "Backend validation rerun"
+        }
+      ],
+      "activity": [
+        {
+          "stage": "stage-5",
+          "timestamp": "2025-10-10T14:24:00Z",
+          "agent": "Codex",
+          "summary": "Stage 5 alignment approvals captured for display stack cohort.",
+          "files": [
+            "Templum/dev/architecture/utility-consolidation-plans/pattern-5.md"
+          ]
+        },
+        {
+          "stage": "lane-6a",
+          "timestamp": "2025-10-02T22:28:00Z",
+          "agent": "Codex",
+          "summary": "Lane 6a complete — backend scope confirmed N/A and validation suite rerun.",
+          "files": [
+            "Templum/dev/architecture/utility-consolidation-plans/pattern-5.md",
+            "Templum/dev/architecture/safe-consolidation-candidates.md"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -20,6 +20,7 @@ Project/
 │  ├ current/
 │  │  ├ architecture-spec.md (canonical)
 │  │  ├ progress.md (status tracker)
+│  │  ├ testing-guide.md (canonical test command matrix)
 │  │  ├ pattern-taxonomy.md (frontmatter category enum)
 │  │  ├ CHANGELOG.md
 │  │  └ supporting references (api.md, operations.md, etc.)
@@ -42,7 +43,8 @@ Project/
 ```
 
 Promote docs from `dev/` into `docs/current/` only after implementation matches reality. Archive superseded material immediately.
-Use the templates in `meta/templates/` (`architecture-spec.md`, `progress.md`, `task-log.md`) when creating or refreshing documents to keep structure consistent.
+Use the templates in `meta/templates/` (`architecture-spec.md`, `progress.md`, `task-log.md`, `testing-guide.md`) when creating or refreshing documents to keep structure consistent.
+Projects with automated validation suites must keep `docs/current/testing-guide.md` accurate—update it alongside spec changes whenever test commands, timeouts, or orchestration scripts shift.
 Keep each project's `pattern-taxonomy.md` in sync with its frontmatter schema and consult it before adding or updating pattern documentation.
 Validate frontmatter using `meta/scripts/validate_frontmatter.py` (points to `meta/templates/schema/frontmatter.json` by default) before committing significant documentation changes.
 

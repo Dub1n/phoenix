@@ -1,6 +1,6 @@
 ---
 date-created: 2025-09-14T17:45:00Z
-last-updated: 2025-09-16T14:00:00Z
+last-updated: 2025-10-02T16:26:03Z
 name: terminal-formatter
 description: Semantic formatter consolidating chalk usage into a capability-aware, cache-backed API for terminal output consistency
 status:
@@ -30,8 +30,8 @@ related-patterns:
 
 ## Consolidation Snapshot
 
-- **Redundancy**: 279 direct `chalk` calls spread across 14 high-traffic modules (validated with `rg -o "chalk"`).
-- **Top offenders**: `src/mcp-channel/src/visual-feedback-system.ts` (52), `src/cli-entry.ts` (49), `src/interfaces/cli-adapter-abstracted.ts` (45), `src/interfaces/terminal-ui-components.ts` (44), `src/interfaces/interactive-menu-renderer.ts` (41).
+- **Redundancy**: 266 direct `chalk` calls spread across 13 high-traffic modules (validated with `rg -c "chalk" Templum/src`).
+- **Top offenders**: `src/mcp-channel/src/visual-feedback-system.ts` (47), `src/cli-entry.ts` (51), `src/interfaces/cli-adapter-abstracted.ts` (44), `src/interfaces/terminal-ui-components.ts` (35), `src/interfaces/interactive-menu-renderer.ts` (27).
 - **Impact**: ≈200 duplicated lines eliminated; guarantees uniform accessibility prefixes and fallback behaviour.
 - **Priority**: HIGH within display utilities—standardises CLI output before migration work on windows and layout helpers.
 
@@ -46,24 +46,24 @@ Terminal output currently mixes raw `chalk` calls, ad-hoc glyphs, and inconsiste
 
 ### Redundancy Evidence
 
-Captured via `rg -o "chalk" -g '*.ts' Templum/src`:
+Captured via `rg -c "chalk" Templum/src`:
 
 | File | Direct `chalk` references | Notes |
 |------|--------------------------|-------|
-| `Templum/src/mcp-channel/src/visual-feedback-system.ts` | 52 | Status/completion banners, inline diagnostics |
-| `Templum/src/cli-entry.ts` | 49 | Boot banners, menu prompts, progress output |
-| `Templum/src/interfaces/cli-adapter-abstracted.ts` | 45 | Menu rendering, error messaging |
-| `Templum/src/interfaces/terminal-ui-components.ts` | 44 | Theme definitions with scattered styling |
-| `Templum/src/interfaces/interactive-menu-renderer.ts` | 41 | Selection highlighting, paging hints |
-| `Templum/src/interfaces/navigation/border-renderer.ts` | 20 | Border glyph definitions |
-| `Templum/src/rendering/content-layout-system.ts` | 10 | Section headers, separators |
-| `Templum/src/interfaces/enhanced-window-system.ts` | 10 | Focused window chrome |
-| `Templum/src/rendering/universal-layout-engine.ts` | 8 | Layout diagnostics |
-| `Templum/src/interfaces/terminal-compatibility-detector.ts` | 6 | Capability probes duplicating formatter logic |
-| `Templum/src/interfaces/universal-interaction-manager.ts` | 5 | Inline prompts |
-| `Templum/src/interfaces/navigation/width-calculator.ts` | 4 | Border previews |
+| `Templum/src/mcp-channel/src/visual-feedback-system.ts` | 47 | Status/completion banners, inline diagnostics |
+| `Templum/src/cli-entry.ts` | 51 | Boot banners, menu prompts, progress output |
+| `Templum/src/interfaces/cli-adapter-abstracted.ts` | 44 | Menu rendering, error messaging |
+| `Templum/src/interfaces/terminal-ui-components.ts` | 35 | Theme definitions with scattered styling |
+| `Templum/src/interfaces/interactive-menu-renderer.ts` | 27 | Selection highlighting, paging hints |
+| `Templum/src/interfaces/navigation/border-renderer.ts` | 19 | Border glyph definitions |
+| `Templum/src/rendering/content-layout-system.ts` | 9 | Section headers, separators |
+| `Templum/src/interfaces/enhanced-window-system.ts` | 9 | Focused window chrome |
+| `Templum/src/rendering/universal-layout-engine.ts` | 7 | Layout diagnostics |
+| `Templum/src/interfaces/terminal-compatibility-detector.ts` | 5 | Capability probes duplicating formatter logic |
+| `Templum/src/interfaces/universal-interaction-manager.ts` | 4 | Inline prompts |
+| `Templum/src/interfaces/navigation/width-calculator.ts` | 3 | Border previews |
 | `Templum/src/interfaces/window-layout-manager.ts` | 1 | Legacy heading styling |
-| `Templum/src/utils/terminal-formatter.ts` | 9 | Existing formatter internals; once consolidated, no other modules keep direct `chalk` imports |
+| `Templum/src/utils/terminal-formatter.ts` | 5 | Existing formatter internals; once consolidated, no other modules keep direct `chalk` imports |
 
 ## Solution Overview
 

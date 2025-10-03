@@ -24,7 +24,7 @@ tags: ['consolidation', 'utilities', 'redundancy', 'optimization', 'phase-1-comp
 
 Refer to [`utility-consolidation-onboarding.md`](utility-consolidation-onboarding.md) for the coordinated onboarding sequence, reference map, and utility ownership workflow used by agents during consolidation.
 
-**Tracker Convention**: When Stage 2.5 planning is finished, mark the pattern’s Stage 2.5 row as `[x]`. If Stage 3 work uncovers a new helper or dependency gap, revert that glyph to `[~]`, return to Stage 2.5 to refresh the plan/owners, log the change, and only move back to Stage 3 once the updated plan is in place. Stage 3 rows stay `[x]` only when every required phase (including any added after a Stage 2.5 revisit) is complete.
+**Tracker Convention**: When Stage 3 planning is finished, mark the pattern’s Stage 3 row as `[x]`. If Stage 6 work uncovers a new helper or dependency gap, revert that glyph to `[~]`, return to Stage 3 to refresh the plan/owners, log the change, and only move back to Stage 6 once the updated plan is in place. Stage 6 rows stay `[x]` only when every required lane (including any added after a Stage 3 revisit) is complete.
 
 ## Consolidation Impact Summary
 
@@ -246,8 +246,8 @@ These areas show true redundancy without architectural value:
   - [ ] `src/interfaces/terminal-ui-components.ts` (142 console calls)
   - [ ] `src/core/templum-core.ts` (167 console calls)
   - [ ] `src/core/adapter-registry.ts` (123 console calls)
-  - [ ] `src/skin/universal-skin-engine.ts` (189 console calls)
-  - [ ] `src/session/templum-universal-session-manager.ts` (134 console calls)
+  - [x] `src/skin/universal-skin-engine.ts` (189 console calls)
+  - [x] `src/session/templum-universal-session-manager.ts` (134 console calls)
   - [ ] All other files with console.log/warn/error calls (68+ additional files)
 
 - **Current Problem**: 2,810 console.log/warn/error calls with inconsistent formatting
@@ -263,7 +263,7 @@ These areas show true redundancy without architectural value:
   - [ ] `src/backend/service-discovery.ts` (76 catch blocks)
   - [ ] `src/backend/connection-factory.ts` (54 catch blocks)
   - [ ] `src/interfaces/cli-adapter-abstracted.ts` (63 catch blocks)
-  - [ ] `src/skin/universal-skin-engine.ts` (71 catch blocks)
+  - [x] `src/skin/universal-skin-engine.ts` (71 catch blocks)
   - [ ] `src/core/templum-core.ts` (58 catch blocks)
   - [ ] All other files with try/catch blocks (74+ additional files)
 
@@ -311,9 +311,25 @@ These areas show true redundancy without architectural value:
 - [T] **Utility File**: (Templum/src/utils/display-utils.ts)
 - [ ] **Files Using This Pattern**:
   - [ ] `src/interfaces/cli-display-consistency-engine.ts` - DisplayStandardsCalculator
-  - [ ] `src/interfaces/service-ordering-manager.ts` - Service display ordering
+  - [x] `src/interfaces/service-ordering-manager.ts` - Service display ordering
   - [ ] `src/rendering/universal-layout-engine.ts` - Layout calculations
   - [ ] Display consistency patterns scattered across CLI components
+
+- **Stage Notes**:
+  - Stage 1 plan drafted (2025-10-02) — see `utility-consolidation-plans/pattern-5.md`
+  - Stage 2 tests + utility adjustments completed (2025-10-02) — new suite `src/tests/utils/display-utils.test.ts`, DI hooks added via `DisplayUtils.configure/reset`
+  - Stage 3 plan drafted (2025-10-02) — Stage 4 lanes populated (service-ordering/CLI test prep through Stage 4c shared audit) with readiness summary + Stage 5 alignment ownership placeholder
+  - Stage 4b CLI layout baseline complete (2025-10-02) — responsive width and separator recursion snapshots landed in `src/interfaces/__tests__/adaptive-cli-integration.test.ts`; command logged (`npm run test -- --runTestsByPath src/interfaces/__tests__/adaptive-cli-integration.test.ts --runInBand --no-cache --forceExit`).
+  - Stage 4c coordination lane complete (2025-10-02) — reconciled Terminal Formatter + Window Utils spacing defaults and introduced shared `columnsProvider` mock helper (`Templum/src/tests/helpers/display-columns-provider.ts`) adopted by regression suites; see plan + activity log for evidence and test command outputs.
+  - Stage 4a regression harness complete (2025-10-08) — `src/interfaces/__tests__/service-ordering-manager.test.ts` covers connected-first defaults, configuration toggles, and DisplayUtils logging expectations.
+- Stage 4 handoff block populated (2025-10-08) — `utility-consolidation-plans/pattern-5.md` enumerates shared constants, DI seams (Display/Window/Terminal), and reusable helpers (`display-columns-provider`, formatter/window fixtures).
+- Stage 5 prep complete (2025-10-09) — `display-stack-alignment.md` pre-populated with Stage 4 baselines, coordinator assigned, and kickoff checklist logged; waiting on Patterns 6/7 owner confirmations before publishing the shared spec.
+- Stage 5 alignment complete (2025-10-10) — shared spec finalised with approvals, Stage 6 gating checklist published, and pattern plans updated with Stage 5 acknowledgements.
+  - Stage 5 pattern prep complete (2025-10-02 rerun, logged 2025-10-02T22:07Z) — Stage 5B notes now link executed evidence under `tmp/stage6/pattern-5/` (unit, CLI, leak-guard, health logs) and all lanes sit `Ready`; see activity log entry “2025-10-02 — Display Utils (Pattern 5) — Stage 5B Gating Battery” and schedule cell `C[x] P[x]`.
+  - Stage 6 lane a complete (2025-10-02T22:25Z) — `rg -n "DisplayUtils" Templum/src/backend` returned no matches; backend validation command (`npm run test -- --runTestsByPath src/tests/backend/comprehensive-backend-validation.test.ts --testNamePattern "Display" --runInBand --no-cache --forceExit`) exited 0 with all Display-tagged backend tests skipped.
+  - Stage 6 lane d complete (2025-10-11T15:32Z) — `configureDisplayStack`/`resetDisplayStack` introduced to wrap `DisplayUtils.configure` + shared formatter seams, new integration suite `src/tests/utils/display-stack.integration.test.ts` added, and architecture spec updated to document the display stack DI helper; execution logged under `tmp/stage6/pattern-5/20251011T153200Z-display-stack-lane-d.log`.
+  - Stage 6 lane d (2025-10-03T00:00Z) — MCP visual feedback system now routes all colour/Unicode handling through `TerminalFormatter`; formatter-aware muted/accent helpers replace `chalk` chains, and streaming outputs clamp to terminal width with ANSI-safe fallbacks. Evidence: `node scripts/run-with-timeout.mjs --timeout 45000 -- npm test -- --runTestsByPath src/tests/mcp/visual-feedback-system.formatter.test.ts --runInBand --forceExit` (PASS). Phase 6 scripts executed via the timeout harness but remain blocked by existing `tsc` errors in CLI/navigation modules (`cli-entry.ts` literal width typing, missing interactive renderer helpers, `terminal-ui-components.ts` isolatedModules export fix, absent `interfaces/navigation/exit-handler.ts`); owner coordination required before recording PASS for those commands.
+  - Stage 6 lane c in progress (2025-10-02T23:06Z) — `src/interfaces/terminal-ui-components.ts` now sources layout metrics from `DisplayUtils`/`WindowUtils`, adaptive CLI + navigation regression suites enforce separator/border widths (`tmp/stage6/pattern-5/20251002T230547Z-adaptive-cli-integration.test.log`, `tmp/stage6/pattern-5/20251002T230617Z-navigation-system.test.log`); outstanding work tracked in plan to migrate CLI display engine + universal layout engine consumers.
 
 - **Current Problem**: Display calculations repeated in multiple places
 - **API Design**: `display.calculate().width(80).order('connected-first')` - Fluent API
@@ -331,21 +347,48 @@ These areas show true redundancy without architectural value:
 - **Current Problem**: Border and window layout logic duplicated
 - **API Design**: `window.border('double').title('Menu').render()` - Chainable window API
 - **Impact**: ~15 files, ~300 lines reduction, consistent window management
+- **Stage Notes**:
+  - Stage 5 alignment complete (2025-10-10) — Window Utils owner acknowledged `display-stack-alignment.md`; Stage 6 migrations must route formatter + columns provider injection through `WindowUtils.configure/reset` per spec.
+  - Stage 5 pattern prep complete (2025-10-02 rerun) — Stage 5B notes reference executed logs under `tmp/stage6/pattern-6/` (formatter, terminal UI, navigation, MCP, leak-guard, phase6-health) with every lane marked `Ready`.
 
 ### 7. Terminal Formatter Consolidation
 
 - [x] **Pattern File**: [Terminal Formatter Utility Pattern](../patterns/utilities/display/terminal-formatter.md) — refreshed 2025-09-16T14:00:00Z with quantified impact metrics, file inventory, and a complete implementation validation checklist
 - [T] **Utility File**: (Templum/src/utils/terminal-formatter.ts)
 - [ ] **Files Using This Pattern**:
-  - [ ] `src/interfaces/cli-adapter.ts` (47 chalk calls)
-  - [ ] `src/interfaces/cli-adapter-abstracted.ts` (52 chalk calls)
-  - [ ] `src/interfaces/terminal-ui-components.ts` (89 chalk calls)
-  - [ ] `src/rendering/universal-layout-engine.ts` (34 chalk calls)
-  - [ ] All other files using chalk (10+ additional files)
+  - [ ] `src/cli-entry.ts` (51 chalk calls)
+  - [ ] `src/mcp-channel/src/visual-feedback-system.ts` (47 chalk calls)
+  - [ ] `src/interfaces/cli-adapter-abstracted.ts` (44 chalk calls)
+  - [ ] `src/interfaces/terminal-ui-components.ts` (35 chalk calls)
+  - [ ] `src/interfaces/interactive-menu-renderer.ts` (27 chalk calls)
+  - [ ] `src/rendering/content-layout-system.ts` (9 chalk calls)
+  - [x] `src/interfaces/enhanced-window-system.ts` (9 chalk calls)
+  - [ ] `src/rendering/universal-layout-engine.ts` (7 chalk calls)
+  - [ ] `src/interfaces/terminal-compatibility-detector.ts` (5 chalk calls)
+  - [ ] `src/interfaces/universal-interaction-manager.ts` (4 chalk calls)
+  - [ ] `src/interfaces/navigation/border-renderer.ts` (19 chalk calls)
+  - [ ] `src/interfaces/navigation/width-calculator.ts` (3 chalk calls)
+  - [ ] `src/interfaces/window-layout-manager.ts` (1 chalk call)
 
-- **Current Problem**: 279 chalk calls with inconsistent color usage
+- **Current Problem**: 266 chalk calls with inconsistent color usage
 - **API Design**: `fmt.success('text').border()` - Semantic formatting, auto-fallback
-- **Impact**: ~14 files, ~200 lines reduction, consistent terminal styling
+- **Impact**: ~13 files, ~200 lines reduction, consistent terminal styling
+- [x] Stage 1 plan drafted — see `Templum/dev/architecture/utility-consolidation-plans/pattern-7.md` (2025-10-02); consumer inventory reconfirmed with `rg -l "chalk" Templum/src` and staged migration order captured in the Stage 1 snapshot.
+- [x] Stage 2 utility + tests — baseline formatter coverage (`src/tests/utils/terminal-formatter.test.ts`) remains green with cache/fallback scenarios; capabilities suite follow-ups tracked in the Stage 2 notes section.
+- [x] Stage 3 readiness summary recorded — `Templum/dev/architecture/utility-consolidation-plans/pattern-7.md` updated 2025-10-06 with Stage 4 lanes, Stage 5 lane breakdown, and coordination risks; see activity log entry 2025-10-06.
+- [x] Stage 4 prerequisites — lane 4a completed 2025-10-08: Window Utils now inject formatter capabilities and enforce ASCII fallbacks; regression suites `src/tests/utils/window-utils.test.ts` and `src/tests/utils/terminal-formatter.test.ts` rerun (globalTeardown handle warning persists, no new leaks).
+- [x] Stage 4 prerequisites — lane 4b completed 2025-10-08: shared glyph/spacing constants extracted to `src/utils/window-theme-constants.ts`, fixtures unified, and gating suites rerun with hang-safe parameters.
+- [x] Stage 4 prerequisites — lane 4c completed 2025-10-02: CLI regression harness extended with window/theme baselines using `scripts/run-with-timeout.mjs` + `scripts/run-jest-ci.mjs`; logs stored under `tmp/stage4c-*.log` for audit.
+- [x] Stage 6 lane c completed 2025-10-02T23:32Z — CLI/menu consumers now inject shared formatter + columns providers via `TerminalUI.configure`, new `terminal-ui-theme.ts` wraps palette specs, and handler-guarded logs archived under `tmp/stage6/pattern-7/20251002T233503Z-adaptive-cli-integration.test.log` and `...233137Z-interface-adapter-integration.test.log`.
+- [x] Stage 4 handoff block documented 2025-10-08 — see `utility-consolidation-plans/pattern-7.md` Stage 4 Handoff Block for consolidated constants, DI seams, reusable test helpers, and outstanding Stage 5 risks.
+- [x] Stage 5 alignment complete (2025-10-10) — alignment spec approved, Stage 6 battery defined (formatter, display, window, CLI, navigation suites), and pattern plan Stage 5 summary/approvals updated.
+- [x] Stage 5 pattern prep logged (2025-10-10) — pattern plan Stage 5B now links executed gating evidence under `tmp/stage6/pattern-7/` (formatter/window/core, CLI harness, service/session, MCP, phase6-health) with all lanes marked `Ready`.
+- [x] Stage 6 lane a — CLI adapter + entrypoint migration now fully formatter-backed; DisplayUtils assertions adjusted (see `tmp/stage6/pattern-6/20251002T231009Z-adaptive-cli-integration.test.log`). Persistent Jest globalTeardown socket warnings remain; track remediation before Stage 7 close-out.
+- [x] Stage 6 lane c — navigation helpers now consume formatter/DisplayUtils seams; leak-guarded harness runs (`npm run test:ci -- --runTestsByPath src/interfaces/navigation/__tests__/navigation-system.test.ts`, `npm run test:ci -- --runTestsByPath tests/interfaces/interface-adapter-integration.test.ts`) passed 2025-10-02, confirming ASCII fallback + separator invariants.
+- [x] Stage 6 lane d — MCP visual feedback surfaces now render through `WindowUtils` with formatter-driven fallbacks; handler-guarded tests (`node scripts/run-with-timeout.mjs --timeout 120000 -- node scripts/run-jest-ci.mjs --runTestsByPath src/tests/mcp/visual-feedback-system.formatter.test.ts`) pass. `npm run phase6-health` still fails at the global TypeScript build due to long-standing CLI/navigation typing gaps (documented in plan and activity log) rather than the MCP updates.
+- [x] Stage 5 pattern prep refreshed (2025-10-11) — readiness notes retain DI/verifier context; no outstanding gating TODOs after the 2025-10-02 reruns.
+- [x] Stage 6 lane a (window/layout) complete — consolidated width/layout consumers onto `DisplayUtils` + `WINDOW_SPACING`, retired bespoke padding manager/breakpoints, and refreshed navigation window tests. Evidence: plan lane update (2025-10-02T22:41:32Z), `npm run test -- --runTestsByPath src/tests/utils/display-utils.test.ts` ✅, navigation suite still blocked by upstream `terminal-ui-components.ts` deletion and pre-existing breadcrumb spy expectation + jest handle leak (logged in activity record).
+- [x] Stage 6 lane b (terminal UI + rendering) complete — terminal UI components, interactive menu renderer, and universal layout engine now consume injected formatter/palette helpers; `TerminalFormatter` exposes shared `palette.*` APIs with Jest coverage. Validation: `npm run test -- --runTestsByPath src/tests/rendering/terminal-ui-components.formatter.test.ts` and `npm run test -- --runTestsByPath src/tests/utils/display-utils.test.ts` (2025-10-06T21:17:00Z). See `utility-consolidation-plans/pattern-6.md` Stage 6b notes for evidence and follow-ups.
 
 ### 8. Theme Utils Consolidation
 
@@ -393,20 +436,29 @@ These areas show true redundancy without architectural value:
 - [ ] Current State: `npm run phase6-health` passes as of 2025-10-02 (helper predicates compiled cleanly); rerun after each Phase 3 migration batch to ensure no new type predicate regressions.
 - [x] Stage 1 plan drafted — see `Templum/dev/architecture/utility-consolidation-plans/pattern-10.md` (2025-10-01)
 - [x] Stage 2 utility + tests complete — see activity log entry 2025-10-01 (Pattern 10 Stage 2); implementation in `Templum/src/utils/type-guards.ts` with Jest coverage `Templum/tests/utils/type-guards.test.ts`
-- [x] Stage 2.5 migration plan refreshed — Phase 0a/0b lanes complete; helper coverage + `npm test -- type-guards` exit cleanly (see 2025-10-02 Stage 2.5 log and `Templum/dev/architecture/utility-consolidation-plans/pattern-10.md`).
+- [x] Stage 3 readiness summary recorded — Stage 4 lanes `[x]`; Stage 6 lane checklists in `Templum/dev/architecture/utility-consolidation-plans/pattern-10.md` contain actionable tasks/tests for lanes a–d (last updated 2025-10-03).
+- [x] Stage 6 lane b (core orchestration) complete — consolidated guard usage in adapter registry, templum-config-manager, and universal-interface-manager; leak-guard commands green (`npm run test:ci -- --runTestsByPath tests/core/adapter-registry.test.ts`, `tests/core/templum-config-manager-guards.test.ts`, `tests/core/universal-interface-manager.test.ts`). Revalidated 2025-10-05 after patching residual inline guard checks; reran `npm run test:ci -- --runTestsByPath tests/core/adapter-registry.test.ts`, `tests/core/templum-config-manager-guards.test.ts`, and `tests/core/universal-interface-manager.test.ts` (green).
+- [x] Stage 6 lane a complete — backend service discovery/router/validator consumers now use shared TypeGuards (`CI=1 npm test -- service-discovery` green). See 2025-10-02 Stage 6 log and updated plan checklist.
+- [x] Stage 6 lane c complete — refactored CLI adapter and navigation parsers to shared guard helpers and re-ran `npm run test:ci -- --runTestsByPath src/interfaces/__tests__/adaptive-cli-integration.test.ts`, `npm run test:ci -- --runTestsByPath src/interfaces/navigation/__tests__/navigation-system.test.ts`, and `npm run test:ci -- --runTestsByPath tests/interfaces/interface-adapter-integration.test.ts` (post Stage 7 follow-up: listener warnings resolved).
+- [x] Stage 6 lane d complete — session manager preserved-state flow and shared utilities now enforce consolidated guard/assertion APIs; validated via `npm run test:ci -- --runTestsByPath src/tests/utils/service-utils.test.ts`, `src/tests/utils/terminal-formatter.test.ts`, `src/tests/utils/protocol-utils.test.ts`, `src/tests/session/templum-universal-session-manager.test.ts`, and `npm test -- --runTestsByPath tests/utils/type-guards.test.ts` on 2025-10-02T16:24:22Z (see activity log entry for evidence).
+- [x] Stage 7 validation & reporting re-run — 2025-10-07 targeted suites green (`CI=1 npm run test:ci -- --runTestsByPath src/tests/backend/service-discovery.test.ts`, `tests/core/adapter-registry.test.ts`, `src/interfaces/navigation/__tests__/navigation-system.test.ts`, `src/tests/utils/service-utils.test.ts`, `src/tests/utils/terminal-formatter.test.ts`, `src/tests/utils/protocol-utils.test.ts`, `src/tests/session/templum-universal-session-manager.test.ts`, `CI=1 npm test -- --runTestsByPath tests/utils/type-guards.test.ts --runInBand`); listener cleanup and DI seams confirmed stable, trackers updated 2025-10-07T14:30:00Z.
 
 ### 11. Serialization Utils Consolidation
 
 - [x] **Pattern File**: [Serialization Utils Utility Pattern](../patterns/utilities/data/serialization-utils.md) — updated with quantified duplication metrics, hotspot inventory, and migration/validation checklist (2025-10-01)
-- [ ] **Utility File**: (Templum/src/utils/serialization-utils.ts) — removed placeholder implementation; recreate after doc refresh
-- [ ] **Files Using This Pattern**:
-  - [ ] JSON processing for skin definitions
-  - [ ] Configuration file serialization
-  - [ ] Backend communication data handling
+- [x] **Utility File**: (Templum/src/utils/serialization-utils.ts) — fluent serialization/parsing API implemented with logger/error-handler integration (baseline 2025-10-01; reconfirmed during 2025-10-06 Stage 7 validation)
+- [x] **Files Using This Pattern**:
+  - [x] JSON processing for skin definitions
+  - [x] Configuration file serialization
+  - [x] Backend communication data handling
 - [x] Stage 1 plan drafted — see `Templum/dev/architecture/utility-consolidation-plans/pattern-11.md`; consumer inventory prioritises service-discovery, backend-service-router, connection-factory, templum-core, cli-entry, observability system, and universal skin engine.
 
 - [x] Stage 2 tests passing — see activity log (2025-10-01 Stage 2); serialization builder coverage extended for masking, circular references, revivers, and schema failure cases.
-- [~] Stage 2.5 migration plan drafted — Phase 0 lanes (0a schema defaults, 0b logging bridge, 0c CLI/observability fallbacks) pending; see `Templum/dev/architecture/utility-consolidation-plans/pattern-11.md` for phase checkpoints.
+- [x] Stage 3 readiness summary recorded — Stage 4 lanes `[x]`; Stage 6 lane checklist in `Templum/dev/architecture/utility-consolidation-plans/pattern-11.md` covers backend/router/CLI/observability migrations with required tests.
+- [x] Stage 6 lane a complete — backend data-source migrations now consume serialization builders; see 2025-10-04 Stage 6 log for test evidence.
+- [x] Stage 6 lane b complete — router messaging and streaming consumers now marshal serialization contexts; see 2025-10-02 Stage 6 log for timeout-run Jest evidence and the phase6-services follow-up.
+- [x] Stage 6 lane c complete — CLI/core serialization surfaces now consume shared builders and contract sanitizers; see 2025-10-02 Stage 6 log for `npm run phase6-health`, `npm run phase6-validation`, and menu adapter unit coverage (`npm test -- src/tests/rendering/menu-definition-adapter.test.ts`).
+- [x] Stage 7 validation + reporting revalidated (2025-10-02) — `npm test -- --runTestsByPath src/tests/utils/serialization-utils.test.ts --runInBand --no-cache --forceExit`, `npm test -- --runTestsByPath src/tests/rendering/menu-definition-adapter.test.ts --runInBand --no-cache --forceExit`, `node scripts/run-with-timeout.mjs --timeout 90000 -- npm test -- --runTestsByPath src/tests/backend/comprehensive-backend-validation.test.ts --testNamePattern "Pattern 11 Phase 2 router serialization contexts" --runInBand --no-cache --forceExit`, `npm run phase6-health` (100% readiness), `npm run phase6-validation` (92% readiness; performance monitor score 67/100), `npm run phase6-services` (usage prompt, exit 1 — requires `start|stop|status`). Follow-ups logged for performance remediation + CLI usage guidance.
 
 - **Current Problem**: JSON/serialization patterns repeated across components
 - **API Design**: `serialize.json(obj).withDefaults()` - Safe serialization with validation
@@ -428,10 +480,10 @@ These areas show true redundancy without architectural value:
 
 - [x] Stage 2 utility + tests complete — see activity log entry 2025-10-01 (Pattern 12 Stage 2); chainable API implemented under `Templum/src/utils/chainable-string-utils.ts` with Jest coverage `Templum/src/tests/utils/chainable-string-utils.test.ts`.
 
-- [x] Stage 2.5 migration plan updated — Phase 0b TypeScript build & navigation remediation completed (see `Templum/dev/architecture/utility-consolidation-plans/pattern-12.md` 2025-10-02 update).
+- [x] Stage 3 readiness summary recorded — Stage 4 helper/build lanes `[x]`; Stage 6 sections in `Templum/dev/architecture/utility-consolidation-plans/pattern-12.md` capture executed migrations/tests for lanes a–d.
 
-- [x] Stage 3 migrations complete — CLI adapters, navigation width-calculator, terminal UI components, border renderer, layout normalizer, content/universal layout engines, and Phase 6 scripts validated via `npx jest --no-cache --runInBand --runTestsByPath src/tests/utils/chainable-string-utils.test.ts` and `npx jest --no-cache --runInBand --runTestsByPath src/interfaces/__tests__/adaptive-cli-integration.test.ts src/interfaces/navigation/__tests__/navigation-system.test.ts`; `npm run phase6-health` now passes against the optional mock harness (Haruspex skipped by default, mock service lives in `Templum/tests/integration/mocks/pcl-mock-service.ts` and is invoked via `phoenix-code-lite` `start:service`).
-- [x] Stage 4 validation + reporting complete — `npx jest --no-cache --runInBand --runTestsByPath src/tests/utils/chainable-string-utils.test.ts` (trim/pad/wrap coverage), `npx jest --no-cache --runInBand --runTestsByPath src/interfaces/__tests__/adaptive-cli-integration.test.ts src/interfaces/navigation/__tests__/navigation-system.test.ts`, and `npm run phase6-health`; progress tracker + pattern plan updated with evidence. Snapshot parity remains a follow-up if CLI visuals change.
+- [x] Stage 6 migrations complete — CLI adapters, navigation width-calculator, terminal UI components, border renderer, layout normalizer, content/universal layout engines, and Phase 6 scripts validated via `npx jest --no-cache --runInBand --runTestsByPath src/tests/utils/chainable-string-utils.test.ts` and `npx jest --no-cache --runInBand --runTestsByPath src/interfaces/__tests__/adaptive-cli-integration.test.ts src/interfaces/navigation/__tests__/navigation-system.test.ts`; `npm run phase6-health` now passes against the optional mock harness (Haruspex skipped by default, mock service lives in `Templum/tests/integration/mocks/pcl-mock-service.ts` and is invoked via `phoenix-code-lite` `start:service`).
+- [x] Stage 7 validation + reporting complete — `npx jest --no-cache --runInBand --detectOpenHandles --forceExit --runTestsByPath src/tests/utils/chainable-string-utils.test.ts` (trim/pad/wrap coverage), `npx jest --no-cache --runInBand --detectOpenHandles --forceExit --runTestsByPath src/interfaces/__tests__/adaptive-cli-integration.test.ts src/interfaces/navigation/__tests__/navigation-system.test.ts`, `npm run phase6-health`, and `npm run phase6-validation`; latest run captured validation artefacts in `Templum/validation-reports/phase6-validation-2025-10-02T18-59-24-385Z.*` with the standing performance regression warning (Phase 6 score 67/100). Snapshot parity remains a follow-up if CLI visuals change.
 
 ---
 

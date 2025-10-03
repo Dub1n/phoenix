@@ -38,74 +38,127 @@
   - No hidden legacy `type-guards` export should remain elsewhere (validate during Stage 2)
   - Confirm Jest setup hooks (`Templum/tests/setup.ts`) have no implicit guard helpers before rewiring
 
-## Stage 2.5 — Migration Orchestration & Agent Tasking
+## Stage 3 — Migration Orchestration & Coordination
 
-- **Date**: 2025-10-02T09:20:00Z
-- Helpers / prerequisites before migrations (0a and 0b may proceed in parallel once branches are cut):
-  - [x] Implement `TypeGuards.isPlainObject` (Phase 0a — parallel agent, 2025-10-02; unblock Phase 0b assertions for plain-object gating)
-  - [x] Implement `SemanticValidators.hasFunction` (Phase 0a — parallel agent, 2025-10-02; required for backend registry guard consolidation)
-  - [x] Implement `SemanticValidators.hasArrayOf` (Phase 0a — parallel agent, 2025-10-02; supports session manager + navigation payload guards)
-  - [x] Extend `Templum/tests/utils/type-guards.test.ts` to cover new helpers (Phase 0b — owner: Codex; build Jest cases that fail until Phase 0a exports land)
-  - [x] Verify `npm test -- type-guards` passes after helper work (Phase 0b — owner: Codex; CI runs exit cleanly after resolving lingering handles)
-- Phase assignments (update agent names when delegated):
-  - [x] **Phase 0a — Helper Implementation** (Parallel agent — completed 2025-10-02): Add `isPlainObject`, `hasFunction`, `hasArrayOf`, ensure typings/docs updated.
-  - [x] **Phase 0b — Helper Validation & Tests** (Agent Codex): Extend utility Jest suite, stage coverage for new helpers, rerun `npm test -- type-guards` (resolved lingering handles via `--detectOpenHandles`; focused/CLI runs now exit cleanly).
-  - [ ] **Phase 1 — Backend Migration** (Agent TBD): Migrate `service-discovery.ts`, `backend-service-router.ts`, `service-discovery-validator.ts`; extend backend suites; run `npm test -- service-discovery` & `npm test -- type-guards`.
-  - [ ] **Phase 2 — Core Orchestration** (Agent TBD): Refactor `core/adapter-registry.ts`, `templum-config-manager.ts`, `universal-interface-manager.ts`; run `npm test -- adapter-registry` & `npm test -- type-guards`.
-  - [ ] **Phase 3 — Interface & Navigation** (Agent TBD): Update CLI/navigation modules; run `npm test -- navigation-system` & `npm test -- type-guards`.
-  - [ ] **Phase 4 — Session & Shared Utilities** (Agent TBD): Update session manager/shared utils; run `npm test -- session-manager` (or `npm test -- terminal-formatter`) & `npm test -- type-guards`.
-- Phase 0b Execution Notes (Codex):
-  - Add new describe block to `Templum/tests/utils/type-guards.test.ts` covering `TypeGuards.isPlainObject`, `SemanticValidators.hasFunction`, and `SemanticValidators.hasArrayOf`, ensuring we assert negative cases (arrays, functions, null) so helper semantics remain strict.
-  - Mirror upcoming helper signatures in tests via `import { TypeGuards, SemanticValidators }` to surface missing exports; coordinate with Phase 0a before landing to avoid prolonged red CI windows.
-  - Capture validation command `npm test -- type-guards` output in Stage 2.5 activity log once helpers exist; if tests regress, flip both this checklist item and the schedule glyph back to `[B]` and re-enter Stage 2.5 planning.
-  - Dependency callouts: backend `service-discovery` and `adapter-registry` modules expect `isPlainObject` + `hasFunction`; navigation/session payload guards depend on `hasArrayOf`. These consumers may not accept weaker fallbacks, so unit assertions must reflect production data.
-  - Contingency trigger: if Phase 0a cannot deliver helpers in this iteration, park the failing tests behind `.todo` temporarily, log the blocker in the activity log, and coordinate reassignment via the schedule before proceeding with migrations.
-  - Parallel hand-off note: Phase 0a helpers merged mid-2025-10-02 by the upstream agent after this lane’s initial review; always re-read `type-guards.ts` before committing tests so coverage matches the latest helper surface.
-- Coordination instructions:
-  - Before starting your phase, confirm Phase 0a/0b checkboxes for tasks impacting your scope are complete (0a and 0b can run in parallel but 0b should rerun tests after pulling latest helper changes), review any blockers noted for your phase, and pull the latest hub plan/tracker updates. Phases 1–4 may proceed in parallel once both Phase 0a and Phase 0b are complete.
-  - Each phase appends a Stage 3 entry to `utility-consolidation-activity-log.md`, updates `safe-consolidation-candidates.md`, and notes test commands executed.
-  - Agents operate in isolated environments; rely on this plan for hand-offs and leave TODO comments plus notes below when future phases need follow-up.
-  - Flag helper gaps or blockers in **Coordination Notes / Blockers** and pause downstream phases until resolved; add corresponding entries to the activity log.
+- **Date**: 2025-10-03T12:45:00Z
+- Readiness Summary:
+  - Stage 4 lanes `[x]` (helper implementation, Jest validation, coordination snapshots).
+  - Stage 5 lanes defined (a: backend, b: core orchestration, c: interface/navigation, d: session/shared utilities) with owners/tests.
+  - Contingencies: If additional helper gaps surface, revert to Stage 3 to add new Stage 4 lanes before resuming migrations.
+- Coordination Snapshot:
+  - Tracker status: Stage 3 `[x]` (plan captured in `pattern-10.md`).
+  - Activity log entry: 2025-10-02 Stage 3 (Pattern 10) — see activity log for evidence and risks.
+  - Additional notes: Monitor navigation listener warnings; tie follow-ups to Stage 5c before closing Stage 6.
 
-## Stage 3 Execution Log
+## Stage 4 Execution Log (Prerequisites)
 
-### Phase Completion Checklist
+- _All Stage 4 lanes completed — see Stage 3 summary for evidence._
 
-- [x] Phase 0a — Helper implementation complete (helpers committed)
-- [x] Phase 0b — Helper validation/tests complete (`npm test -- type-guards`)
-- [ ] Phase 1 — Backend migration complete (tests: `npm test -- type-guards`, `npm test -- service-discovery`)
-- [ ] Phase 2 — Core orchestration migration complete (tests: `npm test -- type-guards`, `npm test -- adapter-registry`)
-- [ ] Phase 3 — Interface & navigation migration complete (tests: `npm test -- type-guards`, `npm test -- navigation-system`)
-- [ ] Phase 4 — Session & utilities migration complete (tests: `npm test -- type-guards`, `npm test -- session-manager` / `npm test -- terminal-formatter`)
+### Lane 4a — Helper implementations (Complete)
 
-### Validation Artefacts & Commands
+- [x] Tasks: Build shared guard helpers, update DI seams, ensure TDD coverage in `tests/utils/type-guards.test.ts`.
+- Tests/commands: `npm test -- --runTestsByPath tests/utils/type-guards.test.ts`
 
-- `npm test -- type-guards`
-- `npm test -- service-discovery`
-- `npm test -- adapter-registry`
-- `npm test -- navigation-system`
-- `npm test -- session-manager`
+### Lane 4b — Jest validation (Complete)
+
+- [x] Tasks: Recorded targeted runs for backend/core/interface suites; results embedded in activity log.
+- Tests/commands: `npm run test:ci -- --runTestsByPath src/tests/backend/service-discovery.test.ts`
+
+### Lane 4c — Coordination snapshot (Complete)
+
+- [x] Tasks: Aligned Display/Terminal owners on guard adoption; updated schedule + tracker.
+- Tests/commands: `npm run test:ci -- --runTestsByPath tests/interfaces/interface-adapter-integration.test.ts`
+
+## Stage 5 Execution Log (Living Stage)
+
+### Lane 5a — Backend Migration
+
+- [x] Status checkbox
+- Scope & tasks:
+  - Migrate service discovery/router/validator consumers to shared guards.
+  - Harden connection factory guard usage.
+- Tests/commands:
+  - `npm run test:ci -- --runTestsByPath src/tests/backend/service-discovery.test.ts`
+  - `npm run test:ci -- --runTestsByPath src/tests/backend/backend-dependency-integration.test.ts`
+- Contingencies / notes:
+  - Monitor Phase 6 scripts for TypeScript regressions; revert to Stage 3 if new backend helpers needed.
+
+### Lane 5b — Core Orchestration
+
+- [x] Status checkbox
+- Scope & tasks:
+  - Consolidate guard usage in adapter registry, templum-config-manager, universal-interface-manager.
+  - Remove ad-hoc checks once shared helpers are in place.
+- Tests/commands:
+  - `npm run test:ci -- --runTestsByPath tests/core/adapter-registry.test.ts`
+  - `npm run test:ci -- --runTestsByPath tests/core/templum-config-manager-guards.test.ts`
+  - `npm run test:ci -- --runTestsByPath tests/core/universal-interface-manager.test.ts`
+- Contingencies / notes:
+  - If enum/date helpers missing, add Stage 4d lane and revisit Stage 3 before continuing.
+
+### Lane 5c — Interface & Navigation
+
+- [x] Status checkbox
+- Scope & tasks:
+  - Refactor CLI adapters, navigation parsers, and interface integration tests to shared guards.
+  - Address listener warnings via shared cleanup helper.
+- Tests/commands:
+  - `npm run test:ci -- --runTestsByPath src/interfaces/__tests__/adaptive-cli-integration.test.ts`
+  - `npm run test:ci -- --runTestsByPath src/interfaces/navigation/__tests__/navigation-system.test.ts`
+  - `npm run test:ci -- --runTestsByPath tests/interfaces/interface-adapter-integration.test.ts`
+- Contingencies / notes:
+  - Keep listener warnings tracked; Stage 6 ensures resolution.
+
+### Lane 5d — Session & Shared Utilities
+
+- [x] Status checkbox
+- Scope & tasks:
+  - Update session manager, service/terminal/protocol utils to rely on shared guards.
+  - Confirm DI seams remain intact.
+- Tests/commands:
+  - `npm run test:ci -- --runTestsByPath src/tests/utils/service-utils.test.ts`
+  - `npm run test:ci -- --runTestsByPath src/tests/utils/terminal-formatter.test.ts`
+  - `npm run test:ci -- --runTestsByPath src/tests/utils/protocol-utils.test.ts`
+  - `npm run test:ci -- --runTestsByPath src/tests/session/templum-universal-session-manager.test.ts`
+- Contingencies / notes:
+  - Watch for session regressions; if found, expand Stage 4 lanes to cover additional mocks.
+
+### Validation Artefacts & Commands (summary)
+
+- `npm run test:ci -- --runTestsByPath src/tests/backend/service-discovery.test.ts`
+- `npm run test:ci -- --runTestsByPath tests/core/adapter-registry.test.ts`
+- `npm run test:ci -- --runTestsByPath src/interfaces/navigation/__tests__/navigation-system.test.ts`
+- `npm run test:ci -- --runTestsByPath src/tests/utils/service-utils.test.ts`
+- `npm run test -- --runTestsByPath tests/utils/type-guards.test.ts`
 
 ### Adjustments & Additional Consumers
 
-- ...
+- Documented reopened navigation listener work; resolved during Stage 5c.
 
 ### Issues Encountered & Mitigations
 
-- ...
+- Addressed TypeScript leak guard warnings; see Stage 5c notes.
 
 ### Coordination Notes / Blockers
 
-- ...
+- Navigation listener warnings escalated and resolved before Stage 6 validation.
 
-## Stage 4 Close-Out
+## Stage 6 Close-Out
 
-- **Date**: {{YYYY-MM-DD'T'HH:MM:SS'Z'}}
+- **Date**: 2025-10-07T14:20:00Z
 - Final validation summary:
-  - Tests/scripts executed, coverage insights
+  - Re-ran targeted leak-guard suites after the Stage 5 interface/session refinements; backend, core, interface, utilities, and session coverage all pass.
+  - Confirmed listener cleanup remains stable and TypeGuards helpers back shared migrations without new warnings.
+- Validation commands executed:
+  - `CI=1 npm run test:ci -- --runTestsByPath src/tests/backend/service-discovery.test.ts`
+  - `CI=1 npm run test:ci -- --runTestsByPath tests/core/adapter-registry.test.ts`
+  - `CI=1 npm run test:ci -- --runTestsByPath src/interfaces/navigation/__tests__/navigation-system.test.ts`
+  - `CI=1 npm run test:ci -- --runTestsByPath src/tests/utils/service-utils.test.ts`
+  - `CI=1 npm run test:ci -- --runTestsByPath src/tests/utils/terminal-formatter.test.ts`
+  - `CI=1 npm run test:ci -- --runTestsByPath src/tests/utils/protocol-utils.test.ts`
+  - `CI=1 npm run test:ci -- --runTestsByPath src/tests/session/templum-universal-session-manager.test.ts`
+  - `CI=1 npm test -- --runTestsByPath tests/utils/type-guards.test.ts --runInBand`
 - Remaining follow-ups or TODOs:
-  - ...
+  - None — continue routine monitoring via Cohort A health checks.
 - Evidence links:
-  - Activity log entry, PR, screenshots, etc.
-
-_Copy this template to `pattern-{{Pattern}}.md` and fill sections as the work progresses._
+  - Activity log entry 2025-10-07 Stage 6, tracker updates, `docs/current/progress.md` snapshot.

@@ -1,3 +1,4 @@
+---
 date-created: 2025-09-14T18:00:00Z
 last-updated: 2025-10-01T12:43:40Z
 name: type-guards
@@ -675,17 +676,20 @@ function processUserData(data: unknown) {
 ## Validation Checklist
 
 ### Before Implementation
+
 - [ ] Confirm redundancy metrics (~150 LOC / ~20 files) remain accurate; update plan if new hotspots discovered
 - [ ] Enumerate target consumers across backend, core, interfaces, and session modules with migration checkpoints logged
 - [ ] Align API surface with logger/error-handler integration requirements and dependency-injection boundaries
 
 ### During Implementation
+
 - [ ] Implement basic and complex guards with full TypeScript narrowing semantics
 - [ ] Provide confidence-scored property validation with nested path support and composable options
 - [ ] Integrate runtime assertions with `TemplumError` categories and logger metadata without violating SOLID thresholds
 - [ ] Maintain performance optimisations (memoised guards, batch validation helpers) under the <10ms SLA for complex objects
 
 ### After Implementation
+
 - [ ] Backfill Jest suites for happy-path, failure-path, and confidence-threshold behaviours with ≥80% coverage
 - [ ] Validate consumer migrations via targeted smoke scripts and document evidence in activity log
 - [ ] Verify semantic API usage examples stay current with final implementation
@@ -701,6 +705,7 @@ function processUserData(data: unknown) {
 **Successfully Applied**: Foundation pattern for type safety across VDL_Vault ecosystem  
 **Integration Points**: [unified-type-system], [comprehensive-type-system], [templum-error-integration]
 **Files Using This Pattern**:
+
 - [ ] `Templum/src/backend/service-discovery.ts`
 - [ ] `Templum/src/backend/backend-service-router.ts`
 - [ ] `Templum/src/backend/service-discovery-validator.ts`

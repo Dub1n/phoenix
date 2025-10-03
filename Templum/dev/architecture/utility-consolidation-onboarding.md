@@ -21,6 +21,7 @@ Enable each agent to deliver a single utility consolidation (creation or rollout
 3. Review `Templum/dev/architecture/pattern-usage-analysis.md` + `Templum/dev/architecture/component-dependency-map.md` to understand preserved boundaries.
 4. Open the pattern specification for your assigned utility (table below) and note API/usage commitments.
 5. Inspect the current utility implementation in `Templum/src/utils/` (or confirm it still needs to be created) and spot impacted consumers via ripgrep before touching code.
+6. Review `Templum/docs/current/testing-guide.md` to align on canonical test commands, Phase 6 scripts, and backend prerequisites before beginning Stage 2.
 
 ## Essential References
 
@@ -32,7 +33,8 @@ Enable each agent to deliver a single utility consolidation (creation or rollout
 | `pattern-usage-analysis.md` | Confirms which separations must remain untouched during consolidation.
 | `component-dependency-map.md` | Highlights oversized modules and cross-component dependencies.
 | `meta/templates/schema/pattern-frontmatter.json` | Schema required when updating or adding pattern docs.
-| `utility-consolidation-plans/PLAN_TEMPLATE.md` | Stage-by-stage plan skeleton, including Stage 2.5 multi-agent coordination.
+| `utility-consolidation-plans/PLAN_TEMPLATE.md` | Stage-by-stage plan skeleton, including Stage 3 multi-agent coordination.
+| `docs/current/testing-guide.md` | Canonical matrix of Jest suites, Phase 6 scripts, and troubleshooting steps for consolidation validation.
 
 ## Shared Baselines
 
@@ -41,7 +43,7 @@ Enable each agent to deliver a single utility consolidation (creation or rollout
 - Pattern docs must retain frontmatter compliance; use `Templum/dev/patterns/utilities/...` examples as structure references.
 - Utilities must integrate with logger/error-handler/type-system hooks where applicable and expose chainable, fluent APIs as described in the pattern specs.
 - Large migrations require staged commits; never revert unrelated user changes and keep file sizes <2000 lines.
-- Stage 2.5 phase planning lives inside each pattern plan; keep helper checklists, phase assignments, and contingency notes current so subsequent agents can execute without back-channel coordination.
+- Stage 3 readiness summaries now point to Stage 4 lanes (prerequisites) and Stage 6 lanes (migration scope); keep those sections current because they remain the single source of truth for actionable tasks/tests.
 
 ## Single-Utility Workflow
 
@@ -52,25 +54,27 @@ Enable each agent to deliver a single utility consolidation (creation or rollout
    - Read the pattern spec and note API/timing/logging requirements.
    - Cross-check redundancy counts with `redundancy-report.md` to anchor success metrics.
    - Map primary consumers via ripgrep (e.g. `rg "console" src/backend` for logger replacements).
-3. **Plan the Work (Stages 1–2)**
+3. **Plan the Work (Stage 1 & Stage 2)**
    - Document intended changes (files to touch, migration order) in your working notes and flag cross-component touchpoints.
    - For unimplemented utilities, draft interfaces + tests first (TDD). For existing utilities, list deltas needed before touching code.
-4. **Orchestrate Migration Phases (Stage 2.5)**
-   - After Stage 2 tests pass, group consumers into migration phases (backend/core/interface/session) and capture assignments in `utility-consolidation-plans/pattern-{{Pattern}}.md`.
-   - Identify helper gaps or additional utility work and either implement immediately or log ownership and due stage.
-   - Add per-phase checklists, validation commands, and coordination notes so isolated agents can work the plan without extra context.
-   - Record a Stage 2.5 entry in the activity log and tick the Stage 2.5 marker in `safe-consolidation-candidates.md`.
-   - Update the cohort schedule (`utility-consolidation-schedule.md`) with Phase 0 lanes (0a/0b/0c…), owners, and status glyphs so other agents can see in-flight work.
-   - Call out the contingency path: if any phase later encounters a missing helper or shared dependency, pause migrations, flip the Stage 2.5 tracker back to `[~]`, refresh the plan with the new requirements, and add a new Stage 2.5 activity-log entry before resuming Stage 3.
-5. **Implement Safely (Stage 2 & Stage 3)**
- - Update or create the utility under `Templum/src/utils/` with tests alongside affected components.
- - Keep dependencies injected where practical; avoid hard-coded singletons beyond `index.ts` exports.
- - Update `Templum/src/utils/index.ts` if a new utility is added.
- - Stage 3 is deliberately iterative: if it reveals a blocker (e.g., missing helper, shared dependency conflict), stop that phase, return to Stage 2.5 to revise the plan/trackers/logs/schedule, and only continue once the refreshed checklist marks the phase ready. Split the new work into parallel Phase 0x lanes when possible so multiple agents can unblock together. Leave completed migrations in place unless the refreshed plan says to roll them back.
-6. **Validate & Report (Stage 4)**
-   - Execute relevant unit/integration tests; document any gaps if suites are absent.
-   - Record migration progress in `safe-consolidation-candidates.md` checkboxes and note any follow-up tasks.
-   - Surface architectural questions promptly to prevent conflicting solutions.
+4. **Orchestrate Migration Phases (Stage 3)**
+   - After Stage 2 tests pass, map consumers into Stage 6 lanes (backend/core/interface/session or equivalent) and populate the Stage 4 + Stage 6 subsections in `utility-consolidation-plans/pattern-{{Pattern}}.md` with detailed tasks, tests, owners, and contingencies.
+   - Use the Stage 3 section for a concise readiness summary (Stage 4 lane status, which Stage 6 lanes are pending, current risks) that points agents to the Stage 4/6 checklists.
+   - Identify helper gaps or additional utility work; resolve immediately or add new Stage 4 lanes before updating the Stage 3 summary.
+   - Record a Stage 3 entry in the activity log, tick the Stage 3 marker in `safe-consolidation-candidates.md`, and update the cohort schedule (`utility-consolidation-schedule.md`) so Stage 4 lane glyphs mirror the plan.
+   - Call out the contingency path: if any Stage 6 lane uncovers a blocker, pause migrations, flip the Stage 3 tracker back to `[~]`, refresh the Stage 4/6 checklists and readiness summary, and log a new Stage 3 entry before resuming.
+5. **Finalize Prereqs & Pattern Prep (Stage 4 & Stage 5)**
+   - Work Stage 4 lanes (4a–4c) to `[x]` before touching consumer code; capture evidence for each gating test.
+   - Complete Stage 5A cohort alignment (shared spec) and Stage 5B pattern preparation by iterating until every Stage 6 lane is unblocked: run the full gating battery, attach evidence/artefact paths in the plan, and only then flip trackers to `C[x]` / `P[x]` with the Stage 5 activity entry.
+   - Maintain the cohort’s **Shared Dependencies Matrix** in the Stage 5 alignment spec and mirror the relevant rows into each pattern plan’s Stage 5B section so lane owners have local visibility into cross-pattern artefacts before migrations begin.
+   - If new prerequisites emerge, return to Stage 3 to revise Stage 4/6 sections rather than forcing migrations forward. Split additional prerequisite work into new Stage 4 lanes when feasible so multiple agents can unblock together, and leave completed migrations in place unless the updated plan says otherwise.
+6. **Execute Migrations (Stage 6)**
+   - Claim Stage 6 lanes one at a time, apply the shared utility APIs, remove redundant helpers, and rerun the mandated gating suites before marking a lane complete.
+   - Record migration progress in `safe-consolidation-candidates.md` checkboxes, update the schedule lane status, and capture evidence/commands in the activity log.
+   - Surface architectural or DI conflicts immediately so the cohort can revisit Stage 3/Stage 5 if needed.
+7. **Validate & Close (Stage 7)**
+   - Run final validation suites (unit + smoke/Phase 6 scripts) and update documentation/pattern notes with the final API surface.
+   - Log Stage 7 completion in the activity log, flip trackers to Stage 7 `[x]`, and note any follow-on work for future cohorts.
 
 ## Utility Assignment Matrix
 
