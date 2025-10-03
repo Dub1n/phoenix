@@ -12,6 +12,9 @@ tags: [CLI, Display-Consistency, Algorithms, Layout-Standards]
 ---
 */
 
+import { DisplayUtils } from '../utils/display-utils';
+import { TerminalSeparatorStyle } from '../utils/terminal-formatter';
+
 /**
  * TODO: [TASK-ID-001] Pattern: algorithmic-display-standardization | Complexity: 7 | Dependencies: responsive-layout,content-measurement
  * Context: Core algorithmic foundation for consistent CLI display calculations including width, padding, and separator selection
@@ -142,7 +145,7 @@ export class DisplayStandardsCalculator {
       ...config
     };
 
-    this.terminalWidth = process.stdout.columns || 80;
+    this.terminalWidth = DisplayUtils.standards.terminalWidth;
   }
 
   /**
@@ -151,28 +154,25 @@ export class DisplayStandardsCalculator {
    */
   calculateOptimalWidth(elements: DisplayElement[]): number {
     if (elements.length === 0) {
-      return this.config.minWidth + (this.config.standardPadding * 2);
+      return Math.max(this.config.minWidth, Math.min(this.config.maxWidth, this.getTerminalWidth()));
     }
 
-    // Measure content widths for all elements
-    const contentWidths = elements.map(element => {
-      const dimensions = this.measureContent(element);
-      return dimensions.width;
+    const samples = this.flattenElementContent(elements);
+    const terminalWidth = this.getTerminalWidth();
+
+    const responsiveWidth = DisplayUtils.responsiveWidth(samples, {
+      padding: this.config.standardPadding,
+      minWidth: this.config.minWidth,
+      maxWidth: Math.min(this.config.maxWidth, terminalWidth)
     });
 
-    // Find maximum content width
-    const maxContentWidth = Math.max(...contentWidths);
-    
-    // Apply standard padding (3 chars each side = 6 total)
-    const optimalWidth = maxContentWidth + (this.config.standardPadding * 2);
-    
-    // Ensure within terminal constraints
-    const constrainedWidth = Math.min(
-      Math.max(optimalWidth, this.config.minWidth),
-      Math.min(this.config.maxWidth, this.terminalWidth - 4)
-    );
+    const layout = DisplayUtils.calculate()
+      .padding(this.config.standardPadding)
+      .width(responsiveWidth)
+      .layout();
 
-    return constrainedWidth;
+    const maxAllowed = Math.min(this.config.maxWidth, terminalWidth);
+    return Math.max(this.config.minWidth, Math.min(layout.totalWidth, maxAllowed));
   }
 
   /**
@@ -244,22 +244,23 @@ export class DisplayStandardsCalculator {
    * Select appropriate separator character based on context
    */
   selectSeparator(context: SeparatorContext): string {
+    const style = this.mapContextToSeparatorStyle(context);
+    const rendered = DisplayUtils.separator(1, style);
+    const stripped = this.stripAnsiCodes(rendered);
+
+    if (stripped.length > 0) {
+      return stripped;
+    }
+
     switch (context) {
       case 'major-section':
-        return this.config.separatorChars.major; // ━
-
-      case 'minor-section':
-        return this.config.separatorChars.minor; // ─
-
+        return this.config.separatorChars.major;
       case 'emphasis-header':
-        return this.config.separatorChars.emphasis; // ═
-
+        return this.config.separatorChars.emphasis;
       case 'table-border':
-        return this.config.separatorChars.table.horizontal; // ─
-
-      case 'list-separator':
+        return this.config.separatorChars.table.horizontal;
       default:
-        return this.config.separatorChars.minor; // ─
+        return this.config.separatorChars.minor;
     }
   }
 
@@ -316,37 +317,42 @@ export class DisplayStandardsCalculator {
    * Perform complete layout calculation for a set of elements
    */
   calculateLayout(elements: DisplayElement[], context: SeparatorContext = 'major-section'): LayoutCalculation {
-    const optimalWidth = this.calculateOptimalWidth(elements);
     const primaryElementType = elements.length > 0 ? elements[0].type : 'info-panel';
     const paddingSpec = this.calculatePadding(primaryElementType);
-    const separatorChar = this.selectSeparator(context);
-    
-    // Calculate aggregate content dimensions
+    const effectivePadding = Math.max(this.config.standardPadding, paddingSpec.left, paddingSpec.right);
+    const layout = DisplayUtils.calculate()
+      .padding(effectivePadding)
+      .width(this.calculateOptimalWidth(elements))
+      .layout();
+
+    const separatorStyle = this.mapContextToSeparatorStyle(context);
+    const separatorChar = this.stripAnsiCodes(DisplayUtils.separator(1, separatorStyle)) || this.selectSeparator(context);
+
     const contentDimensions: ContentDimensions = {
-      width: optimalWidth - (paddingSpec.left + paddingSpec.right),
+      width: layout.contentWidth,
       height: elements.reduce((sum, el) => sum + this.measureContent(el).height, 0),
       minWidth: this.config.minWidth,
-      maxWidth: Math.min(this.config.maxWidth, this.terminalWidth - 4),
+      maxWidth: Math.min(this.config.maxWidth, this.getTerminalWidth()),
       hasVariableWidth: elements.some(el => this.measureContent(el).hasVariableWidth)
     };
 
-    // Generate recommendations
+    const terminalWidth = this.getTerminalWidth();
     const recommendations: string[] = [];
-    
-    if (optimalWidth > this.terminalWidth * 0.9) {
+
+    if (layout.totalWidth > terminalWidth * 0.9) {
       recommendations.push('Consider responsive layout for narrow terminals');
     }
-    
+
     if (elements.length > 10) {
       recommendations.push('Consider pagination for large element sets');
     }
-    
+
     if (contentDimensions.height > 20) {
       recommendations.push('Consider vertical scrolling for tall content');
     }
 
     return {
-      optimalWidth,
+      optimalWidth: layout.totalWidth,
       paddingSpec,
       separatorChar,
       contentDimensions,
@@ -358,8 +364,8 @@ export class DisplayStandardsCalculator {
    * Create standardized separator line
    */
   createSeparatorLine(width: number, context: SeparatorContext = 'major-section'): string {
-    const char = this.selectSeparator(context);
-    return char.repeat(Math.max(1, width));
+    const style = this.mapContextToSeparatorStyle(context);
+    return DisplayUtils.separator(Math.max(1, width), style);
   }
 
   /**
@@ -432,6 +438,40 @@ export class DisplayStandardsCalculator {
   private stripAnsiCodes(text: string): string {
     // Remove ANSI escape sequences for accurate length calculation
     return text.replace(/\x1b\[[0-9;]*m/g, '');
+  }
+
+  private getTerminalWidth(): number {
+    return this.terminalWidth || DisplayUtils.standards.terminalWidth;
+  }
+
+  private flattenElementContent(elements: DisplayElement[]): string[] {
+    const samples: string[] = [];
+
+    for (const element of elements) {
+      if (typeof element.content === 'string') {
+        samples.push(...element.content.split('\n'));
+      } else {
+        samples.push(...element.content);
+      }
+    }
+
+    return samples
+      .filter(line => line !== undefined && line !== null)
+      .map(line => String(line));
+  }
+
+  private mapContextToSeparatorStyle(context: SeparatorContext): TerminalSeparatorStyle {
+    switch (context) {
+      case 'emphasis-header':
+        return 'double';
+      case 'minor-section':
+      case 'list-separator':
+        return 'dashed';
+      case 'table-border':
+      case 'major-section':
+      default:
+        return 'solid';
+    }
   }
 }
 

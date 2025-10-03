@@ -1,5 +1,7 @@
 import chalk from 'chalk';
 import { inspect } from 'util';
+import { createTemplumError } from '../types/templum-types';
+import { TypeAssertions, TypeGuards, TypeValidators } from './type-guards';
 
 export type Platform = 'windows' | 'unix' | 'browser';
 
@@ -16,6 +18,27 @@ export interface TerminalCapabilities {
 }
 
 type Modifier = 'bold' | 'dim' | 'italic' | 'underline' | 'inverse';
+type PaletteTone = 'primary' | 'secondary' | 'accent' | 'muted';
+
+export const TERMINAL_SEPARATOR_STYLES = ['solid', 'dashed', 'double'] as const;
+export type TerminalSeparatorStyle = typeof TERMINAL_SEPARATOR_STYLES[number];
+
+export const TERMINAL_FORMATTER_SPACING = {
+  /** Default left/right padding applied by display/window helpers */
+  defaultPadding: 2,
+  /** Total visual border width (left + right) reserved when drawing windows */
+  borderWidth: 2,
+  /** Preferred maximum separator length before clamping to terminal width */
+  separatorLength: 60,
+  /** Margin reserved from terminal width when computing separators */
+  separatorMargin: 4,
+  /** Recommended minimum terminal width before wrapping content */
+  minTerminalWidth: 40,
+  /** Recommended maximum terminal width for deterministic snapshots */
+  maxTerminalWidth: 120
+} as const;
+
+export const getFormatterSeparatorLength = (): number => TERMINAL_FORMATTER_SPACING.separatorLength;
 
 export interface ColorSpec {
   fg?: string;
@@ -79,6 +102,26 @@ export interface FormatterCacheStats {
   misses: number;
   hitRate: number;
 }
+
+export interface FormatterFactoryOptions {
+  theme: Partial<TerminalTheme>;
+  capabilities: TerminalCapabilities;
+}
+
+export type FormatterFactory = (options: FormatterFactoryOptions) => TerminalFormatter;
+
+export interface ConfigureFormatterOptions {
+  defaultTheme?: Partial<TerminalTheme> | (() => Partial<TerminalTheme>);
+  capabilitiesProvider?: () => TerminalCapabilities;
+  factory?: FormatterFactory;
+}
+
+const ALLOWED_MODIFIERS: readonly Modifier[] = ['bold', 'dim', 'italic', 'underline', 'inverse'] as const;
+
+const isAllowedModifier = (value: unknown): value is Modifier =>
+  TypeGuards.isString(value) && (ALLOWED_MODIFIERS as readonly string[]).includes(value);
+
+const isColorSpec = (value: unknown): value is ColorSpec => TypeGuards.isPlainObject(value);
 
 const STATUS_GLYPHS: Record<keyof TerminalTheme['status'], { unicode: string; fallback: string }> = {
   success: { unicode: '✔', fallback: '[OK]' },
@@ -185,6 +228,58 @@ function unicodeOrFallback(capabilities: TerminalCapabilities, unicode: string, 
   return capabilities.supportsUnicode ? unicode : fallback;
 }
 
+function sanitizeColorSpec(spec: ColorSpec, path: string): ColorSpec {
+  if (!TypeGuards.isPlainObject(spec)) {
+    throw createTemplumError(
+      `Terminal theme segment '${path}' must be a plain object`,
+      'TERMINAL_FORMATTER_INVALID_THEME',
+      'validation',
+      { path },
+    );
+  }
+
+  const sanitized: ColorSpec = { ...spec };
+
+  if (sanitized.fg !== undefined && !TypeGuards.isNonEmptyString(sanitized.fg)) {
+    throw createTemplumError(
+      `Terminal theme field '${path}.fg' must be a non-empty string`,
+      'TERMINAL_FORMATTER_INVALID_THEME',
+      'validation',
+      { path, field: 'fg' },
+    );
+  }
+
+  if (sanitized.bg !== undefined && !TypeGuards.isNonEmptyString(sanitized.bg)) {
+    throw createTemplumError(
+      `Terminal theme field '${path}.bg' must be a non-empty string`,
+      'TERMINAL_FORMATTER_INVALID_THEME',
+      'validation',
+      { path, field: 'bg' },
+    );
+  }
+
+  if (sanitized.modifiers !== undefined) {
+    try {
+      TypeAssertions.assertWithConfidence(
+        sanitized.modifiers,
+        (value): value is Modifier[] => TypeValidators.isArrayOf(value, isAllowedModifier),
+        `Invalid terminal theme modifiers for ${path}`,
+      );
+    } catch (error) {
+      throw createTemplumError(
+        `Terminal theme modifiers for ${path} must be an array of supported values`,
+        'TERMINAL_FORMATTER_INVALID_THEME',
+        'validation',
+        { path: `${path}.modifiers` },
+      );
+    }
+
+    sanitized.modifiers = [...sanitized.modifiers];
+  }
+
+  return sanitized;
+}
+
 export class TerminalFormatter {
   private static readonly MAX_CACHE_SIZE = 200;
   private readonly capabilities: TerminalCapabilities;
@@ -194,7 +289,8 @@ export class TerminalFormatter {
   private cacheMisses = 0;
 
   constructor(theme: Partial<TerminalTheme> = {}, capabilities?: TerminalCapabilities) {
-    this.capabilities = capabilities ?? TerminalFormatter.detectCapabilities();
+    const resolvedCapabilities = capabilities ?? TerminalFormatter.detectCapabilities();
+    this.capabilities = TerminalFormatter.validateCapabilities(resolvedCapabilities);
     this.theme = TerminalFormatter.mergeTheme(theme);
   }
 
@@ -208,8 +304,10 @@ export class TerminalFormatter {
 
   readonly ui = {
     header: (message: string, level: 1 | 2 | 3 = 1) => this.formatHeader(message, level),
-    separator: (length = this.capabilities.width, style: 'solid' | 'dashed' | 'double' = 'solid') =>
-      this.formatSeparator(length, style),
+    separator: (
+      length: number = getFormatterSeparatorLength(),
+      style: TerminalSeparatorStyle = 'solid'
+    ) => this.formatSeparator(length, style),
     menu: (items: MenuItem[], selectedIndex = 0) => this.formatMenu(items, selectedIndex),
     prompt: (question: string, type: 'input' | 'confirm' | 'select' = 'input') =>
       this.formatPrompt(question, type),
@@ -236,6 +334,22 @@ export class TerminalFormatter {
     version: (value: string) => this.formatSystem('version', value)
   };
 
+  readonly text = {
+    muted: (message: string) =>
+      this.formatCached(
+        `text:muted:${message}`,
+        () => applySpec(message, this.theme.muted, this.capabilities)
+      ),
+    plain: (message: string) => message
+  };
+
+  readonly palette = {
+    primary: (text: string) => this.formatPalette('primary', text),
+    secondary: (text: string) => this.formatPalette('secondary', text),
+    accent: (text: string) => this.formatPalette('accent', text),
+    muted: (text: string) => this.formatPalette('muted', text)
+  };
+
   getCapabilities(): TerminalCapabilities {
     return { ...this.capabilities };
   }
@@ -258,6 +372,27 @@ export class TerminalFormatter {
     };
   }
 
+  getTheme(): TerminalTheme {
+    return cloneThemeOverrides(this.theme) as TerminalTheme;
+  }
+
+  formatWithSpec(spec: ColorSpec | undefined, text: string): string;
+  formatWithSpec(text: string, spec: ColorSpec | undefined): string;
+  formatWithSpec(
+    first: string | ColorSpec | undefined,
+    second: string | ColorSpec | undefined,
+  ): string {
+    const text = typeof first === 'string' ? first : typeof second === 'string' ? second : '';
+    const spec = (typeof first === 'object' ? first :
+      typeof second === 'object' ? second : undefined) as ColorSpec | undefined;
+
+    if (!spec) {
+      return text;
+    }
+
+    return applySpec(text, spec, this.capabilities);
+  }
+
   private formatStatus(kind: keyof TerminalTheme['status'], message: string): string {
     const spec = this.theme.status[kind];
     const glyph = unicodeOrFallback(this.capabilities, STATUS_GLYPHS[kind].unicode, STATUS_GLYPHS[kind].fallback);
@@ -278,20 +413,24 @@ export class TerminalFormatter {
     );
   }
 
-  private formatSeparator(length: number, style: 'solid' | 'dashed' | 'double'): string {
-    const palette = {
+  private formatSeparator(
+    length: number = getFormatterSeparatorLength(),
+    style: TerminalSeparatorStyle = 'solid'
+  ): string {
+    const palette: Record<TerminalSeparatorStyle, string> = {
       solid: unicodeOrFallback(this.capabilities, '─', '-'),
       dashed: unicodeOrFallback(this.capabilities, '╌', '-'),
       double: unicodeOrFallback(this.capabilities, '═', '=')
-    } as const;
+    };
 
-    const char = palette[style];
-    const key = `ui:separator:${style}:${length}`;
+    const maxLength = Math.max(1, this.capabilities.width - TERMINAL_FORMATTER_SPACING.separatorMargin);
+    const effectiveLength = Math.max(1, Math.min(length, maxLength));
+    const key = `ui:separator:${style}:${effectiveLength}`;
 
     return this.formatCached(
       key,
       () => {
-        const separator = char.repeat(Math.max(1, Math.min(length, this.capabilities.width)));
+        const separator = palette[style].repeat(effectiveLength);
         return applySpec(separator, this.theme.ui.separator, this.capabilities);
       }
     );
@@ -474,22 +613,143 @@ export class TerminalFormatter {
     );
   }
 
+  private static validateCapabilities(capabilities: TerminalCapabilities): TerminalCapabilities {
+    const booleanFields: Array<keyof TerminalCapabilities> = [
+      'supportsColor',
+      'supports256Colors',
+      'supportsTrueColor',
+      'supportsStyles',
+      'supportsUnicode',
+      'isInteractive',
+    ];
+
+    const capabilityRecord = capabilities as unknown as Record<string, unknown>;
+
+    for (const field of booleanFields) {
+      if (!TypeGuards.isBoolean(capabilityRecord[field])) {
+        throw createTemplumError(
+          `Terminal capability '${String(field)}' must be boolean`,
+          'TERMINAL_FORMATTER_INVALID_CAPABILITIES',
+          'validation',
+          { field }
+        );
+      }
+    }
+
+    if (!TypeGuards.isPositiveNumber(capabilities.width)) {
+      throw createTemplumError(
+        'Terminal capability width must be a positive number',
+        'TERMINAL_FORMATTER_INVALID_CAPABILITIES',
+        'validation',
+        { field: 'width', value: capabilities.width }
+      );
+    }
+
+    if (!TypeGuards.isPositiveNumber(capabilities.height)) {
+      throw createTemplumError(
+        'Terminal capability height must be a positive number',
+        'TERMINAL_FORMATTER_INVALID_CAPABILITIES',
+        'validation',
+        { field: 'height', value: capabilities.height }
+      );
+    }
+
+    if (!['windows', 'unix', 'browser'].includes(capabilities.platform)) {
+      throw createTemplumError(
+        'Terminal capability platform must be one of windows, unix, or browser',
+        'TERMINAL_FORMATTER_INVALID_CAPABILITIES',
+        'validation',
+        { field: 'platform', value: capabilities.platform }
+      );
+    }
+
+    return capabilities;
+  }
+
   private static mergeTheme(theme: Partial<TerminalTheme>): TerminalTheme {
     const merged: TerminalTheme = JSON.parse(JSON.stringify(DEFAULT_THEME));
 
-    const apply = (source: any, patch: any) => {
-      if (!patch) return;
+    const apply = (source: any, patch: unknown) => {
+      if (!TypeGuards.isPlainObject(patch)) {
+        return;
+      }
+
       for (const key of Object.keys(patch)) {
-        if (patch[key] && typeof patch[key] === 'object' && !Array.isArray(patch[key])) {
-          apply(source[key], patch[key]);
+        const value = (patch as Record<string, unknown>)[key];
+        if (TypeGuards.isPlainObject(value)) {
+          if (!TypeGuards.isObject(source[key])) {
+            source[key] = {};
+          }
+          apply(source[key], value);
         } else {
-          source[key] = patch[key];
+          source[key] = value;
         }
       }
     };
 
     apply(merged, theme);
-    return merged;
+    return TerminalFormatter.sanitiseTheme(merged);
+  }
+
+  private static sanitiseTheme(theme: TerminalTheme): TerminalTheme {
+    const sanitize = (spec: ColorSpec, path: string): ColorSpec => sanitizeColorSpec(spec, path);
+
+    const headerInput: unknown = theme.ui.header;
+    if (!TypeValidators.isArrayOf(headerInput, isColorSpec)) {
+      throw createTemplumError(
+        'Terminal theme ui.header must be an array of colour specifications',
+        'TERMINAL_FORMATTER_INVALID_THEME',
+        'validation',
+        { path: 'ui.header' },
+      );
+    }
+
+    if (headerInput.length !== 3) {
+      throw createTemplumError(
+        'Terminal theme ui.header must contain exactly three entries',
+        'TERMINAL_FORMATTER_INVALID_THEME',
+        'validation',
+        { path: 'ui.header' },
+      );
+    }
+
+    const header = headerInput.map((spec, index) => sanitize(spec, `ui.header[${index}]`)) as [ColorSpec, ColorSpec, ColorSpec];
+
+    return {
+      status: {
+        success: sanitize(theme.status.success, 'status.success'),
+        error: sanitize(theme.status.error, 'status.error'),
+        warning: sanitize(theme.status.warning, 'status.warning'),
+        info: sanitize(theme.status.info, 'status.info'),
+        debug: sanitize(theme.status.debug, 'status.debug'),
+      },
+      ui: {
+        header,
+        separator: sanitize(theme.ui.separator, 'ui.separator'),
+        menu: sanitize(theme.ui.menu, 'ui.menu'),
+        menuSelected: sanitize(theme.ui.menuSelected, 'ui.menuSelected'),
+        prompt: sanitize(theme.ui.prompt, 'ui.prompt'),
+        breadcrumb: sanitize(theme.ui.breadcrumb, 'ui.breadcrumb'),
+      },
+      data: {
+        tableHeader: sanitize(theme.data.tableHeader, 'data.tableHeader'),
+        tableCell: sanitize(theme.data.tableCell, 'data.tableCell'),
+        highlight: sanitize(theme.data.highlight, 'data.highlight'),
+        code: sanitize(theme.data.code, 'data.code'),
+      },
+      interactive: {
+        selection: sanitize(theme.interactive.selection, 'interactive.selection'),
+        navigation: sanitize(theme.interactive.navigation, 'interactive.navigation'),
+        feedback: sanitize(theme.interactive.feedback, 'interactive.feedback'),
+      },
+      system: {
+        timestamp: sanitize(theme.system.timestamp, 'system.timestamp'),
+        path: sanitize(theme.system.path, 'system.path'),
+        command: sanitize(theme.system.command, 'system.command'),
+        version: sanitize(theme.system.version, 'system.version'),
+      },
+      muted: sanitize(theme.muted, 'muted'),
+    };
   }
 
   private static detectUnicode(): boolean {
@@ -520,7 +780,10 @@ export class TerminalFormatter {
 
   static withFallback(text: string, fallback: string, capabilities?: TerminalCapabilities): string {
     const caps = capabilities ?? this.detectCapabilities();
-    return caps.supportsColor || caps.supportsUnicode ? text : fallback;
+    if (caps.supportsColor && caps.supportsUnicode) {
+      return text;
+    }
+    return fallback;
   }
 
   private formatCached(key: string, compute: () => string, cacheable = true): string {
@@ -563,10 +826,135 @@ export class TerminalFormatter {
       }
     }
   }
+
+  private formatPalette(tone: PaletteTone, text: string): string {
+    const key = `palette:${tone}:${text}`;
+
+    const resolver = () => {
+      switch (tone) {
+        case 'primary':
+          return applySpec(text, this.theme.ui.menu, this.capabilities);
+        case 'secondary':
+          return applySpec(text, this.theme.ui.prompt, this.capabilities);
+        case 'accent':
+          return applySpec(text, this.theme.ui.menuSelected, this.capabilities);
+        case 'muted':
+        default:
+          return applySpec(text, this.theme.muted, this.capabilities);
+      }
+    };
+
+    return this.formatCached(key, resolver);
+  }
 }
 
-export const createFormatter = (theme: Partial<TerminalTheme> = {}, capabilities?: TerminalCapabilities) =>
-  new TerminalFormatter(theme, capabilities);
+interface FormatterConfigurationState {
+  themeProvider: () => Partial<TerminalTheme>;
+  capabilitiesProvider: () => TerminalCapabilities;
+  factory?: FormatterFactory;
+}
+
+const DEFAULT_THEME_PROVIDER = () => ({} as Partial<TerminalTheme>);
+const DEFAULT_CAPABILITIES_PROVIDER = () => TerminalFormatter.detectCapabilities();
+
+const DEFAULT_CONFIGURATION: FormatterConfigurationState = {
+  themeProvider: DEFAULT_THEME_PROVIDER,
+  capabilitiesProvider: DEFAULT_CAPABILITIES_PROVIDER
+};
+
+let formatterConfiguration: FormatterConfigurationState = {
+  themeProvider: DEFAULT_CONFIGURATION.themeProvider,
+  capabilitiesProvider: DEFAULT_CONFIGURATION.capabilitiesProvider
+};
+
+export const configureFormatter = (options: ConfigureFormatterOptions): void => {
+  if (!options) {
+    return;
+  }
+
+  if (options.defaultTheme) {
+    const previous = formatterConfiguration.themeProvider;
+
+    if (typeof options.defaultTheme === 'function') {
+      const themeFactory = options.defaultTheme;
+      formatterConfiguration.themeProvider = () =>
+        mergeThemeOverrides(previous(), themeFactory());
+    } else {
+      const themePatch = options.defaultTheme;
+      formatterConfiguration.themeProvider = () =>
+        mergeThemeOverrides(previous(), themePatch);
+    }
+  }
+
+  if (options.capabilitiesProvider) {
+    formatterConfiguration.capabilitiesProvider = options.capabilitiesProvider;
+  }
+
+  if (options.factory) {
+    formatterConfiguration.factory = options.factory;
+  }
+};
+
+export const resetFormatterConfiguration = (): void => {
+  formatterConfiguration = {
+    themeProvider: DEFAULT_CONFIGURATION.themeProvider,
+    capabilitiesProvider: DEFAULT_CONFIGURATION.capabilitiesProvider
+  };
+};
+
+export const createFormatter = (theme: Partial<TerminalTheme> = {}, capabilities?: TerminalCapabilities) => {
+  const baseTheme = formatterConfiguration.themeProvider();
+  const mergedTheme = mergeThemeOverrides(baseTheme, theme);
+  const resolvedCapabilities = capabilities ?? formatterConfiguration.capabilitiesProvider();
+
+  if (formatterConfiguration.factory) {
+    return formatterConfiguration.factory({
+      theme: mergedTheme,
+      capabilities: resolvedCapabilities
+    });
+  }
+
+  return new TerminalFormatter(mergedTheme, resolvedCapabilities);
+};
+
+function mergeThemeOverrides(
+  base: Partial<TerminalTheme>,
+  overrides?: Partial<TerminalTheme>
+): Partial<TerminalTheme> {
+  const clonedBase = cloneThemeOverrides(base);
+  if (!overrides) {
+    return clonedBase;
+  }
+  return mergeOverrideInto(clonedBase, overrides) as Partial<TerminalTheme>;
+}
+
+function cloneThemeOverrides(theme: Partial<TerminalTheme>): Partial<TerminalTheme> {
+  if (!TypeGuards.isPlainObject(theme)) {
+    return {};
+  }
+  return mergeOverrideInto({}, theme) as Partial<TerminalTheme>;
+}
+
+function mergeOverrideInto(target: Record<string, unknown>, patch: unknown): Record<string, unknown> {
+  if (!TypeGuards.isPlainObject(patch)) {
+    return target;
+  }
+
+  for (const [key, value] of Object.entries(patch as Record<string, unknown>)) {
+    if (TypeGuards.isPlainObject(value)) {
+      const current = TypeGuards.isPlainObject(target[key]) ? (target[key] as Record<string, unknown>) : {};
+      target[key] = mergeOverrideInto({ ...current }, value);
+    } else if (Array.isArray(value)) {
+      target[key] = value.map(item =>
+        TypeGuards.isPlainObject(item) ? mergeOverrideInto({}, item) : item
+      );
+    } else if (typeof value !== 'undefined') {
+      target[key] = value;
+    }
+  }
+
+  return target;
+}
 
 function formatCell(value: unknown): string {
   if (value === null || value === undefined) {

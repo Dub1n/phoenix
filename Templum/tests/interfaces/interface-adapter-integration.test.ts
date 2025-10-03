@@ -6,36 +6,64 @@
  * description: [Comprehensive integration tests for VSCode, CLI, and Command interface adapters with orchestrator interaction validation]
  * ---*/
 
-import { EventEmitter } from 'events';
-import { 
-  InterfaceType, 
-  UniversalSkinDefinition, 
-  StateUpdate, 
+import { EventEmitter } from "events";
+import {
+  InterfaceType,
+  UniversalSkinDefinition,
+  StateUpdate,
   InterfaceAdapterStatus,
-  createTemplumError
-} from '../../src/types/templum-types';
-import { 
+  createTemplumError,
+} from "../../src/types/templum-types";
+import {
   ITemplumOrchestrator,
-  IInterfaceAdapter 
-} from '../../src/interfaces/templum-orchestrator-interface';
-import { VSCodeInterfaceAdapter } from '../../src/interfaces/vscode-adapter-abstracted';
-import { CLIInterfaceAdapter } from '../../src/interfaces/cli-adapter-abstracted';
-import { CommandInterfaceAdapter } from '../../src/interfaces/command-adapter-abstracted';
+  IInterfaceAdapter,
+} from "../../src/interfaces/templum-orchestrator-interface";
+import { VSCodeInterfaceAdapter } from "../../src/interfaces/vscode-adapter-abstracted";
+import { CLIInterfaceAdapter } from "../../src/interfaces/cli-adapter-abstracted";
+import { CommandInterfaceAdapter } from "../../src/interfaces/command-adapter-abstracted";
+import {
+  DefaultColorThemes,
+  ensureThemeIntegrity,
+  ResponsiveLayout,
+} from "../../src/interfaces/terminal-ui-components";
+
+const ansiPattern = /\u001b\[[0-9;]*m/g;
+
+const overrideStdoutColumns = (width: number): (() => void) => {
+  const original = process.stdout.columns;
+  Object.defineProperty(process.stdout, "columns", {
+    configurable: true,
+    writable: true,
+    value: width,
+  });
+
+  return () => {
+    Object.defineProperty(process.stdout, "columns", {
+      configurable: true,
+      writable: true,
+      value: original,
+    });
+  };
+};
 
 /**
  * Mock Orchestrator for Testing Interface Adapter Integration
- * 
+ *
  * This provides a controlled orchestrator implementation for testing
  * interface adapter behavior without full system dependencies.
  */
-class MockTemplumOrchestrator extends EventEmitter implements ITemplumOrchestrator {
+class MockTemplumOrchestrator
+  extends EventEmitter
+  implements ITemplumOrchestrator
+{
   private initialized: boolean = false;
-  private registeredInterfaces: Map<InterfaceType, IInterfaceAdapter> = new Map();
-  private supportedInterfaces: InterfaceType[] = ['vscode', 'cli', 'command'];
+  private registeredInterfaces: Map<InterfaceType, IInterfaceAdapter> =
+    new Map();
+  private supportedInterfaces: InterfaceType[] = ["vscode", "cli", "command"];
 
   async initialize(): Promise<void> {
     this.initialized = true;
-    this.emit('initialized');
+    this.emit("initialized");
   }
 
   isInitialized(): boolean {
@@ -46,101 +74,120 @@ class MockTemplumOrchestrator extends EventEmitter implements ITemplumOrchestrat
     return [...this.supportedInterfaces];
   }
 
-  async registerInterface(interfaceType: InterfaceType, adapter: any): Promise<void> {
+  async registerInterface(
+    interfaceType: InterfaceType,
+    adapter: any,
+  ): Promise<void> {
     if (!this.initialized) {
-      throw createTemplumError('Cannot register interface on uninitialized orchestrator', 'SERVICE_NOT_READY', 'configuration');
+      throw createTemplumError(
+        "Cannot register interface on uninitialized orchestrator",
+        "SERVICE_NOT_READY",
+        "configuration",
+      );
     }
     this.registeredInterfaces.set(interfaceType, adapter);
-    this.emit('interface-registered', { interfaceType, adapter });
+    this.emit("interface-registered", { interfaceType, adapter });
   }
 
   async loadSkin(skinDefinition: UniversalSkinDefinition): Promise<void> {
-    this.emit('skin-loaded', skinDefinition);
+    this.emit("skin-loaded", skinDefinition);
   }
 
-  async loadBackendSkin(backendId: string): Promise<UniversalSkinDefinition | null> {
+  async loadBackendSkin(
+    backendId: string,
+  ): Promise<UniversalSkinDefinition | null> {
     // Return mock skin for testing
     return {
       id: `mock-skin-${backendId}`,
       name: `Mock Skin for ${backendId}`,
-      version: '1.0.0',
+      version: "1.0.0",
       description: `Mock skin for testing ${backendId}`,
       metadata: {
         id: `mock-skin-${backendId}`,
         name: `Mock Skin for ${backendId}`,
-        version: '1.0.0',
+        version: "1.0.0",
         description: `Mock skin for testing ${backendId}`,
-        backend: 'haruspex' as any,
-        backendService: 'haruspex-service',
-        compatibleInterfaces: ['vscode', 'cli', 'command']
+        backend: "haruspex" as any,
+        backendService: "haruspex-service",
+        compatibleInterfaces: ["vscode", "cli", "command"],
       },
       theme: {
-        primary: '#007ACC',
-        secondary: '#00AA44',
-        accent: '#FF6600',
-        success: '#00AA44',
-        warning: '#FFAA00',
-        error: '#FF4444',
-        background: '#1E1E1E',
-        foreground: '#FFFFFF'
+        primary: "#007ACC",
+        secondary: "#00AA44",
+        accent: "#FF6600",
+        success: "#00AA44",
+        warning: "#FFAA00",
+        error: "#FF4444",
+        background: "#1E1E1E",
+        foreground: "#FFFFFF",
       },
       pclCompatibility: {
         enabled: true,
-        version: '1.0.0',
+        version: "1.0.0",
         reusePercentage: 75,
-        inheritancePatterns: ['command-pattern'],
-        optimizations: ['lazy-loading'],
-        features: []
-      }
+        inheritancePatterns: ["command-pattern"],
+        optimizations: ["lazy-loading"],
+        features: [],
+      },
     };
   }
 
-  async executeCommand(command: string, sourceInterface: InterfaceType, args?: any[]): Promise<any> {
+  async executeCommand(
+    command: string,
+    sourceInterface: InterfaceType,
+    args?: any[],
+  ): Promise<any> {
     return {
       success: true,
       message: `Mock execution of ${command} from ${sourceInterface}`,
-      data: { command, sourceInterface, args }
+      data: { command, sourceInterface, args },
     };
   }
 
   getSystemStatus(): any {
     return {
-      health: 'healthy',
+      health: "healthy",
       activeInterfaces: Array.from(this.registeredInterfaces.keys()),
-      version: '1.0.0-test'
+      version: "1.0.0-test",
     };
   }
 
   async refreshBackendServices(): Promise<void> {
-    this.emit('backend-services-refreshed');
+    this.emit("backend-services-refreshed");
   }
 
   getUniversalSkinEngine(): any {
     return {
-      renderForInterface: jest.fn().mockResolvedValue('<mock-rendered-content/>')
+      renderForInterface: jest
+        .fn()
+        .mockResolvedValue("<mock-rendered-content/>"),
     };
   }
 
   getBackendRouter(): any {
     return {
-      getConnectionStatus: jest.fn().mockReturnValue({ connected: true, services: [] })
+      getConnectionStatus: jest
+        .fn()
+        .mockReturnValue({ connected: true, services: [] }),
     };
   }
 
   getResourceManager(): any {
     return {
-      getMetrics: jest.fn().mockReturnValue({ memory: 0, cpu: 0 })
+      getMetrics: jest.fn().mockReturnValue({ memory: 0, cpu: 0 }),
     };
   }
 
   async shutdown(): Promise<void> {
     this.initialized = false;
     this.registeredInterfaces.clear();
-    this.emit('shutdown');
+    this.emit("shutdown");
   }
 
   // Helper methods for testing
-  getRegisteredInterface(interfaceType: InterfaceType): IInterfaceAdapter | undefined {
+  getRegisteredInterface(
+    interfaceType: InterfaceType,
+  ): IInterfaceAdapter | undefined {
     return this.registeredInterfaces.get(interfaceType);
   }
 
@@ -156,15 +203,15 @@ class MockVSCodeContext {
   subscriptions: any[] = [];
   globalState = new Map();
   workspaceState = new Map();
-  extensionUri = { fsPath: '/mock/extension/path' };
-  extensionPath = '/mock/extension/path';
+  extensionUri = { fsPath: "/mock/extension/path" };
+  extensionPath = "/mock/extension/path";
 
   constructor() {
     // Mock VSCode context implementation
   }
 }
 
-describe('Interface Adapter Integration Tests', () => {
+describe("Interface Adapter Integration Tests", () => {
   let mockOrchestrator: MockTemplumOrchestrator;
 
   beforeEach(async () => {
@@ -178,7 +225,7 @@ describe('Interface Adapter Integration Tests', () => {
     }
   });
 
-  describe('VSCode Interface Adapter Integration', () => {
+  describe("VSCode Interface Adapter Integration", () => {
     let vscodeAdapter: VSCodeInterfaceAdapter;
     let mockVSCodeContext: MockVSCodeContext;
 
@@ -193,75 +240,77 @@ describe('Interface Adapter Integration Tests', () => {
       }
     });
 
-    test('initializes with orchestrator and registers interface', async () => {
+    test("initializes with orchestrator and registers interface", async () => {
       // Act
       await vscodeAdapter.initialize(mockOrchestrator);
 
       // Assert
-      expect(mockOrchestrator.getRegisteredInterface('vscode')).toBe(vscodeAdapter);
+      expect(mockOrchestrator.getRegisteredInterface("vscode")).toBe(
+        vscodeAdapter,
+      );
       expect(mockOrchestrator.getRegisteredInterfaceCount()).toBe(1);
     });
 
-    test('returns correct interface type', () => {
+    test("returns correct interface type", () => {
       // Act
       const interfaceType = vscodeAdapter.getInterfaceType();
 
       // Assert
-      expect(interfaceType).toBe('vscode');
+      expect(interfaceType).toBe("vscode");
     });
 
-    test('applies skin through orchestrator integration', async () => {
+    test("applies skin through orchestrator integration", async () => {
       // Arrange
       await vscodeAdapter.initialize(mockOrchestrator);
       const mockSkin: UniversalSkinDefinition = {
-        id: 'test-skin',
-        name: 'Test Skin',
-        version: '1.0.0',
+        id: "test-skin",
+        name: "Test Skin",
+        version: "1.0.0",
         metadata: {
-          id: 'test-skin',
-          name: 'Test Skin',
-          version: '1.0.0',
-          backend: 'haruspex',
-          backendService: 'haruspex-service',
-          compatibleInterfaces: ['vscode']
+          id: "test-skin",
+          name: "Test Skin",
+          version: "1.0.0",
+          backend: "haruspex",
+          backendService: "haruspex-service",
+          compatibleInterfaces: ["vscode"],
         },
         theme: {
-          primary: '#007ACC',
-          secondary: '#00AA44',
-          accent: '#FF6600',
-          success: '#00AA44',
-          warning: '#FFAA00',
-          error: '#FF4444',
-          background: '#FFFFFF',
-          foreground: '#000000'
+          primary: "#007ACC",
+          secondary: "#00AA44",
+          accent: "#FF6600",
+          success: "#00AA44",
+          warning: "#FFAA00",
+          error: "#FF4444",
+          background: "#FFFFFF",
+          foreground: "#000000",
         },
         pclCompatibility: {
           enabled: true,
-          version: '1.0.0',
+          version: "1.0.0",
           reusePercentage: 75,
-          inheritancePatterns: ['command-pattern'],
-          optimizations: ['lazy-loading'],
-          features: []
-        }
+          inheritancePatterns: ["command-pattern"],
+          optimizations: ["lazy-loading"],
+          features: [],
+        },
       };
 
       // Act & Assert - Should not throw
       await expect(vscodeAdapter.applySkin(mockSkin)).resolves.not.toThrow();
     });
 
-    test('synchronizes state updates from orchestrator', async () => {
+    test("synchronizes state updates from orchestrator", async () => {
       // Arrange
       await vscodeAdapter.initialize(mockOrchestrator);
       const stateUpdate: StateUpdate = {
         timestamp: Date.now(),
-        sessionState: { activeMenu: 'main' }
+        sessionState: { activeMenu: "main" },
       };
 
       // Act & Assert - Should not throw
       await expect(vscodeAdapter.syncState(stateUpdate)).resolves.not.toThrow();
     });
 
-    test('reports accurate adapter status', async () => {
+    test("reports accurate adapter status", async () => {
       // Arrange
       await vscodeAdapter.initialize(mockOrchestrator);
 
@@ -272,44 +321,44 @@ describe('Interface Adapter Integration Tests', () => {
       expect(status).toMatchObject({
         active: expect.any(Boolean),
         orchestratorConnected: expect.any(Boolean),
-        lastActivity: expect.any(Number)
+        lastActivity: expect.any(Number),
       });
       expect(status.orchestratorConnected).toBe(true);
     });
 
-    test('supports skin compatibility validation', async () => {
+    test("supports skin compatibility validation", async () => {
       // Arrange
       await vscodeAdapter.initialize(mockOrchestrator);
       const compatibleSkin: UniversalSkinDefinition = {
-        id: 'compatible-skin',
-        name: 'Compatible Skin',
-        version: '1.0.0',
+        id: "compatible-skin",
+        name: "Compatible Skin",
+        version: "1.0.0",
         metadata: {
-          id: 'compatible-skin',
-          name: 'Compatible Skin',
-          version: '1.0.0',
-          backend: 'haruspex',
-          backendService: 'haruspex-service',
-          compatibleInterfaces: ['vscode', 'cli']
+          id: "compatible-skin",
+          name: "Compatible Skin",
+          version: "1.0.0",
+          backend: "haruspex",
+          backendService: "haruspex-service",
+          compatibleInterfaces: ["vscode", "cli"],
         },
         theme: {
-          primary: '#007ACC',
-          secondary: '#00AA44',
-          accent: '#FF6600',
-          success: '#00AA44',
-          warning: '#FFAA00',
-          error: '#FF4444',
-          background: '#FFFFFF',
-          foreground: '#000000'
+          primary: "#007ACC",
+          secondary: "#00AA44",
+          accent: "#FF6600",
+          success: "#00AA44",
+          warning: "#FFAA00",
+          error: "#FF4444",
+          background: "#FFFFFF",
+          foreground: "#000000",
         },
         pclCompatibility: {
           enabled: true,
-          version: '1.0.0',
+          version: "1.0.0",
           reusePercentage: 75,
-          inheritancePatterns: ['command-pattern'],
-          optimizations: ['lazy-loading'],
-          features: []
-        }
+          inheritancePatterns: ["command-pattern"],
+          optimizations: ["lazy-loading"],
+          features: [],
+        },
       };
 
       // Act
@@ -319,11 +368,11 @@ describe('Interface Adapter Integration Tests', () => {
       expect(supports).toBe(true);
     });
 
-    test('executes commands through orchestrator', async () => {
+    test("executes commands through orchestrator", async () => {
       // Arrange
       await vscodeAdapter.initialize(mockOrchestrator);
-      const command = 'test-command';
-      const args = ['arg1', 'arg2'];
+      const command = "test-command";
+      const args = ["arg1", "arg2"];
 
       // Act
       const result = await vscodeAdapter.executeCommand(command, args);
@@ -334,14 +383,14 @@ describe('Interface Adapter Integration Tests', () => {
         message: expect.stringContaining(command),
         data: expect.objectContaining({
           command,
-          sourceInterface: 'vscode',
-          args
-        })
+          sourceInterface: "vscode",
+          args,
+        }),
       });
     });
   });
 
-  describe('CLI Interface Adapter Integration', () => {
+  describe("CLI Interface Adapter Integration", () => {
     let cliAdapter: CLIInterfaceAdapter;
 
     beforeEach(() => {
@@ -351,7 +400,7 @@ describe('Interface Adapter Integration Tests', () => {
         enableColorOutput: false,
         enableProgressIndicators: false,
         clearScreenOnRender: false,
-        maxHistorySize: 10
+        maxHistorySize: 10,
       });
     });
 
@@ -361,38 +410,38 @@ describe('Interface Adapter Integration Tests', () => {
       }
     });
 
-    test('initializes with orchestrator and registers interface', async () => {
+    test("initializes with orchestrator and registers interface", async () => {
       // Act
       await cliAdapter.initialize(mockOrchestrator);
 
       // Assert
-      expect(mockOrchestrator.getRegisteredInterface('cli')).toBe(cliAdapter);
+      expect(mockOrchestrator.getRegisteredInterface("cli")).toBe(cliAdapter);
       expect(mockOrchestrator.getRegisteredInterfaceCount()).toBe(1);
     });
 
-    test('returns correct interface type', () => {
+    test("returns correct interface type", () => {
       // Act
       const interfaceType = cliAdapter.getInterfaceType();
 
       // Assert
-      expect(interfaceType).toBe('cli');
+      expect(interfaceType).toBe("cli");
     });
 
-    test('synchronizes state updates from orchestrator', async () => {
+    test("synchronizes state updates from orchestrator", async () => {
       // Arrange
       await cliAdapter.initialize(mockOrchestrator);
       const stateUpdate: StateUpdate = {
         timestamp: Date.now(),
         menuUpdates: {
-          'main': { refreshRequired: true }
-        }
+          main: { refreshRequired: true },
+        },
       };
 
       // Act & Assert - Should not throw
       await expect(cliAdapter.syncState(stateUpdate)).resolves.not.toThrow();
     });
 
-    test('reports accurate adapter status', async () => {
+    test("reports accurate adapter status", async () => {
       // Arrange
       await cliAdapter.initialize(mockOrchestrator);
 
@@ -403,44 +452,44 @@ describe('Interface Adapter Integration Tests', () => {
       expect(status).toMatchObject({
         active: expect.any(Boolean),
         initialized: expect.any(Boolean),
-        lastActivity: expect.any(Number)
+        lastActivity: expect.any(Number),
       });
       expect(status.initialized).toBe(true);
     });
 
-    test('applies skin through orchestrator integration', async () => {
+    test("applies skin through orchestrator integration", async () => {
       // Arrange
       await cliAdapter.initialize(mockOrchestrator);
       const mockSkin: UniversalSkinDefinition = {
-        id: 'cli-test-skin',
-        name: 'CLI Test Skin',
-        version: '1.0.0',
+        id: "cli-test-skin",
+        name: "CLI Test Skin",
+        version: "1.0.0",
         metadata: {
-          id: 'cli-test-skin',
-          name: 'CLI Test Skin', 
-          version: '1.0.0',
-          backend: 'pcl',
-          backendService: 'pcl-service',
-          compatibleInterfaces: ['cli']
+          id: "cli-test-skin",
+          name: "CLI Test Skin",
+          version: "1.0.0",
+          backend: "pcl",
+          backendService: "pcl-service",
+          compatibleInterfaces: ["cli"],
         },
         theme: {
-          primary: '#00FF00',
-          secondary: '#FFFF00',
-          accent: '#FF00FF',
-          success: '#00FF00',
-          warning: '#FFFF00',
-          error: '#FF0000',
-          background: '#000000',
-          foreground: '#FFFFFF'
+          primary: "#00FF00",
+          secondary: "#FFFF00",
+          accent: "#FF00FF",
+          success: "#00FF00",
+          warning: "#FFFF00",
+          error: "#FF0000",
+          background: "#000000",
+          foreground: "#FFFFFF",
         },
         pclCompatibility: {
           enabled: true,
-          version: '1.0.0',
+          version: "1.0.0",
           reusePercentage: 75,
-          inheritancePatterns: ['command-pattern'],
-          optimizations: ['lazy-loading'],
-          features: []
-        }
+          inheritancePatterns: ["command-pattern"],
+          optimizations: ["lazy-loading"],
+          features: [],
+        },
       };
 
       // Act & Assert - Should not throw
@@ -448,7 +497,139 @@ describe('Interface Adapter Integration Tests', () => {
     });
   });
 
-  describe('Command Interface Adapter Integration', () => {
+  describe("Terminal UI Theme Integrity", () => {
+    test("ensureThemeIntegrity falls back on invalid theme definitions", () => {
+      const invalidTheme = {
+        name: "Broken",
+        primary: "not a function",
+      } as unknown;
+
+      const { theme, resetRequired, issues } =
+        ensureThemeIntegrity(invalidTheme);
+
+      expect(theme).toBe(DefaultColorThemes.default);
+      expect(resetRequired).toBe(true);
+      expect(issues).toContain("primary");
+    });
+
+    test("ensureThemeIntegrity preserves valid themes", () => {
+      const { theme, resetRequired, issues } = ensureThemeIntegrity(
+        DefaultColorThemes.dark,
+      );
+
+      expect(theme).toBe(DefaultColorThemes.dark);
+      expect(resetRequired).toBe(false);
+      expect(issues).toHaveLength(0);
+    });
+  });
+
+  describe("CLI Window and Theme Baselines", () => {
+    const captureResponsiveBaseline = (
+      columns: number,
+      themeKey: keyof typeof DefaultColorThemes,
+    ) => {
+      const restoreColumns = overrideStdoutColumns(columns);
+      const initialResizeListeners = process.stdout.listenerCount("resize");
+      try {
+        const layout = new ResponsiveLayout({
+          theme: DefaultColorThemes[themeKey],
+        });
+
+        const table = layout.createTable(
+          [
+            {
+              Step: "Initialize orchestrator bridges",
+              Window: "primary",
+              Theme: "accented",
+            },
+            {
+              Step: "Calibrate adaptive layout",
+              Window: "secondary",
+              Theme: "diagnostic",
+            },
+            {
+              Step: "Persist baseline snapshot",
+              Window: "summary",
+              Theme: "baseline",
+            },
+          ],
+          ["Step", "Window", "Theme"],
+        );
+
+        const sanitizedLines = table
+          .split("\n")
+          .filter((line) => line.trim().length > 0)
+          .map((line) => line.replace(ansiPattern, ""));
+
+        const colorSegments = table.match(/\u001b\[[0-9;]*m/g) ?? [];
+
+        return {
+          columns,
+          theme: themeKey,
+          sanitizedPreview: sanitizedLines.slice(0, 6),
+          colorSegments: colorSegments.length,
+          tableWidth: sanitizedLines[0]?.length ?? 0,
+          resizeListeners: {
+            before: initialResizeListeners,
+            after: process.stdout.listenerCount("resize"),
+          },
+        };
+      } finally {
+        process.stdout.removeAllListeners("resize");
+        restoreColumns();
+      }
+    };
+
+    test("captures default theme responsive baseline snapshot", () => {
+      const baseline = captureResponsiveBaseline(88, "default");
+      expect(baseline).toMatchInlineSnapshot(`
+       {
+         "colorSegments": 0,
+         "columns": 88,
+         "resizeListeners": {
+           "after": 6,
+           "before": 5,
+         },
+         "sanitizedPreview": [
+           "┌─────────────────────────────────┬───────────┬────────────┐",
+           "│                            Step │    Window │      Theme │",
+           "├─────────────────────────────────┼───────────┼────────────┤",
+           "│ Initialize orchestrator bridges │   primary │   accented │",
+           "│       Calibrate adaptive layout │ secondary │ diagnostic │",
+           "│       Persist baseline snapshot │   summary │   baseline │",
+         ],
+         "tableWidth": 60,
+         "theme": "default",
+       }
+      `);
+    });
+
+    test("captures monochrome fallback baseline snapshot", () => {
+      const baseline = captureResponsiveBaseline(88, "monochrome");
+      expect(baseline).toMatchInlineSnapshot(`
+       {
+         "colorSegments": 0,
+         "columns": 88,
+         "resizeListeners": {
+           "after": 1,
+           "before": 0,
+         },
+         "sanitizedPreview": [
+           "┌─────────────────────────────────┬───────────┬────────────┐",
+           "│                            Step │    Window │      Theme │",
+           "├─────────────────────────────────┼───────────┼────────────┤",
+           "│ Initialize orchestrator bridges │   primary │   accented │",
+           "│       Calibrate adaptive layout │ secondary │ diagnostic │",
+           "│       Persist baseline snapshot │   summary │   baseline │",
+         ],
+         "tableWidth": 60,
+         "theme": "monochrome",
+       }
+      `);
+    });
+  });
+
+  describe("Command Interface Adapter Integration", () => {
     let commandAdapter: CommandInterfaceAdapter;
 
     beforeEach(() => {
@@ -459,7 +640,7 @@ describe('Interface Adapter Integration Tests', () => {
         maxQueueSize: 100,
         maxHistorySize: 50,
         defaultTimeout: 30000,
-        enableMetrics: true
+        enableMetrics: true,
       });
     });
 
@@ -469,36 +650,40 @@ describe('Interface Adapter Integration Tests', () => {
       }
     });
 
-    test('initializes with orchestrator and registers interface', async () => {
+    test("initializes with orchestrator and registers interface", async () => {
       // Act
       await commandAdapter.initialize(mockOrchestrator);
 
       // Assert
-      expect(mockOrchestrator.getRegisteredInterface('command')).toBe(commandAdapter);
+      expect(mockOrchestrator.getRegisteredInterface("command")).toBe(
+        commandAdapter,
+      );
       expect(mockOrchestrator.getRegisteredInterfaceCount()).toBe(1);
     });
 
-    test('returns correct interface type', () => {
+    test("returns correct interface type", () => {
       // Act
       const interfaceType = commandAdapter.getInterfaceType();
 
       // Assert
-      expect(interfaceType).toBe('command');
+      expect(interfaceType).toBe("command");
     });
 
-    test('synchronizes state updates from orchestrator', async () => {
+    test("synchronizes state updates from orchestrator", async () => {
       // Arrange
       await commandAdapter.initialize(mockOrchestrator);
       const stateUpdate: StateUpdate = {
         timestamp: Date.now(),
-        sessionState: { commandContext: 'batch' }
+        sessionState: { commandContext: "batch" },
       };
 
-      // Act & Assert - Should not throw  
-      await expect(commandAdapter.syncState(stateUpdate)).resolves.not.toThrow();
+      // Act & Assert - Should not throw
+      await expect(
+        commandAdapter.syncState(stateUpdate),
+      ).resolves.not.toThrow();
     });
 
-    test('reports accurate adapter status with queue metrics', async () => {
+    test("reports accurate adapter status with queue metrics", async () => {
       // Arrange
       await commandAdapter.initialize(mockOrchestrator);
 
@@ -510,21 +695,21 @@ describe('Interface Adapter Integration Tests', () => {
         active: expect.any(Boolean),
         queueSize: expect.any(Number),
         healthy: expect.any(Boolean),
-        lastActivity: expect.any(Number)
+        lastActivity: expect.any(Number),
       });
       expect(status.queueSize).toBeGreaterThanOrEqual(0);
     });
 
-    test('executes commands through orchestrator with proper context', async () => {
+    test("executes commands through orchestrator with proper context", async () => {
       // Arrange
       await commandAdapter.initialize(mockOrchestrator);
-      const command = 'batch-test-command';
-      const args = ['--verbose', '--output=json'];
+      const command = "batch-test-command";
+      const args = ["--verbose", "--output=json"];
 
       // Act
       const result = await commandAdapter.executeCommand({
-        type: 'direct_command',
-        command: command
+        type: "direct_command",
+        command: command,
       } as any);
 
       // Assert
@@ -532,24 +717,26 @@ describe('Interface Adapter Integration Tests', () => {
         success: true,
         data: expect.objectContaining({
           command,
-          sourceInterface: 'command'
-        })
+          sourceInterface: "command",
+        }),
       });
     });
   });
 
-  describe('Cross-Interface Integration Scenarios', () => {
+  describe("Cross-Interface Integration Scenarios", () => {
     let vscodeAdapter: VSCodeInterfaceAdapter;
     let cliAdapter: CLIInterfaceAdapter;
     let commandAdapter: CommandInterfaceAdapter;
 
     beforeEach(async () => {
       // Initialize all adapters
-      vscodeAdapter = new VSCodeInterfaceAdapter(new MockVSCodeContext() as any);
+      vscodeAdapter = new VSCodeInterfaceAdapter(
+        new MockVSCodeContext() as any,
+      );
       cliAdapter = new CLIInterfaceAdapter({ enableInteractiveMode: false });
       commandAdapter = new CommandInterfaceAdapter({
         enableBatchExecution: true,
-        maxQueueSize: 10
+        maxQueueSize: 10,
       });
 
       // Initialize with orchestrator
@@ -562,48 +749,54 @@ describe('Interface Adapter Integration Tests', () => {
       await Promise.all([
         vscodeAdapter?.dispose(),
         cliAdapter?.dispose(),
-        commandAdapter?.dispose()
+        commandAdapter?.dispose(),
       ]);
     });
 
-    test('multiple interface adapters register successfully', () => {
+    test("multiple interface adapters register successfully", () => {
       // Assert
       expect(mockOrchestrator.getRegisteredInterfaceCount()).toBe(3);
-      expect(mockOrchestrator.getRegisteredInterface('vscode')).toBe(vscodeAdapter);
-      expect(mockOrchestrator.getRegisteredInterface('cli')).toBe(cliAdapter);
-      expect(mockOrchestrator.getRegisteredInterface('command')).toBe(commandAdapter);
+      expect(mockOrchestrator.getRegisteredInterface("vscode")).toBe(
+        vscodeAdapter,
+      );
+      expect(mockOrchestrator.getRegisteredInterface("cli")).toBe(cliAdapter);
+      expect(mockOrchestrator.getRegisteredInterface("command")).toBe(
+        commandAdapter,
+      );
     });
 
-    test('orchestrator reports all active interfaces in system status', () => {
+    test("orchestrator reports all active interfaces in system status", () => {
       // Act
       const systemStatus = mockOrchestrator.getSystemStatus();
 
       // Assert
-      expect(systemStatus.activeInterfaces).toContain('vscode');
-      expect(systemStatus.activeInterfaces).toContain('cli');
-      expect(systemStatus.activeInterfaces).toContain('command');
+      expect(systemStatus.activeInterfaces).toContain("vscode");
+      expect(systemStatus.activeInterfaces).toContain("cli");
+      expect(systemStatus.activeInterfaces).toContain("command");
       expect(systemStatus.activeInterfaces).toHaveLength(3);
     });
 
-    test('state synchronization broadcasts to all registered interfaces', async () => {
+    test("state synchronization broadcasts to all registered interfaces", async () => {
       // Arrange
       const stateUpdate: StateUpdate = {
         timestamp: Date.now(),
-        globalState: { theme: 'dark' },
-        sessionState: { user: 'test-user' }
+        globalState: { theme: "dark" },
+        sessionState: { user: "test-user" },
       };
 
       // Act & Assert - All should handle state sync without throwing
-      await expect(Promise.all([
-        vscodeAdapter.syncState(stateUpdate),
-        cliAdapter.syncState(stateUpdate), 
-        commandAdapter.syncState(stateUpdate)
-      ])).resolves.not.toThrow();
+      await expect(
+        Promise.all([
+          vscodeAdapter.syncState(stateUpdate),
+          cliAdapter.syncState(stateUpdate),
+          commandAdapter.syncState(stateUpdate),
+        ]),
+      ).resolves.not.toThrow();
     });
 
-    test('interface switching maintains orchestrator connection', async () => {
+    test("interface switching maintains orchestrator connection", async () => {
       // Arrange - Simulate interface switching by getting status from each
-      
+
       // Act
       const vscodeStatus = vscodeAdapter.getStatus();
       const cliStatus = cliAdapter.getStatus();
@@ -615,35 +808,46 @@ describe('Interface Adapter Integration Tests', () => {
       expect(commandStatus.active).toBe(true);
     });
 
-    test('backend skin loading works across all interface types', async () => {
+    test("backend skin loading works across all interface types", async () => {
       // Act
-      const backendSkin = await mockOrchestrator.loadBackendSkin('haruspex');
+      const backendSkin = await mockOrchestrator.loadBackendSkin("haruspex");
 
       // Assert
       expect(backendSkin).toBeTruthy();
-      expect(backendSkin?.metadata.compatibleInterfaces).toEqual(['vscode', 'cli', 'command']);
-      
+      expect(backendSkin?.metadata.compatibleInterfaces).toEqual([
+        "vscode",
+        "cli",
+        "command",
+      ]);
+
       // Test skin application across interfaces
-      await expect(Promise.all([
-        vscodeAdapter.applySkin(backendSkin!),
-        cliAdapter.applySkin(backendSkin!),
-        commandAdapter.applySkin(backendSkin!)
-      ])).resolves.not.toThrow();
+      await expect(
+        Promise.all([
+          vscodeAdapter.applySkin(backendSkin!),
+          cliAdapter.applySkin(backendSkin!),
+          commandAdapter.applySkin(backendSkin!),
+        ]),
+      ).resolves.not.toThrow();
     });
   });
 
-  describe('Error Handling and Resilience', () => {
-    test('adapter handles orchestrator initialization failure gracefully', async () => {
+  describe("Error Handling and Resilience", () => {
+    test("adapter handles orchestrator initialization failure gracefully", async () => {
       // Arrange
       const uninitializedOrchestrator = new MockTemplumOrchestrator();
-      const adapter = new VSCodeInterfaceAdapter(new MockVSCodeContext() as any);
+      const adapter = new VSCodeInterfaceAdapter(
+        new MockVSCodeContext() as any,
+      );
 
       // Act & Assert
-      await expect(adapter.initialize(uninitializedOrchestrator))
-        .rejects.toThrow('Cannot register interface on uninitialized orchestrator');
+      await expect(
+        adapter.initialize(uninitializedOrchestrator),
+      ).rejects.toThrow(
+        "Cannot register interface on uninitialized orchestrator",
+      );
     });
 
-    test('adapter status reflects orchestrator connection state', async () => {
+    test("adapter status reflects orchestrator connection state", async () => {
       // Arrange
       const adapter = new CLIInterfaceAdapter({ enableInteractiveMode: false });
       await adapter.initialize(mockOrchestrator);
@@ -656,17 +860,16 @@ describe('Interface Adapter Integration Tests', () => {
       expect(status.initialized).toBe(false);
     });
 
-    test('interface adapters handle state sync errors appropriately', async () => {
+    test("interface adapters handle state sync errors appropriately", async () => {
       // Arrange
       const adapter = new CommandInterfaceAdapter();
       await adapter.initialize(mockOrchestrator);
-      
+
       // Create invalid state update that might cause errors
       const invalidStateUpdate = null as any;
 
       // Act & Assert
-      await expect(adapter.syncState(invalidStateUpdate))
-        .rejects.toThrow();
+      await expect(adapter.syncState(invalidStateUpdate)).rejects.toThrow();
     });
   });
 });

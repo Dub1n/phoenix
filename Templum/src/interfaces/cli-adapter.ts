@@ -14,24 +14,27 @@
 import { EventEmitter } from 'events';
 import * as readline from 'readline';
 import { UniversalCommandRegistry } from '../commands/universal-command-registry';
-import {UniversalMenuRegistry, LoadedSkin, UniversalMenuDefinition} from '../menus/universal-menu-registry';
+import { UniversalMenuRegistry, LoadedSkin, UniversalMenuDefinition } from '../menus/universal-menu-registry';
 import { SessionContextFoundation } from '../session/session-context-foundation';
 import { UniversalLayoutEngine } from '../rendering/universal-layout-engine';
+import { buildSkinMenuFromUniversalDefinition, coerceUniversalMenuDefinition } from '../rendering/menu-definition-adapter';
 import { ITemplumOrchestrator } from './templum-orchestrator-interface';
 import { UniversalSkinDefinition } from '../types/universal-skin-definition';
-import { 
+import { createFormatter } from '../utils/terminal-formatter';
+import {
   createDefaultTerminalUI,
-  InteractiveSearch as _InteractiveSearch, 
-  SearchableItem, 
+  InteractiveSearch as _InteractiveSearch,
+  SearchableItem,
   SearchResult,
-  DefaultColorThemes 
+  DefaultColorThemes,
 } from './terminal-ui-components';
 import { StringUtils } from '../utils/chainable-string-utils';
+import { TypeGuards, TypeValidators } from '../utils/type-guards';
 
 export interface CLIAdapter {
   type: 'cli';
   initialize(): Promise<boolean>;
-  render(menuData: any): Promise<CLIRenderResult>;
+  render(menuData: unknown): Promise<CLIRenderResult>;
   handleInput(input: CLIInput): Promise<CLIInputResult>;
   cleanup(): Promise<boolean>;
 }
@@ -161,7 +164,11 @@ export class CLIInterfaceAdapter extends EventEmitter implements CLIAdapter {
     };
 
     // Initialize Terminal UI with centralized defaults
-    this.terminalUI = createDefaultTerminalUI(this.config.terminalTheme || 'default');
+    const formatter = createFormatter();
+    this.terminalUI = createDefaultTerminalUI(this.config.terminalTheme || 'default', {
+      formatter,
+      columnsProvider: () => formatter.getCapabilities().width,
+    });
   }
 
   /**
@@ -171,8 +178,14 @@ export class CLIInterfaceAdapter extends EventEmitter implements CLIAdapter {
     if (this.isInitialized) return true;
 
     try {
+      const interactiveAllowed =
+        this.config.enableInteractiveMode &&
+        typeof process.stdin.isTTY === 'boolean' &&
+        process.stdin.isTTY &&
+        process.env.CI !== '1';
+
       // Setup readline interface for interactive mode
-      if (this.config.enableInteractiveMode) {
+      if (interactiveAllowed) {
         await this.setupReadlineInterface();
       }
 
@@ -197,15 +210,26 @@ export class CLIInterfaceAdapter extends EventEmitter implements CLIAdapter {
   /**
    * Render menu using Universal Layout Engine
    */
-  async render(menuData: any): Promise<CLIRenderResult> {
+  async render(menuData: unknown): Promise<CLIRenderResult> {
     if (!this.isInitialized) {
       return { success: false, rendered: false, errors: ['Adapter not initialized'] };
     }
 
     try {
+      const validation = this.validateMenuPayload(menuData);
+      if (!validation.isValid) {
+        return {
+          success: false,
+          rendered: false,
+          errors: [validation.reason ?? 'CLIInterfaceAdapter: invalid menu payload'],
+        };
+      }
+
       // Use Universal Layout Engine for consistent rendering
+      const menuDefinition = validation.payload!;
+      const skinDefinition = buildSkinMenuFromUniversalDefinition(menuDefinition, 'cli');
       const renderResult = await this.layoutEngine.renderForInterface(
-        menuData,
+        skinDefinition,
         'cli',
         {
           interfaceType: 'cli',
@@ -234,7 +258,7 @@ export class CLIInterfaceAdapter extends EventEmitter implements CLIAdapter {
           this.displayKeyboardShortcuts();
         }
 
-        this.emit('rendered', menuData);
+        this.emit('rendered', menuDefinition);
         
         return {
           success: true,
@@ -257,6 +281,55 @@ export class CLIInterfaceAdapter extends EventEmitter implements CLIAdapter {
         errors: [error instanceof Error ? error.message : 'Unknown render error'] 
       };
     }
+  }
+
+  private validateMenuPayload(menuData: unknown): {
+    isValid: boolean;
+    reason?: string;
+    payload?: UniversalMenuDefinition;
+  } {
+    if (!TypeGuards.isPlainObject(menuData)) {
+      return {
+        isValid: false,
+        reason: 'CLIInterfaceAdapter: menu payload must be a plain object',
+      };
+    }
+
+    const payload = menuData as Record<string, unknown>;
+
+    const sections = payload.sections;
+    if (
+      sections !== undefined &&
+      !TypeValidators.isArrayOf(sections, (entry): entry is Record<string, unknown> => TypeGuards.isPlainObject(entry))
+    ) {
+      return {
+        isValid: false,
+        reason: 'CLIInterfaceAdapter: menu payload sections must be an array of plain objects',
+      };
+    }
+
+    if (Array.isArray(sections)) {
+      for (const section of sections as Record<string, unknown>[]) {
+        const items = section.items;
+        if (
+          items !== undefined &&
+          !TypeValidators.isArrayOf(items, (item): item is Record<string, unknown> => TypeGuards.isPlainObject(item))
+        ) {
+          return {
+            isValid: false,
+            reason: 'CLIInterfaceAdapter: menu items must be provided as plain object entries',
+          };
+        }
+      }
+    }
+
+    return {
+      isValid: true,
+      payload: coerceUniversalMenuDefinition(payload, {
+        fallbackId: 'cli-menu',
+        fallbackTitle: 'Templum CLI Menu'
+      })
+    };
   }
 
   /**
@@ -1080,7 +1153,7 @@ export class CLIInterfaceAdapter extends EventEmitter implements CLIAdapter {
     // Handle submenus
     if (skin.menus.submenus) {
       for (const [menuId, menuDef] of Object.entries(skin.menus.submenus)) {
-        if (menuDef && typeof menuDef === 'object' && 'title' in menuDef) {
+        if (TypeGuards.isPlainObject(menuDef)) {
           convertedMenus[menuId] = convertMenuDefinition(menuDef, menuId);
         }
       }

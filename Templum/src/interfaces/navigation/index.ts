@@ -57,21 +57,23 @@ export {
 
 export type {
   WindowBorderConfig,
-  BorderCharacterSet
+  BorderCharacterSet,
+  BorderRendererTheme,
+  BorderRendererDependencies
 } from './border-renderer';
 
 export {
   WidthCalculator,
   ResponsiveWidthCalculator,
   ContentAnalyzer,
-  PaddingManager,
   createWidthCalculator,
   createResponsiveWidthCalculator
 } from './width-calculator';
 
 export type {
   WidthCalculationOptions,
-  WidthCalculationResult
+  WidthCalculationResult,
+  WidthCalculatorDependencies
 } from './width-calculator';
 
 export { StringWidthUtils } from '../../utils/chainable-string-utils';

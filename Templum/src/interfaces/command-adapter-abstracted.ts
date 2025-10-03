@@ -7,21 +7,19 @@
  * ---*/
 
 import { EventEmitter } from 'events';
-import { 
-  ErrorSignalPayload, 
-  createTemplumError, 
+import {
+  ErrorSignalPayload,
+  createTemplumError,
   isTemplumError,
   InterfaceType,
   CommandContext,
   CommandResult,
   UniversalSkinDefinition,
   StateUpdate,
-  InterfaceAdapterStatus
+  InterfaceAdapterStatus,
 } from '../types/templum-types';
-import { 
-  ITemplumOrchestrator, 
-  IInterfaceAdapter 
-} from './templum-orchestrator-interface';
+import { ITemplumOrchestrator, IInterfaceAdapter } from './templum-orchestrator-interface';
+import { TypeGuards } from '../utils/type-guards';
 
 /**
  * Command Input Types (Interface-specific)
@@ -48,9 +46,8 @@ export interface CommandRetryPolicy {
   backoffStrategy: 'linear' | 'exponential';
 }
 
-export interface CommandExecutionResult {
+export interface CommandExecutionResult extends CommandResult {
   handled: boolean;
-  result?: CommandResult;
   executionTime?: number;
   errors?: string[];
   metadata?: Record<string, any>;
@@ -69,6 +66,7 @@ export class CommandInterfaceAdapter extends EventEmitter implements IInterfaceA
   private executionQueue: CommandInput[] = [];
   private isProcessingQueue: boolean = false;
   private executionHistory: CommandExecutionResult[] = [];
+  private lastActivityTimestamp = Date.now();
 
   constructor(config?: Partial<CommandAdapterConfig>) {
     super();
@@ -176,36 +174,56 @@ export class CommandInterfaceAdapter extends EventEmitter implements IInterfaceA
     
     try {
       // Validate command input
-      if (!input.command || input.command.trim().length === 0) {
+      if (!TypeGuards.isNonEmptyString(input.command)) {
         throw createTemplumError('Command cannot be empty', 'INVALID_INPUT', 'validation');
       }
       
-      // Create command context
+      const sanitizedArgs = Array.isArray(input.args) ? input.args : [];
+
+      const metadata = TypeGuards.isPlainObject(input.context?.metadata)
+        ? (input.context!.metadata as Record<string, unknown>)
+        : undefined;
+
+      const retryPolicy = this.normalizeRetryPolicy(input.context?.retryPolicy);
+
       const context: CommandContext = {
-        sessionId: input.context?.sessionId || this.generateSessionId(),
+        sessionId: TypeGuards.isNonEmptyString(input.context?.sessionId)
+          ? input.context!.sessionId
+          : this.generateSessionId(),
         originalInput: input.command,
-        ...input.context?.metadata
+        executionMode: input.context?.executionMode || 'synchronous',
+        retryPolicy,
+        metadata,
+        source: input.source || 'programmatic',
       };
       
       // Execute through orchestrator abstraction (not direct coupling)
       const result = await this.orchestrator.executeCommand(
         input.command,
         'command',
-        input.args,
+        sanitizedArgs,
         context
       );
       
       const executionTime = Date.now() - startTime;
-      
+      this.lastActivityTimestamp = Date.now();
+
       const executionResult: CommandExecutionResult = {
         handled: true,
-        result: result,
-        executionTime: executionTime,
+        success: result.success,
+        message: result.message,
+        data: result.data,
+        error: result.error,
+        source: result.source || 'command',
+        timestamp: result.timestamp || Date.now(),
+        executionTime,
+        context: result.context || context,
         metadata: {
           inputType: input.type,
           source: input.source || 'programmatic',
-          executionMode: input.context?.executionMode || 'synchronous'
-        }
+          executionMode: input.context?.executionMode || 'synchronous',
+          queueDepth: this.executionQueue.length,
+        },
       };
       
       // Add to history if enabled
@@ -232,18 +250,22 @@ export class CommandInterfaceAdapter extends EventEmitter implements IInterfaceA
       const executionTime = Date.now() - startTime;
       
       console.error('CommandInterfaceAdapter: Command execution failed:', errorMessage);
+      this.lastActivityTimestamp = Date.now();
       
       const executionResult: CommandExecutionResult = {
         handled: false,
+        success: false,
         executionTime: executionTime,
         errors: [errorMessage],
+        error: errorMessage,
         metadata: {
           inputType: input.type,
           source: input.source || 'programmatic',
-          failed: true
+          failed: true,
+          queueDepth: this.executionQueue.length,
         }
       };
-      
+
       this.emit('error', {
         timestamp: Date.now(),
         source: 'command',
@@ -273,8 +295,10 @@ export class CommandInterfaceAdapter extends EventEmitter implements IInterfaceA
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         results.push({
           handled: false,
+          success: false,
           errors: [errorMessage],
-          metadata: { command: command.command, batchExecution: true }
+          error: errorMessage,
+          metadata: { command: command.command, batchExecution: true },
         });
       }
     }
@@ -286,19 +310,21 @@ export class CommandInterfaceAdapter extends EventEmitter implements IInterfaceA
    * Get adapter status
    */
   getStatus(): InterfaceAdapterStatus {
+    const orchestratorConnected = Boolean(this.orchestrator?.isInitialized?.() ?? this.orchestrator);
+
     return {
-      initialized: this.orchestrator !== undefined,
-      connected: true, // Command interface is always "connected"
-      active: this.isProcessingQueue,
-      lastActivity: Date.now(),
+      initialized: orchestratorConnected,
+      connected: orchestratorConnected,
+      active: orchestratorConnected || this.isProcessingQueue,
+      lastActivity: this.lastActivityTimestamp,
+      queueSize: this.executionQueue.length,
+      healthy: this.isHealthy(),
       metrics: {
         totalCommands: this.executionHistory.length,
         queueSize: this.executionQueue.length,
         isProcessing: this.isProcessingQueue,
-        averageExecutionTime: this.calculateAverageExecutionTime()
+        averageExecutionTime: this.calculateAverageExecutionTime(),
       },
-      health: this.isHealthy() ? 'healthy' : 'unhealthy',
-      errors: [] // Could track recent errors if needed
     };
   }
 
@@ -344,6 +370,21 @@ export class CommandInterfaceAdapter extends EventEmitter implements IInterfaceA
    */
   private generateSessionId(): string {
     return `cmd-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  private normalizeRetryPolicy(policy?: CommandRetryPolicy): CommandRetryPolicy | undefined {
+    if (!policy || !TypeGuards.isNumber(policy.maxRetries) || !TypeGuards.isNumber(policy.retryInterval)) {
+      return undefined;
+    }
+
+    const backoffStrategy = policy.backoffStrategy;
+    const validStrategy = backoffStrategy === 'linear' || backoffStrategy === 'exponential';
+
+    return {
+      maxRetries: Math.max(0, Math.floor(policy.maxRetries)),
+      retryInterval: Math.max(0, Math.floor(policy.retryInterval)),
+      backoffStrategy: validStrategy ? backoffStrategy : 'linear',
+    };
   }
 
   /**

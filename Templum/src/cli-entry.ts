@@ -10,22 +10,86 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import chalk = require('chalk');
+import { createFormatter, TerminalFormatter, getFormatterSeparatorLength } from './utils/terminal-formatter';
 import { CLIInterfaceAdapter } from './interfaces/cli-adapter-abstracted';
 import { DynamicCommandRouter } from './navigation/dynamic-command-router';
 import { ContentNavigationManager } from './navigation/content-driven-navigation';
+import {
+  buildCliCommandPayload,
+  buildCliIpcRequest,
+  buildServiceRegistryDefaults
+} from './backend/defaults/serialization-defaults';
+import {
+  serviceRegistryEntrySchema,
+  type ServiceRegistryEntry
+} from './backend/schemas/serialization-registry';
+import {
+  serialization,
+  type SerializationOutcome
+} from './utils/serialization-utils';
 
-interface ServiceRegistryEntry {
-  id: string;
-  service: string;
-  version: string;
-  protocol: 'ipc' | 'http' | 'websocket';
-  endpoint: string;
-  health: string;
-  capabilities: string[];
-  pid: number;
-  registrationTime: number;
-  lastSeen: number;
+const cliFormatter: TerminalFormatter = createFormatter();
+
+const cliFormat = {
+  info: (message: string) => cliFormatter.status.info(message),
+  success: (message: string) => cliFormatter.status.success(message),
+  warning: (message: string) => cliFormatter.status.warning(message),
+  error: (message: string) => cliFormatter.status.error(message),
+  muted: (message: string) => cliFormatter.text.muted(message),
+  command: (message: string) => cliFormatter.system.command(message),
+  separator: (length: number = getFormatterSeparatorLength()) =>
+    cliFormatter.ui.separator(length, 'double'),
+};
+
+function reportCliSerializationOutcome<T>(
+  context: string,
+  outcome: SerializationOutcome<T>
+): T | null {
+  const summary = `${context} [${outcome.meta.context}]`;
+
+  if (!outcome.ok) {
+    console.error(cliFormat.error(`✗ ${summary} failed`), outcome.error);
+    return null;
+  }
+
+  if (outcome.status === 'fallback') {
+    console.warn(cliFormat.warning(`⚠ ${summary} used fallback`), {
+      warnings: outcome.meta.warnings,
+      maskedFields: outcome.meta.maskedFields
+    });
+  } else if (outcome.status === 'defaults') {
+    console.warn(cliFormat.warning(`⚠ ${summary} applied defaults`), {
+      warnings: outcome.meta.warnings
+    });
+  } else if (outcome.meta.warnings.length > 0) {
+    console.warn(cliFormat.warning(`⚠ ${summary} warnings`), outcome.meta.warnings);
+  }
+
+  return outcome.value as T;
+}
+
+function deriveRegistryDefaults(serviceFilePath: string): ServiceRegistryEntry {
+  const fileName = path.basename(serviceFilePath, '.json');
+  const match = fileName.match(/^templum-core-(\d+)$/);
+  const pid = match ? Number(match[1]) : process.pid;
+  const endpoint = `ipc://${fileName}`;
+
+  const defaults = buildServiceRegistryDefaults({
+    id: fileName,
+    endpoint,
+    protocol: 'ipc',
+    pid,
+    capabilities: [],
+    health: '/health',
+    version: '1.0.0',
+    registrationTime: Date.now(),
+    lastSeen: Date.now(),
+    metadata: {
+      source: 'cli-discovery'
+    }
+  });
+
+  return serviceRegistryEntrySchema.parse(defaults);
 }
 
 /**
@@ -77,27 +141,44 @@ class TemplumCliDiscovery {
       for (const serviceFile of serviceFiles) {
         try {
           const serviceFilePath = path.join(this.servicesDir, serviceFile);
-          const serviceEntry: ServiceRegistryEntry = JSON.parse(
-            fs.readFileSync(serviceFilePath, 'utf8')
+          const rawContent = fs.readFileSync(serviceFilePath, 'utf8');
+          const defaults = deriveRegistryDefaults(serviceFilePath);
+          const outcome = serialization.fromJson<ServiceRegistryEntry>(rawContent, {
+            context: `cli:service-registry:${serviceFile}`,
+            schema: serviceRegistryEntrySchema,
+            defaults,
+            fallback: defaults
+          }).parse();
+
+          const serviceEntry = reportCliSerializationOutcome<ServiceRegistryEntry>(
+            `Service registry entry ${serviceFile}`,
+            outcome
           );
 
+          if (!serviceEntry) {
+            // Cleanup malformed registry entry so discovery can recover
+            fs.unlinkSync(serviceFilePath);
+            continue;
+          }
+
+          const pid = serviceEntry.pid;
           // Check if process is still running
-          if (this.isProcessRunning(serviceEntry.pid)) {
+          if (typeof pid === 'number' && this.isProcessRunning(pid)) {
             activeServices.push(serviceEntry);
           } else {
             // Cleanup stale registry entry
             fs.unlinkSync(serviceFilePath);
-            console.log(chalk.gray(`🧹 Cleaned up stale service entry: ${serviceEntry.id}`));
+            console.log(cliFormat.muted(`🧹 Cleaned up stale service entry: ${serviceEntry.id}`));
           }
         } catch (error) {
-          console.warn(chalk.yellow(`⚠️  Failed to parse service file ${serviceFile}:`, error));
+          console.warn(cliFormat.warning(`⚠️  Failed to process service file ${serviceFile}:`), error);
         }
       }
 
       return activeServices.sort((a, b) => b.registrationTime - a.registrationTime);
 
     } catch (error) {
-      console.error(chalk.red('❌ Service discovery failed:'), error);
+      console.error(cliFormat.error('❌ Service discovery failed:'), error);
       return [];
     }
   }
@@ -146,6 +227,14 @@ class RemoteTemplumAdapter {
     this.initializeDynamicRouting();
   }
 
+  private requireServicePid(): number {
+    const pid = this.serviceEntry.pid;
+    if (typeof pid !== 'number' || Number.isNaN(pid)) {
+      throw new Error('Service registry entry missing process identifier for IPC communication');
+    }
+    return pid;
+  }
+
   /**
    * Initialize dynamic routing system
    * Initialize dynamic routing system for skin-definition based navigation
@@ -156,9 +245,9 @@ class RemoteTemplumAdapter {
     try {
       this.dynamicRouter = new DynamicCommandRouter();
       this.contentNavigationManager = new ContentNavigationManager(this.dynamicRouter);
-      console.log(chalk.blue('[ROUTING] Dynamic command router initialized'));
+      console.log(cliFormat.info('[ROUTING] Dynamic command router initialized'));
     } catch (error) {
-      console.warn(chalk.yellow('[ROUTING] Failed to initialize dynamic routing, falling back to compatibility mode:'), error);
+      console.warn(cliFormat.warning('[ROUTING] Failed to initialize dynamic routing, falling back to compatibility mode:'), error);
       // System will fall back to compatibility mode
     }
   }
@@ -242,7 +331,7 @@ class RemoteTemplumAdapter {
         const responseFile = require('path').join(tempDir, `templum-${requestId}-response.json`);
         
         // Enhanced request structure with metadata
-        const ipcRequest = {
+        const ipcRequest = buildCliIpcRequest({
           type: message.type,
           data: message.data,
           requestId,
@@ -250,10 +339,27 @@ class RemoteTemplumAdapter {
           clientPid: process.pid,
           timestamp: Date.now(),
           version: '1.1',
-          priority: message.priority || 'normal'
-        };
-        
-        require('fs').writeFileSync(requestFile, JSON.stringify(ipcRequest, null, 2));
+          priority: message.priority ?? 'normal'
+        });
+
+        const requestOutcome = serialization
+          .json(ipcRequest, {
+            context: `cli:ipc:request:${requestId}`,
+            pretty: 2,
+            maskFields: ['token', 'credentials']
+          })
+          .stringify();
+
+        const serializedRequest = reportCliSerializationOutcome<string>(
+          `IPC request ${requestId}`,
+          requestOutcome
+        );
+
+        if (!serializedRequest) {
+          throw new Error(`Failed to serialize IPC request ${requestId}`);
+        }
+
+        require('fs').writeFileSync(requestFile, serializedRequest, 'utf8');
 
         // Enhanced timeout with cleanup
         const timeout = setTimeout(() => {
@@ -271,17 +377,37 @@ class RemoteTemplumAdapter {
               clearTimeout(timeout);
               
               const responseData = require('fs').readFileSync(responseFile, 'utf8');
-              const response = JSON.parse(responseData);
-              
+              const responseOutcome = serialization.fromJson<Record<string, unknown>>(responseData, {
+                context: `cli:ipc:response:${requestId}`,
+                fallback: {}
+              }).parse();
+
+              const response = reportCliSerializationOutcome<Record<string, unknown>>(
+                `IPC response ${requestId}`,
+                responseOutcome
+              );
+
+              if (!response) {
+                throw new Error('IPC response parsing failed');
+              }
+
+              const responseMeta = (response.serializationMeta && typeof response.serializationMeta === 'object')
+                ? (response.serializationMeta as any).request
+                : undefined;
+
+              if (responseMeta && Array.isArray(responseMeta.warnings) && responseMeta.warnings.length > 0) {
+                console.warn(cliFormat.warning(`⚠ IPC warnings: ${responseMeta.warnings.join('; ')}`));
+              }
+
               // Cleanup temp files safely
               this.safeCleanupTempFiles(requestFile, responseFile);
-              
+
               // Enhanced response validation
-              if (response.success !== undefined) {
+              if ('success' in response) {
                 if (response.success) {
-                  resolve(response.result || response.data);
+                  resolve((response as any).result ?? (response as any).data);
                 } else {
-                  reject(new Error(response.error || response.message || 'Command execution failed'));
+                  reject(new Error((response as any).error || (response as any).message || 'Command execution failed'));
                 }
               } else {
                 // Legacy response format support
@@ -354,10 +480,11 @@ class RemoteTemplumAdapter {
    * Connect to remote service and initialize CLI interface
    */
   async initializeCLI(): Promise<void> {
-    console.log(chalk.blue('Connecting to Templum service...'));
-    console.log(chalk.gray(`   Service: ${this.serviceEntry.id} (PID: ${this.serviceEntry.pid})`));
-    console.log(chalk.gray(`   Endpoint: ${this.serviceEntry.endpoint}`));
-    console.log(chalk.gray(`   Capabilities: ${this.serviceEntry.capabilities.join(', ')}`));
+    console.log(cliFormat.info('Connecting to Templum service...'));
+    const servicePid = this.requireServicePid();
+    console.log(cliFormat.muted(`   Service: ${this.serviceEntry.id} (PID: ${servicePid})`));
+    console.log(cliFormat.muted(`   Endpoint: ${this.serviceEntry.endpoint}`));
+    console.log(cliFormat.muted(`   Capabilities: ${this.serviceEntry.capabilities.join(', ')}`));
     
     try {
       // Create CLI adapter with remote service configuration
@@ -383,15 +510,15 @@ class RemoteTemplumAdapter {
         await serviceOrchestrator.refreshSystemStatus();
       }
       
-      console.log(chalk.green('✅ Connected to Templum service successfully'));
-      console.log(chalk.blue('🚀 Starting Templum CLI session...'));
-      console.log(chalk.gray('═'.repeat(60)));
+      console.log(cliFormat.success('✅ Connected to Templum service successfully'));
+      console.log(cliFormat.info('🚀 Starting Templum CLI session...'));
+      console.log(cliFormat.separator(60));
       
       // Start interactive CLI session
       await cliAdapter.startInteractiveSession('main');
       
     } catch (error) {
-      console.error(chalk.red('❌ Failed to initialize CLI connection:'), error);
+      console.error(cliFormat.error('❌ Failed to initialize CLI connection:'), error);
       throw error;
     }
   }
@@ -405,6 +532,7 @@ class RemoteTemplumAdapter {
     const serviceEndpoint = this.serviceEntry.endpoint;
     const serviceProtocol = this.serviceEntry.protocol;
     const serviceEntry = this.serviceEntry; // Capture in closure
+    const servicePid = this.requireServicePid();
     const sendIPCCommand = this.sendIPCCommand.bind(this); // Bind method to correct context
     
     // Cache system status for synchronous access
@@ -423,20 +551,20 @@ class RemoteTemplumAdapter {
       serviceInfo: {
         protocol: serviceProtocol,
         endpoint: serviceEndpoint,
-        pid: serviceEntry.pid,
+        pid: servicePid,
         registrationTime: serviceEntry.registrationTime,
         note: "Initial cached status"
       },
       timestamp: Date.now()
     };
     
-    console.log(chalk.blue(`[${serviceProtocol.toUpperCase()}] Creating orchestrator proxy for ${serviceEndpoint}`));
+    console.log(cliFormat.info(`[${serviceProtocol.toUpperCase()}] Creating orchestrator proxy for ${serviceEndpoint}`));
     
     return {
       // Service-based command execution with protocol detection
       async executeCommand(command: string, interfaceType: string, args: any[], context?: any) {
-        console.log(chalk.blue(`[${serviceProtocol.toUpperCase()}] Executing command: ${command}`));
-        console.log(chalk.gray(`[${serviceProtocol.toUpperCase()}] Interface: ${interfaceType}, Endpoint: ${serviceEndpoint}`));
+        console.log(cliFormat.info(`[${serviceProtocol.toUpperCase()}] Executing command: ${command}`));
+        console.log(cliFormat.muted(`[${serviceProtocol.toUpperCase()}] Interface: ${interfaceType}, Endpoint: ${serviceEndpoint}`));
         
         try {
           // TASK-CLI-014: Check for local CLI commands that should be processed locally
@@ -444,7 +572,7 @@ class RemoteTemplumAdapter {
           const isLocalCommand = this.isLocalCLICommand(command, interfaceType);
           
           if (isLocalCommand) {
-            console.log(chalk.green(`[LOCAL] Command '${command}' should be handled locally by CLI adapter`));
+            console.log(cliFormat.success(`[LOCAL] Command '${command}' should be handled locally by CLI adapter`));
             
             // Return a special response indicating this should be handled locally
             // The CLI adapter will see this and process the command locally
@@ -460,7 +588,7 @@ class RemoteTemplumAdapter {
               serviceInfo: {
                 protocol: serviceProtocol,
                 endpoint: serviceEndpoint,
-                pid: serviceEntry.pid,
+                pid: servicePid,
                 note: "Command routed for local CLI processing"
               }
             };
@@ -477,7 +605,15 @@ class RemoteTemplumAdapter {
                 'Content-Type': 'application/json',
                 'User-Agent': 'Templum-CLI/1.0'
               },
-              body: JSON.stringify({ command, interfaceType, args, context, timestamp: Date.now() })
+              body: JSON.stringify(
+                buildCliCommandPayload({
+                  command,
+                  interfaceType,
+                  args,
+                  context,
+                  timestamp: Date.now()
+                })
+              )
             });
 
             if (!response.ok) {
@@ -488,7 +624,7 @@ class RemoteTemplumAdapter {
             
           } else {
             // IPC implementation - Real command execution via process communication
-            console.log(chalk.blue(`[IPC] Forwarding command to Templum Core service (PID: ${serviceEntry.pid})`));
+            console.log(cliFormat.info(`[IPC] Forwarding command to Templum Core service (PID: ${servicePid})`));
             
             // Create IPC message for the Templum Core process
             const ipcMessage = {
@@ -511,9 +647,9 @@ class RemoteTemplumAdapter {
                 priority: 'normal'
               };
               
-              const result = await sendIPCCommand(serviceEntry.pid, ipcMessage, ipcOptions);
+              const result = await sendIPCCommand(servicePid, ipcMessage, ipcOptions);
               
-              console.log(chalk.green(`[IPC] Command executed successfully via service PID ${serviceEntry.pid}`));
+              console.log(cliFormat.success(`[IPC] Command executed successfully via service PID ${servicePid}`));
               
               return {
                 success: true,
@@ -523,12 +659,12 @@ class RemoteTemplumAdapter {
                 serviceInfo: {
                   protocol: serviceProtocol,
                   endpoint: serviceEndpoint,
-                  pid: serviceEntry.pid
+                  pid: servicePid
                 }
               };
               
             } catch (ipcError) {
-              console.warn(chalk.yellow(`[IPC] Direct IPC failed, using fallback execution: ${ipcError}`));
+              console.warn(cliFormat.warning(`[IPC] Direct IPC failed, using fallback execution: ${ipcError}`));
               
               // Fallback to local execution if IPC fails
               return {
@@ -546,7 +682,7 @@ class RemoteTemplumAdapter {
                 serviceInfo: {
                   protocol: serviceProtocol,
                   endpoint: serviceEndpoint,
-                  pid: serviceEntry.pid,
+                  pid: servicePid,
                   note: "Fallback execution - service available but IPC communication failed"
                 }
               };
@@ -554,7 +690,7 @@ class RemoteTemplumAdapter {
           }
           
         } catch (error) {
-          console.error(chalk.red(`[${serviceProtocol.toUpperCase()}] Command execution failed:`, error));
+          console.error(cliFormat.error(`[${serviceProtocol.toUpperCase()}] Command execution failed:`), error);
           return {
             success: false,
             error: error instanceof Error ? error.message : String(error),
@@ -580,7 +716,7 @@ class RemoteTemplumAdapter {
       
       // Background method to update cached system status via IPC
       async refreshSystemStatus() {
-        console.log(chalk.blue(`[${serviceProtocol.toUpperCase()}] Refreshing system status...`));
+        console.log(cliFormat.info(`[${serviceProtocol.toUpperCase()}] Refreshing system status...`));
         
         try {
           // TASK-DIAG-001: Implement real IPC communication for system status
@@ -591,26 +727,26 @@ class RemoteTemplumAdapter {
             }
           };
 
-          const realStatus = await sendIPCCommand(serviceEntry.pid, ipcMessage, { 
+          const realStatus = await sendIPCCommand(servicePid, ipcMessage, { 
             maxRetries: 2, 
             timeoutMs: 5000, 
             priority: 'normal' 
           });
-          console.log(chalk.green(`[${serviceProtocol.toUpperCase()}] System status updated from service`));
+          console.log(cliFormat.success(`[${serviceProtocol.toUpperCase()}] System status updated from service`));
           
           // Update cached status
           cachedSystemStatus = realStatus;
           return realStatus;
           
         } catch (error) {
-          console.warn(chalk.yellow(`[${serviceProtocol.toUpperCase()}] IPC system status refresh failed: ${error}`));
+          console.warn(cliFormat.warning(`[${serviceProtocol.toUpperCase()}] IPC system status refresh failed: ${error}`));
           // Keep existing cached status on failure
           return cachedSystemStatus;
         }
       },
 
       async loadSkin(_skinDefinition: any) { 
-        console.log(chalk.blue(`[${serviceProtocol.toUpperCase()}] Loading skin...`));
+        console.log(cliFormat.info(`[${serviceProtocol.toUpperCase()}] Loading skin...`));
         // IPC-to-HTTP transition: Architecture implemented, service integration pending
         return { 
           success: true, 
@@ -620,7 +756,7 @@ class RemoteTemplumAdapter {
       },
 
       async loadBackendSkin(backendId: string) { 
-        console.log(chalk.blue(`[${serviceProtocol.toUpperCase()}] Loading skin from backend: ${backendId}`));
+        console.log(cliFormat.info(`[${serviceProtocol.toUpperCase()}] Loading skin from backend: ${backendId}`));
         
         try {
           // TASK-DIAG-001: Implement real IPC communication for backend skin loading
@@ -632,12 +768,12 @@ class RemoteTemplumAdapter {
             }
           };
 
-          const skinDefinition = await sendIPCCommand(serviceEntry.pid, ipcMessage, {
+          const skinDefinition = await sendIPCCommand(servicePid, ipcMessage, {
             maxRetries: 2,
             timeoutMs: 6000,
             priority: 'normal'
           });
-          console.log(chalk.green(`[${serviceProtocol.toUpperCase()}] Real backend skin loaded: ${skinDefinition?.name || backendId}`));
+          console.log(cliFormat.success(`[${serviceProtocol.toUpperCase()}] Real backend skin loaded: ${skinDefinition?.name || backendId}`));
           
           // Initialize dynamic routing with the loaded skin
           if (this.dynamicRouter && this.contentNavigationManager && skinDefinition) {
@@ -645,16 +781,16 @@ class RemoteTemplumAdapter {
               await this.dynamicRouter.initialize(skinDefinition);
               await this.contentNavigationManager.initialize(skinDefinition);
               this.currentSkinId = skinDefinition.id;
-              console.log(chalk.green(`[ROUTING] Dynamic navigation initialized for ${skinDefinition.name || backendId}`));
+              console.log(cliFormat.success(`[ROUTING] Dynamic navigation initialized for ${skinDefinition.name || backendId}`));
             } catch (routingError) {
-              console.warn(chalk.yellow(`[ROUTING] Failed to initialize dynamic navigation: ${routingError}`));
+              console.warn(cliFormat.warning(`[ROUTING] Failed to initialize dynamic navigation: ${routingError}`));
             }
           }
           
           return skinDefinition;
           
         } catch (error) {
-          console.warn(chalk.yellow(`[${serviceProtocol.toUpperCase()}] IPC skin loading failed, using fallback: ${error}`));
+          console.warn(cliFormat.warning(`[${serviceProtocol.toUpperCase()}] IPC skin loading failed, using fallback: ${error}`));
           
           // Fallback to transitional skin if IPC fails
           return {
@@ -670,7 +806,7 @@ class RemoteTemplumAdapter {
       getUniversalSkinEngine() {
         return {
           applySkin: async (skinDefinition: any, _context: any) => {
-            console.log(chalk.blue(`[${serviceProtocol.toUpperCase()}] Applying skin: ${skinDefinition.name || skinDefinition.id}`));
+            console.log(cliFormat.info(`[${serviceProtocol.toUpperCase()}] Applying skin: ${skinDefinition.name || skinDefinition.id}`));
             // IPC-to-HTTP transition: Architecture implemented, service integration pending
             return {
               success: true,
@@ -683,25 +819,25 @@ class RemoteTemplumAdapter {
       },
 
       async registerInterface(interfaceType: string, _adapter: any) { 
-        console.log(chalk.blue(`[${serviceProtocol.toUpperCase()}] Registering interface: ${interfaceType}`));
+        console.log(cliFormat.info(`[${serviceProtocol.toUpperCase()}] Registering interface: ${interfaceType}`));
         // IPC-to-HTTP transition: Architecture implemented, service integration pending
         return { success: true, message: "Interface registration forwarded to service" };
       },
 
       async synchronizeInterfaceStates(_result: any) { 
-        console.log(chalk.blue(`[${serviceProtocol.toUpperCase()}] Synchronizing interface states...`));
+        console.log(cliFormat.info(`[${serviceProtocol.toUpperCase()}] Synchronizing interface states...`));
         // IPC-to-HTTP transition: Architecture implemented, service integration pending
         return { success: true, message: "State synchronization forwarded to service" };
       },
 
       async refreshBackendServices() {
-        console.log(chalk.blue(`[${serviceProtocol.toUpperCase()}] Refreshing backend services...`));
+        console.log(cliFormat.info(`[${serviceProtocol.toUpperCase()}] Refreshing backend services...`));
         // IPC-to-HTTP transition: Architecture implemented, service integration pending
         return { success: true, message: "Backend refresh forwarded to service" };
       },
 
       async shutdown() {
-        console.log(chalk.gray(`[${serviceProtocol.toUpperCase()}] Orchestrator proxy shutdown (service continues running)`));
+        console.log(cliFormat.muted(`[${serviceProtocol.toUpperCase()}] Orchestrator proxy shutdown (service continues running)`));
         return Promise.resolve();
       },
 
@@ -768,19 +904,19 @@ class RemoteTemplumAdapter {
  */
 async function main(): Promise<void> {
   try {
-    console.log(chalk.blue.bold('* Templum CLI - Connecting to Service'));
-    console.log(chalk.gray('Discovering running Templum service instances...'));
+    console.log(cliFormatter.ui.header('* Templum CLI - Connecting to Service', 2));
+    console.log(cliFormat.muted('Discovering running Templum service instances...'));
     
     // Discover running Templum services
     const discovery = new TemplumCliDiscovery();
     const serviceEntry = await discovery.getBestService();
     
     if (!serviceEntry) {
-      console.error(chalk.red('❌ No running Templum service found'));
-      console.log(chalk.yellow('💡 Please start Templum service first:'));
-      console.log(chalk.cyan('   node dist/src/index.js'));
+      console.error(cliFormat.error('❌ No running Templum service found'));
+      console.log(cliFormat.warning('💡 Please start Templum service first:'));
+      console.log(cliFormat.command('   node dist/src/index.js'));
       console.log();
-      console.log(chalk.gray('   Or if installed globally: npm start'));
+      console.log(cliFormat.muted('   Or if installed globally: npm start'));
       process.exit(1);
     }
 
@@ -796,22 +932,18 @@ async function main(): Promise<void> {
       console.error('Stack trace:');
       console.error(error.stack);
     }
-    
-    console.error('DEBUG: chalk type:', typeof chalk);
-    console.error('DEBUG: chalk.red type:', typeof chalk.red);
-    
     process.exit(1);
   }
 }
 
 // Handle process cleanup
 process.on('SIGINT', () => {
-  console.log(chalk.yellow('\n🛑 Templum CLI shutting down...'));
+  console.log(cliFormat.warning('\n🛑 Templum CLI shutting down...'));
   process.exit(0);
 });
 
 process.on('SIGTERM', () => {
-  console.log(chalk.yellow('\n🛑 Templum CLI shutting down...'));
+  console.log(cliFormat.warning('\n🛑 Templum CLI shutting down...'));
   process.exit(0);
 });
 

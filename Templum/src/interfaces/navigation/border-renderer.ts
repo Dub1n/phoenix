@@ -24,9 +24,15 @@ tags: [cli, navigation, borders, accessibility]
  * Pattern-Info: { approach: "progressive-enhancement", alternatives: "ascii-fallback", trade-offs: "unicode-compatibility" }
  */
 
-import chalk from 'chalk';
-import { TerminalColorTheme, DefaultColorThemes } from '../terminal-ui-components';
 import { StringUtils, StringWidthUtils } from '../../utils/chainable-string-utils';
+import { DisplayUtils } from '../../utils/display-utils';
+import { WINDOW_SPACING } from '../../utils/window-theme-constants';
+import {
+  TerminalFormatter,
+  createFormatter,
+  type TerminalCapabilities,
+  type ColorSpec
+} from '../../utils/terminal-formatter';
 
 // TODO: [TASK-ID-001] Pattern: border-rendering | Complexity: 4 | Dependencies: terminal-detection
 // Context: Terminal capability detection system for Unicode box-drawing character support
@@ -75,169 +81,70 @@ export const ASCII_BORDERS: BorderCharacterSet = {
   cross: '+'
 };
 
+export interface BorderRendererTheme {
+  primary: (value: string) => string;
+  accent: (value: string) => string;
+  muted: (value: string) => string;
+}
+
+const applyThemeSegment = (
+  formatter: TerminalFormatter,
+  spec: ColorSpec | undefined
+): ((value: string) => string) => {
+  if (!spec) {
+    return (value: string) => value;
+  }
+  return (value: string) => formatter.formatWithSpec(value, spec);
+};
+
+const createThemeFromFormatter = (formatter: TerminalFormatter): BorderRendererTheme => {
+  const theme = formatter.getTheme();
+  const navigationSpec = theme.interactive?.navigation ?? theme.ui?.prompt ?? theme.ui?.menu;
+
+  return {
+    primary: applyThemeSegment(formatter, theme.ui?.separator),
+    accent: applyThemeSegment(formatter, navigationSpec),
+    muted: applyThemeSegment(formatter, theme.muted)
+  };
+};
+
+export interface BorderRendererDependencies {
+  formatter?: TerminalFormatter;
+  capabilities?: TerminalCapabilities;
+  theme?: BorderRendererTheme;
+}
+
 export interface WindowBorderConfig {
   title?: string;
   subtitle?: string;
   width: number;
   height: number;
   padding: number;
-  theme: TerminalColorTheme;
+  theme: BorderRendererTheme;
   useUnicode: boolean;
   showTitle: boolean;
   showSubtitle: boolean;
   doubleWidth: boolean;
 }
 
-export interface TerminalCapabilities {
-  supportsUnicode: boolean;
-  supportsColor: boolean;
-  colorDepth: number;
-  width: number;
-  height: number;
-  terminalType: string;
-}
-
-/**
- * Terminal capability detection for Unicode and color support
- */
 export class BorderCapabilityDetector {
-  private static _capabilities: TerminalCapabilities | null = null;
+  private static formatter: TerminalFormatter | null = null;
+
+  static configure(formatter: TerminalFormatter): void {
+    this.formatter = formatter;
+  }
+
+  static reset(): void {
+    this.formatter = null;
+  }
 
   static getCapabilities(): TerminalCapabilities {
-    if (!this._capabilities) {
-      this._capabilities = this.detectCapabilities();
-    }
-    return this._capabilities;
+    const formatter = this.formatter ?? createFormatter();
+    return formatter.getCapabilities();
   }
 
-  private static detectCapabilities(): TerminalCapabilities {
-    const terminalType = process.env.TERM || 'unknown';
-    const colorTerm = process.env.COLORTERM;
-    const width = process.stdout.columns || 80;
-    const height = process.stdout.rows || 24;
-
-    // Detect Unicode support
-    const supportsUnicode = this.detectUnicodeSupport(terminalType);
-    
-    // Detect color support
-    const supportsColor = this.detectColorSupport(terminalType, colorTerm);
-    const colorDepth = this.detectColorDepth(terminalType, colorTerm);
-
-    return {
-      supportsUnicode,
-      supportsColor,
-      colorDepth,
-      width,
-      height,
-      terminalType
-    };
-  }
-
-  private static detectUnicodeSupport(terminalType: string): boolean {
-    // Known terminals with good Unicode support
-    const unicodeTerminals = [
-      'xterm-256color',
-      'xterm-color',
-      'screen-256color',
-      'tmux-256color',
-      'alacritty',
-      'kitty'
-    ];
-
-    // Windows environments may have issues with Unicode
-    if (process.platform === 'win32') {
-      // Windows Terminal and newer PowerShell support Unicode
-      const windowsTerminal = process.env.WT_SESSION;
-      const powershellHost = process.env.TERM_PROGRAM;
-      
-      if (windowsTerminal || powershellHost === 'vscode') {
-        return true;
-      }
-      
-      // Traditional cmd.exe and older PowerShell don't
-      if (terminalType === 'unknown' || terminalType.includes('cmd')) {
-        return false;
-      }
-    }
-
-    // Check for known good terminals
-    if (unicodeTerminals.includes(terminalType)) {
-      return true;
-    }
-
-    // Check UTF-8 locale
-    const locale = process.env.LC_ALL || process.env.LANG || '';
-    if (locale.includes('UTF-8') || locale.includes('utf8')) {
-      return true;
-    }
-
-    // Conservative default for unknown terminals
-    return terminalType.includes('xterm') || terminalType.includes('screen');
-  }
-
-  private static detectColorSupport(terminalType: string, colorTerm?: string): boolean {
-    // Force color disabled
-    if (process.env.NO_COLOR || process.env.NODE_DISABLE_COLORS) {
-      return false;
-    }
-
-    // Force color enabled
-    if (process.env.FORCE_COLOR) {
-      return true;
-    }
-
-    // Check COLORTERM
-    if (colorTerm) {
-      return true;
-    }
-
-    // Check terminal capabilities
-    const colorTerminals = [
-      'xterm-256color',
-      'xterm-color',
-      'screen-256color',
-      'tmux-256color'
-    ];
-
-    return colorTerminals.includes(terminalType) || 
-           terminalType.includes('256color') || 
-           terminalType.includes('color');
-  }
-
-  private static detectColorDepth(terminalType: string, colorTerm?: string): number {
-    if (!this.detectColorSupport(terminalType, colorTerm)) {
-      return 0;
-    }
-
-    // 24-bit color support
-    if (colorTerm === 'truecolor' || colorTerm === '24bit') {
-      return 24;
-    }
-
-    // 256 color support
-    if (terminalType.includes('256') || colorTerm === '256') {
-      return 8;
-    }
-
-    // 16 color support
-    if (terminalType.includes('color')) {
-      return 4;
-    }
-
-    // Basic 8 color support
-    return 3;
-  }
-
-  /**
-   * Test Unicode character rendering in terminal
-   */
   static async testUnicodeRendering(): Promise<boolean> {
-    return new Promise((resolve) => {
-      // This is a simplified test - in a real implementation,
-      // we might need to actually render characters and check output
-      const capabilities = this.getCapabilities();
-      resolve(capabilities.supportsUnicode);
-    });
+    return this.getCapabilities().supportsUnicode;
   }
 }
 
@@ -245,23 +152,35 @@ export class BorderCapabilityDetector {
  * Border rendering system with Unicode support and ASCII fallback
  */
 export class BorderRenderer {
+  private readonly formatter: TerminalFormatter;
   private config: WindowBorderConfig;
   private borderChars: BorderCharacterSet;
   private capabilities: TerminalCapabilities;
 
-  constructor(config: Partial<WindowBorderConfig> = {}) {
-    this.capabilities = BorderCapabilityDetector.getCapabilities();
-    
-    this.config = {
-      width: 60,
+  constructor(config: Partial<WindowBorderConfig> = {}, dependencies: BorderRendererDependencies = {}) {
+    this.formatter = dependencies.formatter ?? createFormatter();
+    this.capabilities = dependencies.capabilities ?? this.formatter.getCapabilities();
+    const resolvedTheme = dependencies.theme ?? (config.theme as BorderRendererTheme | undefined) ?? createThemeFromFormatter(this.formatter);
+    const unicodePreference = config.useUnicode ?? this.capabilities.supportsUnicode;
+    const resolvedUnicode = unicodePreference && this.capabilities.supportsUnicode;
+
+    const defaultWidth = DisplayUtils.standards.separatorLength + WINDOW_SPACING.borderWidth;
+    const baseConfig: WindowBorderConfig = {
+      width: defaultWidth,
       height: 10,
       padding: 3,
-      theme: DefaultColorThemes.default,
-      useUnicode: this.capabilities.supportsUnicode,
+      theme: resolvedTheme,
+      useUnicode: resolvedUnicode,
       showTitle: true,
       showSubtitle: true,
-      doubleWidth: false,
-      ...config
+      doubleWidth: false
+    };
+
+    this.config = {
+      ...baseConfig,
+      ...config,
+      theme: resolvedTheme,
+      useUnicode: resolvedUnicode
     };
 
     this.borderChars = this.config.useUnicode ? UNICODE_BORDERS : ASCII_BORDERS;
@@ -450,17 +369,18 @@ export class BorderRenderer {
    * Calculate optimal window dimensions for given content
    */
   calculateOptimalDimensions(content: string[], minWidth = 40, maxWidth = 120): { width: number; height: number } {
-    // Find longest line
-    let maxContentWidth = 0;
-    for (const line of content) {
-      maxContentWidth = Math.max(maxContentWidth, StringWidthUtils.getDisplayWidth(line));
-    }
-    
-    // Add padding and border space
-    const totalWidth = Math.max(
+    const padding = this.config.padding ?? WINDOW_SPACING.defaultPadding;
+    const borderWidth = WINDOW_SPACING.borderWidth;
+    const baselineContentWidth = DisplayUtils.standards.separatorLength;
+
+    const responsiveWidth = DisplayUtils.responsiveWidth(content, {
+      padding,
       minWidth,
-      Math.min(maxWidth, maxContentWidth + (this.config.padding * 2) + 2)
-    );
+      maxWidth: Math.max(minWidth, maxWidth - borderWidth)
+    });
+
+    const normalizedContentWidth = Math.max(responsiveWidth, baselineContentWidth);
+    const totalWidth = Math.min(maxWidth, Math.max(normalizedContentWidth + borderWidth, minWidth + borderWidth));
     
     // Calculate height based on content and wrapped lines
     let totalHeight = 2; // Top and bottom borders
@@ -473,7 +393,7 @@ export class BorderRenderer {
       totalHeight += 1; // Separator line
     }
     
-    const contentWidth = Math.max(0, totalWidth - (this.config.padding * 2) - 2);
+    const contentWidth = Math.max(0, totalWidth - (padding * 2) - borderWidth);
     for (const line of content) {
       if (contentWidth <= 0) {
         totalHeight += 1;
@@ -521,7 +441,7 @@ export class BorderRenderer {
    * Test if Unicode rendering is working properly
    */
   async testUnicodeSupport(): Promise<boolean> {
-    return BorderCapabilityDetector.testUnicodeRendering();
+    return this.capabilities.supportsUnicode;
   }
 
   /**
@@ -535,7 +455,7 @@ export class BorderRenderer {
   /**
    * Update theme
    */
-  setTheme(theme: TerminalColorTheme): void {
+  setTheme(theme: BorderRendererTheme): void {
     this.config.theme = theme;
   }
 }
@@ -551,8 +471,11 @@ export class BorderRenderer {
 export class AccessibleBorderRenderer extends BorderRenderer {
   private includeScreenReaderLabels: boolean;
 
-  constructor(config: Partial<WindowBorderConfig & { includeScreenReaderLabels: boolean }> = {}) {
-    super(config);
+  constructor(
+    config: Partial<WindowBorderConfig & { includeScreenReaderLabels: boolean }> = {},
+    dependencies: BorderRendererDependencies = {}
+  ) {
+    super(config, dependencies);
     this.includeScreenReaderLabels = config.includeScreenReaderLabels ?? false;
   }
 
@@ -609,48 +532,19 @@ export class AccessibleBorderRenderer extends BorderRenderer {
 /**
  * Factory function for creating border renderer with automatic capability detection
  */
-export function createBorderRenderer(config?: Partial<WindowBorderConfig>): BorderRenderer {
-  const capabilities = BorderCapabilityDetector.getCapabilities();
-  
-  const defaultConfig: Partial<WindowBorderConfig> = {
-    useUnicode: capabilities.supportsUnicode,
-    theme: capabilities.supportsColor ? DefaultColorThemes.default : {
-      ...DefaultColorThemes.default,
-      primary: chalk.reset,
-      secondary: chalk.reset,
-      success: chalk.reset,
-      warning: chalk.reset,
-      error: chalk.reset,
-      info: chalk.reset,
-      accent: chalk.reset,
-      muted: chalk.reset
-    }
-  };
-  
-  return new BorderRenderer({ ...defaultConfig, ...config });
+export function createBorderRenderer(
+  config: Partial<WindowBorderConfig> = {},
+  dependencies: BorderRendererDependencies = {}
+): BorderRenderer {
+  return new BorderRenderer(config, dependencies);
 }
 
 /**
  * Factory function for creating accessible border renderer
  */
-export function createAccessibleBorderRenderer(config?: Partial<WindowBorderConfig & { includeScreenReaderLabels: boolean }>): AccessibleBorderRenderer {
-  const capabilities = BorderCapabilityDetector.getCapabilities();
-  
-  const defaultConfig = {
-    useUnicode: capabilities.supportsUnicode,
-    theme: capabilities.supportsColor ? DefaultColorThemes.default : {
-      ...DefaultColorThemes.default,
-      primary: chalk.reset,
-      secondary: chalk.reset,
-      success: chalk.reset,
-      warning: chalk.reset,
-      error: chalk.reset,
-      info: chalk.reset,
-      accent: chalk.reset,
-      muted: chalk.reset
-    },
-    includeScreenReaderLabels: false
-  };
-  
-  return new AccessibleBorderRenderer({ ...defaultConfig, ...config });
+export function createAccessibleBorderRenderer(
+  config: Partial<WindowBorderConfig & { includeScreenReaderLabels: boolean }> = {},
+  dependencies: BorderRendererDependencies = {}
+): AccessibleBorderRenderer {
+  return new AccessibleBorderRenderer(config, dependencies);
 }

@@ -20,10 +20,16 @@ tags: [terminal-ui, integration, progressive-enhancement, window-system]
  * TASK-MCP-006: Complete integration of structured window system
  */
 
-import chalk from 'chalk';
+import {
+  createFormatter,
+  TerminalCapabilities as FormatterCapabilities,
+  ColorSpec,
+  Platform,
+} from '../utils/terminal-formatter';
+import { summariseThemeUsage, ThemeMetricsSummary, ThemeFallbackMode, ThemeUsageRecord } from '../utils/service-utils';
 import { BorderRenderer, WindowContent, WindowOptions, WindowTheme } from './border-renderer';
 import { WindowLayoutManager, OptimalLayout } from './window-layout-manager';
-import { TerminalCompatibilityDetector, TerminalCapabilities, getTerminalCapabilities } from './terminal-compatibility-detector';
+import { TerminalCompatibilityDetector, TerminalCapabilities as DetectorCapabilities, getTerminalCapabilities } from './terminal-compatibility-detector';
 import { UniversalLayoutEngine, UniversalSkinMenuDefinition, PCLSkinMenuDefinition, InterfaceType } from '../rendering/universal-layout-engine';
 
 export interface EnhancedWindowOptions extends WindowOptions {
@@ -36,9 +42,10 @@ export interface EnhancedWindowOptions extends WindowOptions {
 export interface WindowSystemCapabilities {
   supportsStructuredWindows: boolean;
   supportsUnicodeBorders: boolean;
-  fallbackMode: 'unicode' | 'ascii' | 'simple';
-  terminalCapabilities: TerminalCapabilities;
+  fallbackMode: ThemeFallbackMode;
+  terminalCapabilities: DetectorCapabilities;
   recommendedTheme: WindowTheme;
+  themeMetrics: ThemeMetricsSummary;
 }
 
 export interface EnhancedRenderResult {
@@ -162,7 +169,8 @@ export class EnhancedWindowSystem {
     }
 
     const terminalCapabilities = await this.compatibilityDetector.detectCapabilities();
-    
+    const formatterCapabilities = mapCapabilitiesToFormatter(terminalCapabilities);
+
     const supportsStructuredWindows = 
       terminalCapabilities.supportsAnsi && 
       (terminalCapabilities.width >= 40) && 
@@ -180,15 +188,30 @@ export class EnhancedWindowSystem {
     }
     
     const recommendedTheme = this.createRecommendedTheme(terminalCapabilities);
-    
+
+    const themeRecord: ThemeUsageRecord = {
+      id: 'enhanced-window-system',
+      theme: 'recommended',
+      applied: supportsStructuredWindows,
+      fallbackMode,
+      capabilities: {
+        supportsColor: formatterCapabilities.supportsColor,
+        supportsUnicode: formatterCapabilities.supportsUnicode,
+      },
+      overrides: [],
+    };
+
+    const themeMetrics = summariseThemeUsage([themeRecord]);
+
     this.cachedCapabilities = {
       supportsStructuredWindows,
       supportsUnicodeBorders,
       fallbackMode,
       terminalCapabilities,
-      recommendedTheme
+      recommendedTheme,
+      themeMetrics,
     };
-    
+
     return this.cachedCapabilities;
   }
 
@@ -346,32 +369,27 @@ export class EnhancedWindowSystem {
   /**
    * Create recommended theme based on terminal capabilities
    */
-  private createRecommendedTheme(capabilities: TerminalCapabilities): WindowTheme {
-    if (capabilities.supportsColors && capabilities.colorDepth >= 8) {
-      // Full color theme
-      return {
-        border: chalk.gray,
-        title: chalk.blue.bold,
-        content: chalk.white,
-        footer: chalk.gray
-      };
-    } else if (capabilities.supportsColors && capabilities.colorDepth >= 4) {
-      // Basic color theme
-      return {
-        border: chalk.white,
-        title: chalk.green.bold,
-        content: chalk.white,
-        footer: chalk.gray
-      };
-    } else {
-      // Monochrome theme
-      return {
-        border: (text: string) => text,
-        title: (text: string) => text.toUpperCase(),
-        content: (text: string) => text,
-        footer: (text: string) => text
-      };
-    }
+  private createRecommendedTheme(capabilities: DetectorCapabilities): WindowTheme {
+    const formatterCapabilities = mapCapabilitiesToFormatter(capabilities);
+    const formatter = createFormatter({}, formatterCapabilities);
+    const theme = formatter.getTheme();
+
+    const applySpecOrIdentity = (spec?: ColorSpec) => (text: string) =>
+      spec ? formatter.formatWithSpec(text, spec) : text;
+
+    const [headerSpec = theme.ui.separator] = theme.ui.header;
+
+    return {
+      primary: applySpecOrIdentity(theme.status.info),
+      secondary: applySpecOrIdentity(theme.muted),
+      accent: applySpecOrIdentity(theme.interactive.navigation),
+      border: applySpecOrIdentity(theme.ui.separator),
+      background: applySpecOrIdentity(theme.data.tableCell),
+      text: applySpecOrIdentity(theme.data.tableCell),
+      title: applySpecOrIdentity(headerSpec),
+      content: applySpecOrIdentity(theme.ui.menu),
+      footer: applySpecOrIdentity(theme.system.path),
+    };
   }
 
   /**
@@ -419,6 +437,42 @@ ${Array.from(this.universalLayoutEngine.getPerformanceMetrics().entries())
 
 // Export singleton instance  
 export const enhancedWindowSystem = new EnhancedWindowSystem();
+
+function mapCapabilitiesToFormatter(capabilities: DetectorCapabilities): FormatterCapabilities {
+  return {
+    supportsColor: Boolean(capabilities.supportsColors),
+    supports256Colors: (capabilities.colorDepth ?? 0) >= 8,
+    supportsTrueColor: (capabilities.colorDepth ?? 0) >= 24,
+    supportsStyles: Boolean(capabilities.supportsAnsi),
+    supportsUnicode: Boolean(capabilities.supportsUnicode),
+    width: sanitizeDimension(capabilities.width, 80),
+    height: sanitizeDimension(capabilities.height, 24),
+    isInteractive: true,
+    platform: mapPlatform(capabilities.platform),
+  };
+}
+
+function sanitizeDimension(value: number | undefined, fallback: number): number {
+  if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
+    return value;
+  }
+  return fallback;
+}
+
+function mapPlatform(platform: string | undefined): Platform {
+  if (!platform) {
+    return 'unix';
+  }
+
+  const lower = platform.toLowerCase();
+  if (lower.startsWith('win')) {
+    return 'windows';
+  }
+  if (lower.includes('browser')) {
+    return 'browser';
+  }
+  return 'unix';
+}
 
 /**
  * Quick access functions

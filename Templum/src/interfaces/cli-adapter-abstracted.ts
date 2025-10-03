@@ -33,7 +33,12 @@ import {
   createDefaultTerminalUI
 } from './terminal-ui-components';
 import { StringUtils } from '../utils/chainable-string-utils';
-import chalk from 'chalk';
+import {
+  createFormatter,
+  TerminalCapabilities,
+  TerminalFormatter,
+  getFormatterSeparatorLength,
+} from '../utils/terminal-formatter';
 import { 
   InteractiveMenuRenderer, 
   MenuInteractionResult 
@@ -321,6 +326,7 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
   private interactionMode: 'menu' | 'command' = 'menu';
   private sessionManager: CLISessionManager;
   private consistencyEngine: CLIDisplayConsistencyEngine;
+  private readonly formatter: TerminalFormatter;
 
   private formatColumn(
     value: unknown,
@@ -331,9 +337,59 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
     return StringUtils.chain(text, { mode: 'terminal' }).pad(width, alignment).value();
   }
 
-  constructor(config?: Partial<CLIAdapterConfig>) {
+  private resolveFormatterCapabilities(
+    overrides?: Partial<TerminalCapabilities>
+  ): TerminalCapabilities {
+    const detected = TerminalFormatter.detectCapabilities();
+    const merged: TerminalCapabilities = {
+      ...detected,
+      ...overrides,
+    };
+
+    if (!this.config.enableColorOutput) {
+      return {
+        ...merged,
+        supportsColor: false,
+        supportsStyles: false,
+      };
+    }
+
+    return merged;
+  }
+
+  private formatInfo(message: string): string {
+    return this.formatter.status.info(message);
+  }
+
+  private formatSuccess(message: string): string {
+    return this.formatter.status.success(message);
+  }
+
+  private formatWarning(message: string): string {
+    return this.formatter.status.warning(message);
+  }
+
+  private formatError(message: string): string {
+    return this.formatter.status.error(message);
+  }
+
+  private formatMuted(message: string): string {
+    return this.formatter.text.muted(message);
+  }
+
+  private formatSeparator(length: number): string {
+    return this.formatter.ui.separator(length, 'double');
+  }
+
+  private formatCommandPrompt(prompt: string): string {
+    return this.formatter.system.command(prompt);
+  }
+
+  constructor(config?: CLIAdapterInitializationOptions) {
     super();
     
+    const { formatter, formatterCapabilities, ...adapterConfig } = config ?? {};
+
     this.config = {
       enableInteractiveMode: true,
       enableKeyboardShortcuts: true,
@@ -344,11 +400,17 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
       inputTimeout: 30000,
       terminalTheme: 'default',
       enableResponsiveLayout: true,
-      ...config
+      ...adapterConfig
     };
 
+    const capabilities = this.resolveFormatterCapabilities(formatterCapabilities);
+    this.formatter = formatter ?? createFormatter({}, capabilities);
+
     // Initialize terminal UI with centralized defaults
-    this.terminalUI = createDefaultTerminalUI(this.config.terminalTheme);
+    this.terminalUI = createDefaultTerminalUI(this.config.terminalTheme, {
+      formatter: this.formatter,
+      columnsProvider: () => this.formatter.getCapabilities().width,
+    });
     
     // Initialize session manager
     // TODO: [TASK-ID-004] Pattern: session-manager-integration | Complexity: 4 | Dependencies: session-persistence
@@ -368,7 +430,7 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
       enforceLayoutNormalization: true,
       skinCompatibilityMode: true,
       responsiveBreakpoints: {
-        small: 60,
+        small: getFormatterSeparatorLength(),
         medium: 100,
         large: 140
       }
@@ -700,18 +762,20 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
       this.navigationHistory = [];
 
       // Initialize interactive menu renderer
-      this.interactiveMenuRenderer = new InteractiveMenuRenderer(this.orchestrator);
+      this.interactiveMenuRenderer = new InteractiveMenuRenderer(this.orchestrator, {
+        formatter: this.formatter
+      });
 
       // Show welcome message
-      console.log(chalk.green('✅ Connected to Templum service successfully'));
-      console.log(chalk.blue('🚀 Starting Templum interactive session...'));
-      console.log(chalk.gray('Use arrow keys to navigate, Enter to select, Ctrl+C to exit'));
-      console.log(chalk.gray('═'.repeat(60)));
+      console.log(this.formatSuccess('✅ Connected to Templum service successfully'));
+      console.log(this.formatInfo('🚀 Starting Templum interactive session...'));
+      console.log(this.formatMuted('Use arrow keys to navigate, Enter to select, Ctrl+C to exit'));
+      console.log(this.formatSeparator(60));
 
       // TASK-CLI-014: Add automatic skin discovery and loading during initialization
-      console.log(chalk.blue('🔍 Discovering and loading backend skins...'));
+      console.log(this.formatInfo('🔍 Discovering and loading backend skins...'));
       await this.loadInitialContent();
-      console.log(chalk.gray('═'.repeat(60)));
+      console.log(this.formatSeparator(60));
 
       this.emit('interactiveSessionStarted', { menu: initialMenu, timestamp: Date.now() });
 
@@ -778,7 +842,7 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
             // User pressed Ctrl+C
             sessionRunning = false;
           } else {
-            console.error(chalk.red('Menu interaction error:'), error);
+            console.error(this.formatError('Menu interaction error:'), error);
             // TODO: [TASK-MCP-010-003] Pattern: cli-design-compliance | Complexity: 3 | Dependencies: error-handling,navigation-flow
             // Context: Replaced Press Enter message with timeout-based error handling per CLI-design specification
             // Validation-Required: error-display-timing, user-experience-flow, cli-design-compliance
@@ -794,8 +858,8 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
       // Store session history for potential debugging
       this.navigationHistory = sessionHistory;
       
-      console.log(chalk.yellow('\n🛑 Interactive session ended'));
-      console.log(chalk.gray(`Session history: ${sessionHistory.length} interactions recorded`));
+      console.log(this.formatWarning('\n🛑 Interactive session ended'));
+      console.log(this.formatMuted(`Session history: ${sessionHistory.length} interactions recorded`));
     }
   }
 
@@ -804,7 +868,7 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
    */
   private async executeMenuCommand(command: string, data?: any): Promise<void> {
     try {
-      console.log(chalk.blue(`\n⚡ Executing: ${command}`));
+      console.log(this.formatInfo(`\n⚡ Executing: ${command}`));
       
       const [namespace, action, ...args] = command.split(':');
       
@@ -847,12 +911,12 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
           break;
           
         default:
-          console.log(chalk.yellow(`Unknown command namespace: ${namespace}`));
+          console.log(this.formatWarning(`Unknown command namespace: ${namespace}`));
       }
       
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error(chalk.red(`Command execution failed: ${errorMessage}`));
+      console.error(this.formatError(`Command execution failed: ${errorMessage}`));
     }
   }
 
@@ -863,7 +927,7 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
     switch (action) {
       case 'status':
         const systemStatus = this.orchestrator.getSystemStatus();
-        console.log(chalk.green('\n📊 System Status:'));
+        console.log(this.formatSuccess('\n📊 System Status:'));
         console.log(`  Initialized: ${systemStatus.coreEngine.initialized ? '✅' : '❌'}`);
         console.log(`  Active Interfaces: ${systemStatus.activeInterfaces?.join(', ') || 'None'}`);
         
@@ -878,7 +942,7 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
         break;
         
       default:
-        console.log(chalk.yellow(`Unknown system command: ${action}`));
+        console.log(this.formatWarning(`Unknown system command: ${action}`));
     }
   }
 
@@ -892,18 +956,18 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
         if (systemStatus.coreEngine?.backendConnections?.backends) {
           this.displayBackendStatus({ backends: systemStatus.coreEngine.backendConnections.backends });
         } else {
-          console.log(chalk.yellow('No backend services found'));
+          console.log(this.formatWarning('No backend services found'));
         }
         break;
         
       case 'refresh':
-        console.log(chalk.blue('🔄 Refreshing backend services...'));
+        console.log(this.formatInfo('🔄 Refreshing backend services...'));
         await this.orchestrator.refreshBackendServices();
-        console.log(chalk.green('✅ Backend services refreshed'));
+        console.log(this.formatSuccess('✅ Backend services refreshed'));
         break;
         
       default:
-        console.log(chalk.yellow(`Unknown services command: ${action}`));
+        console.log(this.formatWarning(`Unknown services command: ${action}`));
     }
   }
 
@@ -921,7 +985,7 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
         const backendEntry = Object.entries(backends).find(([key]) => key === backendId);
         if (backendEntry) {
           const [_key, backend] = backendEntry;
-          console.log(chalk.green(`\n📋 Backend Info: ${backendId}`));
+          console.log(this.formatSuccess(`\n📋 Backend Info: ${backendId}`));
           console.log(`  Connected: ${backend.connected ? '✅' : '❌'}`);
           console.log(`  Health: ${backend.health || 'Unknown'}`);
           console.log(`  Last Check: ${new Date(backend.lastCheck).toISOString()}`);
@@ -938,13 +1002,13 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
             console.log(`  Response Time: ${backend.responseTime}ms`);
           }
         } else {
-          console.log(chalk.yellow(`Backend not found: ${backendId}`));
+          console.log(this.formatWarning(`Backend not found: ${backendId}`));
         }
       } else {
-        console.log(chalk.yellow(`Backend not found: ${backendId}`));
+        console.log(this.formatWarning(`Backend not found: ${backendId}`));
       }
     } else {
-      console.log(chalk.yellow(`Unknown backend command: ${action}`));
+      console.log(this.formatWarning(`Unknown backend command: ${action}`));
     }
   }
 
@@ -972,15 +1036,15 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
   private async handleSettingsCommand(action: string, _args: string[], _data?: any): Promise<void> {
     switch (action) {
       case 'toggle-mode':
-        console.log(chalk.blue('🔀 Switching to command mode...'));
+        console.log(this.formatInfo('🔀 Switching to command mode...'));
         this.interactionMode = 'command';
         
         // Switch to command mode (would need additional implementation)
-        console.log(chalk.yellow('Command mode not yet implemented - staying in menu mode'));
+        console.log(this.formatWarning('Command mode not yet implemented - staying in menu mode'));
         break;
         
       default:
-        console.log(chalk.yellow(`Unknown settings command: ${action}`));
+        console.log(this.formatWarning(`Unknown settings command: ${action}`));
     }
   }
 
@@ -1074,10 +1138,10 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
    * Pattern-Info: { approach: "readline-based-command-mode", alternatives: "prompt-library", trade-offs: "control-vs-simplicity" }
    */
   private async switchToCommandMode(): Promise<any> {
-    console.log(chalk.blue('\n🔧 Switching to Command Mode'));
-    console.log(chalk.gray('Type commands directly. Use "m" to return to menu mode.'));
-    console.log(chalk.gray('Commands: help, status, load <backend>, quit, etc.'));
-    console.log(chalk.gray('═'.repeat(50)));
+    console.log(this.formatInfo('\n🔧 Switching to Command Mode'));
+    console.log(this.formatMuted('Type commands directly. Use "m" to return to menu mode.'));
+    console.log(this.formatMuted('Commands: help, status, load <backend>, quit, etc.'));
+    console.log(this.formatSeparator(50));
     
     this.interactionMode = 'command';
     this.sessionManager.switchInteractionMode('command');
@@ -1092,9 +1156,9 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
    * Switch to menu mode with session persistence
    */
   private async switchToMenuMode(): Promise<any> {
-    console.log(chalk.blue('\n📋 Switching to Menu Mode'));
-    console.log(chalk.gray('Use arrow keys to navigate, Enter to select.'));
-    console.log(chalk.gray('═'.repeat(50)));
+    console.log(this.formatInfo('\n📋 Switching to Menu Mode'));
+    console.log(this.formatMuted('Use arrow keys to navigate, Enter to select.'));
+    console.log(this.formatSeparator(50));
     
     this.interactionMode = 'menu';
     this.sessionManager.switchInteractionMode('menu');
@@ -1114,14 +1178,14 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
     const rl = readline.createInterface({
       input: process.stdin,
       output: process.stdout,
-      prompt: chalk.cyan('templum> ')
+      prompt: this.formatCommandPrompt('templum> ')
     });
 
     // Setup command history
     const session = this.sessionManager.getCurrentSession();
     if (session.commandHistory.length > 0) {
       // Note: readline history setup would require more complex implementation
-      console.log(chalk.gray(`Command history available (${session.commandHistory.length} commands)`));
+      console.log(this.formatMuted(`Command history available (${session.commandHistory.length} commands)`));
     }
 
     rl.prompt();
@@ -1158,9 +1222,9 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
           const result = await this.processLocalCommand(command);
           
           if (result.success) {
-            console.log(chalk.green(`✅ ${result.message}`));
+            console.log(this.formatSuccess(`✅ ${result.message}`));
           } else {
-            console.log(chalk.red(`❌ ${result.message}`));
+            console.log(this.formatError(`❌ ${result.message}`));
           }
           
         } catch (error) {
@@ -1179,7 +1243,7 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
       });
 
       rl.on('SIGINT', () => {
-        console.log(chalk.yellow('\n🔄 Use "m" to switch to menu mode or "quit" to exit'));
+        console.log(this.formatWarning('\n🔄 Use "m" to switch to menu mode or "quit" to exit'));
         rl.prompt();
       });
     });
@@ -1197,16 +1261,16 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
     const errorType = this.categorizeError(error, context);
     
     // Display error with context
-    console.log(chalk.red(`\n❌ ${errorType.category}: ${errorMessage}`));
+    console.log(this.formatError(`\n❌ ${errorType.category}: ${errorMessage}`));
     
     // Provide recovery suggestions
     const suggestions = this.generateRecoverySuggestions(errorType, context, source);
     if (suggestions.length > 0) {
-      console.log(chalk.yellow('\n💡 Recovery Suggestions:'));
+      console.log(this.formatWarning('\n💡 Recovery Suggestions:'));
       suggestions.forEach((suggestion, index) => {
-        console.log(chalk.yellow(`   ${index + 1}. ${suggestion.action}`));
+        console.log(this.formatWarning(`   ${index + 1}. ${suggestion.action}`));
         if (suggestion.command) {
-          console.log(chalk.gray(`      Try: ${suggestion.command}`));
+          console.log(this.formatMuted(`      Try: ${suggestion.command}`));
         }
       });
     }
@@ -1214,8 +1278,8 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
     // Offer automated recovery if available
     const autoRecovery = this.getAutomatedRecovery(errorType, context);
     if (autoRecovery) {
-      console.log(chalk.blue(`\n🔧 Auto-recovery available: ${autoRecovery.description}`));
-      console.log(chalk.gray('Type "y" to attempt auto-recovery, or any other key to continue...'));
+      console.log(this.formatInfo(`\n🔧 Auto-recovery available: ${autoRecovery.description}`));
+      console.log(this.formatMuted('Type "y" to attempt auto-recovery, or any other key to continue...'));
       
       // Note: In a full implementation, this would wait for user input
       // For now, just log the availability
@@ -2104,12 +2168,17 @@ export interface CLIAdapterConfig {
   enableResponsiveLayout: boolean;
 }
 
+export type CLIAdapterInitializationOptions = Partial<CLIAdapterConfig> & {
+  formatter?: TerminalFormatter;
+  formatterCapabilities?: Partial<TerminalCapabilities>;
+};
+
 /**
  * Factory function for creating CLI interface adapter
  * 
  * This provides a clean creation pattern that doesn't require direct imports
  * of the concrete adapter class in other parts of the system.
  */
-export function createCLIInterfaceAdapter(config?: Partial<CLIAdapterConfig>): IInterfaceAdapter {
+export function createCLIInterfaceAdapter(config?: CLIAdapterInitializationOptions): IInterfaceAdapter {
   return new CLIInterfaceAdapter(config);
 }

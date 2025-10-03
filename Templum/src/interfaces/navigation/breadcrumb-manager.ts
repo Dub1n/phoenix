@@ -27,6 +27,7 @@ tags: [cli, navigation, breadcrumbs, user-experience]
 import { EventEmitter } from 'events';
 import { TerminalColorTheme, DefaultColorThemes } from '../terminal-ui-components';
 import { StringUtils, StringWidthUtils } from '../../utils/chainable-string-utils';
+import { DisplayUtils } from '../../utils/display-utils';
 
 /**
  * Utility type to convert event function signatures to parameter arrays for EventEmitter compatibility
@@ -348,7 +349,8 @@ export class NavigationRenderer {
    */
   private renderFullBreadcrumbs(entries: BreadcrumbEntry[], terminalWidth: number): string {
     const availableWidth = terminalWidth - 20; // Reserve space for margins
-    const separator = this.style.theme.muted(this.style.separator);
+    const rawSeparator = DisplayUtils.separator(1);
+    const separator = this.style.theme.muted(rawSeparator || this.style.separator);
     const parts: string[] = [];
     let currentWidth = 0;
 
@@ -388,7 +390,8 @@ export class NavigationRenderer {
    */
   private renderCompactBreadcrumbs(entries: BreadcrumbEntry[], terminalWidth: number): string {
     const availableWidth = terminalWidth - 15;
-    const separator = this.style.theme.muted(' › ');
+    const compactSeparator = DisplayUtils.separator(1);
+    const separator = this.style.theme.muted(compactSeparator || ' › ');
     const parts: string[] = [];
 
     // Show first, ellipsis, and last few entries
@@ -438,7 +441,9 @@ export class NavigationRenderer {
     if (parentEntry) {
       const parent = this.formatEntryTitle(parentEntry, 'minimal');
       const current = this.formatEntryTitle(activeEntry, 'minimal');
-      return `${parent} ${this.style.theme.muted('›')} ${current}`;
+      const minimalSeparator = DisplayUtils.separator(1);
+      const renderedSeparator = this.style.theme.muted(minimalSeparator || '›');
+      return `${parent} ${renderedSeparator} ${current}`;
     } else {
       return this.formatEntryTitle(activeEntry, 'minimal');
     }

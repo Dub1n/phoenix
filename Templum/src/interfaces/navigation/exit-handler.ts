@@ -28,6 +28,8 @@ import { EventEmitter } from 'events';
 import * as readline from 'readline';
 import { TerminalColorTheme, DefaultColorThemes, InteractivePrompt } from '../terminal-ui-components';
 
+type FatalEventType = 'uncaughtException' | 'unhandledRejection';
+
 /**
  * Utility type to convert event function signatures to parameter arrays for EventEmitter compatibility
  * This ensures TypeScript compatibility while maintaining type safety
@@ -333,6 +335,18 @@ export class CleanupManager {
  * Main exit handler implementation
  */
 export class ExitHandler extends EventEmitter implements TypedEventEmitter<ExitHandlerEvents> {
+  private static activeHandlers = new Set<ExitHandler>();
+  private static processingFatalEvent = false;
+  private static registered = false;
+  private static readonly globalProcessListeners: Record<FatalEventType, (...args: any[]) => void> = {
+    uncaughtException: (error: unknown) => {
+      ExitHandler.dispatchFatalEvent('uncaughtException', error);
+    },
+    unhandledRejection: (reason: unknown, promise: Promise<unknown>) => {
+      ExitHandler.dispatchFatalEvent('unhandledRejection', reason, promise);
+    }
+  };
+
   private confirmationDialog: ExitConfirmationDialog;
   private cleanupManager: CleanupManager;
   private config: ExitConfirmationConfig;
@@ -369,6 +383,44 @@ export class ExitHandler extends EventEmitter implements TypedEventEmitter<ExitH
 
     this.setupSignalHandlers();
     this.registerDefaultCleanupTasks();
+  }
+
+  private static dispatchFatalEvent(type: FatalEventType, payload: unknown, promise?: Promise<unknown>): void {
+    if (ExitHandler.processingFatalEvent) {
+      return;
+    }
+
+    ExitHandler.processingFatalEvent = true;
+
+    for (const handler of ExitHandler.activeHandlers) {
+      handler.handleFatalEvent(type, payload, promise);
+    }
+
+    ExitHandler.processingFatalEvent = false;
+  }
+
+  private static registerProcessListeners(handler: ExitHandler): void {
+    ExitHandler.activeHandlers.add(handler);
+
+    if (ExitHandler.registered) {
+      return;
+    }
+
+    process.on('uncaughtException', ExitHandler.globalProcessListeners.uncaughtException);
+    process.on('unhandledRejection', ExitHandler.globalProcessListeners.unhandledRejection);
+    ExitHandler.registered = true;
+  }
+
+  private static unregisterProcessListeners(handler: ExitHandler): void {
+    ExitHandler.activeHandlers.delete(handler);
+
+    if (ExitHandler.activeHandlers.size > 0 || !ExitHandler.registered) {
+      return;
+    }
+
+    process.removeListener('uncaughtException', ExitHandler.globalProcessListeners.uncaughtException);
+    process.removeListener('unhandledRejection', ExitHandler.globalProcessListeners.unhandledRejection);
+    ExitHandler.registered = false;
   }
 
   /**
@@ -493,6 +545,16 @@ export class ExitHandler extends EventEmitter implements TypedEventEmitter<ExitH
     return items;
   }
 
+  private handleFatalEvent(type: FatalEventType, payload: unknown, promise?: Promise<unknown>): void {
+    if (type === 'uncaughtException') {
+      console.error('Uncaught exception:', payload);
+    } else {
+      console.error('Unhandled promise rejection at:', promise, 'reason:', payload);
+    }
+
+    this.forceExit(1, 1000);
+  }
+
   /**
    * Setup signal handlers
    */
@@ -521,17 +583,7 @@ export class ExitHandler extends EventEmitter implements TypedEventEmitter<ExitH
     this.signalHandlers.set('SIGTERM', sigtermHandler);
     this.signalHandlers.set('SIGHUP', sighupHandler);
 
-    // Handle uncaught exceptions
-    process.on('uncaughtException', (error) => {
-      console.error('Uncaught exception:', error);
-      this.forceExit(1, 1000); // Force exit after 1 second
-    });
-
-    // Handle unhandled promise rejections
-    process.on('unhandledRejection', (reason, promise) => {
-      console.error('Unhandled promise rejection at:', promise, 'reason:', reason);
-      this.forceExit(1, 1000); // Force exit after 1 second
-    });
+    ExitHandler.registerProcessListeners(this);
   }
 
   /**
@@ -600,6 +652,8 @@ export class ExitHandler extends EventEmitter implements TypedEventEmitter<ExitH
       process.removeListener(signal as any, handler);
     });
 
+    ExitHandler.unregisterProcessListeners(this);
+
     // Avoid terminating the process when running under automated tests
     if (process.env.JEST_WORKER_ID || process.env.NODE_ENV === 'test') {
       return;
@@ -626,7 +680,8 @@ export class ExitHandler extends EventEmitter implements TypedEventEmitter<ExitH
     this.signalHandlers.forEach((handler, signal) => {
       process.removeListener(signal as any, handler);
     });
-    
+
+    ExitHandler.unregisterProcessListeners(this);
     this.signalHandlers.clear();
     this.cleanupManager.clearTasks();
     

@@ -26,7 +26,9 @@ export {
 } from './async-utils';
 export type { RetryOptions } from './async-utils';
 export * from './terminal-formatter';
+export * from './window-theme-constants';
 export * from './window-utils';
+export * from './display-stack';
 export * from './event-utils';
 export * from './display-utils';
 export * from './protocol-utils';

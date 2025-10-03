@@ -3,15 +3,32 @@
 title: [Terminal UI Components - Interactive CLI Elements]
 tags: [Terminal, UI, Progress, Spinner, Interactive, CLI]
 provides: [ProgressBar, Spinner, InteractivePrompt, ColorTheme, ResponsiveLayout]
-requires: [chalk, readline, process]
+requires: [readline, process]
 description: [Terminal UI components for progress indication, user interaction, and responsive layouts]
 ---
 **/
 
-import chalk, { Chalk } from 'chalk';
 import * as readline from 'readline';
 import { EventEmitter } from 'events';
 import { StringUtils, StringWidthUtils } from '../utils/chainable-string-utils';
+import { TerminalFormatter, createFormatter } from '../utils/terminal-formatter';
+import { DisplayUtils, DisplayStandards } from '../utils/display-utils';
+import { WindowUtils } from '../utils/window-utils';
+import { computeDisplayLayout } from './display-utils-layout';
+import {
+  DefaultColorThemes,
+  TerminalColorTheme,
+  ThemeIntegrityResult,
+  ensureThemeIntegrity,
+  setTerminalUIFormatter,
+} from './terminal-ui-theme';
+
+export {
+  DefaultColorThemes,
+  TerminalColorTheme,
+  ThemeIntegrityResult,
+  ensureThemeIntegrity,
+} from './terminal-ui-theme';
 
 // Import consistency framework for table formatting integration
 // TODO: [TASK-ID-006] Pattern: consistency-framework-integration | Complexity: 4 | Dependencies: cli-display-consistency-engine
@@ -21,68 +38,6 @@ import { StringUtils, StringWidthUtils } from '../utils/chainable-string-utils';
 
 // Interactive Search and Filtering components - TASK-CLI-002 implementation
 // Advanced Menu Navigation integration - TASK-CLI-003 compatibility maintained
-
-/**
- * Color Theme System for Terminal UI
- */
-export interface TerminalColorTheme {
-  name: string;
-  primary: Chalk;
-  secondary: Chalk;
-  success: Chalk;
-  warning: Chalk;
-  error: Chalk;
-  info: Chalk;
-  accent: Chalk;
-  muted: Chalk;
-}
-
-export const DefaultColorThemes: Record<string, TerminalColorTheme> = {
-  default: {
-    name: 'Default',
-    primary: chalk.blue,
-    secondary: chalk.cyan,
-    success: chalk.green,
-    warning: chalk.yellow,
-    error: chalk.red,
-    info: chalk.blue,
-    accent: chalk.magenta,
-    muted: chalk.gray
-  },
-  dark: {
-    name: 'Dark',
-    primary: chalk.white,
-    secondary: chalk.gray,
-    success: chalk.greenBright,
-    warning: chalk.yellowBright,
-    error: chalk.redBright,
-    info: chalk.cyanBright,
-    accent: chalk.magentaBright,
-    muted: chalk.dim
-  },
-  light: {
-    name: 'Light',
-    primary: chalk.black,
-    secondary: chalk.blue,
-    success: chalk.green,
-    warning: chalk.yellow, // Custom yellow for light theme
-    error: chalk.red,
-    info: chalk.blue,
-    accent: chalk.magenta,
-    muted: chalk.gray
-  },
-  monochrome: {
-    name: 'Monochrome',
-    primary: chalk.white,
-    secondary: chalk.gray,
-    success: chalk.white,
-    warning: chalk.white,
-    error: chalk.white,
-    info: chalk.white,
-    accent: chalk.white,
-    muted: chalk.gray
-  }
-};
 
 /**
  * Progress Bar Component
@@ -95,6 +50,7 @@ export interface ProgressBarConfig {
   showPercentage: boolean;
   showEta: boolean;
   format?: string; // Custom format string
+  formatter?: TerminalFormatter;
 }
 
 export class ProgressBar extends EventEmitter {
@@ -103,6 +59,7 @@ export class ProgressBar extends EventEmitter {
   private total: number = 100;
   private startTime: number;
   private isActive: boolean = false;
+  private readonly formatter?: TerminalFormatter;
 
   constructor(config: Partial<ProgressBarConfig> = {}) {
     super();
@@ -117,6 +74,8 @@ export class ProgressBar extends EventEmitter {
       format: ':bar :percent :eta',
       ...config
     };
+
+    this.formatter = config.formatter;
     
     this.startTime = Date.now();
   }
@@ -153,9 +112,27 @@ export class ProgressBar extends EventEmitter {
   }
 
   private render(message?: string): void {
-    const percentage = (this.current / this.total) * 100;
+    const percentage = (this.current / Math.max(this.total, 1)) * 100;
     const completed = Math.round((percentage / 100) * this.config.width);
     const remaining = this.config.width - completed;
+
+    if (this.formatter) {
+      const progressLabel = message ?? undefined;
+      let formatted = this.formatter.data.progress(this.current, this.total, progressLabel);
+
+      if (!this.config.showPercentage) {
+        formatted = formatted.replace(/\s+\d{1,3}%/, '');
+      }
+
+      if (!this.config.showEta) {
+        formatted = formatted.replace(/\s+ETA:\s*[^\s]+/i, '');
+      }
+
+      process.stdout.clearLine(0);
+      process.stdout.cursorTo(0);
+      process.stdout.write(formatted.trimEnd());
+      return;
+    }
 
     // Create progress bar visual
     const bar = this.config.theme.success(this.config.character.repeat(completed)) +
@@ -166,8 +143,8 @@ export class ProgressBar extends EventEmitter {
     if (this.config.showEta && this.current > 0) {
       const elapsed = Date.now() - this.startTime;
       const rate = this.current / elapsed;
-      const remaining = this.total - this.current;
-      const etaMs = remaining / rate;
+      const remainingUnits = this.total - this.current;
+      const etaMs = rate > 0 ? remainingUnits / rate : 0;
       eta = `ETA: ${this.formatTime(etaMs)}`;
     }
 
@@ -189,6 +166,7 @@ export class ProgressBar extends EventEmitter {
     process.stdout.cursorTo(0);
     process.stdout.write(output);
   }
+
 
   private formatTime(ms: number): string {
     const seconds = Math.floor(ms / 1000);
@@ -311,11 +289,13 @@ export interface PromptConfig {
   validate?: (input: string) => boolean | string;
   transform?: (input: string) => string;
   mask?: boolean; // For password inputs
+  formatter?: TerminalFormatter;
 }
 
 export class InteractivePrompt extends EventEmitter {
   private rl: readline.Interface | null = null;
   private config: PromptConfig;
+  private readonly formatter?: TerminalFormatter;
 
   constructor(config: Partial<PromptConfig> = {}) {
     super();
@@ -326,6 +306,8 @@ export class InteractivePrompt extends EventEmitter {
       suffix: ':',
       ...config
     };
+
+    this.formatter = config.formatter;
   }
 
   async text(question: string, defaultValue?: string): Promise<string> {
@@ -477,6 +459,12 @@ export class InteractivePrompt extends EventEmitter {
   }
 
   private formatPrompt(question: string, defaultValue?: string): string {
+    if (this.formatter) {
+      const base = this.formatter.ui.prompt(question, 'input');
+      const defaultText = defaultValue ? this.formatter.palette.muted(` (${defaultValue})`) : '';
+      return `${base}${defaultText} `;
+    }
+
     const prefix = this.config.theme.primary(this.config.prefix!);
     const questionText = this.config.theme.primary(question);
     const defaultText = defaultValue ? this.config.theme.muted(` (${defaultValue})`) : '';
@@ -533,146 +521,119 @@ export interface WindowContentItem {
   data?: any;
 }
 
+interface WindowRenderMetrics {
+  standards: DisplayStandards;
+  windowWidth: number;
+  contentWidth: number;
+  separatorLength: number;
+  padding: number;
+}
+
 export class EnhancedWindowLayoutRenderer {
-  private theme: TerminalColorTheme;
-  private currentSelection: number = 0;
+  private readonly theme: TerminalColorTheme;
+  private readonly formatter: TerminalFormatter;
   private items: WindowContentItem[] = [];
-  private separatorIndices: number[] = [];
+  private currentSelection = 0;
 
-  constructor(theme: TerminalColorTheme = DefaultColorThemes.default) {
+  constructor(
+    theme: TerminalColorTheme = DefaultColorThemes.default,
+    formatter: TerminalFormatter = createFormatter(),
+  ) {
     this.theme = theme;
+    this.formatter = formatter;
   }
 
-  private normalizeWidth(width: number): number {
-    return Math.max(1, Math.floor(width));
+  private deriveRenderMetrics(config: WindowLayoutConfig): WindowRenderMetrics {
+    const samples = this.collectContentSamples(config);
+    const metrics = computeDisplayLayout(samples, { borderWidth: 2 });
+
+    return {
+      standards: metrics.standards,
+      windowWidth: metrics.windowWidth,
+      contentWidth: metrics.contentWidth,
+      separatorLength: metrics.separatorLength,
+      padding: metrics.padding,
+    };
   }
 
-  private measure(value: string): number {
-    return StringWidthUtils.getDisplayWidth(value);
-  }
+  private collectContentSamples(config: WindowLayoutConfig): string[] {
+    const samples: string[] = [config.title];
 
-  private truncateToWidth(value: string, width: number, ellipsis = '...'): string {
-    const targetWidth = this.normalizeWidth(width);
-    return StringUtils.chain(value, { mode: 'terminal' })
-      .truncate(targetWidth, ellipsis)
-      .value();
-  }
-
-  private formatWithinWidth(
-    value: string,
-    width: number,
-    alignment: 'left' | 'right' | 'center' = 'right',
-    ellipsis = '...'
-  ): string {
-    const targetWidth = this.normalizeWidth(width);
-    return StringUtils.chain(value, { mode: 'terminal' })
-      .truncate(targetWidth, ellipsis)
-      .pad(targetWidth, alignment)
-      .value();
-  }
-
-  /**
-   * Render bordered window with CLI design specification compliance
-   */
-  renderWindow(config: WindowLayoutConfig): string {
-    const { title, subtitle, content } = config;
-    
-    // Build flattened item list for navigation
-    this.buildNavigationList(content);
-    
-    // Calculate window width based on content
-    const windowWidth = config.width || this.calculateWindowWidth(config);
-    
-    const lines: string[] = [];
-    
-    // Top border with title
-    lines.push(this.renderTopBorder(title, windowWidth));
-    
-    // Subtitle section if present
-    if (subtitle) {
-      lines.push(this.renderContentLine(subtitle, windowWidth));
-      lines.push(this.renderEmptyLine(windowWidth));
+    if (config.subtitle) {
+      samples.push(config.subtitle);
     }
-    
-    // Content sections
-    let itemIndex = 0;
-    for (const section of content) {
-      if (section.type === 'separator') {
-        lines.push(this.renderSeparatorLine(windowWidth));
-        this.separatorIndices.push(itemIndex);
-      } else {
-        // Section heading if present
-        if (section.heading) {
-          lines.push(this.renderContentLine(section.heading, windowWidth));
-          lines.push(this.renderEmptyLine(windowWidth));
-        }
-        
-        // Section items
+
+    for (const section of config.content) {
+      if (section.heading) {
+        samples.push(section.heading);
+      }
+
+      if (section.type !== 'separator') {
         for (const item of section.items) {
-          const isSelected = itemIndex === this.currentSelection;
-          lines.push(this.renderMenuItem(item, isSelected, windowWidth));
-          itemIndex++;
-        }
-        
-        // Add spacing after section
-        if (section !== content[content.length - 1]) {
-          lines.push(this.renderEmptyLine(windowWidth));
+          const parts: string[] = [];
+          if (item.icon) {
+            parts.push(item.icon);
+          }
+          parts.push(item.label);
+          const base = parts.join(' ').replace(/\s+/g, ' ').trim();
+          const description = item.description ? ` - ${item.description}` : '';
+          samples.push(`${base}${description}`.trim());
         }
       }
     }
-    
-    // Bottom border
-    lines.push(this.renderBottomBorder(windowWidth));
-    
-    // Text box (selector prompt)
-    lines.push('');
-    lines.push(this.renderTextBox(windowWidth));
-    
-    return lines.join('\n');
+
+    return samples;
   }
 
-  /**
-   * Handle navigation input across separator boundaries
-   */
+  renderWindow(config: WindowLayoutConfig): string {
+    setTerminalUIFormatter(this.formatter);
+    this.buildNavigationList(config.content);
+
+    const metrics = this.deriveRenderMetrics(config);
+    const padding = config.padding ?? metrics.padding;
+    const width = config.width ?? metrics.windowWidth;
+    const subtitleLines = config.subtitle ? [config.subtitle, ''] : [];
+    const contentLines = [...subtitleLines, ...this.composeContentLines(config, metrics)];
+
+    const rendered = WindowUtils.render({
+      title: config.title,
+      content: contentLines,
+      width,
+      padding,
+    });
+
+    const prompt = this.theme.info('Select an option: (Use arrow keys)');
+    return `${rendered}\n\n${prompt}`;
+  }
+
   navigate(direction: 'up' | 'down'): boolean {
     const totalItems = this.items.length;
-    if (totalItems === 0) return false;
-
-    let newSelection = this.currentSelection;
-    
-    if (direction === 'up') {
-      newSelection = this.currentSelection > 0 ? this.currentSelection - 1 : totalItems - 1;
-    } else {
-      newSelection = this.currentSelection < totalItems - 1 ? this.currentSelection + 1 : 0;
+    if (totalItems === 0) {
+      return false;
     }
-    
-    // Skip disabled items
-    while (!this.items[newSelection].enabled && newSelection !== this.currentSelection) {
+
+    const originalSelection = this.currentSelection;
+    let attempts = 0;
+
+    do {
       if (direction === 'up') {
-        newSelection = newSelection > 0 ? newSelection - 1 : totalItems - 1;
+        this.currentSelection = (this.currentSelection - 1 + totalItems) % totalItems;
       } else {
-        newSelection = newSelection < totalItems - 1 ? newSelection + 1 : 0;
+        this.currentSelection = (this.currentSelection + 1) % totalItems;
       }
-    }
-    
-    if (newSelection !== this.currentSelection) {
-      this.currentSelection = newSelection;
-      return true;
-    }
-    
-    return false;
+      attempts += 1;
+      if (this.items[this.currentSelection].enabled) {
+        break;
+      }
+    } while (attempts <= totalItems);
+
+    return this.currentSelection !== originalSelection;
   }
 
-  /**
-   * Get currently selected item
-   */
-  getSelectedItem(): WindowContentItem | null {
-    return this.items[this.currentSelection] || null;
+  getSelection(): WindowContentItem | null {
+    return this.items[this.currentSelection] ?? null;
   }
 
-  /**
-   * Set selection by item ID
-   */
   setSelection(itemId: string): boolean {
     const index = this.items.findIndex(item => item.id === itemId);
     if (index >= 0) {
@@ -682,124 +643,75 @@ export class EnhancedWindowLayoutRenderer {
     return false;
   }
 
+  private composeContentLines(config: WindowLayoutConfig, metrics: WindowRenderMetrics): string[] {
+    const lines: string[] = [];
+    let itemIndex = 0;
+
+    for (const section of config.content) {
+      if (section.type === 'separator') {
+        lines.push(DisplayUtils.separator(metrics.separatorLength));
+        continue;
+      }
+
+      if (section.heading) {
+        lines.push(section.heading);
+      }
+
+      for (const item of section.items) {
+        const isSelected = itemIndex === this.currentSelection;
+        lines.push(this.formatMenuItem(item, isSelected, metrics));
+        itemIndex += 1;
+      }
+
+      if (section.items.length > 0 && section !== config.content[config.content.length - 1]) {
+        lines.push('');
+      }
+    }
+
+    return lines;
+  }
+
+  private formatMenuItem(item: WindowContentItem, isSelected: boolean, metrics: WindowRenderMetrics): string {
+    const selector = isSelected ? '›' : ' ';
+    const icon = item.icon ? `${item.icon}` : '';
+    const fragments = [selector, icon, item.label].filter(fragment => fragment && fragment.trim().length > 0);
+    let raw = fragments.join(' ').replace(/\s+/g, ' ').trim();
+    if (item.description) {
+      raw = `${raw} - ${item.description}`;
+    }
+
+    const [formatted] = DisplayUtils.formatItems([raw], {
+      numbered: false,
+      width: metrics.contentWidth,
+      alignment: 'left',
+    });
+
+    if (!item.enabled) {
+      return this.theme.muted(formatted);
+    }
+
+    return isSelected ? this.theme.accent(formatted) : this.theme.primary(formatted);
+  }
+
   private buildNavigationList(content: WindowContentSection[]): void {
     this.items = [];
-    this.separatorIndices = [];
-    
     for (const section of content) {
       if (section.type !== 'separator') {
         this.items.push(...section.items);
       }
     }
-  }
-
-  private calculateWindowWidth(config: WindowLayoutConfig): number {
-    const { title, subtitle, content } = config;
-    let maxWidth = this.measure(title);
-
-    if (subtitle) {
-      maxWidth = Math.max(maxWidth, this.measure(subtitle));
+    if (this.currentSelection >= this.items.length) {
+      this.currentSelection = Math.max(0, this.items.length - 1);
     }
-
-    for (const section of content) {
-      if (section.heading) {
-        maxWidth = Math.max(maxWidth, this.measure(section.heading));
-      }
-
-      for (const item of section.items) {
-        const itemText = `${item.icon || ''} ${item.label}${item.description ? ` - ${item.description}` : ''}`.trim();
-        maxWidth = Math.max(maxWidth, this.measure(itemText));
-      }
-    }
-
-    // Add padding (3 characters on each side) and borders (1 character each side)
-    return Math.max(maxWidth + 8, 80); // Minimum 80 characters
-  }
-
-  private renderTopBorder(title: string, width: number): string {
-    const borderWidth = width - 2;
-    const centeredTitle = this.formatWithinWidth(title, borderWidth, 'center', '…');
-
-    return this.theme.primary(`┌${'─'.repeat(borderWidth)}┐`) + '\n' +
-           this.theme.primary(`│${centeredTitle}│`);
-  }
-
-  private renderBottomBorder(width: number): string {
-    return this.theme.primary(`└${'─'.repeat(width - 2)}┘`);
-  }
-
-  private renderContentLine(content: string, width: number): string {
-    const availableWidth = width - 8; // Account for borders and padding
-    const formattedContent = this.formatWithinWidth(content, availableWidth, 'left', '...');
-
-    return this.theme.primary('│') +
-           '   ' +
-           this.theme.secondary(formattedContent) +
-           '   ' +
-           this.theme.primary('│');
-  }
-
-  private renderEmptyLine(width: number): string {
-    return this.theme.primary('│') + ' '.repeat(width - 2) + this.theme.primary('│');
-  }
-
-  private renderMenuItem(item: WindowContentItem, isSelected: boolean, width: number): string {
-    const availableWidth = width - 8; // Account for borders and padding
-    const selector = isSelected ? '›' : ' ';
-    const icon = item.icon || '';
-    const iconText = icon ? `${icon} ` : '';
-    const itemText = `${iconText}${item.label}`;
-    const description = item.description ? ` - ${item.description}` : '';
-    const fullText = itemText + description;
-    
-    const formattedText = this.formatWithinWidth(fullText, availableWidth - 1, 'left', '...');
-    
-    const textStyle = item.enabled ? 
-      (isSelected ? this.theme.accent : this.theme.primary) : 
-      this.theme.muted;
-    
-    return this.theme.primary('│') + 
-           '  ' + 
-           (isSelected ? this.theme.accent(selector) : ' ') + 
-           ' ' + 
-           textStyle(formattedText) + 
-           '   ' + 
-           this.theme.primary('│');
-  }
-
-  private renderSeparatorLine(width: number): string {
-    const separatorLength = width - 8;
-    const separator = '─'.repeat(separatorLength);
-    
-    return this.theme.primary('│') + 
-           '   ' + 
-           this.theme.muted(separator) + 
-           '   ' + 
-           this.theme.primary('│');
-  }
-
-  private renderTextBox(width: number): string {
-    const borderWidth = width - 2;
-    const prompt = 'Select an option: (Use arrow keys)';
-    const centeredPrompt = this.formatWithinWidth(prompt, borderWidth, 'center', '...');
-
-    return this.theme.info(`┌${'─'.repeat(borderWidth)}┐`) + '\n' +
-           this.theme.info(`│${centeredPrompt}│`) + '\n' +
-           this.theme.info(`└${'─'.repeat(borderWidth)}┘`);
   }
 }
 
-/**
- * Enhanced Interactive Menu System for CLI Design Specification
- * Implements proper menu navigation across separators and exit behavior patterns  
- * Pattern: cross-separator-navigation - See /dev/patterns/cross-separator-navigation.md for reusable implementation guide
- * Validation-Required: separator-navigation, exit-confirmation, keyboard-responsiveness
- */
 export interface EnhancedMenuConfig {
   title: string;
   subtitle?: string;
   sections: MenuSection[];
   theme?: TerminalColorTheme;
+  formatter?: TerminalFormatter;
   onSelection?: (item: WindowContentItem) => Promise<void>;
   onExit?: () => Promise<void>;
 }
@@ -830,8 +742,12 @@ export class EnhancedInteractiveMenu extends EventEmitter {
 
   constructor(config: EnhancedMenuConfig) {
     super();
-    this.config = config;
-    this.renderer = new EnhancedWindowLayoutRenderer(config.theme || DefaultColorThemes.default);
+    const formatter = config.formatter ?? createFormatter();
+    this.config = { ...config, formatter };
+    this.renderer = new EnhancedWindowLayoutRenderer(
+      this.config.theme || DefaultColorThemes.default,
+      formatter,
+    );
   }
 
   /**
@@ -1426,28 +1342,45 @@ export class ResponsiveLayout extends EventEmitter {
 export interface TerminalUIConfig {
   theme: TerminalColorTheme;
   responsive: ResponsiveLayoutConfig;
+  formatter?: TerminalFormatter;
+  columnsProvider?: () => number | undefined;
 }
 
 export class TerminalUI extends EventEmitter {
   private theme: TerminalColorTheme;
   private layout: ResponsiveLayout;
   private activeComponents: Set<ProgressBar | Spinner | InteractivePrompt> = new Set();
+  private readonly formatter: TerminalFormatter;
 
   constructor(config: Partial<TerminalUIConfig> = {}) {
     super();
+    process.setMaxListeners(0);
     
-    this.theme = config.theme || DefaultColorThemes.default;
+    this.formatter = config.formatter ?? createFormatter();
+    setTerminalUIFormatter(this.formatter);
+    const themeIntegrity = ensureThemeIntegrity(config.theme ?? DefaultColorThemes.default, DefaultColorThemes.default);
+    if (themeIntegrity.resetRequired) {
+      console.warn('[TerminalUI] Theme failed integrity check during initialization; default theme applied');
+    }
+    this.theme = themeIntegrity.theme;
     this.layout = new ResponsiveLayout(config.responsive);
-    
+
+    const columnsProvider =
+      config.columnsProvider ??
+      (() => (typeof process.stdout?.columns === 'number' ? process.stdout.columns : undefined));
+    DisplayUtils.configure({ formatter: this.formatter, columnsProvider });
+    WindowUtils.configure({ formatter: this.formatter });
+
     this.setupEventHandlers();
   }
 
   createProgressBar(config?: Partial<ProgressBarConfig>): ProgressBar {
     const progressBar = new ProgressBar({
       theme: this.getTheme(),
+      formatter: this.formatter,
       ...config
     });
-    
+
     this.activeComponents.add(progressBar);
     progressBar.on('complete', () => this.activeComponents.delete(progressBar));
     
@@ -1469,9 +1402,10 @@ export class TerminalUI extends EventEmitter {
   createPrompt(config?: Partial<PromptConfig>): InteractivePrompt {
     const prompt = new InteractivePrompt({
       theme: this.getTheme(),
+      formatter: this.formatter,
       ...config
     });
-    
+
     this.activeComponents.add(prompt);
     
     return prompt;
@@ -1493,22 +1427,22 @@ export class TerminalUI extends EventEmitter {
   }
 
   setTheme(theme: TerminalColorTheme): void {
-    this.theme = theme;
-    this.emit('themeChanged', theme);
+    setTerminalUIFormatter(this.formatter);
+    const integrity = ensureThemeIntegrity(theme, DefaultColorThemes.default);
+    this.theme = integrity.theme;
+    if (integrity.resetRequired) {
+      console.warn('[TerminalUI] Provided theme failed integrity checks; default theme applied');
+    }
+    this.emit('themeChanged', this.theme);
   }
 
   getTheme(): TerminalColorTheme {
-    // Safety check: ensure theme has proper chalk functions
-    const requiredFunctions = ['primary', 'secondary', 'success', 'warning', 'error', 'info', 'accent', 'muted'];
-    const isThemeValid = requiredFunctions.every(fn => typeof this.theme[fn as keyof TerminalColorTheme] === 'function');
-    
-    if (!isThemeValid) {
+    const integrity = ensureThemeIntegrity(this.theme, DefaultColorThemes.default);
+    if (integrity.resetRequired) {
       console.warn('[TerminalUI] Theme corrupted, restoring default theme');
-      this.theme = DefaultColorThemes.default;
-      
-      // Clear active components since they have corrupted themes
-      // They will be recreated with the correct theme when needed
+      this.theme = integrity.theme;
       this.activeComponents.clear();
+      setTerminalUIFormatter(this.formatter);
     }
     return this.theme;
   }
@@ -1529,6 +1463,10 @@ export class TerminalUI extends EventEmitter {
     }
     
     this.activeComponents.clear();
+
+    DisplayUtils.reset();
+    WindowUtils.reset();
+    setTerminalUIFormatter(createFormatter());
   }
 
   private setupEventHandlers(): void {
@@ -2088,10 +2026,17 @@ export const DEFAULT_TERMINAL_UI_CONFIG = {
 /**
  * Factory function for creating terminal UI instance with centralized defaults
  */
-export function createDefaultTerminalUI(themeName: keyof typeof DefaultColorThemes = 'default'): TerminalUI {
+export function createDefaultTerminalUI(
+  themeName: keyof typeof DefaultColorThemes = 'default',
+  dependencies: { formatter?: TerminalFormatter; columnsProvider?: () => number | undefined } = {},
+): TerminalUI {
   const theme = DefaultColorThemes[themeName] || DefaultColorThemes.default;
+  const formatter = dependencies.formatter ?? createFormatter();
+  const columnsProvider = dependencies.columnsProvider ?? (() => (typeof process.stdout?.columns === 'number' ? process.stdout.columns : undefined));
   return createTerminalUI({
     theme,
+    formatter,
+    columnsProvider,
     responsive: DEFAULT_TERMINAL_UI_CONFIG.responsive
   });
 }

@@ -39,8 +39,34 @@ import {
   AccessibilityManager,
   createBorderRenderer,
   createWidthCalculator,
+  createSelectorUpdater,
   applySelector
 } from '../index';
+import type { TerminalCapabilities } from '../index';
+import { DisplayUtils } from '../../../utils/display-utils';
+import { WINDOW_SPACING } from '../../../utils/window-theme-constants';
+import { windowLayoutManager } from '../../window-layout-manager';
+import {
+  createFormatterCapabilities,
+  createFormatterFixture
+} from '../../../tests/helpers/terminal-formatter-fixtures';
+
+const overrideStdoutColumns = (width: number): (() => void) => {
+  const original = process.stdout.columns;
+  Object.defineProperty(process.stdout, 'columns', {
+    configurable: true,
+    writable: true,
+    value: width
+  });
+
+  return () => {
+    Object.defineProperty(process.stdout, 'columns', {
+      configurable: true,
+      writable: true,
+      value: original
+    });
+  };
+};
 
 // TODO: [TASK-ID-016] Pattern: integration-testing | Complexity: 3 | Dependencies: testing-framework
 // Context: Integration testing for complete navigation system functionality
@@ -51,6 +77,7 @@ describe('Navigation System Integration Tests', () => {
   let navigationSystem: NavigationSystem;
 
   beforeEach(async () => {
+    DisplayUtils.reset();
     navigationSystem = createNavigationSystem();
   });
 
@@ -148,6 +175,60 @@ describe('Navigation System Integration Tests', () => {
       expect(dimensions.height).toBeGreaterThan(0);
       expect(dimensions.width).toBeGreaterThanOrEqual(40); // Minimum width
     });
+
+    test('should respect formatter capabilities when selecting border glyphs', () => {
+      const formatter = createFormatterFixture({
+        capabilities: createFormatterCapabilities({ supportsUnicode: false })
+      });
+      const renderer = createBorderRenderer({ useUnicode: true }, { formatter });
+      const content = ['Formatter capability check'];
+
+      const rendered = renderer.renderWindow(content);
+
+      expect(rendered).toContain('+');
+      expect(rendered).not.toContain('┌');
+    });
+
+    test('aligns border dimensions with DisplayUtils standards', () => {
+      const columns = 96;
+      const restoreColumns = overrideStdoutColumns(columns);
+      DisplayUtils.configure({ columnsProvider: () => columns });
+      try {
+        const padding = DisplayUtils.standards.defaultPadding;
+        const renderer = createBorderRenderer({
+          padding,
+          showTitle: false,
+          showSubtitle: false
+        });
+        const content = [
+          'Service status overview',
+          'Connected: 5',
+          'Disconnected: 2'
+        ];
+
+        const dimensions = renderer.calculateOptimalDimensions(
+          content,
+          DisplayUtils.standards.minWidth,
+          DisplayUtils.standards.maxWidth
+        );
+
+        const expectedContentWidth = Math.max(
+          DisplayUtils.responsiveWidth(content, { padding }),
+          DisplayUtils.standards.separatorLength
+        );
+        expect(dimensions.width).toBe(expectedContentWidth + DisplayUtils.standards.borderWidth);
+
+        const rendered = renderer.renderWindow(content);
+        const topBorder = rendered
+          .split('\n')[0]
+          .replace(/\u001b\[[0-9;]*m/g, '');
+        const horizontalSegment = topBorder.slice(1, -1).replace(/\s+/g, '');
+        expect(horizontalSegment.length).toBe(DisplayUtils.standards.separatorLength);
+      } finally {
+        DisplayUtils.reset();
+        restoreColumns();
+      }
+    });
   });
 
   describe('Width Calculation', () => {
@@ -188,6 +269,59 @@ describe('Navigation System Integration Tests', () => {
       expect(shortResult.calculatedWidth).toBeGreaterThanOrEqual(50);
       expect(longResult.calculatedWidth).toBeLessThanOrEqual(100);
     });
+
+    test('respects formatter terminal width when applying constraints', () => {
+      const formatter = createFormatterFixture({
+        capabilities: createFormatterCapabilities({ width: 60 })
+      });
+      const calculator = createWidthCalculator({ respectTerminalWidth: true }, { formatter });
+      const content = ['Line 1', 'Line 2 that is longer than the first'];
+
+      const result = calculator.calculateWidth(content);
+
+      expect(result.calculatedWidth).toBeLessThanOrEqual(56);
+    });
+
+    test('aligns padding width with shared window spacing defaults', () => {
+      DisplayUtils.reset();
+      DisplayUtils.configure({ columnsProvider: () => 96 });
+
+      const calculator = createWidthCalculator();
+      const content = ['Navigation status', 'Service availability overview'];
+
+      const result = calculator.calculateWidth(content);
+
+      expect(result.paddingWidth).toBe(WINDOW_SPACING.defaultPadding * 2);
+      expect(result.borderWidth).toBe(WINDOW_SPACING.borderWidth);
+    });
+  });
+
+  describe('Window Layout Manager Integration', () => {
+    test('enforces minimum width based on window spacing standards', () => {
+      const capabilities: TerminalCapabilities = {
+        supportsBoxDrawing: true,
+        supportsUnicode: true,
+        supportsColors: true,
+        supportsAnsi: true,
+        colorDepth: 8,
+        width: 72,
+        height: 24,
+        terminalType: 'xterm',
+        platform: 'unix'
+      };
+
+      const layout = windowLayoutManager.calculateOptimalLayout(
+        {
+          title: 'Navigation',
+          content: ['Short summary']
+        },
+        capabilities,
+        {}
+      );
+
+      expect(layout.width).toBeGreaterThanOrEqual(WINDOW_SPACING.minWidth);
+      expect(layout.padding).toBe(WINDOW_SPACING.defaultPadding);
+    });
   });
 
   describe('Selector Updates', () => {
@@ -214,6 +348,30 @@ describe('Navigation System Integration Tests', () => {
       
       const selector = updater.getCurrentSelector();
       expect(selector).toBe('>'); // ASCII fallback
+    });
+
+    test('should skip selector injection for non-plain menu wrappers', () => {
+      class CustomMenu {
+        sections;
+
+        constructor() {
+          this.sections = [
+            {
+              items: [
+                { label: 'Legacy Option' }
+              ]
+            }
+          ];
+        }
+      }
+
+      const updater = createSelectorUpdater();
+      const menuWrapper = new CustomMenu();
+
+      const result = updater.updateMenuObject(menuWrapper as any);
+
+      expect(result.changes).toHaveLength(0);
+      expect(result.processed).toBe(menuWrapper);
     });
   });
 
@@ -251,6 +409,52 @@ describe('Navigation System Integration Tests', () => {
       expect(breadcrumbs).toContain('Home');
       expect(breadcrumbs).toContain('Settings');
       expect(breadcrumbs).toContain('Advanced');
+    });
+
+    test('renders breadcrumbs using DisplayUtils separators', () => {
+      const columns = 72;
+      const restoreColumns = overrideStdoutColumns(columns);
+      const separatorMock = jest.fn((length?: number) => `sep:${length ?? 0}`);
+      DisplayUtils.configure({
+        columnsProvider: () => columns,
+        formatter: {
+          ui: {
+            separator: separatorMock
+          }
+        } as any
+      });
+      try {
+        const breadcrumbManager = new BreadcrumbManager();
+        const now = Date.now();
+        breadcrumbManager.pushBreadcrumb({
+          id: 'home',
+          title: 'Home',
+          depth: 0,
+          timestamp: now,
+          description: 'root'
+        });
+        breadcrumbManager.pushBreadcrumb({
+          id: 'settings',
+          title: 'Settings',
+          depth: 1,
+          timestamp: now + 1,
+          description: 'settings'
+        });
+        breadcrumbManager.pushBreadcrumb({
+          id: 'advanced',
+          title: 'Advanced',
+          depth: 2,
+          timestamp: now + 2,
+          description: 'advanced'
+        });
+
+        const rendered = breadcrumbManager.renderBreadcrumbs();
+        expect(separatorMock).toHaveBeenCalled();
+        expect(rendered).toContain('sep:');
+      } finally {
+        DisplayUtils.reset();
+        restoreColumns();
+      }
     });
 
     test('should enforce stack size limits', () => {
@@ -456,6 +660,29 @@ describe('Navigation System Integration Tests', () => {
       // Cleanup
       await system.cleanup();
       expect(system.isInitialized()).toBe(false);
+    });
+  });
+
+  describe('Process listener management', () => {
+    test('does not accumulate fatal process listeners across repeated initialization', async () => {
+      const baselineUncaught = process.listenerCount('uncaughtException');
+      const baselineUnhandled = process.listenerCount('unhandledRejection');
+
+      for (let i = 0; i < 12; i += 1) {
+        const system = createNavigationSystem({
+          exitHandling: {
+            requireConfirmation: false,
+            doubleConfirmation: false,
+            confirmationTimeout: 0
+          }
+        });
+
+        await system.initialize();
+        await system.cleanup();
+      }
+
+      expect(process.listenerCount('uncaughtException')).toBe(baselineUncaught);
+      expect(process.listenerCount('unhandledRejection')).toBe(baselineUnhandled);
     });
   });
 });

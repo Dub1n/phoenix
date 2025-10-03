@@ -845,6 +845,12 @@ export class AdaptiveCLIIntegration extends EventEmitter {
    * Cleanup resources
    */
   async cleanup(): Promise<void> {
+    try {
+      await this.state.originalAdapter.cleanup();
+    } catch (error) {
+      this.emit('cleanupWarning', error);
+    }
+
     if (this.state.navigationSystem) {
       try {
         await this.state.navigationSystem.cleanup();

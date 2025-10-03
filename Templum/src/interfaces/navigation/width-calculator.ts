@@ -6,36 +6,25 @@ TASK-ID: [TASK-MCP-006]
 category: navigation-system
 status: ["[T]"]
 patterns: [content-measurement, dynamic-sizing, responsive-layout]
-components: [WidthCalculator, ContentAnalyzer, PaddingManager]
-dependencies: [string-width, chalk, border-renderer]
+components: [WidthCalculator, ContentAnalyzer]
+dependencies: [string-width, terminal-formatter, display-utils]
 tags: [cli, navigation, sizing, responsive]
 ---
- * 
+ *
  * WidthCalculator - Dynamic Window Sizing System
- * 
+ *
  * Provides intelligent window width calculation based on content analysis,
- * multi-byte character support, and terminal constraints. Implements the
- * "widest content across all pages" requirement from the design specification.
- * 
- * Generated: 2025-09-12T174343Z
- * TASK-ID: TASK-MCP-006 Pattern: content-measurement | Complexity: 4 | Dependencies: string-width,chalk
- * Context: Dynamic width calculation for bordered windows based on content measurement
- * Validation-Required: multi-byte-character-support, performance-benchmarking, responsive-behavior
- * Pattern-Info: { approach: "content-analysis", alternatives: "fixed-width", trade-offs: "computation-overhead" }
+ * terminal formatter capabilities, and shared window/display spacing
+ * standards. Implements the "widest content across all pages" requirement
+ * from the design specification while delegating glyph spacing and
+ * responsive bounds to consolidated utilities.
  */
 
-import chalk from 'chalk';
-import { BorderCapabilityDetector } from './border-renderer';
-import { StringUtils, StringWidthUtils } from '../../utils/chainable-string-utils';
+import { DisplayUtils, type DisplayStandards, type ResponsiveOptions } from '../../utils/display-utils';
+import { WINDOW_SPACING } from '../../utils/window-theme-constants';
+import { StringWidthUtils } from '../../utils/chainable-string-utils';
+import { createFormatter, TerminalFormatter, type TerminalCapabilities as FormatterCapabilities } from '../../utils/terminal-formatter';
 
-// TODO: [TASK-ID-003] Pattern: content-measurement | Complexity: 3 | Dependencies: string-width
-// Context: Multi-byte character width calculation for accurate content measurement
-// Validation-Required: unicode-character-support, emoji-handling, performance-testing
-// Pattern-Info: { approach: "string-width-library", alternatives: "custom-calculation", trade-offs: "dependency-management" }
-
-/**
- * Content analysis for menu and text measurement
- */
 export interface ContentAnalysisResult {
   maxLineWidth: number;
   totalLines: number;
@@ -47,43 +36,40 @@ export interface ContentAnalysisResult {
 }
 
 export class ContentAnalyzer {
-  /**
-   * Analyze content structure and dimensions
-   */
   static analyzeContent(lines: string[]): ContentAnalysisResult {
     let maxLineWidth = 0;
     let totalWidth = 0;
     let hasMultiByteChars = false;
     let hasAnsiCodes = false;
-    
+
     for (const line of lines) {
-      const lineWidth = StringWidthUtils.getDisplayWidth(line);
-      maxLineWidth = Math.max(maxLineWidth, lineWidth);
-      totalWidth += lineWidth;
-      
-      // Check for multi-byte characters
-      if (!hasMultiByteChars && StringWidthUtils.getDisplayWidth(line) !== line.length) {
+      const width = StringWidthUtils.getDisplayWidth(line);
+      const stripped = StringWidthUtils.stripAnsi(line);
+
+      maxLineWidth = Math.max(maxLineWidth, width);
+      totalWidth += width;
+
+      if (!hasMultiByteChars && width !== stripped.length) {
         hasMultiByteChars = true;
       }
-      
-      // Check for ANSI codes
-      if (!hasAnsiCodes && line !== StringWidthUtils.stripAnsi(line)) {
+
+      if (!hasAnsiCodes && stripped !== line) {
         hasAnsiCodes = true;
       }
     }
-    
+
     const averageLineWidth = lines.length > 0 ? totalWidth / lines.length : 0;
-    const recommendedWidth = Math.max(40, maxLineWidth + 8); // +8 for padding and borders
-    
-    // Determine complexity
-    let contentComplexity: 'simple' | 'medium' | 'complex' = 'simple';
-    if (hasMultiByteChars || hasAnsiCodes || maxLineWidth > 80) {
-      contentComplexity = 'medium';
-    }
-    if (maxLineWidth > 120 || lines.length > 20) {
-      contentComplexity = 'complex';
-    }
-    
+    const recommendedWidth = Math.max(
+      WINDOW_SPACING.minWidth,
+      maxLineWidth + WINDOW_SPACING.defaultPadding * 2
+    );
+
+    const contentComplexity: 'simple' | 'medium' | 'complex' = this.resolveComplexity(
+      maxLineWidth,
+      lines.length,
+      hasMultiByteChars || hasAnsiCodes
+    );
+
     return {
       maxLineWidth,
       totalLines: lines.length,
@@ -95,138 +81,119 @@ export class ContentAnalyzer {
     };
   }
 
-  /**
-   * Analyze menu structure for optimal width calculation
-   */
   static analyzeMenuContent(menuDefinition: any): ContentAnalysisResult {
+    const lines = this.collectMenuLines(menuDefinition);
+    return this.analyzeContent(lines);
+  }
+
+  static collectLines(content: string[] | any): string[] {
+    if (Array.isArray(content)) {
+      return content;
+    }
+    return this.collectMenuLines(content);
+  }
+
+  static combine(results: ContentAnalysisResult[]): ContentAnalysisResult {
+    if (results.length === 0) {
+      return this.analyzeContent([]);
+    }
+
+    const maxLineWidth = Math.max(...results.map(result => result.maxLineWidth));
+    const recommendedWidth = Math.max(...results.map(result => result.recommendedWidth));
+    const totalLines = Math.max(...results.map(result => result.totalLines));
+    const averageLineWidth = results.reduce((sum, result) => sum + result.averageLineWidth, 0) / results.length;
+    const hasMultiByteChars = results.some(result => result.hasMultiByteChars);
+    const hasAnsiCodes = results.some(result => result.hasAnsiCodes);
+    const contentComplexity = this.resolveMaxComplexity(results.map(result => result.contentComplexity));
+
+    return {
+      maxLineWidth,
+      totalLines,
+      averageLineWidth,
+      hasMultiByteChars,
+      hasAnsiCodes,
+      recommendedWidth,
+      contentComplexity
+    };
+  }
+
+  private static collectMenuLines(menuDefinition: any): string[] {
     const lines: string[] = [];
-    
-    // Extract title and subtitle
-    if (menuDefinition.title) {
-      lines.push(menuDefinition.title);
+
+    if (menuDefinition?.title) {
+      lines.push(String(menuDefinition.title));
     }
-    if (menuDefinition.subtitle) {
-      lines.push(menuDefinition.subtitle);
+
+    if (menuDefinition?.subtitle) {
+      lines.push(String(menuDefinition.subtitle));
     }
-    
-    // Extract menu items
-    if (menuDefinition.sections) {
+
+    if (Array.isArray(menuDefinition?.sections)) {
       for (const section of menuDefinition.sections) {
-        if (section.heading) {
-          lines.push(section.heading);
+        if (section?.heading) {
+          lines.push(String(section.heading));
         }
-        
-        if (section.items) {
+
+        if (Array.isArray(section?.items)) {
           for (const item of section.items) {
-            lines.push(item.label || '');
-            if (item.description) {
-              lines.push(item.description);
+            if (item?.label) {
+              lines.push(String(item.label));
+            }
+            if (item?.description) {
+              lines.push(String(item.description));
             }
           }
         }
       }
     }
-    
-    return this.analyzeContent(lines);
+
+    return lines;
+  }
+
+  private static resolveComplexity(
+    maxLineWidth: number,
+    totalLines: number,
+    containsComplexCharacters: boolean
+  ): 'simple' | 'medium' | 'complex' {
+    if (maxLineWidth > 120 || totalLines > 20) {
+      return 'complex';
+    }
+    if (containsComplexCharacters || maxLineWidth > 80 || totalLines > 12) {
+      return 'medium';
+    }
+    return 'simple';
+  }
+
+  private static resolveMaxComplexity(
+    complexities: Array<'simple' | 'medium' | 'complex'>
+  ): 'simple' | 'medium' | 'complex' {
+    if (complexities.includes('complex')) {
+      return 'complex';
+    }
+    if (complexities.includes('medium')) {
+      return 'medium';
+    }
+    return 'simple';
   }
 }
 
-/**
- * Padding management for consistent spacing
- */
-export interface PaddingConfig {
-  left: number;
-  right: number;
-  top: number;
-  bottom: number;
-  inner: number; // Padding between border and content
+export interface LegacyPaddingConfig {
+  left?: number;
+  right?: number;
+  top?: number;
+  bottom?: number;
+  inner?: number;
 }
 
-export class PaddingManager {
-  private config: PaddingConfig;
-
-  constructor(config: Partial<PaddingConfig> = {}) {
-    this.config = {
-      left: 3,
-      right: 3,
-      top: 1,
-      bottom: 1,
-      inner: 3,
-      ...config
-    };
-  }
-
-  /**
-   * Apply padding to content lines
-   */
-  applyPadding(lines: string[], targetWidth: number): string[] {
-    const contentWidth = targetWidth - this.config.left - this.config.right - 2; // -2 for borders
-    const paddedLines: string[] = [];
-    
-    // Top padding
-    for (let i = 0; i < this.config.top; i++) {
-      paddedLines.push('');
-    }
-    
-    // Content with horizontal padding
-    const innerPadding = ' '.repeat(this.config.inner);
-    const textWidth = Math.max(0, contentWidth - this.config.inner * 2);
-
-    for (const line of lines) {
-      const contentSegment = textWidth > 0
-        ? StringUtils.chain(line, { mode: 'terminal' })
-            .truncate(textWidth)
-            .pad(textWidth)
-            .value()
-        : '';
-
-      paddedLines.push(`${innerPadding}${contentSegment}${innerPadding}`);
-    }
-    
-    // Bottom padding
-    for (let i = 0; i < this.config.bottom; i++) {
-      paddedLines.push('');
-    }
-    
-    return paddedLines;
-  }
-
-  /**
-   * Calculate total padding dimensions
-   */
-  getTotalPaddingDimensions(): { width: number; height: number } {
-    return {
-      width: this.config.left + this.config.right + (this.config.inner * 2) + 2, // +2 for borders
-      height: this.config.top + this.config.bottom + 2 // +2 for top/bottom borders
-    };
-  }
-
-  /**
-   * Validate padding configuration
-   */
-  validatePadding(terminalWidth: number, terminalHeight: number): boolean {
-    const totalPadding = this.getTotalPaddingDimensions();
-    
-    // Ensure minimum usable space
-    const minUsableWidth = 20;
-    const minUsableHeight = 5;
-    
-    return (terminalWidth - totalPadding.width >= minUsableWidth) &&
-           (terminalHeight - totalPadding.height >= minUsableHeight);
-  }
-}
-
-/**
- * Main width calculation system
- */
 export interface WidthCalculationOptions {
-  minWidth: number;
-  maxWidth: number;
+  minWidth?: number;
+  maxWidth?: number;
   preferredWidth?: number;
-  allowShrinking: boolean;
-  respectTerminalWidth: boolean;
-  paddingConfig?: Partial<PaddingConfig>;
-  enforceConsistency: boolean; // Ensure all windows have same width
+  allowShrinking?: boolean;
+  respectTerminalWidth?: boolean;
+  enforceConsistency?: boolean;
+  padding?: number;
+  paddingConfig?: LegacyPaddingConfig;
 }
 
 export interface WidthCalculationResult {
@@ -239,104 +206,134 @@ export interface WidthCalculationResult {
   recommendations: string[];
 }
 
+export interface WidthCalculatorDependencies {
+  formatter?: Pick<TerminalFormatter, 'getCapabilities'>;
+  responsiveWidth?: (content: string | string[], options?: ResponsiveOptions) => number;
+  standards?: () => DisplayStandards;
+}
+
+interface ResolvedWidthCalculatorDependencies {
+  formatter: Pick<TerminalFormatter, 'getCapabilities'>;
+  responsiveWidth: (content: string | string[], options?: ResponsiveOptions) => number;
+  standards: () => DisplayStandards;
+}
+
+const DEFAULT_OPTIONS: Required<Omit<WidthCalculationOptions, 'preferredWidth' | 'paddingConfig' | 'padding'>> &
+  Pick<WidthCalculationOptions, 'preferredWidth' | 'padding' | 'paddingConfig'> = {
+  minWidth: WINDOW_SPACING.minWidth,
+  maxWidth: WINDOW_SPACING.maxWidth,
+  allowShrinking: true,
+  respectTerminalWidth: true,
+  enforceConsistency: false,
+  preferredWidth: undefined,
+  padding: undefined,
+  paddingConfig: undefined
+};
+
+function createDefaultDependencies(): ResolvedWidthCalculatorDependencies {
+  const formatter = createFormatter();
+  return {
+    formatter,
+    responsiveWidth: (content, options) => DisplayUtils.responsiveWidth(content, options),
+    standards: () => DisplayUtils.standards
+  };
+}
+
+function mergeDependencies(
+  overrides: WidthCalculatorDependencies | undefined
+): ResolvedWidthCalculatorDependencies {
+  const defaults = createDefaultDependencies();
+
+  if (!overrides) {
+    return defaults;
+  }
+
+  return {
+    formatter: overrides.formatter ?? defaults.formatter,
+    responsiveWidth: overrides.responsiveWidth ?? defaults.responsiveWidth,
+    standards: overrides.standards ?? defaults.standards
+  };
+}
+
 export class WidthCalculator {
   protected options: WidthCalculationOptions;
-  private paddingManager: PaddingManager;
-  private terminalCapabilities = BorderCapabilityDetector.getCapabilities();
+  private readonly dependencies: ResolvedWidthCalculatorDependencies;
 
-  constructor(options: Partial<WidthCalculationOptions> = {}) {
-    this.options = {
-      minWidth: 40,
-      maxWidth: 120,
-      allowShrinking: true,
-      respectTerminalWidth: true,
-      enforceConsistency: false,
-      ...options
-    };
-
-    this.paddingManager = new PaddingManager(options.paddingConfig);
+  constructor(
+    options: Partial<WidthCalculationOptions> = {},
+    dependencies?: WidthCalculatorDependencies
+  ) {
+    this.options = { ...DEFAULT_OPTIONS, ...options };
+    this.dependencies = mergeDependencies(dependencies);
   }
 
-  /**
-   * Calculate optimal width for single content
-   */
   calculateWidth(content: string[] | any): WidthCalculationResult {
-    let analysis: ContentAnalysisResult;
-    
-    if (Array.isArray(content)) {
-      analysis = ContentAnalyzer.analyzeContent(content);
-    } else {
-      analysis = ContentAnalyzer.analyzeMenuContent(content);
-    }
-    
-    return this.calculateWidthFromAnalysis(analysis);
+    const lines = ContentAnalyzer.collectLines(content);
+    const analysis = ContentAnalyzer.analyzeContent(lines);
+    return this.calculateWidthFromLines(lines, analysis);
   }
 
-  /**
-   * Calculate consistent width across multiple content pieces
-   */
   calculateConsistentWidth(contents: (string[] | any)[]): WidthCalculationResult {
-    const analyses = contents.map(content => 
-      Array.isArray(content) 
-        ? ContentAnalyzer.analyzeContent(content)
-        : ContentAnalyzer.analyzeMenuContent(content)
-    );
-    
-    // Find maximum width requirements across all content
-    const maxContentWidth = Math.max(...analyses.map(a => a.maxLineWidth));
-    const maxRecommendedWidth = Math.max(...analyses.map(a => a.recommendedWidth));
-    
-    // Create combined analysis
-    const combinedAnalysis: ContentAnalysisResult = {
-      maxLineWidth: maxContentWidth,
-      totalLines: Math.max(...analyses.map(a => a.totalLines)),
-      averageLineWidth: analyses.reduce((sum, a) => sum + a.averageLineWidth, 0) / analyses.length,
-      hasMultiByteChars: analyses.some(a => a.hasMultiByteChars),
-      hasAnsiCodes: analyses.some(a => a.hasAnsiCodes),
-      recommendedWidth: maxRecommendedWidth,
-      contentComplexity: this.getMaxComplexity(analyses.map(a => a.contentComplexity))
-    };
-    
-    return this.calculateWidthFromAnalysis(combinedAnalysis);
+    const analyses = contents.map(content => {
+      const lines = ContentAnalyzer.collectLines(content);
+      return {
+        lines,
+        analysis: ContentAnalyzer.analyzeContent(lines)
+      };
+    });
+
+    const combinedAnalysis = ContentAnalyzer.combine(analyses.map(item => item.analysis));
+    const combinedLines = analyses.flatMap(item => item.lines);
+
+    return this.calculateWidthFromLines(combinedLines, combinedAnalysis);
   }
 
-  /**
-   * Calculate width from content analysis
-   */
-  private calculateWidthFromAnalysis(analysis: ContentAnalysisResult): WidthCalculationResult {
-    const paddingDimensions = this.paddingManager.getTotalPaddingDimensions();
-    const borderWidth = 2; // Left and right borders
-    const paddingWidth = paddingDimensions.width - borderWidth;
-    
-    // Start with content requirements
-    let targetWidth = analysis.maxLineWidth + paddingWidth + borderWidth;
-    
-    // Apply preferred width if set
-    if (this.options.preferredWidth) {
-      targetWidth = Math.max(targetWidth, this.options.preferredWidth);
+  testCalculation(sampleContent: string[]): WidthCalculationResult {
+    return this.calculateWidth(sampleContent);
+  }
+
+  updateOptions(options: Partial<WidthCalculationOptions>): void {
+    this.options = { ...this.options, ...options };
+  }
+
+  getTerminalDimensions(): { width: number; height: number } {
+    const capabilities = this.dependencies.formatter.getCapabilities();
+    const width = this.resolveTerminalWidth(capabilities);
+    const height = capabilities.height ?? process.stdout?.rows ?? 24;
+
+    return { width, height };
+  }
+
+  protected calculateWidthFromLines(
+    lines: string[],
+    analysis: ContentAnalysisResult
+  ): WidthCalculationResult {
+    const padding = this.resolvePadding();
+    const minWidth = this.options.minWidth ?? WINDOW_SPACING.minWidth;
+    const maxWidth = this.resolveMaxWidth();
+
+    const responsiveWidth = this.dependencies.responsiveWidth(lines, {
+      minWidth,
+      maxWidth,
+      padding
+    });
+
+    let calculatedWidth = responsiveWidth;
+
+    if (typeof this.options.preferredWidth === 'number') {
+      calculatedWidth = Math.max(calculatedWidth, this.options.preferredWidth);
     }
-    
-    // Apply terminal width constraints
-    if (this.options.respectTerminalWidth) {
-      const terminalWidth = this.terminalCapabilities.width;
-      const maxAllowedWidth = Math.min(this.options.maxWidth, terminalWidth - 4); // -4 for margin
-      targetWidth = Math.min(targetWidth, maxAllowedWidth);
-    } else {
-      targetWidth = Math.min(targetWidth, this.options.maxWidth);
-    }
-    
-    // Ensure minimum width
-    targetWidth = Math.max(targetWidth, this.options.minWidth);
-    
-    // Calculate final dimensions
-    const calculatedWidth = targetWidth;
-    const contentWidth = calculatedWidth - paddingWidth - borderWidth;
-    const isOptimal = contentWidth >= analysis.maxLineWidth;
-    
-    // Generate reasoning and recommendations
-    const reasoning = this.generateReasoning(analysis, calculatedWidth, contentWidth, isOptimal);
+
+    calculatedWidth = Math.max(minWidth, Math.min(calculatedWidth, maxWidth));
+
+    const paddingWidth = padding * 2;
+    const borderWidth = WINDOW_SPACING.borderWidth;
+    const contentWidth = Math.max(calculatedWidth - paddingWidth - borderWidth, 0);
+    const isOptimal = analysis.maxLineWidth <= contentWidth;
+
+    const reasoning = this.generateReasoning(analysis, calculatedWidth, contentWidth);
     const recommendations = this.generateRecommendations(analysis, calculatedWidth, contentWidth, isOptimal);
-    
+
     return {
       calculatedWidth,
       contentWidth,
@@ -348,205 +345,184 @@ export class WidthCalculator {
     };
   }
 
-  /**
-   * Generate reasoning for width calculation
-   */
-  private generateReasoning(analysis: ContentAnalysisResult, calculatedWidth: number, contentWidth: number, isOptimal: boolean): string {
-    const factors = [];
-    
-    factors.push(`Content width: ${analysis.maxLineWidth}`);
-    factors.push(`Recommended width: ${analysis.recommendedWidth}`);
-    factors.push(`Terminal width: ${this.terminalCapabilities.width}`);
-    factors.push(`Final width: ${calculatedWidth}`);
-    
+  private resolvePadding(): number {
+    if (typeof this.options.padding === 'number') {
+      return Math.max(0, this.options.padding);
+    }
+
+    if (this.options.paddingConfig && typeof this.options.paddingConfig.inner === 'number') {
+      return Math.max(0, this.options.paddingConfig.inner);
+    }
+
+    return WINDOW_SPACING.defaultPadding;
+  }
+
+  private resolveMaxWidth(): number {
+    const standards = this.dependencies.standards();
+    const capabilities = this.dependencies.formatter.getCapabilities();
+    const terminalWidth = this.resolveTerminalWidth(capabilities);
+
+    const maxWidthOption = this.options.maxWidth ?? WINDOW_SPACING.maxWidth;
+
+    const boundedMax = Math.min(
+      maxWidthOption,
+      terminalWidth - WINDOW_SPACING.separatorMargin,
+      standards.terminalWidth,
+      WINDOW_SPACING.maxWidth
+    );
+
+    return Math.max(WINDOW_SPACING.minWidth, boundedMax);
+  }
+
+  private resolveTerminalWidth(capabilities: FormatterCapabilities): number {
+    const standards = this.dependencies.standards();
+
+    if (this.options.respectTerminalWidth === false) {
+      return standards.terminalWidth;
+    }
+
+    const detectedWidth = capabilities.width ?? standards.terminalWidth;
+    return Math.max(WINDOW_SPACING.minWidth, Math.min(detectedWidth, standards.terminalWidth));
+  }
+
+  private generateReasoning(
+    analysis: ContentAnalysisResult,
+    calculatedWidth: number,
+    contentWidth: number
+  ): string {
+    const terminalWidth = this.resolveTerminalWidth(this.dependencies.formatter.getCapabilities());
+
+    const factors = [
+      `maxLineWidth=${analysis.maxLineWidth}`,
+      `recommended=${analysis.recommendedWidth}`,
+      `calculated=${calculatedWidth}`,
+      `content=${contentWidth}`,
+      `terminal=${terminalWidth}`
+    ];
+
     if (analysis.hasMultiByteChars) {
-      factors.push('Multi-byte characters detected');
+      factors.push('multiByte');
     }
-    
+
     if (analysis.hasAnsiCodes) {
-      factors.push('ANSI formatting detected');
+      factors.push('ansi');
     }
-    
-    if (!isOptimal) {
-      factors.push('Content may be truncated');
+
+    if (analysis.contentComplexity !== 'simple') {
+      factors.push(`complexity=${analysis.contentComplexity}`);
     }
-    
+
     return factors.join(', ');
   }
 
-  /**
-   * Generate recommendations for optimization
-   */
-  private generateRecommendations(analysis: ContentAnalysisResult, calculatedWidth: number, contentWidth: number, isOptimal: boolean): string[] {
-    const recommendations = [];
-    
+  private generateRecommendations(
+    analysis: ContentAnalysisResult,
+    calculatedWidth: number,
+    contentWidth: number,
+    isOptimal: boolean
+  ): string[] {
+    const recommendations: string[] = [];
+
     if (!isOptimal) {
-      recommendations.push('Consider increasing terminal width or reducing content length');
+      recommendations.push('Consider increasing max width or reducing content length.');
     }
-    
+
     if (analysis.contentComplexity === 'complex') {
-      recommendations.push('Complex content detected - consider pagination or scrolling');
+      recommendations.push('Complex content detected — evaluate pagination or scrolling options.');
     }
-    
+
     if (analysis.hasMultiByteChars) {
-      recommendations.push('Multi-byte characters present - verify terminal font support');
+      recommendations.push('Multi-byte characters present — verify terminal font support.');
     }
-    
-    const utilizationRatio = contentWidth / calculatedWidth;
+
+    const utilizationRatio = contentWidth === 0 ? 0 : contentWidth / calculatedWidth;
     if (utilizationRatio < 0.6) {
-      recommendations.push('Low content utilization - consider reducing padding or width');
+      recommendations.push('Low content utilization — adjust padding or width to reduce whitespace.');
     }
-    
-    if (calculatedWidth > this.terminalCapabilities.width * 0.9) {
-      recommendations.push('Width approaching terminal limits - consider responsive design');
+
+    if (calculatedWidth >= this.resolveMaxWidth()) {
+      recommendations.push('Width clamped by terminal capabilities — ensure responsive layouts fall back gracefully.');
     }
-    
+
     return recommendations;
-  }
-
-  /**
-   * Get maximum complexity from multiple analyses
-   */
-  private getMaxComplexity(complexities: ('simple' | 'medium' | 'complex')[]): 'simple' | 'medium' | 'complex' {
-    if (complexities.includes('complex')) return 'complex';
-    if (complexities.includes('medium')) return 'medium';
-    return 'simple';
-  }
-
-  /**
-   * Update calculation options
-   */
-  updateOptions(options: Partial<WidthCalculationOptions>): void {
-    this.options = { ...this.options, ...options };
-    
-    if (options.paddingConfig) {
-      this.paddingManager = new PaddingManager(options.paddingConfig);
-    }
-  }
-
-  /**
-   * Get current terminal dimensions
-   */
-  getTerminalDimensions(): { width: number; height: number } {
-    return {
-      width: this.terminalCapabilities.width,
-      height: this.terminalCapabilities.height
-    };
-  }
-
-  /**
-   * Test width calculation with sample content
-   */
-  testCalculation(sampleContent: string[]): WidthCalculationResult {
-    return this.calculateWidth(sampleContent);
   }
 }
 
-// TODO: [TASK-ID-004] Pattern: responsive-design | Complexity: 3 | Dependencies: terminal-detection
-// Context: Responsive width adjustment based on terminal size changes
-// Validation-Required: resize-handling, performance-testing, layout-consistency
-// Pattern-Info: { approach: "event-driven-resize", alternatives: "polling-based", trade-offs: "event-reliability" }
-
-/**
- * Responsive width calculator that adapts to terminal size changes
- */
 export class ResponsiveWidthCalculator extends WidthCalculator {
-  private resizeListeners: (() => void)[] = [];
+  private resizeListeners: Array<() => void> = [];
   private lastKnownDimensions: { width: number; height: number };
 
-  constructor(options: Partial<WidthCalculationOptions> = {}) {
-    super(options);
+  constructor(
+    options: Partial<WidthCalculationOptions> = {},
+    dependencies?: WidthCalculatorDependencies
+  ) {
+    super(options, dependencies);
     this.lastKnownDimensions = this.getTerminalDimensions();
     this.setupResizeListener();
   }
 
-  /**
-   * Setup terminal resize listener
-   */
+  calculateResponsiveWidth(content: string[] | any): WidthCalculationResult {
+    const originalMaxWidth = this.options.maxWidth;
+    const { width } = this.getTerminalDimensions();
+    const responsiveMaxWidth = Math.max(WINDOW_SPACING.minWidth, width - WINDOW_SPACING.separatorMargin);
+
+    this.updateOptions({ maxWidth: responsiveMaxWidth });
+    const result = this.calculateWidth(content);
+
+    this.updateOptions({ maxWidth: originalMaxWidth });
+    return result;
+  }
+
+  onResize(listener: () => void): void {
+    this.resizeListeners.push(listener);
+  }
+
+  removeResizeListener(listener: () => void): void {
+    const index = this.resizeListeners.indexOf(listener);
+    if (index >= 0) {
+      this.resizeListeners.splice(index, 1);
+    }
+  }
+
+  cleanup(): void {
+    this.resizeListeners = [];
+    process.stdout.removeAllListeners('resize');
+  }
+
   private setupResizeListener(): void {
     process.stdout.on('resize', () => {
-      const newDimensions = this.getTerminalDimensions();
-      
-      if (newDimensions.width !== this.lastKnownDimensions.width ||
-          newDimensions.height !== this.lastKnownDimensions.height) {
-        
-        this.lastKnownDimensions = newDimensions;
+      const dimensions = this.getTerminalDimensions();
+      if (
+        dimensions.width !== this.lastKnownDimensions.width ||
+        dimensions.height !== this.lastKnownDimensions.height
+      ) {
+        this.lastKnownDimensions = dimensions;
         this.notifyResizeListeners();
       }
     });
   }
 
-  /**
-   * Add resize listener
-   */
-  onResize(listener: () => void): void {
-    this.resizeListeners.push(listener);
-  }
-
-  /**
-   * Remove resize listener
-   */
-  removeResizeListener(listener: () => void): void {
-    const index = this.resizeListeners.indexOf(listener);
-    if (index > -1) {
-      this.resizeListeners.splice(index, 1);
-    }
-  }
-
-  /**
-   * Notify all resize listeners
-   */
   private notifyResizeListeners(): void {
-    this.resizeListeners.forEach(listener => {
+    for (const listener of this.resizeListeners) {
       try {
         listener();
       } catch (error) {
         console.error('Error in resize listener:', error);
       }
-    });
-  }
-
-  /**
-   * Calculate responsive width that adapts to current terminal size
-   */
-  calculateResponsiveWidth(content: string[] | any): WidthCalculationResult {
-    // Update options based on current terminal size
-    const dimensions = this.getTerminalDimensions();
-    const responsiveMaxWidth = Math.min(
-      this.options.maxWidth,
-      Math.max(40, dimensions.width - 8) // -8 for margins
-    );
-    
-    const originalMaxWidth = this.options.maxWidth;
-    this.updateOptions({ maxWidth: responsiveMaxWidth });
-    
-    const result = this.calculateWidth(content);
-    
-    // Restore original max width
-    this.updateOptions({ maxWidth: originalMaxWidth });
-    
-    return result;
-  }
-
-  /**
-   * Cleanup resize listeners
-   */
-  cleanup(): void {
-    this.resizeListeners = [];
-    process.stdout.removeAllListeners('resize');
+    }
   }
 }
 
-/**
- * Factory function for creating width calculator
- */
-export function createWidthCalculator(options?: Partial<WidthCalculationOptions>): WidthCalculator {
-  return new WidthCalculator(options);
+export function createWidthCalculator(
+  options?: Partial<WidthCalculationOptions>,
+  dependencies?: WidthCalculatorDependencies
+): WidthCalculator {
+  return new WidthCalculator(options, dependencies);
 }
 
-/**
- * Factory function for creating responsive width calculator
- */
-export function createResponsiveWidthCalculator(options?: Partial<WidthCalculationOptions>): ResponsiveWidthCalculator {
-  return new ResponsiveWidthCalculator(options);
+export function createResponsiveWidthCalculator(
+  options?: Partial<WidthCalculationOptions>,
+  dependencies?: WidthCalculatorDependencies
+): ResponsiveWidthCalculator {
+  return new ResponsiveWidthCalculator(options, dependencies);
 }

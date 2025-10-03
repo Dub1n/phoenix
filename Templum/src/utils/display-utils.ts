@@ -1,5 +1,25 @@
 import { createLogger, Logger } from './logger';
-import { TerminalFormatter } from './terminal-formatter';
+import { createFormatter, TERMINAL_FORMATTER_SPACING, TerminalSeparatorStyle } from './terminal-formatter';
+
+interface DisplayFormatter {
+  ui: {
+    separator(length?: number, style?: TerminalSeparatorStyle): string;
+  };
+}
+
+type ColumnsProvider = () => number | undefined;
+
+export interface DisplayUtilsDependencies {
+  logger?: Logger;
+  formatter?: DisplayFormatter;
+  columnsProvider?: ColumnsProvider;
+}
+
+interface ResolvedDisplayUtilsDependencies {
+  logger: Logger;
+  formatter: DisplayFormatter;
+  columnsProvider: ColumnsProvider;
+}
 
 export interface ServiceOrderOptions {
   connectedFirst?: boolean;
@@ -27,6 +47,7 @@ export interface DisplayStandards {
   defaultPadding: number;
   borderWidth: number;
   separatorLength: number;
+  separatorMargin: number;
 }
 
 export interface DisplayLayout {
@@ -79,8 +100,33 @@ class DisplayCalculator {
 }
 
 export class DisplayUtils {
-  private static logger: Logger = createLogger('display-utils');
-  private static formatter: TerminalFormatter = new TerminalFormatter();
+  private static createDefaultDependencies(): ResolvedDisplayUtilsDependencies {
+    return {
+      logger: createLogger('display-utils'),
+      formatter: createFormatter(),
+      columnsProvider: () => (typeof process.stdout?.columns === 'number' ? process.stdout.columns : undefined)
+    };
+  }
+
+  private static dependencies: ResolvedDisplayUtilsDependencies = DisplayUtils.createDefaultDependencies();
+
+  static configure(dependencies: DisplayUtilsDependencies): void {
+    if (dependencies.logger) {
+      DisplayUtils.dependencies.logger = dependencies.logger;
+    }
+
+    if (dependencies.formatter) {
+      DisplayUtils.dependencies.formatter = dependencies.formatter;
+    }
+
+    if (dependencies.columnsProvider) {
+      DisplayUtils.dependencies.columnsProvider = dependencies.columnsProvider;
+    }
+  }
+
+  static reset(): void {
+    DisplayUtils.dependencies = DisplayUtils.createDefaultDependencies();
+  }
 
   static calculate(): DisplayCalculator {
     return new DisplayCalculator();
@@ -109,7 +155,7 @@ export class DisplayUtils {
       ordered.sort((a, b) => a.name.localeCompare(b.name));
     }
 
-    this.logger.debug('Ordered services', {
+    DisplayUtils.dependencies.logger.debug('Ordered services', {
       total: services.length,
       connected: ordered.filter(service => service.status === 'connected').length
     });
@@ -118,27 +164,34 @@ export class DisplayUtils {
   }
 
   static get standards(): DisplayStandards {
-    const terminalWidth = typeof process.stdout?.columns === 'number'
-      ? process.stdout.columns
-      : 80;
+    const providedWidth = DisplayUtils.dependencies.columnsProvider();
+    const terminalWidth = typeof providedWidth === 'number' && Number.isFinite(providedWidth)
+      ? providedWidth
+      : typeof process.stdout?.columns === 'number'
+        ? process.stdout.columns
+        : 80;
 
     return {
       terminalWidth,
-      minWidth: 40,
-      maxWidth: 120,
-      defaultPadding: 2,
-      borderWidth: 2,
-      separatorLength: Math.min(terminalWidth - 4, 60)
+      minWidth: TERMINAL_FORMATTER_SPACING.minTerminalWidth,
+      maxWidth: TERMINAL_FORMATTER_SPACING.maxTerminalWidth,
+      defaultPadding: TERMINAL_FORMATTER_SPACING.defaultPadding,
+      borderWidth: TERMINAL_FORMATTER_SPACING.borderWidth,
+      separatorLength: Math.min(
+        Math.max(1, terminalWidth - TERMINAL_FORMATTER_SPACING.separatorMargin),
+        TERMINAL_FORMATTER_SPACING.separatorLength
+      ),
+      separatorMargin: TERMINAL_FORMATTER_SPACING.separatorMargin
     };
   }
 
   static responsiveWidth(content: string | string[], options: ResponsiveOptions = {}): number {
-    const { minWidth, maxWidth, padding = this.standards.defaultPadding } = options;
-    const standards = this.standards;
+    const { minWidth, maxWidth, padding = DisplayUtils.standards.defaultPadding } = options;
+    const standards = DisplayUtils.standards;
 
     const values = Array.isArray(content) ? content : [content];
     const contentWidth = values.reduce((max, value) => {
-      const width = this.stripAnsi(value).length;
+      const width = DisplayUtils.stripAnsi(value).length;
       return Math.max(max, width);
     }, 0);
 
@@ -175,19 +228,19 @@ export class DisplayUtils {
       }
 
       if (width > 0) {
-        output = this.applyWidth(output, width, alignment);
+        output = DisplayUtils.applyWidth(output, width, alignment);
       }
 
       return output;
     });
   }
 
-  static separator(length = this.standards.separatorLength, style: 'solid' | 'dashed' | 'double' = 'solid'): string {
-    return this.formatter.ui.separator(length, style);
+  static separator(length = DisplayUtils.standards.separatorLength, style: TerminalSeparatorStyle = 'solid'): string {
+    return DisplayUtils.dependencies.formatter.ui.separator(length, style);
   }
 
   private static applyWidth(value: string, width: number, alignment: ItemFormatOptions['alignment']): string {
-    const stripped = this.stripAnsi(value);
+    const stripped = DisplayUtils.stripAnsi(value);
     const padding = width - stripped.length;
 
     if (padding <= 0) {

@@ -1,8 +1,12 @@
 import { createLogger, Logger } from './logger';
 import { DisplayUtils } from './display-utils';
-import { TerminalFormatter } from './terminal-formatter';
-
-export type WindowBorderStyle = 'single' | 'double' | 'dashed';
+import {
+  TerminalFormatter,
+  createFormatter,
+  type TerminalCapabilities,
+  TerminalSeparatorStyle,
+} from './terminal-formatter';
+import { WINDOW_BORDER_GLYPHS, WindowBorderGlyphSet, WindowBorderStyle, WINDOW_SPACING } from './window-theme-constants';
 
 export interface WindowRenderOptions {
   width?: number;
@@ -19,36 +23,6 @@ export interface WindowRenderInput extends WindowRenderOptions {
 
 export interface WindowBuilderConfig extends WindowRenderOptions {}
 
-const BORDER_SETS: Record<WindowBorderStyle, { horizontal: string; vertical: string; topLeft: string; topRight: string; bottomLeft: string; bottomRight: string; tee: string }>= {
-  single: {
-    horizontal: '─',
-    vertical: '│',
-    topLeft: '┌',
-    topRight: '┐',
-    bottomLeft: '└',
-    bottomRight: '┘',
-    tee: '┤'
-  },
-  double: {
-    horizontal: '═',
-    vertical: '║',
-    topLeft: '╔',
-    topRight: '╗',
-    bottomLeft: '╚',
-    bottomRight: '╝',
-    tee: '╣'
-  },
-  dashed: {
-    horizontal: '-',
-    vertical: '|',
-    topLeft: '+',
-    topRight: '+',
-    bottomLeft: '+',
-    bottomRight: '+',
-    tee: '+'
-  }
-};
-
 const TITLE_ALIGNERS: Record<'left' | 'center' | 'right', (title: string, width: number) => string> = {
   left: (title, width) => title.padEnd(width, ' '),
   center: (title, width) => {
@@ -61,6 +35,23 @@ const TITLE_ALIGNERS: Record<'left' | 'center' | 'right', (title: string, width:
   right: (title, width) => title.padStart(width, ' ')
 };
 
+interface WindowFormatter {
+  getCapabilities(): TerminalCapabilities;
+  ui: {
+    separator(length?: number, style?: TerminalSeparatorStyle): string;
+  };
+}
+
+export interface WindowUtilsDependencies {
+  logger?: Logger;
+  formatter?: WindowFormatter;
+}
+
+interface ResolvedWindowUtilsDependencies {
+  logger: Logger;
+  formatter: WindowFormatter;
+}
+
 export class WindowBuilder {
   private config: WindowBuilderConfig = {};
 
@@ -70,7 +61,7 @@ export class WindowBuilder {
   }
 
   autoWidth(): this {
-    this.config.width = DisplayUtils.standards.terminalWidth - 4;
+    this.config.width = DisplayUtils.standards.terminalWidth - DisplayUtils.standards.separatorMargin;
     return this;
   }
 
@@ -101,25 +92,53 @@ export class WindowBuilder {
 }
 
 export class WindowUtils {
-  private static logger: Logger = createLogger('window-utils');
-  private static formatter = new TerminalFormatter();
+  private static createDefaultDependencies(): ResolvedWindowUtilsDependencies {
+    return {
+      logger: createLogger('window-utils'),
+      formatter: createFormatter(),
+    };
+  }
+
+  private static dependencies: ResolvedWindowUtilsDependencies = WindowUtils.createDefaultDependencies();
+
+  static configure(dependencies: WindowUtilsDependencies): void {
+    if (dependencies.logger) {
+      WindowUtils.dependencies.logger = dependencies.logger;
+    }
+
+    if (dependencies.formatter) {
+      WindowUtils.dependencies.formatter = dependencies.formatter;
+    }
+  }
+
+  static reset(): void {
+    WindowUtils.dependencies = WindowUtils.createDefaultDependencies();
+  }
 
   static builder(): WindowBuilder {
     return new WindowBuilder();
   }
 
   static render(input: WindowRenderInput): string {
-    const content = input.content ?? [];
-    const padding = input.padding ?? 1;
+    const { formatter, logger } = WindowUtils.dependencies;
+    const capabilities = formatter.getCapabilities?.() ?? TerminalFormatter.detectCapabilities();
     const style = input.style ?? 'single';
-    const chars = BORDER_SETS[style];
+    const glyphs = WindowUtils.resolveGlyphs(style, capabilities);
+    const resolvedStyle = capabilities.supportsUnicode || style === 'ascii' ? style : 'ascii';
 
-    const width = input.width ?? DisplayUtils.responsiveWidth(content, { padding });
-    const boundedWidth = Math.max(width, 4);
-    const innerWidth = Math.max(boundedWidth - 2, 1);
+    const content = input.content ?? [];
+    const padding = input.padding ?? WINDOW_SPACING.defaultPadding;
+    const requestedWidth = input.width ?? DisplayUtils.responsiveWidth(content, { padding });
+    const minimumWidth = Math.max(WINDOW_SPACING.borderWidth + 2, WINDOW_SPACING.separatorMargin);
+    const capabilityWidth = Math.max(
+      minimumWidth,
+      Math.min(capabilities.width ?? minimumWidth, WINDOW_SPACING.maxWidth)
+    );
+    const boundedWidth = Math.min(Math.max(requestedWidth, minimumWidth), capabilityWidth);
+    const innerWidth = Math.max(boundedWidth - WINDOW_SPACING.borderWidth, 1);
 
     const header = this.composeHeader({
-      chars,
+      glyphs,
       title: input.title,
       align: input.alignTitle ?? 'center',
       innerWidth
@@ -129,35 +148,87 @@ export class WindowUtils {
       content,
       padding,
       innerWidth,
-      vertical: chars.vertical,
+      vertical: glyphs.edges.vertical,
       requestedHeight: input.height
     });
 
-    const footer = `${chars.bottomLeft}${chars.horizontal.repeat(innerWidth)}${chars.bottomRight}`;
+    const footer = `${glyphs.corners.bottomLeft}${glyphs.edges.horizontal.repeat(innerWidth)}${glyphs.corners.bottomRight}`;
 
     const output = [header, ...body, footer].join('\n');
-    this.logger.debug('Rendered window', {
+    logger.debug('Rendered window', {
       width: boundedWidth,
       height: body.length + 2,
       padding,
-      style,
-      titleLength: input.title?.length ?? 0
+      requestedStyle: style,
+      resolvedStyle,
+      titleLength: input.title?.length ?? 0,
+      supportsUnicode: capabilities.supportsUnicode,
+      supportsColor: capabilities.supportsColor
     });
     return output;
   }
 
-  private static composeHeader({ chars, title, align, innerWidth }: { chars: typeof BORDER_SETS[WindowBorderStyle]; title?: string; align: 'left' | 'center' | 'right'; innerWidth: number }): string {
+  private static resolveGlyphs(
+    style: WindowBorderStyle,
+    capabilities: TerminalCapabilities
+  ): WindowBorderGlyphSet {
+    const baseSet = WINDOW_BORDER_GLYPHS[style] ?? WINDOW_BORDER_GLYPHS.single;
+
+    if (style === 'ascii') {
+      return baseSet;
+    }
+
+    if (capabilities.supportsColor && capabilities.supportsUnicode) {
+      return baseSet;
+    }
+
+    return WindowUtils.applyGlyphFallbacks(baseSet, WINDOW_BORDER_GLYPHS.ascii, capabilities);
+  }
+
+  private static applyGlyphFallbacks(
+    base: WindowBorderGlyphSet,
+    fallback: WindowBorderGlyphSet,
+    capabilities: TerminalCapabilities
+  ): WindowBorderGlyphSet {
+    const edges = {
+      horizontal: TerminalFormatter.withFallback(base.edges.horizontal, fallback.edges.horizontal, capabilities),
+      vertical: TerminalFormatter.withFallback(base.edges.vertical, fallback.edges.vertical, capabilities),
+    };
+
+    const corners = {
+      topLeft: TerminalFormatter.withFallback(base.corners.topLeft, fallback.corners.topLeft, capabilities),
+      topRight: TerminalFormatter.withFallback(base.corners.topRight, fallback.corners.topRight, capabilities),
+      bottomLeft: TerminalFormatter.withFallback(base.corners.bottomLeft, fallback.corners.bottomLeft, capabilities),
+      bottomRight: TerminalFormatter.withFallback(base.corners.bottomRight, fallback.corners.bottomRight, capabilities),
+    };
+
+    const junctions = {
+      top: TerminalFormatter.withFallback(base.junctions.top, fallback.junctions.top, capabilities),
+      bottom: TerminalFormatter.withFallback(base.junctions.bottom, fallback.junctions.bottom, capabilities),
+      left: TerminalFormatter.withFallback(base.junctions.left, fallback.junctions.left, capabilities),
+      right: TerminalFormatter.withFallback(base.junctions.right, fallback.junctions.right, capabilities),
+      cross: TerminalFormatter.withFallback(base.junctions.cross, fallback.junctions.cross, capabilities),
+    };
+
+    return {
+      edges,
+      corners,
+      junctions,
+    };
+  }
+
+  private static composeHeader({ glyphs, title, align, innerWidth }: { glyphs: WindowBorderGlyphSet; title?: string; align: 'left' | 'center' | 'right'; innerWidth: number }): string {
     if (!title || title.trim().length === 0) {
-      return `${chars.topLeft}${chars.horizontal.repeat(innerWidth)}${chars.topRight}`;
+      return `${glyphs.corners.topLeft}${glyphs.edges.horizontal.repeat(innerWidth)}${glyphs.corners.topRight}`;
     }
 
     const maxTitleWidth = Math.max(innerWidth, title.length);
     const alignedTitle = TITLE_ALIGNERS[align](title, maxTitleWidth).slice(0, innerWidth);
-    const decorated = this.formatter.ui.separator(innerWidth, 'solid');
+    const decorated = WindowUtils.dependencies.formatter.ui.separator(innerWidth, 'solid');
     const stripped = this.stripAnsi(decorated);
 
     const merged = stripped.substring(0, Math.min(innerWidth, alignedTitle.length));
-    const withTitle = `${chars.topLeft}${this.mergeTitle(merged, alignedTitle)}${chars.topRight}`;
+    const withTitle = `${glyphs.corners.topLeft}${this.mergeTitle(merged, alignedTitle)}${glyphs.corners.topRight}`;
     return withTitle;
   }
 

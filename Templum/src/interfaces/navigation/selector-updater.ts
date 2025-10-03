@@ -25,6 +25,7 @@ tags: [cli, navigation, selector-character, menu-formatting]
  */
 
 import { TerminalColorTheme, DefaultColorThemes } from '../terminal-ui-components';
+import { TypeGuards, TypeValidators } from '../../utils/type-guards';
 
 // TODO: [TASK-ID-012] Pattern: selector-updating | Complexity: 3 | Dependencies: accessibility
 // Context: Accessibility-compliant selector implementation with screen reader support
@@ -440,7 +441,7 @@ export class MenuFormatter {
     menuData: any, 
     options?: SelectorFormatOptions
   ): { processed: any; changes: MenuFormatResult['changes'] } {
-    if (!menuData || typeof menuData !== 'object') {
+    if (!TypeGuards.isPlainObject(menuData)) {
       return { processed: menuData, changes: [] };
     }
 
@@ -448,29 +449,39 @@ export class MenuFormatter {
     const allChanges: MenuFormatResult['changes'] = [];
 
     // Process menu sections
-    if (processed.sections && Array.isArray(processed.sections)) {
-      for (const section of processed.sections) {
-        if (section.items && Array.isArray(section.items)) {
-          for (let i = 0; i < section.items.length; i++) {
-            const item = section.items[i];
-            
-            if (item.label && typeof item.label === 'string') {
+    if (
+      processed.sections &&
+      TypeValidators.isArrayOf(processed.sections, (section): section is Record<string, unknown> => TypeGuards.isPlainObject(section))
+    ) {
+      for (const section of processed.sections as Array<Record<string, unknown>>) {
+        if (
+          section.items &&
+          TypeValidators.isArrayOf(
+            section.items,
+            (item): item is Record<string, unknown> => TypeGuards.isPlainObject(item),
+          )
+        ) {
+          const items = section.items as Array<Record<string, any>>;
+          for (let i = 0; i < items.length; i++) {
+            const item = items[i];
+
+            if (TypeGuards.isNonEmptyString(item.label)) {
               const state: SelectionState = {
                 isSelected: false,
                 isHovered: false,
                 isActive: false,
                 isDisabled: item.enabled === false,
                 index: i,
-                totalItems: section.items.length
+                totalItems: items.length,
               };
 
               const selector = this.selector.formatSelector(state, options);
-              const originalLabel = item.label;
-              
+              const originalLabel = item.label as string;
+
               // Add selector if not already present
               if (!this.hasSelector(originalLabel)) {
-                item.label = selector + originalLabel;
-                
+                item.label = `${selector}${originalLabel}`;
+
                 allChanges.push({
                   position: 0,
                   before: originalLabel,
