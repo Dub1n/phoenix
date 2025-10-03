@@ -8,39 +8,39 @@
 
 ## Canonical Categories
 
-| Category | Scope | Typical Artifacts |
-|----------|-------|-------------------|
-| architecture | Cross-system structure, boundaries, and coordination mechanics. | High-level orchestration specs, integration blueprints. |
-| foundation | Core abstractions shared across features (base types, shared policies). | Primitive interfaces, base models, shared policies. |
-| infrastructure | Platform services and runtime plumbing that keep the system operating. | Logging, error handling, async foundations, platform adapters. |
-| integration | Bridges that connect internal modules or external systems. | Adapter patterns, protocol bridges, service orchestration. |
-| business-logic | Domain-driven rules that express product behaviour. | Workflow engines, decision logic, policy evaluators. |
-| configuration | Configuration surfaces and management patterns. | Schema definitions, config loaders, diff/validation logic. |
-| data-management | Storage modelling, persistence, and transformation concerns. | Repository patterns, serializers, data pipelines. |
-| development-tools | Tooling that improves developer productivity. | Debug utilities, scaffolding scripts, local automation. |
-| display-ui | Presentation-specific utilities and rendering helpers. | Terminal components, theming systems, layout utilities. |
-| initialization | Bootstrap and startup sequences. | Lifecycle managers, bootstrappers, startup orchestration. |
-| quality | Quality governance outside dedicated testing artefacts. | Checklists, validation policies, readiness gates. |
-| resilience | Reliability patterns covering fault handling and recovery. | Circuit breakers, fallback managers, health remediation. |
-| routing | Control-flow and request/command routing. | Command routers, event dispatchers, messaging bridges. |
-| system | Cross-cutting system coordination that does not fit a narrower layer. | Multi-subsystem orchestrators, meta-controls. |
-| testing | Test strategy patterns and test harness utilities. | Unit testing patterns, coverage governance. |
-| testing-integration | Integration/acceptance testing specifics. | End-to-end harnesses, contract verification guides. |
-| operations | Runbooks, observability, and day-two operational practices. | Runbook frameworks, incident playbooks, telemetry rollouts. |
-| compliance | Regulatory, security, audit enablement. | Compliance checklists, audit hooks, evidence pipelines. |
-| enablement | Partner onboarding, support, and organisational readiness. | Training guides, change-management packages, enablement scripts. |
+| Category            | Scope                                                                   | Typical Artifacts                                                |
+| ------------------- | ----------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| architecture        | Cross-system structure, boundaries, and coordination mechanics.         | High-level orchestration specs, integration blueprints.          |
+| foundation          | Core abstractions shared across features (base types, shared policies). | Primitive interfaces, base models, shared policies.              |
+| infrastructure      | Platform services and runtime plumbing that keep the system operating.  | Logging, error handling, async foundations, platform adapters.   |
+| integration         | Bridges that connect internal modules or external systems.              | Adapter patterns, protocol bridges, service orchestration.       |
+| business-logic      | Domain-driven rules that express product behaviour.                     | Workflow engines, decision logic, policy evaluators.             |
+| configuration       | Configuration surfaces and management patterns.                         | Schema definitions, config loaders, diff/validation logic.       |
+| data-management     | Storage modelling, persistence, and transformation concerns.            | Repository patterns, serializers, data pipelines.                |
+| development-tools   | Tooling that improves developer productivity.                           | Debug utilities, scaffolding scripts, local automation.          |
+| display-ui          | Presentation-specific utilities and rendering helpers.                  | Terminal components, theming systems, layout utilities.          |
+| initialization      | Bootstrap and startup sequences.                                        | Lifecycle managers, bootstrappers, startup orchestration.        |
+| quality             | Quality governance outside dedicated testing artefacts.                 | Checklists, validation policies, readiness gates.                |
+| resilience          | Reliability patterns covering fault handling and recovery.              | Circuit breakers, fallback managers, health remediation.         |
+| routing             | Control-flow and request/command routing.                               | Command routers, event dispatchers, messaging bridges.           |
+| system              | Cross-cutting system coordination that does not fit a narrower layer.   | Multi-subsystem orchestrators, meta-controls.                    |
+| testing             | Test strategy patterns and test harness utilities.                      | Unit testing patterns, coverage governance.                      |
+| testing-integration | Integration/acceptance testing specifics.                               | End-to-end harnesses, contract verification guides.              |
+| operations          | Runbooks, observability, and day-two operational practices.             | Runbook frameworks, incident playbooks, telemetry rollouts.      |
+| compliance          | Regulatory, security, audit enablement.                                 | Compliance checklists, audit hooks, evidence pipelines.          |
+| enablement          | Partner onboarding, support, and organisational readiness.              | Training guides, change-management packages, enablement scripts. |
 
 ## Legacy Label Mapping
 
-| Legacy Label | Canonical Category | Required Action |
-|--------------|-------------------|-----------------|
-| `Foundation` | foundation | Update frontmatter to lowercase. |
-| `Infrastructure` | infrastructure | Update frontmatter to lowercase. |
-| `Integration` | integration | Update frontmatter to lowercase. |
-| `core-infrastructure` | infrastructure | Replace value and confirm content still matches scope. |
-| `core-infrastructure-utility` | infrastructure | Replace value; ensure utility-level docs also reference `infrastructure`. |
-| `resilience-infrastructure` | resilience | Replace value and adjust supporting text if it cites infrastructure. |
-| `ui` | display-ui | Replace with `display-ui`; verify document describes presentation-specific behaviour. |
+| Legacy Label                  | Canonical Category | Required Action                                                                       |
+| ----------------------------- | ------------------ | ------------------------------------------------------------------------------------- |
+| `Foundation`                  | foundation         | Update frontmatter to lowercase.                                                      |
+| `Infrastructure`              | infrastructure     | Update frontmatter to lowercase.                                                      |
+| `Integration`                 | integration        | Update frontmatter to lowercase.                                                      |
+| `core-infrastructure`         | infrastructure     | Replace value and confirm content still matches scope.                                |
+| `core-infrastructure-utility` | infrastructure     | Replace value; ensure utility-level docs also reference `infrastructure`.             |
+| `resilience-infrastructure`   | resilience         | Replace value and adjust supporting text if it cites infrastructure.                  |
+| `ui`                          | display-ui         | Replace with `display-ui`; verify document describes presentation-specific behaviour. |
 
 All other legacy labels already match canonical form; still confirm spelling and casing during audit.
 

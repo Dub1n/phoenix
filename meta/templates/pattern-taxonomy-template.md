@@ -13,42 +13,42 @@
 > - Collapse case variants and synonyms (e.g., `Foundation` → `foundation`, `ui` → `display-ui`).
 > - Document scope clearly so contributors can choose the correct label without creating ad-hoc alternatives.
 
-| Category | Scope | Typical Artifacts |
-|----------|-------|-------------------|
-| architecture | Cross-system structure, boundaries, coordination. |
-| foundation | Shared primitives and base abstractions. |
-| infrastructure | Platform/runtime plumbing (logging, async, adapters). |
-| integration | Bridges to other modules/services. |
-| business-logic | Domain workflow and policy enforcement. |
-| configuration | Configuration surfaces and validation. |
-| data-management | Storage, persistence, and data shaping. |
-| development-tools | Tooling that improves dev workflows. |
-| display-ui | Presentation utilities/components. |
-| initialization | Bootstrap/startup orchestration. |
-| quality | Governance and readiness gating. |
-| resilience | Reliability/fault tolerance patterns. |
-| routing | Command/event/request routing. |
-| system | Cross-cutting coordination that spans multiple subsystems. |
-| testing | Testing strategy and harness utilities. |
-| testing-integration | Integration/E2E/contract testing specifics. |
-| operations | Observability, runbooks, day-two concerns. |
-| compliance | Security/regulatory/audit enablement. |
-| enablement | Partner onboarding, support, change-management artefacts. |
+| Category            | Scope                                                      | Typical Artifacts |
+| ------------------- | ---------------------------------------------------------- | ----------------- |
+| architecture        | Cross-system structure, boundaries, coordination.          |                   |
+| foundation          | Shared primitives and base abstractions.                   |                   |
+| infrastructure      | Platform/runtime plumbing (logging, async, adapters).      |                   |
+| integration         | Bridges to other modules/services.                         |                   |
+| business-logic      | Domain workflow and policy enforcement.                    |                   |
+| configuration       | Configuration surfaces and validation.                     |                   |
+| data-management     | Storage, persistence, and data shaping.                    |                   |
+| development-tools   | Tooling that improves dev workflows.                       |                   |
+| display-ui          | Presentation utilities/components.                         |                   |
+| initialization      | Bootstrap/startup orchestration.                           |                   |
+| quality             | Governance and readiness gating.                           |                   |
+| resilience          | Reliability/fault tolerance patterns.                      |                   |
+| routing             | Command/event/request routing.                             |                   |
+| system              | Cross-cutting coordination that spans multiple subsystems. |                   |
+| testing             | Testing strategy and harness utilities.                    |                   |
+| testing-integration | Integration/E2E/contract testing specifics.                |                   |
+| operations          | Observability, runbooks, day-two concerns.                 |                   |
+| compliance          | Security/regulatory/audit enablement.                      |                   |
+| enablement          | Partner onboarding, support, change-management artefacts.  |                   |
 
 _Add or remove categories only after following the extension process below._
 
 ## Legacy Label Mapping
 
-| Legacy Label | Canonical Category | Notes |
-|--------------|-------------------|-------|
-| Foundation | foundation | replace during doc audit |
-| Infrastructure | infrastructure | replace during doc audit |
-| Integration | integration | replace during doc audit |
-| core-infrastructure | infrastructure | ensure supporting text still reads correctly |
-| core-infrastructure-utility | infrastructure | consolidate terminology across docs |
-| resilience-infrastructure | resilience | adjust references from infrastructure to resilience |
-| ui | display-ui | ensure content truly focuses on presentation |
-| <add additional project-specific rows here> | | |
+| Legacy Label                                | Canonical Category | Notes                                               |
+| ------------------------------------------- | ------------------ | --------------------------------------------------- |
+| Foundation                                  | foundation         | replace during doc audit                            |
+| Infrastructure                              | infrastructure     | replace during doc audit                            |
+| Integration                                 | integration        | replace during doc audit                            |
+| core-infrastructure                         | infrastructure     | ensure supporting text still reads correctly        |
+| core-infrastructure-utility                 | infrastructure     | consolidate terminology across docs                 |
+| resilience-infrastructure                   | resilience         | adjust references from infrastructure to resilience |
+| ui                                          | display-ui         | ensure content truly focuses on presentation        |
+| <add additional project-specific rows here> |                    |                                                     |
 
 ## Enforcement Rules
 

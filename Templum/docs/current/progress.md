@@ -1,9 +1,9 @@
 ---
 doc-type: progress
-title: Templum Progress Tracker
+name: Templum Progress Tracker
 tags: [templum, progress]
 status: current
-last_updated: 2025-10-02
+last_updated: 2025-10-03
 ---
 
 # Templum Progress Tracker
@@ -38,6 +38,7 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` not started · `[!]` broken · 
 - [ ] [Skin payload consumption powering full UI without hardcoding](../../dev/tasks/skin-payload-consumption.md)
 - [ ] [Procedural windowed TUI layout from skin descriptors](../../dev/tasks/procedural-windowed-tui.md)
 - [ ] [Asset validation](../../dev/tasks/skin-asset-validation.md) (media/localisation/command bindings)
+- [ ] [Universal Skin Engine convergence roadmap](../../dev/tasks/universal-skin-engine-convergence.md) (modularise current engine, absorb Phase 5 validation/caching, retire duplicate impl)
 
 ## Interface Delivery
 

@@ -5,6 +5,7 @@ Use this list before finalising any change. Mark items as you go and link the ch
 Legend: `[ ]` pending · `[x]` complete
 
 ## Core Checklist (all changes)
+
 - [ ] Update relevant code/tests.
 - [ ] Run required tests/validation commands.
 - [ ] Update canonical spec (`docs/current/architecture-spec.md` or equivalent) when behaviour changes.
@@ -17,21 +18,25 @@ Legend: `[ ]` pending · `[x]` complete
 ## Additional Checks by Change Type
 
 ### Feature / Enhancement (`#feature`)
+
 - [ ] Add/extend documentation explaining new behaviour.
 - [ ] Ensure Validation System coverage updated or planned.
 - [ ] Note migration considerations if existing users affected.
 
 ### Bugfix (`#bugfix`)
+
 - [ ] Document root cause and fix link in progress/task log.
 - [ ] Add regression test or monitoring hook.
 - [ ] Verify related requirements remain satisfied.
 
 ### Infrastructure / Refactor (`#infra`)
+
 - [ ] Update architecture diagrams or references impacted.
 - [ ] Confirm CI/validation scripts still pass.
 - [ ] Record decisions/ADRs if architectural choices changed.
 
 ### Documentation-only (`#docs`)
+
 - [ ] Ensure content is sourced from verified behaviour (or clearly marked otherwise).
 - [ ] Update archive index if deprecating files.
 - [ ] Alert owners of dependent docs if follow-up needed.

@@ -1,7 +1,7 @@
 ---
 date-created: 2025-09-01-0000
 last-updated: 2025-09-11-0000
-name: vscode-service-tree-provider-with-conditional-display
+name: vscode-service-tree-provider
 description: Implement conditional display logic using BackendCapabilityProfile to show only relevant information based on backend capabilities, with visual type indicators
 status: established
 category: infrastructure

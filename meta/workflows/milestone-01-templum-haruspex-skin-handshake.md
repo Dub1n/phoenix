@@ -27,12 +27,12 @@
 
 ## 3. Workstreams
 
-| Stream | Intent | Key tasks | Owners |
-| --- | --- | --- | --- |
-| Backend Discovery & Health | Ensure Templum auto-registers Haruspex over IPC/HTTP with correct health metadata. | `Templum/dev/tasks/multi-protocol-auto-registration.md`, `Templum/dev/tasks/zero-knowledge-registry.md` | Agent rotation (Templum platform) |
-| Skin Export Pipeline | Produce deterministic Haruspex skin payload and endpoint. | `Haruspex/dev/tasks/backend-skin-generator.md` | Agent rotation (Haruspex backend) |
-| Skin-Driven Rendering | Consume skin in Templum CLI/VSCode, retire hardcoded menus, ensure CLI generator uses metadata. | `Templum/dev/tasks/skin-payload-consumption.md`, `Templum/dev/tasks/cli-skin-generator.md` | Agent rotation (Templum interface) |
-| Validation & Evidence | Run Validation System backend category + targeted tests; capture outputs. | Validation System backlog (no specific task file yet) | Assigned once automation drafted |
+| Stream                     | Intent                                                                                          | Key tasks                                                                                               | Owners                             |
+| -------------------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| Backend Discovery & Health | Ensure Templum auto-registers Haruspex over IPC/HTTP with correct health metadata.              | `Templum/dev/tasks/multi-protocol-auto-registration.md`, `Templum/dev/tasks/zero-knowledge-registry.md` | Agent rotation (Templum platform)  |
+| Skin Export Pipeline       | Produce deterministic Haruspex skin payload and endpoint.                                       | `Haruspex/dev/tasks/backend-skin-generator.md`                                                          | Agent rotation (Haruspex backend)  |
+| Skin-Driven Rendering      | Consume skin in Templum CLI/VSCode, retire hardcoded menus, ensure CLI generator uses metadata. | `Templum/dev/tasks/skin-payload-consumption.md`, `Templum/dev/tasks/cli-skin-generator.md`              | Agent rotation (Templum interface) |
+| Validation & Evidence      | Run Validation System backend category + targeted tests; capture outputs.                       | Validation System backlog (no specific task file yet)                                                   | Assigned once automation drafted   |
 
 ## 4. Agent Operating Instructions
 

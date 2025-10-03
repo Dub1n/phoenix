@@ -22,14 +22,14 @@ Introduce the registry-driven workflow so agents can execute utility consolidati
 
 ## 1. Required Tools & References
 
-| Resource | Usage |
-| --- | --- |
-| `consolidation-state.json` | Single source of truth for stages, lanes, evidence, approvals. Updated exclusively via CLI. |
-| `consolidation-state.schema.json` | Schema enforced by the CLI/CI; use when validating manual edits during review. |
-| `npm run consolidate -- <command>` | Registry companion (status, update-lane, regen). |
-| Pattern spec (`Templum/dev/patterns/...`) | API contract and guardrails for your utility. |
-| `docs/current/testing-guide.md` | Test harness instructions and troubleshooting. |
-| `display-stack-alignment.md` or cohort spec | Cohort-level agreements referenced by registry dependencies. |
+| Resource                                    | Usage                                                                                       |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `consolidation-state.json`                  | Single source of truth for stages, lanes, evidence, approvals. Updated exclusively via CLI. |
+| `consolidation-state.schema.json`           | Schema enforced by the CLI/CI; use when validating manual edits during review.              |
+| `npm run consolidate -- <command>`          | Registry companion (status, update-lane, regen).                                            |
+| Pattern spec (`Templum/dev/patterns/...`)   | API contract and guardrails for your utility.                                               |
+| `docs/current/testing-guide.md`             | Test harness instructions and troubleshooting.                                              |
+| `display-stack-alignment.md` or cohort spec | Cohort-level agreements referenced by registry dependencies.                                |
 
 ## 2. Workflow Overview
 

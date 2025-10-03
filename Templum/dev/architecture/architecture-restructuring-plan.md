@@ -396,6 +396,16 @@ export class WindowManager {
 }
 ```
 
+### 5.3 Universal Skin Engine Convergence
+
+**Track work:** [`dev/tasks/universal-skin-engine-convergence.md`](../tasks/universal-skin-engine-convergence.md)
+
+**Long-term plan**:
+
+- Gradually modularise the current `UniversalSkinEngine` implementation into focused units (validation, rendering strategy, cache/metrics) so each module stays within SOLID thresholds and can be independently tested.
+- Lift the Phase 5 validation/caching improvements from `universal-skin-engine-impl.ts` into those modules, wiring them behind interfaces so the production engine keeps its PCL adapter and fallback orchestration.
+- After parity is reached, retire the duplicate Phase 5 class and keep a single engine that blends the hardened validation with the existing multi-interface capabilities.
+
 ## Phase 6: Backend Optimization (Session 6)
 
 ### 6.1 Backend Service Architecture

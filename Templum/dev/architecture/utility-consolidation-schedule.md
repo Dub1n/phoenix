@@ -42,7 +42,7 @@ dependencies: ['utility-consolidation-playbook', 'utility-consolidation-onboardi
 | 4     | [x]a [x]b [x]c      | [x]a [x]b [x]c      | [x]a [x]b [x]c      |
 | 5A    | [x]                 | [x]                 | [x]                 |
 | 5B    | [x]                 | [x]                 | [x]                 |
-| 6     | [x]a [x]b [~]c [x]d | [x]a [x]b [x]c [~]d | [x]a [x]b [~]c [~]d |
+| 6     | [x]a [x]b [x]c [x]d | [x]a [x]b [x]c [x]d | [x]a [x]b [x]c [x]d |
 | 7     | [ ]                 | [ ]                 | [ ]                 |
 | C     | [ ]                 | [ ]                 | [ ]                 |
 

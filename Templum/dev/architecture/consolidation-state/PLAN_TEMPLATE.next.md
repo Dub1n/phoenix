@@ -12,15 +12,15 @@ Use this section for qualitative notes that do not fit the registry data model (
 
 ### Stage Summary
 
-| Stage | Status | Completed At | Notes |
-| --- | --- | --- | --- |
-| 1 | {{stage1.status}} | {{stage1.completedAt}} | {{stage1.notes}} |
-| 2 | {{stage2.status}} | {{stage2.completedAt}} | {{stage2.notes}} |
-| 3 | {{stage3.status}} | {{stage3.completedAt}} | {{stage3.notes}} |
-| 4 | {{stage4.status}} | {{stage4.completedAt}} | {{stage4.notes}} |
-| 5 | {{stage5.status}} | {{stage5.completedAt}} | {{stage5.notes}} |
-| 6 | {{stage6.status}} | {{stage6.completedAt}} | {{stage6.notes}} |
-| 7 | {{stage7.status}} | {{stage7.completedAt}} | {{stage7.notes}} |
+| Stage | Status            | Completed At           | Notes            |
+| ----- | ----------------- | ---------------------- | ---------------- |
+| 1     | {{stage1.status}} | {{stage1.completedAt}} | {{stage1.notes}} |
+| 2     | {{stage2.status}} | {{stage2.completedAt}} | {{stage2.notes}} |
+| 3     | {{stage3.status}} | {{stage3.completedAt}} | {{stage3.notes}} |
+| 4     | {{stage4.status}} | {{stage4.completedAt}} | {{stage4.notes}} |
+| 5     | {{stage5.status}} | {{stage5.completedAt}} | {{stage5.notes}} |
+| 6     | {{stage6.status}} | {{stage6.completedAt}} | {{stage6.notes}} |
+| 7     | {{stage7.status}} | {{stage7.completedAt}} | {{stage7.notes}} |
 
 ### Stage 4 Lanes (Prerequisites)
 
@@ -52,14 +52,16 @@ Use this section for qualitative notes that do not fit the registry data model (
 
 | Type | Path | Description |
 | --- | --- | --- |
-{{#each evidence}}
+ {{#each evidence}}
 | {{type}} | {{path}} | {{description}} |
 {{/each}}
 
 ### Activity History
 
 {{#each activity}}
+
 #### {{timestamp}} — {{stage}}
+
 - **Agent**: {{agent}}
 - **Summary**: {{summary}}
 {{#if files}}- **Files**: {{formatFiles files}}

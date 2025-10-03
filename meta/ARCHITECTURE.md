@@ -5,6 +5,7 @@
 - Establish a living map of the active projects (Templum, Phoenix Code Lite, Haruspex, Validation System) and how they are intended to interoperate.
 - Capture the reality of the current state so future sessions can validate code paths, trim dead fronts, and rebuild the skin-based UI stack without rediscovering context.
 - Provide a scaffold that can be expanded project-by-project as deeper research and verification work is completed.
+- Reinforce that these systems are internal tooling whose purpose is to help VDL2 meet its regulated obligations.
 
 ## Scope & Exclusions
 
@@ -13,12 +14,12 @@
 
 ## Ecosystem Summary Snapshot
 
-| Project | Role | Target State | Current Reality |
-|---------|------|--------------|-----------------|
-| Templum | Universal skin-driven interface layer for VSCode/CLI/command tooling. | Backend router ready, CLI/UI generated from skins, multiple backends attach seamlessly. | Backend routing reportedly working; CLI generation mid-flight; still carries enterprise-scale ambitions that may exceed immediate needs. |
-| Phoenix Code Lite (PCL) | QMS-focused workflow engine and automation runtime. | Provides QMS tooling, emits skin definitions for Templum, no legacy code-gen surface left. | Still contains large portions of original agent-oriented code-gen stack; QMS rework docs exist but code status uncertain; front-end not adapted to skins. |
-| Haruspex | Analysis ~~+ prediction~~ backend to support agent/dev workflows. | Pure HTTP backend with auto-registration + skin export for Templum. | Migration from VSCode extension partially designed; implementation likely mixes real code with mocks/placeholder values; skin output not wired yet. |
-| Validation System | Category-driven validation orchestrator for agents and humans. | Acts as shared quality gate for repo projects. | Appears operational; used to coordinate per-project commands; needs confirmation it still runs end-to-end. |
+| Project                 | Role                                                                  | Target State                                                                               | Current Reality                                                                                                                                           |
+| ----------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Templum                 | Universal skin-driven interface layer for VSCode/CLI/command tooling. | Backend router ready, CLI/UI generated from skins, multiple backends attach seamlessly.    | Backend routing reportedly working; CLI generation mid-flight; still carries enterprise-scale ambitions that may exceed immediate needs.                  |
+| Phoenix Code Lite (PCL) | Internal QMS workflow engine translating regulations into actionable development data and automating compliance workflows for VDL2 teams. | Provides QMS tooling, emits skin definitions for Templum, no legacy code-gen surface left. | Still contains large portions of original agent-oriented code-gen stack; QMS rework docs exist but code status uncertain; front-end not adapted to skins. |
+| Haruspex                | Analysis ~~+ prediction~~ backend to support agent/dev workflows.     | Pure HTTP backend with auto-registration + skin export for Templum.                        | Migration from VSCode extension partially designed; implementation likely mixes real code with mocks/placeholder values; skin output not wired yet.       |
+| Validation System       | Category-driven validation orchestrator for agents and humans.        | Acts as shared quality gate for repo projects.                                             | Appears operational; used to coordinate per-project commands; needs confirmation it still runs end-to-end.                                                |
 
 ## Integration Overview
 
@@ -40,7 +41,7 @@
   - Backend discovery/service router documented as functional; relies on priority-based scanning and chokidar observers.
   - CLI/skin rendering layer mid-refactor; enterprise feature set (multi-interface adapters, resilience utilities) may be over-scoped for immediate deliverables.
   - Utilities consolidation and logging/error handling refactors planned but not executed.
-  - Pattern taxonomy reference: `Templum/docs/current/pattern-taxonomy.md` (canonical category enum and maintenance process).
+  - [Pattern taxonomy reference](Templum/docs/current/pattern-taxonomy.md): Canonical category enum and maintenance process.
 - **Ideal Requirements (target architecture):**
   - **Universal Interface Core**
     - Maintains zero-knowledge backend registry; discovers services via auto-registration, filesystem watches, and explicit connect operations without prior schema coupling.
@@ -77,18 +78,18 @@
   - Discovery code depending on file system state not aligned with current dev setups.
   - Lack of verified skins could hide misalignments in renderer assumptions.
 
-- **Current-State Spec:** `Templum/docs/current/architecture-spec.md` (updated with reality checks; verify flagged sections before assuming production readiness).
-- **Progress Tracker:** `Templum/docs/current/progress.md` (status of ideal requirements; update alongside spec).
-- **Task Logs:** `Templum/dev/tasks/` (e.g., `unified-session-layer.md`).
-- **Ideal-State References:** `Templum/dev/architecture/` plans and `Templum/dev/CLI/` flows document the end goal. Keep in sync with the spec when implementation progresses.
+- **[Current-State Spec](Templum/docs/current/architecture-spec.md):** (updated with reality checks; verify flagged sections before assuming production readiness).
+- **[Progress Tracker](Templum/docs/current/progress.md):** (status of ideal requirements; update alongside spec).
+- **[Task Logs](Templum/dev/tasks/):** (e.g., [unified-session-layer](unified-session-layer.md)).
+- **Ideal-State References:** [plans](Templum/dev/architecture/) and [flows](Templum/dev/CLI/) document the end goal. Keep in sync with the spec when implementation progresses.
 - **Pending Review / Verification Files:**
-  - `Templum/dev/patterns/README.md` — needs refresh to reflect latest pattern consolidation.
-  - `Templum/docs/target/ValidationSystem-V3C-Documentation.md` — confirm which V3C features will ship and sync with Validation System team.
-  - `Templum/docs/archive/observability-infrastructure.md` & `Templum/docs/archive/TEST-HEALTH-MONITORING.md` — historical detail retained; revisit after verifying observability rollout.
+  - [Pattern README](Templum/dev/patterns/README.md) — needs refresh to reflect latest pattern consolidation. *In Progress*
+  - [ValidationSystem-V3C-Documentation](Templum/docs/target/ValidationSystem-V3C-Documentation.md) — confirm which V3C features will ship and sync with Validation System team.
+  - [observability-infrastructure](Templum/docs/archive/observability-infrastructure.md) & [TEST-HEALTH-MONITORING](Templum/docs/archive/TEST-HEALTH-MONITORING.md) — historical detail retained; revisit after verifying observability rollout.
 
 ### 2. Phoenix Code Lite (QMS edition)
 
-- **Mission Snapshot:** Transitioned from agent workflow generator to QMS tooling supporting regulated medical-device development (Rust/Web stack).
+- **Mission Snapshot:** Transitioned from agent workflow generator to an internal QMS tooling stack that lets VDL2 teams translate regulatory source material into governed requirements, guided workflows, and audit-ready evidence.
 - **Current Implementation Notes:**
   - QMS documentation roadmap extensive; technical code may still reflect old workflow generation patterns.
   - Front-end/UI layer not stripped; no skin emission for Templum yet.
@@ -98,9 +99,11 @@
     - Represents design inputs, requirements, risks, verification activities, CAPA records, and release packages with immutable audit history.
     - Supports bidirectional traceability (requirement ⇄ design ⇄ test ⇄ release) with exportable matrices suitable for IEC 62304 and AAMI TIR45 evidence.
     - Stores regulatory metadata (standards clauses, status, owners, timestamps) in structured, queryable form.
-  - **Workflow Automation**
+    - Ingests regulatory source material (e.g., EN 62304, MDR Rule 11) via guided workflows or assisted parsing so classifications/obligations become first-class data.
+  - **Workflow Automation & Assistance**
     - Orchestrates lifecycle states for work items (draft → review → approved → released) with gated transitions and electronic signatures where needed.
     - Generates QMS artifacts (forms, reports, SOP references) programmatically from data model; exports to markdown/PDF.
+    - Guides developers and QA through compliance-critical tasks with contextual instructions, checklists, and SOP shortcuts.
     - Integrates with Validation System to attach automated check results to work items, blocking promotion when validators fail.
     - Provides configurable templates for different release types (prototype, production, emergency fix) with tailored validation bundles.
   - **Interface & Skin Output**
@@ -111,6 +114,7 @@
     - Offers API/CLI endpoints for ingesting commit metadata, linking external repositories, and synchronizing validation results.
     - Supports plug-in validators/adapters (e.g., tying into external CI pipelines) while maintaining QMS traceability.
     - Provides audit logging hooks aligned with regulatory requirements (tamper detection, retention policies, time sync).
+    - Hosts regulatory ingestion adapters (guided UI flows, assisted parsing pipelines) so new requirements are captured without rewriting the core engine.
   - **Operational Guarantees**
     - Enforces configuration validation at startup (ensuring required validators, templates, storage paths exist).
     - Supports offline/online modes matching future distributed deployment (local data store with sync queues).
@@ -129,15 +133,15 @@
   - Potential security/compliance gaps if old agent features remain active.
   - Lack of clarity on how Rust/web deliverable interfaces with PCL services.
 
-- **Current-State Spec:** `phoenix-code-lite/docs/current/architecture-spec.md` (summarises QMS pivot and outstanding work).
-- **Supplemental Diagrams:** `phoenix-code-lite/docs/current/index/ARCHITECTURE-DIAGRAM.md` (legacy context diagrams—see spec for current caveats).
-- **Progress Tracker:** `phoenix-code-lite/docs/current/progress.md` (mirrors QMS requirements status).
-- **Task Logs:** `phoenix-code-lite/dev/tasks/` (e.g., `skin-exporter.md`).
-- **Ideal-State References:** `docs/03-PCL-QMS/` (notably `09-Current-State.md`, `03-QMS-via-PCL.md`) capture the regulated target model.
+- **[Current-State Spec](phoenix-code-lite/docs/current/architecture-spec.md):** Summarises QMS pivot and outstanding work.
+- **[Supplemental Diagrams](phoenix-code-lite/docs/current/index/ARCHITECTURE-DIAGRAM.md):** Legacy context diagrams—see spec for current caveats.
+- **[Progress Tracker](phoenix-code-lite/docs/current/progress.md):** Mirrors QMS requirements status.
+- **[Task Logs](phoenix-code-lite/dev/tasks/):** e.g., [skin-exporter](phoenix-code-lite/dev/tasks/skin-exporter.md).
+- **[Ideal-State References](docs/03-PCL-QMS/):** Notably [09-Current-State](docs/03-PCL-QMS/09-Current-State.md), [03-QMS-via-PCL](docs/03-PCL-QMS/03-QMS-via-PCL.md) capture the regulated target model.
 - **Pending Review / Verification Files:**
-  - `phoenix-code-lite/docs/archive/Phoenix-Code-Lite-Specification.md` — legacy Claude/TDD spec kept for reference; confirm if any sections need porting to QMS docs.
-  - `phoenix-code-lite/dev/cli/CLI-IMPLEMENTATION-SUMMARY.md` — confirm applicability once CLI is skin-driven.
-  - `phoenix-code-lite/src/claude/` & related agent modules — audit for deprecation during QMS migration.
+  - [Phoenix-Code-Lite-Specification](phoenix-code-lite/docs/archive/Phoenix-Code-Lite-Specification.md) — legacy Claude/TDD spec kept for reference; confirm if any sections need porting to QMS docs.
+  - [CLI-IMPLEMENTATION-SUMMARY](phoenix-code-lite/dev/cli/CLI-IMPLEMENTATION-SUMMARY.md) — confirm applicability once CLI is skin-driven.
+  - [Claude folder](phoenix-code-lite/src/claude/) & related agent modules — audit for deprecation during QMS migration.
 
 ### 3. Haruspex
 
@@ -181,15 +185,15 @@
   - Placeholder data providing false sense of readiness.
   - Model/prediction pipelines unspecified or missing.
 
-- **Current-State Spec:** `Haruspex/docs/current/architecture-spec.md` (updated with migration caveats).
-- **Progress Tracker:** `Haruspex/docs/current/progress.md` (tracks migration readiness of backend).
-- **Task Logs:** `Haruspex/dev/tasks/` (e.g., `backend-skin-generator.md`).
-- **Ideal-State References:** `Haruspex/dev/architecture/` & `dev/03-debugging/` documents outline the desired backend + tooling experience.
+- **[Current-State Spec](Haruspex/docs/current/architecture-spec.md):** updated with migration caveats.
+- **[Progress Tracker](Haruspex/docs/current/progress.md):** tracks migration readiness of backend.
+- **[Task Logs](Haruspex/dev/tasks/):** e.g., [backend-skin-generator](Haruspex/dev/tasks/backend-skin-generator.md).
+- **Ideal-State References:** [architecture folder](Haruspex/dev/architecture/) & [03-debugging folder](Haruspex/dev/03-debugging/) documents outline the desired backend + tooling experience.
 - **Pending Review / Verification Files:**
-  - `Haruspex/docs/archive/Haruspex-2.0-spec.md` — decide whether any content aids the migration notes.
-  - `Haruspex/docs/archive/01-Claude-Code-Integration-Architecture.md` — legacy integration doc kept for historical reference; ensure new backend fully decouples from Claude.
-  - `Haruspex/src/extension.ts`, `Haruspex/src/extension-enhanced.ts` — evaluate for removal after backend separation.
-  - `Haruspex/src/providers/` and `Haruspex/src/components/` that emit WebViews — confirm which can be replaced by skin outputs.
+  - [Haruspex-2.0-spec.md](Haruspex/docs/archive/Haruspex-2.0-spec.md) — decide whether any content aids the migration notes.
+  - [01-Claude-Code-Integration-Architecture.md](Haruspex/docs/archive/01-Claude-Code-Integration-Architecture.md) — legacy integration doc kept for historical reference; ensure new backend fully decouples from Claude.
+  - [extension.ts](Haruspex/src/extension.ts), [extension-enhanced.ts](Haruspex/src/extension-enhanced.ts) — evaluate for removal after backend separation.
+  - [providers/ folder](Haruspex/src/providers/) and [omponents/ folder](Haruspex/src/components/) that emit WebViews — confirm which can be replaced by skin outputs.
 
 ### 4. Validation System
 
@@ -230,13 +234,13 @@
   - Lack of automated tests ensuring orchestrator compatibility with evolving Node versions.
   - Missing coverage for new Templum/Haruspex workflows (e.g., skin validation).
 
-- **Current-State Spec:** `scripts/validation/docs/current/architecture-spec.md` (callouts added for re-validation of command assumptions).
-- **Progress Tracker:** `scripts/validation/docs/current/progress.md` (status of validator ecosystem goals).
-- **Task Logs:** `scripts/validation/dev/tasks/` (e.g., `policy-engine.md`).
-- **Ideal-State References:** `scripts/validation/docs/target/architecture/VALIDATION-SYSTEM-ARCHITECTURE-README.md` + `scripts/validation/docs/current/guides/CORE-VALIDATION-README.md` describe the intended modular validator ecosystem.
+- **[Current-State Spec](scripts/validation/docs/current/architecture-spec.md):** callouts added for re-validation of command assumptions.
+- **[Progress Tracker](scripts/validation/docs/current/progress.md):** status of validator ecosystem goals.
+- **[Task Logs](scripts/validation/dev/tasks/):** e.g., [policy-engine](scripts/validation/dev/tasks/policy-engine.md).
+- **Ideal-State References:** [VALIDATION-SYSTEM-ARCHITECTURE-README](scripts/validation/docs/target/architecture/VALIDATION-SYSTEM-ARCHITECTURE-README.md) + [CORE-VALIDATION-README](scripts/validation/docs/current/guides/CORE-VALIDATION-README.md) describe the intended modular validator ecosystem.
 - **Pending Review / Verification Files:**
-  - `scripts/validation/templates/README.md` — confirm templates still match orchestrator expectations.
-  - `scripts/validation/config/` project manifests — audit for drift once per project integration resumes.
+  - [README.md](scripts/validation/templates/README.md) — confirm templates still match orchestrator expectations.
+  - [project manifests folder](scripts/validation/config/) — audit for drift once per project integration resumes.
 
 ---
 
@@ -244,7 +248,7 @@
 
 - **Skin Definition Contract:** Define schema expectations, source-of-truth repositories, versioning strategy, and validation tooling.
 - **Runtime Topology:** Document local dev vs. deployment (e.g., how Templum discovers services running on localhost, port management, environment variables).
-- **QMS Alignment:** Map how each service supports regulated workflows (traceability, audit logs, security controls).
+- **QMS Alignment:** Map how each service enables VDL2 teams to satisfy regulated workflows (traceability, audit logs, security controls) without the tooling itself becoming the regulated deliverable.
 - **Agent/Human UX:** Clarify how Claude Code (if still used) interacts with new architecture, and what human operator tooling remains necessary.
 - **Security & Compliance:** Analyze authentication, authorization, and logging once services are network-facing.
 
@@ -254,7 +258,7 @@
 
 ### Repository-Wide
 
-- [ ] Confirm README/CLAUDE.md guidance aligns with actual project priorities and excludes deprecated initiatives.
+- [-] Confirm README/CLAUDE.md guidance aligns with actual project priorities and excludes deprecated initiatives. *superceded by AGENTS.md*
 - [ ] Map all active npm scripts to ensure they execute successfully or document failures with root causes.
 - [ ] Inventory documentation vs. code drift; flag files whose content predates major refactors (esp. pre-QMS PCL docs).
 - [ ] Validate shared TypeScript/Node versions across projects to avoid tooling conflicts.
@@ -278,7 +282,7 @@
 
 ### Haruspex
 
-- [ ] Launch the standalone backend (`node dist/src/backend-main.js` or equivalent) and verify health, analysis, and skin endpoints.
+- [ ] Launch the standalone backend (run `node` against [backend-main.js](dist/src/backend-main.js) or equivalent) and verify health, analysis, and skin endpoints.
 - [ ] Inspect responses for mock/placeholder content; flag areas needing real implementations.
 - [ ] Evaluate dependency on VSCode APIs by running without VSCode context; record failures.
 - [ ] Exercise debugging CLI/IPC tools to ensure agent workflows are functional.

@@ -48,22 +48,22 @@ Terminal output currently mixes raw `chalk` calls, ad-hoc glyphs, and inconsiste
 
 Captured via `rg -c "chalk" Templum/src`:
 
-| File | Direct `chalk` references | Notes |
-|------|--------------------------|-------|
-| `Templum/src/mcp-channel/src/visual-feedback-system.ts` | 47 | Status/completion banners, inline diagnostics |
-| `Templum/src/cli-entry.ts` | 51 | Boot banners, menu prompts, progress output |
-| `Templum/src/interfaces/cli-adapter-abstracted.ts` | 44 | Menu rendering, error messaging |
-| `Templum/src/interfaces/terminal-ui-components.ts` | 35 | Theme definitions with scattered styling |
-| `Templum/src/interfaces/interactive-menu-renderer.ts` | 27 | Selection highlighting, paging hints |
-| `Templum/src/interfaces/navigation/border-renderer.ts` | 19 | Border glyph definitions |
-| `Templum/src/rendering/content-layout-system.ts` | 9 | Section headers, separators |
-| `Templum/src/interfaces/enhanced-window-system.ts` | 9 | Focused window chrome |
-| `Templum/src/rendering/universal-layout-engine.ts` | 7 | Layout diagnostics |
-| `Templum/src/interfaces/terminal-compatibility-detector.ts` | 5 | Capability probes duplicating formatter logic |
-| `Templum/src/interfaces/universal-interaction-manager.ts` | 4 | Inline prompts |
-| `Templum/src/interfaces/navigation/width-calculator.ts` | 3 | Border previews |
-| `Templum/src/interfaces/window-layout-manager.ts` | 1 | Legacy heading styling |
-| `Templum/src/utils/terminal-formatter.ts` | 5 | Existing formatter internals; once consolidated, no other modules keep direct `chalk` imports |
+| File                                                        | Direct `chalk` references | Notes                                                                                         |
+| ----------------------------------------------------------- | ------------------------- | --------------------------------------------------------------------------------------------- |
+| `Templum/src/mcp-channel/src/visual-feedback-system.ts`     | 47                        | Status/completion banners, inline diagnostics                                                 |
+| `Templum/src/cli-entry.ts`                                  | 51                        | Boot banners, menu prompts, progress output                                                   |
+| `Templum/src/interfaces/cli-adapter-abstracted.ts`          | 44                        | Menu rendering, error messaging                                                               |
+| `Templum/src/interfaces/terminal-ui-components.ts`          | 35                        | Theme definitions with scattered styling                                                      |
+| `Templum/src/interfaces/interactive-menu-renderer.ts`       | 27                        | Selection highlighting, paging hints                                                          |
+| `Templum/src/interfaces/navigation/border-renderer.ts`      | 19                        | Border glyph definitions                                                                      |
+| `Templum/src/rendering/content-layout-system.ts`            | 9                         | Section headers, separators                                                                   |
+| `Templum/src/interfaces/enhanced-window-system.ts`          | 9                         | Focused window chrome                                                                         |
+| `Templum/src/rendering/universal-layout-engine.ts`          | 7                         | Layout diagnostics                                                                            |
+| `Templum/src/interfaces/terminal-compatibility-detector.ts` | 5                         | Capability probes duplicating formatter logic                                                 |
+| `Templum/src/interfaces/universal-interaction-manager.ts`   | 4                         | Inline prompts                                                                                |
+| `Templum/src/interfaces/navigation/width-calculator.ts`     | 3                         | Border previews                                                                               |
+| `Templum/src/interfaces/window-layout-manager.ts`           | 1                         | Legacy heading styling                                                                        |
+| `Templum/src/utils/terminal-formatter.ts`                   | 5                         | Existing formatter internals; once consolidated, no other modules keep direct `chalk` imports |
 
 ## Solution Overview
 
@@ -171,17 +171,20 @@ Migration priority should follow the heaviest duplication first:
 ## Validation Checklist
 
 ### Before Implementation
+
 - [ ] Capture current `chalk` reference counts per file (`rg -o "chalk"`).
 - [ ] Snapshot terminal capability requirements for the target modules (Unicode usage, colour depth assumptions).
 - [ ] Confirm theme dependencies—identify any modules using bespoke palettes that must move into `theme-utils` first.
 
 ### During Implementation
+
 - [ ] Replace imports with `TerminalFormatter` or `createFormatter` and ensure only formatter methods remain.
 - [ ] Verify semantics: each replacement must map to an appropriate formatter method (status/UI/data/interactive/system).
 - [ ] Ensure accessibility by manually testing a no-colour scenario (`FORCE_COLOR=0 node ...`) or by injecting capabilities with `supportsUnicode: false`.
 - [ ] Monitor `formatter.getCacheStats()` in dev runs to confirm cache hit rate trends upward (>70% after warm-up loops).
 
 ### After Implementation
+
 - [ ] Run CLI smoke scripts (see `meta/workflows/milestone-01-templum-haruspex-skin-handshake.md`) and confirm output parity.
 - [ ] Re-run `rg -o "chalk"` to ensure only `src/utils/terminal-formatter.ts` retains direct `chalk` usage.
 - [ ] Document migration progress in `safe-consolidation-candidates.md` (tick the pattern row, note files completed).

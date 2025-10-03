@@ -43,6 +43,7 @@ Pause at stage boundaries when the session ends. Always run `npm run consolidate
 5. When Stage 1 readiness is met, re-run `update-stage` to mark status `complete`. CLI enforces required notes and at least one activity entry.
 
 Outputs:
+
 - Stage 1 gate `complete` in registry (with timestamp/notes).
 - Stage 4 lanes pre-seeded with scope/commands.
 - Generated plan/ tracker reflect Stage 1 completion after regeneration.
@@ -57,6 +58,7 @@ Outputs:
 4. Provide command evidence (command string, timestamp, exit code, log path) when prompted; CLI stores it in `stageGates["2"]` and `evidence` array.
 
 Outputs:
+
 - Stage 2 gate complete with associated test commands.
 - Updated registry evidence enabling automated regeneration of Stage 2 notes in plan/tracker.
 
@@ -70,6 +72,7 @@ Outputs:
 4. On completion, mark Stage 3 `complete`. CLI records timestamp and prompts for coordination notes (referencing dependency pattern IDs).
 
 Outputs:
+
 - Stage 4 lanes fully defined.
 - Activity log entry referencing Stage 3 summary.
 
@@ -78,12 +81,14 @@ Outputs:
 **Inputs**: Stage 3 plan, Stage 4 lane definitions, shared guardrails.
 
 For each Stage 4 lane (e.g., `4a`, `4b`, `4c`):
+
 1. Run `npm run consolidate -- update-lane <patternId> 4a --status in_progress` before executing tasks.
 2. Execute commands; log each via CLI prompt (command, log path, exit code, executedAt). CLI refuses `complete` status until all commands are recorded.
 3. If blockers surface, set lane `blocked` with `notes` describing the issue. CLI automatically adds Stage 3 activity entry for required replan.
 4. Once all Stage 4 lanes are `complete`, the CLI sets Stage 4 gate to `complete` and announces readiness for Stage 5.
 
 Outputs:
+
 - Stage 4 gate `complete` with evidence per lane.
 - Dependencies satisfied to unlock Stage 5 alignment.
 
@@ -97,6 +102,7 @@ Outputs:
 4. Mark Stage 5 `ready` once all acknowledgements and evidence exist. CLI prevents `complete` until Stage 6 lanes begin.
 
 Outputs:
+
 - Cohort approvals recorded in registry.
 - Stage 6 lanes flagged `pending` with gating evidence attached.
 
@@ -105,6 +111,7 @@ Outputs:
 **Inputs**: Stage 5 readiness, Stage 6 lane definitions, gating evidence.
 
 For each lane (`6a`–`6d`):
+
 1. `npm run consolidate -- update-lane <patternId> 6a --status in_progress` before modifying consumers.
 2. Execute commands; provide log paths and exit codes when CLI prompts.
 3. CLI enforces dependencies (e.g., Lane 6c requires Patterns 6/7 Stage 5 `ready`). Override requires `--force` and adds audit note.
@@ -112,6 +119,7 @@ For each lane (`6a`–`6d`):
 5. If new prerequisites emerge, set lane `blocked`; the CLI requests Stage 3 update before allowing further Stage 6 transitions.
 
 Outputs:
+
 - Stage 6 lane statuses with full evidence trail.
 - Generated plan/tracker show lane completion, and activity log captures each lane entry.
 
@@ -124,6 +132,7 @@ Outputs:
 3. Ensure pattern documentation, testing guide references, and `display-stack-alignment.md` (if applicable) are updated; note paths in CLI prompt.
 
 Outputs:
+
 - Stage 7 gate complete with evidence.
 - Activity log entry summarizing closeout and follow-ups.
 - Registry `stage` auto-advances to 7 with timestamp.
@@ -141,13 +150,13 @@ Outputs:
 
 ## Quick Reference Commands
 
-| Action | Command |
-| --- | --- |
-| Show status | `npm run consolidate -- status 5` |
-| Claim pattern | `npm run consolidate -- claim 5 --agent Codex` |
-| Update stage | `npm run consolidate -- update-stage 5 3 --status complete --notes "Stage 3 readiness"` |
-| Update lane | `npm run consolidate -- update-lane 5 6a --status complete --log tmp/... --exit 0` |
-| Regenerate docs | `npm run consolidate -- regen` |
-| Dry-run | Append `--dry-run` to any command |
+| Action          | Command                                                                                 |
+| --------------- | --------------------------------------------------------------------------------------- |
+| Show status     | `npm run consolidate -- status 5`                                                       |
+| Claim pattern   | `npm run consolidate -- claim 5 --agent Codex`                                          |
+| Update stage    | `npm run consolidate -- update-stage 5 3 --status complete --notes "Stage 3 readiness"` |
+| Update lane     | `npm run consolidate -- update-lane 5 6a --status complete --log tmp/... --exit 0`      |
+| Regenerate docs | `npm run consolidate -- regen`                                                          |
+| Dry-run         | Append `--dry-run` to any command                                                       |
 
 Follow this playbook to maintain a fail-safe consolidation workflow with minimal duplication and auditable progress.

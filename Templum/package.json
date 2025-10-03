@@ -113,7 +113,8 @@
     "test:health-status": "node scripts/test-health-monitor.js status",
     "coverage:reality-check": "node scripts/coverage-reality-check.js",
     "prepare": "cd .. && husky install Templum/.husky || true",
-    "precommit": "npm run check:types && npm run check:tests && npm run test:health"
+    "precommit": "npm run check:types && npm run check:tests && npm run test:health",
+    "generate:pattern-readme": "ts-node dev/patterns/scripts/generate-readme.ts"
   },
   "keywords": [
     "templum",
@@ -160,7 +161,8 @@
     "ts-node": "^10.9.2",
     "typescript": "^5.9.2",
     "typescript-eslint": "^8.41.0",
-    "why-is-node-running": "^3.2.2"
+    "why-is-node-running": "^3.2.2",
+    "yaml": "^2.8.1"
   },
   "overrides": {
     "glob": "^10.0.0"

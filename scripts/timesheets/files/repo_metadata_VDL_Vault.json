@@ -28369,8 +28369,8 @@
       "size": 13055
     },
     {
-      "path": "patterns/vscode-service-tree-provider-with-conditional-display.md",
-      "name": "vscode-service-tree-provider-with-conditional-display.md",
+      "path": "patterns/vscode-service-tree-provider.md",
+      "name": "vscode-service-tree-provider.md",
       "created": 1757705737.4932497,
       "modified": 1757594164.1907928,
       "size": 7270

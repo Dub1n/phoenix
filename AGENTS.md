@@ -1,101 +1,63 @@
-# AGENTS.md
+# Repository Guidelines
 
-## Command Tool
+## Project Structure & Key Docs
+- `Templum/` (primary focus) keeps source in `src/`, tests in `tests/` and `src/tests/`; launch sample backends from `examples/minimal-backend/` when running connectivity suites.
+- Partner systems live in `Haruspex/`, `phoenix-code-lite/`, and `scripts/validation/`; read their current specs before altering shared contracts.
+- Canonical references: `Templum/docs/current/architecture-spec.md`, `Templum/docs/current/progress.md`, `Templum/docs/current/testing-guide.md`, `meta/ARCHITECTURE.md`, `meta/DOC_HYGIENE.md`, `meta/workflows/README.md`.
+- Cross-repo communication and engineering rules are in `dev/notes/AGENTS.md`; local guidance inherits from that file.
 
-- Default to bash commands via `["bash","-lc", …]`; switch shells only when explicitly required (invoke PowerShell with `["powershell.exe","-NoProfile", …]`).
+## Architecture & MVP Focus
+- Goal: achieve the Ideal Requirements in the Templum architecture spec across Universal Interface Core, Backend Connectivity, Skin-Driven Rendering, Interface Delivery, and Quality & Release Readiness.
+- Preserve the zero-knowledge backend registry—use `ServiceDiscovery`/`ConnectionFactory` without backend-specific assumptions; any manual override must keep outputs schema-validated (`Templum/dev/tasks/manual-override-flow.md`).
+- All interfaces must render skins only; eliminate bespoke CLI/VSCode UI, keep adapters consuming `UniversalSkinDefinition` payloads.
+- When touching Haruspex or Phoenix Code Lite integration points, sync the change with their specs, progress trackers, and task files in the same commit.
 
-## Placeholders
+## Mission-Critical Priorities
+- **Universal Interface Core:** finish `dev/tasks/unified-session-layer.md` and re-verify `zero-knowledge-registry.md`; land versioned skin contract enforcement before adapter work.
+- **Backend Connectivity:** unblock `multi-protocol-auto-registration.md`, `connection-lifecycle-events.md`, and keep telemetry aligned with `observability-instrumentation.md`.
+- **Skin-Driven Rendering:** complete `skin-payload-consumption.md`, `procedural-windowed-tui.md`, `skin-asset-validation.md`, and the Universal Skin Engine convergence plan.
+- **Interface Delivery:** stabilise VSCode startup (`vscode-initialisation-stability.md`) and finish the CLI skin generator migration (`cli-skin-generator.md`).
+- **Quality & Release:** raise `phase6-validation-signal.md`, execute `test-architecture-governance.md`, progress release hardening, go/no-go checklist, and audit/security tasks.
+- Update `Templum/docs/current/progress.md` and the relevant `dev/tasks/*.md` whenever status changes; leave dated TODO markers if work stays partial.
 
-- Never add mocks or placeholders unless the user explicitly requests them.
+## Onboarding Checklist
+1. Read the canonical specs/tests docs listed above plus active playbooks (e.g., `meta/workflows/milestone-01-templum-haruspex-skin-handshake.md`).
+2. Review utility governance: `Templum/dev/architecture/utility-consolidation-onboarding.md`, `Templum/dev/architecture/utility-consolidation-playbook.md`, and your assigned `utility-consolidation-plans/pattern-*.md` entry; log your stage in the activity log.
+3. Map affected code with `rg` before editing; note consumers in the Stage 1/2 sections of the pattern plan.
+4. Confirm environment: Node.js 20.x, `npm install` run in `Templum/` and `examples/minimal-backend/`, ports `3001-3004` free, `.templum/services/` clear.
+5. Validate Phase 6 harness availability (`npm run phase6-health`) before committing backend/registry changes.
 
-## DRY
+## Build & Test Commands
+- `cd Templum && npm install` — install dependencies (rerun in `examples/minimal-backend/`).
+- `npm test` — full Jest suite (unit + integration).
+- `npm run test:ci` — CI-hardened Jest (`--runInBand --detectOpenHandles`).
+- `npm run test:coverage` — generate coverage report; expect ≥80% on new utilities.
+- `npm run phase6-validation` — build + mock backend validation; add `PHASE6_RUN_REAL=1 npm run phase6-validation:full` for live services.
+- `npm run phase6-health` / `npm run phase6-health:real` — registry/health probes; confirm `.templum/services/` is cleaned afterward.
+- `npx jest --config jest.backend.config.js` — backend integration focus with extended timeouts.
 
-- Remove duplicated logic by extracting reusable functions, components, or higher-order helpers, and regression-test shared code before reuse.
+## Coding & Design Standards
+- Follow the cross-repo directives in `dev/notes/AGENTS.md`: default to `["bash","-lc",…]`, avoid placeholders, favour TDD for new work, keep files <500 lines (warn at 400) and functions <40 lines, prefer dependency injection and extension over modification.
+- TypeScript on Node 20.x, 2-space indentation, intention-revealing names; share utilities through logger/error-handler/`configureDisplayStack` seams and respect pattern docs in `Templum/dev/patterns/`.
+- Remove duplication via shared helpers and regression-test reused code before rollout; record helper reuse in the pattern plan.
+- Ensure new modules honour SOLID: composition over inheritance, interface segregation, no hard-coded backend knowledge.
 
-## Test-Driven Development (TDD)
+## Testing & Quality Expectations
+- Co-locate tests with code (`*.test.ts`/`*.spec.ts`); use TDD when adding utilities or infrastructure.
+- Keep ports `3001-3004` free; clear `.templum/services/` if suites crash before teardown.
+- Document leak fixes when `npm run test:ci` fails due to open handles—add cleanup logic and rerun.
+- Always update architecture spec, progress tracker, testing guide, and task logs together; use `meta/DOC_CHANGE_CHECKLIST.md` before committing.
+- When tests remain pending, state the gap and proposed plan in your summary per cross-repo guidance.
 
-- Prefer TDD for new features and infrastructure; relax it for small tweaks, lightweight harnesses, or code already covered by quick commands when speed matters.
-- Write tests before code: lean on unit tests for isolated behavior, integration tests for module interactions, ≥80% coverage, and mocks/stubs to control dependencies.
-- When you find untested areas: (1) finish the assigned task, (2) flag missing tests and affected components in your summary, (3) wait for user direction on writing them, (4) if told to “present test plan,” draft the plan for the user to complete, then, when building the tests, inspect implementation details as needed, fold any new insights back into the plan, and call out those additions in your summary.
+## Validation & Evidence Logging
+- Capture command outputs (Phase 6 logs, coverage reports) in the relevant Stage sections of `utility-consolidation-plans/pattern-*.md` and link artefacts in progress/task docs.
+- For Stage 3–6 hand-offs, append Activity Log entries noting commands executed (e.g., ``npm run phase6-validation -- --verbose``) and evidence paths.
+- Mark uncertain spec sections with `Status: Needs Verification` callouts instead of silent drift.
+- Archive or update superseded docs immediately, referencing the change in `meta/DOC_HYGIENE.md` expectations.
 
-## SOLID Design Principles
-
-### Single Responsibility Principle
-
-- Keep files under 500 lines (treat ~400 as a prompt to split; never let 1000 linger); group small files logically and limit each class to one reason to change within a single abstraction.
-- Keep functions under ~30–40 lines and reassess classes once they pass ~100–150 lines; use the thresholds as cues to evaluate structure, separate cross-cutting concerns from core logic, and dedicate classes to data access, business rules, or UI as needed.
-- Use descriptive, single-purpose method names; if the description needs “and/or,” refactor; prefer composition over inheritance when combining behaviors.
-
-### Open/Closed Principle
-
-- Design modules for extension, not modification; rely on abstracts/interfaces, configuration, dependency injection, clear extension hooks, and strategy-style polymorphism while avoiding type-check chains.
-
-### Liskov Substitution Principle
-
-- Ensure subclasses honor base invariants, declared exceptions, and pre/postconditions; avoid no-op or exception-only overrides, type checks, and downcasts; choose composition when full substitution is impossible.
-
-### Interface Segregation Principle
-
-- Provide focused, cohesive interfaces, splitting bloated contracts so consumers depend only on the methods they need, and expose granular APIs per client.
-
-### Dependency Inversion Principle
-
-- Depend on abstractions and inject dependencies where it keeps modules decoupled; use factories, containers, or simple wiring based on scale, review inheritance for LSP compliance, refactor toward SOLID regularly, lean on patterns like Strategy/Decorator/Factory/Observer, keep names intention-revealing (avoid `data`/`info`/`helper`/`temp`), code for future scaling, and bake in extension points from day one while favoring composition within sound OO design.
-
-### Warning Signs
-
-- Watch for god classes, behavior-changing boolean flags, deep inheritance, dependency knowledge leaks, circular references, unrelated coupling, rapidly expanding classes, and parameter-heavy methods.
-
-## Modular Design
-
-- Keep modules interchangeable, testable, and isolated; if something cannot be reused across screens or projects, refactor and reduce coupling with dependency injection or protocols.
-
-## Manager and Coordinator Patterns
-
-- Separate responsibilities: ViewModel handles UI logic, Manager handles business rules, Coordinator manages navigation/flow; never mix view code with business logic.
-
-## Project Settings and Data
-
-- Always check for existing CLI interactions (e.g., `npx sanity --help`) before writing custom scripts.
-
-## TypeScript
-
-### Content Modelling
-
-- When working on Sanity schemas, model domain concepts rather than presentation; describe attributes like `status`, not `color`, unless explicitly modelling views.
-
-### Basic Schema Types
-
-- In Sanity schema files, always use `defineType`, `defineField`, and `defineArrayMember`; place schema types in dedicated files exporting a named `const` that matches the filename.
-- Use only `name` unless a different `title` is required; for `string` fields with fewer than five `options.list` items set `options.layout: "radio"` and ensure every `image` includes `options.hotspot: true`.
-- Provide concise `description` text, apply `rule.warning()` where length guidance helps, and add explicit `rule.required().error("<Message>")` reasons.
-- Replace booleans with string select lists, never use single `reference` fields (always arrays of references), and order fields from most to least important.
-
-### Dependency Injection
-
-- Favor dependency injection via interfaces and maintain registries or containers so modules stay loosely coupled and testable.
-
-## Autonomy
-
-- Complete immediate follow-up work (tests, quality checks, documentation, related updates) without additional prompting, but confirm with the user before tackling sizable or risky follow-ups.
-
-## Communication
-
-- Exclude emojis, filler, hype, or conversational transitions; stay directive, suppress engagement/sentiment cues, and focus on reinforcing the user’s independent reasoning.
-
-## Teaching
-
-- Provide right-sized implementation context, and when the user shows confusion, explain the relevant systems and your approach in an instructive, task-aligned way.
-
-## Troubleshooting
-
-### File Editing
-
-- After three failed edit attempts caused by tooling issues, share the intended contents or >100-line diff in chat and ask the user to apply it.
-
-## Repository Integration
-
-- Treat this file as the canonical cross-repo guidance; when creating a repo-specific `AGENTS.md`, fold in only the sections that apply to that codebase and drop language- or tool-specific rules that are irrelevant.
-- Summarize shared rules instead of pasting duplicates—link back to the cross-repo document or reference the section name so future global updates apply automatically.
-- Merge repo-specific conventions ahead of these global directives so the local policies take precedence, then note that remaining sections inherit from the cross-repo guidance.
-- When a repo requires extra emphasis on a global rule, inline a short reminder rather than copying the entire section; keep the combined document under the same clarity and length standards as the rest of this file.
+## Workflow & Communication
+- Use short, imperative commit subjects (e.g., `Add skin asset validation guard`); list executed commands and touched docs in the body.
+- Pull requests must link relevant progress/task files, note test commands, and highlight documentation updates or pending verification.
+- Communication stays directive and professional—no emojis or filler; reinforce user reasoning and explicitly flag risks or blockers.
+- Respect utility consolidation stage gates; never skip Stage 3–5 planning. Escalate blockers instead of bypassing the playbook.
+- When introducing new interfaces or adapters, confirm DI seams remain substitutable and document mitigation if any SOLID rule is at risk.

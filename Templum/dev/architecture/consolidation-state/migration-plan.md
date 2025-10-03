@@ -56,12 +56,12 @@
 
 ## Risks & Mitigations
 
-| Risk | Mitigation |
-| --- | --- |
-| Agents forget to run CLI | Add reminder in Stage 6 gating checklist; instrument lint rule that fails if registry missing expected activity entry. |
-| CLI errors block urgent work | Provide manual override flag (`--force`) that logs the bypass and requires follow-up review. |
-| Schema becomes too rigid | Versioned schema allows incremental evolution; maintain migration scripts between versions. |
-| Generated docs lose context | Preserve free-form appendices; ensure historical activity entries imported before flip. |
+| Risk                         | Mitigation                                                                                                             |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Agents forget to run CLI     | Add reminder in Stage 6 gating checklist; instrument lint rule that fails if registry missing expected activity entry. |
+| CLI errors block urgent work | Provide manual override flag (`--force`) that logs the bypass and requires follow-up review.                           |
+| Schema becomes too rigid     | Versioned schema allows incremental evolution; maintain migration scripts between versions.                            |
+| Generated docs lose context  | Preserve free-form appendices; ensure historical activity entries imported before flip.                                |
 
 ## Success Criteria
 

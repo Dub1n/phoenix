@@ -1,6 +1,6 @@
 ---
 doc-type: operations-guide
-title: [Project Name] Testing Guide
+name: [Project Name] Testing Guide
 tags: [project, testing, qa]
 status: draft
 last_updated: TODO-YYYY-MM-DD
@@ -22,26 +22,29 @@ last_updated: TODO-YYYY-MM-DD
 
 ## 2. Quick Command Reference
 
-| Command | When to use | Notes |
-| --- | --- | --- |
-| `npm test` | Default unit/integration suite. | Include typical runtime, coverage behaviour. |
+| Command               | When to use                           | Notes                                               |
+| --------------------- | ------------------------------------- | --------------------------------------------------- |
+| `npm test`            | Default unit/integration suite.       | Include typical runtime, coverage behaviour.        |
 | `npx jest --config …` | Example of scoped/integration config. | Highlight serial execution, detectOpenHandles, etc. |
-| `npm run <script>` | Long-running harness or smoke test. | Capture prerequisites, output locations. |
+| `npm run <script>`    | Long-running harness or smoke test.   | Capture prerequisites, output locations.            |
 
 Add/edit rows to reflect the project’s script surface.
 
 ## 3. Suite Taxonomy
 
 ### 3.1 Unit Tests
+
 - Location/glob pattern.
 - Runtime expectations (seconds, parallel).
 - Dependencies/mocks worth knowing about.
 
 ### 3.2 Integration Tests
+
 - Breakdown by subsystem (backend, interfaces, adapters, etc.).
 - Explain when to run individually vs. part of the full suite.
 
 ### 3.3 Long-Running / End-to-End Suites
+
 - Describe harness behaviour (e.g., spawns services, uses Playwright).
 - Document timeouts and exit expectations (Ctrl+C handling, cleanup guard rails).
 

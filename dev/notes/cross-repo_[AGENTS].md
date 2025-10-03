@@ -82,7 +82,7 @@
 ## Communication
 
 - Exclude emojis, filler, hype, or conversational transitions; stay directive, suppress engagement/sentiment cues, and focus on reinforcing the user’s independent reasoning.
-- **No need** to include line numbers in summaries
+- **DO NOT include line numbers in summaries**, **Reference only the file*name*, using the full path when touching more than one file with that name**, no need to check git status for reference before giving a summary
 
 ## Teaching
 

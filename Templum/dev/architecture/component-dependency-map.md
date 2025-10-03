@@ -42,7 +42,7 @@ graph TB
         UIM[Universal Interface Manager<br/>Interface Switching]
     end
     
-    subgraph "Backend Integration Layer [CORE ANALYSIS FOCUS]"
+    subgraph "Backend Integration Layer"
         BSR[Backend Service Router<br/>⚠️ 31K+ tokens - OVERSIZED]
         SD[Service Discovery<br/>✅ Well-designed - 1027 lines]
         CF[Connection Factory<br/>✅ Good abstraction - 570 lines]

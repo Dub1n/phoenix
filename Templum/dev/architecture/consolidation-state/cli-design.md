@@ -8,13 +8,13 @@
 
 ## Command Surface
 
-| Command | Purpose |
-| --- | --- |
-| `npm run consolidate -- status <patternId>` | Show registry snapshot (stage, pending lanes, blocking dependencies, latest evidence). |
-| `npm run consolidate -- claim <patternId> --agent <name>` | Assign ownership / refresh timestamps. |
+| Command                                                   | Purpose                                                                                    |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `npm run consolidate -- status <patternId>`               | Show registry snapshot (stage, pending lanes, blocking dependencies, latest evidence).     |
+| `npm run consolidate -- claim <patternId> --agent <name>` | Assign ownership / refresh timestamps.                                                     |
 | `npm run consolidate -- update-lane <patternId> <laneId>` | Guided prompt to mark a lane `in_progress` or `complete`, capturing commands and evidence. |
-| `npm run consolidate -- reopen <patternId> <laneId>` | Roll back a lane to `pending`/`blocked` (forces plan/hand-off review). |
-| `npm run consolidate -- regen` | Regenerate Markdown views (plans, tracker, activity log). |
+| `npm run consolidate -- reopen <patternId> <laneId>`      | Roll back a lane to `pending`/`blocked` (forces plan/hand-off review).                     |
+| `npm run consolidate -- regen`                            | Regenerate Markdown views (plans, tracker, activity log).                                  |
 
 All subcommands operate on `consolidation-state.json`, validate via the schema, and ensure projections are refreshed when the state changes.
 

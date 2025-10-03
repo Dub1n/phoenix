@@ -18,7 +18,7 @@ Existing version:
 - runs locally
 - no integrated tests, manually tested before every update
 New version:
-- Written all in Rust
+- Written in Rust
 - Integrated unit tests (ideally for backend and frontend so no manual testing needed)
 - Web-based: the interface will be a web page (or web-view? i.e the same thing runs in a browser but could be a local app that just displays it) and the backend runs on a remote server such as, but not necessarily, AWS. Can run on any standard browser (not on mobile)
 - Local version: the same interface will be able to connect to a local runtime for offline machines (ideally the same code, or as much of the same code as possible, the remote server uses) (runs on windows but would be good to run on MacOS if a port is easy)

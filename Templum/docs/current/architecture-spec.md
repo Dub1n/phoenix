@@ -13,7 +13,7 @@ last_updated: 2025-09-22
 - **Purpose:** Universal interface orchestrator that renders backend-defined skins across CLI, VSCode, and future interfaces without hardcoded knowledge.
 - **Current Status:** In migration—backend discovery works, but the skin-driven UI and shared session model still need implementation/verification.
 - **Key Dependencies:** Haruspex and Phoenix Code Lite backends; Validation System for runtime checks.
-- **Documentation Links:** `docs/current/progress.md`, `docs/current/testing-guide.md`, `docs/target/ValidationSystem-V3C-Documentation.md`, pattern references under `dev/patterns/`.
+- **Documentation Links:** [progress](docs/current/progress.md), [testing guide](docs/current/testing-guide.md), [V3C](docs/target/ValidationSystem-V3C-Documentation.md), pattern references under `dev/patterns/`.
 
 ## 1. Current State Snapshot
 >
@@ -41,15 +41,15 @@ last_updated: 2025-09-22
 
 ## 3. Ideal Requirements vs. Status
 
-| Requirement | Status | Notes |
-|-------------|--------|-------|
-| Zero-knowledge backend registry | `[~]` | Discovery works; re-verify health/priority logic. |
-| Versioned skin contract enforcement | `[~]` | Schema validation planned; tests missing. |
-| Unified session/context layer | `[ ]` | See `dev/tasks/unified-session-layer.md`. |
-| Skin-driven CLI/VSCode UI | `[ ]` | Renderer refactor outstanding. |
-| Observability instrumentation | `[?]` | Blueprint archived; confirm runtime wiring. |
-| Haruspex backend integration | `[~]` | Pending skin output + API alignment. |
-| PCL skin ingestion | `[ ]` | Awaiting PCL exporter prototype. |
+| Requirement                         | Status | Notes                                             |
+| ----------------------------------- | ------ | ------------------------------------------------- |
+| Zero-knowledge backend registry     | `[~]`  | Discovery works; re-verify health/priority logic. |
+| Versioned skin contract enforcement | `[~]`  | Schema validation planned; tests missing.         |
+| Unified session/context layer       | `[ ]`  | See `dev/tasks/unified-session-layer.md`.         |
+| Skin-driven CLI/VSCode UI           | `[ ]`  | Renderer refactor outstanding.                    |
+| Observability instrumentation       | `[?]`  | Blueprint archived; confirm runtime wiring.       |
+| Haruspex backend integration        | `[~]`  | Pending skin output + API alignment.              |
+| PCL skin ingestion                  | `[ ]`  | Awaiting PCL exporter prototype.                  |
 
 (Refer to `docs/current/progress.md` for the full matrix.)
 
@@ -62,14 +62,14 @@ last_updated: 2025-09-22
 
 ### Phase 6 Validation CLI Reference
 
-| Command | Purpose | Defaults | Real Backend Trigger |
-|---------|---------|----------|----------------------|
-| `npm run phase6-validation` | Build artifacts then execute the Phase 6 suite against mock backends with contract enforcement. | Sets `PHASE6_USE_REAL_BACKENDS=0`, `PHASE6_SKIP_HARUSPEX=1`; fails fast on payload drift via mock harness schemas. | Opt in later with env or flags when needed. |
-| `npm run phase6-validation:full` | Dual-run helper that always executes the mock pass and, when enabled, immediately repeats against live services. | Respects `PHASE6_SKIP_BUILD=1` / `--no-build` to reuse dist output. | Set `PHASE6_RUN_REAL=1` (or pass `--real`/`--with-real`) to append the real backend pass; exports `PHASE6_USE_REAL_BACKENDS=1`, `PHASE6_SKIP_HARUSPEX=0` automatically. |
-| `npm run phase6-validation:real` | Direct real-backend sweep without the mock pre-run (pipelines that already trust mocks). | Rebuilds before execution; expects services reachable. | Always runs with real backends; mock harness unused. |
-| `npm run phase6-health` | Health probe sequence against mock services (contract-validated). | Same default env as `phase6-validation`. | Use `--use-real-backends` flag or env override to hit live services. |
-| `npm run phase6-health:real` | Health probe sequence against live services. | Rebuilds before execution. | Always targets real services. |
-| `node dist/src/scripts/run-phase6-integration-validation.js run --use-real-backends` | Low-level entry point for custom automation. | Caller manages env flags. | Passing `--use-real-backends` (or setting `PHASE6_USE_REAL_BACKENDS=1`) enables real services; pair with `PHASE6_SKIP_HARUSPEX=0` once Haruspex availability is confirmed. |
+| Command                                                                              | Purpose                                                                                                          | Defaults                                                                                                           | Real Backend Trigger                                                                                                                                                       |
+| ------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run phase6-validation`                                                          | Build artifacts then execute the Phase 6 suite against mock backends with contract enforcement.                  | Sets `PHASE6_USE_REAL_BACKENDS=0`, `PHASE6_SKIP_HARUSPEX=1`; fails fast on payload drift via mock harness schemas. | Opt in later with env or flags when needed.                                                                                                                                |
+| `npm run phase6-validation:full`                                                     | Dual-run helper that always executes the mock pass and, when enabled, immediately repeats against live services. | Respects `PHASE6_SKIP_BUILD=1` / `--no-build` to reuse dist output.                                                | Set `PHASE6_RUN_REAL=1` (or pass `--real`/`--with-real`) to append the real backend pass; exports `PHASE6_USE_REAL_BACKENDS=1`, `PHASE6_SKIP_HARUSPEX=0` automatically.    |
+| `npm run phase6-validation:real`                                                     | Direct real-backend sweep without the mock pre-run (pipelines that already trust mocks).                         | Rebuilds before execution; expects services reachable.                                                             | Always runs with real backends; mock harness unused.                                                                                                                       |
+| `npm run phase6-health`                                                              | Health probe sequence against mock services (contract-validated).                                                | Same default env as `phase6-validation`.                                                                           | Use `--use-real-backends` flag or env override to hit live services.                                                                                                       |
+| `npm run phase6-health:real`                                                         | Health probe sequence against live services.                                                                     | Rebuilds before execution.                                                                                         | Always targets real services.                                                                                                                                              |
+| `node dist/src/scripts/run-phase6-integration-validation.js run --use-real-backends` | Low-level entry point for custom automation.                                                                     | Caller manages env flags.                                                                                          | Passing `--use-real-backends` (or setting `PHASE6_USE_REAL_BACKENDS=1`) enables real services; pair with `PHASE6_SKIP_HARUSPEX=0` once Haruspex availability is confirmed. |
 
 **Environment knobs:**
 
