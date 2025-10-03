@@ -798,12 +798,84 @@ export class MultiSystemWorkflowOrchestrator extends EventEmitter {
       service: 'pcl',
       interface: 'http',
       payload: {
-        analysisResults: analysisStep.response,
+        analysisResults: this.extractAnalysisResults(analysisStep.response),
         nextAction: 'refactor',
         qualityGateValidation: true
       }
     });
     workflow.steps.push(coordinationStep);
+  }
+
+  private extractAnalysisResults(response: any): {
+    score: number;
+    recommendations: string[];
+    coverage?: number;
+    issues?: string[];
+  } {
+    const raw = response?.analysisResults ?? response ?? {};
+    const scoreValue = typeof raw.score === 'number' ? raw.score : 0;
+    const score = Math.min(100, Math.max(0, scoreValue));
+
+    const recommendationSource = Array.isArray(raw.recommendations) ? raw.recommendations : [];
+    const recommendations = recommendationSource.map((entry: unknown) => String(entry));
+
+    if (recommendationSource.length === 0 || typeof raw.score !== 'number') {
+      console.warn('MultiSystemWorkflowOrchestrator: analysis results missing expected fields, applying defaults');
+    }
+
+    const sanitized: {
+      score: number;
+      recommendations: string[];
+      coverage?: number;
+      issues?: string[];
+    } = { score, recommendations };
+
+    if (typeof raw.coverage === 'number') {
+      sanitized.coverage = raw.coverage;
+    }
+
+    if (Array.isArray(raw.issues)) {
+      sanitized.issues = raw.issues.map((issue: unknown) => String(issue));
+    }
+
+    return sanitized;
+  }
+
+  private extractSkinDefinition(response: any): {
+    id: string;
+    name: string;
+    version: string;
+    metadata: { source: string; generatedAt: number };
+    components: Record<string, unknown>[];
+  } {
+    const raw = response?.skinDefinition ?? response ?? {};
+
+    if (!raw.id || !raw.name || !raw.version) {
+      console.warn('MultiSystemWorkflowOrchestrator: skin definition missing identifiers, applying defaults');
+    }
+
+    const metadataSource = raw.metadata ?? {};
+    const metadata = {
+      source: typeof metadataSource.source === 'string' && metadataSource.source.length > 0 ? metadataSource.source : 'mock-harness',
+      generatedAt: typeof metadataSource.generatedAt === 'number' ? metadataSource.generatedAt : Date.now(),
+    };
+
+    const componentsArray = Array.isArray(raw.components) ? raw.components : [];
+    const components = componentsArray.map((component: unknown) => {
+      if (component && typeof component === 'object') {
+        return component as Record<string, unknown>;
+      }
+
+      return { value: component };
+    });
+
+    return {
+      id: typeof raw.id === 'string' && raw.id.length > 0 ? raw.id : 'mock-skin',
+      name: typeof raw.name === 'string' && raw.name.length > 0 ? raw.name : 'Mock Haruspex Skin',
+      version: typeof raw.version === 'string' && raw.version.length > 0 ? raw.version : '1.0.0',
+      metadata,
+      components,
+    };
   }
 
   /**
@@ -830,7 +902,7 @@ export class MultiSystemWorkflowOrchestrator extends EventEmitter {
       service: 'templum',
       interface: 'websocket',
       payload: {
-        skinDefinition: skinStep.response,
+        skinDefinition: this.extractSkinDefinition(skinStep.response),
         targetInterface: 'universal',
         optimizationLevel: 'production'
       }

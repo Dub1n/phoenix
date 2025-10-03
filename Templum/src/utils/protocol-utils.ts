@@ -1,7 +1,9 @@
 import { EventEmitter } from 'events';
 import { createLogger, Logger } from './logger';
 import { handleAsync } from './error-handler';
-import { withTimeout, retry as asyncRetry, TIMEOUTS } from './async-utils';
+import { AsyncUtils, TIMEOUTS } from './async-utils';
+import { TypeAssertions, TypeGuards, TypeValidators } from './type-guards';
+import { createTemplumError } from '../types/templum-types';
 
 type ProtocolType = 'ipc' | 'http' | 'https' | 'websocket' | 'custom';
 
@@ -123,50 +125,52 @@ const DEFAULT_VALIDATOR: ProtocolMessageValidator = (message, config) => {
   const issues: ProtocolMessageValidationIssue[] = [];
   let confidence = 1;
 
-  if (!message) {
+  if (!TypeGuards.isPlainObject(message)) {
     issues.push({
       type: 'missing-field',
       severity: 'critical',
-      message: 'Message payload is missing'
+      message: 'Message payload is missing',
     });
     return { isValid: false, confidence: 0, issues };
   }
 
-  if (typeof message.type !== 'string' || message.type.trim().length === 0) {
+  const typedMessage = message as ProtocolMessage;
+
+  if (!TypeGuards.isNonEmptyString(typedMessage.type)) {
     issues.push({
       type: 'missing-field',
       severity: 'high',
       message: 'Message type must be a non-empty string',
-      suggestion: 'Provide semantic message type identifiers'
+      suggestion: 'Provide semantic message type identifiers',
     });
     confidence *= 0.2;
   }
 
-  if (config.allowedMessageTypes && !config.allowedMessageTypes.includes(message.type)) {
+  if (config.allowedMessageTypes && !config.allowedMessageTypes.includes(typedMessage.type)) {
     issues.push({
       type: 'security',
       severity: 'critical',
-      message: `Message type "${message.type}" is not allowed`,
-      suggestion: 'Register message types explicitly before sending'
+      message: `Message type "${typedMessage.type}" is not allowed`,
+      suggestion: 'Register message types explicitly before sending',
     });
     confidence *= 0.1;
   }
 
-  if (message.payload === undefined) {
+  if (typedMessage.payload === undefined) {
     issues.push({
       type: 'missing-field',
       severity: 'medium',
-      message: 'Message payload should not be undefined'
+      message: 'Message payload should not be undefined',
     });
     confidence *= 0.8;
   }
 
-  if (typeof message.payload === 'string' && message.payload.length > 32768) {
+  if (TypeGuards.isString(typedMessage.payload) && typedMessage.payload.length > 32_768) {
     issues.push({
       type: 'size',
       severity: 'medium',
       message: 'Payload exceeds recommended size of 32KB',
-      suggestion: 'Consider streaming large payloads or chunking content'
+      suggestion: 'Consider streaming large payloads or chunking content',
     });
     confidence *= 0.7;
   }
@@ -174,7 +178,7 @@ const DEFAULT_VALIDATOR: ProtocolMessageValidator = (message, config) => {
   return {
     isValid: issues.length === 0,
     confidence,
-    issues
+    issues,
   };
 };
 
@@ -217,22 +221,125 @@ export class ProtocolSession extends EventEmitter {
   private transportErrorHandler?: (error: unknown) => void;
   private transportCloseHandler?: () => void;
 
+  private static normalizeConfig(config: ProtocolConfig): ProtocolConfig {
+    const candidate: ProtocolConfig = { ...config };
+
+    try {
+      TypeAssertions.assertPropertyExists(candidate as unknown, 'type', {
+        typeGuard: TypeGuards.isNonEmptyString,
+      });
+    } catch (_error) {
+      throw createTemplumError(
+        'Protocol config requires a non-empty type',
+        'PROTOCOL_CONFIG_INVALID',
+        'validation',
+        { field: 'type', value: candidate.type },
+      );
+    }
+
+    const allowedTypes: ProtocolType[] = ['ipc', 'http', 'https', 'websocket', 'custom'];
+    if (!allowedTypes.includes(candidate.type)) {
+      throw createTemplumError(
+        `Protocol config type '${candidate.type}' is not supported`,
+        'PROTOCOL_CONFIG_INVALID',
+        'validation',
+        { field: 'type', value: candidate.type },
+      );
+    }
+
+    try {
+      TypeAssertions.assertPropertyExists(candidate as unknown, 'connection', {
+        typeGuard: TypeGuards.isPlainObject,
+      });
+    } catch {
+      throw createTemplumError(
+        'Protocol config requires a connection object',
+        'PROTOCOL_CONFIG_INVALID',
+        'validation',
+        { field: 'connection', value: candidate.connection },
+      );
+    }
+
+    candidate.connection = { ...candidate.connection } as ProtocolConfig['connection'];
+
+    if (candidate.allowedMessageTypes !== undefined) {
+      if (!TypeValidators.isArrayOf(candidate.allowedMessageTypes, TypeGuards.isNonEmptyString)) {
+        throw createTemplumError(
+          'Protocol config allowedMessageTypes must be an array of non-empty strings',
+          'PROTOCOL_CONFIG_INVALID',
+          'validation',
+          { field: 'allowedMessageTypes', value: candidate.allowedMessageTypes },
+        );
+      }
+      candidate.allowedMessageTypes = [...candidate.allowedMessageTypes];
+    }
+
+    if (candidate.timeoutMs !== undefined && !TypeGuards.isNumber(candidate.timeoutMs)) {
+      throw createTemplumError(
+        'Protocol config timeoutMs must be numeric',
+        'PROTOCOL_CONFIG_INVALID',
+        'validation',
+        { field: 'timeoutMs', value: candidate.timeoutMs },
+      );
+    }
+
+    if (candidate.retries !== undefined && !TypeGuards.isNumber(candidate.retries)) {
+      throw createTemplumError(
+        'Protocol config retries must be numeric',
+        'PROTOCOL_CONFIG_INVALID',
+        'validation',
+        { field: 'retries', value: candidate.retries },
+      );
+    }
+
+    if (candidate.autoReconnect !== undefined && !TypeGuards.isBoolean(candidate.autoReconnect)) {
+      throw createTemplumError(
+        'Protocol config autoReconnect must be boolean',
+        'PROTOCOL_CONFIG_INVALID',
+        'validation',
+        { field: 'autoReconnect', value: candidate.autoReconnect },
+      );
+    }
+
+    if (candidate.idleTimeoutMs !== undefined && !TypeGuards.isNumber(candidate.idleTimeoutMs)) {
+      throw createTemplumError(
+        'Protocol config idleTimeoutMs must be numeric',
+        'PROTOCOL_CONFIG_INVALID',
+        'validation',
+        { field: 'idleTimeoutMs', value: candidate.idleTimeoutMs },
+      );
+    }
+
+    if (candidate.validator !== undefined && !TypeGuards.isFunction(candidate.validator)) {
+      throw createTemplumError(
+        'Protocol config validator must be a function',
+        'PROTOCOL_CONFIG_INVALID',
+        'validation',
+        { field: 'validator' },
+      );
+    }
+
+    return candidate;
+  }
+
   constructor(adapter: ProtocolAdapter, transport: ProtocolTransport, config: ProtocolConfig, logger: Logger) {
     super();
-    this.id = config.id ?? transport.id ?? createId(`protocol-${config.type}`);
-    this.type = config.type;
+    const normalizedConfig = ProtocolSession.normalizeConfig(config);
+
+    this.id = normalizedConfig.id ?? transport.id ?? createId(`protocol-${normalizedConfig.type}`);
+    this.type = normalizedConfig.type;
     this.adapter = adapter;
     this.transport = transport;
     this.logger = logger.child(`protocol:${this.type}:${this.id}`);
     this.config = {
       ...DEFAULT_CONFIG,
-      ...config,
+      ...normalizedConfig,
       connection: {
         maxConnections: 5,
-        ...config.connection
-      }
+        ...normalizedConfig.connection,
+      },
     };
-    this.validator = config.validator ?? DEFAULT_VALIDATOR;
+    this.validator = normalizedConfig.validator ?? DEFAULT_VALIDATOR;
     this.state = {
       id: this.id,
       type: this.type,
@@ -263,24 +370,29 @@ export class ProtocolSession extends EventEmitter {
 
     const validation = this.validator(message, this.config);
     if (!validation.isValid) {
-      const error = new Error(`Invalid protocol message: ${validation.issues.map(issue => issue.message).join('; ')}`);
+      const templumError = createTemplumError(
+        `Invalid protocol message: ${validation.issues.map(issue => issue.message).join('; ')}`,
+        'PROTOCOL_MESSAGE_INVALID',
+        'validation',
+        { issues: validation.issues, messageType: message.type },
+      );
       this.metrics.failed += 1;
       this.state.lastErrorAt = Date.now();
       this.emit('validationFailed', { message, validation });
-      throw error;
+      throw templumError;
     }
 
     const sendStart = Date.now();
     const timeoutMs = this.config.timeoutMs ?? TIMEOUTS.NORMAL;
     const operation = async () => {
-      await withTimeout(this.transport.send({
+      await AsyncUtils.withTimeout(this.transport.send({
         ...message,
         timestamp: message.timestamp ?? Date.now()
       }), timeoutMs);
     };
 
     try {
-      await asyncRetry(operation, {
+      await AsyncUtils.retry(operation, {
         maxAttempts: this.config.retries ?? DEFAULT_CONFIG.retries,
         onRetry: (error, attempt) => {
           this.logger.warn('Retrying protocol message send', {

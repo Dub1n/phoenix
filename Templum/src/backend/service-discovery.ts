@@ -26,6 +26,12 @@ import { createTemplumError } from '../types/templum-types';
 import { SemanticValidators, TypeGuards, TypeValidators } from '../utils/type-guards';
 // Unused import removed: isTemplumError
 
+import { serialization, type JsonParseOptions, type JsonStringifyOptions, type SerializationOutcome } from '../utils/serialization-utils';
+import { emitSerializationWarnings, getBackendSerializationLogger } from './backend-serialization-log';
+import { buildServiceRegistryDefaults } from './defaults/serialization-defaults';
+import { serviceRegistryEntrySchema, serviceRegistrySchema, type ServiceRegistryEntry, type ServiceRegistryDocument } from './schemas/serialization-registry';
+import type { Logger } from '../utils/logger';
+
 export interface DiscoveredService {
   id: string;
   config: BackendConfig;
@@ -71,6 +77,45 @@ export interface ServiceDiscoveryOptions {
 }
 
 const SUPPORTED_PROTOCOLS: ReadonlyArray<BackendConfig['protocol']> = ['ipc', 'http', 'websocket'];
+const SUPPORTED_AUTH_TYPES: ReadonlyArray<NonNullable<BackendConfig['authentication']>['type']> = [
+  'none',
+  'basic',
+  'bearer',
+  'api-key',
+  'oauth'
+];
+
+function normalizeAuthentication(source: unknown): BackendConfig['authentication'] {
+  if (!TypeGuards.isPlainObject(source)) {
+    return { type: 'none' };
+  }
+
+  const typeCandidate = (source as Record<string, unknown>).type;
+  if (typeof typeCandidate !== 'string') {
+    return { type: 'none' };
+  }
+
+  if (!SUPPORTED_AUTH_TYPES.includes(typeCandidate as NonNullable<BackendConfig['authentication']>['type'])) {
+    return { type: 'none' };
+  }
+
+  const credentialsCandidate = (source as Record<string, unknown>).credentials;
+  const credentials = TypeGuards.isPlainObject(credentialsCandidate)
+    ? Object.fromEntries(
+        Object.entries(credentialsCandidate as Record<string, unknown>).filter((entry): entry is [string, string] =>
+          typeof entry[0] === 'string' && typeof entry[1] === 'string'
+        )
+      )
+    : undefined;
+
+  const requiredCandidate = (source as Record<string, unknown>).required;
+
+  return {
+    type: typeCandidate as NonNullable<BackendConfig['authentication']>['type'],
+    credentials,
+    required: typeof requiredCandidate === 'boolean' ? requiredCandidate : undefined
+  };
+}
 
 interface ParsedServiceDescriptor {
   service: DiscoveredService;
@@ -87,12 +132,125 @@ interface ServiceDescriptorContext {
   validateServiceHealth: (healthEndpoint?: string) => Promise<boolean>;
 }
 
+const serviceDiscoveryLogger = getBackendSerializationLogger('service-discovery');
+const registryLogger = serviceDiscoveryLogger.child('registry');
+const configurationLogger = serviceDiscoveryLogger.child('configuration');
+const fileWatcherLogger = serviceDiscoveryLogger.child('file-watcher');
+const scanningLogger = serviceDiscoveryLogger.child('scanning');
+
+function unwrapSerializationOutcome<T>(context: string, outcome: SerializationOutcome<T>): T | null {
+  emitSerializationWarnings(context, outcome as SerializationOutcome<unknown>);
+  if (!outcome.ok || outcome.value === undefined) {
+    return null;
+  }
+  return outcome.value;
+}
+
+function parseJsonString<T>(context: string, input: string, options?: JsonParseOptions<T>): T | null {
+  const outcome = serialization.fromJson<T>(input, options).context(context).parse();
+  return unwrapSerializationOutcome(context, outcome);
+}
+
+function parseJsonFile<T>(
+  filePath: string,
+  context: string,
+  options?: JsonParseOptions<T>,
+  logger: Logger = serviceDiscoveryLogger
+): T | null {
+  try {
+    const raw = fs.readFileSync(filePath, 'utf-8');
+    return parseJsonString(context, raw, options);
+  } catch (error) {
+    const normalizedError = error instanceof Error ? error : new Error(String(error));
+    logger.error('Failed to read JSON file', normalizedError, { context, filePath });
+    return null;
+  }
+}
+
+function stringifyJsonValue<T>(context: string, value: T, options?: JsonStringifyOptions): string | null {
+  const outcome = serialization.json(value, options).context(context).stringify();
+  return unwrapSerializationOutcome(context, outcome);
+}
+
+function parseRegistryEntry(serviceId: string, candidate: unknown): ServiceRegistryEntry | null {
+  if (!TypeGuards.isPlainObject(candidate)) {
+    registryLogger.warn('Registry entry is not an object', { serviceId });
+    return null;
+  }
+
+  const candidateRecord = candidate as Record<string, unknown>;
+  const endpointCandidate = candidateRecord.endpoint;
+
+  if (!TypeGuards.isNonEmptyString(endpointCandidate)) {
+    registryLogger.warn('Registry entry missing endpoint', { serviceId });
+    return null;
+  }
+
+  const defaults = buildServiceRegistryDefaults({
+    id: serviceId,
+    endpoint: endpointCandidate,
+    protocol: TypeGuards.isNonEmptyString(candidateRecord.protocol)
+      ? (candidateRecord.protocol as ServiceRegistryEntry['protocol'])
+      : undefined,
+    health: TypeGuards.isNonEmptyString(candidateRecord.health)
+      ? (candidateRecord.health as string)
+      : undefined,
+    capabilities: TypeValidators.isArrayOf(candidateRecord.capabilities, TypeGuards.isNonEmptyString)
+      ? (candidateRecord.capabilities as string[])
+      : undefined,
+    version: TypeGuards.isNonEmptyString(candidateRecord.version)
+      ? (candidateRecord.version as string)
+      : undefined,
+    registrationTime: TypeGuards.isNumber(candidateRecord.registrationTime)
+      ? (candidateRecord.registrationTime as number)
+      : undefined,
+    lastSeen: TypeGuards.isNumber(candidateRecord.lastSeen)
+      ? (candidateRecord.lastSeen as number)
+      : undefined,
+    capabilitiesEndpoint: TypeGuards.isNonEmptyString(candidateRecord.capabilitiesEndpoint)
+      ? (candidateRecord.capabilitiesEndpoint as string)
+      : undefined,
+    versionEndpoint: TypeGuards.isNonEmptyString(candidateRecord.versionEndpoint)
+      ? (candidateRecord.versionEndpoint as string)
+      : undefined,
+    pid: TypeGuards.isNumber(candidateRecord.pid)
+      ? (candidateRecord.pid as number)
+      : undefined,
+    authentication: TypeGuards.isPlainObject(candidateRecord.authentication)
+      ? (candidateRecord.authentication as ServiceRegistryEntry['authentication'])
+      : undefined,
+    metadata: TypeGuards.isPlainObject(candidateRecord.metadata)
+      ? (candidateRecord.metadata as Record<string, unknown>)
+      : undefined,
+  });
+
+  const entryContext = `backend:service-discovery:registry:entry:${serviceId}`;
+  const serializedCandidate = stringifyJsonValue(entryContext + ':snapshot', candidateRecord);
+
+  if (!serializedCandidate) {
+    return defaults;
+  }
+
+  const parsedEntry = parseJsonString<ServiceRegistryEntry>(entryContext, serializedCandidate, {
+    schema: serviceRegistryEntrySchema,
+    defaults,
+  });
+
+  return parsedEntry ?? defaults;
+}
+
 async function parseServiceDescriptor(
   descriptor: unknown,
   context: ServiceDescriptorContext,
 ): Promise<ParsedServiceDescriptor | null> {
+  const descriptorLogger = context.logPrefix.includes('[REGISTRY_DISCOVERY]')
+    ? registryLogger
+    : context.logPrefix.includes('[FILE_WATCHER]')
+      ? fileWatcherLogger
+      : serviceDiscoveryLogger;
+
   if (!TypeGuards.isPlainObject(descriptor)) {
-    console.warn(`${context.logPrefix} Invalid service file ${context.filePath}: expected object payload`);
+    descriptorLogger.warn('Invalid service descriptor payload', { filePath: context.filePath });
     return null;
   }
 
@@ -101,23 +259,28 @@ async function parseServiceDescriptor(
   const endpoint = record.endpoint;
 
   if (!TypeGuards.isNonEmptyString(serviceId) || !TypeGuards.isNonEmptyString(endpoint)) {
-    console.warn(`${context.logPrefix} Invalid service file ${context.filePath}: missing id or endpoint`);
+    descriptorLogger.warn('Service descriptor missing id or endpoint', { filePath: context.filePath });
     return null;
   }
 
   const pidValue = record.pid;
   if (TypeGuards.isNumber(pidValue)) {
     if (!context.isProcessRunning(pidValue)) {
-      console.log(
-        `${context.logPrefix} Process ${pidValue} not running${context.removeOnStale ? ', removing stale service file' : ''}`,
-      );
+      descriptorLogger.info('Service descriptor references inactive process', {
+        filePath: context.filePath,
+        pid: pidValue,
+        removeOnStale: context.removeOnStale ?? false,
+      });
       if (context.removeOnStale) {
         fs.unlinkSync(context.filePath);
       }
       return null;
     }
   } else if (pidValue !== undefined) {
-    console.warn(`${context.logPrefix} Service ${serviceId} has non-numeric pid; skipping entry`);
+    descriptorLogger.warn('Service descriptor has non-numeric pid', {
+      filePath: context.filePath,
+      serviceId,
+    });
     return null;
   }
 
@@ -128,7 +291,10 @@ async function parseServiceDescriptor(
   if (context.enforceHealthCheck) {
     const isHealthy = await context.validateServiceHealth(healthSource);
     if (!isHealthy) {
-      console.log(`${context.logPrefix} Service ${serviceId} failed health check`);
+      descriptorLogger.warn('Service failed health check', {
+        filePath: context.filePath,
+        serviceId,
+      });
       return null;
     }
   }
@@ -141,9 +307,7 @@ async function parseServiceDescriptor(
       : 'http';
 
   const version = TypeGuards.isNonEmptyString(record.version) ? (record.version as string) : '1.0.0';
-  const authentication = TypeGuards.isPlainObject(record.authentication)
-    ? (record.authentication as BackendConfig['authentication'])
-    : { type: 'none' };
+  const authentication = normalizeAuthentication(record.authentication);
 
   const config: BackendConfig = {
     service: serviceId,
@@ -258,7 +422,9 @@ export class ServiceDiscovery extends EventEmitter {
    * Discover all available services using enabled strategies
    */
   async discoverServices(): Promise<DiscoveredService[]> {
-    console.log(`[SERVICE_DISCOVERY] Starting discovery with ${this.strategies.length} strategies`);
+    serviceDiscoveryLogger.info('Starting discovery', {
+      strategies: this.strategies.length,
+    });
     this.emit('discoveryStarted', { strategies: this.strategies.length });
 
     const allDiscoveredServices: DiscoveredService[] = [];
@@ -272,17 +438,29 @@ export class ServiceDiscovery extends EventEmitter {
             { strategy: strategy.name },
           );
 
-          console.warn(`[SERVICE_DISCOVERY] Strategy ${strategy.name} failed runtime validation: missing discover()`);
+          serviceDiscoveryLogger.warn('Strategy failed runtime validation', {
+            strategy: strategy.name,
+          });
           this.emit('strategyError', { strategy: strategy.name, error });
           return [];
         }
 
-        console.log(`[SERVICE_DISCOVERY] Running ${strategy.name} strategy (priority: ${strategy.priority})`);
+        serviceDiscoveryLogger.debug('Running discovery strategy', {
+          strategy: strategy.name,
+          priority: strategy.priority,
+        });
         const services = await strategy.discover();
-        console.log(`[SERVICE_DISCOVERY] ${strategy.name} discovered ${services.length} services`);
+        serviceDiscoveryLogger.debug('Strategy completed', {
+          strategy: strategy.name,
+          discovered: services.length,
+        });
         return services;
       } catch (error) {
-        console.warn(`[SERVICE_DISCOVERY] Strategy ${strategy.name} failed:`, error);
+        const normalizedError = error instanceof Error ? error : new Error(String(error));
+        serviceDiscoveryLogger.warn('Strategy failed', {
+          strategy: strategy.name,
+          error: normalizedError.message,
+        });
         this.emit('strategyError', { strategy: strategy.name, error });
         return [];
       }
@@ -306,7 +484,10 @@ export class ServiceDiscovery extends EventEmitter {
       this.discoveredServices.set(service.id, service);
     }
 
-    console.log(`[SERVICE_DISCOVERY] Discovery completed: ${uniqueServices.length} unique services found`);
+    serviceDiscoveryLogger.info('Discovery completed', {
+      discovered: uniqueServices.length,
+      strategies: this.strategies.length,
+    });
     this.emit('discoveryCompleted', { 
       discovered: uniqueServices.length, 
       strategies: this.strategies.length 
@@ -401,7 +582,7 @@ export class ServiceDiscovery extends EventEmitter {
     
     // Create services directory if it doesn't exist
     if (!fs.existsSync(servicesDir)) {
-      console.log(`[FILE_WATCHER] Creating services directory: ${servicesDir}`);
+      fileWatcherLogger.info('Creating services directory', { directory: servicesDir });
       fs.mkdirSync(servicesDir, { recursive: true });
     }
 
@@ -411,11 +592,13 @@ export class ServiceDiscovery extends EventEmitter {
     
     // Create VDL_Vault services directory if it doesn't exist
     if (!fs.existsSync(vdlVaultServicesDir)) {
-      console.log(`[FILE_WATCHER] Creating VDL_Vault services directory: ${vdlVaultServicesDir}`);
+      fileWatcherLogger.info('Creating VDL_Vault services directory', { directory: vdlVaultServicesDir });
       fs.mkdirSync(vdlVaultServicesDir, { recursive: true });
     }
 
-    console.log(`[FILE_WATCHER] Watching directories: ${watchPaths.join(', ')}`);
+    fileWatcherLogger.info('Watching directories for service descriptors', {
+      directories: watchPaths,
+    });
 
     // Initialize chokidar watcher
     this.fileWatcher = chokidar.watch(watchPaths, {
@@ -428,7 +611,7 @@ export class ServiceDiscovery extends EventEmitter {
     // Handle file addition (new backend services)
     this.fileWatcher.on('add', async (filePath: string) => {
       if (filePath.endsWith('.json')) {
-        console.log(`[FILE_WATCHER] New service file detected: ${filePath}`);
+        fileWatcherLogger.info('New service file detected', { filePath });
         await this.handleServiceFileChange(filePath, 'add');
       }
     });
@@ -436,7 +619,7 @@ export class ServiceDiscovery extends EventEmitter {
     // Handle file changes (service updates)
     this.fileWatcher.on('change', async (filePath: string) => {
       if (filePath.endsWith('.json')) {
-        console.log(`[FILE_WATCHER] Service file changed: ${filePath}`);
+        fileWatcherLogger.info('Service file changed', { filePath });
         await this.handleServiceFileChange(filePath, 'change');
       }
     });
@@ -444,18 +627,19 @@ export class ServiceDiscovery extends EventEmitter {
     // Handle file removal (service shutdown)
     this.fileWatcher.on('unlink', (filePath: string) => {
       if (filePath.endsWith('.json')) {
-        console.log(`[FILE_WATCHER] Service file removed: ${filePath}`);
+        fileWatcherLogger.info('Service file removed', { filePath });
         this.handleServiceFileRemoval(filePath);
       }
     });
 
     // Handle watcher errors
     this.fileWatcher.on('error', (error) => {
-      console.error('[FILE_WATCHER] File watching error:', error);
+      const normalizedError = error instanceof Error ? error : new Error(String(error));
+      fileWatcherLogger.error('File watching error', normalizedError);
       this.emit('watcherError', error);
     });
 
-    console.log('[FILE_WATCHER] Dynamic service discovery initialized');
+    fileWatcherLogger.info('File watcher initialized');
   }
 
   /**
@@ -464,9 +648,18 @@ export class ServiceDiscovery extends EventEmitter {
    */
   private async handleServiceFileChange(filePath: string, eventType: 'add' | 'change'): Promise<void> {
     try {
-      const rawDescriptor = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+      const descriptorPayload = parseJsonFile<unknown>(
+        filePath,
+        'backend:service-discovery:file-watcher:descriptor',
+        undefined,
+        fileWatcherLogger,
+      );
 
-      const descriptor = await parseServiceDescriptor(rawDescriptor, {
+      if (!descriptorPayload) {
+        return;
+      }
+
+      const descriptor = await parseServiceDescriptor(descriptorPayload, {
         logPrefix: '[FILE_WATCHER]',
         filePath,
         timeout: this.options.timeout,
@@ -483,14 +676,24 @@ export class ServiceDiscovery extends EventEmitter {
 
       this.discoveredServices.set(service.id, service);
 
-      console.log(`[FILE_WATCHER] Service ${eventType}: ${service.id} (PID: ${pid ?? 'n/a'})`);
+      fileWatcherLogger.info('Service descriptor processed', {
+        serviceId: service.id,
+        eventType,
+        filePath,
+        pid: pid ?? 'n/a',
+      });
+
       this.emit('serviceDiscovered', {
         service,
         eventType,
         filePath,
       });
     } catch (error) {
-      console.warn(`[FILE_WATCHER] Failed to process service file ${filePath}:`, error);
+      const normalizedError = error instanceof Error ? error : new Error(String(error));
+      fileWatcherLogger.error('Failed to process service file', normalizedError, {
+        filePath,
+        eventType,
+      });
     }
   }
 
@@ -513,11 +716,14 @@ export class ServiceDiscovery extends EventEmitter {
 
     if (removedServiceId) {
       this.discoveredServices.delete(removedServiceId);
-      console.log(`[FILE_WATCHER] Service removed: ${removedServiceId}`);
-      
+      fileWatcherLogger.info('Service descriptor removed', {
+        serviceId: removedServiceId,
+        filePath,
+      });
+
       this.emit('serviceRemoved', {
         serviceId: removedServiceId,
-        filePath
+        filePath,
       });
     }
   }
@@ -564,7 +770,7 @@ export class ServiceDiscovery extends EventEmitter {
    */
   async close(): Promise<void> {
     if (this.fileWatcher) {
-      console.log('[FILE_WATCHER] Closing file system watcher');
+      fileWatcherLogger.info('Closing file system watcher');
       await this.fileWatcher.close();
       this.fileWatcher = undefined;
     }
@@ -612,25 +818,45 @@ export class RegistryBasedDiscoveryStrategy implements DiscoveryStrategy {
 
     try {
       if (!fs.existsSync(this.options.registryPath)) {
-        console.log(`[REGISTRY_DISCOVERY] Registry file not found: ${this.options.registryPath}`);
+        registryLogger.info('Registry file not found', { path: this.options.registryPath });
         return services;
       }
 
-      const registryData = JSON.parse(fs.readFileSync(this.options.registryPath, 'utf-8')) as ServiceRegistry;
+      const document = parseJsonFile<Record<string, unknown>>(
+        this.options.registryPath,
+        'backend:service-discovery:registry',
+        undefined,
+        registryLogger,
+      );
+
+      if (!document) {
+        return services;
+      }
+
+      const serviceMapCandidate = (document as { services?: unknown }).services;
+      if (!TypeGuards.isPlainObject(serviceMapCandidate)) {
+        registryLogger.warn('Registry document missing services map', { path: this.options.registryPath });
+        return services;
+      }
+
       const now = Date.now();
       const staleThreshold = 5 * 60 * 1000; // 5 minutes
 
-      for (const [serviceId, registration] of Object.entries(registryData.services)) {
-        // Skip stale registrations
-        if (now - registration.lastSeen > staleThreshold) {
-          console.log(`[REGISTRY_DISCOVERY] Skipping stale registration for ${serviceId}`);
+      for (const [serviceId, entryCandidate] of Object.entries(serviceMapCandidate)) {
+        const registration = parseRegistryEntry(serviceId, entryCandidate);
+
+        if (!registration) {
           continue;
         }
 
-        // Validate health endpoint if available
+        if (now - registration.lastSeen > staleThreshold) {
+          registryLogger.warn('Skipping stale registration', { serviceId });
+          continue;
+        }
+
         const isHealthy = await this.validateServiceHealth(registration.health);
         if (!isHealthy) {
-          console.log(`[REGISTRY_DISCOVERY] Service ${serviceId} failed health check`);
+          registryLogger.warn('Service failed health check', { serviceId });
           continue;
         }
 
@@ -642,22 +868,37 @@ export class RegistryBasedDiscoveryStrategy implements DiscoveryStrategy {
           timeout: this.options.timeout,
           retries: 2,
           keepAlive: true,
-          authentication: { type: 'none' },
-          healthEndpoint: registration.health
+          authentication: normalizeAuthentication(registration.authentication),
+          healthEndpoint: registration.health,
         };
+
+        if (registration.capabilities && registration.capabilities.length > 0) {
+          config.capabilities = [...registration.capabilities];
+        }
+
+        if (TypeGuards.isNonEmptyString(registration.capabilitiesEndpoint)) {
+          config.capabilitiesEndpoint = registration.capabilitiesEndpoint;
+        }
+
+        if (TypeGuards.isNonEmptyString(registration.versionEndpoint)) {
+          config.versionEndpoint = registration.versionEndpoint;
+        }
 
         services.push({
           id: serviceId,
           config,
           discoveryMethod: 'registry',
-          confidence: 0.9, // High confidence for registry-based discovery
-          timestamp: now
+          confidence: 0.9,
+          timestamp: registration.lastSeen,
         });
 
-        console.log(`[REGISTRY_DISCOVERY] Discovered ${serviceId} via registry file`);
+        registryLogger.info('Discovered service via registry', { serviceId });
       }
     } catch (error) {
-      console.warn(`[REGISTRY_DISCOVERY] Registry file discovery failed: ${error instanceof Error ? error.message : String(error)}`);
+      const normalizedError = error instanceof Error ? error : new Error(String(error));
+      registryLogger.error('Registry file discovery failed', normalizedError, {
+        path: this.options.registryPath,
+      });
     }
 
     return services;
@@ -676,25 +917,28 @@ export class RegistryBasedDiscoveryStrategy implements DiscoveryStrategy {
     try {
       // Always scan primary services directory if it exists
       if (this.options.servicesDir && fs.existsSync(this.options.servicesDir)) {
-        console.log(`[REGISTRY_DISCOVERY] Scanning primary services directory: ${this.options.servicesDir}`);
+        registryLogger.info('Scanning primary services directory', { directory: this.options.servicesDir });
         const primaryServices = await this.discoverFromDirectory(this.options.servicesDir);
         services.push(...primaryServices);
       } else if (this.options.servicesDir) {
-        console.log(`[REGISTRY_DISCOVERY] Primary services directory not found: ${this.options.servicesDir}`);
+        registryLogger.info('Primary services directory not found', { directory: this.options.servicesDir });
       }
 
       // Always scan VDL_Vault root .templum/services directory (shared multi-repo location)
       const vdlVaultTemplumDir = path.resolve(process.cwd(), '..', '.templum', 'services');
       if (fs.existsSync(vdlVaultTemplumDir)) {
-        console.log(`[REGISTRY_DISCOVERY] Scanning VDL_Vault shared directory: ${vdlVaultTemplumDir}`);
+        registryLogger.info('Scanning shared VDL_Vault services directory', { directory: vdlVaultTemplumDir });
         const vdlServices = await this.discoverFromDirectory(vdlVaultTemplumDir);
         services.push(...vdlServices);
       } else {
-        console.log(`[REGISTRY_DISCOVERY] VDL_Vault shared directory not found: ${vdlVaultTemplumDir}`);
+        registryLogger.info('VDL_Vault shared directory not found', { directory: vdlVaultTemplumDir });
       }
       
     } catch (error) {
-      console.warn(`[REGISTRY_DISCOVERY] Services directory discovery failed: ${error instanceof Error ? error.message : String(error)}`);
+      const normalizedError = error instanceof Error ? error : new Error(String(error));
+      registryLogger.error('Services directory discovery failed', normalizedError, {
+        directory: this.options.servicesDir,
+      });
     }
 
     return services;
@@ -711,12 +955,24 @@ export class RegistryBasedDiscoveryStrategy implements DiscoveryStrategy {
         .filter(file => file.endsWith('.json'))
         .map(file => path.join(servicesDir, file));
 
-      console.log(`[REGISTRY_DISCOVERY] Scanning ${serviceFiles.length} service files in ${servicesDir}`);
+      registryLogger.info('Scanning services directory', {
+        directory: servicesDir,
+        files: serviceFiles.length,
+      });
 
       for (const filePath of serviceFiles) {
-        const rawDescriptor = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+        const descriptorPayload = parseJsonFile<unknown>(
+          filePath,
+          'backend:service-discovery:registry:descriptor',
+          undefined,
+          registryLogger,
+        );
 
-        const descriptor = await parseServiceDescriptor(rawDescriptor, {
+        if (!descriptorPayload) {
+          continue;
+        }
+
+        const descriptor = await parseServiceDescriptor(descriptorPayload, {
           logPrefix: '[REGISTRY_DISCOVERY]',
           filePath,
           timeout: this.options.timeout,
@@ -732,12 +988,15 @@ export class RegistryBasedDiscoveryStrategy implements DiscoveryStrategy {
 
         services.push(descriptor.service);
 
-        console.log(
-          `[REGISTRY_DISCOVERY] Discovered ${descriptor.service.id} via services directory (PID: ${descriptor.pid ?? 'n/a'})`,
-        );
+        registryLogger.info('Discovered service via services directory', {
+          serviceId: descriptor.service.id,
+          directory: servicesDir,
+          pid: descriptor.pid ?? 'n/a',
+        });
       }
     } catch (error) {
-      console.warn(`[REGISTRY_DISCOVERY] Directory discovery failed for ${servicesDir}: ${error instanceof Error ? error.message : String(error)}`);
+      const normalizedError = error instanceof Error ? error : new Error(String(error));
+      registryLogger.error('Directory discovery failed', normalizedError, { directory: servicesDir });
     }
 
     return services;
@@ -790,28 +1049,38 @@ export class ConfigurationBasedDiscoveryStrategy implements DiscoveryStrategy {
 
     try {
       if (!fs.existsSync(this.options.configurationPath)) {
-        console.log(`[CONFIG_DISCOVERY] Configuration file not found: ${this.options.configurationPath}`);
+        configurationLogger.info('Configuration file not found', { path: this.options.configurationPath });
         return services;
       }
 
-      const configData = JSON.parse(fs.readFileSync(this.options.configurationPath, 'utf-8'));
+      const configData = parseJsonFile<Record<string, unknown>>(
+        this.options.configurationPath,
+        'backend:service-discovery:configuration',
+        undefined,
+        configurationLogger,
+      );
+
+      if (!configData) {
+        return services;
+      }
+
       const now = Date.now();
 
       if (!TypeGuards.isPlainObject(configData)) {
-        console.warn(`[CONFIG_DISCOVERY] Invalid configuration format in ${this.options.configurationPath}`);
+        configurationLogger.warn('Invalid configuration format', { path: this.options.configurationPath });
         return services;
       }
 
       const backends = (configData as Record<string, unknown>).backends;
 
       if (!TypeValidators.isArrayOf(backends, TypeGuards.isPlainObject)) {
-        console.warn(`[CONFIG_DISCOVERY] Invalid configuration backends list in ${this.options.configurationPath}`);
+        configurationLogger.warn('Invalid configuration backends list', { path: this.options.configurationPath });
         return services;
       }
 
       for (const backendConfig of backends) {
         if (!this.validateBackendConfig(backendConfig)) {
-          console.warn(`[CONFIG_DISCOVERY] Invalid backend configuration:`, backendConfig);
+          configurationLogger.warn('Invalid backend configuration entry', { backendConfig });
           continue;
         }
 
@@ -826,24 +1095,31 @@ export class ConfigurationBasedDiscoveryStrategy implements DiscoveryStrategy {
           authentication: backendConfig.authentication || { type: 'none' },
           healthEndpoint: backendConfig.healthEndpoint,
           capabilitiesEndpoint: backendConfig.capabilitiesEndpoint,
-          options: backendConfig.options
+          options: backendConfig.options,
         };
 
         services.push({
           id: backendConfig.service,
           config,
           discoveryMethod: 'configuration',
-          confidence: 0.8, // Medium-high confidence for configuration-based
-          timestamp: now
+          confidence: 0.8,
+          timestamp: now,
         });
 
-        console.log(`[CONFIG_DISCOVERY] Discovered ${backendConfig.service} via configuration`);
+        configurationLogger.info('Discovered service via configuration', {
+          serviceId: backendConfig.service,
+        });
       }
     } catch (error) {
+      const normalizedError = error instanceof Error ? error : new Error(String(error));
+      configurationLogger.error('Configuration discovery failed', normalizedError, {
+        path: this.options.configurationPath,
+      });
+
       throw createTemplumError(
-        `Configuration discovery failed: ${error instanceof Error ? error.message : String(error)}`,
-        'CONFIG_DISCOVERY_ERROR', 
-        'configuration'
+        `Configuration discovery failed: ${normalizedError.message}`,
+        'CONFIG_DISCOVERY_ERROR',
+        'configuration',
       );
     }
 
@@ -905,7 +1181,10 @@ export class EndpointScanningDiscoveryStrategy implements DiscoveryStrategy {
     const services: DiscoveredService[] = [];
     const scanPromises: Promise<DiscoveredService | null>[] = [];
 
-    console.log(`[SCAN_DISCOVERY] Scanning ${this.options.scanHosts.length} hosts on ${this.options.scanPorts.length} ports`);
+    scanningLogger.info('Scanning hosts and ports', {
+      hosts: this.options.scanHosts.length,
+      ports: this.options.scanPorts.length,
+    });
 
     // Scan all host/port combinations
     for (const host of this.options.scanHosts) {
@@ -932,7 +1211,7 @@ export class EndpointScanningDiscoveryStrategy implements DiscoveryStrategy {
       }
     }
 
-    console.log(`[SCAN_DISCOVERY] Completed scanning: ${services.length} services discovered`);
+    scanningLogger.info('Completed scanning', { discovered: services.length });
     return services;
   }
 
@@ -946,40 +1225,47 @@ export class EndpointScanningDiscoveryStrategy implements DiscoveryStrategy {
         
         if (res.statusCode === 200) {
           let data = '';
-          res.on('data', chunk => data += chunk);
+          res.on('data', chunk => { data += chunk; });
           res.on('end', () => {
-            try {
-              const skinDefinition = JSON.parse(data);
-              if (skinDefinition.service) {
-                const config: BackendConfig = {
-                  service: skinDefinition.service,
-                  version: skinDefinition.version || '1.0.0',
-                  protocol: 'http',
-                  endpoint: `http://${host}:${port}`,
-                  timeout: this.options.timeout,
-                  retries: this.options.maxRetries,
-                  keepAlive: true,
-                  authentication: { type: 'none' },
-                  healthEndpoint: `http://${host}:${port}/api/health`,
-                  capabilitiesEndpoint: `http://${host}:${port}/api/capabilities`
-                };
+            const skinDefinition = parseJsonString<Record<string, unknown>>(
+              'backend:service-discovery:scan:http',
+              data,
+            );
 
-                resolve({
-                  id: skinDefinition.service,
-                  config,
-                  discoveryMethod: 'scanning',
-                  confidence: 0.7, // Medium confidence for scanning
-                  timestamp: Date.now()
-                });
-                return;
-              }
-            } catch (_error) {
-              // Invalid skin definition
+            if (!skinDefinition || !TypeGuards.isNonEmptyString(skinDefinition.service)) {
+              resolve(null);
+              return;
             }
-          });
-        }
-        resolve(null);
-      });
+
+            const version = TypeGuards.isNonEmptyString(skinDefinition.version)
+              ? (skinDefinition.version as string)
+              : '1.0.0';
+
+            const config: BackendConfig = {
+              service: skinDefinition.service,
+              version,
+              protocol: 'http',
+              endpoint: `http://${host}:${port}`,
+              timeout: this.options.timeout,
+              retries: this.options.maxRetries,
+              keepAlive: true,
+              authentication: { type: 'none' },
+              healthEndpoint: `http://${host}:${port}/api/health`,
+              capabilitiesEndpoint: `http://${host}:${port}/api/capabilities`,
+            };
+
+           resolve({
+             id: skinDefinition.service,
+             config,
+             discoveryMethod: 'scanning',
+             confidence: 0.7,
+             timestamp: Date.now(),
+           });
+            return;
+         });
+       }
+       resolve(null);
+     });
 
       request.on('error', () => {
         clearTimeout(timeout);
@@ -996,24 +1282,45 @@ export class EndpointScanningDiscoveryStrategy implements DiscoveryStrategy {
         const ws = new WebSocket(`ws://${host}:${port}`);
         
         ws.on('open', () => {
-          // Send skin definition request
-          ws.send(JSON.stringify({
-            id: 'scan-' + Date.now(),
+          const payload = stringifyJsonValue('backend:service-discovery:scan:websocket:request', {
+            id: `scan-${Date.now()}`,
             type: 'getSkinDefinition',
-            timestamp: Date.now()
-          }));
+            timestamp: Date.now(),
+          });
+
+          if (payload) {
+            ws.send(payload);
+          } else {
+            ws.close();
+            resolve(null);
+          }
         });
 
         ws.on('message', (data: Buffer) => {
           clearTimeout(timeout);
           try {
-            const response = JSON.parse(data.toString());
-            if (response.type === 'skin_definition_response' && response.data) {
-              const skinDefinition = response.data;
+            const response = parseJsonString<Record<string, unknown>>(
+              'backend:service-discovery:scan:websocket:response',
+              data.toString(),
+            );
+
+            const skinDefinition = response?.data as Record<string, unknown> | undefined;
+
+            if (
+              response &&
+              response.type === 'skin_definition_response' &&
+              skinDefinition &&
+              (TypeGuards.isNonEmptyString(skinDefinition.service) || skinDefinition.service === undefined)
+            ) {
+              const serviceId = TypeGuards.isNonEmptyString(skinDefinition.service)
+                ? (skinDefinition.service as string)
+                : 'unknown-websocket';
               
               const config: BackendConfig = {
-                service: skinDefinition.service || 'unknown-websocket',
-                version: skinDefinition.version || '1.0.0',
+                service: serviceId,
+                version: TypeGuards.isNonEmptyString(skinDefinition.version)
+                  ? (skinDefinition.version as string)
+                  : '1.0.0',
                 protocol: 'websocket',
                 endpoint: `ws://${host}:${port}`,
                 timeout: this.options.timeout,
@@ -1023,7 +1330,7 @@ export class EndpointScanningDiscoveryStrategy implements DiscoveryStrategy {
               };
 
               resolve({
-                id: skinDefinition.service || 'unknown-websocket',
+                id: serviceId,
                 config,
                 discoveryMethod: 'scanning',
                 confidence: 0.6, // Lower confidence for WebSocket scanning
@@ -1060,14 +1367,19 @@ export class EndpointScanningDiscoveryStrategy implements DiscoveryStrategy {
       const socket = new net.Socket();
       
       socket.connect(port, host, () => {
-        // Send skin definition request
-        const message = JSON.stringify({
-          id: 'scan-' + Date.now(),
+        const payload = stringifyJsonValue('backend:service-discovery:scan:ipc:request', {
+          id: `scan-${Date.now()}`,
           type: 'getSkinDefinition',
-          timestamp: Date.now()
-        }) + '\n';
-        
-        socket.write(message);
+          timestamp: Date.now(),
+        });
+
+        if (!payload) {
+          socket.destroy();
+          resolve(null);
+          return;
+        }
+
+        socket.write(`${payload}\n`);
       });
 
       let buffer = '';
@@ -1079,14 +1391,28 @@ export class EndpointScanningDiscoveryStrategy implements DiscoveryStrategy {
         for (const line of lines) {
           if (line.trim()) {
             try {
-              const response = JSON.parse(line);
-              if (response.type === 'skin_definition_response' && response.data) {
+              const response = parseJsonString<Record<string, unknown>>(
+                'backend:service-discovery:scan:ipc:response',
+                line,
+              );
+              const skinDefinition = response?.data as Record<string, unknown> | undefined;
+
+              if (
+                response &&
+                response.type === 'skin_definition_response' &&
+                skinDefinition &&
+                (TypeGuards.isNonEmptyString(skinDefinition.service) || skinDefinition.service === undefined)
+              ) {
                 clearTimeout(timeout);
                 
-                const skinDefinition = response.data;
+                const serviceId = TypeGuards.isNonEmptyString(skinDefinition.service)
+                  ? (skinDefinition.service as string)
+                  : 'unknown-ipc';
                 const config: BackendConfig = {
-                  service: skinDefinition.service || 'unknown-ipc',
-                  version: skinDefinition.version || '1.0.0',
+                  service: serviceId,
+                  version: TypeGuards.isNonEmptyString(skinDefinition.version)
+                    ? (skinDefinition.version as string)
+                    : '1.0.0',
                   protocol: 'ipc',
                   endpoint: `ipc://${host}:${port}`,
                   timeout: this.options.timeout,
@@ -1096,7 +1422,7 @@ export class EndpointScanningDiscoveryStrategy implements DiscoveryStrategy {
                 };
 
                 resolve({
-                  id: skinDefinition.service || 'unknown-ipc',
+                  id: serviceId,
                   config,
                   discoveryMethod: 'scanning',
                   confidence: 0.6,

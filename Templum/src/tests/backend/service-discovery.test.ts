@@ -25,6 +25,10 @@ import {
   ServiceRegistry,
   DiscoveryStrategy
 } from '../../backend/service-discovery';
+import { serialization } from '../../utils/serialization-utils';
+import * as backendSerializationLog from '../../backend/backend-serialization-log';
+import { serviceRegistryEntrySchema } from '../../backend/schemas/serialization-registry';
+import { buildServiceRegistryDefaults } from '../../backend/defaults/serialization-defaults';
 
 // Mock file system operations
 jest.mock('fs');
@@ -42,21 +46,50 @@ const mockWebSocket = WebSocket as jest.Mocked<typeof WebSocket>;
 jest.mock('net');
 const mockNet = net as jest.Mocked<typeof net>;
 
+let emitSerializationWarningsSpy: jest.SpyInstance;
+
 describe('ServiceDiscovery', () => {
   let serviceDiscovery: ServiceDiscovery;
   let tempDir: string;
 
   beforeEach(() => {
     jest.clearAllMocks();
+    emitSerializationWarningsSpy = jest.spyOn(backendSerializationLog, 'emitSerializationWarnings');
     tempDir = '/tmp/templum-test';
-    
+
     serviceDiscovery = new ServiceDiscovery({
       registryPath: path.join(tempDir, 'service-registry.json'),
       configurationPath: path.join(tempDir, 'backend-config.json'),
       scanPorts: [3001, 3002, 3003],
       scanHosts: ['localhost'],
-      timeout: 1000
+      timeout: 1000,
+      enableFileWatching: false,
+      enableHealthChecks: false,
     });
+
+    mockHttp.get.mockImplementation((_url: any, callback: any) => {
+      const response = {
+        statusCode: 200,
+        on: (event: string, handler: (...args: any[]) => void) => {
+          if (event === 'data') {
+            handler('');
+          }
+          if (event === 'end') {
+            handler();
+          }
+          return response;
+        },
+      } as any;
+
+      if (typeof callback === 'function') {
+        callback(response);
+      }
+
+      return { on: jest.fn() } as any;
+    });
+
+    mockFs.existsSync.mockReturnValue(false);
+    mockFs.readFileSync.mockReturnValue('{}');
   });
 
   afterEach(() => {
@@ -94,15 +127,27 @@ describe('ServiceDiscovery', () => {
       });
 
       // Mock HTTP health check
-      const mockRequest = {
-        on: jest.fn()
-      } as any;
+      mockHttp.get.mockImplementation((_url: any, callback: any) => {
+        const response = {
+          statusCode: 200,
+          on: (event: string, handler: (...args: any[]) => void) => {
+            if (event === 'data') {
+              handler('');
+            }
+            if (event === 'end') {
+              handler();
+            }
+            return response;
+          },
+        } as any;
 
-      mockHttp.get.mockImplementation((url: any, callback: any) => {
         setTimeout(() => {
-          callback({ statusCode: 200 });
+          if (typeof callback === 'function') {
+            callback(response);
+          }
         }, 10);
-        return mockRequest;
+
+        return { on: jest.fn() } as any;
       });
 
       const discovered = await serviceDiscovery.discoverServices();
@@ -252,15 +297,27 @@ describe('ServiceDiscovery', () => {
       mockFs.readFileSync.mockReturnValue(JSON.stringify(registry));
 
       // Mock health checks to pass
-      const mockRequest = {
-        on: jest.fn()
-      } as any;
+      mockHttp.get.mockImplementation((_url: any, callback: any) => {
+        const response = {
+          statusCode: 200,
+          on: (event: string, handler: (...args: any[]) => void) => {
+            if (event === 'data') {
+              handler('');
+            }
+            if (event === 'end') {
+              handler();
+            }
+            return response;
+          },
+        } as any;
 
-      mockHttp.get.mockImplementation((url: any, callback: any) => {
         setTimeout(() => {
-          callback({ statusCode: 200 });
+          if (typeof callback === 'function') {
+            callback(response);
+          }
         }, 10);
-        return mockRequest;
+
+        return { on: jest.fn() } as any;
       });
 
       const discovered = await strategy.discover();
@@ -308,7 +365,9 @@ describe('ServiceDiscovery', () => {
       mockFs.existsSync.mockReturnValue(true);
       mockFs.readFileSync.mockReturnValue('invalid json');
 
-      await expect(strategy.discover()).rejects.toThrow();
+      const discovered = await strategy.discover();
+
+      expect(discovered).toEqual([]);
     });
 
     it('should skip services with non-numeric pid values in services directory', async () => {
@@ -333,10 +392,25 @@ describe('ServiceDiscovery', () => {
         return '';
       });
 
-      const mockRequest = { on: jest.fn() } as any;
       mockHttp.get.mockImplementation((_url: any, callback: any) => {
-        callback({ statusCode: 200 });
-        return mockRequest;
+        const response = {
+          statusCode: 200,
+          on: (event: string, handler: (...args: any[]) => void) => {
+            if (event === 'data') {
+              handler('');
+            }
+            if (event === 'end') {
+              handler();
+            }
+            return response;
+          },
+        } as any;
+
+        if (typeof callback === 'function') {
+          callback(response);
+        }
+
+        return { on: jest.fn() } as any;
       });
 
       const discovered = await strategy.discover();
@@ -657,10 +731,12 @@ describe('ServiceDiscovery', () => {
 
       await serviceDiscovery.discoverServices();
 
-      expect(discoveryStartedSpy).toHaveBeenCalledWith({ strategies: 1 });
-      expect(discoveryCompletedSpy).toHaveBeenCalledWith({ 
-        discovered: 0, 
-        strategies: 1 
+      const expectedStrategyCount = (serviceDiscovery as any).strategies.length;
+
+      expect(discoveryStartedSpy).toHaveBeenCalledWith({ strategies: expectedStrategyCount });
+      expect(discoveryCompletedSpy).toHaveBeenCalledWith({
+        discovered: 0,
+        strategies: expectedStrategyCount,
       });
     });
   });
@@ -738,13 +814,99 @@ describe('ServiceDiscovery', () => {
         discover: jest.fn() as () => Promise<DiscoveredService[]>
       };
 
-      serviceDiscovery.addStrategy(lowPriorityStrategy);
-      serviceDiscovery.addStrategy(highPriorityStrategy);
+      const isolatedDiscovery = new ServiceDiscovery({
+        strategies: [lowPriorityStrategy],
+        enableFileWatching: false,
+        enableHealthChecks: false,
+        enableRegistryDiscovery: false,
+        enableConfigurationDiscovery: false,
+        enableEndpointScanning: false,
+      });
+
+      isolatedDiscovery.addStrategy(highPriorityStrategy);
 
       // Access private strategies array for testing
-      const strategies = (serviceDiscovery as any).strategies;
+      const strategies = (isolatedDiscovery as any).strategies;
       expect(strategies[0].name).toBe('high-priority');
       expect(strategies[1].name).toBe('low-priority');
+    });
+  });
+
+  describe('Phase 1 migrations', () => {
+    it('emits serialization warnings when registry defaults are applied', async () => {
+      emitSerializationWarningsSpy.mockClear();
+
+      mockFs.existsSync.mockImplementation((filePath) => {
+        return filePath.toString().includes('service-registry.json');
+      });
+
+      (mockFs.readFileSync as jest.Mock).mockImplementation((filePath: fs.PathOrFileDescriptor) => {
+        if (filePath.toString().includes('service-registry.json')) {
+          return JSON.stringify({
+            services: {
+              haruspex: {
+                id: 'haruspex',
+                endpoint: 'http://localhost:3001'
+              }
+            },
+            version: 1,
+            lastUpdated: Date.now()
+          });
+        }
+
+        return '{}';
+      });
+
+      const discovered = await serviceDiscovery.discoverServices();
+
+      const registryWarnings = emitSerializationWarningsSpy.mock.calls
+        .filter((call) => call[0].startsWith('backend:service-discovery:registry'))
+        .flatMap((call) => call[1].meta.warnings);
+
+      expect(discovered).toHaveLength(1);
+      expect(registryWarnings.length).toBeGreaterThan(0);
+      expect(registryWarnings.some((warning) => warning.includes('defaults'))).toBe(true);
+      expect(discovered[0].config.healthEndpoint).toBe('http://localhost:3001/health');
+    });
+  });
+
+  describe('serialization helper defaults', () => {
+    const registryContext = 'tests:service-discovery:registry-defaults';
+
+    beforeAll(() => {
+      jest.useFakeTimers();
+      jest.setSystemTime(new Date('2025-10-02T14:30:00Z'));
+    });
+
+    afterAll(() => {
+      jest.useRealTimers();
+    });
+
+    it('applies registry defaults when optional fields are missing', () => {
+      const payload = { id: 'templum-core', endpoint: 'http://localhost:4600' };
+      const expectedTimestamp = Date.now();
+      const defaults = buildServiceRegistryDefaults(payload);
+
+      const result = serialization
+        .fromJson(JSON.stringify(payload))
+        .context(registryContext)
+        .withSchema(serviceRegistryEntrySchema)
+        .withDefaults(defaults)
+        .parse();
+
+      expect(result.ok).toBe(true);
+      expect(result.status).toBe('defaults');
+      expect(result.meta.warnings).toContain('Schema validation failed; applied defaults');
+      expect(result.value).toMatchObject({
+        id: 'templum-core',
+        endpoint: 'http://localhost:4600',
+        protocol: 'http',
+        health: 'http://localhost:4600/health',
+        version: '1.0.0',
+        capabilities: []
+      });
+      expect(result.value?.registrationTime).toBe(expectedTimestamp);
+      expect(result.value?.lastSeen).toBe(expectedTimestamp);
     });
   });
 });

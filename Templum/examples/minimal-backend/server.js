@@ -57,6 +57,7 @@ const SKIN_DEFINITION = {
     service: "minimal-example",
     protocol: "http",
     endpoint: `http://localhost:${port}`,
+    healthEndpoint: "/health",
     authentication: {
       type: "none"
     },

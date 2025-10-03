@@ -514,6 +514,7 @@ export class ValidationFramework extends EventEmitter {
   private performanceThreshold: number = 30; // 30% degradation threshold from Phase 1
   private performanceBaselines: Map<string, number> = new Map();
   private validationResults: Map<string, ValidationResult[]> = new Map();
+  private cleanupTasks: Array<() => void> = [];
 
   constructor() {
     super();
@@ -614,14 +615,18 @@ export class ValidationFramework extends EventEmitter {
 
   private setupPerformanceMonitoring(): void {
     // Listen for performance metrics from other components
-    process.on('backend-integration:metrics', (metrics: any) => {
+    const metricsHandler = (metrics: any) => {
       this.processPerformanceMetrics(metrics);
-    });
+    };
+    process.on('backend-integration:metrics', metricsHandler);
+    this.registerCleanup(() => process.off('backend-integration:metrics', metricsHandler));
 
     // Periodic performance validation
-    setInterval(() => {
+    const handle = setInterval(() => {
       this.performPeriodicValidation();
     }, 10000); // Every 10 seconds
+    handle.unref?.();
+    this.registerCleanup(() => clearInterval(handle));
   }
 
   private processPerformanceMetrics(metrics: any): void {
@@ -710,6 +715,22 @@ export class ValidationFramework extends EventEmitter {
       fallbacksRecommended
     };
   }
+
+  dispose(): void {
+    while (this.cleanupTasks.length) {
+      const task = this.cleanupTasks.pop();
+      try {
+        task?.();
+      } catch (error) {
+        console.error('ValidationFramework: cleanup task failed', error);
+      }
+    }
+    this.removeAllListeners();
+  }
+
+  private registerCleanup(task: () => void): void {
+    this.cleanupTasks.push(task);
+  }
 }
 
 /**
@@ -719,6 +740,7 @@ export class ValidationFramework extends EventEmitter {
 export class BackendFallbackManager extends EventEmitter {
   private fallbackStrategies: Map<string, any> = new Map();
   private riskMitigationFramework: any;
+  private cleanupTasks: Array<() => void> = [];
 
   constructor(riskMitigationFramework: any) {
     super();
@@ -890,6 +912,22 @@ export class BackendFallbackManager extends EventEmitter {
       (process as any).emit(signal, payload);
     });
   }
+
+  dispose(): void {
+    while (this.cleanupTasks.length) {
+      const task = this.cleanupTasks.pop();
+      try {
+        task?.();
+      } catch (error) {
+        console.error('BackendFallbackManager: cleanup task failed', error);
+      }
+    }
+    this.removeAllListeners();
+  }
+
+  private registerCleanup(task: () => void): void {
+    this.cleanupTasks.push(task);
+  }
 }
 
 /**
@@ -902,6 +940,7 @@ export class PCLBackendIntegrator extends EventEmitter {
   private pclCommandRouter: PCLCommandRouter;
   private validationFramework: ValidationFramework;
   private backendFallbackManager: BackendFallbackManager;
+  private cleanupTasks: Array<() => void> = [];
   
   private integrationStats: BackendIntegrationStats = {
     totalConnections: 0,
@@ -1246,14 +1285,18 @@ export class PCLBackendIntegrator extends EventEmitter {
 
   private setupPerformanceMonitoring(): void {
     // Listen for performance metrics from components
-    process.on('backend-integration:metrics', (metrics: any) => {
+    const metricsHandler = (metrics: any) => {
       this.processPerformanceMetrics(metrics);
-    });
+    };
+    process.on('backend-integration:metrics', metricsHandler);
+    this.registerCleanup(() => process.off('backend-integration:metrics', metricsHandler));
 
     // Periodic health checks
-    setInterval(() => {
+    const healthHandle = setInterval(() => {
       this.performHealthChecks();
     }, 30000); // Every 30 seconds
+    healthHandle.unref?.();
+    this.registerCleanup(() => clearInterval(healthHandle));
   }
 
   private processPerformanceMetrics(metrics: any): void {
@@ -1346,16 +1389,32 @@ export class PCLBackendIntegrator extends EventEmitter {
    */
   async shutdown(): Promise<void> {
     this.emit('shuttingDown', { timestamp: Date.now() });
-    
+
     // Clean up components
     this.componentTransferCoordinator.removeAllListeners();
     this.pclCommandRouter.removeAllListeners();
-    this.validationFramework.removeAllListeners();
+    this.validationFramework.dispose();
     this.backendFallbackManager.removeAllListeners();
-    
+    this.cleanupResources();
+
     this.removeAllListeners();
-    
+
     this.emit('shutdownComplete', { timestamp: Date.now() });
+  }
+
+  private registerCleanup(task: () => void): void {
+    this.cleanupTasks.push(task);
+  }
+
+  private cleanupResources(): void {
+    while (this.cleanupTasks.length) {
+      const task = this.cleanupTasks.pop();
+      try {
+        task?.();
+      } catch (error) {
+        console.error('PCLBackendIntegrator: cleanup task failed', error);
+      }
+    }
   }
 }
 

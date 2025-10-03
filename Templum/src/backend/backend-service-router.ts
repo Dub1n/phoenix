@@ -42,6 +42,17 @@ import { ServiceDiscovery, ServiceDiscoveryOptions } from './service-discovery';
 import { ITemplumOrchestrator } from '../interfaces/templum-orchestrator-interface';
 // Migration Note (2025-09-01): TemplumSkinDefinition alias no longer needed with unified types
 import { SemanticValidators, TypeGuards, TypeValidators } from '../utils/type-guards';
+import {
+  serialization,
+  type JsonParseOptions,
+  type JsonStringifyOptions,
+  type JsonReviver,
+  type JsonReplacer,
+  type JsonSchema,
+  type SerializationOutcome,
+  type SerializationStatus
+} from '../utils/serialization-utils';
+import { emitSerializationWarnings } from './backend-serialization-log';
 
 // IPC Protocol Types (Based on Haruspex IPC Protocol)
 export type IPCMessageType = 
@@ -52,6 +63,7 @@ export type IPCMessageType =
   | 'getCapabilities' | 'capabilities_response'
   | 'getVersion' | 'version_response'
   | 'shutdown' | 'error'
+  | 'handshake_ack' | 'handshake_error'
   // Litany WebSocket message types
   | 'skin_definition_updated' | 'context_sync_notification'
   | 'analysis_complete' | 'service_status' | 'error_notification';
@@ -157,6 +169,143 @@ interface HaruspexConnectionInfo {
   serverVersion: string;
 }
 
+
+type RouterSerializationDirection = 'inbound' | 'outbound';
+
+interface RouterSerializationSnapshot {
+  context: string;
+  status: SerializationStatus;
+  direction: RouterSerializationDirection;
+  warnings: string[];
+  bytes: number;
+  durationMs: number;
+  maskedFields: string[];
+  updatedAt: number;
+}
+
+interface RouterSerializationRecorder {
+  record(snapshot: RouterSerializationSnapshot): void;
+}
+
+interface RouterParseOptions<T> {
+  context: string;
+  serviceId?: string;
+  direction?: RouterSerializationDirection;
+  defaults?: Partial<T>;
+  fallback?: T;
+  schema?: JsonSchema<T>;
+  reviver?: JsonReviver;
+  maxBytes?: number;
+}
+
+interface RouterStringifyOptions<T> {
+  context: string;
+  serviceId?: string;
+  direction?: RouterSerializationDirection;
+  maskFields?: string[] | string;
+  fallback?: string;
+  pretty?: boolean | number;
+  maxBytes?: number;
+  replacer?: JsonReplacer;
+}
+
+
+function createRouterSerializationSnapshot(
+  context: string,
+  direction: RouterSerializationDirection,
+  outcome: SerializationOutcome<unknown>
+): RouterSerializationSnapshot {
+  return {
+    context,
+    direction,
+    status: outcome.status,
+    warnings: [...outcome.meta.warnings],
+    bytes: outcome.meta.bytes,
+    durationMs: outcome.meta.durationMs,
+    maskedFields: [...outcome.meta.maskedFields],
+    updatedAt: Date.now()
+  };
+}
+
+function handleRouterSerializationOutcome(
+  context: string,
+  direction: RouterSerializationDirection,
+  outcome: SerializationOutcome<unknown>,
+  recorder?: RouterSerializationRecorder
+): void {
+  emitSerializationWarnings(context, outcome);
+  if (recorder) {
+    recorder.record(createRouterSerializationSnapshot(context, direction, outcome));
+  }
+}
+
+function runRouterParse<T>(
+  raw: string,
+  context: string,
+  direction: RouterSerializationDirection,
+  options: JsonParseOptions<T> | undefined,
+  recorder?: RouterSerializationRecorder
+): SerializationOutcome<T> {
+  const outcome = serialization.fromJson<T>(raw, options).context(context).parse();
+  handleRouterSerializationOutcome(context, direction, outcome as SerializationOutcome<unknown>, recorder);
+  return outcome;
+}
+
+function runRouterStringify<T>(
+  value: T,
+  context: string,
+  direction: RouterSerializationDirection,
+  options: JsonStringifyOptions | undefined,
+  recorder?: RouterSerializationRecorder
+): SerializationOutcome<string> {
+  const outcome = serialization.json(value, options).context(context).stringify();
+  handleRouterSerializationOutcome(context, direction, outcome as SerializationOutcome<unknown>, recorder);
+  return outcome;
+}
+
+function toJsonParseOptions<T>(options: RouterParseOptions<T>): JsonParseOptions<T> {
+  const { defaults, fallback, schema, reviver, maxBytes } = options;
+  const parseOptions: JsonParseOptions<T> = {};
+  if (defaults) {
+    parseOptions.defaults = defaults;
+  }
+  if (fallback !== undefined) {
+    parseOptions.fallback = fallback;
+  }
+  if (schema) {
+    parseOptions.schema = schema;
+  }
+  if (reviver) {
+    parseOptions.reviver = reviver;
+  }
+  if (typeof maxBytes === 'number') {
+    parseOptions.maxBytes = maxBytes;
+  }
+  return parseOptions;
+}
+
+function toJsonStringifyOptions<T>(options: RouterStringifyOptions<T>): JsonStringifyOptions {
+  const stringifyOptions: JsonStringifyOptions = {};
+  if (options.maskFields) {
+    stringifyOptions.maskFields = Array.isArray(options.maskFields)
+      ? options.maskFields
+      : [options.maskFields];
+  }
+  if (options.fallback !== undefined) {
+    stringifyOptions.fallback = options.fallback;
+  }
+  if (options.pretty !== undefined) {
+    stringifyOptions.pretty = options.pretty;
+  }
+  if (typeof options.maxBytes === 'number') {
+    stringifyOptions.maxBytes = options.maxBytes;
+  }
+  if (options.replacer) {
+    stringifyOptions.replacer = options.replacer;
+  }
+  return stringifyOptions;
+}
+
 export interface BackendServiceRouter {
   discoverAndConnect(): Promise<void>;
   getConnectionStatus(): BackendConnectionStatus;
@@ -194,6 +343,7 @@ export interface BackendStatus {
       responseTime?: number;
     }>;
   };
+  lastSerialization?: RouterSerializationSnapshot;
 }
 
 // TASK-SKIN-004B: Backend Capability Profile Detection
@@ -234,6 +384,22 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
   private healthCheckInterval: number = 30000; // 30 seconds default
   private recoveryAttempts: Map<string, number> = new Map();
   private maxRecoveryAttempts: number = 3;
+  private healthMonitoringEnabled: boolean = true;
+  private healthCheckKickoffTimeout: NodeJS.Timeout | null = null;
+  private continuousHealthInterval: NodeJS.Timeout | null = null;
+
+  private scheduleTimeout(callback: () => void, ms: number): NodeJS.Timeout {
+    const handle = setTimeout(callback, ms);
+    handle.unref?.();
+    return handle;
+  }
+
+  private async delay(ms: number): Promise<void> {
+    await new Promise<void>((resolve) => {
+      const handle = setTimeout(resolve, ms);
+      handle.unref?.();
+    });
+  }
 
   constructor(
     orchestrator?: ITemplumOrchestrator,
@@ -241,6 +407,7 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
       useGenericDiscovery?: boolean;
       healthCheckInterval?: number;
       maxRecoveryAttempts?: number;
+      healthMonitoringEnabled?: boolean;
     }
   ) {
     super();
@@ -253,6 +420,7 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
     // ENHANCED: Configure health monitoring parameters
     this.healthCheckInterval = discoveryOptions?.healthCheckInterval ?? 30000;
     this.maxRecoveryAttempts = discoveryOptions?.maxRecoveryAttempts ?? 3;
+    this.healthMonitoringEnabled = discoveryOptions?.healthMonitoringEnabled ?? true;
     
     // GENERIC SYSTEM: Always use skin-driven approach
     console.log('[BACKEND_SERVICE_ROUTER] Using fully generic skin-driven backend integration');
@@ -261,12 +429,57 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
     
     this.setupCommandRouterIntegration();
     
-    // ENHANCED: Start background health monitoring
-    this.startHealthMonitoring();
+    // ENHANCED: Start background health monitoring when enabled
+    if (this.healthMonitoringEnabled) {
+      this.startHealthMonitoring();
+    }
   }
 
-  /**
-   * Set the TemplumCore orchestrator reference for skin loading integration
+  private parseRouterMessage<T>(raw: string, options: RouterParseOptions<T>): SerializationOutcome<T> {
+    const { context, serviceId, direction = 'inbound' } = options;
+    const recorder = serviceId
+      ? {
+          record: (snapshot: RouterSerializationSnapshot) =>
+            this.recordSerializationSnapshot(serviceId, snapshot)
+        }
+      : undefined;
+    const outcome = runRouterParse<T>(
+      raw,
+      context,
+      direction,
+      toJsonParseOptions(options),
+      recorder
+    );
+    return outcome;
+  }
+
+  private stringifyRouterMessage<T>(value: T, options: RouterStringifyOptions<T>): SerializationOutcome<string> {
+    const { context, serviceId, direction = 'outbound' } = options;
+    const recorder = serviceId
+      ? {
+          record: (snapshot: RouterSerializationSnapshot) =>
+            this.recordSerializationSnapshot(serviceId, snapshot)
+        }
+      : undefined;
+    return runRouterStringify<T>(
+      value,
+      context,
+      direction,
+      toJsonStringifyOptions(options),
+      recorder
+    );
+  }
+
+  private recordSerializationSnapshot(serviceId: string, snapshot: RouterSerializationSnapshot): void {
+    const status = this.serviceHealth.get(serviceId);
+    if (!status) {
+      return;
+    }
+    status.lastSerialization = snapshot;
+  }
+
+/**
+ * Set the TemplumCore orchestrator reference for skin loading integration
    * Following Backend Service Integration Unified pattern
    */
   setOrchestrator(orchestrator: ITemplumOrchestrator): void {
@@ -359,9 +572,13 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
     this.healthMonitorInterval = setInterval(() => {
       this.performHealthCheck();
     }, this.healthCheckInterval);
+    this.healthMonitorInterval.unref?.();
     
     // Perform initial health check
-    setTimeout(() => this.performHealthCheck(), 1000);
+    this.healthCheckKickoffTimeout = this.scheduleTimeout(() => {
+      this.healthCheckKickoffTimeout = null;
+      void this.performHealthCheck();
+    }, 1000);
   }
 
   /**
@@ -432,7 +649,7 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
         const config = this.backendConfigs.get(backendId);
         if (config?.healthEndpoint) {
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 5000);
+          const timeoutId = this.scheduleTimeout(() => controller.abort(), 5000);
           
           const response = await fetch(`${config.endpoint}${config.healthEndpoint}`, {
             method: 'GET',
@@ -479,7 +696,7 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
     
     console.log(`[RECOVERY] Attempting recovery for ${backendId} (attempt ${nextAttempt}/${this.maxRecoveryAttempts}, delay: ${backoffDelay}ms)`);
     
-    setTimeout(async () => {
+    this.scheduleTimeout(async () => {
       try {
         await connection.connect();
         console.log(`[RECOVERY] Successfully recovered connection to ${backendId}`);
@@ -500,6 +717,16 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
       clearInterval(this.healthMonitorInterval);
       this.healthMonitorInterval = null;
       console.log('[HEALTH_MONITOR] Background health monitoring stopped');
+    }
+
+    if (this.healthCheckKickoffTimeout) {
+      clearTimeout(this.healthCheckKickoffTimeout);
+      this.healthCheckKickoffTimeout = null;
+    }
+
+    if (this.continuousHealthInterval) {
+      clearInterval(this.continuousHealthInterval);
+      this.continuousHealthInterval = null;
     }
   }
 
@@ -793,7 +1020,7 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
           const delayMs = baseDelayMs * Math.pow(2, attempt);
           console.log(`Backend Service Router: [GENERIC] Retrying ${serviceId} in ${delayMs}ms...`);
           metrics.retryAttempts++;
-          await new Promise(resolve => setTimeout(resolve, delayMs));
+          await this.delay(delayMs);
         }
         
       } catch (error) {
@@ -837,7 +1064,7 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
           const delayMs = baseDelayMs * Math.pow(2, attempt);
           console.log(`Backend Service Router: Retrying ${serviceId} in ${delayMs}ms...`);
           metrics.retryAttempts++;
-          await new Promise(resolve => setTimeout(resolve, delayMs));
+          await this.delay(delayMs);
         }
         
       } catch (error) {
@@ -914,7 +1141,7 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
       if (connection.connection && connection.isConnected()) {
         const childProcess = connection.connection as ChildProcess;
         return new Promise<boolean>((resolve) => {
-          const timeout = setTimeout(() => resolve(false), 2000);
+          const timeout = this.scheduleTimeout(() => resolve(false), 2000);
           
           const pingHandler = (message: IPCMessage | IPCResponse) => {
             // Fixed: Using proper interface types for message.success property access
@@ -942,7 +1169,7 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
     try {
       // Test with service-specific health endpoint
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3000);
+          const timeoutId = this.scheduleTimeout(() => controller.abort(), 3000);
       
       const response = await fetch(`${connection.endpoint}/api/status`, {
         method: 'GET',
@@ -966,23 +1193,43 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
       if (connection.connection && connection.isConnected()) {
         const ws = connection.connection as WebSocket.WebSocket;
         return new Promise<boolean>((resolve) => {
-          const timeout = setTimeout(() => resolve(false), 2000);
+          const timeout = this.scheduleTimeout(() => resolve(false), 2000);
           
           const messageHandler = (data: WebSocket.RawData) => {
-            try {
-              const message = JSON.parse(data.toString()) as IPCMessage | IPCResponse;
+            const outcome = this.parseRouterMessage<IPCMessage | IPCResponse>(data.toString(), {
+              context: 'backend:router:websocket:verification',
+              serviceId: connection.id,
+              direction: 'inbound'
+            });
+
+            if (outcome.ok && outcome.value) {
+              const message = outcome.value;
               if (message.type === 'pong' || (message as IPCResponse).success) {
                 clearTimeout(timeout);
                 ws.off('message', messageHandler);
                 resolve(true);
               }
-            } catch (_parseError) {
-              // Ignore parse errors during verification
             }
           };
           
           ws.on('message', messageHandler);
-          ws.send(JSON.stringify({ type: 'ping', timestamp: Date.now() }));
+          const pingOutcome = this.stringifyRouterMessage(
+            { type: 'ping', timestamp: Date.now() },
+            {
+              context: 'backend:router:websocket:verification',
+              serviceId: connection.id,
+              direction: 'outbound'
+            }
+          );
+
+          if (pingOutcome.ok && pingOutcome.value) {
+            ws.send(pingOutcome.value);
+          } else {
+            console.warn('[WebSocket] Verification ping serialization failed', {
+              context: pingOutcome.meta.context,
+              status: pingOutcome.status
+            });
+          }
         });
       }
       return false;
@@ -1123,9 +1370,14 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
     // Implementation: Periodic health checks with degraded service recovery detection
     
     // For now, set up basic periodic health checks
-    setInterval(() => {
+    if (this.continuousHealthInterval) {
+      clearInterval(this.continuousHealthInterval);
+    }
+
+    this.continuousHealthInterval = setInterval(() => {
       this.performHealthChecks();
     }, 30000); // Check every 30 seconds
+    this.continuousHealthInterval.unref?.();
   }
 
 
@@ -1203,6 +1455,68 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
   }
 
   /**
+   * TASK-SKIN-005: Two-tier backend prioritization helper
+   * Exposed for orchestration and testing so higher layers can share the same scoring logic
+   */
+  prioritizeBackendsTwoTier(
+    backends: Array<{ backendId: string; status: any }>
+  ): Array<{ backendId: string; score: number; tier: 'health-enabled' | 'minimal' }> {
+    const prioritized: Array<{ backendId: string; score: number; tier: 'health-enabled' | 'minimal' }> = [];
+
+    for (const { backendId, status } of backends) {
+      const capabilityProfile = this.getBackendCapabilityProfile(backendId);
+
+      if (capabilityProfile?.hasHealthEndpoint) {
+        const healthFactor = status.health === 'healthy' ? 1 : status.health === 'unhealthy' ? 0.5 : 0;
+        const capabilitiesCount = status.capabilities?.length ?? 0;
+        const responseTimeFactor = typeof status.responseTime === 'number'
+          ? Math.max(0, (1000 - status.responseTime) / 1000)
+          : 0.5;
+        const versionFactor = status.version ? 1 : 0;
+
+        const score = (healthFactor * 100)
+          + (capabilitiesCount * 10)
+          + (responseTimeFactor * 5)
+          + (versionFactor * 2);
+
+        prioritized.push({ backendId, score, tier: 'health-enabled' });
+        continue;
+      }
+
+      const connectionStability = this.getConnectionStability(backendId);
+      const skinCompleteness = this.calculateSkinCompleteness(capabilityProfile?.skinDefinitionQuality ?? 'minimal');
+      const commandCount = status.capabilities?.length ?? 0;
+
+      const score = (connectionStability * 0.8)
+        + (skinCompleteness * 15)
+        + (commandCount * 5);
+
+      prioritized.push({ backendId, score, tier: 'minimal' });
+    }
+
+    prioritized.sort((a, b) => {
+      const aAdjusted = a.tier === 'health-enabled' ? a.score : a.score + 50;
+      const bAdjusted = b.tier === 'health-enabled' ? b.score : b.score + 50;
+      return bAdjusted - aAdjusted;
+    });
+
+    return prioritized;
+  }
+
+  private calculateSkinCompleteness(quality: string): number {
+    switch (quality) {
+      case 'complete':
+        return 10;
+      case 'partial':
+        return 6;
+      case 'minimal':
+        return 3;
+      default:
+        return 1;
+    }
+  }
+
+  /**
    * TASK-SKIN-005: Initialize connection stability tracking for a new backend
    * Called during backend registration from skin definition
    */
@@ -1244,7 +1558,10 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
    */
   private createIPCConnection(serviceId: string, endpoint: string): BackendConnection {
     // Create instance of Haruspex IPC client for real service communication
-    const ipcClient = new HaruspexIPCClient();
+    const ipcClient = new HaruspexIPCClient(undefined, undefined, {
+      record: (snapshot: RouterSerializationSnapshot) =>
+        this.recordSerializationSnapshot(serviceId, snapshot)
+    });
     let connected = false;
 
     return {
@@ -1315,7 +1632,7 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
           
           // Test real PCL HTTP service connection with enhanced health check
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 10000); // Longer timeout for real service
+          const timeoutId = this.scheduleTimeout(() => controller.abort(), 10000); // Longer timeout for real service
 
           try {
             // Try multiple PCL service endpoints to verify real service availability
@@ -1437,7 +1754,7 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
           ws = new WebSocket.WebSocket(wsUrl);
 
           return new Promise<void>((resolve, reject) => {
-            const timeout = setTimeout(() => {
+            const timeout = this.scheduleTimeout(() => {
               wsConnected = false;
               reject(new Error(`Real WebSocket connection timeout for ${serviceId}`));
             }, 15000); // Longer timeout for real service connection
@@ -1474,14 +1791,22 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
             ws!.onmessage = (event) => {
               console.log(`[WebSocket] Real message from ${serviceId}:`, event.data);
               
-              // Real Litany WebSocket Message Processing Implementation
-              // Process unsolicited messages from Litany service (notifications, events, status updates)
-              try {
-                const message = JSON.parse(event.data.toString());
-                this.processLitanyWebSocketMessage(serviceId, message);
-              } catch (parseError) {
-                console.warn(`[WebSocket] Failed to parse unsolicited Litany message from ${serviceId}:`, parseError);
-                console.warn(`[WebSocket] Raw message data:`, event.data);
+              const outcome = this.parseRouterMessage<LitanyWebSocketMessage | IPCMessage>(
+                event.data.toString(),
+                {
+                  context: 'backend:router:websocket:event',
+                  serviceId,
+                  direction: 'inbound'
+                }
+              );
+
+              if (outcome.value) {
+                this.processLitanyWebSocketMessage(serviceId, outcome.value);
+              } else if (!outcome.ok) {
+                console.warn(`[WebSocket] Failed to parse unsolicited Litany message from ${serviceId}`, {
+                  context: outcome.meta.context,
+                  status: outcome.status
+                });
               }
             };
           });
@@ -1508,7 +1833,7 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
     return new Promise<void>((resolve, reject) => {
       console.log(`[WebSocket] Performing real handshake with ${serviceId} Litany service`);
       
-      const handshakeTimeout = setTimeout(() => {
+      const handshakeTimeout = this.scheduleTimeout(() => {
         reject(new Error(`Litany service handshake timeout for ${serviceId}`));
       }, 5000);
 
@@ -1523,29 +1848,47 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
       };
 
       const handshakeHandler = (data: WebSocket.RawData) => {
-        try {
-          const response = JSON.parse(data.toString());
-          
-          if (response.type === 'handshake_ack' && response.success) {
-            clearTimeout(handshakeTimeout);
-            ws.off('message', handshakeHandler);
-            console.log(`[WebSocket] Litany service handshake successful for ${serviceId}`);
-            resolve();
-          } else if (response.type === 'handshake_error') {
-            clearTimeout(handshakeTimeout);
-            ws.off('message', handshakeHandler);
-            reject(new Error(`Litany service handshake failed: ${response.error || 'Unknown error'}`));
-          }
-        } catch (_parseError) {
-          // Ignore parse errors during handshake - continue listening
+        const outcome = this.parseRouterMessage<IPCResponse | IPCMessage>(data.toString(), {
+          context: 'backend:router:websocket:handshake',
+          serviceId,
+          direction: 'inbound'
+        });
+
+        if (!outcome.value) {
+          return;
+        }
+
+        const response = outcome.value as IPCResponse & { success?: boolean; error?: string };
+
+        if (response.type === 'handshake_ack' && response.success) {
+          clearTimeout(handshakeTimeout);
+          ws.off('message', handshakeHandler);
+          console.log(`[WebSocket] Litany service handshake successful for ${serviceId}`);
+          resolve();
+        } else if (response.type === 'handshake_error') {
+          clearTimeout(handshakeTimeout);
+          ws.off('message', handshakeHandler);
+          reject(new Error(`Litany service handshake failed: ${response.error || 'Unknown error'}`));
         }
       };
 
       ws.on('message', handshakeHandler);
       
       try {
-        ws.send(JSON.stringify(handshakeMessage));
-        console.log(`[WebSocket] Handshake message sent to ${serviceId} Litany service`);
+        const outbound = this.stringifyRouterMessage(handshakeMessage, {
+          context: 'backend:router:websocket:handshake',
+          serviceId,
+          direction: 'outbound'
+        });
+
+        if (outbound.ok && outbound.value) {
+          ws.send(outbound.value);
+          console.log(`[WebSocket] Handshake message sent to ${serviceId} Litany service`);
+        } else {
+          throw new Error(
+            `Handshake serialization failed (${outbound.status})`
+          );
+        }
       } catch (sendError) {
         clearTimeout(handshakeTimeout);
         ws.off('message', handshakeHandler);
@@ -1795,16 +2138,31 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
         console.log(`[HTTP] Trying ${connection.id} endpoint: ${attempt.method} ${attempt.endpoint}`);
         
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000);
+        const timeoutId = this.scheduleTimeout(() => controller.abort(), 30000);
 
         try {
+          let body: string | undefined;
+          if (attempt.method !== 'GET') {
+            const bodyOutcome = this.stringifyRouterMessage(attempt.payload ?? {}, {
+              context: `backend:router:http:request:${connection.id}`,
+              serviceId: connection.id,
+              direction: 'outbound'
+            });
+
+            if (bodyOutcome.ok && bodyOutcome.value) {
+              body = bodyOutcome.value;
+            } else {
+              throw new Error(`HTTP request serialization failed (${bodyOutcome.status})`);
+            }
+          }
+
           const response = await fetch(attempt.endpoint, {
             method: attempt.method,
             headers: {
               'Content-Type': 'application/json',
               'Accept': 'application/json'
             },
-            body: attempt.method !== 'GET' ? JSON.stringify(attempt.payload) : undefined,
+            body,
             signal: controller.signal
           });
 
@@ -1997,63 +2355,85 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
       
       // Enhanced WebSocket message handling with longer timeout for real services
       return new Promise((resolve, reject) => {
-        const timeout = setTimeout(() => {
+        const timeout = this.scheduleTimeout(() => {
           ws.off('message', messageHandler);
           reject(createTemplumError(`Litany WebSocket call timeout for ${apiMethod}`, 'WEBSOCKET_TIMEOUT', 'integration'));
         }, 15000);
 
         const messageHandler = (data: WebSocket.RawData) => {
-          try {
-            const response = JSON.parse(data.toString());
-            
-            // Enhanced Litany response matching with multiple response patterns
-            if (response.id === messageId || 
-                (response.type === 'api_response' && response.method === apiMethod) ||
-                (response.requestId === messageId)) {
-              
-              clearTimeout(timeout);
-              ws.off('message', messageHandler);
-              
-              console.log(`[WebSocket] Received response from ${connection.id}:`, { 
-                method: apiMethod, 
-                success: response.success !== false,
-                hasData: !!response.data
+          const outcome = this.parseRouterMessage<Record<string, any>>(data.toString(), {
+            context: 'backend:router:websocket:response',
+            serviceId: connection.id,
+            direction: 'inbound'
+          });
+
+          if (!outcome.value) {
+            if (!outcome.ok) {
+              console.warn('[WebSocket] Failed to parse Litany response', {
+                context: outcome.meta.context,
+                status: outcome.status
               });
-              
-              // Handle Litany skin definition responses
-              if (apiMethod === 'getSkinDefinition' && response.skinDefinition) {
-                console.log(`[WebSocket] Successfully received Litany skin definition`);
-                return resolve({ skinDefinition: response.skinDefinition });
+            }
+            return;
+          }
+
+          const response = outcome.value as {
+            id?: string;
+            type?: string;
+            method?: string;
+            requestId?: string;
+            success?: boolean;
+            error?: string;
+            data?: BackendServicePayload;
+            result?: BackendServicePayload;
+            skinDefinition?: BackendServicePayload;
+          };
+
+          if (
+            response.id === messageId ||
+            (response.type === 'api_response' && response.method === apiMethod) ||
+            (response.requestId === messageId)
+          ) {
+            clearTimeout(timeout);
+            ws.off('message', messageHandler);
+
+            console.log(`[WebSocket] Received response from ${connection.id}:`, {
+              method: apiMethod,
+              success: response.success !== false,
+              hasData: !!response.data
+            });
+
+            if (apiMethod === 'getSkinDefinition' && response.skinDefinition) {
+              console.log(`[WebSocket] Successfully received Litany skin definition`);
+              resolve({ skinDefinition: response.skinDefinition });
+              return;
+            }
+
+            if (apiMethod === 'executeCommand') {
+              console.log(`[WebSocket] Litany command execution result:`, response.success ? 'success' : 'failed');
+              if (response.result) {
+                resolve(response.result);
+                return;
               }
-              
-              // Handle command execution responses
-              if (apiMethod === 'executeCommand') {
-                console.log(`[WebSocket] Litany command execution result:`, response.success ? 'success' : 'failed');
-                if (response.result) {
-                  return resolve(response.result);
-                }
-              }
-              
-              // Handle Litany context management responses
-              if (apiMethod === 'updateContext' || apiMethod === 'syncMemory') {
-                console.log(`[WebSocket] Litany context operation completed:`, apiMethod);
-                return resolve(response.data || { success: response.success });
-              }
-              
-              // Default response handling
-              if (response.success === false) {
-                reject(createTemplumError(
+            }
+
+            if (apiMethod === 'updateContext' || apiMethod === 'syncMemory') {
+              console.log(`[WebSocket] Litany context operation completed:`, apiMethod);
+              resolve(response.data || { success: response.success });
+              return;
+            }
+
+            if (response.success === false) {
+              reject(
+                createTemplumError(
                   `Litany service error: ${response.error || 'Unknown error'}`,
                   'WEBSOCKET_SERVICE_ERROR',
                   'integration'
-                ));
-              } else {
-                resolve(response.data || response);
-              }
+                )
+              );
+            } else {
+              resolve(response.data || response);
             }
-          } catch (parseError) {
-            console.warn(`[WebSocket] Failed to parse Litany response:`, parseError);
-            // Continue listening for other messages
           }
         };
 
@@ -2061,8 +2441,18 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
         
         // Send message to real Litany service
         try {
-          ws.send(JSON.stringify(wsMessage));
-          console.log(`[WebSocket] Message sent to real Litany service`);
+          const outbound = this.stringifyRouterMessage(wsMessage, {
+            context: 'backend:router:websocket:request',
+            serviceId: connection.id,
+            direction: 'outbound'
+          });
+
+          if (outbound.ok && outbound.value) {
+            ws.send(outbound.value);
+            console.log(`[WebSocket] Message sent to real Litany service`);
+          } else {
+            throw new Error(`WebSocket serialization failed (${outbound.status})`);
+          }
         } catch (sendError) {
           clearTimeout(timeout);
           ws.off('message', messageHandler);
@@ -2887,6 +3277,12 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
     this.serviceHealth.clear();
     this.recoveryAttempts.clear();
     
+    try {
+      await this.serviceDiscovery.close();
+    } catch (error) {
+      console.warn('[BACKEND_SERVICE_ROUTER] Error closing service discovery during dispose:', error);
+    }
+
     // Remove all event listeners
     this.removeAllListeners();
     
@@ -2911,6 +3307,7 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
  * Haruspex IPC Client for real service communication
  * Based on Haruspex IPC Protocol implementation
  */
+
 class HaruspexIPCClient {
     private socket: net.Socket | undefined;
     private isConnected = false;
@@ -2923,16 +3320,37 @@ class HaruspexIPCClient {
     private connectionInfo: HaruspexConnectionInfo | null = null;
     private workspacePath: string;
     private connectionInfoPath: string;
+    private readonly serializationRecorder?: RouterSerializationRecorder;
+    private readonly serviceId: string;
 
-    constructor(workspacePath?: string) {
-      // Try to find workspace root by looking for .haruspex directory
+    constructor(
+      workspacePath?: string,
+      _config?: unknown,
+      serializationRecorder?: RouterSerializationRecorder
+    ) {
       this.workspacePath = workspacePath || this.findWorkspaceRoot(process.cwd()) || process.cwd();
       this.connectionInfoPath = path.join(this.workspacePath, '.haruspex', 'haruspex-debug-connection.json');
+      this.serializationRecorder = serializationRecorder;
+      this.serviceId = 'haruspex';
+    }
+
+    private scheduleTimeout(callback: () => void, ms: number): NodeJS.Timeout {
+      const handle = setTimeout(callback, ms);
+      handle.unref?.();
+      return handle;
+    }
+
+    private parseIpcMessage<T>(raw: string, context: string): SerializationOutcome<T> {
+      return runRouterParse<T>(raw, context, 'inbound', undefined, this.serializationRecorder);
+    }
+
+    private stringifyIpcMessage<T>(value: T, context: string): SerializationOutcome<string> {
+      return runRouterStringify<T>(value, context, 'outbound', undefined, this.serializationRecorder);
     }
 
     private findWorkspaceRoot(startPath: string): string | undefined {
       let currentPath = startPath;
-      
+
       while (currentPath !== path.dirname(currentPath)) {
         const haruspexPath = path.join(currentPath, '.haruspex');
         if (fs.existsSync(haruspexPath)) {
@@ -2940,7 +3358,7 @@ class HaruspexIPCClient {
         }
         currentPath = path.dirname(currentPath);
       }
-      
+
       return undefined;
     }
 
@@ -2949,22 +3367,31 @@ class HaruspexIPCClient {
         return;
       }
 
-      // Read connection info from file created by Haruspex extension
       if (!fs.existsSync(this.connectionInfoPath)) {
-        throw new Error(`Haruspex connection info not found at ${this.connectionInfoPath}. Ensure Haruspex extension is running.`);
+        throw new Error(
+          `Haruspex connection info not found at ${this.connectionInfoPath}. Ensure Haruspex extension is running.`
+        );
       }
 
-      try {
-        const connectionData = fs.readFileSync(this.connectionInfoPath, 'utf-8');
-        this.connectionInfo = JSON.parse(connectionData);
-      } catch (error) {
-        throw new Error(`Failed to parse Haruspex connection info: ${error}`);
+      const connectionData = fs.readFileSync(this.connectionInfoPath, 'utf-8');
+      const infoOutcome = this.parseIpcMessage<HaruspexConnectionInfo>(
+        connectionData,
+        'backend:router:ipc:connection-info'
+      );
+
+      if (infoOutcome.ok && infoOutcome.value) {
+        this.connectionInfo = infoOutcome.value;
+      } else {
+        const reason = infoOutcome.error instanceof Error
+          ? infoOutcome.error.message
+          : `status=${infoOutcome.status}`;
+        throw new Error(`Failed to parse Haruspex connection info: ${reason}`);
       }
 
       return new Promise((resolve, reject) => {
         this.socket = new net.Socket();
-        
-        const timeout = setTimeout(() => {
+
+        const timeout = this.scheduleTimeout(() => {
           this.socket?.destroy();
           reject(new Error('Connection timeout'));
         }, 10000);
@@ -2972,7 +3399,9 @@ class HaruspexIPCClient {
         this.socket.connect(this.connectionInfo!.port, this.connectionInfo!.host, () => {
           clearTimeout(timeout);
           this.isConnected = true;
-          console.log(`[IPC] Connected to Haruspex service at ${this.connectionInfo!.host}:${this.connectionInfo!.port}`);
+          console.log(
+            `[IPC] Connected to Haruspex service at ${this.connectionInfo!.host}:${this.connectionInfo!.port}`
+          );
           resolve();
         });
 
@@ -2998,8 +3427,7 @@ class HaruspexIPCClient {
         this.socket.destroy();
       }
       this.isConnected = false;
-      
-      // Reject all pending requests
+
       for (const [_requestId, request] of Array.from(this.pendingRequests.entries())) {
         clearTimeout(request.timeout);
         request.reject(new Error('Connection closed'));
@@ -3008,8 +3436,8 @@ class HaruspexIPCClient {
     }
 
     async sendRequest<T extends BackendServicePayload = BackendServicePayload>(
-      type: IPCMessageType, 
-      payload?: BackendServicePayload, 
+      type: IPCMessageType,
+      payload?: BackendServicePayload,
       method?: string
     ): Promise<T> {
       if (!this.isConnected || !this.socket) {
@@ -3027,37 +3455,52 @@ class HaruspexIPCClient {
       };
 
       return new Promise((resolve, reject) => {
-        const timeout = setTimeout(() => {
+        const timeout = this.scheduleTimeout(() => {
           this.pendingRequests.delete(requestId);
           reject(new Error(`Request timeout for ${type}`));
         }, 30000);
 
-        this.pendingRequests.set(requestId, { 
-          resolve: resolve as (value: unknown) => void, 
-          reject, 
-          timeout 
+        this.pendingRequests.set(requestId, {
+          resolve: resolve as (value: unknown) => void,
+          reject,
+          timeout
         });
 
-        const messageStr = JSON.stringify(message) + '\n';
-        this.socket!.write(messageStr);
+        const outbound = this.stringifyIpcMessage(message, 'backend:router:ipc:request');
+        if (outbound.ok && outbound.value) {
+          this.socket!.write(`${outbound.value}\n`);
+        } else {
+          clearTimeout(timeout);
+          this.pendingRequests.delete(requestId);
+          reject(new Error(`IPC serialization failed (${outbound.status})`));
+        }
       });
     }
 
     private handleIncomingData(data: Buffer): void {
       this.messageBuffer += data.toString();
       const messages = this.messageBuffer.split('\n');
-      
-      // Keep the last incomplete message in the buffer
+
       this.messageBuffer = messages.pop() || '';
 
       for (const messageStr of messages) {
-        if (messageStr.trim()) {
-          try {
-            const message: IPCResponse = JSON.parse(messageStr);
-            this.handleMessage(message);
-          } catch (error) {
-            console.error('[IPC] Failed to parse message:', error);
-          }
+        if (!messageStr.trim()) {
+          continue;
+        }
+
+        const outcome = this.parseIpcMessage<IPCResponse>(
+          messageStr,
+          'backend:router:ipc:response'
+        );
+
+        if (outcome.value) {
+          this.handleMessage(outcome.value);
+        } else {
+          console.error('[IPC] Failed to parse message', {
+            context: outcome.meta.context,
+            status: outcome.status,
+            error: outcome.error instanceof Error ? outcome.error.message : outcome.error
+          });
         }
       }
     }
@@ -3076,12 +3519,11 @@ class HaruspexIPCClient {
       }
     }
 
-  getConnectionStatus(): { connected: boolean; info: HaruspexConnectionInfo | null } {
-    return {
-      connected: this.isConnected,
-      info: this.connectionInfo
-    };
+    getConnectionStatus(): { connected: boolean; info: HaruspexConnectionInfo | null } {
+      return {
+        connected: this.isConnected,
+        info: this.connectionInfo
+      };
+    }
   }
-}
-
 // BackendConnection interface now imported from connection-factory.ts

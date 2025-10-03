@@ -2,8 +2,8 @@ import { createLogger } from './logger';
 import { ErrorHandler } from './error-handler';
 import { createTemplumError, TemplumError } from '../types/templum-types';
 
-type JsonReplacer = (this: unknown, key: string, value: unknown) => unknown;
-type JsonReviver = (this: unknown, key: string, value: unknown) => unknown;
+export type JsonReplacer = (this: unknown, key: string, value: unknown) => unknown;
+export type JsonReviver = (this: unknown, key: string, value: unknown) => unknown;
 
 type SafeParseResult<T> = { success: true; data: T } | { success: false; error: unknown };
 
@@ -422,5 +422,3 @@ export const serialization = {
     return new JsonParseBuilder<T>(input, options);
   }
 };
-
-export type { JsonReplacer, JsonReviver };

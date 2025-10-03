@@ -17,6 +17,44 @@ import {
 } from '../types/templum-types';
 import { BackendConfig } from '../types/universal-skin-engine-types';
 
+import { serialization, type JsonParseOptions, type JsonStringifyOptions, type SerializationOutcome } from '../utils/serialization-utils';
+import { emitSerializationWarnings, getBackendSerializationLogger } from './backend-serialization-log';
+import type { Logger } from '../utils/logger';
+
+const connectionLogger = getBackendSerializationLogger('connection-factory');
+const ipcLogger = connectionLogger.child('ipc');
+const httpLogger = connectionLogger.child('http');
+const websocketLogger = connectionLogger.child('websocket');
+
+function unwrapSerializationOutcome<T>(context: string, outcome: SerializationOutcome<T>): T | null {
+  emitSerializationWarnings(context, outcome as SerializationOutcome<unknown>);
+  if (!outcome.ok || outcome.value === undefined) {
+    return null;
+  }
+  return outcome.value;
+}
+
+function parseJsonString<T>(context: string, input: string, options?: JsonParseOptions<T>): T | null {
+  const outcome = serialization.fromJson<T>(input, options).context(context).parse();
+  return unwrapSerializationOutcome(context, outcome);
+}
+
+function parseJsonFile<T>(filePath: string, context: string, options?: JsonParseOptions<T>, logger: Logger = connectionLogger): T | null {
+  try {
+    const raw = fs.readFileSync(filePath, 'utf-8');
+    return parseJsonString(context, raw, options);
+  } catch (error) {
+    const normalizedError = error instanceof Error ? error : new Error(String(error));
+    logger.error('Failed to read JSON file', normalizedError, { filePath, context });
+    return null;
+  }
+}
+
+function stringifyJsonValue<T>(context: string, value: T, options?: JsonStringifyOptions): string | null {
+  const outcome = serialization.json(value, options).context(context).stringify();
+  return unwrapSerializationOutcome(context, outcome);
+}
+
 // Connection interface from backend-service-router.ts
 export interface BackendConnection {
   id: string;
@@ -111,12 +149,15 @@ export class ConnectionFactory {
       },
       connect: async () => {
         try {
-          console.log(`[IPC] Establishing connection to ${serviceId} via ${config.endpoint}`);
+          ipcLogger.info('Establishing IPC connection', {
+            serviceId,
+            endpoint: config.endpoint,
+          });
           
           await ipcClient.connect();
           connected = true;
           
-          console.log(`[IPC] Successfully connected to ${serviceId}`);
+          ipcLogger.info('IPC connection established', { serviceId });
           
           // Verify connection if authentication required
           if (config.authentication?.required) {
@@ -134,11 +175,15 @@ export class ConnectionFactory {
       },
       disconnect: async () => {
         try {
-          console.log(`[IPC] Disconnecting from ${serviceId}`);
+          ipcLogger.info('Disconnecting IPC connection', { serviceId });
           await ipcClient.disconnect();
           connected = false;
         } catch (error) {
-          console.warn(`[IPC] Warning during disconnection from ${serviceId}: ${error}`);
+          const normalizedError = error instanceof Error ? error : new Error(String(error));
+          ipcLogger.warn('Warning during IPC disconnection', {
+            serviceId,
+            error: normalizedError.message,
+          });
           connected = false;
         }
       }
@@ -162,7 +207,7 @@ export class ConnectionFactory {
       isConnected: () => httpConnected,
       connect: async () => {
         try {
-          console.log(`[HTTP] Testing connection to ${serviceId} at ${config.endpoint}`);
+          httpLogger.info('Testing HTTP connection', { serviceId, endpoint: config.endpoint });
           
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), config.timeout || 10000);
@@ -194,12 +239,12 @@ export class ConnectionFactory {
                 });
 
                 if (response.ok) {
-                  console.log(`[HTTP] ${serviceId} service available at ${healthEndpoint}`);
+                  httpLogger.info('HTTP service available', { serviceId, healthEndpoint });
                   connected = true;
                   break;
                 }
               } catch (endpointError) {
-                console.log(`[HTTP] Health check failed for ${healthEndpoint}: ${endpointError}`);
+                httpLogger.warn('HTTP health check failed', { serviceId, healthEndpoint, error: endpointError instanceof Error ? endpointError.message : String(endpointError) });
               }
             }
 
@@ -207,7 +252,7 @@ export class ConnectionFactory {
             
             if (connected) {
               httpConnected = true;
-              console.log(`[HTTP] Successfully connected to ${serviceId}`);
+              httpLogger.info('HTTP connection established', { serviceId });
             } else {
               throw new Error(`All health endpoints failed for ${serviceId} service`);
             }
@@ -226,7 +271,7 @@ export class ConnectionFactory {
         }
       },
       disconnect: async () => {
-        console.log(`[HTTP] Disconnecting from ${serviceId}`);
+        httpLogger.info('Disconnecting HTTP connection', { serviceId });
         httpConnected = false;
       }
     };
@@ -251,7 +296,7 @@ export class ConnectionFactory {
       isConnected: () => wsConnected && ws !== null && ws.readyState === ws.OPEN,
       connect: async () => {
         try {
-          console.log(`[WebSocket] Establishing connection to ${serviceId} at ${config.endpoint}`);
+          websocketLogger.info('Establishing WebSocket connection', { serviceId, endpoint: config.endpoint });
           
           const wsUrl = config.endpoint.replace('ws://', 'ws://').replace('http://', 'ws://');
           ws = new WebSocket.WebSocket(wsUrl);
@@ -264,17 +309,17 @@ export class ConnectionFactory {
 
             ws!.onopen = async () => {
               clearTimeout(timeout);
-              console.log(`[WebSocket] Connection established to ${serviceId}`);
+              websocketLogger.info('WebSocket connection established', { serviceId });
               
               try {
                 // Perform service handshake with authentication if required
                 await ConnectionFactory.performWebSocketHandshake(ws!, serviceId, config);
                 wsConnected = true;
-                console.log(`[WebSocket] Successfully connected to ${serviceId}`);
+                websocketLogger.info('WebSocket connection ready', { serviceId });
                 resolve();
               } catch (handshakeError) {
                 wsConnected = false;
-                console.error(`[WebSocket] Handshake failed with ${serviceId}:`, handshakeError);
+                websocketLogger.error('WebSocket handshake failed', handshakeError instanceof Error ? handshakeError : new Error(String(handshakeError)), { serviceId });
                 reject(handshakeError);
               }
             };
@@ -282,17 +327,17 @@ export class ConnectionFactory {
             ws!.onerror = (error) => {
               clearTimeout(timeout);
               wsConnected = false;
-              console.error(`[WebSocket] Connection error for ${serviceId}:`, error);
+              websocketLogger.error('WebSocket connection error', error instanceof Error ? error : new Error(String(error)), { serviceId });
               reject(error);
             };
 
             ws!.onclose = () => {
               wsConnected = false;
-              console.log(`[WebSocket] ${serviceId} connection closed`);
+              websocketLogger.info('WebSocket connection closed', { serviceId });
             };
 
             ws!.onmessage = (event) => {
-              console.log(`[WebSocket] Message from ${serviceId}:`, event.data);
+              websocketLogger.debug('WebSocket message received', { serviceId, payload: event.data });
             };
           });
         } catch (error) {
@@ -306,7 +351,7 @@ export class ConnectionFactory {
       },
       disconnect: async () => {
         if (ws && ws.readyState === ws.OPEN) {
-          console.log(`[WebSocket] Disconnecting from ${serviceId}`);
+          websocketLogger.info('Disconnecting WebSocket connection', { serviceId });
           ws.close();
           wsConnected = false;
           ws = null;
@@ -327,7 +372,7 @@ export class ConnectionFactory {
     config: BackendConfig
   ): Promise<void> {
     return new Promise<void>((resolve, reject) => {
-      console.log(`[WebSocket] Performing handshake with ${serviceId}`);
+      websocketLogger.info('Performing WebSocket handshake', { serviceId });
       
       const handshakeTimeout = setTimeout(() => {
         reject(new Error(`WebSocket handshake timeout for ${serviceId}`));
@@ -344,29 +389,38 @@ export class ConnectionFactory {
       };
 
       const handshakeHandler = (data: WebSocket.RawData) => {
-        try {
-          const response = JSON.parse(data.toString());
-          
-          if (response.type === 'handshake_ack' && response.success) {
-            clearTimeout(handshakeTimeout);
-            ws.off('message', handshakeHandler);
-            console.log(`[WebSocket] Handshake successful for ${serviceId}`);
-            resolve();
-          } else if (response.type === 'handshake_error') {
-            clearTimeout(handshakeTimeout);
-            ws.off('message', handshakeHandler);
-            reject(new Error(`WebSocket handshake failed: ${response.error || 'Unknown error'}`));
-          }
-        } catch {
-          // Continue listening for proper handshake response
+        const response = parseJsonString<Record<string, unknown>>(
+          'backend:connection-factory:websocket:handshake:response',
+          data.toString(),
+        );
+
+        if (!response) {
+          return;
+        }
+
+        if (response.type === 'handshake_ack' && response.success) {
+          clearTimeout(handshakeTimeout);
+          ws.off('message', handshakeHandler);
+          websocketLogger.info('WebSocket handshake successful', { serviceId });
+          resolve();
+        } else if (response.type === 'handshake_error') {
+          clearTimeout(handshakeTimeout);
+          ws.off('message', handshakeHandler);
+          reject(new Error(`WebSocket handshake failed: ${response.error || 'Unknown error'}`));
         }
       };
 
       ws.on('message', handshakeHandler);
       
       try {
-        ws.send(JSON.stringify(handshakeMessage));
-        console.log(`[WebSocket] Handshake message sent to ${serviceId}`);
+        const payload = stringifyJsonValue('backend:connection-factory:websocket:handshake:request', handshakeMessage);
+
+        if (!payload) {
+          throw new Error('Failed to serialize handshake message');
+        }
+
+        ws.send(payload);
+        websocketLogger.debug('WebSocket handshake message sent', { serviceId });
       } catch (sendError) {
         clearTimeout(handshakeTimeout);
         ws.off('message', handshakeHandler);
@@ -414,7 +468,7 @@ export class ConnectionFactory {
     if (auth.type === 'none' || !auth.required) return;
     
     // Implementation depends on the specific IPC authentication protocol
-    console.log(`[IPC] Authenticating connection with ${auth.type} authentication`);
+    ipcLogger.info('Authenticating IPC connection', { type: auth.type });
     
     if (auth.credentials && client.sendRequest) {
       await client.sendRequest('authenticate', auth.credentials);
@@ -469,7 +523,7 @@ class HaruspexIPCClient {
       for (const marker of markers) {
         const markerPath = path.join(currentPath, marker);
         if (fs.existsSync(markerPath)) {
-          console.log(`[IPC] Found workspace root via marker '${marker}' at: ${currentPath}`);
+          ipcLogger.debug('Workspace root detected', { marker, path: currentPath });
           return currentPath;
         }
       }
@@ -488,9 +542,19 @@ class HaruspexIPCClient {
 
     try {
       const connectionData = fs.readFileSync(this.connectionInfoPath, 'utf-8');
-      this.connectionInfo = JSON.parse(connectionData);
+      const parsedInfo = parseJsonString<Record<string, unknown>>(
+        'backend:connection-factory:ipc:connection-info',
+        connectionData,
+        { defaults: {} },
+      );
+
+      if (!parsedInfo) {
+        throw new Error('Connection info serialization failed');
+      }
+
+      this.connectionInfo = parsedInfo;
     } catch (error) {
-      throw new Error(`Failed to parse Haruspex connection info: ${error}`);
+      throw new Error(`Failed to parse Haruspex connection info: ${error instanceof Error ? error.message : String(error)}`);
     }
 
     return new Promise((resolve, reject) => {
@@ -504,7 +568,7 @@ class HaruspexIPCClient {
       this.socket.connect(this.connectionInfo.port, this.connectionInfo.host, () => {
         clearTimeout(timeout);
         this.isConnected = true;
-        console.log(`[IPC] Connected to Haruspex at ${this.connectionInfo.host}:${this.connectionInfo.port}`);
+        ipcLogger.info('IPC socket connected', { host: this.connectionInfo.host, port: this.connectionInfo.port });
         resolve();
       });
 
@@ -516,7 +580,7 @@ class HaruspexIPCClient {
 
       this.socket.on('close', () => {
         this.isConnected = false;
-        console.log('[IPC] Connection to Haruspex closed');
+        ipcLogger.info('IPC socket closed');
       });
     });
   }
@@ -563,7 +627,13 @@ class HaruspexIPCClient {
 
       this.pendingRequests.set(requestId, { resolve, reject, timeout });
 
-      const messageStr = JSON.stringify(message) + '\n';
+      const serializedMessage = stringifyJsonValue('backend:connection-factory:ipc:message', message);
+
+      if (!serializedMessage) {
+        throw new Error('Failed to serialize IPC request message');
+      }
+
+      const messageStr = `${serializedMessage}\n`;
       this.socket!.write(messageStr);
     });
   }
