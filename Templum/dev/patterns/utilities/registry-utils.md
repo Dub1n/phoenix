@@ -5,7 +5,7 @@ name: registry-utils
 description: Confidence-validated registry foundation replacing bespoke lifecycle, validation, and duplicate detection logic scattered across interface and command registries
 status:
   - [x]
-category: core-infrastructure
+category: infrastructure
 use-when:
   - You need to register and lazily resolve components while enforcing consistent lifecycle hooks
   - Duplicate registry code exists across command, menu, adapter, or service registries

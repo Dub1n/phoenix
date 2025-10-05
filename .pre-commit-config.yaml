@@ -17,3 +17,8 @@ repos:
             else
               python scripts/IDE-manager/generate-context-index.py
             fi
+      - id: audit-json-warning
+        name: warn on audit json additions
+        entry: scripts/hooks/audit-json-warning.sh
+        language: script
+        pass_filenames: false

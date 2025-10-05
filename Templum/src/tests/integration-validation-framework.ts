@@ -91,10 +91,13 @@ interface MultiSystemWorkflowOptions {
   responseFactory?: BackendResponseFactory;
 }
 
+export const PHASE6_READINESS_SCORE_NOTE = 'Score disabled until properly implemented';
+
 export interface Phase6ValidationReport {
   reportId: string;
   generatedAt: number;
   phase6ReadinessScore: number; // 0-100
+  phase6ReadinessScoreNote: string;
   realIntegrationSummary: {
     totalWorkflows: number;
     successfulWorkflows: number;
@@ -3778,6 +3781,7 @@ export class Phase6IntegrationValidationSuite extends EventEmitter {
         reportId,
         generatedAt: Date.now(),
         phase6ReadinessScore,
+        phase6ReadinessScoreNote: PHASE6_READINESS_SCORE_NOTE,
         realIntegrationSummary: {
           totalWorkflows: workflows.length,
           successfulWorkflows: workflows.filter(w => w.success).length,
@@ -4106,6 +4110,7 @@ export class Phase6IntegrationValidationSuite extends EventEmitter {
         reportId: `health_check_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         generatedAt: Date.now(),
         phase6ReadinessScore,
+        phase6ReadinessScoreNote: PHASE6_READINESS_SCORE_NOTE,
         realIntegrationSummary: {
           totalWorkflows: 0,
           successfulWorkflows: 0,

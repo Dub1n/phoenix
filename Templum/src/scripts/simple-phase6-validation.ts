@@ -14,6 +14,8 @@ import * as path from 'path';
 import { performance } from 'perf_hooks';
 import { formatColumn } from './cli-string-formatting';
 
+const READINESS_SCORE_NOTE = 'Score disabled until properly implemented';
+
 // Simplified interfaces for working validation
 interface ServiceHealth {
   operational: boolean;
@@ -27,6 +29,7 @@ interface ValidationReport {
   reportId: string;
   generatedAt: number;
   phase6ReadinessScore: number;
+  phase6ReadinessScoreNote: string;
   serviceHealth: {
     haruspex: ServiceHealth;
     pcl: ServiceHealth;
@@ -83,6 +86,7 @@ class SimplePhase6Validator {
       reportId: `validation_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       generatedAt: Date.now(),
       phase6ReadinessScore: readinessScore,
+      phase6ReadinessScoreNote: READINESS_SCORE_NOTE,
       serviceHealth,
       testResults,
       recommendations: this.generateRecommendations(readinessScore, serviceHealth, testResults)
@@ -280,7 +284,7 @@ class SimplePhase6Validator {
   displaySummary(report: ValidationReport): void {
     console.log('\n📊 Phase 6 Integration Validation Summary');
     console.log('═'.repeat(50));
-    console.log(`Phase 6 Readiness Score: ${report.phase6ReadinessScore}%`);
+    console.log(`Phase 6 Readiness Score: ${report.phase6ReadinessScoreNote ?? READINESS_SCORE_NOTE}`);
     console.log(`Integration Tests: ${report.testResults.passedTests}/${report.testResults.totalTests} passed`);
     console.log(`Average Response Time: ${report.testResults.averageResponseTime.toFixed(1)}ms`);
     
@@ -312,8 +316,7 @@ class SimplePhase6Validator {
    * Generate HTML report
    */
   private generateHTMLReport(report: ValidationReport): string {
-    const readinessColor = report.phase6ReadinessScore >= 80 ? '#27ae60' : 
-                          report.phase6ReadinessScore >= 70 ? '#f39c12' : '#e74c3c';
+    const readinessNote = report.phase6ReadinessScoreNote ?? READINESS_SCORE_NOTE;
 
     return `<!DOCTYPE html>
 <html>
@@ -323,7 +326,7 @@ class SimplePhase6Validator {
         body { font-family: Arial, sans-serif; margin: 20px; }
         .header { background: #2c3e50; color: white; padding: 20px; border-radius: 5px; }
         .summary { background: #ecf0f1; padding: 15px; margin: 20px 0; border-radius: 5px; }
-        .score { font-size: 24px; font-weight: bold; color: ${readinessColor}; }
+        .score { font-size: 24px; font-weight: bold; color: #7f8c8d; font-style: italic; }
         .success { color: #27ae60; }
         .failure { color: #e74c3c; }
         .warning { color: #f39c12; }
@@ -343,7 +346,7 @@ class SimplePhase6Validator {
 
     <div class="summary">
         <h2>Overall Results</h2>
-        <div class="score">Phase 6 Readiness Score: ${report.phase6ReadinessScore}%</div>
+        <div class="score">Phase 6 Readiness Score: ${readinessNote}</div>
         <p>Integration Tests: ${report.testResults.passedTests}/${report.testResults.totalTests} passed</p>
         <p>Average Response Time: ${report.testResults.averageResponseTime.toFixed(1)}ms</p>
     </div>
@@ -401,7 +404,7 @@ class SimplePhase6Validator {
    * Generate Markdown report
    */
   private generateMarkdownReport(report: ValidationReport): string {
-    const readinessEmoji = report.phase6ReadinessScore >= 80 ? '✅' : '❌';
+    const readinessNote = report.phase6ReadinessScoreNote ?? READINESS_SCORE_NOTE;
     
     return `# Simple Phase 6 Integration Validation Report
 
@@ -410,7 +413,7 @@ class SimplePhase6Validator {
 
 ## Overall Results
 
-**Phase 6 Readiness Score:** ${report.phase6ReadinessScore}% ${readinessEmoji}
+**Phase 6 Readiness Score:** ${readinessNote}
 
 - Integration Tests: ${report.testResults.passedTests}/${report.testResults.totalTests} passed
 - Failed Tests: ${report.testResults.failedTests}

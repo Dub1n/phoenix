@@ -27,6 +27,15 @@ If a Stage 3 phase exposes new helper or dependency work, add a fresh Stage 2.5 
 
 ## Running Log
 
+### 2025-10-03 — Display Utils (Pattern 5) — Stage 7 Validation & Reporting
+
+- **Agent**: Codex
+- **Stage**: 7
+- **Summary**: Finalised Display Utils consolidation by executing targeted Jest suites and the full Phase 6 health/validation harness; resolved lingering TypeScript gaps in the interactive menu renderer, terminal UI components, and service ordering manager so the build pipeline completes without manual intervention.
+- **Commands / Evidence**: `cd Templum && npm run test -- --runTestsByPath src/tests/utils/display-utils.test.ts src/tests/utils/display-stack.integration.test.ts --runInBand --no-cache --forceExit` (`tmp/stage7/pattern-5/20251003T193949Z-display-utils-and-stack.log`); `cd Templum && npm run test -- --runTestsByPath src/interfaces/__tests__/adaptive-cli-integration.test.ts --runInBand --no-cache --forceExit` (`tmp/stage7/pattern-5/20251003T194016Z-adaptive-cli-integration.log`); `cd Templum && npm run test -- --runTestsByPath src/interfaces/navigation/__tests__/navigation-system.test.ts --runInBand --no-cache --forceExit` (`tmp/stage7/pattern-5/20251003T194049Z-navigation-system.log`); `cd Templum && npm run phase6-health` (`tmp/stage7/pattern-5/20251003T193648Z-phase6-health.log`); `cd Templum && npm run phase6-validation` (`tmp/stage7/pattern-5/20251003T193723Z-phase6-validation.log`, reports under `validation-reports/phase6-validation-2025-10-03T19-37-52-796Z.*`).
+- **Files touched**: `Templum/src/interfaces/interactive-menu-renderer.ts`, `Templum/src/interfaces/terminal-ui-components.ts`, `Templum/src/interfaces/service-ordering-manager.ts`, `Templum/dev/architecture/safe-consolidation-candidates.md`, `Templum/dev/architecture/utility-consolidation-plans/pattern-5.md`.
+- **Follow-ups / Risks**: Phase 6 readiness score output is disabled (previous hard-coded 67/100 now ignored); enhanced menu help flow still exits the session after showing the overlay — schedule UX reinforcement post Stage 7.
+
 ### 2025-10-03 — Display Utils (Pattern 5) — Stage 6 lane c Wrap-up
 
 - **Agent**: Codex

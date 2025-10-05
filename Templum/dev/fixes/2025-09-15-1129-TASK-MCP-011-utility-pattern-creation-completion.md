@@ -52,23 +52,23 @@ Implemented Chain-Engineered Task Orchestration using hybrid layered intelligenc
 
 - `Templum/dev/patterns/utilities/core/event-utils.md` - Typed event management with auto-cleanup (528 EventEmitter consolidation)
 - `Templum/dev/patterns/utilities/display/window-utils.md` - Chainable window API for borders/layout (~15 files, ~300 lines reduction)
-- `Templum/dev/patterns/terminal-formatter.md` - Semantic formatting API (279 chalk calls consolidation)
-- `Templum/dev/patterns/theme-utils.md` - Theme loading/switching with interface adaptations
-- `Templum/dev/patterns/validator.ts` - Chainable validation API (~12 files, ~200 lines reduction)
-- `Templum/dev/patterns/type-guards.md` - Semantic type checking with confidence validation
-- `Templum/dev/patterns/serialization-utils.md` - Safe JSON processing with validation integration
-- `Templum/dev/patterns/chainable-string-utils.md` - Chainable text processing API
-- `Templum/dev/patterns/path-utils.md` - Safe file system operations with Promise patterns
+- `Templum/dev/patterns/utilities/display/terminal-formatter.md` - Semantic formatting API (279 chalk calls consolidation)
+- `Templum/dev/patterns/utilities/display/theme-utils.md` - Theme loading/switching with interface adaptations
+- `Templum/dev/patterns/utilities/data/validator.md` - Chainable validation API (~12 files, ~200 lines reduction)
+- `Templum/dev/patterns/utilities/data/type-guards.md` - Semantic type checking with confidence validation
+- `Templum/dev/patterns/utilities/data/serialization-utils.md` - Safe JSON processing with validation integration
+- `Templum/dev/patterns/utilities/data/chainable-string-utils.md` - Chainable text processing API
+- `Templum/dev/patterns/utilities/system/path-utils.md` - Safe file system operations with Promise patterns
 - `cross-project-dev/config-utils.md` - Unified configuration management
-- `Templum/dev/patterns/cache-utils-==.md` - Multi-level LRU cache with TTL and confidence validation
+- `Templum/dev/patterns/utilities/system/cache-utils.md` - Multi-level LRU cache with TTL and confidence validation
 - `cross-project-dev/performance-utils.md` - Performance tracking with confidence-validated metrics
-- `Templum/dev/patterns/registry-utils.md` - Base registry class with lifecycle management
+- `Templum/dev/patterns/utilities/registry-utils.md` - Base registry class with lifecycle management
 - `Templum/dev/patterns/utilities/core/factory-utils.md` - Factory pattern base with configuration optimization
-- `Templum/dev/patterns/utilities/core/navigation-utils.md` - Unified navigation API with breadcrumb management
+- `Templum/dev/patterns/utilities/core/navigation-utils-utility.md` - Unified navigation API with breadcrumb management
 - `Templum/dev/patterns/utilities/core/protocol-utils.md` - Shared protocol utilities for IPC/HTTP/WebSocket
-- `Templum/dev/patterns/service-utils.md` - Service management with health monitoring
-- `Templum/dev/patterns/debug-utils.md` - Development debugging utilities with confidence validation
-- `Templum/dev/patterns/utilities/patterns/resilience-utils.md` - Unified resilience patterns consolidating fallback, monitoring, and rollback (~3 files, ~150 lines reduction)
+- `Templum/dev/patterns/utilities/core/service-utils.md` - Service management with health monitoring
+- `Templum/dev/patterns/utilities/dev/debug-utils.md` - Development debugging utilities with confidence validation
+- `Templum/dev/patterns/utilities/resilience-utils.md` - Unified resilience patterns consolidating fallback, monitoring, and rollback (~3 files, ~150 lines reduction)
 
 **Intelligence Infrastructure**:
 

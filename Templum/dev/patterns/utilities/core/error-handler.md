@@ -4,7 +4,7 @@ last-updated: 2025-09-14T18:10:00Z
 name: error-handler
 description: Centralized error handling to standardize 695 catch blocks with consistent error wrapping, recovery strategies, and minimal usage footprint
 status: "[x]"
-category: core-infrastructure
+category: infrastructure
 use-when:
   - Standardizing scattered try/catch blocks across components
   - Need for consistent error wrapping and recovery patterns

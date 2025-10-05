@@ -4,7 +4,7 @@ last-updated: 2025-09-14T21:31:45Z
 name: protocol-utils
 description: Unified protocol utilities for IPC/HTTP/WebSocket connection management optimization with confidence-validated message processing and shared protocol abstractions
 status: ["[x]"]
-category: core-infrastructure-utility
+category: infrastructure
 use-when:
   - Multiple protocol implementations with duplicated connection logic
   - Need for unified protocol abstraction across IPC/HTTP/WebSocket

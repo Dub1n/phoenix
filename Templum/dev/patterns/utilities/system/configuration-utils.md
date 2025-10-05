@@ -4,7 +4,7 @@ last-updated: 2025-09-14T14:12:30Z
 name: configuration-utils
 description: Unified configuration loading utilities covering environment parsing, schema validation, file persistence, and hot reloading
 status: established
-category: system
+category: configuration
 use-when:
   - Loading configuration from files, environment variables, or defaults
   - Validating configuration structure before bootstrapping services

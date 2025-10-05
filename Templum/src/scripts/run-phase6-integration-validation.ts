@@ -11,7 +11,11 @@
 import { program } from 'commander';
 import * as fs from 'fs';
 import * as path from 'path';
-import { Phase6IntegrationValidationSuite, Phase6ValidationReport } from '../tests/integration-validation-framework';
+import {
+  PHASE6_READINESS_SCORE_NOTE,
+  Phase6IntegrationValidationSuite,
+  Phase6ValidationReport,
+} from '../tests/integration-validation-framework';
 import { formatColumn } from './cli-string-formatting';
 
 // CLI Configuration
@@ -266,7 +270,7 @@ class Phase6ValidationCLI {
 
       console.log('─'.repeat(50));
       console.log(`Overall System Health: ${healthResults.phase6ReadinessScore >= 80 ? '✅ HEALTHY' : '❌ NEEDS ATTENTION'}`);
-      console.log(`Phase 6 Readiness Score: ${healthResults.phase6ReadinessScore}%`);
+      console.log(`Phase 6 Readiness Score: ${healthResults.phase6ReadinessScoreNote ?? PHASE6_READINESS_SCORE_NOTE}`);
 
       if (healthResults.recommendations.critical.length > 0) {
         console.log('\n🚨 Critical Issues:');
@@ -515,7 +519,7 @@ class Phase6ValidationCLI {
   private displayValidationSummary(report: Phase6ValidationReport): void {
     console.log('\n📊 Phase 6 Integration Validation Summary');
     console.log('═'.repeat(50));
-    console.log(`Phase 6 Readiness Score: ${report.phase6ReadinessScore}%`);
+    console.log(`Phase 6 Readiness Score: ${report.phase6ReadinessScoreNote ?? PHASE6_READINESS_SCORE_NOTE}`);
     console.log(`Multi-System Workflows: ${report.realIntegrationSummary.successfulWorkflows}/${report.realIntegrationSummary.totalWorkflows} successful`);
     console.log(`Cross-Interface Consistency: ${report.realIntegrationSummary.crossInterfaceConsistency.toFixed(1)}%`);
     console.log(`Average Workflow Time: ${report.realIntegrationSummary.averageWorkflowTime.toFixed(1)}ms`);
@@ -568,6 +572,7 @@ class Phase6ValidationCLI {
         th, td { border: 1px solid #bdc3c7; padding: 8px; text-align: left; }
         th { background: #34495e; color: white; }
         .score { font-size: 24px; font-weight: bold; }
+        .note { color: #7f8c8d; font-style: italic; }
     </style>
 </head>
 <body>
@@ -579,8 +584,8 @@ class Phase6ValidationCLI {
 
     <div class="summary">
         <h2>Overall Results</h2>
-        <div class="score ${report.phase6ReadinessScore >= 80 ? 'success' : 'failure'}">
-            Phase 6 Readiness Score: ${report.phase6ReadinessScore}%
+        <div class="score note">
+            Phase 6 Readiness Score: ${report.phase6ReadinessScoreNote ?? PHASE6_READINESS_SCORE_NOTE}
         </div>
         <p>Multi-System Workflows: ${report.realIntegrationSummary.successfulWorkflows}/${report.realIntegrationSummary.totalWorkflows} successful</p>
         <p>Cross-Interface Consistency: ${report.realIntegrationSummary.crossInterfaceConsistency.toFixed(1)}%</p>
@@ -641,7 +646,7 @@ class Phase6ValidationCLI {
 
 ## Overall Results
 
-**Phase 6 Readiness Score:** ${report.phase6ReadinessScore}% ${report.phase6ReadinessScore >= 80 ? '✅' : '❌'}
+**Phase 6 Readiness Score:** ${report.phase6ReadinessScoreNote ?? PHASE6_READINESS_SCORE_NOTE}
 
 - Multi-System Workflows: ${report.realIntegrationSummary.successfulWorkflows}/${report.realIntegrationSummary.totalWorkflows} successful
 - Cross-Interface Consistency: ${report.realIntegrationSummary.crossInterfaceConsistency.toFixed(1)}%

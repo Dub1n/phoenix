@@ -1,6 +1,6 @@
 {
-  "generated_at": "2025-10-03T00:00:38Z",
-  "root": "VDL_Vault",
+  "generated_at": "2025-10-05T18:51:15Z",
+  "root": "VDL_VAULT",
   "patterns": [
     "README.md",
     "README*.md",
@@ -45,13 +45,14 @@
     "**/archive/*"
   ],
   "case_sensitive": false,
-  "paths_hash": "dbde377f35a55584ba19e51f33572af19bd47e89",
+  "paths_hash": "c538d99382c993416f7eaee10654dbc500d64eae",
   "counts": {
     "Haruspex": 3,
     "meta": 5,
     "phoenix-code-lite": 7,
-    "scripts": 7,
-    "Templum": 17
+    "scripts": 8,
+    "skill-tree": 1,
+    "Templum": 19
   },
   "files": [
     {
@@ -86,45 +87,45 @@
       "filename": "ARCHITECTURE.md",
       "folder": "meta",
       "kind": "architecture",
-      "lines": 297,
-      "bytes": 24255,
-      "sha1": "751b35531f19a3766ce09661d66120efc39c8573"
+      "lines": 300,
+      "bytes": 26478,
+      "sha1": "4716f6425bd621897826c716058e28c37447982f"
     },
     {
       "path": "meta/context_index.md",
       "filename": "context_index.md",
       "folder": "meta",
       "kind": "other",
-      "lines": 64,
-      "bytes": 3828,
-      "sha1": "ceefb87f941084898896eadf1fdffdbdce170477"
+      "lines": 66,
+      "bytes": 4011,
+      "sha1": "009cb1e4d74592d71c582f54429a812063b0887b"
     },
     {
       "path": "meta/context_index_raw.md",
       "filename": "context_index_raw.md",
       "folder": "meta",
       "kind": "other",
-      "lines": 59,
-      "bytes": 3903,
-      "sha1": "94506514872bb3c1c708153242ae578f45de0487"
+      "lines": 61,
+      "bytes": 4123,
+      "sha1": "710083d4276855778457ff43cc4cb562a3756b15"
     },
     {
       "path": "meta/templates/architecture-spec.md",
       "filename": "architecture-spec.md",
       "folder": "meta",
       "kind": "architecture",
-      "lines": 54,
-      "bytes": 1856,
-      "sha1": "d456e9e3e69d664dd2a722202ecb981a52bb8875"
+      "lines": 62,
+      "bytes": 1921,
+      "sha1": "ab89e7c99615525df09acdf076bbc62cd85951d3"
     },
     {
       "path": "meta/workflows/README.md",
       "filename": "README.md",
       "folder": "meta",
       "kind": "readme",
-      "lines": 29,
-      "bytes": 1880,
-      "sha1": "f6b8bc5fd5419bd7d17048fe453a734ebaa8388f"
+      "lines": 34,
+      "bytes": 1885,
+      "sha1": "c193e5a21a3d3ac11536579e583bf3c6f3f61973"
     },
     {
       "path": "phoenix-code-lite/dev/architecture/UNIFIED-LAYOUT-ARCHITECTURE.md",
@@ -158,9 +159,9 @@
       "filename": "architecture-spec.md",
       "folder": "phoenix-code-lite",
       "kind": "architecture",
-      "lines": 69,
-      "bytes": 3568,
-      "sha1": "51d1e5f4804c57a7a5a858ddb738333216e2e1c5"
+      "lines": 78,
+      "bytes": 5147,
+      "sha1": "2531932adce71aa5619b772693aa121940dd8ae4"
     },
     {
       "path": "phoenix-code-lite/docs/current/index/ARCHITECTURE-DIAGRAM.md",
@@ -188,6 +189,15 @@
       "lines": 34,
       "bytes": 764,
       "sha1": "4a9b261d1dce6d8a66d4d61aa5c20a162ad066f2"
+    },
+    {
+      "path": "scripts/custommove/README.md",
+      "filename": "README.md",
+      "folder": "scripts",
+      "kind": "readme",
+      "lines": 65,
+      "bytes": 2437,
+      "sha1": "0c52893d80980bd97813f936ff7c1138eee296df"
     },
     {
       "path": "scripts/shimdex/ARCHITECTURE.md",
@@ -253,13 +263,22 @@
       "sha1": "6fde89379c24956854cbd2d35b7d2a552ca5167b"
     },
     {
+      "path": "skill-tree/README.md",
+      "filename": "README.md",
+      "folder": "skill-tree",
+      "kind": "readme",
+      "lines": 215,
+      "bytes": 10444,
+      "sha1": "1260dbfa5e62e477800e718c781896378e65d964"
+    },
+    {
       "path": "Templum/dev/architecture/architecture-restructuring-plan.md",
       "filename": "architecture-restructuring-plan.md",
       "folder": "Templum",
       "kind": "architecture",
-      "lines": 595,
-      "bytes": 17278,
-      "sha1": "1b08b7a73337813745ef404fc166ef186d7cb845"
+      "lines": 605,
+      "bytes": 18063,
+      "sha1": "c79eca9b98b0c28bf1cea89e0c2964afc728cc33"
     },
     {
       "path": "Templum/dev/architecture/consolidation-state/README.md",
@@ -325,6 +344,15 @@
       "sha1": "e2a4d8a5164787246c9bb65dbb742bdc6a3d4967"
     },
     {
+      "path": "Templum/dev/patterns/architecture/abstraction-layer-architecture.md",
+      "filename": "abstraction-layer-architecture.md",
+      "folder": "Templum",
+      "kind": "architecture",
+      "lines": 147,
+      "bytes": 5607,
+      "sha1": "13e20c363f46d39346481998159571caa7c021e3"
+    },
+    {
       "path": "Templum/dev/patterns/hybrid-cli-development-testing.md",
       "filename": "hybrid-cli-development-testing.md",
       "folder": "Templum",
@@ -338,9 +366,18 @@
       "filename": "README.md",
       "folder": "Templum",
       "kind": "readme",
-      "lines": 303,
-      "bytes": 27643,
-      "sha1": "8e8ced8f3a696204ec3e395746fe87fe81f0a6b5"
+      "lines": 1171,
+      "bytes": 101863,
+      "sha1": "90e1a784948d20d1e514964ad1a539ce20cf2061"
+    },
+    {
+      "path": "Templum/dev/patterns/testing-integration/hybrid-cli-development-testing.md",
+      "filename": "hybrid-cli-development-testing.md",
+      "folder": "Templum",
+      "kind": "dev",
+      "lines": 385,
+      "bytes": 12384,
+      "sha1": "dbd8ea2917466f22700bfcab509800ed75699636"
     },
     {
       "path": "Templum/dev/tasks/developer-doc-consolidation.md",
@@ -366,8 +403,8 @@
       "folder": "Templum",
       "kind": "architecture",
       "lines": 100,
-      "bytes": 7757,
-      "sha1": "77864b7d6469e39f4301ed072f0e7942372568a7"
+      "bytes": 10278,
+      "sha1": "e5a2fb5e600e4f9adfc071adb0cbc4f378ffb618"
     },
     {
       "path": "Templum/examples/README.md",
@@ -442,45 +479,45 @@
         "filename": "ARCHITECTURE.md",
         "folder": "meta",
         "kind": "architecture",
-        "lines": 297,
-        "bytes": 24255,
-        "sha1": "751b35531f19a3766ce09661d66120efc39c8573"
+        "lines": 300,
+        "bytes": 26478,
+        "sha1": "4716f6425bd621897826c716058e28c37447982f"
       },
       {
         "path": "meta/context_index.md",
         "filename": "context_index.md",
         "folder": "meta",
         "kind": "other",
-        "lines": 64,
-        "bytes": 3828,
-        "sha1": "ceefb87f941084898896eadf1fdffdbdce170477"
+        "lines": 66,
+        "bytes": 4011,
+        "sha1": "009cb1e4d74592d71c582f54429a812063b0887b"
       },
       {
         "path": "meta/context_index_raw.md",
         "filename": "context_index_raw.md",
         "folder": "meta",
         "kind": "other",
-        "lines": 59,
-        "bytes": 3903,
-        "sha1": "94506514872bb3c1c708153242ae578f45de0487"
+        "lines": 61,
+        "bytes": 4123,
+        "sha1": "710083d4276855778457ff43cc4cb562a3756b15"
       },
       {
         "path": "meta/templates/architecture-spec.md",
         "filename": "architecture-spec.md",
         "folder": "meta",
         "kind": "architecture",
-        "lines": 54,
-        "bytes": 1856,
-        "sha1": "d456e9e3e69d664dd2a722202ecb981a52bb8875"
+        "lines": 62,
+        "bytes": 1921,
+        "sha1": "ab89e7c99615525df09acdf076bbc62cd85951d3"
       },
       {
         "path": "meta/workflows/README.md",
         "filename": "README.md",
         "folder": "meta",
         "kind": "readme",
-        "lines": 29,
-        "bytes": 1880,
-        "sha1": "f6b8bc5fd5419bd7d17048fe453a734ebaa8388f"
+        "lines": 34,
+        "bytes": 1885,
+        "sha1": "c193e5a21a3d3ac11536579e583bf3c6f3f61973"
       }
     ],
     "phoenix-code-lite": [
@@ -516,9 +553,9 @@
         "filename": "architecture-spec.md",
         "folder": "phoenix-code-lite",
         "kind": "architecture",
-        "lines": 69,
-        "bytes": 3568,
-        "sha1": "51d1e5f4804c57a7a5a858ddb738333216e2e1c5"
+        "lines": 78,
+        "bytes": 5147,
+        "sha1": "2531932adce71aa5619b772693aa121940dd8ae4"
       },
       {
         "path": "phoenix-code-lite/docs/current/index/ARCHITECTURE-DIAGRAM.md",
@@ -549,6 +586,15 @@
       }
     ],
     "scripts": [
+      {
+        "path": "scripts/custommove/README.md",
+        "filename": "README.md",
+        "folder": "scripts",
+        "kind": "readme",
+        "lines": 65,
+        "bytes": 2437,
+        "sha1": "0c52893d80980bd97813f936ff7c1138eee296df"
+      },
       {
         "path": "scripts/shimdex/ARCHITECTURE.md",
         "filename": "ARCHITECTURE.md",
@@ -613,15 +659,26 @@
         "sha1": "6fde89379c24956854cbd2d35b7d2a552ca5167b"
       }
     ],
+    "skill-tree": [
+      {
+        "path": "skill-tree/README.md",
+        "filename": "README.md",
+        "folder": "skill-tree",
+        "kind": "readme",
+        "lines": 215,
+        "bytes": 10444,
+        "sha1": "1260dbfa5e62e477800e718c781896378e65d964"
+      }
+    ],
     "Templum": [
       {
         "path": "Templum/dev/architecture/architecture-restructuring-plan.md",
         "filename": "architecture-restructuring-plan.md",
         "folder": "Templum",
         "kind": "architecture",
-        "lines": 595,
-        "bytes": 17278,
-        "sha1": "1b08b7a73337813745ef404fc166ef186d7cb845"
+        "lines": 605,
+        "bytes": 18063,
+        "sha1": "c79eca9b98b0c28bf1cea89e0c2964afc728cc33"
       },
       {
         "path": "Templum/dev/architecture/consolidation-state/README.md",
@@ -687,6 +744,15 @@
         "sha1": "e2a4d8a5164787246c9bb65dbb742bdc6a3d4967"
       },
       {
+        "path": "Templum/dev/patterns/architecture/abstraction-layer-architecture.md",
+        "filename": "abstraction-layer-architecture.md",
+        "folder": "Templum",
+        "kind": "architecture",
+        "lines": 147,
+        "bytes": 5607,
+        "sha1": "13e20c363f46d39346481998159571caa7c021e3"
+      },
+      {
         "path": "Templum/dev/patterns/hybrid-cli-development-testing.md",
         "filename": "hybrid-cli-development-testing.md",
         "folder": "Templum",
@@ -700,9 +766,18 @@
         "filename": "README.md",
         "folder": "Templum",
         "kind": "readme",
-        "lines": 303,
-        "bytes": 27643,
-        "sha1": "8e8ced8f3a696204ec3e395746fe87fe81f0a6b5"
+        "lines": 1171,
+        "bytes": 101863,
+        "sha1": "90e1a784948d20d1e514964ad1a539ce20cf2061"
+      },
+      {
+        "path": "Templum/dev/patterns/testing-integration/hybrid-cli-development-testing.md",
+        "filename": "hybrid-cli-development-testing.md",
+        "folder": "Templum",
+        "kind": "dev",
+        "lines": 385,
+        "bytes": 12384,
+        "sha1": "dbd8ea2917466f22700bfcab509800ed75699636"
       },
       {
         "path": "Templum/dev/tasks/developer-doc-consolidation.md",
@@ -728,8 +803,8 @@
         "folder": "Templum",
         "kind": "architecture",
         "lines": 100,
-        "bytes": 7757,
-        "sha1": "77864b7d6469e39f4301ed072f0e7942372568a7"
+        "bytes": 10278,
+        "sha1": "e5a2fb5e600e4f9adfc071adb0cbc4f378ffb618"
       },
       {
         "path": "Templum/examples/README.md",

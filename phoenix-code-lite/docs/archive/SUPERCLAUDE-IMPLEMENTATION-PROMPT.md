@@ -1,10 +1,10 @@
-<!--
-title: [SuperClaude Implementation Prompt - Documentation]
+---
+name: [SuperClaude Implementation Prompt - Documentation]
 tags: [Documentation, Prompt, Implementation, Architecture, CLI, Decoupling]
 provides: [Step-by-Step Implementation Guide, Architecture Layers]
 requires: [docs/CLI-INTERACTION-DECOUPLING-ARCHITECTURE.md]
 description: [Execution prompt guiding implementation of the decoupled CLI architecture]
--->
+---
 
 # SuperClaude Implementation Prompt: CLI Interaction Decoupling Architecture
 
@@ -24,21 +24,21 @@ The new architecture consists of four distinct layers:
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                     USER INTERACTION                   │
+│                     USER INTERACTION                    │
 ├─────────────────────────────────────────────────────────┤
 │  Interactive Mode    │  Command Mode   │  Future Modes  │
 │  (Arrow Navigation)  │  (Text Input)   │  (Voice, etc.) │
 ├─────────────────────────────────────────────────────────┤
-│              INTERACTION ABSTRACTION LAYER             │
+│              INTERACTION ABSTRACTION LAYER              │
 ├─────────────────────────────────────────────────────────┤
-│                   MENU DEFINITION LAYER                │
-│         (Data structures describing menus/commands)    │
+│                   MENU DEFINITION LAYER                 │
+│         (Data structures describing menus/commands)     │
 ├─────────────────────────────────────────────────────────┤
-│                   COMMAND EXECUTION LAYER              │
-│              (Business logic implementation)           │
+│                   COMMAND EXECUTION LAYER               │
+│              (Business logic implementation)            │
 ├─────────────────────────────────────────────────────────┤
-│                      SKINS SYSTEM                      │
-│            (Menu/command definitions per domain)       │
+│                      SKINS SYSTEM                       │
+│            (Menu/command definitions per domain)        │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -865,4 +865,4 @@ describe('Unified Architecture Integration', () => {
 6. **Extensibility**: Easy to add new interaction modes or menu definitions
 7. **Skins Ready**: Architecture prepared for Skins system integration
 
-Follow this implementation guide step by step, referencing the original `CLI-INTERACTION-DECOUPLING-ARCHITECTURE.md` document for detailed specifications and examples. Maintain the separation of concerns principle throughout the implementation process. 
+Follow this implementation guide step by step, referencing the original `CLI-INTERACTION-DECOUPLING-ARCHITECTURE.md` document for detailed specifications and examples. Maintain the separation of concerns principle throughout the implementation process.

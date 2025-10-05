@@ -4,7 +4,7 @@ last-updated: 2025-09-14T19:10:00Z
 name: factory-utils
 description: Shared factory orchestration utilities that standardize creation pipelines across connection, adapter, and session components.
 status: "[!]"
-category: core-infrastructure
+category: infrastructure
 use-when:
   - Consolidating duplicated switch-based factory logic across backend connectors and adapters.
   - Replacing ad-hoc factory error handling with centralized, contextual responses.

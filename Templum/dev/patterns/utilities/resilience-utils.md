@@ -4,7 +4,7 @@ last-updated: 2025-09-15T00:00:00Z
 name: resilience-utils-consolidation-pattern
 description: Unified resilience utilities consolidating fallback strategies, performance monitoring, and rollback decision logic into a single chainable API for consistent system resilience
 status: pending
-category: resilience-infrastructure
+category: resilience
 use-when:
   - Need unified resilience patterns across components
   - Consolidating scattered fallback and monitoring logic

@@ -112,7 +112,7 @@ For additional context on architecture and active milestones, see `docs/current/
 
 ## Current Utility Consolidation Blockers
 
-- Pattern 11 Stage 4 validation surfaced two remaining follow-ups: `npm run phase6-services` now expects an explicit `start|stop|status` subcommand and exits 1 when invoked without one, and the Phase 6 performance monitor continues to report regressions (score 67/100) despite `npm run phase6-health` / `npm run phase6-validation` passing. Serialization unit and targeted backend suites require `--runInBand --no-cache --forceExit` to avoid the teardown handle warnings emitted by `tests/globalTeardown.ts` until the open-socket cleanup lands.
+- Pattern 11 Stage 4 validation surfaced two remaining follow-ups: `npm run phase6-services` now expects an explicit `start|stop|status` subcommand and exits 1 when invoked without one, and the Phase 6 readiness score output remains disabled (previous hard-coded value ignored) despite `npm run phase6-health` / `npm run phase6-validation` passing. Serialization unit and targeted backend suites require `--runInBand --no-cache --forceExit` to avoid the teardown handle warnings emitted by `tests/globalTeardown.ts` until the open-socket cleanup lands.
 
 ## Recent Fixes & Diagnostics
 

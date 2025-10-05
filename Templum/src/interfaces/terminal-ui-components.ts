@@ -25,9 +25,13 @@ import {
 
 export {
   DefaultColorThemes,
+  ensureThemeIntegrity,
+  setTerminalUIFormatter,
+} from './terminal-ui-theme';
+
+export type {
   TerminalColorTheme,
   ThemeIntegrityResult,
-  ensureThemeIntegrity,
 } from './terminal-ui-theme';
 
 // Import consistency framework for table formatting integration
@@ -501,6 +505,7 @@ export interface WindowLayoutConfig {
   subtitle?: string;
   content: WindowContentSection[];
   width?: number; // Auto-calculated if not provided
+  padding?: number;
   theme: TerminalColorTheme;
 }
 
@@ -632,6 +637,10 @@ export class EnhancedWindowLayoutRenderer {
 
   getSelection(): WindowContentItem | null {
     return this.items[this.currentSelection] ?? null;
+  }
+
+  getSelectedItem(): WindowContentItem | null {
+    return this.getSelection();
   }
 
   setSelection(itemId: string): boolean {

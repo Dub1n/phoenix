@@ -4,7 +4,7 @@ last-updated: 2025-10-05T15:30:00Z
 name: "service-utils"
 description: "Single-call toolkit that normalises, ranks, and summarises services for ordering, health insights, and dependency resolution."
 status: ["[x]"]
-category: "business-logic"
+category: business-logic
 use-when:
   - "Service ordering, health monitoring, and backend dependency flows drift because each subsystem scores services differently."
   - "You need a one-line way to turn heterogeneous service descriptors into ordered lists plus confidence-aware summaries."

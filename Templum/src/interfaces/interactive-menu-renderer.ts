@@ -15,6 +15,7 @@ import {
   EnhancedInteractiveMenu, 
   EnhancedMenuConfig, 
   MenuSection, 
+  MenuItemConfig,
   DefaultColorThemes,
   WindowContentItem 
 } from './terminal-ui-components';
@@ -195,6 +196,130 @@ export class InteractiveMenuRenderer {
         return { action: 'quit', data: { confirmRequired: true } };
       }
       throw error;
+    }
+  }
+
+  private buildEnhancedSections(menu: InteractiveMenu): MenuSection[] {
+    const primaryItems: MenuItemConfig[] = menu.items.map(item => this.toMenuItemConfig(item));
+
+    const sections: MenuSection[] = [
+      {
+        id: `${menu.id}-primary`,
+        heading: menu.description,
+        items: primaryItems,
+        type: 'menu'
+      }
+    ];
+
+    const navigationItems: MenuItemConfig[] = [];
+
+    const previousMenu = this.navigationHistory[this.navigationHistory.length - 1] ?? menu.parent;
+    if (previousMenu) {
+      navigationItems.push({
+        id: 'back',
+        label: 'Back',
+        description: 'Return to previous menu',
+        action: `navigate:${previousMenu}`,
+        enabled: true,
+        data: { action: `navigate:${previousMenu}` }
+      });
+    }
+
+    navigationItems.push(
+      {
+        id: 'home',
+        label: 'Home',
+        description: 'Jump to main menu',
+        action: 'navigate:main',
+        enabled: true,
+        data: { action: 'navigate:main' }
+      },
+      {
+        id: 'help',
+        label: 'Help',
+        description: 'View keyboard and navigation tips',
+        action: 'show:help',
+        enabled: true,
+        data: { action: 'show:help' }
+      },
+      {
+        id: 'exit',
+        label: 'Exit',
+        description: 'Close the Templum CLI session',
+        action: 'system:quit',
+        enabled: true,
+        data: { action: 'system:quit' }
+      }
+    );
+
+    sections.push({
+      id: `${menu.id}-navigation`,
+      heading: 'Session Controls',
+      items: navigationItems,
+      type: 'menu'
+    });
+
+    return sections;
+  }
+
+  private toMenuItemConfig(item: InteractiveMenuItem): MenuItemConfig {
+    const action = this.computeMenuAction(item);
+    return {
+      id: item.id,
+      label: item.title,
+      description: item.description,
+      action,
+      enabled: item.enabled,
+      icon: item.icon,
+      data: {
+        action,
+        target: item.target,
+        command: item.command
+      }
+    };
+  }
+
+  private computeMenuAction(item: InteractiveMenuItem): string {
+    switch (item.action) {
+      case 'navigate':
+        return `navigate:${item.target ?? item.id}`;
+      case 'execute':
+        return `execute:${item.command ?? item.id}`;
+      case 'system':
+        return `system:${item.command ?? item.target ?? item.id}`;
+      default:
+        return `navigate:${item.target ?? this.currentMenu}`;
+    }
+  }
+
+  private async handleEnhancedSelection(item: WindowContentItem): Promise<void> {
+    const payload = (item.data as { action?: string }) ?? {};
+    if (!payload.action) {
+      return;
+    }
+
+    const [actionType, actionTarget] = payload.action.split(':', 2);
+
+    switch (actionType) {
+      case 'navigate': {
+        if (item.id === 'back') {
+          this.navigateBack();
+        } else if (actionTarget) {
+          this.navigateToMenu(actionTarget);
+        }
+        break;
+      }
+      case 'show': {
+        if (actionTarget === 'help') {
+          await this.displayEnhancedHelp();
+        }
+        break;
+      }
+      case 'system':
+        // `system:quit` is handled by EnhancedInteractiveMenu after selection
+        break;
+      default:
+        break;
     }
   }
 

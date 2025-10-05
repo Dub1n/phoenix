@@ -1,0 +1,49 @@
+version: 0.1
+statuses:
+  - id: unseen
+    label: Unseen
+    description: No exposure yet.
+  - id: encountered
+    label: Encountered
+    description: Touched briefly; would need guidance to revisit.
+  - id: learning
+    label: Learning
+    description: Actively building understanding; can discuss with support.
+  - id: confident
+    label: Confident
+    description: Comfortable applying without assistance.
+areas:
+  - node: jest_watchers_streaming
+    topics:
+      - id: watch_mode_flake_diagnosis
+        label: Watch mode flake diagnosis
+        status: encountered
+        last_covered: 2025-10-04
+        note: Observed duplicate watcher issue; needs follow-up lesson.
+        priority: false
+      - id: streaming_response_cleanup
+        label: Streaming response cleanup
+        status: unseen
+        priority: false
+  - node: node_async_patterns
+    topics:
+      - id: event_loop_backpressure
+        label: Event loop backpressure mitigation
+        status: unseen
+        priority: false
+  - node: tooling_automation
+    topics:
+      - id: wsl_filesystem_migration
+        label: WSL filesystem migration & backups
+        status: learning
+        last_covered: 2025-10-05
+        note: Covered repo move safeguards, tar snapshots, and pv-based progress tracking.
+        priority: false
+  - node: documentation_specs
+    topics:
+      - id: spec_acceptance_criteria
+        label: Writing acceptance criteria in specs
+        status: learning
+        last_covered: 2025-09-30
+        note: Co-authored template; still refining example bank.
+        priority: false

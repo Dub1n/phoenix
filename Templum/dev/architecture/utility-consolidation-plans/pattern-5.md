@@ -248,12 +248,18 @@
 
 ## Stage 7 Close-Out
 
-- **Date**: {{YYYY-MM-DD'T'HH:MM:SS'Z'}}
+- **Date**: 2025-10-03T19:38:10Z
 - Final validation summary:
-  - Tests/scripts executed, coverage insights
+  - `npm run test -- --runTestsByPath src/tests/utils/display-utils.test.ts src/tests/utils/display-stack.integration.test.ts --runInBand --no-cache --forceExit` → PASS (`tmp/stage7/pattern-5/20251003T193949Z-display-utils-and-stack.log`).
+  - `npm run test -- --runTestsByPath src/interfaces/__tests__/adaptive-cli-integration.test.ts --runInBand --no-cache --forceExit` → PASS (`tmp/stage7/pattern-5/20251003T194016Z-adaptive-cli-integration.log`).
+  - `npm run test -- --runTestsByPath src/interfaces/navigation/__tests__/navigation-system.test.ts --runInBand --no-cache --forceExit` → PASS (`tmp/stage7/pattern-5/20251003T194049Z-navigation-system.log`).
+  - `npm run phase6-health` → PASS after TypeScript cleanup (`tmp/stage7/pattern-5/20251003T193648Z-phase6-health.log`).
+  - `npm run phase6-validation` → PASS (Readiness 92%; readiness score output disabled until properly implemented, logs appended in `tmp/stage7/pattern-5/20251003T193723Z-phase6-validation.log`; formal reports in `validation-reports/phase6-validation-2025-10-03T19-37-52-796Z.{json,md,html}`).
 - Remaining follow-ups or TODOs:
-  - ...
+  - Note: Phase 6 readiness score output is currently disabled (prior hard-coded 67/100 can be ignored); no immediate action required beyond monitoring future implementation.
+  - Coordinate enhanced menu UX so `show:help` interactions can re-render without closing the enhanced session (post-Stage 7 comfort item).
 - Evidence links:
-  - Activity log entry, PR, screenshots, etc.
+  - Activity log entry `Templum/dev/architecture/utility-consolidation-activity-log.md` (2025-10-03 Stage 7 — Display Utils).
+  - Validation artefacts under `tmp/stage7/pattern-5/` and `validation-reports/phase6-validation-2025-10-03T19-37-52-796Z.*`.
 
 _Copy this template to `pattern-{{Pattern}}.md` and fill sections as the work progresses._

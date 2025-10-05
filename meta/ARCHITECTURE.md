@@ -83,7 +83,6 @@
 - **[Task Logs](Templum/dev/tasks/):** (e.g., [unified-session-layer](unified-session-layer.md)).
 - **Ideal-State References:** [plans](Templum/dev/architecture/) and [flows](Templum/dev/CLI/) document the end goal. Keep in sync with the spec when implementation progresses.
 - **Pending Review / Verification Files:**
-  - [Pattern README](Templum/dev/patterns/README.md) — needs refresh to reflect latest pattern consolidation. *In Progress*
   - [ValidationSystem-V3C-Documentation](Templum/docs/target/ValidationSystem-V3C-Documentation.md) — confirm which V3C features will ship and sync with Validation System team.
   - [observability-infrastructure](Templum/docs/archive/observability-infrastructure.md) & [TEST-HEALTH-MONITORING](Templum/docs/archive/TEST-HEALTH-MONITORING.md) — historical detail retained; revisit after verifying observability rollout.
 

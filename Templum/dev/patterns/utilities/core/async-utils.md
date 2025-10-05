@@ -4,7 +4,7 @@ last-updated: 2025-09-14T18:15:00Z
 name: async-utils
 description: Centralized async utilities to eliminate 316 setTimeout/setInterval calls with automatic cleanup, retry logic, and debouncing/throttling
 status: "[x]"
-category: core-infrastructure
+category: infrastructure
 use-when:
   - Eliminating manual timeout management across components
   - Need for consistent retry logic with exponential backoff

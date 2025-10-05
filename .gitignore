@@ -65,6 +65,13 @@ yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
 
+# Audit artifacts
+**/audit/**/*.json
+**/audit/**/*.jsonl
+
+# Metrics artifacts
+**/metrics/**/*.json
+
 # Runtime data
 pids/
 *.pid

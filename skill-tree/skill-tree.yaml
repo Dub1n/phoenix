@@ -1,0 +1,257 @@
+version: 0.1
+updated: 2025-10-05
+roles:
+  ladder:
+    - id: learner
+      label: Learner
+      description: Building initial familiarity; needs guidance for every task.
+    - id: junior
+      label: Junior
+      description: Handles scoped tasks with guidance; recognises core terminology.
+    - id: mid
+      label: Mid
+      description: Delivers features with light oversight; explains trade-offs in
+        familiar areas.
+    - id: senior
+      label: Senior
+      description: Drives end-to-end solutions; teaches patterns and mitigates risks
+        proactively.
+    - id: staff
+      label: Staff
+      description: Shapes cross-team architecture; anticipates systemic impact and
+        mentors others.
+nodes:
+  - id: engineering_execution
+    title: Engineering Execution
+    parent: null
+    level: junior
+    readiness: 0.25
+    test_cooldown: 0
+    confidence: medium
+    evidence: []
+    last_test: null
+    next_test_hint: null
+    achievements: {}
+    priority: false
+  - id: backend_implementation
+    title: Backend Implementation
+    parent: engineering_execution
+    level: junior
+    readiness: 0.25
+    test_cooldown: 0
+    confidence: medium
+    evidence: []
+    last_test: null
+    next_test_hint: null
+    achievements: {}
+    priority: false
+  - id: node_async_patterns
+    title: Node.js & Async Patterns
+    parent: backend_implementation
+    level: learner
+    readiness: 0.1
+    test_cooldown: 0
+    confidence: low
+    evidence: []
+    last_test: null
+    next_test_hint: Explain event loop impacts on long-running watchers.
+    achievements: {}
+    priority: false
+  - id: jest_watchers_streaming
+    title: Jest Watchers & Streaming HTTP
+    parent: node_async_patterns
+    level: learner
+    readiness: 0.1
+    test_cooldown: 0
+    confidence: low
+    evidence: []
+    last_test: null
+    next_test_hint: null
+    achievements:
+      first_watch_fix: false
+    priority: false
+  - id: frontend_integration
+    title: Frontend Integration
+    parent: engineering_execution
+    level: learner
+    readiness: 0.1
+    test_cooldown: 0
+    confidence: low
+    evidence: []
+    last_test: null
+    next_test_hint: null
+    achievements: {}
+    priority: false
+  - id: integration_architecture
+    title: Integration Architecture
+    parent: engineering_execution
+    level: junior
+    readiness: 0.2
+    test_cooldown: 0
+    confidence: medium
+    evidence: []
+    last_test: null
+    next_test_hint: null
+    achievements: {}
+    priority: false
+  - id: tooling_automation
+    title: Tooling & Automation
+    parent: engineering_execution
+    level: learner
+    readiness: 0.3
+    test_cooldown: 0
+    confidence: low
+    evidence:
+      - '2025-10-04: Understood VSCODE_SERVER_TAR override while configuring VSCodium
+        WSL wrapper.'
+      - '2025-10-05: Planned safe WSL repo relocation, covering backups, tar usage,
+        and mv progress trade-offs.'
+    last_test: null
+    next_test_hint: null
+    achievements: {}
+    priority: false
+  - id: product_delivery
+    title: Product & Delivery Leadership
+    parent: null
+    level: learner
+    readiness: 0.1
+    test_cooldown: 0
+    confidence: low
+    evidence: []
+    last_test: null
+    next_test_hint: null
+    achievements: {}
+    priority: false
+  - id: roadmapping_strategy
+    title: Roadmapping & Prioritisation
+    parent: product_delivery
+    level: learner
+    readiness: 0.1
+    test_cooldown: 0
+    confidence: low
+    evidence: []
+    last_test: null
+    next_test_hint: null
+    achievements: {}
+    priority: false
+  - id: stakeholder_coordination
+    title: Stakeholder Coordination
+    parent: product_delivery
+    level: learner
+    readiness: 0.1
+    test_cooldown: 0
+    confidence: low
+    evidence: []
+    last_test: null
+    next_test_hint: null
+    achievements: {}
+    priority: false
+  - id: quality_strategy
+    title: Quality & Testing Strategy
+    parent: null
+    level: junior
+    readiness: 0.2
+    test_cooldown: 0
+    confidence: medium
+    evidence: []
+    last_test: null
+    next_test_hint: null
+    achievements: {}
+    priority: false
+  - id: test_architecture
+    title: Test Architecture & Governance
+    parent: quality_strategy
+    level: junior
+    readiness: 0.2
+    test_cooldown: 0
+    confidence: medium
+    evidence: []
+    last_test: null
+    next_test_hint: null
+    achievements:
+      first_unit_test: false
+    priority: false
+  - id: validation_analytics
+    title: Validation & Release Analytics
+    parent: quality_strategy
+    level: learner
+    readiness: 0.15
+    test_cooldown: 0
+    confidence: low
+    evidence: []
+    last_test: null
+    next_test_hint: null
+    achievements: {}
+    priority: false
+  - id: devops_platform
+    title: DevOps & Platform Health
+    parent: null
+    level: learner
+    readiness: 0.1
+    test_cooldown: 0
+    confidence: low
+    evidence: []
+    last_test: null
+    next_test_hint: null
+    achievements: {}
+    priority: false
+  - id: cicd_pipeline
+    title: CI/CD Pipeline Stewardship
+    parent: devops_platform
+    level: learner
+    readiness: 0.15
+    test_cooldown: 0
+    confidence: low
+    evidence: []
+    last_test: null
+    next_test_hint: null
+    achievements: {}
+    priority: false
+  - id: observability_telemetry
+    title: Observability & Telemetry
+    parent: devops_platform
+    level: learner
+    readiness: 0.1
+    test_cooldown: 0
+    confidence: low
+    evidence: []
+    last_test: null
+    next_test_hint: null
+    achievements: {}
+    priority: false
+  - id: knowledge_flow
+    title: Knowledge Flow & Communication
+    parent: null
+    level: learner
+    readiness: 0.1
+    test_cooldown: 0
+    confidence: low
+    evidence: []
+    last_test: null
+    next_test_hint: null
+    achievements: {}
+    priority: false
+  - id: documentation_specs
+    title: Documentation & Specs
+    parent: knowledge_flow
+    level: learner
+    readiness: 0.1
+    test_cooldown: 0
+    confidence: low
+    evidence: []
+    last_test: null
+    next_test_hint: null
+    achievements: {}
+    priority: false
+  - id: facilitation_comms
+    title: Facilitation & Communication
+    parent: knowledge_flow
+    level: learner
+    readiness: 0.1
+    test_cooldown: 0
+    confidence: low
+    evidence: []
+    last_test: null
+    next_test_hint: null
+    achievements: {}
+    priority: false

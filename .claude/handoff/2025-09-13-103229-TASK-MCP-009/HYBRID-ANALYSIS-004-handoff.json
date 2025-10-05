@@ -9,7 +9,7 @@
       "projectType": "templum",
       "basePath": "/mnt/c/Users/gabri/Documents/Infotopology/VDL_Vault/Templum",
       "activeTasksFile": "/mnt/c/Users/gabri/Documents/Infotopology/VDL_Vault/Templum/dev/templum-active-tasks.md",
-      "patternsFile": "/mnt/c/Users/gabri/Documents/Infotopology/VDL_Vault/Templum/dev/patterns/terminal-ui-components.md",
+      "patternsFile": "/mnt/c/Users/gabri/Documents/Infotopology/VDL_Vault/Templum/dev/patterns/display-ui/terminal-ui-components.md",
       "trackerFile": "/mnt/c/Users/gabri/Documents/Infotopology/VDL_Vault/Templum/dev/templum-tracker-data.md",
       "validationScriptConfig": {
         "scriptPath": "/mnt/c/Users/gabri/Documents/Infotopology/VDL_Vault/scripts/validation/test-agent-validator.js",

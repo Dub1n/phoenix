@@ -149,9 +149,9 @@
 - Final validation summary:
   - Re-ran `npx jest --no-cache --runInBand --detectOpenHandles --forceExit --runTestsByPath src/tests/utils/chainable-string-utils.test.ts` to confirm leak-free harness behaviour.
   - Re-ran `npx jest --no-cache --runInBand --detectOpenHandles --forceExit --runTestsByPath src/interfaces/__tests__/adaptive-cli-integration.test.ts src/interfaces/navigation/__tests__/navigation-system.test.ts` to validate CLI + navigation migrations.
-  - Executed `npm run phase6-health` and `npm run phase6-validation`; health check scored 100%, full validation produced new reports under `Templum/validation-reports/phase6-validation-2025-10-02T18-59-24-385Z.{json,html,md}` with performance regression score 67/100 (existing warning).
+  - Executed `npm run phase6-health` and `npm run phase6-validation`; health check scored 100%, full validation produced new reports under `Templum/validation-reports/phase6-validation-2025-10-02T18-59-24-385Z.{json,html,md}` with readiness score output disabled pending proper implementation.
 - Remaining follow-ups or TODOs:
   - Snapshot parity follow-up if CLI visuals change.
-  - Investigate Phase 6 performance regression warning (67/100 score) with performance owners before closing Cohort A.
+  - No action required on the previously hard-coded readiness score; revisit once real scoring lands before closing Cohort A.
 - Evidence links:
   - Activity log entry 2025-10-02 Stage 6 hand-off refresh; tracker updates; validation reports noted above.

@@ -4,7 +4,7 @@ last-updated: 2025-09-14T18:05:00Z
 name: logger
 description: Centralized logging infrastructure to eliminate 2,810 console.log/warn/error calls across 75+ files with structured, contextual logging
 status: "[x]"
-category: core-infrastructure
+category: infrastructure
 use-when:
   - Eliminating scattered console logging across components
   - Need for structured logging with context management

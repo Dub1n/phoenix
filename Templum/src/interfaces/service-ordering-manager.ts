@@ -324,7 +324,7 @@ export class ServiceOrderingManager {
       return 0;
     }
 
-    const healthOrder: Record<ServiceInfo['health'] | 'fallback', number> = {
+    const healthOrder: Record<Exclude<ServiceInfo['health'], undefined> | 'fallback', number> = {
       healthy: 0,
       degraded: 1,
       unhealthy: 2,

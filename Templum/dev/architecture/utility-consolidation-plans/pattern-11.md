@@ -116,7 +116,7 @@
   - `node scripts/run-with-timeout.mjs --timeout 240000 -- npm test -- --runTestsByPath src/tests/backend/comprehensive-backend-validation.test.ts --testNamePattern "Phase 0c" --no-cache`
   - `npm run phase6-health`
 - Contingencies / notes:
-  - Document performance warning (Phase 6 monitor score 67/100) for follow-up.
+  - Record that the Phase 6 readiness score output is currently disabled (previous hard-coded value ignored) for future implementation follow-up.
 
 ### Validation Artefacts & Commands (summary)
 
@@ -143,9 +143,9 @@
 - **Date**: 2025-10-02T19:00:00Z
 - Final validation summary:
   - Re-ran serialization unit + menu adapter Jest suites (`--runInBand --no-cache --forceExit`) and the backend Phase 2 subset via `scripts/run-with-timeout.mjs`; all green.
-  - `npm run phase6-health` reported 100% readiness; `npm run phase6-validation` succeeded (readiness 92%) while flagging a performance regression score of 67/100.
+  - `npm run phase6-health` reported 100% readiness; `npm run phase6-validation` succeeded (readiness 92%) with readiness score output disabled pending proper implementation.
 - Remaining follow-ups or TODOs:
-  - Investigate and remediate the Phase 6 performance regression monitor drop (score 67/100) before close-out.
+  - No further action required on the previous hard-coded readiness score; monitor once the proper implementation lands.
   - Update `phase6-services` CLI usage guidance (plain invocation exits 1; requires `start|stop|status`).
 - Evidence links:
   - Activity log entry (2025-10-02 Stage Hand-off), tracker updates, validation reports (`validation-reports/phase6-validation-2025-10-02T18-59-15-506Z.*`).

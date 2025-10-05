@@ -1,8 +1,8 @@
 # context index (raw links)
 
-- generated: `2025-10-03T00:00:38Z`
-- root: `VDL_Vault`
-- paths-hash: `dbde377f35a55584ba19e51f33572af19bd47e89`
+- generated: `2025-10-05T18:51:15Z`
+- root: `VDL_VAULT`
+- paths-hash: `c538d99382c993416f7eaee10654dbc500d64eae`
 - raw-base: `https://raw.githubusercontent.com/Dub1n/phoenix/main`
 
 ## Haruspex
@@ -31,6 +31,7 @@ https://raw.githubusercontent.com/Dub1n/phoenix/main/phoenix-code-lite/README.md
 
 ## scripts
 
+https://raw.githubusercontent.com/Dub1n/phoenix/main/scripts/custommove/README.md
 https://raw.githubusercontent.com/Dub1n/phoenix/main/scripts/shimdex/ARCHITECTURE.md
 https://raw.githubusercontent.com/Dub1n/phoenix/main/scripts/shimdex/dev.md
 https://raw.githubusercontent.com/Dub1n/phoenix/main/scripts/shimdex/README.md
@@ -38,6 +39,10 @@ https://raw.githubusercontent.com/Dub1n/phoenix/main/scripts/validation/docs/cur
 https://raw.githubusercontent.com/Dub1n/phoenix/main/scripts/validation/docs/current/guides/CORE-VALIDATION-README.md
 https://raw.githubusercontent.com/Dub1n/phoenix/main/scripts/validation/README.md
 https://raw.githubusercontent.com/Dub1n/phoenix/main/scripts/validation/templates/README.md
+
+## skill-tree
+
+https://raw.githubusercontent.com/Dub1n/phoenix/main/skill-tree/README.md
 
 ## Templum
 
@@ -49,8 +54,10 @@ https://raw.githubusercontent.com/Dub1n/phoenix/main/Templum/dev/CLI/CLI-design-
 https://raw.githubusercontent.com/Dub1n/phoenix/main/Templum/dev/CLI/templum-cli-user-specification.md
 https://raw.githubusercontent.com/Dub1n/phoenix/main/Templum/dev/pattern-index.md
 https://raw.githubusercontent.com/Dub1n/phoenix/main/Templum/dev/patterns/abstraction-layer-architecture.md
+https://raw.githubusercontent.com/Dub1n/phoenix/main/Templum/dev/patterns/architecture/abstraction-layer-architecture.md
 https://raw.githubusercontent.com/Dub1n/phoenix/main/Templum/dev/patterns/hybrid-cli-development-testing.md
 https://raw.githubusercontent.com/Dub1n/phoenix/main/Templum/dev/patterns/README.md
+https://raw.githubusercontent.com/Dub1n/phoenix/main/Templum/dev/patterns/testing-integration/hybrid-cli-development-testing.md
 https://raw.githubusercontent.com/Dub1n/phoenix/main/Templum/dev/tasks/developer-doc-consolidation.md
 https://raw.githubusercontent.com/Dub1n/phoenix/main/Templum/dev/tasks/test-architecture-governance.md
 https://raw.githubusercontent.com/Dub1n/phoenix/main/Templum/docs/current/architecture-spec.md

@@ -3,7 +3,7 @@ date-created: 2025-09-14T21:30:00Z
 last-updated: 2025-09-14T21:30:00Z
 name: event-utils
 description: Centralized event utilities to eliminate 528 EventEmitter uses with typed event management, automatic cleanup, and minimal-footprint API design
-category: core-infrastructure-utility
+category: infrastructure
 status: "[x]"
 use-when:
   - Eliminating scattered EventEmitter instantiation across components
