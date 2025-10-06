@@ -83,6 +83,8 @@ last_updated: 2025-09-22
 
 Mock orchestration now validates request/response contracts via `Templum/src/tests/mock-backend-contracts.ts`; any mismatch surfaces as a `Mock contract violation` before real services are touched.
 
+> **Phase 6 status (2025-10-06):** The harness now emits deterministic `passed`/`skipped` outcomes for mock runs and stores raw reports in `validation-reports/`. Mock executions capture real timings, memory deltas, and error paths via the consolidated mock harness; live backend baselines remain tracked in `dev/tasks/phase6-validation-signal.md` and will be enabled once partner services are online.
+
 ## 5. Outstanding Work & Risks
 
 - Full skin-driven UI and CLI refactor remain the largest blockers.

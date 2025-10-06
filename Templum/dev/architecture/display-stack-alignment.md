@@ -5,7 +5,7 @@ TASK-ID: ['TASK-ARCH-005-ALIGN']
 category: architecture-operations
 status: ['[x]']
 tags: ['utility-consolidation', 'stage-5', 'alignment', 'display-stack']
-dependencies: ['utility-consolidation-playbook', 'utility-consolidation-plans/pattern-5.md', 'utility-consolidation-plans/pattern-6.md', 'utility-consolidation-plans/pattern-7.md']
+dependencies: ['utility-consolidation-playbook', 'utility-consolidation-plans/pattern-5.md', 'utility-consolidation-plans/pattern-6.5.md', 'utility-consolidation-plans/pattern-7.md']
 ---
 
 # Display Stack Stage 5 Alignment Spec
@@ -18,14 +18,14 @@ Stage 4 prerequisites across Patterns 5–7 are complete; this document captures
 - **Last Updated**: 2025-10-10T14:30:00Z (Stage 5 alignment session)
 - **Stage 4 Status**:
   - Pattern 5: Stage 4 handoff block populated 2025-10-08 — see `utility-consolidation-plans/pattern-5.md#stage-4-handoff-block`
-  - Pattern 6: Stage 4 lanes 4a/4b/4c closed 2025-10-07 — DI seams and spacing constants logged in `utility-consolidation-plans/pattern-6.md`
+  - Pattern 6.5: Stage 4 lanes 4a/4b/4c closed 2025-10-07 — DI seams and spacing constants logged in `utility-consolidation-plans/pattern-6.5.md`
   - Pattern 7: Stage 4 lanes 4a/4b/4c closed 2025-10-08 — window/theme constants and CLI regression harness recorded in `utility-consolidation-plans/pattern-7.md`
 
 ## Shared Constants & Defaults (Stage 4 baseline)
 
 | Domain | Baseline Value | Notes |
 | ------ | -------------- | ----- |
-| Terminal width fallback | `80` columns | Terminal Formatter capability provider (`pattern-6` Stage 4a) |
+| Terminal width fallback | `80` columns | Terminal Formatter capability provider (`pattern-6.5` Stage 4a) |
 | Test width baseline | `96` columns | `display-columns-provider` mock shared across cohorts |
 | Separator length clamp | `Math.min(width - 4, 60)` | Display/Window utils rely on formatter spacing constants |
 | Default padding | `2` | Applies to separator + window spacing helpers |
@@ -57,7 +57,7 @@ Provider wiring across utilities now shares the formatter and columns provider h
   - Retain `TERMINAL_FORMATTER_SPACING`/`WINDOW_SPACING` as the single source for separator length, padding, and margin; Stage 6 migrations must remove any bespoke constants they encounter instead of adding adapter layers.
   - All consumer modules entering Stage 6 must inject formatter + columns providers via `DisplayUtils.configure` and `WindowUtils.configureWindowUtilsFormatter`; direct `chalk` imports remain prohibited and must be flagged during migration reviews.
   - CLI and navigation migrations will treat `96` columns as the deterministic test baseline and assert ASCII fallbacks using `TerminalFormatter.withFallback`; leak-guard harnesses (`run-with-timeout.mjs`) stay mandatory for the CLI suites listed below.
-  - Shared helper ownership: Pattern 6 maintains `terminal-formatter-fixtures`, Pattern 5 owns `display-columns-provider`, and Pattern 7 maintains `window-utils-fixtures`; any changes require cross-pattern review before merge.
+  - Shared helper ownership: Pattern 6.5 maintains `terminal-formatter-fixtures`, Pattern 5 owns `display-columns-provider`, and Pattern 7 maintains `window-utils-fixtures`; any changes require cross-pattern review before merge.
 - **Deliverables**:
   - This spec updated to reflect Stage 5 outcomes and approvals.
   - Stage 5 sections in patterns 5–7 plans updated with acknowledgement checkboxes and Stage 6 readiness notes.
@@ -74,7 +74,7 @@ Provider wiring across utilities now shares the formatter and columns provider h
 ## Approvals
 
 - Pattern 5 owner (Display Utils): `[x]` — Codex (2025-10-10T14:22:00Z)
-- Pattern 6 owner (Terminal Formatter): `[x]` — Codex (2025-10-10T14:23:00Z)
+- Pattern 6.5 owner (Terminal Formatter): `[x]` — Codex (2025-10-10T14:23:00Z)
 - Pattern 7 owner (Window Utils): `[x]` — Codex (2025-10-10T14:24:00Z)
 
 ## Outstanding Risks / Follow-ups

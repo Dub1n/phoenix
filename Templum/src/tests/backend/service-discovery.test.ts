@@ -16,19 +16,20 @@ import * as http from 'http';
 import * as net from 'net';
 import * as WebSocket from 'ws';
 
-import { 
-  ServiceDiscovery, 
+import {
+  ServiceDiscovery,
   RegistryBasedDiscoveryStrategy,
-  ConfigurationBasedDiscoveryStrategy, 
+  ConfigurationBasedDiscoveryStrategy,
   EndpointScanningDiscoveryStrategy,
   DiscoveredService,
   ServiceRegistry,
-  DiscoveryStrategy
+  DiscoveryStrategy,
 } from '../../backend/service-discovery';
 import { serialization } from '../../utils/serialization-utils';
 import * as backendSerializationLog from '../../backend/backend-serialization-log';
 import { serviceRegistryEntrySchema } from '../../backend/schemas/serialization-registry';
 import { buildServiceRegistryDefaults } from '../../backend/defaults/serialization-defaults';
+import { serializeServiceManifest } from '../../backend/schemas/service-manifest';
 
 // Mock file system operations
 jest.mock('fs');
@@ -47,12 +48,14 @@ jest.mock('net');
 const mockNet = net as jest.Mocked<typeof net>;
 
 let emitSerializationWarningsSpy: jest.SpyInstance;
+const registryHealthSpy = jest.spyOn(RegistryBasedDiscoveryStrategy.prototype as any, 'validateServiceHealth');
 
 describe('ServiceDiscovery', () => {
   let serviceDiscovery: ServiceDiscovery;
   let tempDir: string;
 
   beforeEach(() => {
+    registryHealthSpy.mockResolvedValue(true);
     jest.clearAllMocks();
     emitSerializationWarningsSpy = jest.spyOn(backendSerializationLog, 'emitSerializationWarnings');
     tempDir = '/tmp/templum-test';
@@ -70,6 +73,7 @@ describe('ServiceDiscovery', () => {
     mockHttp.get.mockImplementation((_url: any, callback: any) => {
       const response = {
         statusCode: 200,
+        resume: jest.fn(),
         on: (event: string, handler: (...args: any[]) => void) => {
           if (event === 'data') {
             handler('');
@@ -93,7 +97,8 @@ describe('ServiceDiscovery', () => {
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    emitSerializationWarningsSpy.mockRestore();
+    registryHealthSpy.mockReset();
   });
 
   describe('Multi-Strategy Discovery', () => {
@@ -130,6 +135,7 @@ describe('ServiceDiscovery', () => {
       mockHttp.get.mockImplementation((_url: any, callback: any) => {
         const response = {
           statusCode: 200,
+          resume: jest.fn(),
           on: (event: string, handler: (...args: any[]) => void) => {
             if (event === 'data') {
               handler('');
@@ -255,6 +261,141 @@ describe('ServiceDiscovery', () => {
     });
   });
 
+
+  describe('Service manifest ingestion', () => {
+    const servicesRoot = '/tmp/templum-services';
+    const httpManifestPath = `${servicesRoot}/http-service.json`;
+    const wsManifestPath = `${servicesRoot}/ws-service.json`;
+    const ipcManifestPath = `${servicesRoot}/ipc-service.json`;
+
+    beforeEach(() => {
+      const manifests: Record<string, string> = {
+        [httpManifestPath]: serializeServiceManifest({
+          id: 'http-service',
+          endpoint: 'http://localhost:3100',
+          protocol: 'http',
+          version: '1.2.0',
+          capabilities: ['ping', 'status'],
+          registrationTime: 1730822400000,
+          lastSeen: 1730822401000,
+          healthCheck: {
+            type: 'http',
+            endpoint: 'http://localhost:3100/health',
+            timeoutMs: 2000,
+          },
+        }),
+        [wsManifestPath]: serializeServiceManifest({
+          id: 'ws-service',
+          endpoint: 'ws://localhost:3200',
+          protocol: 'websocket',
+          version: '3.0.0',
+          capabilities: ['events'],
+          registrationTime: 1730822402000,
+          lastSeen: 1730822403000,
+          healthCheck: {
+            type: 'websocket',
+            endpoint: 'ws://localhost:3200',
+            timeoutMs: 1500,
+          },
+        }),
+        [ipcManifestPath]: serializeServiceManifest({
+          id: 'ipc-service',
+          endpoint: 'ipc://templum-ipc-service',
+          protocol: 'ipc',
+          version: '2.1.0',
+          capabilities: ['analysis'],
+          registrationTime: 1730822404000,
+          lastSeen: 1730822405000,
+          healthCheck: {
+            type: 'ipc',
+            timeoutMs: 1000,
+          },
+        }),
+      };
+
+      mockFs.readFileSync.mockImplementation((filePath: fs.PathOrFileDescriptor) => {
+        const normalized = filePath.toString();
+        const manifest = manifests[normalized];
+        if (!manifest) {
+          throw new Error(`Unexpected file read: ${normalized}`);
+        }
+        return manifest;
+      });
+    });
+
+    it('registers healthy manifests and filters failing ones', async () => {
+      const discovery = new ServiceDiscovery({
+        enableFileWatching: false,
+        enableHealthChecks: true,
+        timeout: 750,
+      });
+
+      const validateHealthSpy = jest
+        .spyOn(discovery as any, 'validateServiceHealth')
+        .mockImplementation(async ({ manifest }: { manifest: { id: string } }) => manifest.id !== 'ipc-service');
+
+      const discoveredIds: string[] = [];
+      discovery.on('serviceDiscovered', ({ service }) => {
+        discoveredIds.push(service.id);
+      });
+
+      await (discovery as any).handleServiceFileChange(
+        httpManifestPath,
+        'add',
+      );
+      await (discovery as any).handleServiceFileChange(
+        wsManifestPath,
+        'add',
+      );
+      await (discovery as any).handleServiceFileChange(
+        ipcManifestPath,
+        'add',
+      );
+
+      expect(validateHealthSpy).toHaveBeenCalledTimes(3);
+      expect(validateHealthSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          manifest: expect.objectContaining({ id: 'http-service', protocol: 'http' }),
+        }),
+      );
+      expect(validateHealthSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          manifest: expect.objectContaining({ id: 'ws-service', protocol: 'websocket' }),
+        }),
+      );
+
+      const backendConfigs = discovery.getBackendConfigs();
+      expect(backendConfigs.get('http-service')).toMatchObject({
+        protocol: 'http',
+        healthEndpoint: 'http://localhost:3100/health',
+      });
+      expect(backendConfigs.get('ws-service')).toMatchObject({ protocol: 'websocket' });
+      expect(backendConfigs.has('ipc-service')).toBe(false);
+      expect(discoveredIds).toEqual(['http-service', 'ws-service']);
+    });
+
+    it('emits removal events when manifests disappear', async () => {
+      const discovery = new ServiceDiscovery({
+        enableFileWatching: false,
+        enableHealthChecks: false,
+        timeout: 500,
+      });
+
+      await (discovery as any).handleServiceFileChange(
+        wsManifestPath,
+        'add',
+      );
+
+      const removed: string[] = [];
+      discovery.on('serviceRemoved', ({ serviceId }) => removed.push(serviceId));
+
+      (discovery as any).handleServiceFileRemoval(wsManifestPath);
+
+      expect(removed).toEqual(['ws-service']);
+      expect(discovery.getBackendConfigs().has('ws-service')).toBe(false);
+    });
+  });
+
   describe('RegistryBasedDiscoveryStrategy', () => {
     let strategy: RegistryBasedDiscoveryStrategy;
 
@@ -300,6 +441,7 @@ describe('ServiceDiscovery', () => {
       mockHttp.get.mockImplementation((_url: any, callback: any) => {
         const response = {
           statusCode: 200,
+          resume: jest.fn(),
           on: (event: string, handler: (...args: any[]) => void) => {
             if (event === 'data') {
               handler('');
@@ -909,4 +1051,8 @@ describe('ServiceDiscovery', () => {
       expect(result.value?.lastSeen).toBe(expectedTimestamp);
     });
   });
+});
+
+afterAll(() => {
+  registryHealthSpy.mockRestore();
 });

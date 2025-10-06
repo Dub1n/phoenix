@@ -6,7 +6,7 @@
  * description: Ensures the mock backend harness enforces request/response contracts so API drift is surfaced during mock runs
  * ---*/
 
-import { MockBackendContractValidator, MockBackendResponseFactory } from '../../src/tests/mock-backend-contracts';
+import { MockBackendContractValidator, MockBackendResponseFactory } from '../../src/validation/mock-backend-contracts';
 import { WorkflowStep } from '../../src/tests/integration-validation-framework';
 
 const createStep = (stepId: string, service: WorkflowStep['service'], iface: WorkflowStep['interface']): WorkflowStep => ({
@@ -74,4 +74,3 @@ describe('MockBackendContractValidator', () => {
     expect(() => validator.validateResponse(step, response)).toThrow(/Mock contract violation/);
   });
 });
-

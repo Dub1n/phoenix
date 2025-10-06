@@ -83,15 +83,16 @@
 - Do not skip required privileged commands—run them, wait for the password to be entered, and continue once the harness returns control. If a sudo command still times out, assume the user is away and fall back to non-sudo work until they respond.
 
 ## Skill Tree Maintenance
-- Update `skill-tree/skill-tree.yaml` whenever a session includes real learning or capability shifts; add a dated entry under `skill-log/` with the standard check-in template unless the user declines.
-- Log fine-grained exposure in `skill-tree/areas.yaml` when a topic is discussed but doesn’t merit a dedicated node; set the appropriate status (`unseen` → `encountered` → `learning` → `confident`) and keep notes succinct.
+
+- Use the CLI for all updates—do not hand-edit `skill-tree/*.yaml` or `skill-log/` files. Run `npm run skill-tree:update -- --node <id> <ops…>` to adjust nodes, append evidence, and increment session counters (`-c`) while the tool regenerates `skill-tree/skill-tree.md` automatically.
+- Capture new check-ins via the CLI’s logging flags (`--log "- Domains touched: …"`, `--log-slug <slug>` or `--log-file path.md`); the helper creates the dated entry under `skill-log/` and links it to the node updates. Use `--skip-render` only when markdown regeneration must be deferred.
+- Record fine-grained exposure with `--topic-upsert id=<topic>,status=<status>,note="…"` so the CLI keeps `skill-tree/areas.yaml` in sync; continue using the standard status ladder (`unseen` → `encountered` → `learning` → `confident`) and keep notes concise.
 - Before delivering a substantial summary or complex answer, run `npm run skill-tree:lookup -- <node>` (or a fuzzy search term) for the relevant skill to gauge current level and micro-topics; tailor explanations accordingly and offer lesson options where confidence is lowest.
 - When a node or topic is marked `priority: true`, favour lessons/tests there whenever the session’s work aligns—unless focusing elsewhere is essential for task completion.
-- For each affected node, adjust `level` using the shared ladder (Learner → Junior → Mid → Senior → Staff) and set `confidence` to highlight tentative judgments.
-- Keep hierarchy depth at four levels max (root → level-2 → level-3 → level-4); if a concept would push deeper, split or reorganise branches instead of nesting further.
+- For each affected node, adjust `level`, `readiness`, `confidence`, achievements, and hints via CLI flags (`--level`, `--readiness`, `--set-readiness`, `--confidence`, `--achievement`, `--set-next-hint`). Keep hierarchy depth at four levels max (root → level-2 → level-3 → level-4); if a concept would push deeper, create sibling branches or restructure instead.
 - Track `readiness` (0–1) as progress toward the next evaluation. Promote: reset to 0.1. Fail: halve it, subtract 0.2, and floor at 0.1.
-- When a lesson (rather than a formal test) results in the user restating concepts accurately, consider nudging `readiness` upward modestly (≤0.15) to reflect momentum—note the rationale in `evidence`.
+- When a lesson (rather than a formal test) results in the user restating concepts accurately, consider nudging `readiness` upward modestly (≤0.15) to reflect momentum—note the rationale in `evidence` using the CLI’s `--evidence` flag (`YYYY-MM-DD: detail`).
 - Maintain `test_cooldown` (integer) so only one evaluation happens per session. After any test set it to at least 1; on failure compute `max(2, ceil(previous_readiness * 4))`. Decrement on later check-ins before testing again.
-- Only schedule a test when `readiness >= 1` and `test_cooldown == 0`; record outcomes in `last_test` and future ideas in `next_test_hint`.
+- Only schedule a test when `readiness >= 1` and `test_cooldown == 0`; record outcomes in `last_test` and future ideas in `next_test_hint` through the CLI.
 - Limit to one skill test per session; if multiple nodes are ready, note the rest for follow-up instead of testing immediately.
 - When the user misses a comprehension check, teach the concept, supply a fill-in-the-blank recap (with a tiny word bank if helpful), and capture the takeaway in `evidence`.

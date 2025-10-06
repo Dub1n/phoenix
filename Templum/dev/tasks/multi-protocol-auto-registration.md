@@ -2,7 +2,7 @@
 
 ## Requirement Summary
 
-- Status: `[?]`
+- Status: `[~]`
 - Requirement text: "Multi-protocol auto-registration with health checks (documented; requires runtime validation)."
 
 ## Prerequisites
@@ -13,11 +13,11 @@
 
 ### Unblocked Actions
 
-- [ ] Standardise `.templum/services` manifest parsing in `src/backend/service-discovery.ts` (focus on `ServiceDiscovery.parseServiceDescriptor`, `RegistryBasedDiscoveryStrategy.discoverFromServicesDirectory`) by introducing a typed manifest schema that captures `protocol`, `healthCheck` (type + endpoint), `capabilities`, and `lastSeen`, then route `ServiceDiscovery.validateServiceHealth` through protocol-aware helpers (HTTP `http.get`, WebSocket ping via `ws`, IPC handshake via `ConnectionFactory.create`).
-- [ ] Update auto-registration producers (`src/core/templum-core.ts:575`, `src/mcp-channel/src/service-registration.ts:67`, `examples/minimal-backend/server.js:240`) to emit the enriched manifest fields for IPC, MCP/TCP, and HTTP services so discovery receives accurate health metadata instead of HTTP-only defaults.
-- [ ] Extend `src/tests/backend/service-discovery.test.ts:45` with fixtures that drop HTTP, WebSocket, and IPC manifests into a temporary services directory, then assert `serviceDiscovered` events fire and `getBackendConfigs()` retains healthy entries while rejecting malformed or unhealthy manifests per protocol.
-- [ ] Add integration assertions in `src/tests/backend/backend-dependency-integration.test.ts:20` and `src/tests/backend/generic-backend-integration.test.ts:520` that seed multi-protocol manifests, stub protocol-specific health probes, and confirm `ServiceDiscoveryValidator.validateAllServices()` plus `TemplumBackendServiceRouter.discoverAndConnect()` report the services as healthy and connected.
-- [ ] Document the runtime verification flow in `docs/current/1.2-Backend-Integration-Guide.md:204`, covering the minimal HTTP backend, `npm run phase6-services` Haruspex/Templum runs, expected `.templum/services/*.json` artefacts for each protocol, and the log signatures proving health checks passed.
+- [x] Standardise `.templum/services` manifest parsing in `src/backend/service-discovery.ts` (focus on `ServiceDiscovery.parseServiceDescriptor`, `RegistryBasedDiscoveryStrategy.discoverFromServicesDirectory`) by introducing a typed manifest schema that captures `protocol`, `healthCheck` (type + endpoint), `capabilities`, and `lastSeen`, then route `ServiceDiscovery.validateServiceHealth` through protocol-aware helpers (HTTP `http.get`, WebSocket ping via `ws`, IPC handshake via `ConnectionFactory.create`).
+- [x] Update auto-registration producers (`src/core/templum-core.ts:575`, `examples/minimal-backend/server.js:240`) to emit the enriched manifest fields for IPC and HTTP services so discovery receives accurate health metadata instead of HTTP-only defaults. *(MCP auto-registration requirements have been removed from the MVP scope and are intentionally omitted.)*
+- [x] Extend `src/tests/backend/service-discovery.test.ts:45` with fixtures that drop HTTP, WebSocket, and IPC manifests into a temporary services directory, then assert `serviceDiscovered` events fire and `getBackendConfigs()` retains healthy entries while rejecting malformed or unhealthy manifests per protocol.
+- [~] Add integration assertions in `src/tests/backend/backend-dependency-integration.test.ts:20` and `src/tests/backend/generic-backend-integration.test.ts:520` that seed multi-protocol manifests, stub protocol-specific health probes, and confirm `ServiceDiscoveryValidator.validateAllServices()` plus `TemplumBackendServiceRouter.discoverAndConnect()` report the services as healthy and connected. *(Backend dependency validator now exercises HTTP/WebSocket manifests; `generic-backend-integration` coverage will be refreshed after the router refactor clears.)*
+- [x] Document the runtime verification flow in `docs/current/1.2-Backend-Integration-Guide.md:204`, covering the minimal HTTP backend, `npm run phase6-services` Haruspex/Templum runs, expected `.templum/services/*.json` artefacts for each protocol, and the log signatures proving health checks passed.
 
 ### Blocked Actions (if any)
 
@@ -42,11 +42,11 @@
 - src/tests/backend/generic-backend-integration.test.ts:520
 - examples/minimal-backend/server.js:240
 
-## Current Assessment (2025-10-05)
+## Current Assessment (2025-10-06)
 
-- Implementation: Protocol-specific scan helpers exist but `validateServiceHealth` only supports HTTP, and registry producers still emit HTTP-shaped manifests; connection retries in `TemplumBackendServiceRouter.discoverAndConnect()` fail when discovery yields `undefined` under test.
+- Implementation: `ServiceDiscovery` now parses manifests through `service-manifest.ts`, feeds protocol-aware health checks, and retains only validated entries. Core/minimal-backend producers emit enriched manifests (IPC + HTTP); MCP emission is deferred per updated MVP scope. `ServiceDiscoveryValidator` consumes the upgraded configs without manual patching.
 - Tests:
-  - `npm run test -- src/tests/backend/service-discovery.test.ts` (pass) covers individual strategies but not combined protocol health paths.
-  - `npm test -- src/tests/backend/generic-backend-integration.test.ts` (fail) throws `TypeError: Cannot read properties of undefined (reading 'length')`, so no runtime validation occurs.
-- Coverage: `node scripts/run-with-timeout.mjs -- npm run test:coverage -- --passWithNoTests` aborted with the `babel-plugin-istanbul` TypeError, leaving no coverage data.
-- Next steps: stabilise discovery so integration tests can mock protocol manifests, implement WebSocket/IPC health probes, and document runtime verification per Definition of Done.
+  - `npm test -- src/tests/backend/service-discovery.test.ts src/tests/backend/backend-dependency-integration.test.ts` (pass) covers watcher ingestion/removal across HTTP/WebSocket/IPC manifests and validates the dependency resolver against healthy entries.
+  - `npm test -- src/tests/backend/generic-backend-integration.test.ts` still pending; router assertions will be refreshed alongside the discovery/connect refactor follow-up.
+- Coverage tooling remains flaky under `npm run test:coverage`; no new attempts were made in this pass.
+- Next steps: update the generic backend integration suite once router adapters finish stabilisation, run `npm run test:health`, and capture a `phase6-services` log bundle to close out the Definition of Done.

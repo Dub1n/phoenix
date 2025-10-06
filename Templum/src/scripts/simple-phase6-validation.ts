@@ -12,7 +12,31 @@ import { program } from 'commander';
 import * as fs from 'fs';
 import * as path from 'path';
 import { performance } from 'perf_hooks';
-import { formatColumn } from './cli-string-formatting';
+type ColumnAlignment = 'left' | 'right' | 'center';
+
+const formatColumn = (
+  value: string | number,
+  width: number,
+  alignment: ColumnAlignment = 'right'
+): string => {
+  const text = typeof value === 'string' ? value : String(value);
+  if (text.length >= width) {
+    return text;
+  }
+
+  const paddingLength = width - text.length;
+  if (alignment === 'left') {
+    return text + ' '.repeat(paddingLength);
+  }
+
+  if (alignment === 'center') {
+    const leading = Math.floor(paddingLength / 2);
+    const trailing = paddingLength - leading;
+    return `${' '.repeat(leading)}${text}${' '.repeat(trailing)}`;
+  }
+
+  return ' '.repeat(paddingLength) + text;
+};
 
 const READINESS_SCORE_NOTE = 'Score disabled until properly implemented';
 

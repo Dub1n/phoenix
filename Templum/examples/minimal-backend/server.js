@@ -251,6 +251,7 @@ function autoRegisterService() {
 
     // Create service registration file
     const serviceFile = path.join(servicesDir, `minimal-example-${process.pid}.json`);
+    const now = Date.now();
     const serviceInfo = {
       id: 'minimal-example',
       name: 'Minimal Example Backend',
@@ -259,9 +260,21 @@ function autoRegisterService() {
       endpoint: `http://localhost:${port}`,
       protocol: 'http',
       health: `http://localhost:${port}/health`,
+      healthCheck: {
+        type: 'http',
+        endpoint: `http://localhost:${port}/health`,
+        timeoutMs: 3000
+      },
       capabilities: ['getSkinDefinition', 'executeCommand', 'health'],
-      started: Date.now(),
-      port: port
+      registrationTime: now,
+      lastSeen: now,
+      metadata: {
+        serviceKind: 'http-example'
+      },
+      capabilitiesEndpoint: `http://localhost:${port}/capabilities`,
+      versionEndpoint: `http://localhost:${port}/version`,
+      started: now,
+      port
     };
 
     fs.writeFileSync(serviceFile, JSON.stringify(serviceInfo, null, 2));

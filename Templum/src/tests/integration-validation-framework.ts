@@ -12,7 +12,7 @@ import { spawn, ChildProcess } from 'child_process';
 import * as net from 'net';
 import * as http from 'http';
 import WebSocket from 'ws';
-import { MockBackendContractValidator, MockBackendResponseFactory } from './mock-backend-contracts';
+import { MockBackendContractValidator, MockBackendResponseFactory } from '../validation/mock-backend-contracts';
 
 // Phase 6 Real Backend Integration Interfaces
 export interface BackendServiceInstance {
@@ -91,11 +91,19 @@ interface MultiSystemWorkflowOptions {
   responseFactory?: BackendResponseFactory;
 }
 
-export const PHASE6_READINESS_SCORE_NOTE = 'Score disabled until properly implemented';
+export const PHASE6_READINESS_SCORE_NOTE = 'Phase 6 readiness score disabled—use report.status for outcome.';
+
+let phase6IdCounter = 0;
+const nextPhase6Id = (prefix: string): string => {
+  phase6IdCounter += 1;
+  return `${prefix}_${Date.now()}_${phase6IdCounter}`;
+};
 
 export interface Phase6ValidationReport {
   reportId: string;
   generatedAt: number;
+  status: 'passed' | 'failed' | 'skipped';
+  statusReason?: string;
   phase6ReadinessScore: number; // 0-100
   phase6ReadinessScoreNote: string;
   realIntegrationSummary: {
@@ -1089,7 +1097,8 @@ export class MultiSystemWorkflowOrchestrator extends EventEmitter {
   }
 
   private async simulateWorkflowStep(step: WorkflowStep, payload: any): Promise<void> {
-    await new Promise((resolve) => setTimeout(resolve, 5));
+    const hrStart = performance.now();
+    const memoryBefore = process.memoryUsage().heapUsed;
 
     this.contractValidator.validateRequest(step, payload);
 
@@ -1097,14 +1106,18 @@ export class MultiSystemWorkflowOrchestrator extends EventEmitter {
 
     this.contractValidator.validateResponse(step, response);
 
+    // Yield to event loop to simulate async boundaries without fixed delays
+    await Promise.resolve();
+
+    const memoryAfter = process.memoryUsage().heapUsed;
+    const durationMs = Math.max(1, Math.round(performance.now() - hrStart));
+
     step.success = true;
     step.response = response;
-
-    const endTime = Date.now();
-    step.duration = Math.max(5, endTime - step.startTime);
+    step.duration = durationMs;
     step.performanceMetrics = {
-      responseTime: step.duration,
-      memoryDelta: 0,
+      responseTime: durationMs,
+      memoryDelta: memoryAfter - memoryBefore,
       errorRate: 0,
     };
   }
@@ -1256,7 +1269,7 @@ export class MultiSystemWorkflowOrchestrator extends EventEmitter {
           exitCode: 0,
           payload
         });
-      }, Math.random() * 500 + 100);
+      }, 300);
     });
   }
 
@@ -1272,7 +1285,7 @@ export class MultiSystemWorkflowOrchestrator extends EventEmitter {
           commands: ['extension.activate', 'extension.execute'],
           payload
         });
-      }, Math.random() * 300 + 50);
+      }, 200);
     });
   }
 
@@ -1302,11 +1315,11 @@ export class MultiSystemWorkflowOrchestrator extends EventEmitter {
   }
 
   private generateWorkflowId(): string {
-    return `workflow_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return nextPhase6Id('workflow');
   }
 
   private generateMessageId(): string {
-    return `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return nextPhase6Id('msg');
   }
 }
 
@@ -1807,12 +1820,18 @@ export class PerformanceRegressionMonitor extends EventEmitter {
   private monitoringInterval?: NodeJS.Timeout;
   private currentMetrics: Map<string, number> = new Map();
   private readonly useRealBackends: boolean;
+  private mockValidator?: MockBackendContractValidator;
+  private mockResponseFactory?: MockBackendResponseFactory;
 
   constructor(serviceOrchestrator: BackendServiceOrchestrator, options: { useRealBackends?: boolean } = {}) {
     super();
     this.serviceOrchestrator = serviceOrchestrator;
     this.useRealBackends = options.useRealBackends ?? true;
     this.initializePhase5Baselines();
+    if (!this.useRealBackends) {
+      this.mockValidator = new MockBackendContractValidator();
+      this.mockResponseFactory = new MockBackendResponseFactory();
+    }
   }
 
   /**
@@ -1930,7 +1949,7 @@ export class PerformanceRegressionMonitor extends EventEmitter {
    */
   private async measureCurrentMetric(metric: string): Promise<number> {
     if (!this.useRealBackends) {
-      return this.getSimulatedMetric(metric);
+      return await this.measureMockMetric(metric);
     }
 
     switch (metric) {
@@ -1956,27 +1975,229 @@ export class PerformanceRegressionMonitor extends EventEmitter {
     }
   }
 
-  private getSimulatedMetric(metric: string): number {
+  private async measureMockMetric(metric: string): Promise<number> {
     switch (metric) {
       case 'multi_system_workflow_time':
-        return 150;
+        return await this.measureMockWorkflowTime();
       case 'cross_interface_consistency':
-        return 5;
+        return await this.measureMockInterfaceConsistency();
       case 'system_integration_latency':
-        return 120;
+        return await this.measureMockIntegrationLatency();
       case 'memory_usage_under_load':
-        return 180;
+        return await this.measureMockMemoryUsage();
       case 'concurrent_request_handling':
-        return 45;
+        return await this.measureMockConcurrency();
       case 'service_startup_time':
-        return 8000;
+        return await this.measureServiceStartupTime();
       case 'interface_switching_performance':
-        return 60;
+        return await this.measureMockInterfaceSwitching();
       case 'real_time_state_sync':
-        return 90;
+        return await this.measureMockStateSync();
       default:
         return 0;
     }
+  }
+
+  private getMockValidator(): MockBackendContractValidator {
+    if (!this.mockValidator) {
+      this.mockValidator = new MockBackendContractValidator();
+    }
+    return this.mockValidator;
+  }
+
+  private getMockResponseFactory(): MockBackendResponseFactory {
+    if (!this.mockResponseFactory) {
+      this.mockResponseFactory = new MockBackendResponseFactory();
+    }
+    return this.mockResponseFactory;
+  }
+
+  private async measureMockWorkflowTime(): Promise<number> {
+    const validator = this.getMockValidator();
+    const factory = this.getMockResponseFactory();
+
+    const steps: Array<{ stepId: WorkflowStep['stepId']; service: WorkflowStep['service']; interface: WorkflowStep['interface']; payload: any }>
+      = [
+        {
+          stepId: 'pcl-tdd-init',
+          service: 'pcl',
+          interface: 'http',
+          payload: { command: 'tdd:start', projectPath: '/mock/project', testType: 'integration' }
+        },
+        {
+          stepId: 'haruspex-analysis',
+          service: 'haruspex',
+          interface: 'ipc',
+          payload: { code: 'function mock() { return true; }', analysisType: 'comprehensive' }
+        },
+        {
+          stepId: 'pcl-result-coordination',
+          service: 'pcl',
+          interface: 'http',
+          payload: {
+            analysisResults: { score: 85, recommendations: ['refactor'], coverage: 75 },
+            nextAction: 'refactor',
+            qualityGateValidation: true
+          }
+        }
+      ];
+
+    const start = performance.now();
+
+    for (const { stepId, service, interface: iface, payload } of steps) {
+      const step: WorkflowStep = {
+        stepId,
+        stepName: stepId,
+        service,
+        interface: iface,
+        startTime: Date.now(),
+        duration: 0,
+        success: true,
+        performanceMetrics: { responseTime: 0, memoryDelta: 0, errorRate: 0 }
+      };
+
+      validator.validateRequest(step, payload);
+      const response = factory.buildResponse(step, payload);
+      validator.validateResponse(step, response);
+    }
+
+    await Promise.resolve();
+    return Math.max(1, Math.round(performance.now() - start));
+  }
+
+  private async measureMockInterfaceConsistency(): Promise<number> {
+    const validator = this.getMockValidator();
+    const factory = this.getMockResponseFactory();
+    const payload = {
+      operation: 'sync-state',
+      crossInterfaceData: { key: 'demo', value: Date.now() },
+      consistencyCheck: true
+    };
+
+    const primaryStep: WorkflowStep = {
+      stepId: 'cross-interface-pcl-cli',
+      stepName: 'Mock CLI Sync',
+      service: 'pcl',
+      interface: 'cli',
+      startTime: Date.now(),
+      duration: 0,
+      success: true,
+      performanceMetrics: { responseTime: 0, memoryDelta: 0, errorRate: 0 }
+    };
+
+    const secondaryStep: WorkflowStep = {
+      stepId: 'cross-interface-templum-vscode',
+      stepName: 'Mock VSCode Sync',
+      service: 'templum',
+      interface: 'vscode',
+      startTime: Date.now(),
+      duration: 0,
+      success: true,
+      performanceMetrics: { responseTime: 0, memoryDelta: 0, errorRate: 0 }
+    };
+
+    validator.validateRequest(primaryStep, payload);
+    const primaryResponse = factory.buildResponse(primaryStep, payload);
+    validator.validateResponse(primaryStep, primaryResponse);
+
+    validator.validateRequest(secondaryStep, payload);
+    const secondaryResponse = factory.buildResponse(secondaryStep, payload);
+    validator.validateResponse(secondaryStep, secondaryResponse);
+
+    const primaryData = JSON.stringify(primaryResponse);
+    const secondaryData = JSON.stringify(secondaryResponse);
+    if (primaryData === secondaryData) {
+      return 0;
+    }
+
+    const maxLength = Math.max(primaryData.length, secondaryData.length) || 1;
+    return Math.round((Math.abs(primaryData.length - secondaryData.length) / maxLength) * 100);
+  }
+
+  private async measureMockIntegrationLatency(): Promise<number> {
+    const start = performance.now();
+    await this.simulateMockNetworkCall();
+    return Math.max(1, Math.round(performance.now() - start));
+  }
+
+  private async measureMockMemoryUsage(): Promise<number> {
+    const before = process.memoryUsage().heapUsed;
+    const buffers = Array.from({ length: 5 }, () => Buffer.alloc(1024 * 32, 0));
+    await Promise.resolve();
+    const after = process.memoryUsage().heapUsed;
+    buffers.splice(0, buffers.length);
+    return Math.max(0, Math.round((after - before) / 1024 / 1024));
+  }
+
+  private async measureMockConcurrency(): Promise<number> {
+    const concurrency = 10;
+    const start = performance.now();
+    const results = await Promise.all(
+      Array.from({ length: concurrency }, () => this.simulateMockNetworkCall().then(() => true).catch(() => false))
+    );
+    const durationSeconds = (performance.now() - start) / 1000;
+    const successCount = results.filter(Boolean).length;
+    return durationSeconds > 0 ? successCount / durationSeconds : successCount;
+  }
+
+  private async measureMockInterfaceSwitching(): Promise<number> {
+    const sequence = ['http', 'ipc', 'websocket'];
+    const timings: number[] = [];
+
+    for (let i = 0; i < sequence.length - 1; i++) {
+      const start = performance.now();
+      await this.simulateMockNetworkCall(sequence[i]);
+      await this.simulateMockNetworkCall(sequence[i + 1]);
+      timings.push(performance.now() - start);
+    }
+
+    return timings.length ? Math.round(Math.max(...timings)) : 0;
+  }
+
+  private async measureMockStateSync(): Promise<number> {
+    const start = performance.now();
+    const updates = Array.from({ length: 5 }, async (_, index) => {
+      const updateStart = performance.now();
+      await this.simulateMockNetworkCall('websocket', { stateUpdate: { id: index, value: Date.now() } });
+      return performance.now() - updateStart;
+    });
+
+    const times = await Promise.all(updates);
+    return times.length ? Math.round(Math.max(...times)) : Math.round(performance.now() - start);
+  }
+
+  private async simulateMockNetworkCall(interfaceType: string = 'http', payload: any = {}): Promise<void> {
+    // Introduce a micro delay to mimic IO without fixed values
+    await new Promise<void>((resolve) => setTimeout(resolve, 1));
+
+    const validator = this.getMockValidator();
+    const factory = this.getMockResponseFactory();
+
+    const mapping: Record<string, { stepId: WorkflowStep['stepId']; service: WorkflowStep['service']; interface: WorkflowStep['interface'] }> = {
+      http: { stepId: 'pcl:http', service: 'pcl', interface: 'http' },
+      ipc: { stepId: 'haruspex:ipc', service: 'haruspex', interface: 'ipc' },
+      websocket: { stepId: 'templum:websocket', service: 'templum', interface: 'websocket' },
+      cli: { stepId: 'cross-interface-pcl-cli', service: 'pcl', interface: 'cli' },
+      vscode: { stepId: 'cross-interface-templum-vscode', service: 'templum', interface: 'vscode' },
+    };
+
+    const selected = mapping[interfaceType] ?? mapping.http;
+
+    const step: WorkflowStep = {
+      stepId: selected.stepId,
+      stepName: 'Mock Metric Step',
+      service: selected.service,
+      interface: selected.interface,
+      startTime: Date.now(),
+      duration: 0,
+      success: true,
+      performanceMetrics: { responseTime: 0, memoryDelta: 0, errorRate: 0 }
+    };
+
+    const requestPayload = Object.keys(payload).length > 0 ? payload : { operation: 'mock-metric', timestamp: Date.now() };
+    validator.validateRequest(step, requestPayload);
+    const response = factory.buildResponse(step, requestPayload);
+    validator.validateResponse(step, response);
   }
 
   /**
@@ -2418,11 +2639,17 @@ export class CrossInterfaceValidator extends EventEmitter {
   private serviceOrchestrator: BackendServiceOrchestrator;
   private validationResults: Map<string, any> = new Map();
   private readonly useRealBackends: boolean;
+  private mockValidator?: MockBackendContractValidator;
+  private mockResponseFactory?: MockBackendResponseFactory;
 
   constructor(serviceOrchestrator: BackendServiceOrchestrator, options: { useRealBackends?: boolean } = {}) {
     super();
     this.serviceOrchestrator = serviceOrchestrator;
     this.useRealBackends = options.useRealBackends ?? true;
+    if (!this.useRealBackends) {
+      this.mockValidator = new MockBackendContractValidator();
+      this.mockResponseFactory = new MockBackendResponseFactory();
+    }
   }
 
   /**
@@ -2456,28 +2683,6 @@ export class CrossInterfaceValidator extends EventEmitter {
       { primary: 'cli', secondary: 'http', service: 'pcl' },
       { primary: 'vscode', secondary: 'websocket', service: 'templum' }
     ];
-
-    if (!this.useRealBackends) {
-      for (const combination of interfaceCombinations) {
-        const combinationKey = `${combination.primary}-${combination.secondary}-${combination.service}`;
-        interfaceResults[combinationKey] = {
-          consistencyScore: 100,
-          performanceVariance: 5,
-          dataInconsistencies: 0,
-          scenarioResults: {}
-        };
-      }
-
-      const simulatedResult = {
-        overallConsistency: 100,
-        interfaceResults,
-        consistencyIssues,
-        recommendations
-      };
-
-      this.emit('validationCompleted', simulatedResult);
-      return simulatedResult;
-    }
 
     for (const combination of interfaceCombinations) {
       const combinationKey = `${combination.primary}-${combination.secondary}-${combination.service}`;
@@ -2588,14 +2793,6 @@ export class CrossInterfaceValidator extends EventEmitter {
     performanceVariance: number;
     dataInconsistencies: number;
   }> {
-    if (!this.useRealBackends) {
-      return {
-        consistency: 100,
-        performanceVariance: 5,
-        dataInconsistencies: 0
-      };
-    }
-
     const testPayload = this.generateScenarioPayload(scenario);
     
     try {
@@ -2641,11 +2838,77 @@ export class CrossInterfaceValidator extends EventEmitter {
     const startTime = Date.now();
 
     if (!this.useRealBackends) {
-      await new Promise(resolve => setTimeout(resolve, 5));
+      const validator = this.mockValidator ?? new MockBackendContractValidator();
+      const factory = this.mockResponseFactory ?? new MockBackendResponseFactory();
+
+      const mapping: Record<string, { stepId: WorkflowStep['stepId']; service: WorkflowStep['service']; interface: WorkflowStep['interface']; payload: () => any }>
+        = {
+          http: {
+            stepId: serviceName === 'haruspex' ? 'haruspex:http' : 'pcl:http',
+            service: serviceName,
+            interface: 'http',
+            payload: () => ({ requestType: 'skin-definition', ...payload })
+          },
+          ipc: {
+            stepId: 'haruspex:ipc',
+            service: 'haruspex',
+            interface: 'ipc',
+            payload: () => ({ code: 'mock-code', analysisType: 'baseline', ...payload })
+          },
+          websocket: {
+            stepId: 'templum:websocket',
+            service: 'templum',
+            interface: 'websocket',
+            payload: () => ({ targetInterface: 'universal', ...payload })
+          },
+          cli: {
+            stepId: 'cross-interface-pcl-cli',
+            service: 'pcl',
+            interface: 'cli',
+            payload: () => ({
+              operation: 'sync-state',
+              crossInterfaceData: { payload },
+              consistencyCheck: true,
+            })
+          },
+          vscode: {
+            stepId: 'cross-interface-templum-vscode',
+            service: 'templum',
+            interface: 'vscode',
+            payload: () => ({
+              operation: 'sync-state',
+              crossInterfaceData: { payload },
+              consistencyCheck: true,
+            })
+          }
+        };
+
+      const selected = mapping[interfaceType] ?? mapping.http;
+
+      const start = performance.now();
+
+      const step: WorkflowStep = {
+        stepId: selected.stepId,
+        stepName: 'Mock Interface Scenario',
+        service: selected.service,
+        interface: selected.interface,
+        startTime: Date.now(),
+        duration: 0,
+        success: true,
+        performanceMetrics: { responseTime: 0, memoryDelta: 0, errorRate: 0 }
+      };
+
+      const scenarioPayload = selected.payload();
+      validator.validateRequest(step, scenarioPayload);
+      const response = factory.buildResponse(step, scenarioPayload);
+      validator.validateResponse(step, response);
+
+      const responseTime = Math.max(1, Math.round(performance.now() - start));
+
       return {
         success: true,
-        responseTime: 5,
-        data: { status: 'ok', service: serviceName, interface: interfaceType, payload },
+        responseTime,
+        data: response,
         timestamp: Date.now()
       };
     }
@@ -2768,7 +3031,7 @@ export class CrossInterfaceValidator extends EventEmitter {
           exitCode: 0,
           payload
         });
-      }, Math.random() * 200 + 100);
+      }, 250);
     });
   }
 
@@ -2781,7 +3044,7 @@ export class CrossInterfaceValidator extends EventEmitter {
           commands: ['test.command'],
           payload
         });
-      }, Math.random() * 150 + 50);
+      }, 180);
     });
   }
 
@@ -3014,7 +3277,7 @@ export class RegressionTestRunner extends EventEmitter {
     const startTime = performance.now();
     
     // Simulate interface switching
-    await new Promise(resolve => setTimeout(resolve, Math.random() * 20 + 80)); // 80-100ms simulation
+    await new Promise(resolve => setTimeout(resolve, 90));
     
     const current = performance.now() - startTime;
     const degradation = ((current - baseline) / baseline) * 100;
@@ -3040,7 +3303,7 @@ export class RegressionTestRunner extends EventEmitter {
     const startTime = performance.now();
     
     // Simulate command routing
-    await new Promise(resolve => setTimeout(resolve, Math.random() * 10 + 25)); // 25-35ms simulation
+    await new Promise(resolve => setTimeout(resolve, 30));
     
     const current = performance.now() - startTime;
     const degradation = ((current - baseline) / baseline) * 100;
@@ -3087,7 +3350,7 @@ export class RegressionTestRunner extends EventEmitter {
     const startTime = performance.now();
     
     // Simulate component transfer
-    await new Promise(resolve => setTimeout(resolve, Math.random() * 15 + 30)); // 30-45ms simulation
+    await new Promise(resolve => setTimeout(resolve, 40));
     
     const current = performance.now() - startTime;
     const degradation = ((current - baseline) / baseline) * 100;
@@ -3163,13 +3426,27 @@ export class ProductionReadinessValidator extends EventEmitter {
 
     try {
       if (!this.useRealBackends) {
-        validationResults.deploymentValidation = true;
-        validationResults.healthMonitoring = true;
-        validationResults.failoverTesting = true;
-        validationResults.scalabilityTesting = true;
-        validationResults.securityValidation = true;
-        validationResults.overallReadiness = 100;
-        validationResults.phase6Compliance = 100;
+        const services = this.serviceOrchestrator.getAllServiceStatuses();
+        const ready = services.every(service => service.status === 'ready');
+
+        validationResults.deploymentValidation = ready;
+        validationResults.healthMonitoring = await this.performMockHealthMonitoring(services);
+        validationResults.failoverTesting = await this.performMockFailoverCheck(services);
+        validationResults.scalabilityTesting = await this.performMockScalabilityCheck();
+        validationResults.securityValidation = ready;
+
+        const readinessFlags = [
+          validationResults.deploymentValidation,
+          validationResults.healthMonitoring,
+          validationResults.failoverTesting,
+          validationResults.scalabilityTesting,
+          validationResults.securityValidation,
+        ];
+
+        const passedCount = readinessFlags.filter(Boolean).length;
+        validationResults.overallReadiness = Math.round((passedCount / readinessFlags.length) * 100);
+        validationResults.phase6Compliance = validationResults.overallReadiness;
+
         this.emit('productionValidationCompleted', validationResults);
         return validationResults;
       }
@@ -3672,6 +3949,61 @@ export class ProductionReadinessValidator extends EventEmitter {
       return { success: false, responseTime: Date.now() - startTime };
     }
   }
+
+  private async performMockHealthMonitoring(services: BackendServiceInstance[]): Promise<boolean> {
+    if (services.length === 0) {
+      return false;
+    }
+
+    // Simulate health check by invoking mock performance sampling
+    await Promise.all(services.map(async (service) => {
+      await new Promise<void>((resolve) => setTimeout(resolve, 1));
+      return service.status === 'ready';
+    }));
+
+    return services.every(service => service.status === 'ready');
+  }
+
+  private async performMockFailoverCheck(services: BackendServiceInstance[]): Promise<boolean> {
+    if (services.length === 0) {
+      return false;
+    }
+
+    const validator = new MockBackendContractValidator();
+    const factory = new MockBackendResponseFactory();
+
+    for (const service of services) {
+      const step: WorkflowStep = {
+        stepId: service.name === 'templum' ? 'state-sync-validation' : 'pcl-tdd-init',
+        stepName: 'Mock Failover Check',
+        service: service.name,
+        interface: service.name === 'templum' ? 'ipc' : 'http',
+        startTime: Date.now(),
+        duration: 0,
+        success: true,
+        performanceMetrics: { responseTime: 0, memoryDelta: 0, errorRate: 0 }
+      };
+
+      const payload = service.name === 'templum'
+        ? { syncType: 'bi-directional', services: ['haruspex', 'pcl'], conflictResolution: 'latest-wins' }
+        : { command: 'tdd:start', projectPath: '/mock/project', testType: 'integration' };
+
+      try {
+        validator.validateRequest(step, payload);
+        const response = factory.buildResponse(step, payload);
+        validator.validateResponse(step, response);
+      } catch {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  private async performMockScalabilityCheck(): Promise<boolean> {
+    const performanceMonitorResult = await this.performanceMonitor.runPerformanceRegressionTests();
+    return !performanceMonitorResult.regressionDetected;
+  }
 }
 
 /**
@@ -3737,10 +4069,82 @@ export class Phase6IntegrationValidationSuite extends EventEmitter {
   async runPhase6IntegrationValidation(): Promise<Phase6ValidationReport> {
     console.log('Phase6IntegrationValidationSuite: Starting comprehensive Phase 6 validation...');
     
-    const reportId = `phase6_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const reportId = nextPhase6Id('phase6');
     const startTime = Date.now();
 
     try {
+      if (!this.useRealBackends) {
+        const [workflows, performanceResults, crossInterfaceResults, productionResults] = await Promise.all([
+          this.executeComprehensiveWorkflows(),
+          this.performanceMonitor.runPerformanceRegressionTests(),
+          this.crossInterfaceValidator.runCrossInterfaceValidation(),
+          this.productionValidator.runProductionReadinessValidation(),
+        ]);
+
+        const serviceHealth = this.collectServiceHealth();
+        const allReady = Object.values(serviceHealth).every(health => health.operational);
+
+        const integrationMatrix = this.generateIntegrationMatrix(
+          workflows,
+          { regressionDetected: performanceResults.regressionDetected },
+          { overallConsistency: crossInterfaceResults.overallConsistency },
+          { securityValidation: productionResults.securityValidation },
+        );
+
+        const status: Phase6ValidationReport['status'] = allReady ? 'skipped' : 'failed';
+        const statusReason = allReady
+          ? 'Mocks in use; run with --use-real-backends for full validation.'
+          : 'Mock services failed to report ready status.';
+
+        const skippedReport: Phase6ValidationReport = {
+          reportId,
+          generatedAt: Date.now(),
+          status,
+          statusReason,
+          phase6ReadinessScore: 0,
+          phase6ReadinessScoreNote: PHASE6_READINESS_SCORE_NOTE,
+          realIntegrationSummary: {
+            totalWorkflows: workflows.length,
+            successfulWorkflows: workflows.filter(w => w.success).length,
+            failedWorkflows: workflows.filter(w => !w.success).length,
+            averageWorkflowTime: workflows.length > 0
+              ? Math.round(workflows.reduce((sum, w) => sum + w.totalDuration, 0) / workflows.length)
+              : 0,
+            crossInterfaceConsistency: crossInterfaceResults.overallConsistency
+          },
+          serviceHealth,
+          performanceRegression: {
+            baselineComparison: performanceResults.baselineComparison,
+            regressionDetected: performanceResults.regressionDetected,
+            criticalRegressions: performanceResults.criticalRegressions,
+            performanceImprovement: performanceResults.performanceImprovement
+          },
+          productionReadiness: {
+            deploymentValidation: productionResults.deploymentValidation,
+            healthMonitoring: productionResults.healthMonitoring,
+            failoverTesting: productionResults.failoverTesting,
+            scalabilityTesting: productionResults.scalabilityTesting,
+            securityValidation: productionResults.securityValidation,
+            overallReadiness: productionResults.overallReadiness
+          },
+          integrationMatrix,
+          recommendations: this.generateComprehensiveRecommendations(
+            workflows,
+            performanceResults,
+            crossInterfaceResults,
+            productionResults
+          )
+        };
+
+        this.validationHistory.push(skippedReport);
+        if (this.validationHistory.length > 10) {
+          this.validationHistory.splice(0, this.validationHistory.length - 10);
+        }
+
+        this.emit('phase6ValidationCompleted', skippedReport);
+        return skippedReport;
+      }
+
       // Ensure all services are ready
       if (!this.serviceOrchestrator.areAllServicesReady()) {
         throw new Error('All services must be ready before running Phase 6 validation');
@@ -3766,27 +4170,50 @@ export class Phase6IntegrationValidationSuite extends EventEmitter {
       const serviceHealth = this.collectServiceHealth();
 
       // 6. Generate Integration Matrix
-      const integrationMatrix = this.generateIntegrationMatrix(workflows, crossInterfaceResults);
-
-      // 7. Calculate Phase 6 Readiness Score
-      const phase6ReadinessScore = this.calculatePhase6ReadinessScore(
+      const integrationMatrix = this.generateIntegrationMatrix(
         workflows,
         performanceResults,
         crossInterfaceResults,
         productionResults
       );
 
+      // 7. Determine validation status
+      const validationFailures: string[] = [];
+
+      if (workflows.some(workflow => !workflow.success)) {
+        validationFailures.push('One or more workflows failed.');
+      }
+
+      if (performanceResults.regressionDetected) {
+        validationFailures.push('Performance regression detected.');
+      }
+
+      if (crossInterfaceResults.overallConsistency < 90) {
+        validationFailures.push('Cross-interface consistency below threshold.');
+      }
+
+      if (productionResults.overallReadiness < 80) {
+        validationFailures.push('Production readiness checks did not meet threshold.');
+      }
+
+      const validationStatus: Phase6ValidationReport['status'] = validationFailures.length === 0 ? 'passed' : 'failed';
+      const phase6ReadinessScore = validationStatus === 'passed' ? 100 : 0;
+
       // Generate comprehensive report
       const report: Phase6ValidationReport = {
         reportId,
         generatedAt: Date.now(),
+        status: validationStatus,
+        statusReason: validationFailures.length === 0 ? undefined : validationFailures.join(' '),
         phase6ReadinessScore,
         phase6ReadinessScoreNote: PHASE6_READINESS_SCORE_NOTE,
         realIntegrationSummary: {
           totalWorkflows: workflows.length,
           successfulWorkflows: workflows.filter(w => w.success).length,
           failedWorkflows: workflows.filter(w => !w.success).length,
-          averageWorkflowTime: workflows.reduce((sum, w) => sum + w.totalDuration, 0) / workflows.length,
+          averageWorkflowTime: workflows.length > 0
+            ? workflows.reduce((sum, w) => sum + w.totalDuration, 0) / workflows.length
+            : 0,
           crossInterfaceConsistency: crossInterfaceResults.overallConsistency
         },
         serviceHealth,
@@ -3878,13 +4305,14 @@ export class Phase6IntegrationValidationSuite extends EventEmitter {
   private collectServiceHealth(): Phase6ValidationReport['serviceHealth'] {
     const services = this.serviceOrchestrator.getAllServiceStatuses();
     const healthData: Phase6ValidationReport['serviceHealth'] = {} as any;
+    const memorySnapshot = process.memoryUsage().heapUsed / 1024 / 1024;
 
     for (const service of services) {
       healthData[service.name] = {
         operational: service.status === 'ready',
         responseTime: service.startupTime || 0,
-        memoryUsage: 0, // Would implement actual memory monitoring
-        errorRate: 0,   // Would implement actual error rate monitoring
+        memoryUsage: memorySnapshot,
+        errorRate: service.status === 'ready' ? 0 : 1,
         lastHealthCheck: Date.now()
       };
     }
@@ -3892,101 +4320,62 @@ export class Phase6IntegrationValidationSuite extends EventEmitter {
     return healthData;
   }
 
+  private buildIntegrationMatrixFromFlags(passed: boolean): Phase6ValidationReport['integrationMatrix'] {
+    const buildStatus = (): IntegrationStatus => ({
+      functional: passed,
+      performant: passed,
+      reliable: passed,
+      consistent: passed,
+      securityCompliant: passed,
+      overallScore: passed ? 100 : 0
+    });
+
+    return {
+      pclToHaruspex: buildStatus(),
+      haruspexToTemplum: buildStatus(),
+      templumToPcl: buildStatus(),
+      endToEndWorkflows: buildStatus()
+    };
+  }
+
   /**
    * Generate integration matrix
    */
   private generateIntegrationMatrix(
     workflows: WorkflowExecution[],
-    crossInterfaceResults: any
+    performanceResults: { regressionDetected: boolean },
+    crossInterfaceResults: { overallConsistency: number },
+    productionResults: { securityValidation: boolean }
   ): Phase6ValidationReport['integrationMatrix'] {
-    const calculateIntegrationStatus = (
-      functionalScore: number,
-      performanceScore: number,
-      reliabilityScore: number,
-      consistencyScore: number,
-      securityScore: number
-    ): IntegrationStatus => {
-      const scores = [functionalScore, performanceScore, reliabilityScore, consistencyScore, securityScore];
-      const overallScore = Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length);
-      
+    const hasGoodPerformance = !performanceResults.regressionDetected;
+    const consistent = crossInterfaceResults.overallConsistency >= 90;
+    const securityCompliant = !!productionResults.securityValidation;
+
+    const buildStatus = (workflow?: WorkflowExecution, extraConsistency?: boolean): IntegrationStatus => {
+      const functional = Boolean(workflow?.success);
+      const reliable = functional && !workflow?.steps.some(step => !step.success);
+      const consistentFlag = extraConsistency !== undefined ? extraConsistency : consistent;
+      const passed = functional && hasGoodPerformance && reliable && consistentFlag && securityCompliant;
       return {
-        functional: functionalScore >= 90,
-        performant: performanceScore >= 85,
-        reliable: reliabilityScore >= 90,
-        consistent: consistencyScore >= 90,
-        securityCompliant: securityScore >= 95,
-        overallScore
+        functional,
+        performant: hasGoodPerformance,
+        reliable,
+        consistent: consistentFlag,
+        securityCompliant,
+        overallScore: passed ? 100 : 0
       };
     };
 
-    // Calculate scores based on workflow results and cross-interface validation
     const pclToHaruspexWorkflow = workflows.find(w => w.workflowType === 'pcl-to-haruspex');
     const haruspexToTemplumWorkflow = workflows.find(w => w.workflowType === 'haruspex-to-templum');
     const endToEndWorkflow = workflows.find(w => w.workflowType === 'end-to-end-tdd');
 
     return {
-      pclToHaruspex: calculateIntegrationStatus(
-        pclToHaruspexWorkflow?.success ? 100 : 0,
-        85, // Would calculate from performance metrics
-        90, // Would calculate from reliability metrics
-        crossInterfaceResults.overallConsistency,
-        95  // Would calculate from security validation
-      ),
-      haruspexToTemplum: calculateIntegrationStatus(
-        haruspexToTemplumWorkflow?.success ? 100 : 0,
-        88, // Would calculate from performance metrics
-        92, // Would calculate from reliability metrics
-        crossInterfaceResults.overallConsistency,
-        95  // Would calculate from security validation
-      ),
-      templumToPcl: calculateIntegrationStatus(
-        endToEndWorkflow?.interfaceConsistency ? 100 : 0,
-        90, // Would calculate from performance metrics
-        88, // Would calculate from reliability metrics
-        crossInterfaceResults.overallConsistency,
-        95  // Would calculate from security validation
-      ),
-      endToEndWorkflows: calculateIntegrationStatus(
-        endToEndWorkflow?.success ? 100 : 0,
-        85, // Would calculate from performance metrics
-        90, // Would calculate from reliability metrics
-        crossInterfaceResults.overallConsistency,
-        95  // Would calculate from security validation
-      )
+      pclToHaruspex: buildStatus(pclToHaruspexWorkflow),
+      haruspexToTemplum: buildStatus(haruspexToTemplumWorkflow),
+      templumToPcl: buildStatus(endToEndWorkflow, Boolean(endToEndWorkflow?.interfaceConsistency)),
+      endToEndWorkflows: buildStatus(endToEndWorkflow)
     };
-  }
-
-  /**
-   * Calculate Phase 6 readiness score
-   */
-  private calculatePhase6ReadinessScore(
-    workflows: WorkflowExecution[],
-    performanceResults: any,
-    crossInterfaceResults: any,
-    productionResults: any
-  ): number {
-    const weights = {
-      workflows: 0.25,
-      performance: 0.25,
-      crossInterface: 0.20,
-      production: 0.30
-    };
-
-    const workflowScore = workflows.length > 0 
-      ? (workflows.filter(w => w.success).length / workflows.length) * 100
-      : 0;
-
-    const performanceScore = performanceResults.overallScore || 0;
-    const crossInterfaceScore = crossInterfaceResults.overallConsistency || 0;
-    const productionScore = productionResults.overallReadiness || 0;
-
-    const phase6Score = 
-      (workflowScore * weights.workflows) +
-      (performanceScore * weights.performance) +
-      (crossInterfaceScore * weights.crossInterface) +
-      (productionScore * weights.production);
-
-    return Math.round(phase6Score);
   }
 
   /**
@@ -4106,9 +4495,13 @@ export class Phase6IntegrationValidationSuite extends EventEmitter {
         }
       });
       
+      const passed = phase6ReadinessScore === 100;
+
       const report: Phase6ValidationReport = {
-        reportId: `health_check_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        reportId: nextPhase6Id('health_check'),
         generatedAt: Date.now(),
+        status: passed ? 'passed' : 'failed',
+        statusReason: passed ? undefined : 'One or more services are unavailable or unhealthy.',
         phase6ReadinessScore,
         phase6ReadinessScoreNote: PHASE6_READINESS_SCORE_NOTE,
         realIntegrationSummary: {
@@ -4125,25 +4518,22 @@ export class Phase6IntegrationValidationSuite extends EventEmitter {
           criticalRegressions: [],
           performanceImprovement: 0
         },
-        integrationMatrix: {
-          pclToHaruspex: { functional: true, performant: true, reliable: true, consistent: true, securityCompliant: true, overallScore: phase6ReadinessScore },
-          haruspexToTemplum: { functional: true, performant: true, reliable: true, consistent: true, securityCompliant: true, overallScore: phase6ReadinessScore },
-          templumToPcl: { functional: true, performant: true, reliable: true, consistent: true, securityCompliant: true, overallScore: phase6ReadinessScore },
-          endToEndWorkflows: { functional: true, performant: true, reliable: true, consistent: true, securityCompliant: true, overallScore: phase6ReadinessScore }
-        },
+        integrationMatrix: this.buildIntegrationMatrixFromFlags(passed),
         productionReadiness: {
-          deploymentValidation: phase6ReadinessScore > 80,
-          healthMonitoring: true,
-          failoverTesting: phase6ReadinessScore > 80,
-          scalabilityTesting: phase6ReadinessScore > 80,
-          securityValidation: true,
+          deploymentValidation: passed,
+          healthMonitoring: passed,
+          failoverTesting: passed,
+          scalabilityTesting: passed,
+          securityValidation: passed,
           overallReadiness: phase6ReadinessScore
         },
         recommendations: {
           critical: criticalRecommendations,
           high: [],
           medium: normalRecommendations,
-          improvements: phase6ReadinessScore < 80 ? ['Improve service stability before Phase 6 deployment'] : ['System ready for Phase 6 deployment']
+          improvements: passed
+            ? ['System ready for Phase 6 deployment']
+            : ['Improve service stability before Phase 6 deployment']
         }
       };
       
@@ -4330,7 +4720,7 @@ export class SystemValidationFramework extends EventEmitter {
    * Run comprehensive system validation
    */
   async runSystemValidation(): Promise<Phase2ValidationReport> {
-    const reportId = `validation_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const reportId = nextPhase6Id('validation');
     const _startTime = Date.now();
 
     try {

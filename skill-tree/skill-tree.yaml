@@ -37,10 +37,11 @@ nodes:
     title: Backend Implementation
     parent: engineering_execution
     level: junior
-    readiness: 0.25
+    readiness: 0.35
     test_cooldown: 0
     confidence: medium
-    evidence: []
+    evidence:
+      - '2025-10-05: Recognised auto-registration as prerequisite for cross-protocol discovery coverage during registry planning review.'
     last_test: null
     next_test_hint: null
     achievements: {}

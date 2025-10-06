@@ -11,7 +11,10 @@
         "agent": "Codex",
         "claimedAt": "2025-10-02T16:20:00Z"
       },
-      "dependencies": [6, 7],
+      "dependencies": [
+        6,
+        7
+      ],
       "stageGates": {
         "1": {
           "status": "complete",
@@ -31,8 +34,8 @@
         "4": {
           "status": "complete",
           "completedAt": "2025-10-09T18:45:00Z",
-          "notes": "All prerequisites satisfied; handoff block populated." }
-        ,
+          "notes": "All prerequisites satisfied; handoff block populated."
+        },
         "5": {
           "status": "ready",
           "completedAt": "2025-10-10T14:24:00Z",

@@ -3,7 +3,7 @@ doc-type: operations-guide
 title: Templum Testing Guide
 tags: [templum, testing, qa]
 status: current
-last_updated: 2025-10-02
+last_updated: 2025-10-06
 ---
 
 # Templum — Testing Guide
@@ -33,8 +33,9 @@ last_updated: 2025-10-02
 | `npm run test:coverage`                                                                                                                                   | Produce coverage reports                                                        | Outputs to `Templum/coverage`; includes unit + integration suites                                                                                                                     |
 | `npx jest --config jest.backend.config.js`                                                                                                                | Run backend integration validation only                                         | Serial execution, 60 s per-test timeout, enables `detectOpenHandles`                                                                                                                  |
 | `npm test -- --runTestsByPath src/tests/backend/comprehensive-backend-validation.test.ts --testNamePattern "Phase 0c" --runInBand --no-cache --forceExit` | Verify Pattern 11 helper lane quickly                                           | Runs only the Phase 0c CLI/observability fallback block; keep handy after editing serialization defaults or observability logging                                                     |
-| `npm run phase6-validation`                                                                                                                               | “Phase 6” orchestrated smoke validation (build + scripted integration harness). | Requires a fresh build; mocks external backends by default                                                                                                                            |
-| `npm run phase6-validation:full`                                                                                                                          | Full Phase 6 workflow with real backend processes                               | Significantly longer; ensures backend examples are installed                                                                                                                          |
+| `npm run phase6-health`                                                                                                                                   | Probe service readiness via the compiled Phase 6 harness                        | Rebuilds first; exits 0 when every mock/real service reports healthy (uses `report.status=passed`)                                                                                    |
+| `npm run phase6-validation`                                                                                                                               | “Phase 6” orchestrated smoke validation (build + scripted integration harness)  | Rebuilds first; returns `status=skipped` (exit 0) when running against mocks—re-run with `-- --use-real-backends` for a true PASS                                                      |
+| `npm run phase6-validation:full`                                                                                                                          | Full Phase 6 workflow with real backend processes                               | Starts minimal backend services automatically; significantly longer                                                                                                                   |
 | `npm run check:tests`                                                                                                                                     | Lightweight health check used in pre-commit                                     | Runs Jest in CI mode to ensure suites are registered                                                                                                                                  |
 | `node scripts/run-with-timeout.mjs --timeout <ms> -- <command…>`                                                                                          | Guard long-running suites / capture diagnostics                                 | Add `--log-file <path>` and `--heartbeat <ms>` to stream heartbeats and persisted output; signals propagate to the entire process group                                               |
 
@@ -80,22 +81,23 @@ last_updated: 2025-10-02
 
 ### 3.5 Scripted Health Checks
 
-- **Scripts:** `npm run phase6-health`, `npm run phase6-services`, and related commands execute the compiled Phase 6 harness to probe discovery, health monitoring, and service summaries.
-- **Usage:** Gate longer refactors or verify backend availability before demos. They rebuild the project and reuse integration mocks unless `--use-real-backends` is passed.
+- **Scripts:** `npm run phase6-health`, `npm run phase6-validation`, `npm run phase6-services`, and related commands execute the compiled Phase 6 harness to probe discovery, health monitoring, and service summaries.
+- **Usage:** Gate longer refactors or verify backend availability before demos. Commands rebuild first; with the default mock backends they succeed but mark validation runs as `status=skipped`. Pass `-- --use-real-backends` (or invoke the `:full`/`:real` variants) when you need an actual PASS and real service telemetry.
 
 ## 4. Running Phase 6 Validations
 
 1. Ensure `npm run build` succeeds (implicit for most commands, explicit prerequisite for `phase6-validation:full`).
 2. If exercising real backends (`:full` or `:real` variants), install dependencies in each example backend and keep ports free.
 3. Execute the desired script:
-   - `npm run phase6-validation` — default pipeline with mocked backends.
-   - `npm run phase6-validation:full` — starts the real minimal backend and runs the extended scenario suite.
-   - `npm run phase6-validation:real` — same harness with `--use-real-backends` for health/service/validation modes.
+   - `npm run phase6-health` — reports `status=passed` when all configured services respond to health probes.
+   - `npm run phase6-validation` — default pipeline with mocked backends; exits 0 with `status=skipped` (and an explanatory note) unless `--use-real-backends` is provided.
+   - `npm run phase6-validation:full` — starts the real minimal backend and runs the extended scenario suite; equivalent to `npm run phase6-validation -- --use-real-backends --verbose`.
 4. Inspect the generated reports:
-   - `backend-validation-results.json` and `execution-results-backend.json` capture pass/fail details.
+   - `validation-reports/phase6-validation-*.{json,md,html}` contain the typed output (look for `report.status` instead of the deprecated readiness score).
+   - `backend-validation-results.json` and `execution-results-backend.json` capture additional pass/fail details for historical reasons.
    - Logs surface under `scripts/run-phase6-*` if a step fails.
 
-Phase 6 scripts are longer-running (2–5 minutes depending on backend availability). Abort with `Ctrl+C` when needed; the backend validation suite’s signal handlers now tear down spawned servers automatically, but confirm no `node server.js` processes remain before rerunning.
+Phase 6 scripts are longer-running (2–5 minutes depending on backend availability). Abort with `Ctrl+C` when needed; the backend validation suite’s signal handlers now tear down spawned servers automatically, but confirm no `node server.js` processes remain before rerunning. When only mocks are available, expect `phase6-validation` to finish quickly and mark the run as `status=skipped`; treat that as a sanity check rather than true coverage.
 
 ## 5. Troubleshooting & Tips
 
@@ -112,7 +114,7 @@ For additional context on architecture and active milestones, see `docs/current/
 
 ## Current Utility Consolidation Blockers
 
-- Pattern 11 Stage 4 validation surfaced two remaining follow-ups: `npm run phase6-services` now expects an explicit `start|stop|status` subcommand and exits 1 when invoked without one, and the Phase 6 readiness score output remains disabled (previous hard-coded value ignored) despite `npm run phase6-health` / `npm run phase6-validation` passing. Serialization unit and targeted backend suites require `--runInBand --no-cache --forceExit` to avoid the teardown handle warnings emitted by `tests/globalTeardown.ts` until the open-socket cleanup lands.
+- Pattern 11 Stage 4 validation surfaced two remaining follow-ups: `npm run phase6-services` still expects an explicit `start|stop|status` subcommand and exits 1 when invoked without one, and the Phase 6 harness intentionally reports `status=skipped` unless real backends are enabled. Serialization unit and targeted backend suites require `--runInBand --no-cache --forceExit` to avoid the teardown handle warnings emitted by `tests/globalTeardown.ts` until the open-socket cleanup lands.
 
 ## Recent Fixes & Diagnostics
 

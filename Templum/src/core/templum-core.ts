@@ -24,14 +24,9 @@ import {
 import { BackendStatus } from '../backend/backend-service-router';
 import {
   buildCliIpcRequest,
-  buildServiceRegistryDefaults,
   type CliIpcRequestPayload
 } from '../backend/defaults/serialization-defaults';
-import {
-  serviceRegistryEntrySchema,
-  cliRequestEnvelopeSchema,
-  type ServiceRegistryEntry
-} from '../backend/schemas/serialization-registry';
+import { serializeServiceManifest } from '../backend/schemas/service-manifest';
 import {
   serialization,
   type SerializationOutcome,
@@ -618,52 +613,34 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
         require('fs').mkdirSync(servicesDir, { recursive: true });
       }
       
-      // TASK-CLI-006: IPC-to-HTTP Transition - Register as IPC with HTTP readiness flag  
+      const serviceFilePath = path.join(servicesDir, `templum-core-${process.pid}.json`);
       const now = Date.now();
-      const serviceEntryDefaults = buildServiceRegistryDefaults({
+      const manifestPayload = serializeServiceManifest({
         id: `templum-core-${process.pid}`,
+        name: 'Templum Core',
         endpoint: `ipc://templum-core-${process.pid}`,
-        capabilities: this.getSupportedInterfaces(),
+        protocol: 'ipc',
         version: '1.0.0',
+        capabilities: this.getSupportedInterfaces(),
         registrationTime: now,
         lastSeen: now,
+        pid: process.pid,
         health: '/health',
-        metadata: {
-          httpEndpoint: `http://localhost:${this.getHttpPort()}`
+        healthCheck: {
+          type: 'ipc',
+          timeoutMs: 5000,
         },
-        pid: process.pid
+        metadata: {
+          httpEndpoint: `http://localhost:${this.getHttpPort()}`,
+        },
+        options: {
+          workspaceMarkers: ['.templum', '.haruspex', '.git', '.vscode'],
+          connectionDir: '.haruspex',
+          connectionFile: 'haruspex-debug-connection.json',
+        },
       });
 
-      const serviceEntry: ServiceRegistryEntry = serviceRegistryEntrySchema.parse({
-        ...serviceEntryDefaults,
-        protocol: 'ipc',
-        httpEndpoint: `http://localhost:${this.getHttpPort()}`
-      });
-
-      // Write service registry file
-      const serviceFilePath = path.join(servicesDir, `templum-core-${process.pid}.json`);
-      const serializedServiceEntry = serialization
-        .json(serviceEntry, {
-          context: 'core:service-registry:write',
-          pretty: 2,
-          maskFields: ['token', 'credentials']
-        })
-        .stringify();
-
-      const serviceEntryPayload = this.handleSerializationOutcome(
-        'Service registry entry write',
-        serializedServiceEntry
-      );
-
-      if (!serviceEntryPayload) {
-        throw createTemplumError(
-          'Failed to serialize service registry entry',
-          'CLI_REGISTRY_WRITE_FAILED',
-          'configuration'
-        );
-      }
-
-      require('fs').writeFileSync(serviceFilePath, serviceEntryPayload.value, 'utf8');
+      require('fs').writeFileSync(serviceFilePath, manifestPayload, 'utf8');
       
       console.log(`✅ Service registered for CLI discovery at: ${serviceFilePath}`);
       

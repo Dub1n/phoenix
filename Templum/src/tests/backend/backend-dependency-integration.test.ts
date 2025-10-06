@@ -18,6 +18,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as backendSerializationLog from '../../backend/backend-serialization-log';
 import { BackendConfig } from '../../types/universal-skin-engine-types';
+import { serializeServiceManifest } from '../../backend/schemas/service-manifest';
 
 describe('Backend Dependency Resolution Integration', () => {
   let dependencyResolver: BackendDependencyResolver;
@@ -34,7 +35,8 @@ describe('Backend Dependency Resolution Integration', () => {
       enableEndpointScanning: false, // Disable for tests
       enableConfigurationDiscovery: true,
       enableFileWatching: false,
-      timeout: 1000
+      enableHealthChecks: false,
+      timeout: 1000,
     });
 
     dependencyResolver = new BackendDependencyResolver({
@@ -185,6 +187,93 @@ describe('Backend Dependency Resolution Integration', () => {
         expect(validationResult.validationMethods).toContain('health');
       } finally {
         validateSpy.mockRestore();
+      }
+    });
+
+    test('validates multi-protocol manifests discovered from services directory', async () => {
+      const servicesDir = fs.mkdtempSync(path.join(process.cwd(), 'tmp-services-'));
+      const httpManifestPath = path.join(servicesDir, 'http-service.json');
+      const wsManifestPath = path.join(servicesDir, 'ws-service.json');
+
+      fs.writeFileSync(
+        httpManifestPath,
+        serializeServiceManifest({
+          id: 'http-service',
+          endpoint: 'http://127.0.0.1:4100',
+          protocol: 'http',
+          version: '1.3.0',
+          capabilities: ['health', 'status'],
+          healthCheck: {
+            type: 'http',
+            endpoint: 'http://127.0.0.1:4100/health',
+            timeoutMs: 1000,
+          },
+        }),
+        'utf8',
+      );
+
+      fs.writeFileSync(
+        wsManifestPath,
+        serializeServiceManifest({
+          id: 'ws-service',
+          endpoint: 'ws://127.0.0.1:4200',
+          protocol: 'websocket',
+          version: '2.0.0',
+          capabilities: ['events'],
+          healthCheck: {
+            type: 'websocket',
+            endpoint: 'ws://127.0.0.1:4200',
+            timeoutMs: 1500,
+          },
+        }),
+        'utf8',
+      );
+
+      let validateSpy: jest.SpyInstance | undefined;
+      try {
+        await (serviceDiscovery as any).handleServiceFileChange(httpManifestPath, 'add');
+        await (serviceDiscovery as any).handleServiceFileChange(wsManifestPath, 'add');
+
+        const discovered = serviceDiscovery.getDiscoveredServices();
+        expect(discovered.map((service) => service.id).sort()).toEqual(['http-service', 'ws-service']);
+
+        validateSpy = jest
+          .spyOn(serviceValidator, 'validateService')
+          .mockImplementation(async (serviceId, config) => ({
+            serviceId,
+            available: true,
+            healthScore: 0.92,
+            responseTime: 15,
+            capabilityScore: 0.85,
+            reliabilityScore: 0.95,
+            lastValidated: Date.now(),
+            validationMethods: ['connectivity', 'health'],
+            errors: [],
+            warnings: [],
+            metadata: {
+              endpoint: config.endpoint,
+              protocol: config.protocol,
+              version: config.version ?? '1.0.0',
+              capabilities: config.capabilities ?? [],
+            },
+          }));
+
+        const metrics = await serviceValidator.validateAllServices();
+
+        expect(metrics.totalServices).toBe(2);
+        expect(metrics.availableServices).toBe(2);
+        expect(validateSpy).toHaveBeenCalledWith(
+          'http-service',
+          expect.objectContaining({ protocol: 'http', endpoint: 'http://127.0.0.1:4100' }),
+        );
+        expect(validateSpy).toHaveBeenCalledWith(
+          'ws-service',
+          expect.objectContaining({ protocol: 'websocket', endpoint: 'ws://127.0.0.1:4200' }),
+        );
+        expect(metrics.reliabilityRate).toBeGreaterThanOrEqual(90);
+      } finally {
+        validateSpy?.mockRestore();
+        fs.rmSync(servicesDir, { recursive: true, force: true });
       }
     });
 

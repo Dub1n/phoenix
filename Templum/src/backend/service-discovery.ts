@@ -30,6 +30,13 @@ import { serialization, type JsonParseOptions, type JsonStringifyOptions, type S
 import { emitSerializationWarnings, getBackendSerializationLogger } from './backend-serialization-log';
 import { buildServiceRegistryDefaults } from './defaults/serialization-defaults';
 import { serviceRegistryEntrySchema, serviceRegistrySchema, type ServiceRegistryEntry, type ServiceRegistryDocument } from './schemas/serialization-registry';
+import {
+  buildBackendConfigFromManifest,
+  manifestFromRegistryEntry,
+  normalizeServiceManifest,
+  type NormalizedServiceManifest,
+} from './schemas/service-manifest';
+import { performServiceHealthCheck } from './service-health-check';
 import type { Logger } from '../utils/logger';
 
 export interface DiscoveredService {
@@ -77,49 +84,17 @@ export interface ServiceDiscoveryOptions {
 }
 
 const SUPPORTED_PROTOCOLS: ReadonlyArray<BackendConfig['protocol']> = ['ipc', 'http', 'websocket'];
-const SUPPORTED_AUTH_TYPES: ReadonlyArray<NonNullable<BackendConfig['authentication']>['type']> = [
-  'none',
-  'basic',
-  'bearer',
-  'api-key',
-  'oauth'
-];
-
-function normalizeAuthentication(source: unknown): BackendConfig['authentication'] {
-  if (!TypeGuards.isPlainObject(source)) {
-    return { type: 'none' };
-  }
-
-  const typeCandidate = (source as Record<string, unknown>).type;
-  if (typeof typeCandidate !== 'string') {
-    return { type: 'none' };
-  }
-
-  if (!SUPPORTED_AUTH_TYPES.includes(typeCandidate as NonNullable<BackendConfig['authentication']>['type'])) {
-    return { type: 'none' };
-  }
-
-  const credentialsCandidate = (source as Record<string, unknown>).credentials;
-  const credentials = TypeGuards.isPlainObject(credentialsCandidate)
-    ? Object.fromEntries(
-        Object.entries(credentialsCandidate as Record<string, unknown>).filter((entry): entry is [string, string] =>
-          typeof entry[0] === 'string' && typeof entry[1] === 'string'
-        )
-      )
-    : undefined;
-
-  const requiredCandidate = (source as Record<string, unknown>).required;
-
-  return {
-    type: typeCandidate as NonNullable<BackendConfig['authentication']>['type'],
-    credentials,
-    required: typeof requiredCandidate === 'boolean' ? requiredCandidate : undefined
-  };
-}
 
 interface ParsedServiceDescriptor {
   service: DiscoveredService;
   pid?: number;
+}
+
+interface ServiceHealthValidationContext {
+  manifest: NormalizedServiceManifest;
+  config: BackendConfig;
+  logger: Logger;
+  context: string;
 }
 
 interface ServiceDescriptorContext {
@@ -127,9 +102,12 @@ interface ServiceDescriptorContext {
   filePath: string;
   timeout: number;
   enforceHealthCheck: boolean;
+  discoveryMethod: DiscoveredService['discoveryMethod'];
+  confidence?: number;
   removeOnStale?: boolean;
+  logger: Logger;
   isProcessRunning: (pid: number) => boolean;
-  validateServiceHealth: (healthEndpoint?: string) => Promise<boolean>;
+  validateServiceHealth: (validationContext: ServiceHealthValidationContext) => Promise<boolean>;
 }
 
 const serviceDiscoveryLogger = getBackendSerializationLogger('service-discovery');
@@ -170,6 +148,15 @@ function parseJsonFile<T>(
 function stringifyJsonValue<T>(context: string, value: T, options?: JsonStringifyOptions): string | null {
   const outcome = serialization.json(value, options).context(context).stringify();
   return unwrapSerializationOutcome(context, outcome);
+}
+
+function isPidActive(pid: number): boolean {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (_error) {
+    return false;
+  }
 }
 
 function parseRegistryEntry(serviceId: string, candidate: unknown): ServiceRegistryEntry | null {
@@ -243,32 +230,19 @@ async function parseServiceDescriptor(
   descriptor: unknown,
   context: ServiceDescriptorContext,
 ): Promise<ParsedServiceDescriptor | null> {
-  const descriptorLogger = context.logPrefix.includes('[REGISTRY_DISCOVERY]')
-    ? registryLogger
-    : context.logPrefix.includes('[FILE_WATCHER]')
-      ? fileWatcherLogger
-      : serviceDiscoveryLogger;
+  const descriptorLogger = context.logger;
+  const manifest = normalizeServiceManifest(descriptor);
 
-  if (!TypeGuards.isPlainObject(descriptor)) {
-    descriptorLogger.warn('Invalid service descriptor payload', { filePath: context.filePath });
+  if (!manifest) {
+    descriptorLogger.warn('Invalid service manifest payload', { filePath: context.filePath });
     return null;
   }
 
-  const record = descriptor as Record<string, unknown>;
-  const serviceId = record.id;
-  const endpoint = record.endpoint;
-
-  if (!TypeGuards.isNonEmptyString(serviceId) || !TypeGuards.isNonEmptyString(endpoint)) {
-    descriptorLogger.warn('Service descriptor missing id or endpoint', { filePath: context.filePath });
-    return null;
-  }
-
-  const pidValue = record.pid;
-  if (TypeGuards.isNumber(pidValue)) {
-    if (!context.isProcessRunning(pidValue)) {
-      descriptorLogger.info('Service descriptor references inactive process', {
+  if (manifest.pid !== undefined) {
+    if (!context.isProcessRunning(manifest.pid)) {
+      descriptorLogger.info('Service manifest references inactive process', {
         filePath: context.filePath,
-        pid: pidValue,
+        pid: manifest.pid,
         removeOnStale: context.removeOnStale ?? false,
       });
       if (context.removeOnStale) {
@@ -276,72 +250,38 @@ async function parseServiceDescriptor(
       }
       return null;
     }
-  } else if (pidValue !== undefined) {
-    descriptorLogger.warn('Service descriptor has non-numeric pid', {
-      filePath: context.filePath,
-      serviceId,
-    });
-    return null;
   }
 
-  const healthSource = TypeGuards.isNonEmptyString(record.health)
-    ? (record.health as string)
-    : `${endpoint}/health`;
+  const backendConfig = buildBackendConfigFromManifest(manifest, { timeout: context.timeout });
 
   if (context.enforceHealthCheck) {
-    const isHealthy = await context.validateServiceHealth(healthSource);
+    const isHealthy = await context.validateServiceHealth({
+      manifest,
+      config: backendConfig,
+      logger: descriptorLogger,
+      context: context.logPrefix,
+    });
+
     if (!isHealthy) {
       descriptorLogger.warn('Service failed health check', {
         filePath: context.filePath,
-        serviceId,
+        serviceId: manifest.id,
       });
       return null;
     }
   }
 
-  const protocolCandidate = record.protocol;
-  const protocol =
-    TypeGuards.isNonEmptyString(protocolCandidate) &&
-    SUPPORTED_PROTOCOLS.includes(protocolCandidate as BackendConfig['protocol'])
-      ? (protocolCandidate as BackendConfig['protocol'])
-      : 'http';
-
-  const version = TypeGuards.isNonEmptyString(record.version) ? (record.version as string) : '1.0.0';
-  const authentication = normalizeAuthentication(record.authentication);
-
-  const config: BackendConfig = {
-    service: serviceId,
-    version,
-    protocol,
-    endpoint,
-    timeout: context.timeout,
-    retries: 2,
-    keepAlive: true,
-    authentication,
-    healthEndpoint: healthSource,
+  const service: DiscoveredService = {
+    id: manifest.id,
+    config: backendConfig,
+    discoveryMethod: context.discoveryMethod,
+    confidence: context.confidence ?? 0.95,
+    timestamp: manifest.lastSeen ?? manifest.registrationTime ?? Date.now(),
   };
 
-  if (TypeValidators.isArrayOf(record.capabilities, TypeGuards.isNonEmptyString)) {
-    config.capabilities = record.capabilities;
-  }
-
-  if (TypeGuards.isNonEmptyString(record.capabilitiesEndpoint)) {
-    config.capabilitiesEndpoint = record.capabilitiesEndpoint as string;
-  }
-
-  if (TypeGuards.isNonEmptyString(record.versionEndpoint)) {
-    config.versionEndpoint = record.versionEndpoint as string;
-  }
-
   return {
-    service: {
-      id: serviceId,
-      config,
-      discoveryMethod: 'registry',
-      confidence: 0.95,
-      timestamp: Date.now(),
-    },
-    pid: TypeGuards.isNumber(pidValue) ? pidValue : undefined,
+    service,
+    pid: manifest.pid,
   };
 }
 
@@ -664,8 +604,11 @@ export class ServiceDiscovery extends EventEmitter {
         filePath,
         timeout: this.options.timeout,
         enforceHealthCheck: this.options.enableHealthChecks,
+        discoveryMethod: 'registry',
+        confidence: 0.95,
+        logger: fileWatcherLogger,
         isProcessRunning: (pid) => this.isProcessRunning(pid),
-        validateServiceHealth: (healthEndpoint) => this.validateServiceHealth(healthEndpoint),
+        validateServiceHealth: (validationContext) => this.validateServiceHealth(validationContext),
       });
 
       if (!descriptor) {
@@ -733,34 +676,26 @@ export class ServiceDiscovery extends EventEmitter {
    * NEW: Helper method for file watching validation
    */
   private isProcessRunning(pid: number): boolean {
-    try {
-      // process.kill with signal 0 checks if process exists without killing it
-      process.kill(pid, 0);
-      return true;
-    } catch (_error) {
-      return false;
-    }
+    return isPidActive(pid);
   }
 
   /**
    * Validate service health endpoint
    * NEW: Helper method for file watching validation  
    */
-  private async validateServiceHealth(healthEndpoint?: string): Promise<boolean> {
-    if (!healthEndpoint) return true; // No health check specified
+  private async validateServiceHealth(validationContext: ServiceHealthValidationContext): Promise<boolean> {
+    const timeoutMs = validationContext.config.timeout ?? this.options.timeout ?? 5000;
+    const config: BackendConfig = {
+      ...validationContext.config,
+      timeout: timeoutMs,
+    };
 
-    return new Promise((resolve) => {
-      const timeout = setTimeout(() => resolve(false), this.options.timeout);
-      
-      const request = http.get(healthEndpoint, (res) => {
-        clearTimeout(timeout);
-        resolve(res.statusCode === 200);
-      });
-
-      request.on('error', () => {
-        clearTimeout(timeout);
-        resolve(false);
-      });
+    return performServiceHealthCheck({
+      manifest: validationContext.manifest,
+      config,
+      timeoutMs,
+      logger: validationContext.logger,
+      context: validationContext.context,
     });
   }
 
@@ -854,42 +789,27 @@ export class RegistryBasedDiscoveryStrategy implements DiscoveryStrategy {
           continue;
         }
 
-        const isHealthy = await this.validateServiceHealth(registration.health);
+        const manifest = manifestFromRegistryEntry(registration);
+        const backendConfig = buildBackendConfigFromManifest(manifest, { timeout: this.options.timeout });
+
+        const isHealthy = await this.validateServiceHealth({
+          manifest,
+          config: backendConfig,
+          logger: registryLogger,
+          context: '[REGISTRY_DISCOVERY]',
+        });
+
         if (!isHealthy) {
           registryLogger.warn('Service failed health check', { serviceId });
           continue;
         }
 
-        const config: BackendConfig = {
-          service: serviceId,
-          version: registration.version,
-          protocol: registration.protocol,
-          endpoint: registration.endpoint,
-          timeout: this.options.timeout,
-          retries: 2,
-          keepAlive: true,
-          authentication: normalizeAuthentication(registration.authentication),
-          healthEndpoint: registration.health,
-        };
-
-        if (registration.capabilities && registration.capabilities.length > 0) {
-          config.capabilities = [...registration.capabilities];
-        }
-
-        if (TypeGuards.isNonEmptyString(registration.capabilitiesEndpoint)) {
-          config.capabilitiesEndpoint = registration.capabilitiesEndpoint;
-        }
-
-        if (TypeGuards.isNonEmptyString(registration.versionEndpoint)) {
-          config.versionEndpoint = registration.versionEndpoint;
-        }
-
         services.push({
           id: serviceId,
-          config,
+          config: backendConfig,
           discoveryMethod: 'registry',
           confidence: 0.9,
-          timestamp: registration.lastSeen,
+          timestamp: manifest.lastSeen ?? manifest.registrationTime ?? now,
         });
 
         registryLogger.info('Discovered service via registry', { serviceId });
@@ -977,9 +897,12 @@ export class RegistryBasedDiscoveryStrategy implements DiscoveryStrategy {
           filePath,
           timeout: this.options.timeout,
           enforceHealthCheck: true,
+          discoveryMethod: 'registry',
+          confidence: 0.9,
+          logger: registryLogger,
           removeOnStale: true,
           isProcessRunning: (pid) => this.isProcessRunning(pid),
-          validateServiceHealth: (healthEndpoint) => this.validateServiceHealth(healthEndpoint),
+          validateServiceHealth: (validationContext) => this.validateServiceHealth(validationContext),
         });
 
         if (!descriptor) {
@@ -1006,30 +929,22 @@ export class RegistryBasedDiscoveryStrategy implements DiscoveryStrategy {
    * Check if a process ID is still running
    */
   private isProcessRunning(pid: number): boolean {
-    try {
-      // process.kill with signal 0 checks if process exists without killing it
-      process.kill(pid, 0);
-      return true;
-    } catch (_error) {
-      return false;
-    }
+    return isPidActive(pid);
   }
 
-  private async validateServiceHealth(healthEndpoint?: string): Promise<boolean> {
-    if (!healthEndpoint) return true; // No health check specified
+  private async validateServiceHealth(validationContext: ServiceHealthValidationContext): Promise<boolean> {
+    const timeoutMs = validationContext.config.timeout ?? this.options.timeout ?? 5000;
+    const config: BackendConfig = {
+      ...validationContext.config,
+      timeout: timeoutMs,
+    };
 
-    return new Promise((resolve) => {
-      const timeout = setTimeout(() => resolve(false), this.options.timeout);
-      
-      const request = http.get(healthEndpoint, (res) => {
-        clearTimeout(timeout);
-        resolve(res.statusCode === 200);
-      });
-
-      request.on('error', () => {
-        clearTimeout(timeout);
-        resolve(false);
-      });
+    return performServiceHealthCheck({
+      manifest: validationContext.manifest,
+      config,
+      timeoutMs,
+      logger: validationContext.logger,
+      context: validationContext.context,
     });
   }
 }

@@ -15,13 +15,38 @@ import {
   PHASE6_READINESS_SCORE_NOTE,
   Phase6IntegrationValidationSuite,
   Phase6ValidationReport,
-} from '../tests/integration-validation-framework';
-import { formatColumn } from './cli-string-formatting';
+} from '../validation/phase6-harness';
 
 // CLI Configuration
 const CLI_VERSION = '1.0.0';
 const DEFAULT_OUTPUT_DIR = './validation-reports';
 const DEFAULT_CONFIG_FILE = './phase6-validation-config.json';
+
+type ColumnAlignment = 'left' | 'right' | 'center';
+
+const formatColumn = (
+  value: string | number,
+  width: number,
+  alignment: ColumnAlignment = 'right'
+): string => {
+  const text = typeof value === 'string' ? value : String(value);
+  if (text.length >= width) {
+    return text;
+  }
+
+  const paddingLength = width - text.length;
+  if (alignment === 'left') {
+    return text + ' '.repeat(paddingLength);
+  }
+
+  if (alignment === 'center') {
+    const leading = Math.floor(paddingLength / 2);
+    const trailing = paddingLength - leading;
+    return `${' '.repeat(leading)}${text}${' '.repeat(trailing)}`;
+  }
+
+  return ' '.repeat(paddingLength) + text;
+};
 
 interface ValidationConfig {
   services: {
@@ -211,13 +236,23 @@ class Phase6ValidationCLI {
       await this.validationSuite.shutdown();
 
       // Exit with appropriate code
-      if (report.phase6ReadinessScore >= 80) {
+      const validationStatus = report.status ?? (report.phase6ReadinessScore >= 80 ? 'passed' : 'failed');
+
+      if (validationStatus === 'passed') {
         console.log('\n🎉 Phase 6 Integration Validation PASSED - System ready for production deployment');
         process.exit(0);
-      } else {
-        console.log('\n❌ Phase 6 Integration Validation FAILED - Address critical issues before deployment');
-        process.exit(1);
       }
+
+      if (validationStatus === 'skipped') {
+        console.log('\n⚠️ Phase 6 Integration Validation SKIPPED - ' + (report.statusReason ?? 'Mocks in use; run with --use-real-backends for full validation.'));
+        process.exit(0);
+      }
+
+      console.log('\n❌ Phase 6 Integration Validation FAILED - Address critical issues before deployment');
+      if (report.statusReason) {
+        console.log(`   Reason: ${report.statusReason}`);
+      }
+      process.exit(1);
 
     } catch (error) {
       console.error('\n❌ Validation failed:', error instanceof Error ? error.message : 'Unknown error');
@@ -269,8 +304,13 @@ class Phase6ValidationCLI {
       });
 
       console.log('─'.repeat(50));
-      console.log(`Overall System Health: ${healthResults.phase6ReadinessScore >= 80 ? '✅ HEALTHY' : '❌ NEEDS ATTENTION'}`);
-      console.log(`Phase 6 Readiness Score: ${healthResults.phase6ReadinessScoreNote ?? PHASE6_READINESS_SCORE_NOTE}`);
+      const healthStatus = healthResults.status ?? (healthResults.phase6ReadinessScore >= 80 ? 'passed' : 'failed');
+      const healthLabel = healthStatus === 'passed' ? '✅ HEALTHY' : healthStatus === 'skipped' ? '⚠️ SKIPPED' : '❌ NEEDS ATTENTION';
+      console.log(`Overall System Health: ${healthLabel}`);
+      if (healthResults.statusReason) {
+        console.log(`Reason: ${healthResults.statusReason}`);
+      }
+      console.log(`Phase 6 Note: ${healthResults.phase6ReadinessScoreNote ?? PHASE6_READINESS_SCORE_NOTE}`);
 
       if (healthResults.recommendations.critical.length > 0) {
         console.log('\n🚨 Critical Issues:');
@@ -279,7 +319,7 @@ class Phase6ValidationCLI {
 
       await this.validationSuite.shutdown();
       
-      process.exit(healthResults.phase6ReadinessScore >= 80 ? 0 : 1);
+      process.exit(healthStatus === 'failed' ? 1 : 0);
 
     } catch (error) {
       console.error('\n❌ Health check failed:', error instanceof Error ? error.message : 'Unknown error');
@@ -519,7 +559,12 @@ class Phase6ValidationCLI {
   private displayValidationSummary(report: Phase6ValidationReport): void {
     console.log('\n📊 Phase 6 Integration Validation Summary');
     console.log('═'.repeat(50));
-    console.log(`Phase 6 Readiness Score: ${report.phase6ReadinessScoreNote ?? PHASE6_READINESS_SCORE_NOTE}`);
+    const statusLabel = report.status ? report.status.toUpperCase() : 'UNKNOWN';
+    console.log(`Phase 6 Status: ${statusLabel}`);
+    if (report.statusReason) {
+      console.log(`Reason: ${report.statusReason}`);
+    }
+    console.log(`Phase 6 Note: ${report.phase6ReadinessScoreNote ?? PHASE6_READINESS_SCORE_NOTE}`);
     console.log(`Multi-System Workflows: ${report.realIntegrationSummary.successfulWorkflows}/${report.realIntegrationSummary.totalWorkflows} successful`);
     console.log(`Cross-Interface Consistency: ${report.realIntegrationSummary.crossInterfaceConsistency.toFixed(1)}%`);
     console.log(`Average Workflow Time: ${report.realIntegrationSummary.averageWorkflowTime.toFixed(1)}ms`);
@@ -584,9 +629,11 @@ class Phase6ValidationCLI {
 
     <div class="summary">
         <h2>Overall Results</h2>
-        <div class="score note">
-            Phase 6 Readiness Score: ${report.phase6ReadinessScoreNote ?? PHASE6_READINESS_SCORE_NOTE}
+        <div class="score">
+            Phase 6 Status: ${(report.status ?? 'unknown').toUpperCase()}
         </div>
+        ${report.statusReason ? `<p class="note">Reason: ${report.statusReason}</p>` : ''}
+        <p class="note">Phase 6 Note: ${report.phase6ReadinessScoreNote ?? PHASE6_READINESS_SCORE_NOTE}</p>
         <p>Multi-System Workflows: ${report.realIntegrationSummary.successfulWorkflows}/${report.realIntegrationSummary.totalWorkflows} successful</p>
         <p>Cross-Interface Consistency: ${report.realIntegrationSummary.crossInterfaceConsistency.toFixed(1)}%</p>
         <p>Average Workflow Time: ${report.realIntegrationSummary.averageWorkflowTime.toFixed(1)}ms</p>
@@ -646,7 +693,9 @@ class Phase6ValidationCLI {
 
 ## Overall Results
 
-**Phase 6 Readiness Score:** ${report.phase6ReadinessScoreNote ?? PHASE6_READINESS_SCORE_NOTE}
+**Phase 6 Status:** ${(report.status ?? 'unknown').toUpperCase()}
+${report.statusReason ? `**Reason:** ${report.statusReason}` : ''}
+**Phase 6 Note:** ${report.phase6ReadinessScoreNote ?? PHASE6_READINESS_SCORE_NOTE}
 
 - Multi-System Workflows: ${report.realIntegrationSummary.successfulWorkflows}/${report.realIntegrationSummary.totalWorkflows} successful
 - Cross-Interface Consistency: ${report.realIntegrationSummary.crossInterfaceConsistency.toFixed(1)}%
