@@ -28,8 +28,8 @@ last_updated: 2025-10-06
   Progress 100% — Watcher overrides and regression coverage are in place, manual verification is documented, and the remaining real-backend Phase 6 run is waived to post-MVP under `dev/tasks/phase6-validation-signal.md`.
 - [x] [Versioned skin contract enforcement](../../dev/tasks/versioned-skin-contract.md)
   Progress 100% — Ajv-backed validation now enforces the canonical schema (performance hints, menu/command/workflow structures), emits schema metadata on registration, and new contract + adapter suites cover rejection flows. Full `npm test -- --runTestsByPath … --runInBand --forceExit` is green.
-- [~] [Unified session/context layer across adapters](../../dev/tasks/unified-session-layer.md)
-  Progress 70% — `TemplumUniversalSessionManager` now comes from core DI, replaces the CLI-specific manager, and is injected into CLI/VSCode flows with bridging helpers and targeted integration tests (`tests/session/unified-session-manager.integration.test.ts`, `tests/interfaces/interface-adapter-integration.test.ts` → “Unified Session Manager Integration”). Remaining work: finish universal interaction manager persistence cleanup and wire the legacy CLI state-sync helpers through the shared foundation to eliminate duplicate caches.
+- [x] [Unified session/context layer across adapters](../../dev/tasks/unified-session-layer.md)
+  Progress 100% — Stage 4 removed the CLI adapter’s bespoke `navigationHistory`/mode fields in favour of bridge helpers, and Stage 5 hardened teardown by clearing session listeners and asserting disconnect hooks. Evidence: `node scripts/run-with-timeout.mjs --timeout 60000 -- npm test -- --runInBand --forceExit --runTestsByPath tests/interfaces/universal-interaction-manager.session.test.ts` (interaction manager), `node scripts/run-with-timeout.mjs --timeout 180000 -- npm test -- --runInBand --forceExit --runTestsByPath tests/interfaces/interface-adapter-integration.test.ts` (CLI/VSC adapters), plus the existing unified session manager integration run. Documentation synced with the task spec and architecture notes; no open-handle leaks observed under the forced-exit harness.
 
 ## Backend Connectivity
 
@@ -37,15 +37,13 @@ last_updated: 2025-10-06
   Completed — Router/discovery fixes plus multi-protocol test + health suites are green (`npm test -- src/tests/backend/service-discovery.test.ts src/tests/backend/backend-dependency-integration.test.ts src/tests/backend/generic-backend-integration.test.ts`; `npm run test:health`). Live Phase 6 service evidence is rescheduled post-MVP (see `docs/target/post-mvp-progress.md`).
 - [x] [Connection lifecycle event broadcasting to interfaces/logs](../../dev/tasks/connection-lifecycle-events.md)
   Progress 100% — Router now emits normalized lifecycle events via a dedicated channel, TemplumCore re-broadcasts them to observability/state manager, and adapters receive deduped updates; targeted backend/core suites pass under the timeout harness (`node scripts/run-with-timeout.mjs --timeout 45000 -- npm test -- --runTestsByPath src/tests/backend/backend-connection-lifecycle.test.ts`).
-- [ ] [Manual override flow without breaking zero-knowledge behaviour](../../dev/tasks/manual-override-flow.md)
-  Progress 0% — No override manager or sanitized descriptors exist; router/discovery paths ignore overrides.
+- [~] [Manual override flow without breaking zero-knowledge behaviour](../../dev/tasks/manual-override-flow.md)
+  Progress 75% — ManualOverrideManager feeds sanitized descriptors into the router/discovery pipeline, CLI command registry exposes apply/clear commands via TemplumCore, and observability logs hashed override events; pending: exercise the flow against the real `.templum/services` watcher and document operator guidance.
 
 ## Skin-Driven Rendering
 
-- [ ] [Timer & Event cleanup for test harness](../..\dev/architecture/safe-consolidation-candidates.md)
-  Progress 0% — Migrate suites that keep Jest alive to `AsyncUtils.createInterval`/`cleanup` and the refactored `event-utils` wrapper per `Templum/dev/patterns/utilities/core/async-utils.md`, `Templum/src/utils/async-utils.ts`, and plan the broader adoption via `Templum/dev/architecture/utility-consolidation-playbook.md`.
 - [ ] [Timer & Event cleanup for test harness](../../dev/architecture/safe-consolidation-candidates.md)
-  Progress 0% — Migrate suites that keep Jest alive to `AsyncUtils.createInterval`/`cleanup` and the refactored event-utils wrapper per `Templum/dev/patterns/utilities/core/async-utils.md`, `Templum/src/utils/async-utils.ts`, and the consolidation steps in `Templum/dev/architecture/utility-consolidation-playbook.md`.
+  Progress 0% — Migrate suites that keep Jest alive to `AsyncUtils.createInterval`/`cleanup` and the refactored `event-utils` wrapper per `Templum/dev/patterns/utilities/core/async-utils.md`, `Templum/src/utils/async-utils.ts`, and plan the broader adoption via `Templum/dev/architecture/utility-consolidation-playbook.md`.
 - [ ] [Skin payload consumption powering full UI without hardcoding](../../dev/tasks/skin-payload-consumption.md)
   Progress 25% — Rendering scaffolding exists, but adapters still use fallback dumps instead of payload-driven menus.
 - [ ] [Procedural windowed TUI layout from skin descriptors](../../dev/tasks/procedural-windowed-tui.md)

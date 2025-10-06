@@ -28,6 +28,12 @@ import {
 } from "../../src/interfaces/terminal-ui-components";
 import { TemplumUniversalSessionManager } from "../../src/session/templum-universal-session-manager";
 import { createTestPCLSkinDefinition } from "../templum/universal-skin-system.test";
+import type {
+  ManualOverrideDescriptor,
+  ManualOverrideOptions,
+  ManualOverrideSnapshot,
+  ManualOverrideClearResult,
+} from "../../src/backend/manual-override-manager";
 
 const ansiPattern = /\u001b\[[0-9;]*m/g;
 
@@ -108,6 +114,7 @@ class MockTemplumOrchestrator
   private supportedInterfaces: InterfaceType[] = ["vscode", "cli", "command"];
   private backendRouterStub = createStubBackendRouter();
   private sessionManager: TemplumUniversalSessionManager | StubSessionManager;
+  private manualOverrides = new Map<string, ManualOverrideDescriptor>();
 
   constructor(options: {
     sessionManager?: TemplumUniversalSessionManager;
@@ -241,6 +248,51 @@ class MockTemplumOrchestrator
   getResourceManager(): any {
     return {
       getMetrics: jest.fn().mockReturnValue({ memory: 0, cpu: 0 }),
+    };
+  }
+
+  async applyManualOverride(
+    serviceId: string,
+    options: ManualOverrideOptions = {},
+  ): Promise<ManualOverrideDescriptor> {
+    const descriptor: ManualOverrideDescriptor = {
+      serviceId,
+      scope: options.scope ?? "session",
+      appliedAt: Date.now(),
+      expiresAt: options.expiresAt,
+      reason: options.reason,
+    };
+    this.manualOverrides.set(serviceId, descriptor);
+    return descriptor;
+  }
+
+  async clearManualOverride(
+    serviceId?: string,
+  ): Promise<ManualOverrideClearResult> {
+    if (serviceId) {
+      const descriptor = this.manualOverrides.get(serviceId);
+      this.manualOverrides.delete(serviceId);
+      return {
+        descriptor: descriptor ?? {
+          serviceId,
+          scope: "session",
+          appliedAt: Date.now(),
+        },
+        snapshot: this.getManualOverrideSnapshot(),
+      };
+    }
+
+    this.manualOverrides.clear();
+    return {
+      descriptor: undefined,
+      snapshot: this.getManualOverrideSnapshot(),
+    };
+  }
+
+  getManualOverrideSnapshot(): ManualOverrideSnapshot {
+    return {
+      overrides: Array.from(this.manualOverrides.values()),
+      updatedAt: Date.now(),
     };
   }
 
@@ -1038,6 +1090,44 @@ describe("Interface Adapter Integration Tests", () => {
 
       await vscodeAdapter.dispose();
       await cliAdapter.dispose();
+      await orchestrator.shutdown();
+    });
+
+    test("CLI adapter navigation bridges through shared session state", async () => {
+      const sessionManager = new TemplumUniversalSessionManager(
+        {},
+        undefined,
+        createStubBackendRouter() as any,
+      );
+      const orchestrator = new MockTemplumOrchestrator({ sessionManager });
+      await orchestrator.initialize();
+
+      const cliAdapter = new CLIInterfaceAdapter({ enableInteractiveMode: false });
+      await cliAdapter.initialize(orchestrator);
+
+      const bridge = (cliAdapter as any).sessionManager;
+      bridge.navigateToMenu('main', false);
+      bridge.navigateToMenu('settings', true);
+
+      const navigationResult = await (cliAdapter as any).handleNavigation({
+        type: 'navigation',
+        value: 'back',
+      });
+      expect(navigationResult.handled).toBe(true);
+      expect(sessionManager.getSessionSnapshot()?.currentMenu).toBe('main');
+
+      await (cliAdapter as any).processLocalCommand('home');
+      const snapshot = sessionManager.getSessionSnapshot();
+      expect(snapshot?.currentMenu).toBe('main');
+      expect(snapshot?.navigationHistory).toHaveLength(0);
+
+      const disconnectSpy = jest.fn();
+      sessionManager.on('interfaceDisconnected', disconnectSpy);
+      await cliAdapter.dispose();
+      expect(disconnectSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ interfaceType: 'cli', reason: 'cli-adapter-dispose' })
+      );
+
       await orchestrator.shutdown();
     });
   });

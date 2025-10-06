@@ -121,6 +121,11 @@ export class CLISessionBridge {
     this.sessionManager.notifyInterfaceDisconnect(CLI_INTERFACE, 'cli-adapter-dispose');
   }
 
+  resetNavigationHistory(): void {
+    this.navigationHistory = [];
+    this.persistState();
+  }
+
   private applySnapshot(snapshot: TemplumSessionState): void {
     this.navigationHistory = [...snapshot.navigationHistory];
     this.currentMenu = snapshot.currentMenu ?? this.currentMenu;

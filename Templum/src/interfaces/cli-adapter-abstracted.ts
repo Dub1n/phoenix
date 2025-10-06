@@ -97,8 +97,6 @@ export interface CLIRenderResult {
 export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapter {
   private orchestrator!: ITemplumOrchestrator;
   private readlineInterface: readline.Interface | null = null;
-  private currentMenu: string = 'main';
-  private navigationHistory: string[] = [];
   private keyboardShortcuts = new Map<string, string>();
   private isInteractiveMode: boolean = false;
   private config: CLIAdapterConfig;
@@ -106,7 +104,6 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
   private activeSpinner: Spinner | null = null;
   private activeProgressBar: ProgressBar | null = null;
   private interactiveMenuRenderer: InteractiveMenuRenderer | null = null;
-  private interactionMode: 'menu' | 'command' = 'menu';
   private sessionManager!: CLISessionBridge;
   private consistencyEngine: CLIDisplayConsistencyEngine;
   private readonly formatter: TerminalFormatter;
@@ -194,7 +191,7 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
       formatter: this.formatter,
       columnsProvider: () => this.formatter.getCapabilities().width,
     });
-    
+
     // Initialize session manager
     // TODO: [TASK-ID-004] Pattern: session-manager-integration | Complexity: 4 | Dependencies: session-persistence
     // Initialize consistency engine with responsive layout integration
@@ -215,6 +212,26 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
     });
   }
 
+  private getSessionSnapshot(): CLISessionSnapshot {
+    return this.sessionManager.getCurrentSession();
+  }
+
+  private getCurrentMenu(): string {
+    return this.getSessionSnapshot().currentMenu;
+  }
+
+  private getNavigationHistory(): string[] {
+    return [...this.getSessionSnapshot().navigationHistory];
+  }
+
+  private setCurrentMenu(menuId: string, options: { addToHistory?: boolean; resetHistory?: boolean } = {}): void {
+    const { addToHistory = true, resetHistory = false } = options;
+    if (resetHistory) {
+      this.sessionManager.resetNavigationHistory();
+    }
+    this.sessionManager.navigateToMenu(menuId, addToHistory);
+  }
+
   /**
    * Initialize with orchestrator abstraction
    */
@@ -228,10 +245,7 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
 
     // Restore session state
     const session = this.sessionManager.getCurrentSession();
-    this.currentMenu = session.currentMenu;
-    this.navigationHistory = [...session.navigationHistory];
-    this.interactionMode = session.interactionMode;
-    
+
     // Register this adapter with the orchestrator
     await this.orchestrator.registerInterface('cli', this);
     
@@ -261,7 +275,7 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
       // Update local state based on menu updates
       if (stateUpdate.menuUpdates) {
         for (const [menuId, menuUpdate] of Object.entries(stateUpdate.menuUpdates)) {
-          if (menuUpdate.refreshRequired && menuId !== this.currentMenu) {
+          if (menuUpdate.refreshRequired && menuId !== this.getCurrentMenu()) {
             console.log(`CLIInterfaceAdapter: Menu refresh required for ${menuId}`);
           }
           // Handle navigation state changes if available
@@ -394,7 +408,7 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
           source: 'CLIInterfaceAdapter', 
           timestamp: Date.now(),
           interactive: this.isInteractiveMode,
-          currentMenu: this.currentMenu
+          currentMenu: this.getCurrentMenu()
         }
       );
 
@@ -464,7 +478,6 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
         // Navigate back in menu history using session manager
         const previousMenu = this.sessionManager.navigateBack();
         if (previousMenu) {
-          this.currentMenu = previousMenu;
           await this.loadInitialContent();
           return { success: true, message: `Navigated back to ${previousMenu}`, command };
         } else {
@@ -473,9 +486,7 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
         
       } else if (cmd === 'home') {
         // Navigate to main menu
-        this.sessionManager.navigateToMenu('main', true);
-        this.currentMenu = 'main';
-        this.navigationHistory = [];
+        this.setCurrentMenu('main', { addToHistory: false, resetHistory: true });
         await this.loadInitialContent();
         return { success: true, message: 'Navigated to main menu', command };
         
@@ -501,7 +512,7 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
         await this.handleInput({
           type: 'menu_selection',
           value: cmd,
-          context: { currentMenu: this.currentMenu }
+          context: { currentMenu: this.getCurrentMenu() }
         });
         return { success: true, message: `Menu selection: ${cmd}`, command };
         
@@ -538,8 +549,7 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
 
     try {
       this.isInteractiveMode = true;
-      this.currentMenu = initialMenu;
-      this.navigationHistory = [];
+      this.setCurrentMenu(initialMenu, { addToHistory: false, resetHistory: true });
 
       // Initialize interactive menu renderer
       this.interactiveMenuRenderer = new InteractiveMenuRenderer(this.orchestrator, {
@@ -557,7 +567,7 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
       await this.loadInitialContent();
       console.log(this.formatSeparator(60));
 
-      this.emit('interactiveSessionStarted', { menu: initialMenu, timestamp: Date.now() });
+      this.emit('interactiveSessionStarted', { menu: this.getCurrentMenu(), timestamp: Date.now() });
 
       // Start interactive menu loop
       await this.runInteractiveMenuLoop();
@@ -636,8 +646,6 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
       
     } finally {
       // Store session history for potential debugging
-      this.navigationHistory = sessionHistory;
-      
       console.log(this.formatWarning('\n🛑 Interactive session ended'));
       console.log(this.formatMuted(`Session history: ${sessionHistory.length} interactions recorded`));
     }
@@ -817,8 +825,6 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
     switch (action) {
       case 'toggle-mode':
         console.log(this.formatInfo('🔀 Switching to command mode...'));
-        this.interactionMode = 'command';
-        
         // Switch to command mode (would need additional implementation)
         console.log(this.formatWarning('Command mode not yet implemented - staying in menu mode'));
         break;
@@ -902,7 +908,7 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
 
       // Clean up resources
       this.keyboardShortcuts.clear();
-      this.navigationHistory = [];
+      this.sessionManager?.resetNavigationHistory();
       this.removeAllListeners();
       
       console.log('CLIInterfaceAdapter: Disposed successfully with session saved');
@@ -925,7 +931,6 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
     console.log(this.formatMuted('Commands: help, status, load <backend>, quit, etc.'));
     console.log(this.formatSeparator(50));
     
-    this.interactionMode = 'command';
     this.sessionManager.switchInteractionMode('command');
     
     // Start command mode input loop
@@ -942,7 +947,6 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
     console.log(this.formatMuted('Use arrow keys to navigate, Enter to select.'));
     console.log(this.formatSeparator(50));
     
-    this.interactionMode = 'menu';
     this.sessionManager.switchInteractionMode('menu');
     
     // Refresh menu content
@@ -1201,8 +1205,7 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
         return {
           description: 'Reset to main menu and refresh content',
           action: async () => {
-            this.sessionManager.navigateToMenu('main', false);
-            this.currentMenu = 'main';
+            this.setCurrentMenu('main', { addToHistory: false, resetHistory: true });
             await this.loadInitialContent();
           }
         };
@@ -1497,14 +1500,14 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
       await this.handleInput({
         type: 'menu_selection',
         value: input,
-        context: { currentMenu: this.currentMenu }
+        context: { currentMenu: this.getCurrentMenu() }
       });
     } else {
       // Command execution
       await this.handleInput({
         type: 'command',
         value: input,
-        context: { currentMenu: this.currentMenu }
+        context: { currentMenu: this.getCurrentMenu() }
       });
     }
 
@@ -1561,17 +1564,18 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
   private async handleNavigation(input: CLIInput): Promise<CLIInputResult> {
     switch (input.value) {
       case 'back':
-        if (this.navigationHistory.length === 0) {
+        if (this.getNavigationHistory().length === 0) {
           return { handled: false, errors: ['No previous menu in history'] };
         }
-        const previousMenu = this.navigationHistory.pop()!;
-        this.currentMenu = previousMenu;
+        const previousMenu = this.sessionManager.navigateBack();
+        if (!previousMenu) {
+          return { handled: false, errors: ['No previous menu in history'] };
+        }
         console.log(`Navigated back to: ${previousMenu}`);
         return { handled: true, navigationChange: { action: 'back', target: previousMenu } };
       
       case 'home':
-        this.navigationHistory.push(this.currentMenu);
-        this.currentMenu = 'main';
+        this.setCurrentMenu('main', { addToHistory: false, resetHistory: true });
         console.log('Navigated to main menu');
         return { handled: true, navigationChange: { action: 'menu', target: 'main' } };
       

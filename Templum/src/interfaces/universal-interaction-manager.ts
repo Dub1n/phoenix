@@ -23,6 +23,15 @@ import type {
   TemplumSessionManagerContract,
 } from '../session/universal-session-manager.types';
 
+type ManagedInteractionState = {
+  commandHistory: string[];
+  interactionMode: 'menu' | 'command';
+  currentMenu?: string;
+  navigationStack?: string[];
+};
+
+const MAX_COMMAND_HISTORY = 50;
+
 // Extended interfaces for multi-interface support
 export interface UniversalInteractionConfig extends InteractionModeConfig {
   enabledInterfaces: InterfaceType[];
@@ -143,11 +152,10 @@ export class UniversalInteractionManager extends EventEmitter {
   private skinRenderer: UniversalSkinRenderer;
   private readline: Interface | null = null;
   private keyboardShortcuts: KeyboardShortcutMap = new Map();
-  private inputHistory: Map<InterfaceType, string[]> = new Map();
   private activeInterface: InterfaceType = 'cli';
-  private maxHistorySize = 50;
   private readonly formatter: TerminalFormatter;
   private sessionManager?: TemplumSessionManagerContract;
+  private sessionStateListener?: (sessionId: string, updates: Record<string, any>) => void;
 
   constructor(
     commandRegistry: UniversalCommandRegistry,
@@ -195,33 +203,146 @@ export class UniversalInteractionManager extends EventEmitter {
     this.setupInitialComponents();
   }
 
-  private persistSessionState(overrides: Partial<SessionStateUpdate['state']> = {}): void {
-    if (!this.sessionManager) {
+  private getManagedState(interfaceType: InterfaceType = this.activeInterface): ManagedInteractionState {
+    const session = this.sessionContext.getActiveSession();
+    const interfaceState = this.extractInterfaceState(session, interfaceType);
+
+    const commandHistory = Array.isArray(interfaceState.commandHistory)
+      ? [...interfaceState.commandHistory]
+      : [];
+    const interactionMode = interfaceState.interactionMode === 'command' ? 'command' : 'menu';
+    const currentMenu = typeof interfaceState.currentMenu === 'string' ? interfaceState.currentMenu : undefined;
+    const navigationStack = Array.isArray(interfaceState.navigationStack)
+      ? [...interfaceState.navigationStack]
+      : undefined;
+
+    return { commandHistory, interactionMode, currentMenu, navigationStack };
+  }
+
+  private extractInterfaceState(session: SessionContext | null, interfaceType: InterfaceType): Record<string, any> {
+    if (!session || typeof session.state !== 'object') {
+      return {};
+    }
+
+    const stateByInterface = session.state as Record<string, any>;
+    const interfaceState = stateByInterface[interfaceType];
+    if (!interfaceState || typeof interfaceState !== 'object') {
+      return {};
+    }
+
+    return interfaceState;
+  }
+
+  private queueSessionStateUpdate(
+    interfaceType: InterfaceType,
+    updates: Partial<SessionStateUpdate['state']>,
+  ): void {
+    if (!updates || Object.keys(updates).length === 0) {
       return;
     }
 
-    const sessionId = this.sessionManager.getActiveSessionId();
+    const sessionIdFromManager = this.sessionManager?.getActiveSessionId() ?? null;
+    const activeSession = this.sessionContext.getActiveSession();
+    const sessionId = sessionIdFromManager || activeSession?.sessionId;
+
     if (!sessionId) {
       return;
     }
 
-    const history = this.inputHistory.get(this.activeInterface) ?? [];
+    if (updates.interactionMode && interfaceType === this.activeInterface) {
+      this.config.currentMode = updates.interactionMode;
+    }
 
-    const state: SessionStateUpdate['state'] = {
-      commandHistory: history,
-      interactionMode: this.config.currentMode,
-      ...overrides,
+    if (this.sessionManager && sessionIdFromManager) {
+      void this.sessionManager
+        .updateSessionState({
+          sessionId,
+          interfaceType,
+          state: updates,
+        })
+        .catch((error) => {
+          console.warn('UniversalInteractionManager: failed to update session state via manager', error);
+          this.updateFoundationState(sessionId, interfaceType, updates);
+        });
+
+      if (this.config.crossInterfaceSync) {
+        void this.requestInterfaceSync(interfaceType);
+      }
+
+      return;
+    }
+
+    this.updateFoundationState(sessionId, interfaceType, updates);
+  }
+
+  private updateFoundationState(
+    sessionId: string,
+    interfaceType: InterfaceType,
+    updates: Partial<SessionStateUpdate['state']>,
+  ): void {
+    const session = this.sessionContext.getSession(sessionId, { includeInactive: true });
+    const existingState = this.extractInterfaceState(session, interfaceType);
+
+    this.sessionContext.updateSessionState(sessionId, {
+      [interfaceType]: {
+        ...existingState,
+        ...updates,
+        timestamp: Date.now(),
+      },
+    });
+  }
+
+  private async requestInterfaceSync(sourceInterface: InterfaceType): Promise<void> {
+    if (!this.sessionManager || !this.config.crossInterfaceSync) {
+      return;
+    }
+
+    const targets = this.config.enabledInterfaces.filter((interfaceType) => interfaceType !== sourceInterface);
+    if (targets.length === 0) {
+      return;
+    }
+
+    await Promise.all(
+      targets.map((target) =>
+        this.sessionManager!
+          .syncInterfaces(sourceInterface, target)
+          .catch((error) => {
+            console.warn(
+              `UniversalInteractionManager: failed to sync ${sourceInterface} -> ${target}`,
+              error,
+            );
+          }),
+      ),
+    );
+  }
+
+  private registerSessionListeners(): void {
+    if (this.sessionStateListener) {
+      this.sessionContext.removeListener('sessionStateUpdated', this.sessionStateListener);
+    }
+
+    this.sessionStateListener = (_sessionId, updates: Record<string, any>) => {
+      if (!updates || typeof updates !== 'object') {
+        return;
+      }
+
+      const activeUpdate = updates[this.activeInterface];
+      if (activeUpdate && typeof activeUpdate === 'object') {
+        const mode = activeUpdate.interactionMode;
+        if ((mode === 'command' || mode === 'menu') && this.config.currentMode !== mode) {
+          this.config.currentMode = mode;
+        }
+      }
     };
 
-    this.sessionManager
-      .updateSessionState({
-        sessionId,
-        interfaceType: this.activeInterface,
-        state,
-      })
-      .catch((error) => {
-        console.warn('UniversalInteractionManager: failed to persist session state', error);
-      });
+    this.sessionContext.on('sessionStateUpdated', this.sessionStateListener);
+  }
+
+  private refreshInteractionStateFromSession(interfaceType: InterfaceType = this.activeInterface): void {
+    const state = this.getManagedState(interfaceType);
+    if (state.interactionMode !== this.config.currentMode) {
+      this.config.currentMode = state.interactionMode;
+    }
   }
 
   /**
@@ -273,11 +394,9 @@ export class UniversalInteractionManager extends EventEmitter {
           throw new Error(`Unsupported interface type: ${interfaceType}`);
       }
 
-      this.persistSessionState();
       return result;
 
     } catch (error) {
-      this.persistSessionState();
       return {
         action: 'execute',
         success: false,
@@ -319,11 +438,9 @@ export class UniversalInteractionManager extends EventEmitter {
           throw new Error(`Unsupported interface type: ${interfaceType}`);
       }
 
-      this.persistSessionState();
       return result;
 
     } catch (error) {
-      this.persistSessionState();
       return {
         action: 'execute',
         success: false,
@@ -417,8 +534,20 @@ export class UniversalInteractionManager extends EventEmitter {
       }
     }
 
+    this.refreshInteractionStateFromSession(newInterface);
+
+    if (this.sessionManager && this.config.crossInterfaceSync && oldInterface !== newInterface) {
+      void this.sessionManager
+        .syncInterfaces(oldInterface, newInterface)
+        .catch((error) => {
+          console.warn(
+            `UniversalInteractionManager: failed to sync interfaces during switch (${oldInterface} -> ${newInterface})`,
+            error,
+          );
+        });
+    }
+
     this.emit('interfaceSwitched', oldInterface, newInterface);
-    this.persistSessionState();
     return true;
   }
 
@@ -522,26 +651,23 @@ export class UniversalInteractionManager extends EventEmitter {
    */
   getInputHistory(interfaceType?: InterfaceType): string[] {
     const targetInterface = interfaceType || this.activeInterface;
-    return this.inputHistory.get(targetInterface) || [];
+    return this.getManagedState(targetInterface).commandHistory;
   }
 
   /**
    * Clear input history for interface
    */
   clearInputHistory(interfaceType?: InterfaceType): void {
-    if (interfaceType) {
-      this.inputHistory.delete(interfaceType);
-    } else {
-      this.inputHistory.clear();
+    const targets = interfaceType ? [interfaceType] : this.config.enabledInterfaces;
+    for (const target of targets) {
+      this.queueSessionStateUpdate(target, { commandHistory: [] });
     }
   }
 
   // Private implementation methods
   private setupInitialComponents(): void {
-    // Initialize input history for enabled interfaces
-    for (const interfaceType of this.config.enabledInterfaces) {
-      this.inputHistory.set(interfaceType, []);
-    }
+    this.registerSessionListeners();
+    this.refreshInteractionStateFromSession();
 
     // Setup default keyboard shortcuts
     this.setupDefaultKeyboardShortcuts();
@@ -604,6 +730,7 @@ export class UniversalInteractionManager extends EventEmitter {
   private setupEventHandlers(): void {
     // Listen for session changes
     this.sessionContext.on('activeSessionChanged', (sessionId) => {
+      this.refreshInteractionStateFromSession();
       this.emit('sessionChanged', sessionId);
     });
 
@@ -957,23 +1084,12 @@ export class UniversalInteractionManager extends EventEmitter {
   }
 
   private addToInputHistory(interfaceType: InterfaceType, input: string): void {
-    let history = this.inputHistory.get(interfaceType) || [];
-    
-    // Remove duplicate if exists
-    history = history.filter(item => item !== input);
-    
-    // Add to beginning
+    const state = this.getManagedState(interfaceType);
+    const history = state.commandHistory.filter((item) => item !== input);
     history.unshift(input);
-    
-    // Trim to max size
-    if (history.length > this.maxHistorySize) {
-      history = history.slice(0, this.maxHistorySize);
-    }
-    
-    this.inputHistory.set(interfaceType, history);
-    if (interfaceType === this.activeInterface) {
-      this.persistSessionState({ commandHistory: history });
-    }
+
+    const trimmedHistory = history.slice(0, MAX_COMMAND_HISTORY);
+    this.queueSessionStateUpdate(interfaceType, { commandHistory: trimmedHistory });
   }
 
   /**
@@ -997,7 +1113,7 @@ export class UniversalInteractionManager extends EventEmitter {
     this.config.currentMode = this.config.currentMode === 'menu' ? 'command' : 'menu';
     console.log(this.formatter.status.success(`\n═ Switched to ${this.config.currentMode.toUpperCase()} mode`));
     this.emit('modeChanged', this.config.currentMode);
-    this.persistSessionState();
+    this.queueSessionStateUpdate(this.activeInterface, { interactionMode: this.config.currentMode });
     return this.config.currentMode;
   }
 
@@ -1019,7 +1135,10 @@ export class UniversalInteractionManager extends EventEmitter {
     }
     
     this.keyboardShortcuts.clear();
-    this.inputHistory.clear();
+    if (this.sessionStateListener) {
+      this.sessionContext.removeListener('sessionStateUpdated', this.sessionStateListener);
+      this.sessionStateListener = undefined;
+    }
     this.removeAllListeners();
     
     this.emit('disposed');
