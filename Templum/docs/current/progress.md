@@ -37,8 +37,8 @@ last_updated: 2025-10-06
   Completed — Router/discovery fixes plus multi-protocol test + health suites are green (`npm test -- src/tests/backend/service-discovery.test.ts src/tests/backend/backend-dependency-integration.test.ts src/tests/backend/generic-backend-integration.test.ts`; `npm run test:health`). Live Phase 6 service evidence is rescheduled post-MVP (see `docs/target/post-mvp-progress.md`).
 - [x] [Connection lifecycle event broadcasting to interfaces/logs](../../dev/tasks/connection-lifecycle-events.md)
   Progress 100% — Router now emits normalized lifecycle events via a dedicated channel, TemplumCore re-broadcasts them to observability/state manager, and adapters receive deduped updates; targeted backend/core suites pass under the timeout harness (`node scripts/run-with-timeout.mjs --timeout 45000 -- npm test -- --runTestsByPath src/tests/backend/backend-connection-lifecycle.test.ts`).
-- [~] [Manual override flow without breaking zero-knowledge behaviour](../../dev/tasks/manual-override-flow.md)
-  Progress 75% — ManualOverrideManager feeds sanitized descriptors into the router/discovery pipeline, CLI command registry exposes apply/clear commands via TemplumCore, and observability logs hashed override events; pending: exercise the flow against the real `.templum/services` watcher and document operator guidance.
+- [x] [Manual override flow without breaking zero-knowledge behaviour](../../dev/tasks/manual-override-flow.md)
+  Progress 100% — Watcher-backed manual overrides now pass integration coverage (`src/tests/backend/manual-override-watcher.integration.test.ts`), CLI/VSCode plumbing exposes apply/clear, and observability records hashed events; awaiting partner manifests only for live Phase 6 evidence.
 
 ## Skin-Driven Rendering
 

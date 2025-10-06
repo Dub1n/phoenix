@@ -7,18 +7,20 @@
 - ---*/
 
 
-import { 
-  TemplumObservabilitySystem, 
+import {
+  TemplumObservabilitySystem,
   ObservabilityConfig,
   ObservabilityLogger,
   MetricsCollector,
   AlertManager
 } from './templum-observability-system';
-import { 
+import { createHash } from 'crypto';
+import {
   TemplumError,
   isTemplumError,
   createTemplumError
 } from '../types/templum-types';
+import type { ManualOverrideDescriptor } from '../backend/manual-override-manager';
 
 // TODO: [TASK-NEW-044] Cross-component observability correlation patterns
 // Priority: High | Complexity: 7
@@ -53,6 +55,7 @@ export interface IObservabilityService {
   setGauge(name: string, value: number, tags?: Record<string, string>, source?: string): void;
   recordTiming(name: string, duration: number, tags?: Record<string, string>, source?: string): void;
   startTimer(name: string): () => void;
+  recordManualOverrideEvent(action: 'applied' | 'cleared', descriptor: ManualOverrideDescriptor): void;
   
   // Context management
   setCorrelationId(correlationId: string): void;
@@ -240,6 +243,25 @@ export class ObservabilityAdapter implements IObservabilityService {
       return () => {}; // Return no-op function if not initialized
     }
     return this.metrics.startTiming(name);
+  }
+
+  recordManualOverrideEvent(action: 'applied' | 'cleared', descriptor: ManualOverrideDescriptor): void {
+    const hashedService = createHash('sha256')
+      .update(descriptor.serviceId)
+      .digest('hex')
+      .slice(0, 12);
+
+    const metadata = {
+      service: hashedService,
+      scope: descriptor.scope,
+      expiresAt: descriptor.expiresAt ?? null,
+      hasReason: Boolean(descriptor.reason),
+      discoveryMethod: descriptor.metadata?.discoveryMethod ?? null,
+      confidence: descriptor.metadata?.confidence ?? null
+    };
+
+    this.logInfo(`Manual override ${action}`, metadata, 'ManualOverride');
+    this.incrementCounter('manual_override_events', 1, { action }, 'ManualOverride');
   }
   
   // ============================================================================

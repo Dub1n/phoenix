@@ -93,7 +93,7 @@
     "build:component": "node ../scripts/validation/component-build.js",
     "dev": "ts-node src/index.ts",
     "test": "jest",
-    "test:ci": "node scripts/run-jest-ci.mjs",
+    "test:ci": "node scripts/run-jest-ci.mjs && node scripts/run-jest-ci.mjs --runTestsByPath src/tests/backend/manual-override-flow.test.ts src/tests/backend/manual-override-watcher.integration.test.ts --no-cache",
     "test:coverage": "jest --coverage",
     "test:watch": "jest --watch",
     "lint": "eslint src tests",
@@ -113,6 +113,7 @@
     "test:health-status": "node scripts/test-health-monitor.js status",
     "coverage:reality-check": "node scripts/coverage-reality-check.js",
     "prepare": "cd .. && husky install Templum/.husky || true",
+    "consolidate": "node dev/architecture/consolidation-state/cli-command-stub.mjs",
     "precommit": "npm run check:types && npm run check:tests && npm run test:health",
     "generate:pattern-readme": "ts-node dev/patterns/scripts/generate-readme.ts"
   },

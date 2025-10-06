@@ -12,6 +12,12 @@
 
 import { EventEmitter } from 'events';
 import { SessionContextFoundation, SessionContext } from '../session/session-context-foundation';
+import type {
+  ManualOverrideOptions,
+  ManualOverrideDescriptor,
+  ManualOverrideSnapshot,
+  ManualOverrideClearResult
+} from '../backend/manual-override-manager';
 
 // Extended interfaces for multi-backend support
 export interface UniversalCommandHandler extends CommandHandler {
@@ -114,6 +120,12 @@ export interface BackendIntegration {
 
 export type InterfaceType = 'vscode' | 'cli' | 'command';
 
+interface ManualOverrideController {
+  applyManualOverride(serviceId: string, options?: ManualOverrideOptions): Promise<ManualOverrideDescriptor>;
+  clearManualOverride(serviceId?: string): Promise<ManualOverrideClearResult>;
+  getManualOverrideSnapshot(): ManualOverrideSnapshot;
+}
+
 /**
  * Universal Command Registry with Multi-Backend Support
  * Extends PCL command registry for cross-backend and cross-interface operation
@@ -128,11 +140,20 @@ export class UniversalCommandRegistry extends EventEmitter {
   private maxAuditLogSize = 1000;
   private performanceMetrics = new Map<string, number>();
   private commonBackendsInitialized = false;
+  private manualOverrideController?: ManualOverrideController;
+  private manualOverrideCommandsRegistered = false;
 
   constructor(sessionContext: SessionContextFoundation) {
     super();
     this.sessionContext = sessionContext;
     this.setupEventHandlers();
+  }
+
+  attachManualOverrideController(controller: ManualOverrideController): void {
+    this.manualOverrideController = controller;
+    if (!this.manualOverrideCommandsRegistered) {
+      this.registerManualOverrideCommands();
+    }
   }
 
   /**
@@ -663,6 +684,113 @@ export class UniversalCommandRegistry extends EventEmitter {
     this.on('commandFailed', (commandId, result) => {
       console.warn(`Command failed: ${commandId} - ${result.message}`);
     });
+  }
+
+  private registerManualOverrideCommands(): void {
+    if (!this.manualOverrideController) {
+      return;
+    }
+
+    const applyHandler: UniversalCommandHandler = {
+      id: 'templum.manualOverride.apply',
+      name: 'Apply Manual Override',
+      description: 'Apply a manual override for a discovered backend service',
+      backendId: 'templum',
+      interfaceSupport: ['cli', 'vscode', 'command'],
+      handler: async (context) => {
+        const { serviceId, scope, expiresAt, reason } = context.parameters;
+        if (!serviceId || typeof serviceId !== 'string') {
+          throw new Error('Parameter "serviceId" (string) is required');
+        }
+
+        const options: ManualOverrideOptions = {};
+        if (scope) {
+          if (scope !== 'session' && scope !== 'global') {
+            throw new Error('Parameter "scope" must be "session" or "global"');
+          }
+          options.scope = scope;
+        }
+
+        if (expiresAt !== undefined) {
+          const expiresAtNumber = typeof expiresAt === 'number' ? expiresAt : Number(expiresAt);
+          if (Number.isNaN(expiresAtNumber)) {
+            throw new Error('Parameter "expiresAt" must be a number representing a timestamp');
+          }
+          options.expiresAt = expiresAtNumber;
+        }
+
+        if (reason && typeof reason === 'string') {
+          options.reason = reason;
+        }
+
+        const descriptor = await this.manualOverrideController!.applyManualOverride(serviceId.trim(), options);
+        const result: CommandResult = {
+          success: true,
+          message: `Manual override applied for ${descriptor.serviceId}`,
+          data: {
+            override: descriptor,
+            snapshot: this.manualOverrideController!.getManualOverrideSnapshot()
+          },
+          backend: 'templum'
+        };
+        return result;
+      }
+    };
+
+    const clearHandler: UniversalCommandHandler = {
+      id: 'templum.manualOverride.clear',
+      name: 'Clear Manual Override',
+      description: 'Clear a manual override or reset all overrides',
+      backendId: 'templum',
+      interfaceSupport: ['cli', 'vscode', 'command'],
+      handler: async (context) => {
+        const { serviceId } = context.parameters;
+        const cleared = await this.manualOverrideController!.clearManualOverride(
+          serviceId && typeof serviceId === 'string' ? serviceId.trim() : undefined
+        );
+
+        const message = serviceId
+          ? `Manual override cleared for ${serviceId}`
+          : 'All manual overrides cleared';
+
+        const result: CommandResult = {
+          success: true,
+          message,
+          data: {
+            cleared: cleared.descriptor?.serviceId ?? null,
+            snapshot: cleared.snapshot
+          },
+          backend: 'templum'
+        };
+        return result;
+      }
+    };
+
+    const listHandler: UniversalCommandHandler = {
+      id: 'templum.manualOverride.list',
+      name: 'List Manual Overrides',
+      description: 'List active manual overrides with sanitized descriptors',
+      backendId: 'templum',
+      interfaceSupport: ['cli', 'vscode', 'command'],
+      handler: async (_context) => {
+        const snapshot = this.manualOverrideController!.getManualOverrideSnapshot();
+        const result: CommandResult = {
+          success: true,
+          message: snapshot.overrides.length > 0
+            ? `${snapshot.overrides.length} manual override(s) active`
+            : 'No manual overrides active',
+          data: { snapshot },
+          backend: 'templum'
+        };
+        return result;
+      }
+    };
+
+    this.handlers.set(applyHandler.id, applyHandler);
+    this.handlers.set(clearHandler.id, clearHandler);
+    this.handlers.set(listHandler.id, listHandler);
+
+    this.manualOverrideCommandsRegistered = true;
   }
 
   // Backend discovery and configuration methods

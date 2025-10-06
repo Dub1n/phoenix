@@ -169,6 +169,17 @@ export class CLIInterfaceAdapter extends EventEmitter implements CLIAdapter {
       formatter,
       columnsProvider: () => formatter.getCapabilities().width,
     });
+
+    if (this.orchestrator) {
+      this.commandRegistry.attachManualOverrideController({
+        applyManualOverride: (serviceId, options) =>
+          this.orchestrator!.applyManualOverride(serviceId, options),
+        clearManualOverride: (serviceId) =>
+          this.orchestrator!.clearManualOverride(serviceId),
+        getManualOverrideSnapshot: () =>
+          this.orchestrator!.getManualOverrideSnapshot(),
+      });
+    }
   }
 
   /**

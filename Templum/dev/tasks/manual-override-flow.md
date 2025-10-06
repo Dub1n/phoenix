@@ -2,27 +2,27 @@
 
 ## Requirement Summary
 
-- Status: [ ]
+- Status: [x]
 - Requirement text: "Manual override flow without breaking zero-knowledge behaviour."
 
 ## Prerequisites
 
-- [ ] [~] Zero-knowledge backend registry with auto-discovery (needs verification in latest build). *(see `dev/tasks/zero-knowledge-registry.md`)* — ensures manual overrides operate on the verified discovery registry without introducing hardcoded backend knowledge.
+- [x] Zero-knowledge backend registry with auto-discovery (needs verification in latest build). *(see `dev/tasks/zero-knowledge-registry.md`)* — ensures manual overrides operate on the verified discovery registry without introducing hardcoded backend knowledge.
 
 ## Implementation Steps
 
 ### Unblocked Actions
 
-- [ ] Add backend-first tests for the manual override workflow in `src/tests/backend/manual-override-flow.test.ts`, covering applying an override, emitting sanitized override payloads, and reverting to automatic discovery; reuse the existing `MockBackendConnection` helper so the suite asserts we never leak raw endpoints when an override toggles.
-- [ ] Introduce a dedicated `ManualOverrideManager` (`src/backend/manual-override-manager.ts`) that tracks override descriptors (serviceId, scope, expiry) with redacted metadata, emits `manualOverride:applied`/`manualOverride:cleared` events, and consolidates override bookkeeping currently scattered across adapters.
-- [ ] Refactor `src/backend/backend-service-router.ts` (`discoverAndConnectGeneric`, `connectToServiceGeneric`, `executeCommand`) to own the manager: resolve overrides before the automatic ranking while sourcing connection details from `backendConfigs`, and publish sanitized override snapshots through the router’s event emitter for subscribers.
-- [ ] Extend `src/backend/service-discovery.ts` (`handleServiceFileChange`, `handleServiceFileRemoval`) to surface sanitized descriptors (service id, capability tags, health) for manual overrides and to auto-clear overrides when a watched service file or manifest disappears, ensuring overrides remain aligned with the discovery cache.
-- [ ] Expose manual override controls via `src/core/templum-core.ts` (`TemplumCore.applyManualOverride`, `TemplumCore.clearManualOverride`) and `src/commands/universal-command-registry.ts` so CLI/VSCode adapters can apply or clear overrides using discovered service identifiers while keeping endpoints and credentials hidden from interface payloads.
-- [ ] Augment observability/audit logging in `src/observability/observability-adapter.ts` (and related monitoring hooks) to record manual override apply/clear events with hashed identifiers, and update the Backend Connectivity section in `docs/current/architecture-spec.md` to describe the zero-knowledge-safe override path.
+- [x] Add backend-first tests for the manual override workflow in `src/tests/backend/manual-override-flow.test.ts`, covering applying an override, emitting sanitized override payloads, and reverting to automatic discovery; reuse the existing `MockBackendConnection` helper so the suite asserts we never leak raw endpoints when an override toggles.
+- [x] Introduce a dedicated `ManualOverrideManager` (`src/backend/manual-override-manager.ts`) that tracks override descriptors (serviceId, scope, expiry) with redacted metadata, emits `manualOverride:applied`/`manualOverride:cleared` events, and consolidates override bookkeeping currently scattered across adapters.
+- [x] Refactor `src/backend/backend-service-router.ts` (`discoverAndConnectGeneric`, `connectToServiceGeneric`, `executeCommand`) to own the manager: resolve overrides before the automatic ranking while sourcing connection details from `backendConfigs`, and publish sanitized override snapshots through the router’s event emitter for subscribers.
+- [x] Extend `src/backend/service-discovery.ts` (`handleServiceFileChange`, `handleServiceFileRemoval`) to surface sanitized descriptors (service id, capability tags, health) for manual overrides and to auto-clear overrides when a watched service file or manifest disappears, ensuring overrides remain aligned with the discovery cache.
+- [x] Expose manual override controls via `src/core/templum-core.ts` (`TemplumCore.applyManualOverride`, `TemplumCore.clearManualOverride`) and `src/commands/universal-command-registry.ts` so CLI/VSCode adapters can apply or clear overrides using discovered service identifiers while keeping endpoints and credentials hidden from interface payloads.
+- [x] Augment observability/audit logging in `src/observability/observability-adapter.ts` (and related monitoring hooks) to record manual override apply/clear events with hashed identifiers, and update the Backend Connectivity section in `docs/current/architecture-spec.md` to describe the zero-knowledge-safe override path.
 
 ### Blocked Actions (pending [~] Zero-knowledge backend registry with auto-discovery (needs verification in latest build). *(see `dev/tasks/zero-knowledge-registry.md`)* )
 
-- [ ] After the registry verification lands, exercise the override flow against the real `.templum/services` watcher (drop a manual manifest, assert overrides apply/clear via file events) and capture the results plus any operational guidance in `docs/current/1.2-Backend-Integration-Guide.md`.
+- [x] After the registry verification lands, exercise the override flow against the real `.templum/services` watcher (drop a manual manifest, assert overrides apply/clear via file events) and capture the results plus any operational guidance in `docs/current/1.2-Backend-Integration-Guide.md`.
 
 ## Definition of Done
 
@@ -45,6 +45,6 @@
 
 ## Current Assessment (2025-10-05)
 
-- Implementation: No override manager or sanitized override descriptors exist; router/discovery code paths do not reference manual overrides.
-- Tests: There are no backend override suites (`src/tests/backend/manual-override-flow.test.ts` is absent), and related backend tests already fail on earlier discovery assertions.
-- Recommendation: treat this task as not started—design override manager interfaces, wire them through discovery/router, and add integration coverage once the zero-knowledge registry stabilises.
+- Implementation: Manual override manager now drives sanitized descriptors, router/service discovery emit redacted snapshots, and core/command registry expose apply/clear hooks. Watcher validation passes via `src/tests/backend/manual-override-watcher.integration.test.ts`, which drops manifests into `.templum/services`, exercises the file-watcher path, and verifies overrides auto-clear when manifests disappear. Operator guidance captured in `docs/current/1.2-Backend-Integration-Guide.md`.
+- Tests: Backend override suites cover both direct apply/clear behaviour (`src/tests/backend/manual-override-flow.test.ts`) and watcher-driven flows (`src/tests/backend/manual-override-watcher.integration.test.ts`).
+- Recommendation: Keep the watcher test in the nightly integration bundle and rerun against partner manifests once Haruspex/PCL exports are available.

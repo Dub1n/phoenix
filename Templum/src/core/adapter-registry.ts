@@ -38,6 +38,12 @@ import { ObservabilityAdapter } from '../observability/observability-adapter';
 import { CLIInterfaceAdapter } from '../interfaces/cli-adapter-abstracted';
 import { VSCodeInterfaceAdapter } from '../interfaces/vscode-adapter-abstracted';
 import type { IInterfaceAdapter } from '../interfaces/templum-orchestrator-interface';
+import type {
+  ManualOverrideDescriptor,
+  ManualOverrideClearResult,
+  ManualOverrideSnapshot,
+  ManualOverrideOptions
+} from '../backend/manual-override-manager';
 import { TemplumUniversalSessionManager } from '../session/templum-universal-session-manager';
 import type { TemplumSessionManagerContract } from '../session/universal-session-manager.types';
 
@@ -441,6 +447,41 @@ export class BackendServiceRouterAdapter implements IBackendServiceRouter {
 
   getConnectionStatus(): any {
     return this.backendServiceRouter.getConnectionStatus?.() || {};
+  }
+
+  async applyManualOverride(
+    serviceId: string,
+    options?: ManualOverrideOptions
+  ): Promise<ManualOverrideDescriptor> {
+    if (!this.backendServiceRouter.applyManualOverride) {
+      throw createTemplumError(
+        'Manual override operations are not available in the current backend router',
+        'MANUAL_OVERRIDE_UNSUPPORTED',
+        'configuration'
+      );
+    }
+
+    return await this.backendServiceRouter.applyManualOverride(serviceId, options);
+  }
+
+  async clearManualOverride(serviceId?: string): Promise<ManualOverrideClearResult> {
+    if (!this.backendServiceRouter.clearManualOverride) {
+      throw createTemplumError(
+        'Manual override operations are not available in the current backend router',
+        'MANUAL_OVERRIDE_UNSUPPORTED',
+        'configuration'
+      );
+    }
+
+    return await this.backendServiceRouter.clearManualOverride(serviceId);
+  }
+
+  getManualOverrideSnapshot(): ManualOverrideSnapshot {
+    if (!this.backendServiceRouter.getManualOverrideSnapshot) {
+      return { overrides: [], updatedAt: Date.now() };
+    }
+
+    return this.backendServiceRouter.getManualOverrideSnapshot();
   }
 
   async cleanup(): Promise<void> {

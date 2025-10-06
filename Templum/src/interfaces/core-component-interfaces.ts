@@ -13,6 +13,12 @@ import {
   InterfaceType,
   BackendConnectionLifecycleEvent
 } from '../types/templum-types';
+import type {
+  ManualOverrideOptions,
+  ManualOverrideDescriptor,
+  ManualOverrideSnapshot,
+  ManualOverrideClearResult
+} from '../backend/manual-override-manager';
 
 // Resource management interfaces
 import { 
@@ -159,6 +165,21 @@ export interface IBackendServiceRouter {
    * Cleanup backend service connections
    */
   cleanup?(): Promise<void>;
+
+  /**
+   * Apply a manual override for the provided service identifier
+   */
+  applyManualOverride?(serviceId: string, options?: ManualOverrideOptions): Promise<ManualOverrideDescriptor>;
+
+  /**
+   * Clear manual overrides (single service or all)
+   */
+  clearManualOverride?(serviceId?: string): Promise<ManualOverrideClearResult>;
+
+  /**
+   * Retrieve sanitized manual override snapshot for downstream consumers
+   */
+  getManualOverrideSnapshot?(): ManualOverrideSnapshot;
 }
 
 /**

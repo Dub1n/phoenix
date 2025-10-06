@@ -39,6 +39,14 @@ import { BackendConnection, ConnectionFactory } from './connection-factory';
 import { DynamicCommandRouter } from './dynamic-command-router';
 import { ServiceDiscovery, ServiceDiscoveryOptions } from './service-discovery';
 import type { DiscoveredService } from './service-discovery';
+import {
+  ManualOverrideManager,
+  type ManualOverrideOptions,
+  type ManualOverrideDescriptor,
+  type ManualOverrideSnapshot,
+  type ManualOverrideClearResult,
+  type ManualOverrideMetadata
+} from './manual-override-manager';
 // Unused import removed: backendIntegrationConfig
 // Available via require('./backend-integration-config') if needed in future
 import { ITemplumOrchestrator } from '../interfaces/templum-orchestrator-interface';
@@ -318,6 +326,9 @@ export interface BackendServiceRouter {
   // TASK-NEW-050: Service Connection Management APIs
   connectToService(serviceId: string): Promise<{ success: boolean; message: string; responseTime?: number }>;
   disconnectFromService(serviceId: string): Promise<{ success: boolean; message: string }>;
+  applyManualOverride(serviceId: string, options?: ManualOverrideOptions): Promise<ManualOverrideDescriptor>;
+  clearManualOverride(serviceId?: string): Promise<ManualOverrideClearResult>;
+  getManualOverrideSnapshot(): ManualOverrideSnapshot;
 }
 
 export interface BackendConnectionStatus {
@@ -383,6 +394,8 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
   private useGenericDiscovery: boolean;
   private orchestrator?: ITemplumOrchestrator;
   private lifecycleChannel: BackendLifecycleChannel;
+  private manualOverrideManager: ManualOverrideManager;
+  private manualOverrideSnapshot: ManualOverrideSnapshot = { overrides: [], updatedAt: Date.now() };
   
   // ENHANCED: Background health monitoring and recovery system
   private healthMonitorInterval: NodeJS.Timeout | null = null;
@@ -422,7 +435,8 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
     this.serviceDiscovery = new ServiceDiscovery(discoveryOptions);
     this.useGenericDiscovery = discoveryOptions?.useGenericDiscovery ?? true;
     this.lifecycleChannel = new BackendLifecycleChannel(this);
-    
+    this.manualOverrideManager = new ManualOverrideManager();
+
     // ENHANCED: Configure health monitoring parameters
     this.healthCheckInterval = discoveryOptions?.healthCheckInterval ?? 30000;
     this.maxRecoveryAttempts = discoveryOptions?.maxRecoveryAttempts ?? 3;
@@ -430,6 +444,7 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
     
     // GENERIC SYSTEM: Always use skin-driven approach
     console.log('[BACKEND_SERVICE_ROUTER] Using fully generic skin-driven backend integration');
+    this.setupManualOverrideIntegration();
     this.setupServiceDiscoveryIntegration();
     this.initializeGenericBackendSystem();
     
@@ -493,6 +508,25 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
     console.log('[BACKEND_SERVICE_ROUTER] TemplumCore orchestrator reference set for skin loading');
   }
 
+  private setupManualOverrideIntegration(): void {
+    this.manualOverrideSnapshot = this.manualOverrideManager.getSnapshot();
+
+    this.manualOverrideManager.on('manualOverride:applied', ({ descriptor, snapshot }) => {
+      this.updateManualOverrideSnapshot(snapshot);
+      this.emit('manualOverride:applied', descriptor);
+    });
+
+    this.manualOverrideManager.on('manualOverride:cleared', ({ descriptor, snapshot }) => {
+      this.updateManualOverrideSnapshot(snapshot);
+      this.emit('manualOverride:cleared', descriptor);
+    });
+  }
+
+  private updateManualOverrideSnapshot(snapshot: ManualOverrideSnapshot): void {
+    this.manualOverrideSnapshot = snapshot;
+    this.emit('manualOverride:snapshot', snapshot);
+  }
+
   /**
    * Setup service discovery integration
    * NEW GENERIC APPROACH: Uses multi-strategy discovery instead of hardcoded configurations
@@ -512,6 +546,25 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
     this.serviceDiscovery.on('strategyError', (event) => {
       console.warn(`[SERVICE_DISCOVERY] Strategy ${event.strategy} failed:`, event.error);
       this.emit('discoveryError', event);
+    });
+
+    this.serviceDiscovery.on('serviceDiscovered', ({ service }) => {
+      this.discoveredServiceCache.set(service.id, service);
+      this.backendConfigs.set(service.id, service.config);
+      this.manualOverrideManager.syncWithServices(new Set(this.backendConfigs.keys()));
+      this.emit('serviceDiscovered', {
+        serviceId: service.id,
+        discoveryMethod: service.discoveryMethod,
+        confidence: service.confidence
+      });
+    });
+
+    this.serviceDiscovery.on('serviceRemoved', ({ serviceId }) => {
+      this.discoveredServiceCache.delete(serviceId);
+      this.backendConfigs.delete(serviceId);
+      this.manualOverrideManager.handleServiceRemoval(serviceId);
+      this.manualOverrideManager.syncWithServices(new Set(this.backendConfigs.keys()));
+      this.emit('serviceRemoved', { serviceId });
     });
   }
 
@@ -976,6 +1029,8 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
 
       // Wait for all connection attempts to complete
       await Promise.allSettled(connectionPromises);
+
+      this.manualOverrideManager.syncWithServices(new Set(this.backendConfigs.keys()));
       
     } catch (error) {
       console.error('[SERVICE_DISCOVERY] Generic discovery failed:', error);
@@ -3421,6 +3476,96 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
         message: `Disconnection failed: ${errorMessage}`
       };
     }
+  }
+
+  async applyManualOverride(
+    serviceId: string,
+    options: ManualOverrideOptions = {}
+  ): Promise<ManualOverrideDescriptor> {
+    if (!serviceId || !serviceId.trim()) {
+      throw createTemplumError(
+        'Manual override requires a service identifier',
+        'MANUAL_OVERRIDE_INVALID',
+        'validation'
+      );
+    }
+
+    const normalizedId = serviceId.trim();
+    this.manualOverrideManager.pruneExpired();
+
+    let backendConfig = this.backendConfigs.get(normalizedId);
+    let discoveredService = this.discoveredServiceCache.get(normalizedId);
+
+    if (!backendConfig) {
+      const serviceFromDiscovery = this.serviceDiscovery.getServiceById(normalizedId);
+      if (serviceFromDiscovery) {
+        backendConfig = serviceFromDiscovery.config;
+        discoveredService = serviceFromDiscovery;
+        this.backendConfigs.set(normalizedId, backendConfig);
+      }
+    }
+
+    if (!backendConfig) {
+      throw createTemplumError(
+        `Cannot apply manual override for unknown service '${normalizedId}'`,
+        'MANUAL_OVERRIDE_UNKNOWN_SERVICE',
+        'validation',
+        { serviceId: normalizedId }
+      );
+    }
+
+    const metadata: ManualOverrideMetadata | undefined = discoveredService
+      ? {
+          discoveryMethod: discoveredService.discoveryMethod,
+          confidence: discoveredService.confidence
+        }
+      : undefined;
+
+    const descriptor = this.manualOverrideManager.applyOverride(normalizedId, metadata, options);
+
+    const existingConnection = this.connections.get(normalizedId);
+    if (!existingConnection || !existingConnection.isConnected()) {
+      const connectionResult = await this.connectToService(normalizedId);
+      if (!connectionResult.success) {
+        throw createTemplumError(
+          connectionResult.message || `Manual override connection failed for '${normalizedId}'`,
+          'MANUAL_OVERRIDE_CONNECTION_FAILED',
+          'runtime',
+          { serviceId: normalizedId }
+        );
+      }
+    }
+
+    return descriptor;
+  }
+
+  async clearManualOverride(serviceId?: string): Promise<ManualOverrideClearResult> {
+    this.manualOverrideManager.pruneExpired();
+
+    if (serviceId && !serviceId.trim()) {
+      throw createTemplumError(
+        'Manual override clearance requires a service identifier when provided',
+        'MANUAL_OVERRIDE_INVALID',
+        'validation'
+      );
+    }
+
+    const normalizedId = serviceId?.trim();
+    const result = this.manualOverrideManager.clearOverride(normalizedId);
+
+    if (normalizedId && !this.manualOverrideManager.hasOverride(normalizedId)) {
+      console.log(`[MANUAL_OVERRIDE] Cleared manual override for ${normalizedId}`);
+    }
+
+    if (!normalizedId) {
+      console.log('[MANUAL_OVERRIDE] Cleared all manual overrides');
+    }
+
+    return result;
+  }
+
+  getManualOverrideSnapshot(): ManualOverrideSnapshot {
+    return this.manualOverrideSnapshot;
   }
 
   /**

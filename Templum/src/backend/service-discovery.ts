@@ -16,7 +16,6 @@ import { EventEmitter } from 'events';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as http from 'http';
-import * as chokidar from 'chokidar';
 // Unused import removed: https
 import { WebSocket } from 'ws';
 import * as net from 'net';
@@ -37,6 +36,11 @@ import {
   type NormalizedServiceManifest,
 } from './schemas/service-manifest';
 import { performServiceHealthCheck } from './service-health-check';
+import {
+  ServiceDiscoveryFileWatcher,
+  resolveWatchDirectories,
+  type ServiceFileEvent,
+} from './service-discovery/file-watcher';
 import type { Logger } from '../utils/logger';
 
 export interface DiscoveredService {
@@ -81,6 +85,7 @@ export interface ServiceDiscoveryOptions {
   configurationPath?: string;
   timeout?: number;
   maxRetries?: number;
+  watchDirectories?: string[];
 }
 
 const SUPPORTED_PROTOCOLS: ReadonlyArray<BackendConfig['protocol']> = ['ipc', 'http', 'websocket'];
@@ -293,7 +298,7 @@ export class ServiceDiscovery extends EventEmitter {
   private strategies: DiscoveryStrategy[] = [];
   private discoveredServices: Map<string, DiscoveredService> = new Map();
   private options: Required<ServiceDiscoveryOptions>;
-  private fileWatcher?: chokidar.FSWatcher; // NEW: File system watcher instance
+  private fileWatcher?: ServiceDiscoveryFileWatcher; // NEW: File system watcher instance
 
   constructor(options: ServiceDiscoveryOptions = {}) {
     super();
@@ -311,7 +316,8 @@ export class ServiceDiscovery extends EventEmitter {
       scanHosts: options.scanHosts || ['localhost', '127.0.0.1'],
       configurationPath: options.configurationPath || path.join(process.cwd(), '.templum', 'backend-config.json'),
       timeout: options.timeout || 5000,
-      maxRetries: options.maxRetries || 2
+      maxRetries: options.maxRetries || 2,
+      watchDirectories: options.watchDirectories,
     };
 
     this.initializeDefaultStrategies();
@@ -512,81 +518,28 @@ export class ServiceDiscovery extends EventEmitter {
       return;
     }
 
-    // Determine directories to watch
-    const watchPaths: string[] = [];
-    
-    // Watch services directory from registry path
-    const registryDir = path.dirname(this.options.registryPath);
-    const servicesDir = path.join(registryDir, 'services');
-    watchPaths.push(servicesDir);
-    
-    // Create services directory if it doesn't exist
-    if (!fs.existsSync(servicesDir)) {
-      fileWatcherLogger.info('Creating services directory', { directory: servicesDir });
-      fs.mkdirSync(servicesDir, { recursive: true });
-    }
-
-    // Watch VDL_Vault shared services directory
-    const vdlVaultServicesDir = path.resolve(process.cwd(), '..', '.templum', 'services');
-    watchPaths.push(vdlVaultServicesDir);
-    
-    // Create VDL_Vault services directory if it doesn't exist
-    if (!fs.existsSync(vdlVaultServicesDir)) {
-      fileWatcherLogger.info('Creating VDL_Vault services directory', { directory: vdlVaultServicesDir });
-      fs.mkdirSync(vdlVaultServicesDir, { recursive: true });
-    }
-
-    fileWatcherLogger.info('Watching directories for service descriptors', {
-      directories: watchPaths,
+    const directories = resolveWatchDirectories({
+      registryPath: this.options.registryPath,
+      explicitDirectories: this.options.watchDirectories,
+      cwd: process.cwd(),
     });
 
-    // Initialize chokidar watcher
-    this.fileWatcher = chokidar.watch(watchPaths, {
-      ignored: /(^|[\/\\])\../, // Ignore dotfiles
-      persistent: true,
-      ignoreInitial: true, // Don't trigger on existing files
-      depth: 1 // Only watch direct children
+    this.fileWatcher = new ServiceDiscoveryFileWatcher({
+      directories,
+      logger: fileWatcherLogger,
+      onServiceFileChange: (filePath, eventType) => this.handleServiceFileChange(filePath, eventType),
+      onServiceFileRemoval: (filePath) => this.handleServiceFileRemoval(filePath),
+      onWatcherError: (error) => this.emit('watcherError', error),
     });
 
-    // Handle file addition (new backend services)
-    this.fileWatcher.on('add', async (filePath: string) => {
-      if (filePath.endsWith('.json')) {
-        fileWatcherLogger.info('New service file detected', { filePath });
-        await this.handleServiceFileChange(filePath, 'add');
-      }
-    });
-
-    // Handle file changes (service updates)
-    this.fileWatcher.on('change', async (filePath: string) => {
-      if (filePath.endsWith('.json')) {
-        fileWatcherLogger.info('Service file changed', { filePath });
-        await this.handleServiceFileChange(filePath, 'change');
-      }
-    });
-
-    // Handle file removal (service shutdown)
-    this.fileWatcher.on('unlink', (filePath: string) => {
-      if (filePath.endsWith('.json')) {
-        fileWatcherLogger.info('Service file removed', { filePath });
-        this.handleServiceFileRemoval(filePath);
-      }
-    });
-
-    // Handle watcher errors
-    this.fileWatcher.on('error', (error) => {
-      const normalizedError = error instanceof Error ? error : new Error(String(error));
-      fileWatcherLogger.error('File watching error', normalizedError);
-      this.emit('watcherError', error);
-    });
-
-    fileWatcherLogger.info('File watcher initialized');
+    this.fileWatcher.start();
   }
 
   /**
    * Handle service file changes (add/update)
    * NEW: TASK-CLI-015 implementation
    */
-  private async handleServiceFileChange(filePath: string, eventType: 'add' | 'change'): Promise<void> {
+  private async handleServiceFileChange(filePath: string, eventType: ServiceFileEvent): Promise<void> {
     try {
       const descriptorPayload = parseJsonFile<unknown>(
         filePath,

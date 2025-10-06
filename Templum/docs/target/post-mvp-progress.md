@@ -75,8 +75,8 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` not started · `[!]` broken · 
   Progress 85% — mock harness APIs and contracts are in place (`npm run test -- tests/validation/mock-backend-contracts.test.ts` passes) but docs/CI wiring steps in the task checklist are still unchecked.
 - [x] [Connection lifecycle event broadcasting to interfaces/logs](../../dev/tasks/connection-lifecycle-events.md) — **Must-have**
   Progress 100% — lifecycle broadcasting now ships via `BackendLifecycleChannel` with TemplumCore/state manager rebroadcasting; follow-up: rerun targeted suites without the timeout wrapper once the shared harness open-handle fix lands.
-- [ ] [Manual override flow without breaking zero-knowledge behaviour](../../dev/tasks/manual-override-flow.md) — **Must-have**
-  Progress 0% — repository lacks a `ManualOverrideManager` and neither router nor discovery paths expose sanitized override controls.
+- [x] [Manual override flow without breaking zero-knowledge behaviour](../../dev/tasks/manual-override-flow.md) — **Must-have**
+  Progress 100% — Watcher-backed integration tests cover manifest add/remove flows, manual override manager keeps descriptors sanitized, and operator guidance is published; live partner reruns remain optional post-MVP.
 
 ## Skin-Driven Rendering
 

@@ -14,11 +14,17 @@ import {
   CommandResult,
   CommandContext
 } from '../types/templum-types';
-import { 
+import {
   ISkinEngine,
   IBackendServiceRouter,
   IResourceManager
 } from './core-component-interfaces';
+import type {
+  ManualOverrideOptions,
+  ManualOverrideDescriptor,
+  ManualOverrideClearResult,
+  ManualOverrideSnapshot
+} from '../backend/manual-override-manager';
 import type { TemplumSessionManagerContract } from '../session/universal-session-manager.types';
 
 /**
@@ -95,6 +101,21 @@ export interface ITemplumOrchestrator {
    * Get the shared session manager instance
    */
   getSessionManager(): TemplumSessionManagerContract;
+
+  /**
+   * Apply a manual override for a backend service using sanitized descriptors
+   */
+  applyManualOverride(serviceId: string, options?: ManualOverrideOptions): Promise<ManualOverrideDescriptor>;
+
+  /**
+   * Clear manual overrides (specific or all) and return the sanitized result
+   */
+  clearManualOverride(serviceId?: string): Promise<ManualOverrideClearResult>;
+
+  /**
+   * Get the current manual override snapshot for display purposes
+   */
+  getManualOverrideSnapshot(): ManualOverrideSnapshot;
 
   /**
    * Shutdown the orchestrator

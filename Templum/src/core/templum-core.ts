@@ -49,6 +49,12 @@ import { ITemplumOrchestrator } from '../interfaces/templum-orchestrator-interfa
 import { TemplumAdapterRegistry } from './adapter-registry';
 import { UniversalInterfaceManager } from './universal-interface-manager';
 import type { TemplumSessionManagerContract } from '../session/universal-session-manager.types';
+import type {
+  ManualOverrideOptions,
+  ManualOverrideDescriptor,
+  ManualOverrideSnapshot,
+  ManualOverrideClearResult
+} from '../backend/manual-override-manager';
 
 export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
   private config: TemplumConfiguration;
@@ -1126,6 +1132,65 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
       throw createTemplumError('Backend service router not initialized', 'SERVICE_NOT_READY', 'configuration');
     }
     return this.dependencies.backendServiceRouter;
+  }
+
+  async applyManualOverride(
+    serviceId: string,
+    options?: ManualOverrideOptions
+  ): Promise<ManualOverrideDescriptor> {
+    if (!this.initialized) {
+      throw createTemplumError('Templum Core not initialized', 'SERVICE_NOT_READY', 'configuration');
+    }
+
+    const backendRouter = this.getBackendRouter();
+    if (!backendRouter.applyManualOverride) {
+      throw createTemplumError(
+        'Manual override operations are unavailable in the current backend router',
+        'MANUAL_OVERRIDE_UNSUPPORTED',
+        'configuration'
+      );
+    }
+
+    const descriptor = await backendRouter.applyManualOverride(serviceId, options);
+    this.dependencies?.observabilityService?.recordManualOverrideEvent('applied', descriptor);
+    return descriptor;
+  }
+
+  async clearManualOverride(serviceId?: string): Promise<ManualOverrideClearResult> {
+    if (!this.initialized) {
+      throw createTemplumError('Templum Core not initialized', 'SERVICE_NOT_READY', 'configuration');
+    }
+
+    const backendRouter = this.getBackendRouter();
+    if (!backendRouter.clearManualOverride) {
+      throw createTemplumError(
+        'Manual override operations are unavailable in the current backend router',
+        'MANUAL_OVERRIDE_UNSUPPORTED',
+        'configuration'
+      );
+    }
+
+    const result = await backendRouter.clearManualOverride(serviceId);
+    const descriptorForLogging: ManualOverrideDescriptor = result.descriptor ?? {
+      serviceId: serviceId ?? '$all',
+      scope: 'session',
+      appliedAt: Date.now()
+    };
+    this.dependencies?.observabilityService?.recordManualOverrideEvent('cleared', descriptorForLogging);
+    return result;
+  }
+
+  getManualOverrideSnapshot(): ManualOverrideSnapshot {
+    if (!this.initialized) {
+      return { overrides: [], updatedAt: Date.now() };
+    }
+
+    const backendRouter = this.getBackendRouter();
+    if (!backendRouter.getManualOverrideSnapshot) {
+      return { overrides: [], updatedAt: Date.now() };
+    }
+
+    return backendRouter.getManualOverrideSnapshot();
   }
 
   /**
