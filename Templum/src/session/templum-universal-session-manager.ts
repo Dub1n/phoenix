@@ -15,12 +15,9 @@ import {
   CommandResult,
   TemplumConfiguration,
   BackendType,
-
   isTemplumError,
   createTemplumError,
-
   ErrorSignalPayload,
-
 } from '../types/templum-types';
 
 // Import real component implementations
@@ -34,69 +31,14 @@ import {
   ThemeMetricsSummary,
   ThemeFallbackMode,
 } from '../utils/service-utils';
-
-// Interface state synchronization types
-export interface InterfaceStateData {
-  currentView?: string;
-  navigationStack?: string[];
-  userPreferences?: Record<string, any>;
-  temporaryData?: Record<string, any>;
-  activeCommands?: string[];
-  lastActivity?: Date;
-}
-
-export interface InterfaceStateTransferData {
-  sessionId: string;
-  fromInterface: InterfaceType;
-  toInterface: InterfaceType;
-  timestamp: number;
-  sessionMetrics?: TemplumSessionMetrics;
-  navigationHistory?: string[];
-  loadedSkins?: string[];
-  activeBackends?: BackendType[];
-  preservedState?: InterfaceStateData;
-}
-
-export interface SessionCompletionInfo {
-  completed: boolean;
-  completedAt?: Date;
-  completionReason?: 'user-initiated' | 'cleanup' | 'error' | 'timeout' | 'system-shutdown';
-  finalMetrics?: {
-    totalDuration: number;
-    interfaceSwitchCount: number;
-    commandExecutionCount: number;
-    skinLoadCount: number;
-    backendInteractionCount: number;
-  };
-}
-
-export interface TemplumSessionMetrics {
-  interfaceSwitches: number;
-  backendInteractions: number;
-  commandsExecuted: number;
-  sessionsCreated: number;
-  totalSkinLoads: number;
-  averageSwitchTime: number;
-  completion: SessionCompletionInfo;
-}
-
-export interface TemplumSessionState {
-  // Core session properties
-  sessionId: string;
-  userId?: string;
-  startTime: Date;
-  activeInterface: InterfaceType;
-  preferences: Record<string, any>;
-  capabilities: string[];
-  
-  // Extended session state beyond foundation
-  activeBackends: BackendType[];
-  loadedSkins: string[];
-  interfaceHistory: InterfaceType[];
-  sessionMetrics: TemplumSessionMetrics;
-  lastActivity: Date;
-  navigationHistory: string[];
-}
+import type {
+  InterfaceStateData,
+  InterfaceStateTransferData,
+  SessionStateUpdate,
+  TemplumSessionMetrics,
+  TemplumSessionState,
+  TemplumSessionManagerContract,
+} from './universal-session-manager.types';
 
 export interface InterfaceAdapterRegistry {
   vscode?: InterfaceAdapter;
@@ -114,15 +56,19 @@ export interface InterfaceAdapterRegistry {
  * - Universal skin definition management across interfaces
  * - Backend service router integration for session coordination
  */
-export class TemplumUniversalSessionManager extends EventEmitter {
+export class TemplumUniversalSessionManager
+  extends EventEmitter
+  implements TemplumSessionManagerContract {
   private sessionFoundation: SessionContextFoundation;
   private backendServiceRouter: TemplumBackendServiceRouter;
   private config: TemplumConfiguration;
+  private orchestrator?: ITemplumOrchestrator;
   
   // Interface Management (PCL Renderer Switching Pattern Adaptation)
   private activeInterfaceType: InterfaceType = 'cli';
   private interfaceAdapters: InterfaceAdapterRegistry = {};
   private interfaceHistory: InterfaceType[] = [];
+  private sessionByInterface: Map<InterfaceType, string> = new Map();
   
   // Session State Management (PCL Session Context Pattern Adaptation)
   private currentSessionId: string | null = null;
@@ -159,6 +105,7 @@ export class TemplumUniversalSessionManager extends EventEmitter {
 
     // Initialize foundation components
     this.sessionFoundation = new SessionContextFoundation();
+    this.orchestrator = orchestrator;
     this.backendServiceRouter = backendServiceRouter || new TemplumBackendServiceRouter(orchestrator);
 
     this.setupEventListeners();
@@ -233,6 +180,17 @@ export class TemplumUniversalSessionManager extends EventEmitter {
     }
   }
 
+  attachOrchestrator(orchestrator: ITemplumOrchestrator): void {
+    this.orchestrator = orchestrator;
+
+    if (
+      this.backendServiceRouter &&
+      typeof (this.backendServiceRouter as any).setOrchestrator === 'function'
+    ) {
+      (this.backendServiceRouter as any).setOrchestrator(orchestrator);
+    }
+  }
+
   /**
    * Start a new universal session
    * PCL Pattern: Session lifecycle management with state tracking
@@ -286,13 +244,17 @@ export class TemplumUniversalSessionManager extends EventEmitter {
           }
         },
         lastActivity: new Date(),
-        navigationHistory: []
+        navigationHistory: [],
+        currentMenu: 'main',
+        interactionMode: 'menu',
+        commandHistory: []
       };
 
       // Store session state
       this.sessionStates.set(foundationContext.sessionId, sessionState);
       this.currentSessionId = foundationContext.sessionId;
       this.activeInterfaceType = interfaceType;
+      this.sessionByInterface.set(interfaceType, foundationContext.sessionId);
       this.running = true;
 
       // Set as active session in foundation
@@ -318,6 +280,144 @@ export class TemplumUniversalSessionManager extends EventEmitter {
         'runtime'
       );
     }
+  }
+
+  async ensureSessionForInterface(
+    interfaceType: InterfaceType,
+    context?: Partial<SessionContext>
+  ): Promise<string> {
+    if (!this.initialized) {
+      await this.initialize();
+    }
+
+    const existingMapping = this.sessionByInterface.get(interfaceType);
+    if (existingMapping && this.sessionStates.has(existingMapping)) {
+      this.currentSessionId = existingMapping;
+      this.activeInterfaceType = interfaceType;
+      this.sessionFoundation.setActiveSession(existingMapping);
+      this.sessionFoundation.switchInterface(existingMapping, interfaceType);
+      return existingMapping;
+    }
+
+    const activeSessionId = this.currentSessionId;
+    if (activeSessionId && this.sessionStates.has(activeSessionId)) {
+      const sessionState = this.sessionStates.get(activeSessionId)!;
+      sessionState.activeInterface = interfaceType;
+      if (!sessionState.interfaceHistory.includes(interfaceType)) {
+        sessionState.interfaceHistory.push(interfaceType);
+      }
+      this.sessionByInterface.set(interfaceType, activeSessionId);
+      this.activeInterfaceType = interfaceType;
+      this.sessionFoundation.setActiveSession(activeSessionId);
+      this.sessionFoundation.switchInterface(activeSessionId, interfaceType);
+      return activeSessionId;
+    }
+
+    const sessionId = await this.startSession(interfaceType, context);
+    this.sessionByInterface.set(interfaceType, sessionId);
+    return sessionId;
+  }
+
+  getActiveSessionId(): string | null {
+    return this.currentSessionId;
+  }
+
+  getSessionSnapshot(sessionId: string = this.currentSessionId || ''): TemplumSessionState | null {
+    if (!sessionId) {
+      return null;
+    }
+    return this.sessionStates.get(sessionId) || null;
+  }
+
+  async updateSessionState(update: SessionStateUpdate): Promise<void> {
+    if (!this.initialized) {
+      await this.initialize();
+    }
+
+    const { sessionId, interfaceType, state } = update;
+    if (!sessionId) {
+      throw createTemplumError('Session ID is required for state updates', 'SESSION_NOT_READY', 'validation');
+    }
+
+    const sessionState = this.sessionStates.get(sessionId);
+    if (!sessionState) {
+      throw createTemplumError(
+        `Unknown session ${sessionId} for interface ${interfaceType}`,
+        'SESSION_NOT_READY',
+        'validation'
+      );
+    }
+
+    sessionState.lastActivity = new Date();
+
+    if (state.userPreferences) {
+      sessionState.preferences = {
+        ...sessionState.preferences,
+        ...state.userPreferences,
+      };
+    }
+
+    if (state.navigationStack) {
+      sessionState.navigationHistory = [...state.navigationStack];
+    }
+
+    if (state.currentMenu) {
+      sessionState.currentMenu = state.currentMenu;
+    }
+
+    if (state.interactionMode) {
+      sessionState.interactionMode = state.interactionMode;
+    }
+
+    if (state.commandHistory) {
+      sessionState.commandHistory = [...state.commandHistory];
+    }
+
+    const foundationUpdate = {
+      [`${interfaceType}`]: {
+        ...state,
+        timestamp: Date.now(),
+      },
+    };
+
+    this.sessionFoundation.setActiveSession(sessionId);
+    this.sessionFoundation.updateSessionState(sessionId, foundationUpdate);
+  }
+
+  async syncInterfaces(fromInterface: InterfaceType, toInterface: InterfaceType): Promise<void> {
+    const sessionId = this.sessionByInterface.get(fromInterface) || this.currentSessionId;
+    if (!sessionId) {
+      throw createTemplumError(
+        `No active session available to sync ${fromInterface} to ${toInterface}`,
+        'SESSION_NOT_READY',
+        'runtime'
+      );
+    }
+
+    const sessionState = this.sessionStates.get(sessionId);
+    if (!sessionState) {
+      throw createTemplumError(
+        `Unable to sync interfaces; session ${sessionId} not found`,
+        'SESSION_NOT_READY',
+        'runtime'
+      );
+    }
+
+    await this.synchronizeInterfaceState(fromInterface, toInterface, sessionState);
+  }
+
+  notifyInterfaceDisconnect(interfaceType: InterfaceType, reason: string): void {
+    const sessionId = this.sessionByInterface.get(interfaceType) || this.currentSessionId || undefined;
+    this.emit('interfaceDisconnected', {
+      interfaceType,
+      sessionId,
+      reason,
+      timestamp: Date.now(),
+    });
+  }
+
+  off(event: string, listener: (...args: any[]) => void): void {
+    this.removeListener(event, listener);
   }
 
   /**
@@ -455,6 +555,7 @@ export class TemplumUniversalSessionManager extends EventEmitter {
       // Update active interface
       this.activeInterfaceType = targetInterface;
       this.interfaceHistory.push(targetInterface);
+      this.sessionByInterface.set(targetInterface, this.currentSessionId);
 
       // IMPLEMENTATION: Interface state synchronization during switching
       // Implement state transfer coordination between interface adapters
@@ -820,6 +921,7 @@ export class TemplumUniversalSessionManager extends EventEmitter {
       this.running = false;
       this.interfaceHistory.push(this.activeInterfaceType);
       this.navigationHistory = [];
+      this.sessionByInterface.clear();
 
       this.emit('sessionStopped', {
         sessionId,

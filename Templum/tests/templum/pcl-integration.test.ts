@@ -117,6 +117,26 @@ describe('Phase 3: PCL Component Migration', () => {
       expect(finalState.counter).toBeDefined();
       expect(finalState.conflictsResolved).toBe(true);
     });
+
+    test('session context lifecycle handles interface switching within SLA', async () => {
+      const session = await sessionContext.createSession(undefined, 'cli');
+      sessionContext.setActiveSession(session.sessionId);
+
+      const switchStart = Date.now();
+      const switched = sessionContext.switchInterface(session.sessionId, 'vscode');
+      const switchDuration = Date.now() - switchStart;
+
+      expect(switched).toBe(true);
+      expect(switchDuration).toBeLessThan(150);
+
+      const closeStart = Date.now();
+      const closed = sessionContext.closeSession(session.sessionId);
+      const closeDuration = Date.now() - closeStart;
+
+      expect(closed).toBe(true);
+      expect(closeDuration).toBeLessThan(50);
+      expect(sessionContext.getActiveSession()).toBeNull();
+    });
   });
 
   describe('Performance Validation', () => {

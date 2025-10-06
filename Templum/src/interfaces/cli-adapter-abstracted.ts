@@ -49,6 +49,7 @@ import {
   BackendStatusDisplayData 
 } from './cli-display-consistency-engine';
 import { ServiceInfo } from './service-ordering-manager';
+import { CLISessionBridge, CLISessionSnapshot } from './cli-session-bridge';
 
 /**
  * CLI Input Types (Interface-specific)
@@ -79,224 +80,6 @@ export interface NavigationChange {
   previousMenu?: string;
 }
 
-/**
- * CLI Session State Interface
- * TODO: [TASK-ID-003] Pattern: session-persistence | Complexity: 6 | Dependencies: file-system,state-management
- * Context: Session state management for CLI persistence across restarts with navigation history and preferences
- * Validation-Required: state-serialization, persistence-validation, recovery-testing
- * Pattern-Info: { approach: "file-based-session-state", alternatives: "memory-only,database", trade-offs: "persistence-vs-performance" }
- */
-export interface CLISessionState {
-  sessionId: string;
-  currentMenu: string;
-  navigationHistory: string[];
-  interactionMode: 'menu' | 'command';
-  preferences: {
-    theme: string;
-    autoSave: boolean;
-    lastBackend?: string;
-  };
-  lastActivity: number;
-  commandHistory: string[];
-  created: number;
-  version: string;
-}
-
-/**
- * CLI Session Manager
- * Handles session persistence and restoration across CLI restarts
- */
-export class CLISessionManager {
-  private sessionFile: string;
-  private currentSession: CLISessionState;
-  private autoSaveInterval: NodeJS.Timeout | null = null;
-
-  constructor() {
-    const os = require('os');
-    const path = require('path');
-    const homeDir = os.homedir();
-    const templumDir = path.join(homeDir, '.templum');
-    
-    // Ensure .templum directory exists
-    const fs = require('fs');
-    if (!fs.existsSync(templumDir)) {
-      fs.mkdirSync(templumDir, { recursive: true });
-    }
-    
-    this.sessionFile = path.join(templumDir, 'cli-session.json');
-    this.currentSession = this.createDefaultSession();
-  }
-
-  /**
-   * Initialize session manager and restore previous session if available
-   */
-  async initialize(): Promise<void> {
-    try {
-      await this.loadSession();
-      this.startAutoSave();
-      console.log(`CLI Session restored: ${this.currentSession.sessionId}`);
-    } catch (error) {
-      console.warn('Failed to restore previous session, using new session');
-      await this.saveSession();
-    }
-  }
-
-  /**
-   * Create default session state
-   */
-  private createDefaultSession(): CLISessionState {
-    return {
-      sessionId: `cli-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      currentMenu: 'main',
-      navigationHistory: [],
-      interactionMode: 'menu',
-      preferences: {
-        theme: 'dark',
-        autoSave: true
-      },
-      lastActivity: Date.now(),
-      commandHistory: [],
-      created: Date.now(),
-      version: '1.0'
-    };
-  }
-
-  /**
-   * Load session from disk
-   */
-  private async loadSession(): Promise<void> {
-    const fs = require('fs').promises;
-    
-    try {
-      if (require('fs').existsSync(this.sessionFile)) {
-        const sessionData = await fs.readFile(this.sessionFile, 'utf8');
-        const loadedSession = JSON.parse(sessionData) as CLISessionState;
-        
-        // Validate session format and version
-        if (loadedSession.version === '1.0' && loadedSession.sessionId) {
-          this.currentSession = loadedSession;
-          this.currentSession.lastActivity = Date.now(); // Update activity timestamp
-        } else {
-          throw new Error('Invalid or outdated session format');
-        }
-      }
-    } catch (error) {
-      throw new Error(`Session load failed: ${error}`);
-    }
-  }
-
-  /**
-   * Save current session to disk
-   */
-  async saveSession(): Promise<void> {
-    try {
-      const fs = require('fs').promises;
-      this.currentSession.lastActivity = Date.now();
-      
-      const sessionData = JSON.stringify(this.currentSession, null, 2);
-      await fs.writeFile(this.sessionFile, sessionData, 'utf8');
-    } catch (error) {
-      console.warn(`Failed to save session: ${error}`);
-    }
-  }
-
-  /**
-   * Start auto-save timer
-   */
-  private startAutoSave(): void {
-    if (this.currentSession.preferences.autoSave) {
-      this.autoSaveInterval = setInterval(async () => {
-        await this.saveSession();
-      }, 30000); // Save every 30 seconds
-    }
-  }
-
-  /**
-   * Stop auto-save timer
-   */
-  private stopAutoSave(): void {
-    if (this.autoSaveInterval) {
-      clearInterval(this.autoSaveInterval);
-      this.autoSaveInterval = null;
-    }
-  }
-
-  /**
-   * Update session state
-   */
-  updateSession(updates: Partial<CLISessionState>): void {
-    this.currentSession = { ...this.currentSession, ...updates };
-    this.currentSession.lastActivity = Date.now();
-  }
-
-  /**
-   * Get current session state
-   */
-  getCurrentSession(): CLISessionState {
-    return { ...this.currentSession };
-  }
-
-  /**
-   * Add command to history
-   */
-  addCommandToHistory(command: string): void {
-    this.currentSession.commandHistory.unshift(command);
-    
-    // Keep only last 100 commands
-    if (this.currentSession.commandHistory.length > 100) {
-      this.currentSession.commandHistory = this.currentSession.commandHistory.slice(0, 100);
-    }
-    
-    this.currentSession.lastActivity = Date.now();
-  }
-
-  /**
-   * Set current menu and update navigation history
-   */
-  navigateToMenu(menuId: string, addToHistory: boolean = true): void {
-    if (addToHistory && this.currentSession.currentMenu !== menuId) {
-      this.currentSession.navigationHistory.push(this.currentSession.currentMenu);
-      
-      // Keep navigation history manageable
-      if (this.currentSession.navigationHistory.length > 20) {
-        this.currentSession.navigationHistory = this.currentSession.navigationHistory.slice(-20);
-      }
-    }
-    
-    this.currentSession.currentMenu = menuId;
-    this.currentSession.lastActivity = Date.now();
-  }
-
-  /**
-   * Navigate back in history
-   */
-  navigateBack(): string | null {
-    if (this.currentSession.navigationHistory.length > 0) {
-      const previousMenu = this.currentSession.navigationHistory.pop()!;
-      this.currentSession.currentMenu = previousMenu;
-      this.currentSession.lastActivity = Date.now();
-      return previousMenu;
-    }
-    return null;
-  }
-
-  /**
-   * Switch interaction mode
-   */
-  switchInteractionMode(mode: 'menu' | 'command'): void {
-    this.currentSession.interactionMode = mode;
-    this.currentSession.lastActivity = Date.now();
-  }
-
-  /**
-   * Cleanup and save session
-   */
-  async dispose(): Promise<void> {
-    this.stopAutoSave();
-    await this.saveSession();
-  }
-}
-
 export interface CLIRenderResult {
   success: boolean;
   rendered: boolean;
@@ -324,7 +107,7 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
   private activeProgressBar: ProgressBar | null = null;
   private interactiveMenuRenderer: InteractiveMenuRenderer | null = null;
   private interactionMode: 'menu' | 'command' = 'menu';
-  private sessionManager: CLISessionManager;
+  private sessionManager!: CLISessionBridge;
   private consistencyEngine: CLIDisplayConsistencyEngine;
   private readonly formatter: TerminalFormatter;
 
@@ -414,11 +197,6 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
     
     // Initialize session manager
     // TODO: [TASK-ID-004] Pattern: session-manager-integration | Complexity: 4 | Dependencies: session-persistence
-    // Context: Integration of session persistence into CLI adapter lifecycle
-    // Validation-Required: session-restoration, state-synchronization, cleanup-verification
-    // Pattern-Info: { approach: "constructor-initialization", alternatives: "lazy-initialization", trade-offs: "startup-cost-vs-reliability" }
-    this.sessionManager = new CLISessionManager();
-    
     // Initialize consistency engine with responsive layout integration
     // TODO: [TASK-ID-005] Pattern: display-consistency-integration | Complexity: 6 | Dependencies: consistency-framework,responsive-layout
     // Context: Integration of CLI display consistency engine for uniform formatting across all display elements
@@ -442,10 +220,12 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
    */
   async initialize(orchestrator: ITemplumOrchestrator): Promise<void> {
     this.orchestrator = orchestrator;
-    
+
     // Initialize session management first
+    const sessionManagerContract = this.orchestrator.getSessionManager();
+    this.sessionManager = new CLISessionBridge({ sessionManager: sessionManagerContract });
     await this.sessionManager.initialize();
-    
+
     // Restore session state
     const session = this.sessionManager.getCurrentSession();
     this.currentMenu = session.currentMenu;
@@ -1113,7 +893,9 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
       }
 
       // Cleanup session manager
-      await this.sessionManager.dispose();
+      if (this.sessionManager?.dispose) {
+        await this.sessionManager.dispose();
+      }
 
       // Cleanup terminal UI components
       await this.terminalUI.cleanup();

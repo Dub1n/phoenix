@@ -17,6 +17,10 @@ import {
   TemplumConfiguration,
   TemplumSystemStatus,
   StateManagerStatus,
+  StateUpdate,
+  NotificationUpdate,
+  BackendConnectionLifecycleEvent,
+  BackendConnectionLifecycleState,
   isTemplumError,
   createTemplumError,
   ErrorSignalPayload
@@ -44,6 +48,7 @@ import {
 import { ITemplumOrchestrator } from '../interfaces/templum-orchestrator-interface';
 import { TemplumAdapterRegistry } from './adapter-registry';
 import { UniversalInterfaceManager } from './universal-interface-manager';
+import type { TemplumSessionManagerContract } from '../session/universal-session-manager.types';
 
 export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
   private config: TemplumConfiguration;
@@ -58,6 +63,9 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
   
   // Universal Interface Manager - TASK-NEW-048: Interface Switching Implementation
   private universalInterfaceManager!: UniversalInterfaceManager;
+  private teardownBackendLifecycleListener?: () => void;
+  private backendLifecycleState: Map<string, BackendConnectionLifecycleEvent> = new Map();
+  private sessionManager!: TemplumSessionManagerContract;
 
   constructor(
     config: Partial<TemplumConfiguration> = {},
@@ -100,6 +108,8 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
       // Initialize adapter registry and get dependencies
       await this.adapterRegistry.initialize();
       this.dependencies = this.adapterRegistry.getDependencies();
+      this.sessionManager = this.dependencies.sessionManager;
+      this.sessionManager.attachOrchestrator(this);
       
       console.log('Templum Core Engine: Dependency injection complete');
       
@@ -133,6 +143,7 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
           (this.dependencies.backendServiceRouter as any).setOrchestrator(this);
         }
         
+        this.registerBackendLifecycleListeners();
         this.logInfo('Starting backend service router discovery...');
         await this.dependencies.backendServiceRouter.discoverAndConnect();
         
@@ -255,6 +266,8 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
       throw new Error(`Unsupported interface type: ${interfaceType}`);
     }
 
+    await this.sessionManager.ensureSessionForInterface(interfaceType);
+
     // Store adapter
     this.interfaceAdapters.set(interfaceType, adapter);
     this.activeInterfaces.add(interfaceType);
@@ -263,6 +276,8 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
     if (this.universalInterfaceManager) {
       this.universalInterfaceManager.registerInterfaceAdapter(interfaceType, adapter);
     }
+
+    await this.sessionManager.registerInterfaceAdapter(interfaceType, adapter);
     
     // Apply all loaded skins to new interface
     for (const skin of Array.from(this.loadedSkins.values())) {
@@ -805,6 +820,15 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
         }
       }
 
+      if (this.sessionManager && 'stopSession' in this.sessionManager) {
+        try {
+          await (this.sessionManager as any).stopSession?.();
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          console.warn('Failed to stop session manager during shutdown:', errorMessage);
+        }
+      }
+
       // Shutdown components via dependency injection
       if (this.dependencies?.stateManager?.shutdown) {
         await this.dependencies.stateManager.shutdown();
@@ -853,9 +877,192 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
   }
 
   private async initializeInterfaceAdapters(): Promise<void> {
-    // In the real implementation, this would initialize the actual adapters
-    // For now, this is a placeholder for testing
+    const adapters = this.adapterRegistry.buildInterfaceAdapters();
+
+    for (const [interfaceType, adapter] of Object.entries(adapters)) {
+      if (!adapter) {
+        continue;
+      }
+
+      try {
+        if (typeof (adapter as any).initialize === 'function') {
+          await (adapter as any).initialize(this);
+        }
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        console.warn(`Failed to initialize ${interfaceType} adapter during bootstrap:`, errorMessage);
+      }
+    }
+
     console.log('Interface adapters initialization complete');
+  }
+
+  private registerBackendLifecycleListeners(): void {
+    const router = this.dependencies?.backendServiceRouter;
+    if (!router) {
+      return;
+    }
+
+    if (this.teardownBackendLifecycleListener) {
+      this.teardownBackendLifecycleListener();
+      this.teardownBackendLifecycleListener = undefined;
+    }
+
+    const handler = (event: BackendConnectionLifecycleEvent) => {
+      this.handleBackendLifecycleEvent(event);
+    };
+
+    if (router.onLifecycleEvent) {
+      this.teardownBackendLifecycleListener = router.onLifecycleEvent(handler);
+      return;
+    }
+
+    const emitter = router as unknown as EventEmitter;
+    if (typeof emitter.on === 'function' && typeof emitter.off === 'function') {
+      emitter.on('connection:lifecycle', handler);
+      this.teardownBackendLifecycleListener = () => emitter.off('connection:lifecycle', handler);
+    }
+  }
+
+  private handleBackendLifecycleEvent(event: BackendConnectionLifecycleEvent): void {
+    this.backendLifecycleState.set(event.backendId, event);
+    this.emit('backend:lifecycle', event);
+    this.logLifecycleEvent(event);
+    void this.forwardBackendLifecycleEvent(event);
+  }
+
+  private async forwardBackendLifecycleEvent(event: BackendConnectionLifecycleEvent): Promise<void> {
+    const stateManager = this.dependencies?.stateManager;
+    try {
+      if (stateManager?.handleBackendLifecycleEvent) {
+        await stateManager.handleBackendLifecycleEvent(event);
+      }
+      await this.broadcastBackendLifecycleState(event);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logWarn('Failed to propagate backend lifecycle event', {
+        backendId: event.backendId,
+        state: event.state,
+        error: message
+      });
+    }
+  }
+
+  private async broadcastBackendLifecycleState(event: BackendConnectionLifecycleEvent): Promise<void> {
+    const stateManager = this.dependencies?.stateManager;
+    const syncState = stateManager?.syncState?.bind(stateManager);
+
+    if (!syncState || this.activeInterfaces.size === 0) {
+      return;
+    }
+
+    const update = this.buildBackendLifecycleStateUpdate(event);
+    const interfaceTypes = Array.from(this.activeInterfaces);
+    await Promise.all(interfaceTypes.map((interfaceType) => syncState(interfaceType, update, 'backend-lifecycle')));
+  }
+
+  private buildBackendLifecycleStateUpdate(event: BackendConnectionLifecycleEvent): StateUpdate {
+    const snapshot: Record<string, BackendConnectionLifecycleEvent> = {};
+    for (const [backendId, details] of Array.from(this.backendLifecycleState.entries())) {
+      snapshot[backendId] = details;
+    }
+
+    const statusKey = `backend:${event.backendId}`;
+    const notification = this.buildBackendLifecycleNotification(event);
+
+    const update: StateUpdate = {
+      timestamp: Date.now(),
+      globalState: {
+        backendLifecycle: snapshot
+      },
+      statusUpdates: {
+        [statusKey]: {
+          text: `${event.backendId}: ${this.resolveLifecycleDescription(event.state)}`,
+          tooltip: event.error?.message,
+          color: this.resolveLifecycleColor(event.state)
+        }
+      }
+    };
+
+    if (notification) {
+      update.notifications = [notification];
+    }
+
+    return update;
+  }
+
+  private buildBackendLifecycleNotification(event: BackendConnectionLifecycleEvent): NotificationUpdate | undefined {
+    if (event.state === 'connected' || event.state === 'recovered') {
+      return undefined;
+    }
+
+    const type: NotificationUpdate['type'] = event.state === 'failed' ? 'error' : 'warning';
+
+    return {
+      type,
+      message: `Backend ${event.backendId} ${this.resolveLifecycleDescription(event.state)}`,
+      timestamp: Date.now()
+    };
+  }
+
+  private logLifecycleEvent(event: BackendConnectionLifecycleEvent): void {
+    const payload = {
+      backendId: event.backendId,
+      state: event.state,
+      attempts: event.attempts,
+      retryAttempts: event.retryAttempts,
+      origin: event.origin,
+      error: event.error?.message
+    };
+
+    switch (event.state) {
+      case 'connected':
+      case 'recovered':
+        this.logInfo(`Backend ${event.backendId} ${event.state}`, payload);
+        break;
+      case 'disconnected':
+        this.logWarn(`Backend ${event.backendId} disconnected`, payload);
+        break;
+      case 'health-degraded':
+        this.logWarn(`Backend ${event.backendId} health degraded`, payload);
+        break;
+      case 'failed':
+        this.logWarn(`Backend ${event.backendId} connection failed`, payload);
+        break;
+      default:
+        this.logInfo(`Backend ${event.backendId} lifecycle event: ${event.state}`, payload);
+        break;
+    }
+  }
+
+  private resolveLifecycleDescription(state: BackendConnectionLifecycleState): string {
+    switch (state) {
+      case 'connected':
+        return 'connected';
+      case 'disconnected':
+        return 'disconnected';
+      case 'recovered':
+        return 'recovered';
+      case 'health-degraded':
+        return 'health degraded';
+      case 'failed':
+      default:
+        return 'failed';
+    }
+  }
+
+  private resolveLifecycleColor(state: BackendConnectionLifecycleState): string {
+    switch (state) {
+      case 'connected':
+      case 'recovered':
+        return 'success';
+      case 'health-degraded':
+      case 'disconnected':
+        return 'warning';
+      case 'failed':
+      default:
+        return 'error';
+    }
   }
 
 
@@ -941,6 +1148,13 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
       throw createTemplumError('Universal Interface Manager not initialized', 'SERVICE_NOT_READY', 'configuration');
     }
     return this.universalInterfaceManager;
+  }
+
+  getSessionManager(): TemplumSessionManagerContract {
+    if (!this.sessionManager) {
+      throw createTemplumError('Session manager not initialized', 'SERVICE_NOT_READY', 'configuration');
+    }
+    return this.sessionManager;
   }
 
   // Enhanced skin caching system - TASK-NEW-009 implementation

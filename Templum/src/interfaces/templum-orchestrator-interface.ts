@@ -6,7 +6,7 @@
  * description: [Abstraction interface for Templum core orchestration, enables dependency inversion for interface adapters]
  * ---*/
 
-import { 
+import {
   InterfaceType,
   InterfaceAdapter,
   UniversalSkinDefinition,
@@ -19,6 +19,7 @@ import {
   IBackendServiceRouter,
   IResourceManager
 } from './core-component-interfaces';
+import type { TemplumSessionManagerContract } from '../session/universal-session-manager.types';
 
 /**
  * Core Templum orchestrator abstraction interface
@@ -89,6 +90,11 @@ export interface ITemplumOrchestrator {
    * Get Resource Manager for system resource management
    */
   getResourceManager(): IResourceManager;
+
+  /**
+   * Get the shared session manager instance
+   */
+  getSessionManager(): TemplumSessionManagerContract;
 
   /**
    * Shutdown the orchestrator

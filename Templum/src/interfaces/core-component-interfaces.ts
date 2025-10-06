@@ -10,7 +10,8 @@ import {
   UniversalSkinDefinition, 
   StateUpdate,
   CommandResult,
-  InterfaceType
+  InterfaceType,
+  BackendConnectionLifecycleEvent
 } from '../types/templum-types';
 
 // Resource management interfaces
@@ -24,6 +25,7 @@ import {
 
 // Observability interfaces
 import { IObservabilityService } from '../observability/observability-adapter';
+import type { TemplumSessionManagerContract } from '../session/universal-session-manager.types';
 
 /**
  * Universal Skin Engine interface for dependency injection
@@ -85,6 +87,11 @@ export interface IStateManager {
    * Shutdown state manager
    */
   shutdown?(): Promise<void>;
+
+  /**
+   * Handle backend lifecycle updates and broadcast to registered interfaces
+   */
+  handleBackendLifecycleEvent?(event: BackendConnectionLifecycleEvent): Promise<void>;
 }
 
 /**
@@ -143,6 +150,11 @@ export interface IBackendServiceRouter {
    */
   getConnectionStatus?(): any;
   
+  /**
+   * Subscribe to backend lifecycle events
+   */
+  onLifecycleEvent?(listener: (event: BackendConnectionLifecycleEvent) => void): () => void;
+
   /**
    * Cleanup backend service connections
    */
@@ -221,6 +233,7 @@ export interface ITemplumCoreDependencies {
   backendServiceRouter: IBackendServiceRouter;
   resourceManager: IResourceManager;
   observabilityService: IObservabilityService;
+  sessionManager: TemplumSessionManagerContract;
 }
 
 /**

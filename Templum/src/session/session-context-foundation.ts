@@ -169,6 +169,20 @@ export class SessionContextFoundation extends EventEmitter {
     return true;
   }
 
+  closeSession(sessionId: string): boolean {
+    if (!this.sessions.has(sessionId)) {
+      return false;
+    }
+
+    this.sessions.delete(sessionId);
+    if (this.activeSession === sessionId) {
+      this.activeSession = null;
+    }
+
+    this.emit('sessionClosed', sessionId);
+    return true;
+  }
+
   /**
    * Switch active interface for session
    */

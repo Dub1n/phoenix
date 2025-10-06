@@ -35,6 +35,11 @@ import { PCLBackendIntegrator } from '../backend/pcl-backend-integration';
 import { TemplumBackendServiceRouter } from '../backend/backend-service-router';
 import { ServiceHealth, TemplumResourceManager } from './templum-resource-manager';
 import { ObservabilityAdapter } from '../observability/observability-adapter';
+import { CLIInterfaceAdapter } from '../interfaces/cli-adapter-abstracted';
+import { VSCodeInterfaceAdapter } from '../interfaces/vscode-adapter-abstracted';
+import type { IInterfaceAdapter } from '../interfaces/templum-orchestrator-interface';
+import { TemplumUniversalSessionManager } from '../session/templum-universal-session-manager';
+import type { TemplumSessionManagerContract } from '../session/universal-session-manager.types';
 
 /**
  * Component adapter implementations wrapping real components
@@ -215,6 +220,16 @@ export class StateManagerAdapter implements IStateManager {
       const errorMessage = isTemplumError(error) ? error.message : (error instanceof Error ? error.message : 'Unknown error');
       throw createTemplumError(`Message send failed: ${errorMessage}`, 'MESSAGE_SEND_ERROR', 'runtime');
     }
+  }
+
+  async handleBackendLifecycleEvent(event: any): Promise<void> {
+    if (!SemanticValidators.hasFunction(this.stateManager, 'handleBackendLifecycleEvent', { required: false })) {
+      return;
+    }
+
+    await (this.stateManager as unknown as {
+      handleBackendLifecycleEvent(payload: any): Promise<void>;
+    }).handleBackendLifecycleEvent(event);
   }
 
   getCurrentState(): any {
@@ -698,6 +713,7 @@ export class TemplumAdapterRegistry extends EventEmitter {
   private config: IDependencyInjectionConfig;
   private initialized: boolean = false;
   private validationReport: ValidationReport | null = null;
+  private sessionManager?: TemplumSessionManagerContract;
 
   constructor(config: IDependencyInjectionConfig = {}) {
     super();
@@ -758,6 +774,13 @@ export class TemplumAdapterRegistry extends EventEmitter {
         resourceManager: ['initialize', 'allocateResource', 'deallocateResource', 'getResourceUsage'],
         observabilityService: ['logInfo', 'logError', 'logDebug']
       };
+      interfaceChecks.sessionManager = [
+        'initialize',
+        'ensureSessionForInterface',
+        'registerInterfaceAdapter',
+        'updateSessionState',
+        'syncInterfaces'
+      ];
 
       const requiredMethods = interfaceChecks[name] || [];
       const availableMethods: string[] = [];
@@ -1316,8 +1339,11 @@ export class TemplumAdapterRegistry extends EventEmitter {
       
       // Phase 3: Initialize components in dependency order
       await this.initializeComponentsInOrder();
+
+      // Phase 4: Construct shared session manager
+      await this.initializeSessionManager();
       
-      // Phase 4: Validate all dependencies are satisfied
+      // Phase 5: Validate all dependencies are satisfied
       this.validateDependencyIntegrity();
 
       this.initialized = true;
@@ -1611,6 +1637,43 @@ export class TemplumAdapterRegistry extends EventEmitter {
     });
   }
 
+  private async initializeSessionManager(): Promise<void> {
+    if (this.sessionManager) {
+      return;
+    }
+
+    const backendServiceRouter = this.dependencies.backendServiceRouter as TemplumBackendServiceRouter | undefined;
+
+    if (!backendServiceRouter) {
+      throw createTemplumError(
+        'Backend service router must be initialized before creating the session manager',
+        'SESSION_MANAGER_INITIALIZATION_ERROR',
+        'configuration'
+      );
+    }
+
+    try {
+      this.sessionManager = new TemplumUniversalSessionManager(
+        {},
+        undefined,
+        backendServiceRouter
+      );
+
+      await this.sessionManager.initialize();
+
+      this.dependencies.sessionManager = this.sessionManager;
+
+      console.log('TemplumAdapterRegistry: Session manager initialized and registered');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      throw createTemplumError(
+        `Failed to initialize session manager: ${errorMessage}`,
+        'SESSION_MANAGER_INITIALIZATION_ERROR',
+        'configuration'
+      );
+    }
+  }
+
   /**
    * TASK-NEW-031: Enhanced dependency integrity validation (implemented above)
    * Comprehensive validation of the entire dependency injection system
@@ -1626,7 +1689,14 @@ export class TemplumAdapterRegistry extends EventEmitter {
     }
 
     // Ensure all required dependencies are present
-    const required = ['skinEngine', 'stateManager', 'backendRouter', 'backendServiceRouter', 'resourceManager'];
+    const required = [
+      'skinEngine',
+      'stateManager',
+      'backendRouter',
+      'backendServiceRouter',
+      'resourceManager',
+      'sessionManager'
+    ];
     for (const dep of required) {
       if (!this.dependencies[dep as keyof ITemplumCoreDependencies]) {
         throw createTemplumError(`Missing required dependency: ${dep}`, 'MISSING_DEPENDENCY', 'configuration');
@@ -1664,11 +1734,53 @@ export class TemplumAdapterRegistry extends EventEmitter {
     return component as ITemplumCoreDependencies[K];
   }
 
+  buildInterfaceAdapters(
+    overrides: {
+      cli?: CLIInterfaceAdapter;
+      vscode?: { adapter?: VSCodeInterfaceAdapter; context?: any };
+      command?: IInterfaceAdapter;
+    } = {}
+  ): Record<InterfaceType, IInterfaceAdapter> {
+    if (!this.sessionManager) {
+      throw createTemplumError(
+        'Session manager must be initialized before building interface adapters',
+        'SESSION_MANAGER_INITIALIZATION_ERROR',
+        'configuration'
+      );
+    }
+
+    const adapters: Partial<Record<InterfaceType, IInterfaceAdapter>> = {};
+
+    adapters.cli = overrides.cli ?? new CLIInterfaceAdapter({ sessionManager: this.sessionManager });
+
+    if (overrides.vscode) {
+      if (overrides.vscode.adapter) {
+        adapters.vscode = overrides.vscode.adapter;
+      } else if (overrides.vscode.context) {
+        adapters.vscode = new VSCodeInterfaceAdapter(overrides.vscode.context);
+      }
+    }
+
+    if (overrides.command) {
+      adapters.command = overrides.command;
+    }
+
+    return adapters as Record<InterfaceType, IInterfaceAdapter>;
+  }
+
   /**
    * Dispose of all managed components
    */
   async dispose(): Promise<void> {
     try {
+      if (this.sessionManager && 'stopSession' in this.sessionManager) {
+        try {
+          await (this.sessionManager as any).stopSession?.();
+        } catch (error) {
+          console.warn('TemplumAdapterRegistry: Failed to stop session manager during disposal', error);
+        }
+      }
+
       // Dispose components in reverse order
       try {
         if (this.dependencies.backendServiceRouter?.cleanup) {
@@ -1714,6 +1826,7 @@ export class TemplumAdapterRegistry extends EventEmitter {
 
       this.dependencies = {};
       this.initialized = false;
+      this.sessionManager = undefined;
       this.emit('disposed', { timestamp: Date.now() });
       this.removeAllListeners();
 

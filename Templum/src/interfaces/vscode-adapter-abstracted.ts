@@ -21,6 +21,7 @@ import {
   IInterfaceAdapter 
 } from './templum-orchestrator-interface';
 import { createLogger, LogLevel } from '../utils/logger';
+import type { TemplumSessionManagerContract } from '../session/universal-session-manager.types';
 
 /**
  * Abstracted VSCode Interface Adapter
@@ -33,6 +34,7 @@ export class VSCodeInterfaceAdapter implements IInterfaceAdapter {
   private view?: vscode.WebviewView;
   private orchestrator!: ITemplumOrchestrator;
   private readonly logger = createLogger('vscode-interface-adapter', { level: LogLevel.ERROR });
+  private sessionManager?: TemplumSessionManagerContract;
 
   constructor(
     private readonly context: vscode.ExtensionContext
@@ -43,6 +45,15 @@ export class VSCodeInterfaceAdapter implements IInterfaceAdapter {
    */
   async initialize(orchestrator: ITemplumOrchestrator): Promise<void> {
     this.orchestrator = orchestrator;
+    if (this.orchestrator.getSessionManager) {
+      try {
+        this.sessionManager = this.orchestrator.getSessionManager();
+        await this.sessionManager.ensureSessionForInterface('vscode');
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        this.logger.warn('VSCodeInterfaceAdapter: Failed to ensure session', { errorMessage });
+      }
+    }
     
     // Register this adapter with the orchestrator
     await this.orchestrator.registerInterface('vscode', this);

@@ -18,6 +18,10 @@ import { UniversalCommandRegistry } from '../commands/universal-command-registry
 import { UniversalMenuRegistry } from '../menus/universal-menu-registry';
 import { SessionContextFoundation, SessionContext } from '../session/session-context-foundation';
 import { UniversalSkinRenderer } from '../rendering/universal-skin-renderer';
+import type {
+  SessionStateUpdate,
+  TemplumSessionManagerContract,
+} from '../session/universal-session-manager.types';
 
 // Extended interfaces for multi-interface support
 export interface UniversalInteractionConfig extends InteractionModeConfig {
@@ -29,6 +33,7 @@ export interface UniversalInteractionConfig extends InteractionModeConfig {
 
 export interface UniversalInteractionManagerDependencies {
   formatter?: TerminalFormatter;
+  sessionManager?: TemplumSessionManagerContract;
 }
 
 export interface InteractionModeConfig {
@@ -142,6 +147,7 @@ export class UniversalInteractionManager extends EventEmitter {
   private activeInterface: InterfaceType = 'cli';
   private maxHistorySize = 50;
   private readonly formatter: TerminalFormatter;
+  private sessionManager?: TemplumSessionManagerContract;
 
   constructor(
     commandRegistry: UniversalCommandRegistry,
@@ -157,6 +163,7 @@ export class UniversalInteractionManager extends EventEmitter {
     this.menuRegistry = menuRegistry;
     this.sessionContext = sessionContext;
     this.skinRenderer = skinRenderer;
+    this.sessionManager = dependencies.sessionManager;
     
     this.config = {
       currentMode: 'menu',
@@ -186,6 +193,35 @@ export class UniversalInteractionManager extends EventEmitter {
     };
 
     this.setupInitialComponents();
+  }
+
+  private persistSessionState(overrides: Partial<SessionStateUpdate['state']> = {}): void {
+    if (!this.sessionManager) {
+      return;
+    }
+
+    const sessionId = this.sessionManager.getActiveSessionId();
+    if (!sessionId) {
+      return;
+    }
+
+    const history = this.inputHistory.get(this.activeInterface) ?? [];
+
+    const state: SessionStateUpdate['state'] = {
+      commandHistory: history,
+      interactionMode: this.config.currentMode,
+      ...overrides,
+    };
+
+    this.sessionManager
+      .updateSessionState({
+        sessionId,
+        interfaceType: this.activeInterface,
+        state,
+      })
+      .catch((error) => {
+        console.warn('UniversalInteractionManager: failed to persist session state', error);
+      });
   }
 
   /**
@@ -220,19 +256,28 @@ export class UniversalInteractionManager extends EventEmitter {
         throw new Error(`Menu rendering failed: ${renderResult.errors?.join(', ')}`);
       }
 
+      let result: UniversalInputResult;
+
       // Handle input based on interface type
       switch (interfaceType) {
         case 'cli':
-          return await this.handleCLIMenuInput(filteredOptions, session);
+          result = await this.handleCLIMenuInput(filteredOptions, session);
+          break;
         case 'vscode':
-          return await this.handleVSCodeMenuInput(filteredOptions, session);
+          result = await this.handleVSCodeMenuInput(filteredOptions, session);
+          break;
         case 'command':
-          return await this.handleCommandMenuInput(filteredOptions, session);
+          result = await this.handleCommandMenuInput(filteredOptions, session);
+          break;
         default:
           throw new Error(`Unsupported interface type: ${interfaceType}`);
       }
 
+      this.persistSessionState();
+      return result;
+
     } catch (error) {
+      this.persistSessionState();
       return {
         action: 'execute',
         success: false,
@@ -257,19 +302,28 @@ export class UniversalInteractionManager extends EventEmitter {
     const session = this.sessionContext.getActiveSession();
     
     try {
+      let result: UniversalInputResult;
+
       // Display command interface based on type
       switch (interfaceType) {
         case 'cli':
-          return await this.handleCLICommandInput(filteredCommands, session);
+          result = await this.handleCLICommandInput(filteredCommands, session);
+          break;
         case 'vscode':
-          return await this.handleVSCodeCommandInput(filteredCommands, session);
+          result = await this.handleVSCodeCommandInput(filteredCommands, session);
+          break;
         case 'command':
-          return await this.handleDirectCommandInput(filteredCommands, session);
+          result = await this.handleDirectCommandInput(filteredCommands, session);
+          break;
         default:
           throw new Error(`Unsupported interface type: ${interfaceType}`);
       }
 
+      this.persistSessionState();
+      return result;
+
     } catch (error) {
+      this.persistSessionState();
       return {
         action: 'execute',
         success: false,
@@ -364,6 +418,7 @@ export class UniversalInteractionManager extends EventEmitter {
     }
 
     this.emit('interfaceSwitched', oldInterface, newInterface);
+    this.persistSessionState();
     return true;
   }
 
@@ -916,6 +971,9 @@ export class UniversalInteractionManager extends EventEmitter {
     }
     
     this.inputHistory.set(interfaceType, history);
+    if (interfaceType === this.activeInterface) {
+      this.persistSessionState({ commandHistory: history });
+    }
   }
 
   /**
@@ -939,6 +997,7 @@ export class UniversalInteractionManager extends EventEmitter {
     this.config.currentMode = this.config.currentMode === 'menu' ? 'command' : 'menu';
     console.log(this.formatter.status.success(`\n═ Switched to ${this.config.currentMode.toUpperCase()} mode`));
     this.emit('modeChanged', this.config.currentMode);
+    this.persistSessionState();
     return this.config.currentMode;
   }
 
