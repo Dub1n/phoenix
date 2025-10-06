@@ -1,6 +1,6 @@
 # Aims & Objectives Table Template
 
-Copy this table into `05-Aims-and-Objectives.md` or another working document when you need a clean slate.
+Copy this table into `01-Aims-and-Objectives.md` or another working document when you need a clean slate.
 
 | Aim | Objective | Evidence Artifact(s) | Success Metric | Responsible Projects/Systems | Dependencies |
 |-----|-----------|----------------------|----------------|------------------------------|-------------|

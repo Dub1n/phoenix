@@ -38,3 +38,9 @@
 - Templum skin schema: `Templum/src/types/universal-skin-engine-types.ts:1`
 - Existing integration test harness: `phoenix-code-lite/tests/integration/unified-architecture.test.ts:81`
 - Architecture diagram callout: `phoenix-code-lite/docs/current/index/ARCHITECTURE-DIAGRAM.md:26`
+
+## Current Status (2025-02-15)
+- Implementation: no exporter module, CLI handler, or build artifact under `dist/skins/`; the runtime still renders static CLI menus without emitting `UniversalSkinDefinition` assets for Templum.
+- Tests executed: none — unit/integration suites for the exporter have not been created.
+- Coverage snapshot: not applicable while exporter code is missing.
+- Gaps blocking completion: need canonical data feeds, exporter implementation, schema validation harness, and documentation updates to feed Templum.

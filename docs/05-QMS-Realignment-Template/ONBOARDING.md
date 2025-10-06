@@ -12,15 +12,15 @@ Welcome to the QMS realignment effort. This guide gets you productive quickly wh
 ## 2. Working Folder Structure
 
 - `00-Problem-Statement.md`: capture latest drivers and constraints.
-- `05-Aims-and-Objectives.md`: define measurable targets.
-- `10-Solution-Alignment.md`: map aims to Templum/PCL/Haruspex/Validation System.
-- `15-Traceability-Matrix.md`: connect requirements → aims → features → evidence.
-- `20-Progress-and-Gaps.md`: log maturity, next actions, unresolved items.
+- `01-Aims-and-Objectives.md`: define measurable targets.
+- `02-Solution-Alignment.md`: map aims to Templum/PCL/Haruspex/Validation System.
+- `03-Traceability-Matrix.md`: connect requirements → aims → features → evidence.
+- `04-Progress-and-Gaps.md`: log maturity, next actions, unresolved items.
 - `templates/`: reusable skeletons—reference instead of editing directly.
 
 ## 3. Standard Workflow
 
-1. **Pull latest changes**; skim `20-Progress-and-Gaps.md` for current state.
+1. **Pull latest changes**; skim `04-Progress-and-Gaps.md` for current state.
 2. **Update problem context** if new facts emerged (regulatory decisions, architecture shifts).
 3. **Adjust aims/objectives** to reflect new priorities or evidence.
 4. **Reconcile solution alignment** with project updates—capture integration notes and maturity.
@@ -41,13 +41,13 @@ Before committing or handing off:
 
 - [ ] Templates untouched; working docs updated using prompts.
 - [ ] References added for any new evidence (command logs, documents).
-- [ ] `20-Progress-and-Gaps.md` reflects changes and open issues.
+- [ ] `04-Progress-and-Gaps.md` reflects changes and open issues.
 - [ ] Outstanding questions tagged with owner/next step.
 - [ ] Cross-repo trackers (`Templum/docs/current/progress.md`, etc.) updated if scope changed.
 
 ## 6. Escalation & Communication
 
-- Record blockers or decisions needed in `20-Progress-and-Gaps.md` under “Outstanding Decisions & Questions”.
+- Record blockers or decisions needed in `04-Progress-and-Gaps.md` under “Outstanding Decisions & Questions”.
 - Use repo notes (`dev/notes/AGENTS.md`) for communication norms; avoid ad-hoc tooling without documenting rationale.
 - For integration-breaking findings (e.g. Phase 6 harness failing), escalate to project leads immediately and capture the incident in the progress log.
 
@@ -55,7 +55,7 @@ Before committing or handing off:
 
 1. Read the prerequisite docs listed above.
 2. Walk through each file in `docs/05-QMS-Realignment/` to understand current content.
-3. Confirm whether new information exists for the safety classification or cybersecurity scope; if yes, update `00-Problem-Statement.md` and flag it in `20-Progress-and-Gaps.md`.
+3. Confirm whether new information exists for the safety classification or cybersecurity scope; if yes, update `00-Problem-Statement.md` and flag it in `04-Progress-and-Gaps.md`.
 4. Coordinate with project leads to verify which capabilities have advanced since the last update; reflect changes in the solution alignment matrix.
 
 Staying disciplined with this flow keeps the QMS realignment effort audit-ready while the technical work evolves.

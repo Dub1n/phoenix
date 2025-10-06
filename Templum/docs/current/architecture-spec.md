@@ -21,23 +21,26 @@ last_updated: 2025-09-22
 >
 > 🧭 **In Progress:** Backend router refactor, shared session/context work, and Haruspex integration.
 
-- Backend discovery (`ServiceDiscovery`, `ConnectionFactory`) enumerates locally registered services but requires regression testing after recent refactors.
-- Skins are not yet produced by backends; renderer still mixes hardcoded menus with skin stubs.
-- CLI/daemon process separation is scaffolded; IPC contracts need integration tests.
-- Observability/health monitoring blueprints exist; instrumentation must be validated before relying on metrics dashboards.
+- Backend discovery (`ServiceDiscovery`, `ConnectionFactory`) enumerates locally registered services but requires regression testing after recent refactors. **Status:** Present (flaky under integration load).
+- Skins are not yet produced by backends; renderer still mixes hardcoded menus with skin stubs. **Status:** Absent.
+- CLI/daemon process separation is scaffolded; IPC contracts need integration tests. **Status:** Broken.
+- Observability/health monitoring blueprints exist; instrumentation must be validated before relying on metrics dashboards. **Status:** Broken.
 
 ## 2. Architecture Overview
 
 - **Core Components:**
-  - `TemplumCore` orchestrates adapters, state, and backend routing.
-  - `ServiceDiscovery` + `ConnectionFactory` provide zero-knowledge backend connections (IPC/HTTP/WebSocket/gRPC).
-  - `UniversalSkinEngine` is responsible for consuming `UniversalSkinDefinition` payloads (pending full implementation).
-  - Interface adapters (`cli`, `vscode`, `command`) render skins and manage interaction state.
-  - Display stack utilities (`DisplayUtils`, `TerminalFormatter`, `WindowUtils`) expose dependency-injected seams via `configureDisplayStack(...)`, wrapping `DisplayUtils.configure`, `WindowUtils.configure`, and `TerminalFormatter.configure` so CLI/session surfaces share formatter, logger, and column providers without importing `chalk` directly.
-- **Data/Control Flow:** Backends publish skins → discovery registers service → connection factory establishes protocol → command router/skin engine expose functionality across adapters.
+  - `TemplumCore` orchestrates adapters, state, and backend routing. **Status:** Present (initialises but still tied to legacy session managers).
+  - `ServiceDiscovery` + `ConnectionFactory` provide zero-knowledge backend connections (IPC/HTTP/WebSocket/gRPC). **Status:** Broken (multi-protocol discovery fails in integration and health probes stay HTTP-only).
+  - `UniversalSkinEngine` is responsible for consuming `UniversalSkinDefinition` payloads (pending full implementation). **Status:** Broken (schema enforcement and payload rendering incomplete).
+  - Interface adapters (`cli`, `vscode`, `command`) render skins and manage interaction state. **Status:** Present (operational yet reliant on fallback rendering).
+  - Display stack utilities (`DisplayUtils`, `TerminalFormatter`, `WindowUtils`) expose dependency-injected seams via `configureDisplayStack(...)`, wrapping `DisplayUtils.configure`, `WindowUtils.configure`, and `TerminalFormatter.configure` so CLI/session surfaces share formatter, logger, and column providers without importing `chalk` directly. **Status:** Present.
+- **Data/Control Flow:**
+  - Backends publish skins that discovery ingests. **Status:** Absent (partner exports not yet available).
+  - Discovery registers services and hydrates connection factories. **Status:** Broken (fails under integration tests, protocol health incomplete).
+  - Command router/skin engine expose functionality across adapters. **Status:** Broken (skin-driven output still falls back to hardcoded menus).
 - **Integration Points:**
-  - Haruspex backend (analysis) and Phoenix Code Lite (QMS tooling) will expose skins consumed by Templum.
-  - Validation System results need to surface through observability hooks for compliance workflows.
+  - Haruspex backend (analysis) and Phoenix Code Lite (QMS tooling) will expose skins consumed by Templum. **Status:** Absent (waiting on partner exports).
+  - Validation System results need to surface through observability hooks for compliance workflows. **Status:** Broken (instrumentation wiring incomplete).
 
 ## 3. Ideal Requirements vs. Status
 
@@ -55,10 +58,10 @@ last_updated: 2025-09-22
 
 ## 4. Operational Considerations
 
-- **Observability:** Centralised logging/metrics planned (`observability/templum-observability-system.ts`); ensure instrumentation before enabling production dashboards.
-- **Display Stack Management:** Configure CLI/session layout helpers via `configureDisplayStack`/`resetDisplayStack`, which wrap `DisplayUtils.configure`, `WindowUtils.configure`, and `TerminalFormatter.configure` to keep formatter + column providers aligned with `dev/architecture/display-stack-alignment.md`.
-- **Deployment:** Supports headless daemon + separate CLI/VSCode interfaces once process separation stabilises.
-- **Compliance:** Must provide traceable logs and health reports for regulated workflows; integrate with Validation System once categories are defined.
+- **Observability:** Centralised logging/metrics planned (`observability/templum-observability-system.ts`); ensure instrumentation before enabling production dashboards. **Status:** Broken.
+- **Display Stack Management:** Configure CLI/session layout helpers via `configureDisplayStack`/`resetDisplayStack`, which wrap `DisplayUtils.configure`, `WindowUtils.configure`, and `TerminalFormatter.configure` to keep formatter + column providers aligned with `dev/architecture/display-stack-alignment.md`. **Status:** Present.
+- **Deployment:** Supports headless daemon + separate CLI/VSCode interfaces once process separation stabilises. **Status:** Broken.
+- **Compliance:** Must provide traceable logs and health reports for regulated workflows; integrate with Validation System once categories are defined. **Status:** Absent.
 
 ### Phase 6 Validation CLI Reference
 

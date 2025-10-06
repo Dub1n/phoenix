@@ -31,3 +31,9 @@
 - Progress entry: `phoenix-code-lite/docs/current/progress.md:28`.
 - Architecture spec: `phoenix-code-lite/docs/current/architecture-spec.md:49`, `phoenix-code-lite/docs/current/architecture-spec.md:55`.
 - Related task: `phoenix-code-lite/dev/tasks/release-package-export.md:9`.
+
+## Current Status (2025-02-15)
+- Implementation: base `AuditLogger` utility exists but no compliance hooks, event schemas, or listener wiring; audit output is generic workflow logging without QMS metadata.
+- Tests executed: none — compliance hook suites and adapters are not present.
+- Coverage snapshot: audit modules show 0% statements/branches in coverage because no targeted tests run.
+- Gaps blocking completion: need compliance event schemas, hook dispatcher across core modules, validator handshake, and documentation of retention/controls.

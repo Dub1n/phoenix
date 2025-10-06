@@ -27,3 +27,9 @@
 - Progress entry: `docs/current/progress.md:15`
 - Architecture spec: `docs/current/architecture-spec.md:23`, `docs/current/architecture-spec.md:33`, `docs/current/architecture-spec.md:44`, `docs/current/architecture-spec.md:57`
 - QMS roadmap: `../docs/03-PCL-QMS/03-QMS-via-PCL.md:418`, `../docs/03-PCL-QMS/03-QMS-via-PCL.md:452`, `../docs/03-PCL-QMS/09-Current-State.md:282`, `../docs/03-PCL-QMS/09-Current-State.md:293`
+
+## Current Status (2025-02-15)
+- Implementation: no validation gateway, promotion policy, or CLI wiring exists; runtime still lacks awareness of validator verdicts and cannot gate promotions.
+- Tests executed: none — promotion gating suites referenced in the plan are absent.
+- Coverage snapshot: not applicable (integration code not present).
+- Gaps blocking completion: lifecycle orchestrator pending, Validation System adapters not scaffolded, and no audit or CLI layers to propagate failures to users.

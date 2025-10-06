@@ -3,7 +3,7 @@ doc-type: architecture-spec
 title: Phoenix Code Lite Architecture Specification
 tags: [phoenix-code-lite, qms, architecture]
 status: current
-last_updated: 2025-09-22
+last_updated: 2025-02-15
 ---
 ---
 
@@ -28,10 +28,10 @@ last_updated: 2025-09-22
 
 ## 2. Architecture Overview
 - **Core Components (target):**
-  - Regulation ingestion layer that assists teams in capturing classifications, requirements, and obligations from MDR/62304/etc. via guided workflows or assisted parsing.
-  - QMS data layer managing requirements, risks, verification, releases, and regulatory metadata.
-  - Workflow assistance & automation engine generating artefacts, guiding users, running validators, preparing release packages.
-  - Skin exporter bridging QMS data and workflows to Templum so guidance lives inside shared interfaces.
+  - **Regulation ingestion layer** *(Status: Absent)* — intended to assist teams in capturing classifications, requirements, and obligations from MDR/62304/etc.; no ingest workflow or schema implementation exists yet beyond planning docs.
+  - **QMS data layer** *(Status: Partial/Broken)* — legacy analyzers and validators produce ad-hoc structures; canonical traceability types, catalogs, and persistence are still missing.
+  - **Workflow assistance & automation engine** *(Status: Present — Legacy implementation)* — current code still runs the Claude/TDD orchestrator; QMS-specific lifecycle gating, signatures, and validator hooks have not replaced it.
+  - **Skin exporter bridge to Templum** *(Status: Absent)* — no exporter modules or skin payload generation exist in the codebase.
 - **Data/Control Flow (desired):** Regulation intake/classification → requirement modelling → traceability updates → validation execution → documentation/export → skin update.
 - **Integration Points:**
   - Validation System categories invoked programmatically.
@@ -53,11 +53,13 @@ last_updated: 2025-09-22
 | Release package/bundle creation | `[ ]` | To be designed.
 
 ## 4. Operational Considerations
+> Status: Absent — Operational safeguards (immutable logs, signatures, deterministic exports) are documented but not yet enforced in runtime code.
 - Must produce regulated-environment-ready outputs (audit logs, immutable history, electronic signatures where applicable) even though the tooling itself is internal.
 - Needs deterministic exports for submissions (PDF/Markdown bundles).
 - When integrated with Templum, skins must respect role-based access, traceability references, and guided workflow states.
 
 ## 5. Outstanding Work & Risks
+> Status: Known gaps — Entire QMS feature set still pending implementation; legacy workflows remain active.
 - Remove or isolate legacy Claude workflow code to prevent conflicts.
 - Implement QMS data model with persistence/audit.
 - Design and ship the regulation ingestion/normalisation workflows (guided UI, assisted parsing, schema validation).
@@ -67,6 +69,7 @@ last_updated: 2025-09-22
 - Risk of scope creep—focus on core QMS deliverables before advanced automation.
 
 ## 6. Verification & Validation
+> Status: Absent — QMS-specific validation suites and acceptance tests have not been authored; only the environment preparation suite currently runs.
 - After implementation, run `npm run build`, unit tests, and dedicated QMS validation suites.
 - Add integration validations covering traceability matrices and validator gating.
 - Include scenario tests that run the regulation ingestion pipeline against curated MDR/62304 samples and verify resulting classifications/requirements.

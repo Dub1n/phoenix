@@ -5,8 +5,8 @@ Build this matrix once the problem statement, aims, and solution alignment have 
 ## How to Populate
 
 1. Start with the primary VDL2 user needs and regulatory clauses identified in `00-Problem-Statement.md` and the EN 62304 / AAMI TIR45 references.
-2. Link each row to at least one aim/objective from `05-Aims-and-Objectives.md`.
-3. Map the objective to specific project features (actual or planned) using `10-Solution-Alignment.md`.
+2. Link each row to at least one aim/objective from `01-Aims-and-Objectives.md`.
+3. Map the objective to specific project features (actual or planned) using `02-Solution-Alignment.md`.
 4. Identify the verification or validation artefact that will demonstrate the tooling supports the requirement (e.g. automated test suite, CI report, validation command log).
 5. Update the status as work progresses (e.g. Planned → In Progress → Verified).
 

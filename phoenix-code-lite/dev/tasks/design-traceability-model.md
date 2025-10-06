@@ -30,3 +30,9 @@
 - Architecture diagram snapshot: `docs/current/index/ARCHITECTURE-DIAGRAM.md:25`
 - Existing requirement extractors: `src/preparation/regulatory-document-processor.ts:1`, `src/preparation/en62304-requirement-analyzer.ts:1`, `src/preparation/aami-tir45-requirement-analyzer.ts:1`
 - Preparation validation suite: `tests/preparation/environment-setup.test.ts:1`
+
+## Current Status (2025-02-15)
+- Implementation: legacy analyzers/regulatory processor still emit ad-hoc structures with mocked fallbacks; no `src/types/qms-traceability.ts`, traceability matrix builder, or CLI entry has landed, so downstream consumers cannot request a canonical design→requirement→risk graph yet.
+- Tests executed: `npm test -- tests/preparation/environment-setup.test.ts` ✅ (10/10 green); `npm run test:coverage -- --runTestsByPath tests/preparation/environment-setup.test.ts` ✅ for coverage snapshot.
+- Coverage snapshot (Jest): `src/preparation/regulatory-document-processor.ts` statements 66% / branches 38.9%; `src/preparation/en62304-requirement-analyzer.ts` statements 51.35% / branches 57.14%; overall project coverage still 3.79% statements because only the environment suite runs.
+- Gaps blocking completion: missing shared traceability types + catalog, no matrix assembly or dangling detection, no CLI wiring or artefact emission, and zero dedicated tests guarding traceability behaviours beyond the environment smoke.

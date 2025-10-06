@@ -18,6 +18,12 @@ Tags: `#infra`
 - Tests: `npm run test -- --runTestsByPath src/tests/backend/comprehensive-backend-validation.test.ts`, `npm run test -- --runTestsByPath tests/interfaces/interface-adapter-integration.test.ts`
 - Docs: `dev/architecture/architecture-restructuring-plan.md`, `docs/current/progress.md`
 
+## Current Assessment (2025-10-05)
+
+- Implementation: Both engine implementations remain active with overlapping logic; no modular extraction or consolidation has occurred.
+- Tests: Neither of the referenced suites has been updated to fail on duplicate engine behaviour; in fact, `tests/backend/comprehensive-backend-validation.test.ts` currently fails before execution due to the coverage instrumentation error.
+- Next work: plan the extraction, add sanity tests for the consolidated modules, and remove the redundant implementation once the new structure passes the existing suites.
+
 ## Notes
 
 - Current engine owns PCL rendering (`PCLRenderingAdapter`), theme telemetry, fallback orchestration, and interface registration; keep these behaviours intact while reshaping the internals.
@@ -32,3 +38,5 @@ Tags: `#infra`
 - [ ] Progress tracker updated
 - [ ] Task log updated
 - [ ] Checklist completed
+
+> Scope: **Post-MVP** — stabilise the existing engine for MVP; convergence refactor resumes once skin validation/rendering are proven.

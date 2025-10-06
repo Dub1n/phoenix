@@ -15,9 +15,9 @@
 
 - [ ] Add red-failing layout specs in `tests/rendering/content-layout-system.test.ts` (or new `tests/rendering/procedural-windowed-tui.integration.test.ts`) that load `UniversalSkinDefinition` fixtures and assert the CLI output renders bordered windows (titles, sections, navigation) derived from skin descriptors without fallback text.
 - [ ] Extend `tests/interfaces/interface-adapter-integration.test.ts` with CLI-focused cases verifying the adapter requests procedural layouts via `UniversalLayoutEngine`/`ContentLayoutSystem` and renders nested windows for multi-level menus.
-- [ ] Enhance `src/rendering/content-layout-system.ts` and `src/rendering/universal-layout-engine.ts` so window dimensions, borders, and navigation stacks are computed from `skin.views`/`skin.menus` descriptors, including terminal capability fallbacks and consistent numbering.
-- [ ] Update `src/interfaces/enhanced-window-system.ts` to consume the expanded layout API (progressive enhancement paths, capability caching) and expose structured results to CLI adapters, removing any placeholder window scaffolding.
-- [ ] Wire CLI adapters (`src/interfaces/cli-adapter-abstracted.ts`, `src/interfaces/adaptive-cli-integration.ts`) to request procedural windows through the shared renderer, persisting state via `UniversalMenuRegistry` and `SessionContextFoundation`.
+- [ ] Enhance `src/rendering/content-layout-system.ts` (`ContentLayoutSystem.composeWindow`, `ContentLayoutSystem.buildSections`) and `src/rendering/universal-layout-engine.ts` (`UniversalLayoutEngine.renderForCLI`) so window dimensions, borders, and navigation stacks are computed from `skin.views`/`skin.menus` descriptors, including terminal capability fallbacks and consistent numbering.
+- [ ] Update `src/interfaces/enhanced-window-system.ts` (`EnhancedWindowSystem.renderWindowSet`) to consume the expanded layout API (progressive enhancement paths, capability caching) and expose structured results to CLI adapters, removing any placeholder window scaffolding.
+- [ ] Wire CLI adapters (`src/interfaces/cli-adapter-abstracted.ts` `CLIInterfaceAdapter.renderMenuWindow`, `src/interfaces/adaptive-cli-integration.ts` `AdaptiveCLIIntegration.render`) to request procedural windows through the shared renderer, persisting state via `UniversalMenuRegistry` and `SessionContextFoundation`.
 - [ ] Document the procedural window pipeline in `docs/current/architecture-spec.md` (Skin-Driven Rendering section) and capture the verification steps in `docs/current/progress.md` once tests pass.
 
 ### Blocked Actions (pending Skin payload consumption powering full UI without hardcoding)
@@ -37,3 +37,10 @@
 - Architecture spec: `docs/current/architecture-spec.md` → Sections 1 & 3.
 - Code: `src/rendering/content-layout-system.ts`, `src/rendering/universal-layout-engine.ts`, `src/interfaces/enhanced-window-system.ts`, `src/interfaces/cli-adapter-abstracted.ts`, `src/interfaces/adaptive-cli-integration.ts`, `src/menus/universal-menu-registry.ts`.
 - Tests: `tests/rendering/content-layout-system.test.ts`, `tests/interfaces/interface-adapter-integration.test.ts`, `tests/e2e/e2e-complete-workflows.test.ts`.
+
+## Current Assessment (2025-10-05)
+
+- Implementation: `ContentLayoutSystem` can render windowed layouts, but CLI entry points never invoke it; adaptive CLI flows remain bound to legacy renderers.
+- Tests: No procedural TUI integration tests exist; existing CLI adapter tests merely assert legacy snapshots and trigger lingering process handles (`scripts/run-with-timeout.mjs --timeout 180000 -- npm test -- tests/interfaces/interface-adapter-integration.test.ts`).
+- Coverage: The global coverage run continues to fail with the `babel-plugin-istanbul` TypeError, so this workstream has no measurable coverage delta.
+- Required steps: wire windowed layouts into CLI rendering, add targeted layout fixtures, and document validation per the Definition of Done.

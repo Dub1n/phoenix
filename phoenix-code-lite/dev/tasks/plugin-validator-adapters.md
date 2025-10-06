@@ -32,3 +32,9 @@
 - Configuration systems: `src/core/config-manager.ts:1`, `src/config/settings.ts:1`
 - DI entry point: `src/index-di.ts:19`
 - Validation System source adapters: `scripts/validation/src/validators/quality-validator.js:1`, `scripts/validation/src/validators/architecture-validator.js:1`
+
+## Current Status (2025-02-15)
+- Implementation: there is no plugin registry, adapter directory, or configuration schema for validator plugins; orchestrator still hardwires local gates only.
+- Tests executed: none — plugin registry and integration suites have not been authored.
+- Coverage snapshot: not applicable because plugin infrastructure is absent.
+- Gaps blocking completion: require config schema changes, registry/adapters implementation, CLI management surface, and integration with Validation System scripts.

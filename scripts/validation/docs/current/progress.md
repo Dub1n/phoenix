@@ -45,6 +45,7 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` not started · `[!]` broken · 
 - Align outputs with QMS reporting to prepare for integration into Phoenix Code Lite.
 
 ## Step 0 — Playbook Setup
+
 - Prepare milestone playbooks before executing streams:
   - Candidate playbooks: baseline stabilization, validator contract enforcement, policy engine rollout, streaming/progress visibility.
 - Use `meta/templates/milestone-playbook.md`, cross-reference `meta/ARCHITECTURE.md`, and consult `scripts/validation/dev/tasks/validation_task_dependencies.json` for dependency planning.
@@ -55,6 +56,7 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` not started · `[!]` broken · 
 ## Parallel Execution Plan
 
 ### Dependency Highlights
+
 - Core execution determinism and baseline validator revalidation must land first; remote triggers and automation rely on deterministic ordering.
 - Validator result exports provide the canonical JSON feed that PCL artifact production and downstream integrations consume—finalise exports before building traceability packs.
 - PCL embedding interface is a prerequisite for remote execution triggers; finish the CLI/API contract before automation.
@@ -62,6 +64,7 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` not started · `[!]` broken · 
 - Templum skin metadata can proceed once result exports exist but should coordinate with streaming hooks so both surfaces emit consistent payloads.
 
 ### Phase Matrix
+
 | Phase | Dependencies cleared | Parallel work packages | Unlocks |
 | --- | --- | --- | --- |
 | 1 · Baseline Stabilisation | None | Core execution determinism · Baseline validator revalidation · Config discovery | Confirms orchestrator determinism and schema validity |
@@ -70,6 +73,7 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` not started · `[!]` broken · 
 | 4 · Governance & Observability | Phases 2–3 artefacts | Policy engine · Validator audit logging · Streaming hooks | Delivers compliance gating and live progress visibility |
 
 ### Workstream Lanes
+
 - **Orchestrator Core:** core execution determinism, config discovery, dependency graph.
 - **Validator Contract & Telemetry:** validator contract, health monitoring, audit logging, result exports.
 - **Integrations:** PCL embedding interface, artifact production, remote execution triggers.
@@ -77,6 +81,7 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` not started · `[!]` broken · 
 - **Governance:** policy engine (ties together configuration, dependency, and audit data).
 
 ### Risk and Coordination Notes
+
 - Re-run smoke suites after each baseline change to ensure deterministic execution before layering integrations.
 - Coordinate schema changes (config, capability matrix, policy) with Phoenix Code Lite to prevent mismatch in release gating.
 - Artifact production depends on finalized export format—publish export schema revisions early.
@@ -84,6 +89,7 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` not started · `[!]` broken · 
 - Keep audit logs and policy outputs in sync; policy decisions should reference audit evidence for compliance packages.
 
 ### Gantt Snapshot (relative weeks, adjust durations per sprint)
+
 ```mermaid
 gantt
     title Validation System Parallel Execution (relative weeks)
@@ -115,4 +121,5 @@ gantt
 ```
 
 ### Scheduling Worksheet Template
+
 Use `meta/templates/milestone-playbook.md` to capture Validation System milestones (e.g., policy engine rollout). File completed playbooks under `meta/workflows/` and mirror their artifact paths in `reports/validation/`. Update this tracker after each milestone review with status notes and outstanding follow-ups.

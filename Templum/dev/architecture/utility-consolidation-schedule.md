@@ -43,10 +43,11 @@ dependencies: ['utility-consolidation-playbook', 'utility-consolidation-onboardi
 | 5A    | [x]                 | [x]                 | [x]                 |
 | 5B    | [x]                 | [x]                 | [x]                 |
 | 6     | [x]a [x]b [x]c [x]d | [x]a [x]b [x]c [x]d | [x]a [x]b [x]c [x]d |
-| 7     | [ ]                 | [ ]                 | [ ]                 |
+| 7     | [x]                 | [ ]                 | [x]                 |
 | C     | [ ]                 | [ ]                 | [ ]                 |
 
 - 2025-10-10: Stage 5 alignment completed for Cohort B — see `Templum/dev/architecture/display-stack-alignment.md` for the shared spec, approvals, and Stage 6 gating checklist.
+- 2025-10-06: Pattern 7 Stage 7 validation wrapped; formatter, CLI/menu, and MCP suites pass in CI mode while the legacy Phase 6 health harness still awaits replacement of its integration-validation dependency.
 
 ## Purpose
 

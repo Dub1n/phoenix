@@ -357,3 +357,12 @@ If a Stage 3 phase exposes new helper or dependency work, add a fresh Stage 2.5 
   - `cd Templum && node scripts/run-with-timeout.mjs --timeout 180000 -- npm run phase6-health` *(fails during `tsc` step due to pre-existing CLI/navigation typing gaps; see Follow-ups).* 
 - **Files touched**: `Templum/src/mcp-channel/src/visual-feedback-system.ts`, `Templum/src/tests/mcp/visual-feedback-system.formatter.test.ts`, `Templum/dev/architecture/utility-consolidation-plans/pattern-7.md`, `Templum/dev/architecture/safe-consolidation-candidates.md`.
 - **Follow-ups / Risks**: Phase 6 validation remains blocked by TypeScript build errors unrelated to MCP (e.g., `src/cli-entry.ts`, `src/interfaces/cli-adapter-abstracted.ts`, `src/interfaces/terminal-ui-components.ts` using literal `60` separators and missing Stage 6 APIs). Escalate to display stack owners before Stage 7 close-out.
+
+### 2025-10-06 — Terminal Formatter Utility (Pattern 7) — Stage 7 Validation & Reporting
+
+- **Agent**: Codex
+- **Stage**: 7
+- **Summary**: Closed out the formatter consolidation by re-running the Stage 6 gating suites in CI mode, confirming CLI/menu/MCP integrations remain green, and documenting the known Phase 6 health harness gap ahead of its deprecation.
+- **Commands / Evidence**: `cd Templum && npm run test:ci -- --runTestsByPath src/tests/utils/terminal-formatter.test.ts src/interfaces/__tests__/adaptive-cli-integration.test.ts tests/interfaces/interface-adapter-integration.test.ts src/tests/mcp/visual-feedback-system.formatter.test.ts` (pass); `cd Templum && npm run phase6-health` (fails: `dist/src/scripts/run-phase6-integration-validation.js` cannot require `../tests/integration-validation-framework`, expected while the harness is being retired).
+- **Files touched**: `Templum/dev/architecture/utility-consolidation-plans/pattern-7.md`, `Templum/dev/architecture/safe-consolidation-candidates.md`, `Templum/dev/architecture/utility-consolidation-schedule.md`, `Templum/docs/current/progress.md`.
+- **Follow-ups / Risks**: Coordinate with Phase 6 owners on the forthcoming harness replacement so health runs succeed without the legacy integration framework; no outstanding formatter migrations.

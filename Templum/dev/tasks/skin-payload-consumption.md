@@ -16,7 +16,7 @@
 - [ ] Add failing adapter/engine integration coverage first: extend `tests/interfaces/interface-adapter-integration.test.ts` (or introduce `tests/rendering/skin-payload-consumption.integration.test.ts`) to assert CLI and VSCode adapters render menus, commands, and layouts straight from a supplied `UniversalSkinDefinition` without falling back to legacy defaults, asserting menu tree, commands, and theme metadata originate from the payload.
 - [ ] Augment `tests/templum/universal-skin-system.test.ts` with cases that exercise `UniversalSkinEngine.renderForInterface` + `UniversalSkinRenderer.renderMenu`, proving the pipeline consumes `skin.menus`, `skin.views`, and `skin.commands` to generate interface-specific outputs and raises when definitions are missing.
 - [ ] Wire `src/core/templum-core.ts` and `src/core/adapter-registry.ts` so adapters receive render artifacts from `UniversalSkinEngine`/`UniversalSkinRenderer` rather than bespoke scaffolds; ensure dependency injection passes the composed renderer down to CLI/VSCode adapters.
-- [ ] Refactor `src/interfaces/cli-adapter-abstracted.ts`, `src/interfaces/vscode-adapter.ts`, and `src/interfaces/universal-interaction-manager.ts` to delete hardcoded menu/command fallbacks, consuming the engine’s render output and persisting state through `UniversalMenuRegistry` and `SessionContextFoundation` instead.
+- [ ] Refactor `src/interfaces/cli-adapter-abstracted.ts` (`CLIInterfaceAdapter.applySkin`, `CLIInterfaceAdapter.generateFallbackCLIOutput`), `src/interfaces/vscode-adapter.ts` (`VSCodeInterfaceAdapter.applySkin`), and `src/interfaces/universal-interaction-manager.ts` to delete hardcoded menu/command fallbacks, consuming the engine’s render output and persisting state through `UniversalMenuRegistry` and `SessionContextFoundation` instead.
 - [ ] Teach `src/rendering/universal-skin-renderer.ts` and `src/rendering/universal-layout-engine.ts` to hydrate interface-specific components (TreeViews, panels, menu flows) straight from the payload, including caching/layout hints, and expose structured results consumed by adapters.
 - [ ] Update documentation (`docs/current/architecture-spec.md` Section 1 & 3) to describe the skin-driven rendering flow and note the removal of hardcoded UI scaffolding; backfill `docs/current/progress.md` once validations pass.
 
@@ -36,3 +36,10 @@
 - Architecture spec: `docs/current/architecture-spec.md` → Sections 1 (Current State Snapshot) & 3 (Ideal Requirements vs. Status).
 - Code: `src/rendering/universal-skin-renderer.ts`, `src/rendering/universal-layout-engine.ts`, `src/core/templum-core.ts`, `src/core/adapter-registry.ts`, `src/interfaces/cli-adapter-abstracted.ts`, `src/interfaces/vscode-adapter.ts`, `src/interfaces/universal-interaction-manager.ts`, `src/menus/universal-menu-registry.ts`.
 - Tests: `tests/interfaces/interface-adapter-integration.test.ts`, `tests/templum/universal-skin-system.test.ts`.
+
+## Current Assessment (2025-10-05)
+
+- Implementation: Rendering/layout modules carry over from earlier work, but CLI and VSCode adapters still fall back to `generateFallbackCLIOutput`; no production code consumes `UniversalSkinDefinition` menus end-to-end.
+- Tests: `scripts/run-with-timeout.mjs --timeout 180000 -- npm test -- tests/interfaces/interface-adapter-integration.test.ts` passes yet only asserts legacy behaviour (and leaves open handles); there are no dedicated skin-consumption integration tests.
+- Coverage: Global coverage attempt fails with the `babel-plugin-istanbul` TypeError, so there is no coverage signal for these modules.
+- Next actions: implement metadata-driven adapters, add failing tests for missing payload fields, and document the handoff once rendering replaces fallback logic.

@@ -29,6 +29,8 @@
 - Validation: `npm run validate:skin-assets -- --skin examples/minimal-backend/skin-definition.json` (or the backend-provided manifest) completes with all assets/locales/command bindings reported healthy.
 - Documentation: Update `docs/current/progress.md`, `docs/current/architecture-spec.md`, and `docs/current/1.2-Backend-Integration-Guide.md` with the asset validation flow and troubleshooting guidance.
 
+> Scope: **Post-MVP** — ship MVP with schema validation and command routing; add asset/localisation enforcement after baseline rendering is solid.
+
 ## References
 
 - docs/current/progress.md:21
@@ -37,3 +39,9 @@
 - src/skin/skin-version-manager.ts:1143
 - src/backend/dynamic-command-router.ts:72
 - src/tests/backend/comprehensive-backend-validation.test.ts:524
+
+## Current Assessment (2025-10-05)
+
+- Implementation: No localisation bundle or asset metadata augmentations exist in `src/types/universal-skin-definition.ts`; `SkinVersionManager` does not host an asset validator.
+- Tests: The referenced backend validation tests do not assert asset existence or localisation coverage.
+- Actions needed: extend schema/types with asset metadata, implement the validator, add unit tests, and expose the CLI entry point outlined under Definition of Done.

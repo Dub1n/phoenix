@@ -54,3 +54,11 @@ Tags: `#infra`
 - [ ] Progress tracker updated
 - [ ] Task log updated
 - [ ] Checklist completed
+
+## Current Assessment (2025-10-05)
+
+- Implementation: `scripts/run-phase6-full.js` and the mock contract suites are present and working; defaults prefer mocks with an opt-in flag for real services, matching the task intent.
+- Tests: `npm run test -- tests/validation/mock-backend-contracts.test.ts` passes and validates the zod-backed contracts; broader Phase 6 CLI runs were not attempted in this pass.
+- Coverage: Global coverage command (`node scripts/run-with-timeout.mjs -- npm run test:coverage -- --passWithNoTests`) still fails with the `babel-plugin-istanbul` TypeError, so no coverage delta was captured for the harness code.
+- Scope: **Post-MVP** — the current harness suffices for MVP; automating dual runs and documenting the workflow can follow once core flows are stable.
+- Outstanding work: document the command matrix (README/testing guide), hook the dual-run script into CI, and close the task checklist items before considering this requirement complete.

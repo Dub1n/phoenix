@@ -193,6 +193,7 @@
   - If CLI integration snapshots drift, refresh Stage 4b fixtures before proceeding.
 
 #### 2025-10-02 Execution Notes
+
 - Updated `src/interfaces/cli-adapter-abstracted.ts` to inject `TerminalFormatter` dependencies and remove direct `chalk` usage; CLI entrypoint (`src/cli-entry.ts`) now routes console output through formatter helpers.
 - Added `formatter.text` helpers in `src/utils/terminal-formatter.ts` with accompanying tests to support muted/plain output scenarios.
 - Test coverage: `CI=1 npm run test -- --runTestsByPath src/tests/utils/terminal-formatter.test.ts` (pass with existing globalTeardown warnings) and `CI=1 npm run test -- --runTestsByPath src/interfaces/__tests__/adaptive-cli-integration.test.ts` (latest evidence `tmp/stage6/pattern-6/20251002T231009Z-adaptive-cli-integration.test.log`, green after DisplayUtils assertion adjustments).
@@ -211,6 +212,7 @@
   - Coordinate with Display Utils migrations to avoid conflicting separator logic.
 
 #### 2025-10-06 Execution Notes
+
 - Rewired `src/interfaces/terminal-ui-components.ts` to rely on the shared formatter/theme module (`terminal-ui-theme.ts`) and removed lingering binder helpers; confirmed progress bars and prompts respect formatter palette fallbacks.
 - Injected formatter instances into interactive menu renderer and universal layout engine consumers so menu choices, help panes, and rendering hints now source palette/status helpers instead of `chalk`.
 - Test evidence: `npm run test -- --runTestsByPath src/tests/rendering/terminal-ui-components.formatter.test.ts` and `npm run test -- --runTestsByPath src/tests/utils/display-utils.test.ts` (2025-10-06T21:17:00Z) — both green.
@@ -229,6 +231,7 @@
   - Hold lane if Theme Utils adjustments land mid-migration; revisit Stage 3 to rescope lanes.
 
 - #### 2025-10-02 Execution Notes
+
 - Replaced direct `chalk` usage across `src/interfaces/navigation/border-renderer.ts`, `width-calculator.ts`, and `breadcrumb-manager.ts` with formatter-driven theming and capability injection. Added formatter-aware theme scaffolding, refactored capability detection to reuse `TerminalFormatter`, and wired Display/Window spacing constants to keep migration aligned with Stage 5 decisions.
 - Updated navigation renderer/breadcrumb output to source separators from `DisplayUtils.separator`, ensuring Stage 6 formatter spacing constants and ASCII fallbacks stay consistent with shared DI seams.
 - Evidence: `npm run test:ci -- --runTestsByPath src/interfaces/navigation/__tests__/navigation-system.test.ts` (PASS, leak guard clean) and `npm run test:ci -- --runTestsByPath tests/interfaces/interface-adapter-integration.test.ts` (PASS, integration suite green) executed 2025-10-02T22:55Z.
@@ -247,6 +250,7 @@
   - Phase 6 scripts currently fail in shared CLI/navigation code (TypeScript compile errors unrelated to formatter lane); see execution notes for captured error details.
 
 - #### 2025-10-03 Execution Notes
+
 - Replaced the MCP visual feedback system’s direct `chalk` usage with dependency-injected `TerminalFormatter` helpers. Added lane-specific theme overrides (`VISUAL_FEEDBACK_THEME`), formatter-aware muted/accent/highlight helpers, and capability clamps (`clampToTerminalWidth`) so streaming updates respect terminal width + ASCII fallbacks.
 - Strengthened progress/health/log rendering to reuse formatter APIs, introduced ANSI stripping safeguards for monochrome environments, and ensured injected capabilities honour `enableColors` toggles without mutating globals. Documented reusable helpers (`formatStatusLabel`, `mapCircuitBreakerState`, `buildPlainProgressLine`) inside the utility for future lanes.
 - Tests: formatter integration suite executed via timeout harness (`tmp/` logs tracked by run-with-timeout stdout) resulting in full pass. Phase 6 scripts invoked through timeout harness but blocked by pre-existing `tsc` failures (`cli-entry.ts` literal width typing, missing `InteractiveMenuRenderer` enhancements, `terminal-ui-components.ts` re-export guard, and absent `interfaces/navigation/exit-handler.ts`). Logged failures and left phase commands pending until owning teams resolve baseline build issues.
@@ -271,12 +275,17 @@
 
 - Note cross-utility dependencies (Display/Window/Theme) and escalate via Stage 3 if needed.
 
-## Stage 6 Close-Out
+## Stage 7 Close-Out
 
-- **Date**: {{YYYY-MM-DD'T'HH:MM:SS'Z'}}
+- **Date**: 2025-10-06T10:22:00Z
 - Final validation summary:
-  - Tests/scripts executed, coverage insights
+  - Targeted formatter suites remained green: `npm run test:ci -- --runTestsByPath src/tests/utils/terminal-formatter.test.ts`, `npm run test -- --runTestsByPath src/tests/rendering/terminal-ui-components.formatter.test.ts --runInBand --detectOpenHandles --forceExit`, `npm run test -- --runTestsByPath src/tests/mcp/visual-feedback-system.formatter.test.ts --runInBand --detectOpenHandles --forceExit`.
+  - Downstream integration harnesses passed: `npm run test -- --runTestsByPath src/interfaces/__tests__/adaptive-cli-integration.test.ts --runInBand --detectOpenHandles --forceExit`, `npm run test -- --runTestsByPath src/interfaces/navigation/__tests__/navigation-system.test.ts --runInBand --detectOpenHandles --forceExit`, `npm run test -- --runTestsByPath tests/interfaces/interface-adapter-integration.test.ts --runInBand --detectOpenHandles --forceExit` (console warnings captured in logs but expectations held).
+  - Phase 6 health/validation remain blocked: both `npm run phase6-health` and `npm run phase6-validation` now fail post-build because the compiled script cannot resolve `../tests/integration-validation-framework` from `dist/src/scripts/run-phase6-integration-validation.js`.
 - Remaining follow-ups or TODOs:
-  - ...
+  - Coordinate with Phase 6 harness owners to restore the missing `dist/tests/integration-validation-framework` bundle so health/validation commands can complete; share log paths.
+  - Audit remaining direct `chalk` usages surfaced by `rg -l "chalk" src` (e.g., `src/rendering/content-layout-system.ts`, `src/interfaces/terminal-compatibility-detector.ts`, `src/interfaces/universal-interaction-manager.ts`) and confirm whether they belong to the Terminal Formatter backlog or another consolidation lane.
+  - Continue tracking lingering Jest `globalTeardown` socket warnings raised during `adaptive-cli-integration` to avoid masking resource leaks.
 - Evidence links:
-  - Activity log entry, PR, screenshots, etc.
+  - Validation logs archived under `tmp/stage7/pattern-6/20251006T102023Z-terminal-formatter-unit.log`, `...102029Z-terminal-ui-components.log`, `...102034Z-mcp-visual-feedback.log`, `...102040Z-adaptive-cli-integration.log`, `...102045Z-navigation-system.log`, `...102050Z-interface-adapter-integration.log`, `...102113Z-phase6-health.log`, `...102119Z-phase6-validation.log`.
+  - Stage 7 activity log entry dated 2025-10-06.

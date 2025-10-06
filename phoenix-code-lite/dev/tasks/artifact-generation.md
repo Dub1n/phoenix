@@ -29,3 +29,9 @@
 - Architecture spec: `phoenix-code-lite/docs/current/architecture-spec.md:11`, `phoenix-code-lite/docs/current/architecture-spec.md:29`, `phoenix-code-lite/docs/current/architecture-spec.md:43`.
 - Traceability groundwork: `phoenix-code-lite/dev/tasks/design-traceability-model.md:1`.
 - Data sources: `phoenix-code-lite/src/preparation/regulatory-document-processor.ts:1`, `phoenix-code-lite/src/preparation/compliance-criteria-validator.ts:1`, `phoenix-code-lite/src/preparation/qms-performance-target-validator.ts:1`, `phoenix-code-lite/src/config/document-manager.ts:1`.
+
+## Current Status (2025-02-15)
+- Implementation: no `src/qms/artifacts/` modules, shared types, or CLI command exist; document manager remains generic and unaware of QMS artefact destinations.
+- Tests executed: none — `tests/qms/artifact-generation.test.ts` is missing and no suites assert Markdown or filesystem outputs.
+- Coverage snapshot: not applicable due to absent generator code.
+- Gaps blocking completion: need canonical traceability data, generator implementation, publisher wiring, and documentation of the artefact pipeline before progress can move past planning.

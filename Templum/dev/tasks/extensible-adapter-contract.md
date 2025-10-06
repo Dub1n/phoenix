@@ -30,9 +30,17 @@
 - Validation/commands: `npm run lint`, `npm run check:types`, `npm run phase6-services` if the MCP bridge touches backend orchestration.
 - Documentation to update: `docs/current/progress.md`, `docs/current/architecture-spec.md` (Interface Delivery), `docs/current/1.2-Backend-Integration-Guide.md` if MCP onboarding requires runtime steps.
 
+> Scope: **Post-MVP** — focus MVP on CLI and VSCode adapters; broader adapter contract extensions can follow once the core interfaces are stable.
+
 ## References
 
 - Progress entry: `docs/current/progress.md:27`
 - Architecture spec: `docs/current/architecture-spec.md:31`
 - Code: `src/core/templum-core.ts`, `src/interfaces/interface-adapter-registry.ts`, `src/interfaces/command-adapter-abstracted.ts`, `src/interfaces/templum-orchestrator-interface.ts`, `src/mcp-channel/src/enhanced-mcp-integration.ts`
 - Tests: `tests/interfaces/interface-adapter-integration.test.ts`
+
+## Current Assessment (2025-10-05)
+
+- Implementation: MCP compatibility scaffolding exists for CLI preservation, but `TemplumAdapterRegistry` only registers CLI/VSCode/command adapters and exposes no mechanism to add a third runtime interface.
+- Tests: No adapter contract suites exercise alternate interface types; interface integration tests continue to focus on CLI and VSCode.
+- Follow-up: implement registry support for additional adapters (e.g. MCP), add contract tests, and reflect the change in orchestrator/session wiring before marking this task progressed.

@@ -31,3 +31,9 @@
 - Progress entry: `phoenix-code-lite/docs/current/progress.md:16`.
 - Architecture spec: `phoenix-code-lite/docs/current/architecture-spec.md:26`, `phoenix-code-lite/docs/current/architecture-spec.md:33`.
 - Target architecture: `meta/ARCHITECTURE.md:100`.
+
+## Current Status (2025-02-15)
+- Implementation: release template registry, config schema extensions, and CLI flags have not been introduced; configuration templates remain limited to starter/enterprise/performance profiles with no release dimension.
+- Tests executed: none — template variant suites referenced in the plan do not exist.
+- Coverage snapshot: not applicable (release template code missing).
+- Gaps blocking completion: awaiting validation integration taxonomy, lifecycle orchestrator hooks, registry implementation, and CLI/config updates.

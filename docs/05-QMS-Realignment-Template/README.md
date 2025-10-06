@@ -5,10 +5,10 @@ This folder gathers the working material for realigning the in-flight projects (
 ## How to Use This Folder
 
 1. Start with `00-Problem-Statement.md` to capture the business/regulatory drivers and frame the core problem the QMS must solve.
-2. Translate the problem into measurable targets in `05-Aims-and-Objectives.md`.
-3. Map each aim to the ideal-state capabilities of the active projects in `10-Solution-Alignment.md`.
-4. Build end-to-end traceability inside `15-Traceability-Matrix.md` once the first three files have initial content.
-5. Keep the current maturity snapshot up to date in `20-Progress-and-Gaps.md` after each review or delivery milestone.
+2. Translate the problem into measurable targets in `01-Aims-and-Objectives.md`.
+3. Map each aim to the ideal-state capabilities of the active projects in `02-Solution-Alignment.md`.
+4. Build end-to-end traceability inside `03-Traceability-Matrix.md` once the first three files have initial content.
+5. Keep the current maturity snapshot up to date in `04-Progress-and-Gaps.md` after each review or delivery milestone.
 
 Templates under `templates/` provide prompts and skeleton tables for each step. Copy or reference them whenever you iterate on the documents above.
 

@@ -17,7 +17,7 @@ Use this worksheet to articulate why the QMS realignment effort exists and what 
 ## 3. Regulatory & Standards Drivers
 
 - Cite the non-negotiable standards: EN 62304-2006+A1:2015 as baseline, Agile integration via AAMI TIR45, ISO 13485 if applicable.
-- State the IEC 62304 safety classification once confirmed; if unknown, leave a placeholder and flag it in `20-Progress-and-Gaps.md`.
+- State the IEC 62304 safety classification once confirmed; if unknown, leave a placeholder and flag it in `04-Progress-and-Gaps.md`.
 - Mention that cybersecurity obligations are pending scoping and patient-data handling is intentionally deferred for now.
 
 ## 4. In-Flight Project Landscape
@@ -40,7 +40,7 @@ Use this worksheet to articulate why the QMS realignment effort exists and what 
 ## 7. Desired Outcomes & Signals of Success
 
 - List the measurable outcomes that prove the problem is solved (e.g. automated traceability from requirement to validation, audit-ready evidence generated from CI).
-- These items will later become aims/objectives; keep them broad here and quantify detail in `05-Aims-and-Objectives.md`.
+- These items will later become aims/objectives; keep them broad here and quantify detail in `01-Aims-and-Objectives.md`.
 
 ## 8. Open Questions / Information Gaps
 

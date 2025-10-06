@@ -216,7 +216,7 @@
   - Extended `src/tests/mcp/visual-feedback-system.formatter.test.ts` to cover window renderer fallbacks, formatter delegation, and cache-safe progress output under constrained widths before applying implementation changes.
 - Tests/commands:
   - `node scripts/run-with-timeout.mjs --timeout 120000 -- node scripts/run-jest-ci.mjs --runTestsByPath src/tests/mcp/visual-feedback-system.formatter.test.ts`
-  - `node scripts/run-with-timeout.mjs --timeout 180000 -- npm run phase6-health` *(fails: TypeScript build stops on pre-existing repo errors — see Issues Encountered for details)*
+  - `node scripts/run-with-timeout.mjs --timeout 180000 -- npm run phase6-health` _(fails: TypeScript build stops on pre-existing repo errors — see Issues Encountered for details)_
 
 ### Validation Artefacts & Commands (summary)
 
@@ -238,10 +238,11 @@
 
 ## Stage 7 Close-Out
 
-- **Date**: {{YYYY-MM-DD'T'HH:MM:SS'Z'}}
+- **Date**: 2025-10-06T10:20:10Z
 - Final validation summary:
-  - Tests/scripts executed, coverage insights
+  - `npm run test:ci -- --runTestsByPath src/tests/utils/terminal-formatter.test.ts src/interfaces/__tests__/adaptive-cli-integration.test.ts tests/interfaces/interface-adapter-integration.test.ts src/tests/mcp/visual-feedback-system.formatter.test.ts` (PASS) — covers formatter helpers, CLI/menu adapters, and MCP observability surfaces.
+  - `npm run phase6-health` (fails: compiled bundle cannot load `../tests/integration-validation-framework`; known harness gap tracked for upcoming deprecation, no regression traced to Terminal Formatter changes).
 - Remaining follow-ups or TODOs:
-  - ...
+  - Monitor Phase 6 harness replacement so the health script no longer depends on the soon-to-be-removed integration framework stub; no open formatter migration items.
 - Evidence links:
-  - Activity log entry, PR, screenshots, etc.
+  - `Templum/dev/architecture/utility-consolidation-activity-log.md` — 2025-10-06 Stage 7 entry records commands, outcomes, and next steps.

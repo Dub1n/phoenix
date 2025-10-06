@@ -4,10 +4,10 @@ This document connects each aim/objective to the capabilities of the active proj
 
 ## Instructions
 
-1. Copy aims/objectives from `05-Aims-and-Objectives.md`.
+1. Copy aims/objectives from `01-Aims-and-Objectives.md`.
 2. For every objective, identify the project feature(s) that provide or will provide the required capability using `meta/ARCHITECTURE.md` target-state descriptions.
 3. Capture the integration strategy (what needs to be built or wired together) and the current maturity.
-4. Highlight gaps so they can feed `20-Progress-and-Gaps.md` and project backlogs.
+4. Highlight gaps so they can feed `04-Progress-and-Gaps.md` and project backlogs.
 
 ## Alignment Table
 

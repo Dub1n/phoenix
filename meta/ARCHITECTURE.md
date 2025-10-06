@@ -42,6 +42,14 @@
   - CLI/skin rendering layer mid-refactor; enterprise feature set (multi-interface adapters, resilience utilities) may be over-scoped for immediate deliverables.
   - Utilities consolidation and logging/error handling refactors planned but not executed.
   - [Pattern taxonomy reference](Templum/docs/current/pattern-taxonomy.md): Canonical category enum and maintenance process.
+- **MVP Focus (must-land before first release):** zero-knowledge discovery + multi-protocol registration, schema-backed skin validation, shared session/context, skin-driven rendering (including CLI generator & procedural TUI), manual overrides & lifecycle broadcasts, observability instrumentation with clean shutdown, Haruspex/PCL skin ingestion, and stable coverage/CI tooling.
+- **Post-MVP Opportunities (Deferred):**
+  - Universal Skin Engine convergence refactor.
+  - Asset/localisation validator suite.
+  - Adapter extensions beyond CLI/VSCode (e.g., MCP).
+  - Feature flag/audit hook frameworks.
+  - Mock/real dual-run automation polish (Phase 6 extras).
+  - Enterprise release packaging and documentation consolidation.
 - **Ideal Requirements (target architecture):**
   - **Universal Interface Core**
     - Maintains zero-knowledge backend registry; discovers services via auto-registration, filesystem watches, and explicit connect operations without prior schema coupling.

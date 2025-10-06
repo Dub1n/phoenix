@@ -31,3 +31,9 @@
 - Built-in skin definition stub: `phoenix-code-lite/src/cli/skin-menu-renderer.ts:287`.
 - Legacy menu rendering context: `phoenix-code-lite/src/cli/menu-system.ts:84`.
 - Configuration schema for UI settings: `phoenix-code-lite/src/config/settings.ts:39`.
+
+## Current Status (2025-02-15)
+- Implementation: no role metadata is captured in skins; `SessionContext` lacks role awareness and CLI commands cannot switch profiles, so menus remain global across all users.
+- Tests executed: none — role menu suites mentioned in the task are not present.
+- Coverage snapshot: not applicable (assembler and CLI role handling code absent).
+- Gaps blocking completion: requires exporter groundwork, role metadata schema, CLI session updates, and documentation of access control flows.

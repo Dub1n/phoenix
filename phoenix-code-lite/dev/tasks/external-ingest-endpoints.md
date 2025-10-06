@@ -32,3 +32,9 @@
 - Integration diagram context: `docs/current/index/ARCHITECTURE-DIAGRAM.md:528`
 - Command registry wiring: `src/commands/command-registration.ts:1`
 - CLI help surface: `src/cli/help-system.ts:1`
+
+## Current Status (2025-02-15)
+- Implementation: no ingestion contracts, services, or Fastify endpoints exist; CLI lacks ingest commands and there is no `dist/ingest/` output path.
+- Tests executed: none — API/CLI/unit suites cited in the plan have not been created.
+- Coverage snapshot: not applicable because ingest modules are absent.
+- Gaps blocking completion: need git/HTTP adapters, schema definitions, CLI wiring, fixtures, and documentation to unlock downstream sync work.

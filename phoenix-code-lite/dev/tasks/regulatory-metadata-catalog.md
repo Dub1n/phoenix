@@ -27,3 +27,9 @@
 - Progress entry: `docs/current/progress.md:9`
 - Architecture spec: `docs/current/architecture-spec.md:28`, `docs/current/architecture-spec.md:55`
 - Supporting code: `src/preparation/regulatory-document-processor.ts`, `src/utils/audit-logger.ts`
+
+## Current Status (2025-02-15)
+- Implementation: catalog module tree under `src/qms/regulatory/` has not been created; parsers still emit requirement arrays without ownership metadata, and no persistence or query surfaces exist.
+- Tests executed: none — the referenced `tests/qms/regulatory-metadata-catalog.test.ts` file is missing, and current Jest runs do not exercise catalog scenarios.
+- Coverage snapshot: not applicable because the catalog codebase is absent.
+- Gaps blocking completion: need canonical clause dataset, ownership metadata, persistence backing, and CLI exposure before downstream orchestration tasks can consume the catalog.

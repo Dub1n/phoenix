@@ -13,7 +13,7 @@
 
 ### Unblocked Actions
 
-- [ ] Standardise `.templum/services` manifest parsing in `src/backend/service-discovery.ts:340` and `src/backend/service-discovery.ts:639` by introducing a typed manifest schema that captures `protocol`, `healthCheck` (type + endpoint), `capabilities`, and `lastSeen`, then route `validateServiceHealth` through protocol-aware helpers (HTTP `http.get`, WebSocket ping via `ws`, IPC handshake via `ConnectionFactory.create`).
+- [ ] Standardise `.templum/services` manifest parsing in `src/backend/service-discovery.ts` (focus on `ServiceDiscovery.parseServiceDescriptor`, `RegistryBasedDiscoveryStrategy.discoverFromServicesDirectory`) by introducing a typed manifest schema that captures `protocol`, `healthCheck` (type + endpoint), `capabilities`, and `lastSeen`, then route `ServiceDiscovery.validateServiceHealth` through protocol-aware helpers (HTTP `http.get`, WebSocket ping via `ws`, IPC handshake via `ConnectionFactory.create`).
 - [ ] Update auto-registration producers (`src/core/templum-core.ts:575`, `src/mcp-channel/src/service-registration.ts:67`, `examples/minimal-backend/server.js:240`) to emit the enriched manifest fields for IPC, MCP/TCP, and HTTP services so discovery receives accurate health metadata instead of HTTP-only defaults.
 - [ ] Extend `src/tests/backend/service-discovery.test.ts:45` with fixtures that drop HTTP, WebSocket, and IPC manifests into a temporary services directory, then assert `serviceDiscovered` events fire and `getBackendConfigs()` retains healthy entries while rejecting malformed or unhealthy manifests per protocol.
 - [ ] Add integration assertions in `src/tests/backend/backend-dependency-integration.test.ts:20` and `src/tests/backend/generic-backend-integration.test.ts:520` that seed multi-protocol manifests, stub protocol-specific health probes, and confirm `ServiceDiscoveryValidator.validateAllServices()` plus `TemplumBackendServiceRouter.discoverAndConnect()` report the services as healthy and connected.
@@ -34,11 +34,19 @@
 - docs/current/progress.md:13
 - docs/current/architecture-spec.md:32
 - docs/current/1.2-Backend-Integration-Guide.md:204
-- src/backend/service-discovery.ts:340
-- src/backend/service-discovery.ts:639
+- src/backend/service-discovery.ts (`ServiceDiscovery.discoverServices`, `ServiceDiscovery.parseServiceDescriptor`, `EndpointScanningDiscoveryStrategy.scanHttpEndpoint`/`scanWebSocketEndpoint`/`scanIpcEndpoint`)
 - src/core/templum-core.ts:575
 - src/mcp-channel/src/service-registration.ts:67
 - src/tests/backend/service-discovery.test.ts:45
 - src/tests/backend/backend-dependency-integration.test.ts:20
 - src/tests/backend/generic-backend-integration.test.ts:520
 - examples/minimal-backend/server.js:240
+
+## Current Assessment (2025-10-05)
+
+- Implementation: Protocol-specific scan helpers exist but `validateServiceHealth` only supports HTTP, and registry producers still emit HTTP-shaped manifests; connection retries in `TemplumBackendServiceRouter.discoverAndConnect()` fail when discovery yields `undefined` under test.
+- Tests:
+  - `npm run test -- src/tests/backend/service-discovery.test.ts` (pass) covers individual strategies but not combined protocol health paths.
+  - `npm test -- src/tests/backend/generic-backend-integration.test.ts` (fail) throws `TypeError: Cannot read properties of undefined (reading 'length')`, so no runtime validation occurs.
+- Coverage: `node scripts/run-with-timeout.mjs -- npm run test:coverage -- --passWithNoTests` aborted with the `babel-plugin-istanbul` TypeError, leaving no coverage data.
+- Next steps: stabilise discovery so integration tests can mock protocol manifests, implement WebSocket/IPC health probes, and document runtime verification per Definition of Done.

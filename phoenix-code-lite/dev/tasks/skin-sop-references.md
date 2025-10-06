@@ -27,3 +27,9 @@
 - Progress entry: `docs/current/progress.md:21`
 - Architecture spec: `docs/current/architecture-spec.md:30`, `docs/current/architecture-spec.md:34`
 - QMS knowledge base: `../docs/03-PCL-QMS/03-QMS-via-PCL.md:41`, `../docs/03-PCL-QMS/05-QMS-Infrastructure-Technical-Notes.md:30`, `../docs/03-PCL-QMS/07-QMS-Knowledge-Transfer-Guide.md:95`
+
+## Current Status (2025-02-15)
+- Implementation: no SOP index or decorator modules exist; skin definitions remain static and carry no contextual reference metadata, so CLI output cannot surface SOP links.
+- Tests executed: none — QMS SOP reference tests are not present in the codebase.
+- Coverage snapshot: not applicable because SOP integration code is missing.
+- Gaps blocking completion: dependent on skin exporter foundation, SOP metadata ingestion, decorator wiring, and documentation updates.

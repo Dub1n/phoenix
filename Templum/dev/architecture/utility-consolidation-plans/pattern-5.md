@@ -261,5 +261,3 @@
 - Evidence links:
   - Activity log entry `Templum/dev/architecture/utility-consolidation-activity-log.md` (2025-10-03 Stage 7 — Display Utils).
   - Validation artefacts under `tmp/stage7/pattern-5/` and `validation-reports/phase6-validation-2025-10-03T19-37-52-796Z.*`.
-
-_Copy this template to `pattern-{{Pattern}}.md` and fill sections as the work progresses._
