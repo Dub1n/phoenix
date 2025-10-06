@@ -20,6 +20,7 @@ import {
 } from '../types/templum-types';
 import { ITemplumOrchestrator, IInterfaceAdapter } from './templum-orchestrator-interface';
 import { TypeGuards } from '../utils/type-guards';
+import { createLogger, LogLevel } from '../utils/logger';
 
 /**
  * Command Input Types (Interface-specific)
@@ -67,6 +68,7 @@ export class CommandInterfaceAdapter extends EventEmitter implements IInterfaceA
   private isProcessingQueue: boolean = false;
   private executionHistory: CommandExecutionResult[] = [];
   private lastActivityTimestamp = Date.now();
+  private readonly logger = createLogger('command-interface-adapter', { level: LogLevel.ERROR });
 
   constructor(config?: Partial<CommandAdapterConfig>) {
     super();
@@ -122,7 +124,7 @@ export class CommandInterfaceAdapter extends EventEmitter implements IInterfaceA
       
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error('CommandInterfaceAdapter: Skin application failed:', errorMessage);
+      this.logger.error('CommandInterfaceAdapter: Skin application failed', undefined, { errorMessage });
       
       this.emit('error', {
         timestamp: Date.now(),
@@ -155,7 +157,7 @@ export class CommandInterfaceAdapter extends EventEmitter implements IInterfaceA
       
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error('CommandInterfaceAdapter: State sync failed:', errorMessage);
+      this.logger.warn('CommandInterfaceAdapter: State sync failed', { errorMessage });
       
       this.emit('error', {
         timestamp: Date.now(),
@@ -249,7 +251,7 @@ export class CommandInterfaceAdapter extends EventEmitter implements IInterfaceA
       const errorMessage = isTemplumError(error) ? error.message : error instanceof Error ? error.message : 'Unknown error';
       const executionTime = Date.now() - startTime;
       
-      console.error('CommandInterfaceAdapter: Command execution failed:', errorMessage);
+      this.logger.error('CommandInterfaceAdapter: Command execution failed', undefined, { errorMessage });
       this.lastActivityTimestamp = Date.now();
       
       const executionResult: CommandExecutionResult = {

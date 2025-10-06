@@ -13,7 +13,7 @@
 
 import { EventEmitter } from 'events';
 import { createInterface, Interface } from 'readline';
-import chalk from 'chalk';
+import { createFormatter, TerminalFormatter } from '../utils/terminal-formatter';
 import { UniversalCommandRegistry } from '../commands/universal-command-registry';
 import { UniversalMenuRegistry } from '../menus/universal-menu-registry';
 import { SessionContextFoundation, SessionContext } from '../session/session-context-foundation';
@@ -25,6 +25,10 @@ export interface UniversalInteractionConfig extends InteractionModeConfig {
   crossInterfaceSync: boolean;
   sessionIntegration: boolean;
   inputValidation: InputValidationConfig;
+}
+
+export interface UniversalInteractionManagerDependencies {
+  formatter?: TerminalFormatter;
 }
 
 export interface InteractionModeConfig {
@@ -137,15 +141,18 @@ export class UniversalInteractionManager extends EventEmitter {
   private inputHistory: Map<InterfaceType, string[]> = new Map();
   private activeInterface: InterfaceType = 'cli';
   private maxHistorySize = 50;
+  private readonly formatter: TerminalFormatter;
 
   constructor(
     commandRegistry: UniversalCommandRegistry,
     menuRegistry: UniversalMenuRegistry,
     sessionContext: SessionContextFoundation,
     skinRenderer: UniversalSkinRenderer,
-    config?: Partial<UniversalInteractionConfig>
+    config?: Partial<UniversalInteractionConfig>,
+    dependencies: UniversalInteractionManagerDependencies = {}
   ) {
     super();
+    this.formatter = dependencies.formatter ?? createFormatter();
     this.commandRegistry = commandRegistry;
     this.menuRegistry = menuRegistry;
     this.sessionContext = sessionContext;
@@ -608,7 +615,7 @@ export class UniversalInteractionManager extends EventEmitter {
       };
     }
     
-    console.log(chalk.red(`Invalid option: ${input}`));
+    console.log(this.formatter.status.error(`Invalid option: ${input}`));
     return await this.handleCLIMenuInput(options, session);
   }
 
@@ -645,7 +652,7 @@ export class UniversalInteractionManager extends EventEmitter {
     _commands: UniversalCommandInfo[],
     _session: SessionContext | null
   ): Promise<UniversalInputResult> {
-    process.stdout.write(chalk.gray(this.config.commandConfig.promptSymbol));
+    process.stdout.write(this.formatter.text.muted(this.config.commandConfig.promptSymbol));
     const input = await this.getInput();
     
     return await this.executeUniversalCommand(input, {}, 'cli');
@@ -930,7 +937,7 @@ export class UniversalInteractionManager extends EventEmitter {
    */
   switchMode(): 'menu' | 'command' {
     this.config.currentMode = this.config.currentMode === 'menu' ? 'command' : 'menu';
-    console.log(chalk.green(`\n═ Switched to ${this.config.currentMode.toUpperCase()} mode`));
+    console.log(this.formatter.status.success(`\n═ Switched to ${this.config.currentMode.toUpperCase()} mode`));
     this.emit('modeChanged', this.config.currentMode);
     return this.config.currentMode;
   }

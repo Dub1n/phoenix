@@ -6,11 +6,11 @@ Tags: `#infra`
 
 ## Checklist
 
-- [ ] Restore the compiled Phase 6 harness bundle so `dist/src/scripts/run-phase6-integration-validation.js` resolves `../tests/integration-validation-framework` (adjust build includes or rewrite the resolver to point at the emitted module).
-- [ ] Re-run `npm run phase6-health` / `npm run phase6-validation` and capture new evidence logs once the harness loads without runtime errors.
-- [ ] Finish migrating residual CLI/window helpers (`src/rendering/content-layout-system.ts`, `src/interfaces/terminal-compatibility-detector.ts`, `src/interfaces/universal-interaction-manager.ts`) to `TerminalFormatter` semantics and delete remaining direct `chalk` imports.
-- [ ] Eliminate adaptive CLI integration teardown warnings by hardening listener cleanup or logging filters so tests exit cleanly without globalTeardown noise.
-- [ ] Update pattern/docs trackers (`utility-consolidation-plans/pattern-6.md`, `utility-consolidation-activity-log.md`, `safe-consolidation-candidates.md`, `docs/current/progress.md`) with the final validation evidence.
+- [x] Restore the compiled Phase 6 harness bundle so `dist/src/scripts/run-phase6-integration-validation.js` resolves `../tests/integration-validation-framework` (adjust build includes or rewrite the resolver to point at the emitted module).
+- [x] Re-run `npm run phase6-health` / `npm run phase6-validation` and capture new evidence logs once the harness loads without runtime errors.
+- [x] Finish migrating residual CLI/window helpers (`src/rendering/content-layout-system.ts`, `src/interfaces/terminal-compatibility-detector.ts`, `src/interfaces/universal-interaction-manager.ts`) to `TerminalFormatter` semantics and delete remaining direct `chalk` imports.
+- [x] Eliminate adaptive CLI integration teardown warnings by hardening listener cleanup or logging filters so tests exit cleanly without globalTeardown noise.
+- [x] Update pattern/docs trackers (`utility-consolidation-plans/pattern-6.md`, `utility-consolidation-activity-log.md`, `safe-consolidation-candidates.md`, `docs/current/progress.md`) with the final validation evidence.
 - [ ] Commit with message `templum: lock in terminal formatter validation` after tests.
 
 ## References
@@ -27,8 +27,8 @@ Tags: `#infra`
 
 ## Checklist (Copy into PR or issue if needed)
 
-- [ ] Code/tests updated
-- [ ] Docs updated
-- [ ] Progress tracker updated
-- [ ] Task log updated
-- [ ] Checklist completed
+- [x] Code/tests updated
+- [x] Docs updated
+- [x] Progress tracker updated
+- [x] Task log updated
+- [x] Checklist completed

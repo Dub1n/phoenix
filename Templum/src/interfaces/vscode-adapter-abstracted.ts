@@ -20,6 +20,7 @@ import {
   ITemplumOrchestrator, 
   IInterfaceAdapter 
 } from './templum-orchestrator-interface';
+import { createLogger, LogLevel } from '../utils/logger';
 
 /**
  * Abstracted VSCode Interface Adapter
@@ -31,6 +32,7 @@ import {
 export class VSCodeInterfaceAdapter implements IInterfaceAdapter {
   private view?: vscode.WebviewView;
   private orchestrator!: ITemplumOrchestrator;
+  private readonly logger = createLogger('vscode-interface-adapter', { level: LogLevel.ERROR });
 
   constructor(
     private readonly context: vscode.ExtensionContext
@@ -93,7 +95,7 @@ export class VSCodeInterfaceAdapter implements IInterfaceAdapter {
         severity: 'high'
       };
       
-      console.error('VSCodeInterfaceAdapter: WebView initialization failed:', errorPayload.error);
+      this.logger.error('VSCodeInterfaceAdapter: WebView initialization failed', errorPayload.error);
     }
   }
 
@@ -102,7 +104,7 @@ export class VSCodeInterfaceAdapter implements IInterfaceAdapter {
    */
   async applySkin(skinDefinition: UniversalSkinDefinition): Promise<void> {
     if (!this.view || !this.orchestrator.isInitialized()) {
-      console.warn('VSCodeInterfaceAdapter: Cannot apply skin - adapter or orchestrator not ready');
+      this.logger.warn('VSCodeInterfaceAdapter: Cannot apply skin - adapter or orchestrator not ready');
       return;
     }
 
@@ -143,7 +145,7 @@ export class VSCodeInterfaceAdapter implements IInterfaceAdapter {
       
     } catch (error) {
       const errorMessage = isTemplumError(error) ? error.message : (error instanceof Error ? error.message : 'Unknown error');
-      console.error(`VSCodeInterfaceAdapter: Failed to apply skin: ${errorMessage}`);
+      this.logger.error('VSCodeInterfaceAdapter: Failed to apply skin', undefined, { errorMessage });
     }
   }
 
@@ -185,7 +187,7 @@ export class VSCodeInterfaceAdapter implements IInterfaceAdapter {
       console.log('VSCodeInterfaceAdapter: Disposed successfully');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error('VSCodeInterfaceAdapter disposal error:', errorMessage);
+      this.logger.error('VSCodeInterfaceAdapter disposal error', undefined, { errorMessage });
     }
   }
 
@@ -253,7 +255,7 @@ export class VSCodeInterfaceAdapter implements IInterfaceAdapter {
             break;
           }
         } catch (error) {
-          console.warn(`VSCodeInterfaceAdapter: Failed to load skin from ${backendId}:`, error);
+          this.logger.warn(`VSCodeInterfaceAdapter: Failed to load skin from ${backendId}`, error);
           // Continue to next backend
         }
       }
@@ -288,7 +290,7 @@ export class VSCodeInterfaceAdapter implements IInterfaceAdapter {
               }
             }
           } catch (discoveryError) {
-            console.warn('VSCodeInterfaceAdapter: Backend discovery failed:', discoveryError);
+            this.logger.warn('VSCodeInterfaceAdapter: Backend discovery failed', discoveryError);
           }
         }
         
@@ -301,7 +303,7 @@ export class VSCodeInterfaceAdapter implements IInterfaceAdapter {
       
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error('VSCodeInterfaceAdapter: Failed to load initial content:', errorMessage);
+      this.logger.error('VSCodeInterfaceAdapter: Failed to load initial content', undefined, { errorMessage });
       
       // Enhanced error HTML with debugging information
       this.view!.webview.html = this.getEnhancedErrorHTML(errorMessage);
@@ -348,7 +350,7 @@ export class VSCodeInterfaceAdapter implements IInterfaceAdapter {
                 });
               }
             } catch (error) {
-              console.error('VSCodeInterfaceAdapter: Backend connection retry failed:', error);
+              this.logger.error('VSCodeInterfaceAdapter: Backend connection retry failed', error instanceof Error ? error : undefined, error);
               await this.view!.webview.postMessage({
                 type: 'retry_complete',
                 payload: { 
@@ -360,11 +362,11 @@ export class VSCodeInterfaceAdapter implements IInterfaceAdapter {
             }
             break;
           default:
-            console.warn(`VSCodeInterfaceAdapter: Unknown message type: ${message.type}`);
+            this.logger.warn(`VSCodeInterfaceAdapter: Unknown message type: ${message.type}`);
         }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        console.error('VSCodeInterfaceAdapter: Message handling error:', errorMessage);
+        this.logger.error('VSCodeInterfaceAdapter: Message handling error', undefined, { errorMessage });
         
         await this.view!.webview.postMessage({
           type: 'error',
@@ -590,7 +592,7 @@ export class VSCodeInterfaceAdapter implements IInterfaceAdapter {
       }
       console.log('VSCodeInterfaceAdapter: State synchronized', stateUpdate);
     } catch (error) {
-      console.error('VSCodeInterfaceAdapter: Failed to sync state', error);
+      this.logger.error('VSCodeInterfaceAdapter: Failed to sync state', error instanceof Error ? error : undefined, error);
       throw createTemplumError(`Failed to synchronize state: ${error instanceof Error ? error.message : 'Unknown error'}`, 'STATE_SYNC_FAILED', 'runtime');
     }
   }

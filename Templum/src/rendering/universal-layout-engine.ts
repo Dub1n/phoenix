@@ -11,6 +11,7 @@
  */
 
 import { createFormatter, TerminalFormatter } from '../utils/terminal-formatter';
+import { createLogger, LogLevel } from '../utils/logger';
 import { DisplayUtils } from '../utils/display-utils';
 import { InterfaceType } from '../types/templum-types';
 import { StringUtils, StringWidthUtils } from '../utils/chainable-string-utils';
@@ -172,6 +173,7 @@ export class UniversalLayoutEngine {
   private performanceMetrics: Map<string, number> = new Map();
   private contentLayoutSystem: ContentLayoutSystem;
   private readonly formatter: TerminalFormatter;
+  private readonly logger = createLogger('universal-layout-engine', { level: LogLevel.ERROR });
 
   constructor(formatter: TerminalFormatter = createFormatter()) {
     this.formatter = formatter;
@@ -214,12 +216,12 @@ export class UniversalLayoutEngine {
       
       // Log compatibility issues for debugging
       if (!compatibilityCheck.compatible) {
-        console.warn('Skin compatibility issues detected:', compatibilityCheck.issues);
-        console.info('Applied adaptations:', compatibilityCheck.adaptations);
+        this.logger.warn('Skin compatibility issues detected', { issues: compatibilityCheck.issues });
+        this.logger.info('Applied adaptations', { adaptations: compatibilityCheck.adaptations });
       }
       
       if (compatibilityCheck.recommendations.length > 0) {
-        console.info('Skin optimization recommendations:', compatibilityCheck.recommendations);
+        this.logger.info('Skin optimization recommendations', { recommendations: compatibilityCheck.recommendations });
       }
       
       // Determine if this is PCL compatibility mode

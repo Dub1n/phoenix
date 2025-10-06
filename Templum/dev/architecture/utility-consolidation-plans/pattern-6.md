@@ -2,7 +2,7 @@
 
 ## Stage 1 Snapshot
 
-- **Utility / Pattern**: Terminal Formatter (Pattern 6)
+- **Utility / Pattern**: Terminal Formatter (Pattern 6.5)
 - **Agent**: Codex
 - **Date**: 2025-10-02T16:20:54Z
 - **Primary References**: `Templum/dev/architecture/safe-consolidation-candidates.md`, `Templum/dev/patterns/utilities/display/terminal-formatter.md`, `Templum/dev/architecture/redundancy-report.md`, `Templum/dev/architecture/utility-consolidation-schedule.md`
@@ -277,15 +277,16 @@
 
 ## Stage 7 Close-Out
 
-- **Date**: 2025-10-06T10:22:00Z
+- **Date**: 2025-10-06T11:17:00Z
 - Final validation summary:
   - Targeted formatter suites remained green: `npm run test:ci -- --runTestsByPath src/tests/utils/terminal-formatter.test.ts`, `npm run test -- --runTestsByPath src/tests/rendering/terminal-ui-components.formatter.test.ts --runInBand --detectOpenHandles --forceExit`, `npm run test -- --runTestsByPath src/tests/mcp/visual-feedback-system.formatter.test.ts --runInBand --detectOpenHandles --forceExit`.
-  - Downstream integration harnesses passed: `npm run test -- --runTestsByPath src/interfaces/__tests__/adaptive-cli-integration.test.ts --runInBand --detectOpenHandles --forceExit`, `npm run test -- --runTestsByPath src/interfaces/navigation/__tests__/navigation-system.test.ts --runInBand --detectOpenHandles --forceExit`, `npm run test -- --runTestsByPath tests/interfaces/interface-adapter-integration.test.ts --runInBand --detectOpenHandles --forceExit` (console warnings captured in logs but expectations held).
-  - Phase 6 health/validation remain blocked: both `npm run phase6-health` and `npm run phase6-validation` now fail post-build because the compiled script cannot resolve `../tests/integration-validation-framework` from `dist/src/scripts/run-phase6-integration-validation.js`.
+  - Downstream integration harnesses passed: `npm run test -- --runTestsByPath src/interfaces/__tests__/adaptive-cli-integration.test.ts --runInBand --detectOpenHandles --forceExit`, `npm run test -- --runTestsByPath src/interfaces/navigation/__tests__/navigation-system.test.ts --runInBand --detectOpenHandles --forceExit`, `npm run test -- --runTestsByPath tests/interfaces/interface-adapter-integration.test.ts --runInBand --detectOpenHandles --forceExit`; 2025-10-06 verification run executes without console warnings after formatter/logging clean-up.
+  - Phase 6 health/validation now emit deterministic results: `npm run phase6-health` returns `status=passed` (all mock services operational) and `npm run phase6-validation` completes with `status=skipped`, instructing operators to rerun with `--use-real-backends` for full coverage. Synthetic readiness scores have been removed.
 - Remaining follow-ups or TODOs:
-  - Coordinate with Phase 6 harness owners to restore the missing `dist/tests/integration-validation-framework` bundle so health/validation commands can complete; share log paths.
-  - Audit remaining direct `chalk` usages surfaced by `rg -l "chalk" src` (e.g., `src/rendering/content-layout-system.ts`, `src/interfaces/terminal-compatibility-detector.ts`, `src/interfaces/universal-interaction-manager.ts`) and confirm whether they belong to the Terminal Formatter backlog or another consolidation lane.
-  - Continue tracking lingering Jest `globalTeardown` socket warnings raised during `adaptive-cli-integration` to avoid masking resource leaks.
+  - Coordinate with backend owners before marking Stage 7 fully complete: the harness now exposes pass/fail/skip states, but real backend coverage still requires an opt-in run once services are available (tracked in `dev/tasks/phase6-validation-signal.md`).
+  - ✅ 2025-10-06: Residual `chalk` usages migrated to `TerminalFormatter` (`src/rendering/content-layout-system.ts`, `src/interfaces/terminal-compatibility-detector.ts`, `src/interfaces/universal-interaction-manager.ts`); formatter configuration now covers the remaining CLI/window helpers.
+  - ✅ 2025-10-06: Adaptive CLI integration suite runs without teardown noise after tightening layout truncation and downgrading `string-utils`/layout logging to formatter-aware filters.
 - Evidence links:
-  - Validation logs archived under `tmp/stage7/pattern-6/20251006T102023Z-terminal-formatter-unit.log`, `...102029Z-terminal-ui-components.log`, `...102034Z-mcp-visual-feedback.log`, `...102040Z-adaptive-cli-integration.log`, `...102045Z-navigation-system.log`, `...102050Z-interface-adapter-integration.log`, `...102113Z-phase6-health.log`, `...102119Z-phase6-validation.log`.
+  - Validation logs archived under `tmp/stage7/pattern-6/20251006T102023Z-terminal-formatter-unit.log`, `...102029Z-terminal-ui-components.log`, `...102034Z-mcp-visual-feedback.log`, `...102040Z-adaptive-cli-integration.log`, `...102045Z-navigation-system.log`, `...102050Z-interface-adapter-integration.log`, `...111708Z-phase6-health.log`, `...111717Z-phase6-validation.log`.
+  - Supplemental evidence (2025-10-06T14:08Z rerun): `validation-reports/phase6-validation-2025-10-06T14-08-01-667Z.*` and accompanying console captures from `npm run phase6-health` / `npm run phase6-validation`.
   - Stage 7 activity log entry dated 2025-10-06.

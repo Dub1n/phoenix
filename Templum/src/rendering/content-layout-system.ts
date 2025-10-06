@@ -39,8 +39,13 @@ tags:
  * - Terminal compatibility with graceful degradation
  */
 
-import chalk from 'chalk';
 import { EventEmitter } from 'events';
+import {
+  createFormatter,
+  TerminalFormatter,
+  type TerminalCapabilities as FormatterCapabilities,
+  type TerminalTheme,
+} from '../utils/terminal-formatter';
 import { StringUtils, StringWidthUtils } from '../utils/chainable-string-utils';
 
 // Terminal capability detection
@@ -153,24 +158,23 @@ export const BORDER_CHARS = {
  */
 export class TerminalCapabilityDetector {
   private capabilities: TerminalCapabilities | null = null;
+  private readonly formatter: TerminalFormatter;
+
+  constructor(formatter: TerminalFormatter = createFormatter()) {
+    this.formatter = formatter;
+  }
 
   detectCapabilities(): TerminalCapabilities {
     if (this.capabilities) {
       return this.capabilities;
     }
 
-    // Detect Unicode support
-    const supportsUnicode = this.detectUnicodeSupport();
-    
-    // Detect box-drawing character support
-    const supportsBoxDrawing = supportsUnicode && this.detectBoxDrawingSupport();
-    
-    // Detect color support
-    const supportsColor = this.detectColorSupport();
-    
-    // Get terminal dimensions
-    const width = process.stdout.columns || 80;
-    const height = process.stdout.rows || 24;
+    const baseCapabilities = this.formatter.getCapabilities();
+    const supportsUnicode = this.detectUnicodeSupport(baseCapabilities);
+    const supportsBoxDrawing = supportsUnicode && this.detectBoxDrawingSupport(baseCapabilities);
+    const supportsColor = baseCapabilities.supportsColor;
+    const width = baseCapabilities.width ?? process.stdout.columns ?? 80;
+    const height = baseCapabilities.height ?? process.stdout.rows ?? 24;
 
     this.capabilities = {
       supportsUnicode,
@@ -183,51 +187,42 @@ export class TerminalCapabilityDetector {
     return this.capabilities;
   }
 
-  private detectUnicodeSupport(): boolean {
-    // Check environment variables that indicate Unicode support
+  private detectUnicodeSupport(baseCapabilities: FormatterCapabilities): boolean {
+    if (!baseCapabilities.supportsUnicode) {
+      return false;
+    }
+
     const env = process.env;
-    
+
     if (env.LANG && env.LANG.includes('UTF-8')) return true;
     if (env.LC_ALL && env.LC_ALL.includes('UTF-8')) return true;
     if (env.LC_CTYPE && env.LC_CTYPE.includes('UTF-8')) return true;
-    
-    // Check terminal type
+
     if (env.TERM) {
       const term = env.TERM.toLowerCase();
       if (term.includes('xterm') || term.includes('screen') || term.includes('tmux')) {
         return true;
       }
     }
-    
-    // Default to false for safety
-    return false;
-  }
 
-  private detectBoxDrawingSupport(): boolean {
-    // Box drawing requires Unicode support
-    if (!this.detectUnicodeSupport()) return false;
-    
-    // Additional checks for terminals known to have issues
-    const term = process.env.TERM?.toLowerCase() || '';
-    
-    // Some terminals have poor box drawing support
-    if (term.includes('cmd') || term.includes('powershell')) {
-      return false;
+    if (baseCapabilities.platform === 'windows') {
+      return Boolean(process.env.WT_SESSION || process.env.TERM_PROGRAM === 'vscode');
     }
-    
+
     return true;
   }
 
-  private detectColorSupport(): boolean {
-    // Check for color support indicators
+  private detectBoxDrawingSupport(baseCapabilities: FormatterCapabilities): boolean {
+    if (!this.detectUnicodeSupport(baseCapabilities)) {
+      return false;
+    }
+
     const term = process.env.TERM?.toLowerCase() || '';
-    const colorTerm = process.env.COLORTERM?.toLowerCase() || '';
-    
-    if (colorTerm.includes('truecolor') || colorTerm.includes('24bit')) return true;
-    if (term.includes('color') || term.includes('256')) return true;
-    if (term.includes('xterm') || term.includes('screen')) return true;
-    
-    return process.stdout.isTTY;
+    if (term.includes('cmd') || term.includes('powershell')) {
+      return false;
+    }
+
+    return true;
   }
 
   forceCapabilities(capabilities: Partial<TerminalCapabilities>): void {
@@ -349,8 +344,8 @@ export class WindowLayout {
   private capabilityDetector: TerminalCapabilityDetector;
   private contentAnalyzer: ContentAnalyzer;
 
-  constructor() {
-    this.capabilityDetector = new TerminalCapabilityDetector();
+  constructor(capabilityDetector: TerminalCapabilityDetector = new TerminalCapabilityDetector()) {
+    this.capabilityDetector = capabilityDetector;
     this.contentAnalyzer = new ContentAnalyzer();
   }
 
@@ -417,11 +412,77 @@ export class WindowLayout {
  * Border Rendering System
  * Creates structured window borders with proper nesting
  */
+export interface BorderRendererDependencies {
+  formatter?: TerminalFormatter;
+  layout?: WindowLayout;
+  capabilityDetector?: TerminalCapabilityDetector;
+}
+
 export class BorderRenderer {
   private layout: WindowLayout;
+  private readonly formatter: TerminalFormatter;
+  private readonly theme: TerminalTheme;
 
-  constructor() {
-    this.layout = new WindowLayout();
+  constructor(dependencies: BorderRendererDependencies = {}) {
+    this.formatter = dependencies.formatter ?? createFormatter();
+    this.theme = this.formatter.getTheme();
+    const detector = dependencies.capabilityDetector ?? new TerminalCapabilityDetector(this.formatter);
+    this.layout = dependencies.layout ?? new WindowLayout(detector);
+  }
+
+  private formatMenuItem(text: string, isSelected: boolean): string {
+    return this.formatter.interactive.selection(text, isSelected);
+  }
+
+  private formatNavigationItem(text: string, enabled?: boolean): string {
+    return enabled === false
+      ? this.formatter.text.muted(text)
+      : this.formatter.text.plain(text);
+  }
+
+  private formatTitle(text: string): string {
+    return this.formatter.formatWithSpec(text, this.theme.ui.header[0]);
+  }
+
+  private formatHeading(text: string): string {
+    const spec = this.theme.ui.header[1] ?? this.theme.ui.header[0];
+    return this.formatter.formatWithSpec(text, spec);
+  }
+
+  private clampDescription(value: string, maxWidth: number): string {
+    if (!value || maxWidth <= 0) {
+      return '';
+    }
+
+    const ellipsis = '…';
+    const ellipsisWidth = StringWidthUtils.getDisplayWidth(ellipsis);
+    const valueWidth = StringWidthUtils.getDisplayWidth(value);
+    if (valueWidth <= maxWidth) {
+      return value;
+    }
+
+    if (ellipsisWidth > maxWidth) {
+      return '';
+    }
+
+    let width = 0;
+    let output = '';
+
+    for (const char of value) {
+      const charWidth = StringWidthUtils.getDisplayWidth(char);
+      if (width + charWidth + ellipsisWidth > maxWidth) {
+        break;
+      }
+
+      output += char;
+      width += charWidth;
+    }
+
+    if (!output) {
+      return ellipsis;
+    }
+
+    return `${output}${ellipsis}`;
   }
 
   private normalizeWidth(width: number): number {
@@ -498,15 +559,20 @@ export class BorderRenderer {
           // Regular item with space for selector
           itemText = `  ${item.label}`;
         }
-        
         const description = item.description ? ` - ${item.description}` : '';
-        const fullText = itemText + description;
-        
-        // Apply selection highlighting if needed
-        const finalText = item.selected && layoutResult.supportsColors
-          ? chalk.cyan(fullText)
-          : fullText;
-        
+        const nestedOffset = content.isNestedWindow ? 1 : 0;
+        const availableWidth = layoutResult.contentWidth - (layoutResult.padding.length * 2) - nestedOffset;
+
+        let fullText = itemText;
+        if (description) {
+          const baseWidth = StringWidthUtils.getDisplayWidth(itemText);
+          const remainingWidth = availableWidth - baseWidth;
+          if (remainingWidth > 0) {
+            fullText += this.clampDescription(description, remainingWidth);
+          }
+        }
+
+        const finalText = this.formatMenuItem(fullText, Boolean(item.selected));
         lines.push(this.createContentLineWithPadding(finalText, layoutResult, content.isNestedWindow));
       }
       
@@ -523,9 +589,7 @@ export class BorderRenderer {
       
       for (const navItem of content.navigationItems) {
         const navText = `  ${navItem.label}`;
-        const finalNavText = navItem.enabled === false && layoutResult.supportsColors
-          ? chalk.dim(navText)
-          : navText;
+        const finalNavText = this.formatNavigationItem(navText, navItem.enabled);
         lines.push(this.createContentLineWithPadding(finalNavText, layoutResult, content.isNestedWindow));
       }
     }
@@ -575,11 +639,11 @@ export class BorderRenderer {
     layout: CalculatedLayout, 
     emphasized: boolean = false
   ): string {
-    const { borderChars, contentWidth, padding, supportsColors } = layout;
+    const { borderChars, contentWidth, padding } = layout;
 
     let processedText = text;
-    if (emphasized && supportsColors) {
-      processedText = chalk.bold(text);
+    if (emphasized) {
+      processedText = this.formatHeading(text);
     }
 
     const availableWidth = contentWidth - (padding.length * 2);
@@ -592,16 +656,10 @@ export class BorderRenderer {
    * Create centered title line for window title bar
    */
   private createCenteredTitleLine(text: string, layout: CalculatedLayout): string {
-    const { borderChars, contentWidth, supportsColors } = layout;
-    
-    // Apply title styling
-    let processedText = text;
-    if (supportsColors) {
-      processedText = chalk.bold(text);
-    }
-    
+    const { borderChars, contentWidth } = layout;
+    const processedText = this.formatTitle(text);
     const centeredText = this.formatWithinWidth(processedText, contentWidth, 'center', '...');
-    
+
     return borderChars.vertical + centeredText + borderChars.vertical;
   }
 
@@ -614,12 +672,12 @@ export class BorderRenderer {
     isNested: boolean = false,
     emphasized: boolean = false
   ): string {
-    const { borderChars, contentWidth, padding, supportsColors } = layout;
+    const { borderChars, contentWidth, padding } = layout;
     
     // Apply emphasis if needed
     let processedText = text;
-    if (emphasized && supportsColors) {
-      processedText = chalk.bold(text);
+    if (emphasized) {
+      processedText = this.formatHeading(text);
     }
     
     // Calculate available width accounting for nesting
@@ -657,7 +715,7 @@ export class BorderRenderer {
     const { borderChars, contentWidth, padding } = layout;
     const nestedOffset = isNested ? 1 : 0;
     const separatorWidth = contentWidth - (padding.length * 2) - nestedOffset;
-    const separatorContent = '─'.repeat(separatorWidth); // Em dash for menu separator
+    const separatorContent = layout.borderChars.horizontal.repeat(separatorWidth);
     
     if (isNested) {
       return borderChars.vertical + ' ' + borderChars.vertical + padding + separatorContent + padding + borderChars.vertical;
@@ -681,12 +739,8 @@ export class BorderRenderer {
    * Create nested title line
    */
   private createNestedTitleLine(text: string, layout: CalculatedLayout): string {
-    const { borderChars, contentWidth, supportsColors } = layout;
-    
-    let processedText = text;
-    if (supportsColors) {
-      processedText = chalk.bold(text);
-    }
+    const { borderChars, contentWidth } = layout;
+    const processedText = this.formatHeading(text);
     
     const nestedContentWidth = contentWidth - 1;
     const textWidth = this.getDisplayWidth(processedText);
@@ -754,16 +808,28 @@ export class BorderRenderer {
  * Content Layout System - Main Orchestrator
  * Coordinates all layout components for adaptive terminal rendering
  */
+export interface ContentLayoutSystemDependencies {
+  formatter?: TerminalFormatter;
+  borderRenderer?: BorderRenderer;
+  windowLayout?: WindowLayout;
+  capabilityDetector?: TerminalCapabilityDetector;
+}
+
 export class ContentLayoutSystem extends EventEmitter {
   private borderRenderer: BorderRenderer;
   private windowLayout: WindowLayout;
   private capabilityDetector: TerminalCapabilityDetector;
 
-  constructor() {
+  constructor(dependencies: ContentLayoutSystemDependencies = {}) {
     super();
-    this.borderRenderer = new BorderRenderer();
-    this.windowLayout = new WindowLayout();
-    this.capabilityDetector = new TerminalCapabilityDetector();
+    const formatter = dependencies.formatter ?? createFormatter();
+    this.capabilityDetector = dependencies.capabilityDetector ?? new TerminalCapabilityDetector(formatter);
+    this.windowLayout = dependencies.windowLayout ?? new WindowLayout(this.capabilityDetector);
+    this.borderRenderer = dependencies.borderRenderer ?? new BorderRenderer({
+      formatter,
+      capabilityDetector: this.capabilityDetector,
+      layout: this.windowLayout,
+    });
   }
 
   renderContent(

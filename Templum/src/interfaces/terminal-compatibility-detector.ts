@@ -20,8 +20,12 @@ tags: [terminal-ui, compatibility, progressive-enhancement, border-rendering]
  * TASK-MCP-006: Structured window system with progressive enhancement
  */
 
-import chalk from 'chalk';
 import { EventEmitter } from 'events';
+import {
+  createFormatter,
+  TerminalFormatter,
+  type TerminalCapabilities as FormatterCapabilities,
+} from '../utils/terminal-formatter';
 
 export interface TerminalCapabilities {
   supportsBoxDrawing: boolean;
@@ -96,9 +100,11 @@ export type BorderSetType = keyof typeof BORDER_SETS;
 export class TerminalCompatibilityDetector extends EventEmitter {
   private capabilities: TerminalCapabilities | null = null;
   private detectionCompleted: boolean = false;
+  private readonly formatter: TerminalFormatter;
   
-  constructor() {
+  constructor(formatter: TerminalFormatter = createFormatter()) {
     super();
+    this.formatter = formatter;
   }
 
   /**
@@ -109,30 +115,33 @@ export class TerminalCompatibilityDetector extends EventEmitter {
       return this.capabilities;
     }
 
+    const baseCapabilities = this.formatter.getCapabilities();
+    const width = baseCapabilities.width ?? process.stdout.columns ?? 80;
+    const height = baseCapabilities.height ?? process.stdout.rows ?? 24;
     const capabilities: TerminalCapabilities = {
       supportsBoxDrawing: false,
       supportsUnicode: false,
       supportsColors: false,
       supportsAnsi: false,
-      colorDepth: 1,
-      width: process.stdout.columns || 80,
-      height: process.stdout.rows || 24,
+      colorDepth: this.detectColorDepth(baseCapabilities),
+      width,
+      height,
       terminalType: process.env.TERM || 'unknown',
       platform: process.platform
     };
 
     // Detect ANSI support
-    capabilities.supportsAnsi = this.detectAnsiSupport();
+    capabilities.supportsAnsi = this.detectAnsiSupport(baseCapabilities);
     
     // Detect color support
-    capabilities.supportsColors = this.detectColorSupport();
-    capabilities.colorDepth = this.detectColorDepth();
+    capabilities.supportsColors = baseCapabilities.supportsColor;
     
     // Detect Unicode support
-    capabilities.supportsUnicode = await this.detectUnicodeSupport();
+    const supportsUnicode = await this.detectUnicodeSupport(baseCapabilities);
+    capabilities.supportsUnicode = supportsUnicode;
     
     // Detect box-drawing character support
-    capabilities.supportsBoxDrawing = await this.detectBoxDrawingSupport();
+    capabilities.supportsBoxDrawing = supportsUnicode && await this.detectBoxDrawingSupport(baseCapabilities);
 
     this.capabilities = capabilities;
     this.detectionCompleted = true;
@@ -186,11 +195,15 @@ export class TerminalCompatibilityDetector extends EventEmitter {
   /**
    * Test if terminal supports box drawing by attempting to render
    */
-  private async detectBoxDrawingSupport(): Promise<boolean> {
+  private async detectBoxDrawingSupport(baseCapabilities: FormatterCapabilities): Promise<boolean> {
     // Check environment variables first
     const term = process.env.TERM?.toLowerCase() || '';
     const termProgram = process.env.TERM_PROGRAM?.toLowerCase() || '';
-    
+
+    if (!baseCapabilities.supportsUnicode) {
+      return false;
+    }
+
     // Known terminals that support box drawing
     const supportedTerminals = [
       'xterm', 'xterm-256color', 'screen', 'tmux',
@@ -234,7 +247,11 @@ export class TerminalCompatibilityDetector extends EventEmitter {
   /**
    * Test Unicode support
    */
-  private async detectUnicodeSupport(): Promise<boolean> {
+  private async detectUnicodeSupport(baseCapabilities: FormatterCapabilities): Promise<boolean> {
+    if (!baseCapabilities.supportsUnicode) {
+      return false;
+    }
+
     // Check locale settings
     const locale = process.env.LC_ALL || process.env.LANG || '';
     if (locale.includes('UTF-8') || locale.includes('utf8')) {
@@ -262,32 +279,31 @@ export class TerminalCompatibilityDetector extends EventEmitter {
   /**
    * Detect ANSI escape sequence support
    */
-  private detectAnsiSupport(): boolean {
-    return process.stdout.isTTY !== false && process.env.TERM !== 'dumb';
+  private detectAnsiSupport(baseCapabilities: FormatterCapabilities): boolean {
+    if (process.stdout.isTTY === false || process.env.TERM === 'dumb') {
+      return false;
+    }
+
+    return baseCapabilities.supportsStyles || baseCapabilities.supportsColor;
   }
 
   /**
    * Detect color support
    */
-  private detectColorSupport(): boolean {
-    return chalk.supportsColor !== false;
-  }
-
-  /**
-   * Detect color depth
-   */
-  private detectColorDepth(): 1 | 4 | 8 | 24 {
-    if (!chalk.supportsColor) {
+  private detectColorDepth(baseCapabilities: FormatterCapabilities): 1 | 4 | 8 | 24 {
+    if (!baseCapabilities.supportsColor) {
       return 1;
     }
-    
-    const level = chalk.supportsColor.level;
-    switch (level) {
-      case 3: return 24; // 16 million colors
-      case 2: return 8;  // 256 colors  
-      case 1: return 4;  // 16 colors
-      default: return 1; // No color
+
+    if (baseCapabilities.supportsTrueColor) {
+      return 24;
     }
+
+    if (baseCapabilities.supports256Colors) {
+      return 8;
+    }
+
+    return 4;
   }
 
   /**

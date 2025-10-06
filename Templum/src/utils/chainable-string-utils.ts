@@ -1,4 +1,4 @@
-import { createLogger, Logger } from './logger';
+import { createLogger, Logger, LogLevel } from './logger';
 import { ErrorHandler } from './error-handler';
 
 export type ChainMode = 'terminal' | 'plain';
@@ -424,7 +424,7 @@ class ChainBuilder implements StringChain {
 }
 
 class StringUtilsClass implements StringUtilsApi {
-  private readonly logger: Logger = createLogger('string-utils');
+  private readonly logger: Logger = createLogger('string-utils', { level: LogLevel.ERROR });
 
   chain(input: string, options?: ChainOptions): StringChain {
     const resolved: Required<ChainOptions> = {

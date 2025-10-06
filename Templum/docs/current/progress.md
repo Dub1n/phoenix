@@ -19,8 +19,8 @@ last_updated: 2025-10-06
 
 ## Pattern 6 Close-Out
 
-- [ ] [Phase 6 harness & formatter lock-in](../../dev/tasks/pattern-6-finalisation.md)
-  Progress 0% — Stage 7 validation for Terminal Formatter still fails because the compiled Phase 6 harness cannot resolve `../tests/integration-validation-framework`, residual `chalk` calls linger in `content-layout-system.ts`, `terminal-compatibility-detector.ts`, and `universal-interaction-manager.ts`, and adaptive CLI integration runs emit teardown warnings that risk masking leaks.
+- [x] [Phase 6 harness & formatter lock-in](../../dev/tasks/pattern-6-finalisation.md)
+  Progress 100% — Migrated the remaining CLI/window helpers to `TerminalFormatter` (`src/rendering/content-layout-system.ts`, `src/interfaces/terminal-compatibility-detector.ts`, `src/interfaces/universal-interaction-manager.ts`), routed string utils + layout logs through formatter-aware filters so adaptive CLI integration runs without teardown warnings (`npm test -- --runTestsByPath src/interfaces/__tests__/adaptive-cli-integration.test.ts`), and re-ran the harness (`npm run phase6-health`, `npm run phase6-validation`) with clean SKIPPED health output and fresh reports (`validation-reports/phase6-validation-2025-10-06T14-08-01-667Z.*`). Real-backend validation remains an opt-in follow-up once partner services are available (tracked in `dev/tasks/phase6-validation-signal.md`).
 
 ## Universal Interface Core
 
@@ -60,6 +60,8 @@ last_updated: 2025-10-06
   Progress 20% — Coverage command fails with `babel-plugin-istanbul` errors; suite-specific thresholds not in place.
 - [ ] [Process signal listener consolidation](../../dev/tasks/process-signal-listener-consolidation.md)
   Progress 10% — Dozens of direct `process.on` registrations remain, leaving Jest hanging.
+- [ ] [Phase 6 validation signal overhaul](../../dev/tasks/phase6-validation-signal.md)
+  Progress 5% — New mandate is to tear out the synthetic readiness metrics and make the harness emit deterministic pass/fail (no random delays or default 100% mocks) before layering real instrumentation back in.
 - [?] [Structured metrics and logging in place](../../dev/tasks/observability-instrumentation.md) *(MVP subset: `dev/tasks/mvp/observability-baseline.md`)*
   Progress 0% — Blueprint exists but runtime logging/metric hooks are not wired.
 

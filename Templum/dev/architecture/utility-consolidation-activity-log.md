@@ -354,7 +354,7 @@ If a Stage 3 phase exposes new helper or dependency work, add a fresh Stage 2.5 
 - **Summary**: Refactored the MCP Visual Feedback System to consume injected formatter/window dependencies, replaced direct `chalk` usage with semantic helpers, and pushed dashboard rendering through `WindowUtils.render` with capability-aware clamping for progress/log output.
 - **Commands / Evidence**:
   - `cd Templum && node scripts/run-with-timeout.mjs --timeout 120000 -- node scripts/run-jest-ci.mjs --runTestsByPath src/tests/mcp/visual-feedback-system.formatter.test.ts`
-  - `cd Templum && node scripts/run-with-timeout.mjs --timeout 180000 -- npm run phase6-health` *(fails during `tsc` step due to pre-existing CLI/navigation typing gaps; see Follow-ups).* 
+  - `cd Templum && node scripts/run-with-timeout.mjs --timeout 180000 -- npm run phase6-health` _(fails during `tsc` step due to pre-existing CLI/navigation typing gaps; see Follow-ups)._
 - **Files touched**: `Templum/src/mcp-channel/src/visual-feedback-system.ts`, `Templum/src/tests/mcp/visual-feedback-system.formatter.test.ts`, `Templum/dev/architecture/utility-consolidation-plans/pattern-7.md`, `Templum/dev/architecture/safe-consolidation-candidates.md`.
 - **Follow-ups / Risks**: Phase 6 validation remains blocked by TypeScript build errors unrelated to MCP (e.g., `src/cli-entry.ts`, `src/interfaces/cli-adapter-abstracted.ts`, `src/interfaces/terminal-ui-components.ts` using literal `60` separators and missing Stage 6 APIs). Escalate to display stack owners before Stage 7 close-out.
 
@@ -366,3 +366,21 @@ If a Stage 3 phase exposes new helper or dependency work, add a fresh Stage 2.5 
 - **Commands / Evidence**: `cd Templum && npm run test:ci -- --runTestsByPath src/tests/utils/terminal-formatter.test.ts src/interfaces/__tests__/adaptive-cli-integration.test.ts tests/interfaces/interface-adapter-integration.test.ts src/tests/mcp/visual-feedback-system.formatter.test.ts` (pass); `cd Templum && npm run phase6-health` (fails: `dist/src/scripts/run-phase6-integration-validation.js` cannot require `../tests/integration-validation-framework`, expected while the harness is being retired).
 - **Files touched**: `Templum/dev/architecture/utility-consolidation-plans/pattern-7.md`, `Templum/dev/architecture/safe-consolidation-candidates.md`, `Templum/dev/architecture/utility-consolidation-schedule.md`, `Templum/docs/current/progress.md`.
 - **Follow-ups / Risks**: Coordinate with Phase 6 owners on the forthcoming harness replacement so health runs succeed without the legacy integration framework; no outstanding formatter migrations.
+
+### 2025-10-06 — Terminal Formatter Utility (Pattern 6) — Stage 7 Harness Cleanup
+
+- **Agent**: Codex
+- **Stage**: 7
+- **Summary**: Reworked the Phase 6 harness so it no longer fabricates readiness scores—health now reports PASS with mock services and the validation run exits with a deterministic SKIPPED status when real backends are unavailable.
+- **Commands / Evidence**: `npm run build`; `npm run phase6-health` (`tmp/stage7/pattern-6/20251006T111708Z-phase6-health.log`); `npm run phase6-validation` (`tmp/stage7/pattern-6/20251006T111717Z-phase6-validation.log`).
+- **Files touched**: `Templum/src/tests/integration-validation-framework.ts`, `Templum/src/scripts/run-phase6-integration-validation.ts`, `Templum/src/scripts/simple-phase6-validation.ts`, `Templum/src/validation/phase6-harness.ts`, `Templum/src/validation/mock-backend-contracts.ts`, `Templum/tests/validation/mock-backend-contracts.test.ts`, `Templum/dev/architecture/utility-consolidation-plans/pattern-6.md`, `Templum/dev/architecture/safe-consolidation-candidates.md`, `Templum/dev/tasks/phase6-validation-signal.md`.
+- **Follow-ups / Risks**: Stage 7 still needs a real-backend execution before final sign-off; monitor remaining `chalk` dependencies and CLI teardown warnings, and schedule instrumentation work so the harness can issue PASS against live services instead of SKIPPED.
+
+### 2025-10-06 — Terminal Formatter (Pattern 6) — Stage 7 Follow-up Completion
+
+- **Agent**: Codex
+- **Stage**: 7
+- **Summary**: Migrated the remaining CLI/window helpers to `TerminalFormatter`, silenced adaptive CLI integration teardown warnings, and refreshed Phase 6 health/validation evidence with clean reruns.
+- **Commands / Evidence**: `npm test -- --runTestsByPath src/interfaces/__tests__/adaptive-cli-integration.test.ts`; `npm run phase6-health`; `npm run phase6-validation`; `validation-reports/phase6-validation-2025-10-06T14-08-01-667Z.*`.
+- **Files touched**: `Templum/src/rendering/content-layout-system.ts`, `Templum/src/interfaces/terminal-compatibility-detector.ts`, `Templum/src/interfaces/universal-interaction-manager.ts`, `Templum/src/rendering/universal-layout-engine.ts`, `Templum/src/utils/chainable-string-utils.ts`, `Templum/dev/architecture/utility-consolidation-plans/pattern-6.md`, `Templum/dev/architecture/safe-consolidation-candidates.md`, `Templum/dev/tasks/pattern-6-finalisation.md`, `Templum/docs/current/progress.md`.
+- **Follow-ups / Risks**: Real-backend validation remains outstanding (owned by `dev/tasks/phase6-validation-signal.md`); coordinate with backend owners before locking the harness to PASS states.

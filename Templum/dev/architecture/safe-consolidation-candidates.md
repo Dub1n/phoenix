@@ -362,11 +362,11 @@ These areas show true redundancy without architectural value:
   - [ ] `src/interfaces/cli-adapter-abstracted.ts` (44 chalk calls)
   - [ ] `src/interfaces/terminal-ui-components.ts` (35 chalk calls)
   - [ ] `src/interfaces/interactive-menu-renderer.ts` (27 chalk calls)
-  - [ ] `src/rendering/content-layout-system.ts` (9 chalk calls)
+  - [x] `src/rendering/content-layout-system.ts` (9 chalk calls)
   - [x] `src/interfaces/enhanced-window-system.ts` (9 chalk calls)
   - [ ] `src/rendering/universal-layout-engine.ts` (7 chalk calls)
-  - [ ] `src/interfaces/terminal-compatibility-detector.ts` (5 chalk calls)
-  - [ ] `src/interfaces/universal-interaction-manager.ts` (4 chalk calls)
+  - [x] `src/interfaces/terminal-compatibility-detector.ts` (5 chalk calls)
+  - [x] `src/interfaces/universal-interaction-manager.ts` (4 chalk calls)
   - [ ] `src/interfaces/navigation/border-renderer.ts` (19 chalk calls)
   - [ ] `src/interfaces/navigation/width-calculator.ts` (3 chalk calls)
   - [ ] `src/interfaces/window-layout-manager.ts` (1 chalk call)
@@ -390,7 +390,7 @@ These areas show true redundancy without architectural value:
 - [x] Stage 5 pattern prep refreshed (2025-10-11) — readiness notes retain DI/verifier context; no outstanding gating TODOs after the 2025-10-02 reruns.
 - [x] Stage 6 lane a (window/layout) complete — consolidated width/layout consumers onto `DisplayUtils` + `WINDOW_SPACING`, retired bespoke padding manager/breakpoints, and refreshed navigation window tests. Evidence: plan lane update (2025-10-02T22:41:32Z), `npm run test -- --runTestsByPath src/tests/utils/display-utils.test.ts` ✅, navigation suite still blocked by upstream `terminal-ui-components.ts` deletion and pre-existing breadcrumb spy expectation + jest handle leak (logged in activity record).
 - [x] Stage 6 lane b (terminal UI + rendering) complete — terminal UI components, interactive menu renderer, and universal layout engine now consume injected formatter/palette helpers; `TerminalFormatter` exposes shared `palette.*` APIs with Jest coverage. Validation: `npm run test -- --runTestsByPath src/tests/rendering/terminal-ui-components.formatter.test.ts` and `npm run test -- --runTestsByPath src/tests/utils/display-utils.test.ts` (2025-10-06T21:17:00Z). See `utility-consolidation-plans/pattern-6.md` Stage 6b notes for evidence and follow-ups.
-- [x] Stage 7 validation complete (2025-10-06) — CI run (`npm run test:ci -- --runTestsByPath src/tests/utils/terminal-formatter.test.ts src/interfaces/__tests__/adaptive-cli-integration.test.ts tests/interfaces/interface-adapter-integration.test.ts src/tests/mcp/visual-feedback-system.formatter.test.ts`) remained green; `npm run phase6-health` still fails while `dist/src/scripts/run-phase6-integration-validation.js` cannot require `../tests/integration-validation-framework`, documented as a legacy harness issue rather than a formatter regression.
+- [~] Stage 7 validation rerun (2025-10-06) — CI run (`npm run test:ci -- --runTestsByPath src/tests/utils/terminal-formatter.test.ts src/interfaces/__tests__/adaptive-cli-integration.test.ts tests/interfaces/interface-adapter-integration.test.ts src/tests/mcp/visual-feedback-system.formatter.test.ts`) remained green; Phase 6 health now reports `status=passed` and validation exits with `status=skipped`, removing the synthetic readiness score but still requiring a real-backend run before promotion to full PASS.
 
 ### 8. Theme Utils Consolidation
 
