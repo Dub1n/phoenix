@@ -14,6 +14,7 @@ type AnyFunction = (...args: any[]) => any;
 export class AsyncUtils {
   private static logger: Logger = createLogger('async-utils');
   private static activeTimeouts: Set<NodeJS.Timeout> = new Set();
+  private static activeIntervals: Set<NodeJS.Timeout> = new Set();
 
   static async withTimeout<T>(
     promise: Promise<T>,
@@ -159,6 +160,51 @@ export class AsyncUtils {
     return throttled;
   }
 
+  static createInterval(
+    handler: () => void | Promise<void>,
+    intervalMs: number,
+    options: { immediate?: boolean; unref?: boolean } = {}
+  ): { stop: () => void; ref: () => void; unref: () => void } {
+    const { immediate = false, unref = false } = options;
+
+    const invokeHandler = async () => {
+      try {
+        await handler();
+      } catch (error) {
+        this.logger.error('Managed interval handler failed', {
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+    };
+
+    if (immediate) {
+      void invokeHandler();
+    }
+
+    const interval = setInterval(() => {
+      void invokeHandler();
+    }, intervalMs);
+
+    if (unref && typeof interval.unref === 'function') {
+      interval.unref();
+    }
+
+    this.activeIntervals.add(interval);
+
+    return {
+      stop: () => {
+        clearInterval(interval);
+        this.activeIntervals.delete(interval);
+      },
+      ref: () => {
+        interval.ref?.();
+      },
+      unref: () => {
+        interval.unref?.();
+      }
+    };
+  }
+
   static async raceWithTimeout<T>(promise: Promise<T>, timeoutMs: number, timeoutError?: Error): Promise<T> {
     return this.withTimeout(promise, timeoutMs, timeoutError);
   }
@@ -177,7 +223,12 @@ export class AsyncUtils {
       clearTimeout(timeout);
     }
     this.activeTimeouts.clear();
-    this.logger.debug('Cleared active timeouts');
+
+    for (const interval of this.activeIntervals) {
+      clearInterval(interval);
+    }
+    this.activeIntervals.clear();
+    this.logger.debug('Cleared active timeouts and intervals');
   }
 }
 
@@ -187,6 +238,7 @@ export const {
   sleep,
   debounce,
   throttle,
+  createInterval,
   raceWithTimeout,
   allWithTimeout,
   delay,

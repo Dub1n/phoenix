@@ -276,16 +276,17 @@ These areas show true redundancy without architectural value:
 - [x] **Pattern File**: [Async Utils Utility Pattern](../patterns/utilities/core/async-utils.md)
 - [T] **Utility File**: (Templum/src/utils/async-utils.ts)
 - [ ] **Files Using This Pattern**:
-  - [ ] `src/backend/service-discovery.ts` (43 timeout calls)
-  - [ ] `src/backend/connection-factory.ts` (38 timeout calls)
-  - [ ] `src/backend/backend-service-router.ts` (52 timeout calls)
-  - [ ] `src/interfaces/terminal-ui-components.ts` (29 timeout calls)
-  - [ ] `src/core/templum-core.ts` (34 timeout calls)
-  - [ ] All other files with setTimeout/setInterval (45+ additional files)
+  - [ ] `src/backend/service-discovery.ts` (43 timeout calls) *(post-MVP)*
+  - [ ] `src/backend/connection-factory.ts` (38 timeout calls) *(post-MVP)*
+  - [ ] `src/backend/backend-service-router.ts` (52 timeout calls) *(MVP focus: lifecycle/health timers keeping Jest alive)*
+  - [ ] `src/interfaces/terminal-ui-components.ts` (29 timeout calls) *(post-MVP)*
+  - [ ] `src/core/templum-core.ts` (34 timeout calls) *(post-MVP)*
+  - [ ] All other files with setTimeout/setInterval (45+ additional files) *(post-MVP catch-up once harness is stable)*
 
 - **Current Problem**: 316 setTimeout/setInterval calls with manual timeout management
 - **API Design**: `await timeout(promise, 5000)` - Auto-cleanup, retry with backoff
 - **Impact**: ~200 timeout calls consolidatable, reliable retry patterns
+- **MVP Note**: Prioritise suites causing Jest hangs (adapter integration, universal skin system, backend lifecycle tests) before sweeping the remaining timers post-MVP.
 
 ### 4. Event Utils Consolidation
 
@@ -299,6 +300,7 @@ These areas show true redundancy without architectural value:
 - **Current Problem**: 528 EventEmitter uses with repeated event management patterns
 - **API Design**: `events.typed<EventMap>().emit('event', data)` - Typed events, auto-cleanup
 - **Impact**: Standardized event handling, reduced boilerplate
+- **MVP Note**: Once `event-utils` compiles again, target emitters in the adapter/session suites that keep Jest running; broader adoption can wait for post-MVP.
 - [!] Current State: Existing `src/utils/event-utils.ts` implementation fails `tsc` (generic signatures misaligned with Node EventEmitter) during `npm run phase6-health`; refactor required before further consolidation work.
 
 ---

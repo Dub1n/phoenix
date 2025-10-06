@@ -24,17 +24,17 @@ last_updated: 2025-10-06
 
 ## Universal Interface Core
 
-- [~] [Zero-knowledge backend registry with auto-discovery](../../dev/tasks/zero-knowledge-registry.md)
-  Progress 45% — Unit tests pass (`npm run test -- src/tests/backend/service-discovery.test.ts`), but the generic backend integration suite still fails before watcher/health paths execute.
-- [~] [Versioned skin contract enforcement](../../dev/tasks/versioned-skin-contract.md)
-  Progress 15% — Validator remains hand-written; Ajv-backed schema enforcement and adapter rejection tests are still pending.
-- [ ] [Unified session/context layer across adapters](../../dev/tasks/unified-session-layer.md)
-  Progress 15% — Shared manager exists but is not injected; adapters still manage their own session state and leave Jest open handles.
+- [x] [Zero-knowledge backend registry with auto-discovery](../../dev/tasks/zero-knowledge-registry.md)
+  Progress 100% — Watcher overrides and regression coverage are in place, manual verification is documented, and the remaining real-backend Phase 6 run is waived to post-MVP under `dev/tasks/phase6-validation-signal.md`.
+- [x] [Versioned skin contract enforcement](../../dev/tasks/versioned-skin-contract.md)
+  Progress 100% — Ajv-backed validation now enforces the canonical schema (performance hints, menu/command/workflow structures), emits schema metadata on registration, and new contract + adapter suites cover rejection flows. Full `npm test -- --runTestsByPath … --runInBand --forceExit` is green.
+- [~] [Unified session/context layer across adapters](../../dev/tasks/unified-session-layer.md)
+  Progress 70% — `TemplumUniversalSessionManager` now comes from core DI, replaces the CLI-specific manager, and is injected into CLI/VSCode flows with bridging helpers and targeted integration tests (`tests/session/unified-session-manager.integration.test.ts`, `tests/interfaces/interface-adapter-integration.test.ts` → “Unified Session Manager Integration”). Remaining work: finish universal interaction manager persistence cleanup and wire the legacy CLI state-sync helpers through the shared foundation to eliminate duplicate caches.
 
 ## Backend Connectivity
 
-- [?] [Multi-protocol auto-registration with health checks](../../dev/tasks/multi-protocol-auto-registration.md)
-  Progress 35% — Strategy scaffolding is in place, yet `discoverAndConnect()` crashes under Jest; protocol-specific health probes remain HTTP-only.
+- [x] [Multi-protocol auto-registration with health checks](../../dev/tasks/multi-protocol-auto-registration.md)
+  Completed — Router/discovery fixes plus multi-protocol test + health suites are green (`npm test -- src/tests/backend/service-discovery.test.ts src/tests/backend/backend-dependency-integration.test.ts src/tests/backend/generic-backend-integration.test.ts`; `npm run test:health`). Live Phase 6 service evidence is rescheduled post-MVP (see `docs/target/post-mvp-progress.md`).
 - [ ] [Connection lifecycle event broadcasting to interfaces/logs](../../dev/tasks/connection-lifecycle-events.md)
   Progress 0% — Lifecycle payloads are not emitted, so adapters/logs never reflect backend state.
 - [ ] [Manual override flow without breaking zero-knowledge behaviour](../../dev/tasks/manual-override-flow.md)
@@ -42,6 +42,10 @@ last_updated: 2025-10-06
 
 ## Skin-Driven Rendering
 
+- [ ] [Timer & Event cleanup for test harness](../..\dev/architecture/safe-consolidation-candidates.md)
+  Progress 0% — Migrate suites that keep Jest alive to `AsyncUtils.createInterval`/`cleanup` and the refactored `event-utils` wrapper per `Templum/dev/patterns/utilities/core/async-utils.md`, `Templum/src/utils/async-utils.ts`, and plan the broader adoption via `Templum/dev/architecture/utility-consolidation-playbook.md`.
+- [ ] [Timer & Event cleanup for test harness](../../dev/architecture/safe-consolidation-candidates.md)
+  Progress 0% — Migrate suites that keep Jest alive to `AsyncUtils.createInterval`/`cleanup` and the refactored event-utils wrapper per `Templum/dev/patterns/utilities/core/async-utils.md`, `Templum/src/utils/async-utils.ts`, and the consolidation steps in `Templum/dev/architecture/utility-consolidation-playbook.md`.
 - [ ] [Skin payload consumption powering full UI without hardcoding](../../dev/tasks/skin-payload-consumption.md)
   Progress 25% — Rendering scaffolding exists, but adapters still use fallback dumps instead of payload-driven menus.
 - [ ] [Procedural windowed TUI layout from skin descriptors](../../dev/tasks/procedural-windowed-tui.md)
@@ -68,7 +72,7 @@ last_updated: 2025-10-06
 ## Integration Partners
 
 - [~] [Haruspex integration path defined](../../dev/tasks/haruspex-integration.md)
-  Progress 20% — Specs exist but no skin output or ingestion tests.
+  Progress 20% — Specs exist but no skin output or ingestion tests; live Phase 6 boot is parked post-MVP while Haruspex build fixes land.
 - [ ] [Phoenix Code Lite skin ingestion validated](../../dev/tasks/pcl-skin-ingestion.md)
   Progress 0% — Awaiting PCL exporter prototype and ingestion harness.
 

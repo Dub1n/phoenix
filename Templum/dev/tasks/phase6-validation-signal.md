@@ -28,6 +28,7 @@ Tags: `#infra`
 - Capture at least one golden run (mocks + real backends) and store raw metrics in `validation-reports/phase6-baselines/` so the regression monitor can diff against lived data.
 - Consider wiring results into existing observability tooling (e.g., structured logs or metrics exporters) so Phase 6 data is queryable outside the CLI.
 - When instrumentation lands, update CI to fail builds when the performance delta exceeds agreed thresholds—coordinate with pipeline owners before flipping the enforcement switch.
+- Coordinate with the Phase 7 release runner/report templates so the new raw-metrics artefacts surface in the Stage 7 gate; update the Phase 7 task file once the Phase 6 scripts persist metrics.
 - If this task changes prerequisites or dependency relationships, regenerate the project’s dependency map JSON (see `dev/tasks/*_task_dependencies.json`) and attach the updated file in the related progress planner.
 
 ## Checklist (Copy into PR or issue if needed)

@@ -3,7 +3,7 @@ doc-type: architecture-spec
 title: Templum Architecture Specification
 tags: [templum, universal_interface, architecture]
 status: current
-last_updated: 2025-09-22
+last_updated: 2025-10-06
 ---
 
 # Templum — Architecture Specification (Current State)
@@ -11,7 +11,7 @@ last_updated: 2025-09-22
 ## 0. Summary
 
 - **Purpose:** Universal interface orchestrator that renders backend-defined skins across CLI, VSCode, and future interfaces without hardcoded knowledge.
-- **Current Status:** In migration—backend discovery works, but the skin-driven UI and shared session model still need implementation/verification.
+- **Current Status:** In migration—backend discovery works, the shared session manager now spans adapters, and the skin-driven UI still needs implementation/verification.
 - **Key Dependencies:** Haruspex and Phoenix Code Lite backends; Validation System for runtime checks.
 - **Documentation Links:** [progress](docs/current/progress.md), [testing guide](docs/current/testing-guide.md), [V3C](docs/target/ValidationSystem-V3C-Documentation.md), pattern references under `dev/patterns/`.
 
@@ -19,9 +19,9 @@ last_updated: 2025-09-22
 >
 > ⚠️ **Needs Verification:** Skin rendering pipeline, CLI refactor, and observability wiring are documented but not proven end-to-end.
 >
-> 🧭 **In Progress:** Backend router refactor, shared session/context work, and Haruspex integration.
+> 🧭 **In Progress:** Backend router refactor, shared session/context verification, and Haruspex integration.
 
-- Backend discovery (`ServiceDiscovery`, `ConnectionFactory`) enumerates locally registered services but requires regression testing after recent refactors. **Status:** Present (flaky under integration load).
+- Backend discovery (`ServiceDiscovery`, `ConnectionFactory`) enumerates locally registered services; watcher overrides keep `.templum/services` scoped to the active workspace/tests and regression suites cover manifest add/change/remove plus router promotion. Live partner boots remain deferred and are tracked under `dev/tasks/phase6-validation-signal.md`. **Status:** Present (real-service run deferred post-MVP).
 - Skins are not yet produced by backends; renderer still mixes hardcoded menus with skin stubs. **Status:** Absent.
 - CLI/daemon process separation is scaffolded; IPC contracts need integration tests. **Status:** Broken.
 - Observability/health monitoring blueprints exist; instrumentation must be validated before relying on metrics dashboards. **Status:** Broken.
@@ -30,13 +30,13 @@ last_updated: 2025-09-22
 
 - **Core Components:**
   - `TemplumCore` orchestrates adapters, state, and backend routing. **Status:** Present (initialises but still tied to legacy session managers).
-  - `ServiceDiscovery` + `ConnectionFactory` provide zero-knowledge backend connections (IPC/HTTP/WebSocket/gRPC). **Status:** Broken (multi-protocol discovery fails in integration and health probes stay HTTP-only).
+  - `ServiceDiscovery` + `ConnectionFactory` provide zero-knowledge backend connections (IPC/HTTP/WebSocket/gRPC). **Status:** Partial (local multi-protocol tests pass; partner boot captured as post-MVP follow-up).
   - `UniversalSkinEngine` is responsible for consuming `UniversalSkinDefinition` payloads (pending full implementation). **Status:** Broken (schema enforcement and payload rendering incomplete).
-  - Interface adapters (`cli`, `vscode`, `command`) render skins and manage interaction state. **Status:** Present (operational yet reliant on fallback rendering).
+  - Interface adapters (`cli`, `vscode`, `command`) render skins and manage interaction state. **Status:** Present (operational yet reliant on fallback rendering). CLI now bridges into the shared session foundation via `CLISessionBridge`, and VSCode receives the injected session manager instance; the interaction manager still needs to move off local caches.
   - Display stack utilities (`DisplayUtils`, `TerminalFormatter`, `WindowUtils`) expose dependency-injected seams via `configureDisplayStack(...)`, wrapping `DisplayUtils.configure`, `WindowUtils.configure`, and `TerminalFormatter.configure` so CLI/session surfaces share formatter, logger, and column providers without importing `chalk` directly. **Status:** Present.
 - **Data/Control Flow:**
   - Backends publish skins that discovery ingests. **Status:** Absent (partner exports not yet available).
-  - Discovery registers services and hydrates connection factories. **Status:** Broken (fails under integration tests, protocol health incomplete).
+  - Discovery registers services and hydrates connection factories. **Status:** Partial (manifest-led integration works; live partner start deferred post-MVP).
   - Command router/skin engine expose functionality across adapters. **Status:** Broken (skin-driven output still falls back to hardcoded menus).
 - **Integration Points:**
   - Haruspex backend (analysis) and Phoenix Code Lite (QMS tooling) will expose skins consumed by Templum. **Status:** Absent (waiting on partner exports).
@@ -46,9 +46,9 @@ last_updated: 2025-09-22
 
 | Requirement                         | Status | Notes                                             |
 | ----------------------------------- | ------ | ------------------------------------------------- |
-| Zero-knowledge backend registry     | `[~]`  | Discovery works; re-verify health/priority logic. |
-| Versioned skin contract enforcement | `[~]`  | Schema validation planned; tests missing.         |
-| Unified session/context layer       | `[ ]`  | See `dev/tasks/unified-session-layer.md`.         |
+| Zero-knowledge backend registry     | `[~]`  | Local suites green; real backend run deferred to post-MVP follow-up. |
+| Versioned skin contract enforcement | `[x]`  | Ajv-backed validator enforces the canonical schema, emits registration metadata, and contract/adapter suites cover rejection flows. |
+| Unified session/context layer       | `[~]`  | Core now constructs a single `TemplumUniversalSessionManager` shared by adapters; CLI uses the bridge wrapper, VSCode receives the injected manager, follow-up work is tightening interaction-manager syncing. |
 | Skin-driven CLI/VSCode UI           | `[ ]`  | Renderer refactor outstanding.                    |
 | Observability instrumentation       | `[?]`  | Blueprint archived; confirm runtime wiring.       |
 | Haruspex backend integration        | `[~]`  | Pending skin output + API alignment.              |

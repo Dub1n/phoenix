@@ -64,6 +64,18 @@ function debouncedFunction() {
 
 #### Async Utils Implementation
 
+#### Managed Intervals
+
+```typescript
+// Managed interval with automatic cleanup and unref support
+const heartbeat = AsyncUtils.createInterval(async () => {
+  await router.performHealthChecks();
+}, 30000, { immediate: true, unref: true });
+
+// Later in teardown
+heartbeat.stop();
+```
+
 **Core AsyncUtils Class** (Minimal Usage Design):
 
 ```typescript

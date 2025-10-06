@@ -26,6 +26,8 @@ import {
   ensureThemeIntegrity,
   ResponsiveLayout,
 } from "../../src/interfaces/terminal-ui-components";
+import { TemplumUniversalSessionManager } from "../../src/session/templum-universal-session-manager";
+import { createTestPCLSkinDefinition } from "../templum/universal-skin-system.test";
 
 const ansiPattern = /\u001b\[[0-9;]*m/g;
 
@@ -46,6 +48,50 @@ const overrideStdoutColumns = (width: number): (() => void) => {
   };
 };
 
+const createStubBackendRouter = () => ({
+  discoverAndConnect: jest.fn().mockResolvedValue(undefined),
+  loadBackendSkin: jest.fn().mockResolvedValue(null),
+  executeCommand: jest.fn().mockResolvedValue(undefined),
+  getConnectionStatus: jest.fn().mockReturnValue({
+    totalConnections: 0,
+    healthyConnections: 0,
+    backends: {},
+  }),
+});
+
+const createVSCodeContext = () => {
+  const noop = jest.fn();
+  return {
+    extensionUri: undefined,
+    subscriptions: [],
+    globalState: { get: jest.fn(), update: jest.fn() },
+    workspaceState: { get: jest.fn(), update: jest.fn() },
+    asAbsolutePath: (value: string) => value,
+    environmentVariableCollection: {
+      persistent: true,
+      replace: noop,
+      get: noop,
+      forEach: noop,
+      append: noop,
+      prepend: noop,
+      clear: noop,
+      delete: noop,
+    },
+  } as any;
+};
+
+class StubSessionManager extends EventEmitter {
+  initialize = jest.fn().mockResolvedValue(undefined);
+  attachOrchestrator = jest.fn();
+  ensureSessionForInterface = jest.fn().mockResolvedValue('stub-session');
+  registerInterfaceAdapter = jest.fn().mockResolvedValue(undefined);
+  updateSessionState = jest.fn().mockResolvedValue(undefined);
+  syncInterfaces = jest.fn().mockResolvedValue(undefined);
+  notifyInterfaceDisconnect = jest.fn();
+  getSessionSnapshot = jest.fn().mockReturnValue(null);
+  getActiveSessionId = jest.fn().mockReturnValue('stub-session');
+}
+
 /**
  * Mock Orchestrator for Testing Interface Adapter Integration
  *
@@ -60,8 +106,22 @@ class MockTemplumOrchestrator
   private registeredInterfaces: Map<InterfaceType, IInterfaceAdapter> =
     new Map();
   private supportedInterfaces: InterfaceType[] = ["vscode", "cli", "command"];
+  private backendRouterStub = createStubBackendRouter();
+  private sessionManager: TemplumUniversalSessionManager | StubSessionManager;
+
+  constructor(options: {
+    sessionManager?: TemplumUniversalSessionManager;
+  } = {}) {
+    super();
+    this.sessionManager = options.sessionManager ?? new StubSessionManager();
+    if ('attachOrchestrator' in this.sessionManager) {
+      this.sessionManager.attachOrchestrator(this);
+    }
+  }
 
   async initialize(): Promise<void> {
+    await (this.sessionManager.initialize?.() ?? Promise.resolve());
+    await (this.sessionManager.ensureSessionForInterface?.('cli') ?? Promise.resolve('cli-session'));
     this.initialized = true;
     this.emit("initialized");
   }
@@ -86,6 +146,8 @@ class MockTemplumOrchestrator
       );
     }
     this.registeredInterfaces.set(interfaceType, adapter);
+    await (this.sessionManager.ensureSessionForInterface?.(interfaceType) ?? Promise.resolve());
+    await (this.sessionManager.registerInterfaceAdapter?.(interfaceType, adapter) ?? Promise.resolve());
     this.emit("interface-registered", { interfaceType, adapter });
   }
 
@@ -156,6 +218,10 @@ class MockTemplumOrchestrator
     this.emit("backend-services-refreshed");
   }
 
+  getSessionManager(): TemplumUniversalSessionManager | StubSessionManager {
+    return this.sessionManager;
+  }
+
   getUniversalSkinEngine(): any {
     return {
       renderForInterface: jest
@@ -181,6 +247,7 @@ class MockTemplumOrchestrator
   async shutdown(): Promise<void> {
     this.initialized = false;
     this.registeredInterfaces.clear();
+    await (this.sessionManager as any).stopSession?.();
     this.emit("shutdown");
   }
 
@@ -870,6 +937,108 @@ describe("Interface Adapter Integration Tests", () => {
 
       // Act & Assert
       await expect(adapter.syncState(invalidStateUpdate)).rejects.toThrow();
+    });
+
+    test("CLI adapter logs schema validation failures from the skin engine", async () => {
+      const adapter = new CLIInterfaceAdapter({ enableInteractiveMode: false });
+      await adapter.initialize(mockOrchestrator);
+
+      const validationError = createTemplumError(
+        'Skin validation failed: metadata.backendService is required',
+        'skin-validation-error',
+        'validation'
+      );
+
+      const engineSpy = jest.spyOn(mockOrchestrator, 'getUniversalSkinEngine').mockReturnValue({
+        renderForInterface: jest.fn().mockRejectedValue(validationError),
+        generateSkinHTML: jest.fn()
+      } as any);
+
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+      await adapter.applySkin(JSON.parse(JSON.stringify(createTestPCLSkinDefinition())));
+
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining('CLIInterfaceAdapter: Failed to apply skin: Skin validation failed')
+      );
+
+      consoleSpy.mockRestore();
+      engineSpy.mockRestore();
+    });
+
+    test("VSCode adapter surfaces schema validation errors via logger", async () => {
+      const adapter = new VSCodeInterfaceAdapter(new MockVSCodeContext() as any);
+      await adapter.initialize(mockOrchestrator);
+
+      const validationError = createTemplumError(
+        'Skin validation failed: metadata.backendService is required',
+        'skin-validation-error',
+        'validation'
+      );
+
+      const engineSpy = jest.spyOn(mockOrchestrator, 'getUniversalSkinEngine').mockReturnValue({
+        renderForInterface: jest.fn().mockRejectedValue(validationError),
+        generateSkinHTML: jest.fn()
+      } as any);
+
+      const loggerErrorSpy = jest.spyOn((adapter as any).logger, 'error');
+
+      (adapter as any).view = {
+        webview: {
+          postMessage: jest.fn().mockResolvedValue(true)
+        }
+      };
+
+      await adapter.applySkin(JSON.parse(JSON.stringify(createTestPCLSkinDefinition())));
+
+      expect(loggerErrorSpy).toHaveBeenCalled();
+      const [, , metadata] = loggerErrorSpy.mock.calls[0];
+      expect(metadata?.errorMessage).toContain('Skin validation failed');
+
+      loggerErrorSpy.mockRestore();
+      engineSpy.mockRestore();
+    });
+  });
+
+  describe("Unified Session Manager Integration", () => {
+    test("shares session state between CLI and VSCode adapters", async () => {
+      const sessionManager = new TemplumUniversalSessionManager(
+        {},
+        undefined,
+        createStubBackendRouter() as any,
+      );
+      const orchestrator = new MockTemplumOrchestrator({ sessionManager });
+      await orchestrator.initialize();
+
+      const cliAdapter = new CLIInterfaceAdapter({ enableInteractiveMode: false });
+      await cliAdapter.initialize(orchestrator);
+
+      const vscodeAdapter = new VSCodeInterfaceAdapter(createVSCodeContext());
+      await vscodeAdapter.initialize(orchestrator);
+
+      const cliSessionBridge = (cliAdapter as any).sessionManager;
+      cliSessionBridge.navigateToMenu('settings', true);
+      cliSessionBridge.addCommandToHistory('templum.test');
+      cliSessionBridge.updatePreferences({ theme: 'light' });
+
+      const snapshot = sessionManager.getSessionSnapshot();
+      expect(snapshot?.currentMenu).toBe('settings');
+      expect(snapshot?.navigationHistory).toContain('main');
+      expect(snapshot?.commandHistory[0]).toBe('templum.test');
+      expect(snapshot?.preferences.theme).toBe('light');
+
+      await sessionManager.syncInterfaces('cli', 'vscode');
+
+      const disconnectSpy = jest.fn();
+      sessionManager.on('interfaceDisconnected', disconnectSpy);
+      sessionManager.notifyInterfaceDisconnect('cli', 'integration-test');
+      expect(disconnectSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ interfaceType: 'cli', reason: 'integration-test' })
+      );
+
+      await vscodeAdapter.dispose();
+      await cliAdapter.dispose();
+      await orchestrator.shutdown();
     });
   });
 });

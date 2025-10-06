@@ -4,14 +4,28 @@
   "title": "Universal Skin Engine - Validation Schema v1.0",
   "description": "JSON Schema for Universal Skin Engine skin definitions with comprehensive validation rules",
   "type": "object",
-  "required": ["metadata", "views", "menus", "commands", "workflows", "theme", "backendConfig"],
-  "additionalProperties": false,
+  "required": [
+    "metadata",
+    "views",
+    "menus",
+    "commands",
+    "workflows",
+    "backendConfig"
+  ],
+  "additionalProperties": true,
   "properties": {
     "metadata": {
       "type": "object",
       "title": "Skin Metadata",
       "description": "Core identification and compatibility information",
-      "required": ["id", "name", "version", "description", "targetInterfaces", "backendService"],
+      "required": [
+        "id",
+        "name",
+        "version",
+        "description",
+        "targetInterfaces",
+        "backendService"
+      ],
       "properties": {
         "id": {
           "type": "string",
@@ -41,7 +55,11 @@
           "type": "array",
           "items": {
             "type": "string",
-            "enum": ["vscode", "cli", "command"]
+            "enum": [
+              "vscode",
+              "cli",
+              "command"
+            ]
           },
           "minItems": 1,
           "maxItems": 3,
@@ -109,7 +127,9 @@
       "type": "object",
       "title": "CLI Interface Menus",
       "description": "CLI menu structures and navigation",
-      "required": ["main"],
+      "required": [
+        "main"
+      ],
       "properties": {
         "main": {
           "$ref": "#/definitions/MenuDefinition",
@@ -139,14 +159,13 @@
       "type": "object",
       "title": "Command-line Interface",
       "description": "Command-line commands and help system",
-      "required": ["primary", "help"],
       "properties": {
         "primary": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/CommandDefinition"
           },
-          "minItems": 1,
+          "minItems": 0,
           "maxItems": 50,
           "description": "Primary command definitions"
         },
@@ -223,6 +242,15 @@
     "validation": {
       "$ref": "#/definitions/ValidationRules",
       "description": "Validation rules and configuration"
+    },
+    "themes": {
+      "type": "object",
+      "description": "Collection of named theme variants",
+      "patternProperties": {
+        "^[a-zA-Z0-9_-]+$": {
+          "$ref": "#/definitions/SkinTheme"
+        }
+      }
     }
   },
   "definitions": {
@@ -234,43 +262,786 @@
         "vscode": {
           "type": "object",
           "properties": {
-            "treeViews": {"type": "boolean", "default": true},
-            "panels": {"type": "boolean", "default": true},
-            "statusBar": {"type": "boolean", "default": true},
-            "decorations": {"type": "boolean", "default": false},
-            "commands": {"type": "boolean", "default": true},
-            "contextMenus": {"type": "boolean", "default": true}
+            "treeViews": {
+              "type": "boolean",
+              "default": true
+            },
+            "panels": {
+              "type": "boolean",
+              "default": true
+            },
+            "statusBar": {
+              "type": "boolean",
+              "default": true
+            },
+            "decorations": {
+              "type": "boolean",
+              "default": false
+            },
+            "commands": {
+              "type": "boolean",
+              "default": true
+            },
+            "contextMenus": {
+              "type": "boolean",
+              "default": true
+            }
           }
         },
         "cli": {
           "type": "object",
           "properties": {
-            "interactiveMenus": {"type": "boolean", "default": true},
-            "keyboardNavigation": {"type": "boolean", "default": true},
-            "progressIndicators": {"type": "boolean", "default": true},
-            "inputValidation": {"type": "boolean", "default": true},
-            "sessionManagement": {"type": "boolean", "default": false}
+            "interactiveMenus": {
+              "type": "boolean",
+              "default": true
+            },
+            "keyboardNavigation": {
+              "type": "boolean",
+              "default": true
+            },
+            "progressIndicators": {
+              "type": "boolean",
+              "default": true
+            },
+            "inputValidation": {
+              "type": "boolean",
+              "default": true
+            },
+            "sessionManagement": {
+              "type": "boolean",
+              "default": false
+            }
           }
         },
         "command": {
           "type": "object",
           "properties": {
-            "flagParsing": {"type": "boolean", "default": true},
-            "pipeSupport": {"type": "boolean", "default": false},
-            "completions": {"type": "boolean", "default": true},
-            "helpGeneration": {"type": "boolean", "default": true},
-            "aliasSupport": {"type": "boolean", "default": true}
+            "flagParsing": {
+              "type": "boolean",
+              "default": true
+            },
+            "pipeSupport": {
+              "type": "boolean",
+              "default": false
+            },
+            "completions": {
+              "type": "boolean",
+              "default": true
+            },
+            "helpGeneration": {
+              "type": "boolean",
+              "default": true
+            },
+            "aliasSupport": {
+              "type": "boolean",
+              "default": true
+            }
           }
         },
         "shared": {
           "type": "object",
           "properties": {
-            "workflows": {"type": "boolean", "default": false},
-            "theming": {"type": "boolean", "default": true},
-            "caching": {"type": "boolean", "default": true},
-            "stateSync": {"type": "boolean", "default": true},
-            "errorHandling": {"type": "boolean", "default": true}
+            "workflows": {
+              "type": "boolean",
+              "default": false
+            },
+            "theming": {
+              "type": "boolean",
+              "default": true
+            },
+            "caching": {
+              "type": "boolean",
+              "default": true
+            },
+            "stateSync": {
+              "type": "boolean",
+              "default": true
+            },
+            "errorHandling": {
+              "type": "boolean",
+              "default": true
+            }
           }
+        }
+      }
+    },
+    "PerformanceHints": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "loadingStrategy": {
+          "type": "string",
+          "enum": [
+            "eager",
+            "lazy",
+            "progressive"
+          ]
+        },
+        "cacheStrategy": {
+          "type": "string",
+          "enum": [
+            "lru",
+            "lfu",
+            "ttl"
+          ]
+        },
+        "preloadComponents": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "criticalPath": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "renderingHints": {
+          "type": "object"
+        }
+      }
+    },
+    "TreeViewDefinition": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "id",
+        "name",
+        "dataProvider"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "icon": {
+          "type": "string"
+        },
+        "dataProvider": {
+          "type": "string"
+        },
+        "refreshCommand": {
+          "type": "string"
+        },
+        "showCollapseAll": {
+          "type": "boolean"
+        },
+        "canSelectMany": {
+          "type": "boolean"
+        },
+        "contextMenus": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ContextMenuDefinition"
+          }
+        },
+        "onSelectionChange": {
+          "type": "string"
+        },
+        "icons": {
+          "type": "object"
+        }
+      }
+    },
+    "PanelDefinition": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "id",
+        "name",
+        "type"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "webview",
+            "tree",
+            "form",
+            "custom"
+          ]
+        },
+        "showOnStartup": {
+          "type": "boolean"
+        },
+        "retainContextWhenHidden": {
+          "type": "boolean"
+        },
+        "viewColumn": {
+          "type": "integer"
+        },
+        "preserveFocus": {
+          "type": "boolean"
+        },
+        "enableScripts": {
+          "type": "boolean"
+        },
+        "retainContext": {
+          "type": "boolean"
+        },
+        "contentUrl": {
+          "type": "string"
+        },
+        "messageHandler": {
+          "type": "string"
+        }
+      }
+    },
+    "StatusBarDefinition": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "id",
+        "text"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        },
+        "command": {
+          "type": "string"
+        },
+        "tooltip": {
+          "type": "string"
+        },
+        "priority": {
+          "type": "number"
+        },
+        "alignment": {
+          "type": "string",
+          "enum": [
+            "left",
+            "right"
+          ]
+        }
+      }
+    },
+    "DecorationDefinition": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "id",
+        "type"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "line",
+            "range",
+            "gutter"
+          ]
+        },
+        "color": {
+          "type": "string"
+        },
+        "backgroundColor": {
+          "type": "string"
+        }
+      }
+    },
+    "MenuDefinition": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "title",
+        "items"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "subtitle": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/MenuItemDefinition"
+          },
+          "minItems": 0
+        },
+        "theme": {
+          "$ref": "#/definitions/SkinTheme"
+        },
+        "navigation": {
+          "type": "object"
+        }
+      }
+    },
+    "MenuItemDefinition": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "id",
+        "label"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "action": {
+          "type": "string"
+        },
+        "command": {
+          "type": "string"
+        },
+        "shortcuts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "shortcut": {
+          "type": "string"
+        },
+        "submenu": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/MenuItemDefinition"
+              }
+            }
+          ]
+        },
+        "type": {
+          "type": "string"
+        },
+        "icon": {
+          "type": "string"
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "visible": {
+          "type": "boolean"
+        }
+      }
+    },
+    "ContextMenuDefinition": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "id"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "when": {
+          "type": "string"
+        },
+        "command": {
+          "type": "string"
+        },
+        "group": {
+          "type": "string"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/MenuItemDefinition"
+          }
+        }
+      }
+    },
+    "CommandDefinition": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "title",
+        "description"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "handler": {
+          "type": "string"
+        },
+        "command": {
+          "type": "string"
+        },
+        "category": {
+          "type": "string"
+        },
+        "parameters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ParameterDefinition"
+          }
+        },
+        "shortcuts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "type": {
+          "type": "string"
+        }
+      }
+    },
+    "ParameterDefinition": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "name",
+        "type"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "string",
+            "number",
+            "boolean",
+            "array"
+          ]
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "description": {
+          "type": "string"
+        },
+        "default": {}
+      }
+    },
+    "HelpDefinition": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "format",
+        "sections"
+      ],
+      "properties": {
+        "format": {
+          "type": "string",
+          "enum": [
+            "markdown",
+            "text"
+          ]
+        },
+        "sections": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/HelpSection"
+          },
+          "minItems": 0
+        }
+      }
+    },
+    "HelpSection": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "title",
+        "content"
+      ],
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "content": {
+          "type": "string"
+        }
+      }
+    },
+    "CompletionDefinition": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "command",
+        "completions"
+      ],
+      "properties": {
+        "command": {
+          "type": "string"
+        },
+        "completions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "WorkflowDefinition": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "title",
+        "description",
+        "steps"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/WorkflowStepDefinition"
+          },
+          "minItems": 1
+        },
+        "conditions": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "rollback": {
+          "type": "object"
+        }
+      }
+    },
+    "WorkflowStepDefinition": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "id",
+        "command"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "command": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "args": {
+          "type": "array",
+          "items": {}
+        },
+        "condition": {
+          "type": "string"
+        },
+        "onError": {
+          "type": "string",
+          "enum": [
+            "stop",
+            "continue",
+            "retry"
+          ]
+        },
+        "timeout": {
+          "type": "number"
+        },
+        "waitForCompletion": {
+          "type": "boolean"
+        },
+        "parameters": {
+          "type": "object"
+        }
+      }
+    },
+    "WorkflowTemplate": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "id",
+        "name",
+        "description",
+        "parameters",
+        "workflow"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "parameters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ParameterDefinition"
+          }
+        },
+        "workflow": {
+          "$ref": "#/definitions/WorkflowDefinition"
+        }
+      }
+    },
+    "SkinTheme": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Skin theme definition"
+    },
+    "BackendConfig": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "service",
+        "version",
+        "protocol",
+        "endpoint"
+      ],
+      "properties": {
+        "service": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "protocol": {
+          "type": "string",
+          "enum": [
+            "ipc",
+            "http",
+            "websocket"
+          ]
+        },
+        "endpoint": {
+          "type": "string"
+        },
+        "authentication": {
+          "type": "object"
+        },
+        "timeout": {
+          "type": "number"
+        },
+        "retries": {
+          "type": "number"
+        },
+        "keepAlive": {
+          "type": "boolean"
+        },
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "healthEndpoint": {
+          "type": "string"
+        },
+        "capabilitiesEndpoint": {
+          "type": "string"
+        },
+        "versionEndpoint": {
+          "type": "string"
+        },
+        "options": {
+          "type": "object"
+        },
+        "endpoints": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "CachingStrategy": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "strategy",
+        "maxAge",
+        "maxSize"
+      ],
+      "properties": {
+        "strategy": {
+          "type": "string",
+          "enum": [
+            "lru",
+            "lfu",
+            "ttl"
+          ]
+        },
+        "maxAge": {
+          "type": "number"
+        },
+        "maxSize": {
+          "type": "number"
+        }
+      }
+    },
+    "ValidationRules": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "schema"
+      ],
+      "properties": {
+        "schema": {
+          "type": "string"
+        },
+        "strictMode": {
+          "type": "boolean"
+        },
+        "validateOnLoad": {
+          "type": "boolean"
         }
       }
     }
