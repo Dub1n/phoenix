@@ -8,7 +8,13 @@
 
 import { EventEmitter } from 'events';
 import { performance } from 'perf_hooks';
-import {TemplumError, isTemplumError, ErrorSignalPayload} from '../types/templum-types';
+import {
+  TemplumError,
+  isTemplumError,
+  ErrorSignalPayload,
+  BackendConnectionLifecycleEvent,
+  BackendConnectionLifecycleState
+} from '../types/templum-types';
 
 // Core interfaces for IPC-based state coordination
 export interface IPCStateMessage {
@@ -768,6 +774,9 @@ export class EnhancedStateManager extends EventEmitter {
   
   private readonly performanceThreshold = 30; // 30% degradation threshold from Phase 1
   private cleanupTasks: Array<() => void> = [];
+  private backendLifecycleSnapshot: Map<string, BackendConnectionLifecycleEvent> = new Map();
+  private lifecycleEventCache: Map<string, { state: BackendConnectionLifecycleState; timestamp: number }> = new Map();
+  private readonly lifecycleDedupeWindowMs = 500;
 
   constructor(config: {
     coalescingConfig?: Partial<StateCoalescingConfig>;
@@ -917,6 +926,60 @@ export class EnhancedStateManager extends EventEmitter {
     });
 
     this.emit('interface-registered', { interfaceId, interfaceType, capabilities });
+  }
+
+  async handleBackendLifecycleEvent(event: BackendConnectionLifecycleEvent): Promise<void> {
+    const last = this.lifecycleEventCache.get(event.backendId);
+    if (last && last.state === event.state && event.timestamp - last.timestamp < this.lifecycleDedupeWindowMs) {
+      return;
+    }
+
+    this.lifecycleEventCache.set(event.backendId, { state: event.state, timestamp: event.timestamp });
+    this.backendLifecycleSnapshot.set(event.backendId, event);
+    await this.broadcastLifecycleUpdate(event);
+  }
+
+  private async broadcastLifecycleUpdate(event: BackendConnectionLifecycleEvent): Promise<void> {
+    const payload = this.buildLifecycleBroadcastPayload(event);
+    const message: IPCStateMessage = {
+      type: 'state-update',
+      componentId: 'backend-lifecycle',
+      interfaceType: 'broadcast',
+      stateData: payload,
+      timestamp: event.timestamp,
+      changeId: `backend-lifecycle-${event.backendId}-${event.timestamp}`
+    };
+
+    try {
+      await this.ipcCoordinator.sendMessage(message);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown lifecycle broadcast error';
+      this.emit('warning:backend-lifecycle-ipc', { error: errorMessage, event });
+    }
+
+    try {
+      await this.crossInterfaceSync.syncState('backend-lifecycle', payload.snapshot, 'backend');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown cross-interface lifecycle error';
+      this.emit('warning:backend-lifecycle-sync', { error: errorMessage, event });
+    }
+
+    this.emit('backend-lifecycle', payload);
+  }
+
+  private buildLifecycleBroadcastPayload(event: BackendConnectionLifecycleEvent): {
+    event: BackendConnectionLifecycleEvent;
+    snapshot: Record<string, BackendConnectionLifecycleEvent>;
+  } {
+    const snapshot: Record<string, BackendConnectionLifecycleEvent> = {};
+    for (const [backendId, details] of Array.from(this.backendLifecycleSnapshot.entries())) {
+      snapshot[backendId] = details;
+    }
+
+    return {
+      event,
+      snapshot
+    };
   }
 
   private async applyStateChange(change: StateChange, options: any): Promise<void> {

@@ -17,6 +17,7 @@ import * as WebSocket from 'ws';
 import { UniversalSkinEngine } from '../skin/universal-skin-engine';
 import {
     BackendType,
+    BackendConnectionLifecycleEvent,
     createTemplumError,
     InterfaceType,
     isTemplumError,
@@ -37,6 +38,7 @@ import {
 import { BackendConnection, ConnectionFactory } from './connection-factory';
 import { DynamicCommandRouter } from './dynamic-command-router';
 import { ServiceDiscovery, ServiceDiscoveryOptions } from './service-discovery';
+import type { DiscoveredService } from './service-discovery';
 // Unused import removed: backendIntegrationConfig
 // Available via require('./backend-integration-config') if needed in future
 import { ITemplumOrchestrator } from '../interfaces/templum-orchestrator-interface';
@@ -53,6 +55,7 @@ import {
   type SerializationStatus
 } from '../utils/serialization-utils';
 import { emitSerializationWarnings } from './backend-serialization-log';
+import { BackendLifecycleChannel } from './lifecycle/backend-lifecycle-channel';
 
 // IPC Protocol Types (Based on Haruspex IPC Protocol)
 export type IPCMessageType = 
@@ -372,12 +375,14 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
   private connections: Map<string, BackendConnection> = new Map();
   private serviceHealth: Map<string, BackendStatus> = new Map();
   private backendConfigs: Map<string, BackendConfig> = new Map();
+  private discoveredServiceCache: Map<string, DiscoveredService> = new Map();
   private backendCapabilityProfiles: Map<string, BackendCapabilityProfile> = new Map(); // TASK-SKIN-004B
   private universalSkinEngine: UniversalSkinEngine;
   private commandRouter: DynamicCommandRouter;
   private serviceDiscovery: ServiceDiscovery;
   private useGenericDiscovery: boolean;
   private orchestrator?: ITemplumOrchestrator;
+  private lifecycleChannel: BackendLifecycleChannel;
   
   // ENHANCED: Background health monitoring and recovery system
   private healthMonitorInterval: NodeJS.Timeout | null = null;
@@ -416,6 +421,7 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
     this.commandRouter = new DynamicCommandRouter();
     this.serviceDiscovery = new ServiceDiscovery(discoveryOptions);
     this.useGenericDiscovery = discoveryOptions?.useGenericDiscovery ?? true;
+    this.lifecycleChannel = new BackendLifecycleChannel(this);
     
     // ENHANCED: Configure health monitoring parameters
     this.healthCheckInterval = discoveryOptions?.healthCheckInterval ?? 30000;
@@ -702,9 +708,19 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
         console.log(`[RECOVERY] Successfully recovered connection to ${backendId}`);
         this.recoveryAttempts.delete(backendId);
         this.emit('connectionRecovered', { backendId, attempts: nextAttempt });
+        this.lifecycleChannel.emitRecovered(backendId, {
+          attempts: nextAttempt,
+          retryAttempts: nextAttempt - 1,
+          origin: 'recovery'
+        });
       } catch (error) {
         console.warn(`[RECOVERY] Recovery attempt ${nextAttempt} failed for ${backendId}:`, error);
         this.emit('recoveryFailed', { backendId, attempts: nextAttempt, error });
+        this.lifecycleChannel.emitFailed(backendId, error, {
+          attempts: nextAttempt,
+          retryAttempts: nextAttempt,
+          origin: 'recovery'
+        });
       }
     }, backoffDelay);
   }
@@ -794,7 +810,12 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
     }
 
     // Handle both skin definition formats safely  
-    const backendId = skinDefinition.metadata?.backend || skinDefinition.metadata?.backendService || 'unknown-backend';
+    const backendId = 
+      skinDefinition.metadata?.backendService ||
+      skinDefinition.backendConfig?.service ||
+      skinDefinition.metadata?.backend ||
+      skinDefinition.id ||
+      'unknown-backend';
     const backendConfig = skinDefinition.backendConfig;
 
     console.log(`[GENERIC] Registering backend ${backendId} from skin definition`);
@@ -900,16 +921,20 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
 
     try {
       // Use ServiceDiscovery system to find available backends
-      const discoveredBackends = await this.serviceDiscovery.discoverServices();
+      const discoveredBackends = await this.resolveDiscoveredBackends();
       console.log(`[SERVICE_DISCOVERY] Discovery found ${discoveredBackends.length} potential backends`);
 
       // Clear existing backend configs and replace with discovered ones
       this.backendConfigs.clear();
+      this.discoveredServiceCache.clear();
       
       // Process discovered services
       for (const discoveredService of discoveredBackends) {
         console.log(`[SERVICE_DISCOVERY] Processing discovered service: ${discoveredService.id} (${discoveredService.discoveryMethod}, confidence: ${discoveredService.confidence})`);
         
+        // Cache the discovered service metadata for downstream consumers
+        this.discoveredServiceCache.set(discoveredService.id, discoveredService);
+
         // Store the discovered backend configuration
         this.backendConfigs.set(discoveredService.id, discoveredService.config);
         
@@ -928,7 +953,7 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
         console.log(`[SERVICE_DISCOVERY] Connecting to discovered service ${serviceId} at ${config.endpoint}`);
         
         try {
-          const connected = await this.connectToServiceGeneric(serviceId, config, discoveryMetrics);
+          const connected = await this.connectToServiceGeneric(serviceId, config, discoveryMetrics, 'discovery');
           
           if (connected) {
             discoveredServices.push(serviceId);
@@ -980,7 +1005,44 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
       console.warn('[SERVICE_DISCOVERY] No services connected - system running in standalone mode');
     } else {
       console.log(`[SERVICE_DISCOVERY] Successfully connected to ${discoveredServices.length} backend services`);
-      this.startContinuousHealthMonitoring();
+      if (this.healthMonitoringEnabled) {
+        this.startContinuousHealthMonitoring();
+      }
+    }
+  }
+
+  /**
+   * Resolve discovered backend services, tolerating mocked discovery instances.
+   * Falls back to cached discovery results to keep the router state consistent.
+   */
+  private async resolveDiscoveredBackends(): Promise<DiscoveredService[]> {
+    try {
+      const discoveryResult = await this.serviceDiscovery.discoverServices();
+
+      if (Array.isArray(discoveryResult)) {
+        return discoveryResult;
+      }
+
+      if (discoveryResult !== undefined) {
+        console.warn(
+          `[SERVICE_DISCOVERY] Expected discoverServices() to return an array, received ${typeof discoveryResult}; using cached services instead.`
+        );
+      }
+    } catch (error) {
+      console.warn('[SERVICE_DISCOVERY] discoverServices() failed; falling back to cached services.', error);
+    }
+
+    try {
+      const cachedServices = this.serviceDiscovery.getDiscoveredServices();
+
+      if (cachedServices.length > 0) {
+        console.log(`[SERVICE_DISCOVERY] Using ${cachedServices.length} cached service entries for connection attempts.`);
+      }
+
+      return cachedServices;
+    } catch (cacheError) {
+      console.warn('[SERVICE_DISCOVERY] Unable to access cached discovered services; proceeding with empty list.', cacheError);
+      return [];
     }
   }
 
@@ -992,12 +1054,14 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
   private async connectToServiceGeneric(
     serviceId: string, 
     config: BackendConfig, 
-    metrics: { retryAttempts: number }
+    metrics: { retryAttempts: number },
+    origin: 'discovery' | 'manual' | 'recovery' = 'discovery'
   ): Promise<boolean> {
     const maxRetries = config.retries || 3;
     const baseDelayMs = 1000;
     
     for (let attempt = 0; attempt < maxRetries; attempt++) {
+      const attemptStart = Date.now();
       try {
         console.log(`Backend Service Router: [GENERIC] Connection attempt ${attempt + 1}/${maxRetries} for ${serviceId}`);
         
@@ -1011,6 +1075,17 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
           
           if (connection.isConnected()) {
             console.log(`Backend Service Router: [GENERIC] Successfully connected to ${serviceId} on attempt ${attempt + 1}`);
+            const responseTimeMs = Date.now() - attemptStart;
+            this.lifecycleChannel.emitConnected(serviceId, {
+              attempts: attempt + 1,
+              retryAttempts: metrics.retryAttempts,
+              responseTimeMs,
+              origin,
+              metadata: {
+                endpoint: config.endpoint,
+                protocol: config.protocol
+              }
+            });
             return true;
           }
         }
@@ -1028,10 +1103,28 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
         metrics.retryAttempts++;
         
         if (attempt === maxRetries - 1) {
+          this.lifecycleChannel.emitFailed(serviceId, error, {
+            attempts: attempt + 1,
+            retryAttempts: metrics.retryAttempts,
+            origin,
+            metadata: {
+              endpoint: config.endpoint,
+              protocol: config.protocol
+            }
+          });
           throw error;
         }
       }
     }
+    this.lifecycleChannel.emitFailed(serviceId, 'Connection attempts exhausted without establishing a session', {
+      attempts: maxRetries,
+      retryAttempts: metrics.retryAttempts,
+      origin,
+      metadata: {
+        endpoint: config.endpoint,
+        protocol: config.protocol
+      }
+    });
     
     return false;
   }
@@ -1363,6 +1456,10 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
    * Start continuous health monitoring for connected services
    */
   private startContinuousHealthMonitoring(): void {
+    if (!this.healthMonitoringEnabled) {
+      return;
+    }
+
     console.log('Backend Service Router: Starting continuous health monitoring...');
     
     // GENERIC INTEGRATION: Continuous health monitoring for skin-driven backends
@@ -1381,23 +1478,83 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
   }
 
 
-  private updateServiceHealth(serviceId: string, connected: boolean, health: 'healthy' | 'unhealthy' | 'error', error?: string, version?: string, responseTime?: number): void {
-    const status = this.serviceHealth.get(serviceId);
-    if (status) {
-      status.connected = connected;
-      status.health = health;
-      status.lastCheck = Date.now();
-      status.lastError = error;
-      if (version) {
-        status.version = version;
-      }
-      if (responseTime) {
-        status.responseTime = responseTime;
-      }
-      
-      // TASK-SKIN-005: Update connection stability for minimal backends
-      this.updateConnectionStability(serviceId, connected, responseTime);
+  private updateServiceHealth(
+    serviceId: string,
+    connected: boolean,
+    health: 'healthy' | 'unhealthy' | 'error',
+    error?: string,
+    version?: string,
+    responseTime?: number
+  ): void {
+    const existingStatus = this.serviceHealth.get(serviceId);
+    const status: BackendStatus = existingStatus ?? {
+      connected,
+      health,
+      lastCheck: Date.now(),
+      lastError: error,
+      capabilities: existingStatus?.capabilities || []
+    };
+
+    if (!existingStatus) {
+      this.serviceHealth.set(serviceId, status);
     }
+
+    const wasConnected = existingStatus?.connected === true;
+    const previousHealth = existingStatus?.health;
+
+    status.connected = connected;
+    status.health = health;
+    status.lastCheck = Date.now();
+    status.lastError = error;
+    if (version) {
+      status.version = version;
+    }
+    if (responseTime !== undefined) {
+      status.responseTime = responseTime;
+    }
+    
+    // Emit lifecycle transitions only when the backend was previously connected
+    if (wasConnected && connected) {
+      if (health === 'healthy' && previousHealth && previousHealth !== 'healthy') {
+        this.lifecycleChannel.emitRecovered(serviceId, {
+          origin: 'health-monitor',
+          metadata: {
+            previousHealth,
+            error
+          }
+        });
+      } else if (health !== 'healthy' && previousHealth !== health) {
+        if (health === 'error') {
+          this.lifecycleChannel.emitFailed(serviceId, error ?? 'Backend health reported as error', {
+            origin: 'health-monitor',
+            metadata: {
+              previousHealth,
+              error
+            }
+          });
+        } else {
+          this.lifecycleChannel.emitHealthDegraded(serviceId, {
+            origin: 'health-monitor',
+            responseTimeMs: responseTime,
+            metadata: {
+              previousHealth,
+              error
+            }
+          });
+        }
+      }
+    } else if (wasConnected && !connected) {
+      this.lifecycleChannel.emitDisconnected(serviceId, {
+        origin: 'health-monitor',
+        metadata: {
+          previousHealth,
+          error
+        }
+      });
+    }
+    
+    // TASK-SKIN-005: Update connection stability for minimal backends
+    this.updateConnectionStability(serviceId, connected, responseTime);
   }
 
   /**
@@ -3120,6 +3277,11 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
     return status?.connected === true && status?.health === 'healthy';
   }
 
+  onLifecycleEvent(listener: (event: BackendConnectionLifecycleEvent) => void): () => void {
+    this.on('connection:lifecycle', listener);
+    return () => this.off('connection:lifecycle', listener);
+  }
+
   /**
    * TASK-NEW-050: Connect to specific backend service
    * Public API for individual service connection management
@@ -3151,7 +3313,7 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
       }
       
       // Attempt connection using generic connection approach
-      const connected = await this.connectToServiceGeneric(serviceId, backendConfig, { retryAttempts: 0 });
+      const connected = await this.connectToServiceGeneric(serviceId, backendConfig, { retryAttempts: 0 }, 'manual');
       
       if (connected) {
         // Detect service capabilities and update health status
@@ -3232,6 +3394,12 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
       this.recoveryAttempts.delete(serviceId);
       
       console.log(`[SERVICE_DISCONNECTION] Successfully disconnected and cleaned up ${serviceId}`);
+      this.lifecycleChannel.emitDisconnected(serviceId, {
+        origin: 'manual',
+        metadata: {
+          reason: 'manual-disconnect'
+        }
+      });
       
       return {
         success: true,
@@ -3241,6 +3409,12 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown disconnection error';
       console.error(`[SERVICE_DISCONNECTION] Disconnection error for ${serviceId}:`, error);
+      this.lifecycleChannel.emitFailed(serviceId, error, {
+        origin: 'manual',
+        metadata: {
+          reason: 'manual-disconnect'
+        }
+      });
       
       return {
         success: false,

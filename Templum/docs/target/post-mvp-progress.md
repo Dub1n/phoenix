@@ -59,8 +59,8 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` not started · `[!]` broken · 
 
 ## Universal Interface Core
 
-- [~] [Zero-knowledge backend registry with auto-discovery](../../dev/tasks/zero-knowledge-registry.md) (needs verification in latest build) — **Must-have**
-  Progress 45% — `npm run test -- src/tests/backend/service-discovery.test.ts` passes, but `npm test -- src/tests/backend/generic-backend-integration.test.ts` still fails (`discoveredBackends` undefined) and no end-to-end check covers the new `.templum/services` watcher or multi-protocol health flows.
+- [ ] [Phase 6 real-backend verification for zero-knowledge registry](../../dev/tasks/phase6-validation-signal.md) — **Post-MVP follow-up**
+  Progress 0% — Latest build covers watcher overrides/tests; capture a live Phase 6 run with partner services once Haruspex/PCL builds stabilize and archive manifests/log output.
 - [~] [Versioned skin contract enforcement](../../dev/tasks/versioned-skin-contract.md) (schema validation pending integration tests) — **Must-have**
   Progress 15% — `src/validation/skin-validator.ts` remains a hand-written checker, Ajv-backed schema enforcement is unused, and no adapter tests exercise rejection/telemetry; coverage runs abort with `babel-plugin-istanbul` wiring errors before reaching new specs.
 - [ ] [Unified session/context layer across adapters](../../dev/tasks/unified-session-layer.md) — **Must-have**
@@ -73,8 +73,8 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` not started · `[!]` broken · 
   Progress 35% — strategy scaffolding covers HTTP/WebSocket/IPC parsing, yet `discoverAndConnect()` collapses under test (TypeError reported by `npm test -- src/tests/backend/generic-backend-integration.test.ts`) and protocol-specific health probes remain HTTP-only.
 - [~] [Optional backend mock harness for integration suite](../../dev/tasks/optional-backend-mock-harness.md) (mock run: `npm run phase6-validation`; dual run: `PHASE6_RUN_REAL=1 npm run phase6-validation:full`; contract assertions now guard mock payloads) — **Post-MVP**
   Progress 85% — mock harness APIs and contracts are in place (`npm run test -- tests/validation/mock-backend-contracts.test.ts` passes) but docs/CI wiring steps in the task checklist are still unchecked.
-- [ ] [Connection lifecycle event broadcasting to interfaces/logs](../../dev/tasks/connection-lifecycle-events.md) — **Must-have**
-  Progress 0% — no `connection:lifecycle` payloads are emitted from `TemplumBackendServiceRouter`, and no tests assert lifecycle broadcasts.
+- [x] [Connection lifecycle event broadcasting to interfaces/logs](../../dev/tasks/connection-lifecycle-events.md) — **Must-have**
+  Progress 100% — lifecycle broadcasting now ships via `BackendLifecycleChannel` with TemplumCore/state manager rebroadcasting; follow-up: rerun targeted suites without the timeout wrapper once the shared harness open-handle fix lands.
 - [ ] [Manual override flow without breaking zero-knowledge behaviour](../../dev/tasks/manual-override-flow.md) — **Must-have**
   Progress 0% — repository lacks a `ManualOverrideManager` and neither router nor discovery paths expose sanitized override controls.
 
@@ -134,6 +134,7 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` not started · `[!]` broken · 
 ## Integration Partners
 
 - [~] [Haruspex integration path defined](../../dev/tasks/haruspex-integration.md) (backend pending skin output) — **Must-have**
+  - Pending action: resolve Haruspex TypeScript compilation errors blocking `npm run phase6-services -- start --use-real-backends`, then capture Phase 6 live-evidence bundle.
 - [ ] [Phoenix Code Lite skin ingestion validated](../../dev/tasks/pcl-skin-ingestion.md) — **Must-have**
 - [ ] [Backend contract fixture library for regression coverage](../../dev/tasks/backend-contract-fixtures.md) — **Post-MVP**
 

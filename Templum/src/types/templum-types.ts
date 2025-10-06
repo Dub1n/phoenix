@@ -78,6 +78,30 @@ export interface CommandResult {
   };
 }
 
+export type BackendConnectionLifecycleState =
+  | 'connected'
+  | 'disconnected'
+  | 'recovered'
+  | 'failed'
+  | 'health-degraded';
+
+export interface BackendConnectionLifecycleEvent {
+  backendId: string;
+  state: BackendConnectionLifecycleState;
+  timestamp: number;
+  attempts?: number;
+  retryAttempts?: number;
+  responseTimeMs?: number;
+  durationMs?: number;
+  origin?: 'discovery' | 'manual' | 'health-monitor' | 'recovery';
+  metadata?: Record<string, any>;
+  error?: {
+    message: string;
+    code?: string;
+    stack?: string;
+  };
+}
+
 export interface CommandDefinition {
   title: string;
   description: string;
