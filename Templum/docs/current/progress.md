@@ -3,7 +3,7 @@ doc-type: progress
 name: Templum MVP Progress Tracker
 tags: [templum, progress, mvp]
 status: current
-last_updated: 2025-10-06
+last_updated: 2025-10-08
 ---
 
 # Templum — MVP Route Tracker
@@ -43,7 +43,7 @@ last_updated: 2025-10-06
 ## Skin-Driven Rendering
 
 - [ ] [Timer & Event cleanup for test harness](../../dev/architecture/safe-consolidation-candidates.md)
-  Progress 0% — Migrate suites that keep Jest alive to `AsyncUtils.createInterval`/`cleanup` and the refactored `event-utils` wrapper per `Templum/dev/patterns/utilities/core/async-utils.md`, `Templum/src/utils/async-utils.ts`, and plan the broader adoption via `Templum/dev/architecture/utility-consolidation-playbook.md`.
+  Progress 40% — Stage 1+2 groundwork is locked and Stage 3 now defines the prerequisites (backend/validation/phase6 gating runs) plus Stage 6 migration order (router → factory → validation/session → interfaces); backend lifecycle timers stay the first execution cohort once Stage 4 opens.
 - [x] [Skin payload consumption powering full UI without hardcoding](../../dev/tasks/skin-payload-consumption.md)
   Progress 100% — Orchestrator now caches backend skins and immediately replays them to active adapters, CLI/VSCode load flows render directly from `UniversalSkinDefinition` payloads, and integration coverage proves skins surface without fallback scaffolds (`npm test -- --runTestsByPath tests/rendering/skin-payload-consumption.integration.test.ts`).
 - [ ] [Procedural windowed TUI layout from skin descriptors](../../dev/tasks/procedural-windowed-tui.md)
@@ -56,6 +56,17 @@ last_updated: 2025-10-06
 - [!] [VSCode extension initialisation stable](../../dev/tasks/vscode-initialisation-stability.md)
   Progress 30% — Activation in no-workspace scenarios still aborts; WebView readiness logs warnings and tests hang without forced teardown.
 
+## Developer Workflow Alignment
+
+- [ ] [Design review acknowledgements](../../dev/tasks/design-review-acknowledgements.md)
+  Progress 0% — Awaiting Phoenix Code Lite review schema to render role-aware acknowledgement flow and write back independence confirmations (Development-Process-1.pdf §3.2, p.6).
+- [ ] [Sprint review risk prompts](../../dev/tasks/risk-review-prompts.md)
+  Progress 0% — Depends on Phoenix Code Lite risk ledger API to surface sprint risk updates and capture reviewer notes (Development-Process-1.pdf §7, p.10).
+- [ ] [Developer workflow prompts and notifications](../../dev/tasks/developer-discipline-prompts.md)
+  Progress 0% — Requires consuming Phoenix Code Lite workflow metadata so deterministic checks auto-complete with evidence links while residual manual steps surface targeted prompts (Development-Process-1.pdf Practical Developer Guide, pp.14–22).
+- [ ] [Templum backlog tooling visibility](../../dev/tasks/backlog-tooling-visibility.md)
+  Progress 0% — Awaiting final backlog tooling decision from Phoenix Code Lite to update CLI/VS Code onboarding and help flows (Development-Process-1.pdf Software Comparison, pp.29–31).
+
 ## Quality & Runtime Stability
 
 - [ ] [Test architecture consolidation and coverage governance](../../dev/tasks/test-architecture-governance.md)
@@ -64,6 +75,10 @@ last_updated: 2025-10-06
   Progress 10% — Dozens of direct `process.on` registrations remain, leaving Jest hanging.
 - [ ] [Phase 6 validation signal overhaul](../../dev/tasks/phase6-validation-signal.md)
   Progress 5% — New mandate is to tear out the synthetic readiness metrics and make the harness emit deterministic pass/fail (no random delays or default 100% mocks) before layering real instrumentation back in.
+- [ ] [QMS bundle crosswalk for legacy SSI-QF obligations](../../dev/tasks/qms-bundle-crosswalk.md)
+  Progress 0% — Needs bundle schema outline and contextual mapping from retired SSI-QF forms to Phoenix Code Lite exports so auditors can see how each regulatory obligation is met once Word/Excel SOP artefacts are removed.
+- [ ] [Table component schema & rendering support](../../dev/tasks/table-component-schema.md)
+  Progress 0% — Define a reusable table/checklist skin component with cell-level UI hints and editable state so Phoenix Code Lite (and other backends) can surface Practical Developer Guide prompts and CRUD-style tables without bespoke optional fields.
 - [?] [Structured metrics and logging in place](../../dev/tasks/observability-instrumentation.md) *(MVP subset: `dev/tasks/mvp/observability-baseline.md`)*
   Progress 0% — Blueprint exists but runtime logging/metric hooks are not wired.
 
