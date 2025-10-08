@@ -1,55 +1,100 @@
 # Problem Statement
 
+Plain-language note: This version retains the original structure and adds clear explanations so colleagues who primarily work in Word and Excel can follow along without technical jargon.
+
 ## 1. Business & Product Context
 
-VDL2 is the next major release of the company’s hospital reporting platform, replacing the ageing VDL release that hospitals license today. The product is used internationally by clinical teams to view device telemetry, analyse results against predefined templates, and produce regulatory reports. Deployment happens per hospital: a central on-prem host stores the data, while staff connect through desktop terminals. VDL2 keeps that model but modernises the experience—a single webview-based GUI must connect either to a remote backend the company operates or to a local runtime for offline hospitals. The rewrite moves from a manually compiled C/C# codebase with no automated testing to a Rust-led stack with automated tests, faster iteration, and a UI that can be deployed in both connected and offline scenarios. Without this upgrade, every release continues to demand thousands of manual checks, the system remains brittle, and developers cannot keep pace with regulatory scrutiny or product roadmap changes.
+VDL2 is the next major release of our hospital reporting software. It replaces today's VDL program, which hospitals license to view device readings, analyse results, and produce regulatory reports. Each hospital runs the software on a central on-site computer, and staff connect to it from their desks. VDL2 keeps that "installed per hospital" model but modernises the experience:
+
+- A single desktop application window (implemented as a webview) can connect to different back-end systems. Those systems may be operated by us, by the hospital's own IT team, by a trusted hosting partner, or by a local offline copy for hospitals with limited connectivity.
+- The existing system was written in a mix of C and C# with many manual steps and no automated tests. VDL2 moves to a modern codebase (the team is evaluating Rust alongside other components) and embeds automated testing. That approach helps us catch issues sooner and deliver updates more quickly.
+
+If we do not make this upgrade, every release will continue to require a significant amount of manual checking, the system will remain fragile, and deadlines driven by regulators or the product roadmap will become harder to meet.
 
 ## 2. Current Workflow & Quality Pain Points
 
-The existing QMS and SOP workflow depends on copying giant Microsoft Word and Excel templates, renaming files by hand, and filling audit fields based on what testers see in the legacy GUI. Each release requires testers to step through a long checklist of hotkeys, dialog confirmations, and file inspections while toggling between a laggy application and an equally laggy Word document. Forgetting to duplicate a template can overwrite the canonical checklist; mistyped filenames or serial numbers ripple into audit packages. Excel-based forms contain brittle formulas that silently mis-evaluate pass/fail results. Any change to numbering schemes, regulatory clauses, or hardware variants forces someone to manually edit every template—filled and unfilled—across the entire library. Because the tooling cannot automate GUI interactions or read screen state, even partial attempts to script the checks fail, leaving developers back at square one. The compounded friction slows releases, increases error risk, and makes evidence gathering tedious for both software and hardware workflows.
+Our Quality Management System (QMS) is the rulebook and set of records we use to prove the product is safe, effective, and thoroughly tested. Today's process leans heavily on Standard Operating Procedures (SOPs) maintained in Word documents and Excel spreadsheets. Testers copy large templates, rename files manually, and fill in audit fields based on what they observe in the ageing VDL software.
+
+In day-to-day operations:
+
+- Each release means working through long checklists of keyboard shortcuts, dialog confirmations, and file inspections, while moving between a slow application and an equally slow Word document.
+- Forgetting to duplicate a template can overwrite the official checklist. Typos in filenames or serial numbers spread through audit bundles.
+- Tools such as TestComplete can automate only limited portions of the workflow, so testers are left with an inefficient half-manual, half-automated process that can be slower than performing the entire workflow manually.
+- Excel forms in our current QMS have fragile formulas. When numbering schemes, regulations, or hardware versions change, someone must adjust every single template across the library, whether it is already filled or still blank.
+- Formal design reviews required by IEC 62304 Section 5.6 live in email threads, meeting minutes, or personal notebooks rather than a central log. Independent reviewer participation is hard to prove because the Word/Excel workflow does not capture roles or timestamps (Development-Process-1.pdf §3.2).
+- Risk management updates outlined in IEC 62304 Section 7 rely on ad-hoc spreadsheets or personal reminders. Sprint reviews rarely revisit the risk register, and there is no single place where mitigations, requirements, and verification results are linked (Development-Process-1.pdf §7).
+- Traceability between requirements, implementation, and verification is rebuilt sprint-by-sprint. The official matrix (SSI-QF-20C) often lags by weeks, so engineers do not trust it during planning even though the PDF stresses continuous traceability (§4.2, §9.3).
+- Release evidence bundles are assembled manually from assorted folders and emails, making it difficult to satisfy the pre-release checks called out in Development-Process-1.pdf §§6.3–6.4 and §§8.1–8.3.
+- Developer discipline items described in the Practical Developer Guide (branch naming, TDD, Definition of Done checkpoints) are enforced by tribal knowledge. There is no automation to show whether the expected unit tests or documentation updates happened, so audit evidence is fragile (Development-Process-1.pdf Practical Developer Guide pp.14–22).
+- Backlog tooling is fragmented. Some teams track QMS actions in Trello, others in GitHub Projects, and the knowledge base is scattered. The PDF recommends YouTrack because it combines backlog management, knowledge base, and GitHub integration, but we have not made a definitive decision or communicated it broadly (Development-Process-1.pdf Software Comparison pp.29–31).
+
+This overhead delays releases, increases the likelihood of errors, and makes it difficult to gather evidence for both software and hardware workstreams.
 
 ## 3. Regulatory & Standards Drivers for VDL2
 
-VDL2 must demonstrate compliance with BS EN 62304:2006+A1:2015 life-cycle processes, EU MDR 2017/745 general safety and performance requirements, MDD 93/42/EEC essential requirements, UK MDR 2002 (as amended), Canadian Medical Device Regulations SOR/98-282, and analogous US FDA expectations. The development approach should also align with Agile guidance from AAMI TIR45-2023. Software safety classification under IEC 62304 is expected to be Class B, but the team still needs to confirm the final risk analysis; that decision drives the level of evidence and traceability required. Because VDL2 introduces a cloud-accessible deployment option, the team must verify which cybersecurity or data-protection regulations apply beyond the existing hardware-focused scope. Patient data handling remains intentionally out of scope for the internal tooling—developers will model those obligations in VDL2 itself without flowing real patient data through the QMS stack.
+VDL2 must still meet all regulatory obligations. The key standards and laws are:
+
+- **BS EN 62304:2006+A1:2015** - the lifecycle process standard for medical software.
+- **EU MDR 2017/745** and **MDD 93/42/EEC** - European medical device rules defining safety and performance.
+- **UK MDR 2002 (as amended)** - the UK version of medical device regulations.
+- **Canadian Medical Device Regulations SOR/98-282** and comparable US FDA expectations - the North American rule set.
+- **AAMI TIR45-2023** - guidance on how to use Agile practices inside a regulated environment (we already outlined this in "Development Process.pdf").
+
+We expect the software safety class under IEC 62304 to be **Class B** (medium risk), but the final risk assessment will confirm that. The classification determines the depth of traceability and evidence required. Because VDL2 introduces an option to host parts of the system in the cloud, we also need to determine which cybersecurity or data-protection rules apply in addition to the existing hardware-focused requirements.
+
+Important boundary condition: our internal tooling will not handle real patient data. Developers will manage those obligations inside VDL2 itself, so personal data does not pass through the QMS tools.
 
 ## 4. Internal Tooling & Project Landscape
 
-- **Templum** is the universal interface layer that should expose QMS workflows through CLI, VS Code, and other skins without hardcoding backend details. Today it lacks finished skin ingestion and still carries enterprise-grade ambitions that can be deferred for the MVP.
-- **Phoenix Code Lite (PCL)** is positioned as the QMS workflow engine: it owns regulated data models, traceability, release governance, and the artefact generation that replaces Word/Excel checklists. The implementation still contains legacy agent workflows and has no skin exporter yet.
-- **Haruspex** captures repository intelligence and developer-facing analysis. It should feed deterministic analysis data and skin definitions into Templum rather than rendering its own UI. The current backend still leans on VSCode-era code paths and placeholder handlers.
-- **Validation System** orchestrates automated validators. It can provide the gating logic and evidence runs that PCL consumes, but its Phase 6 harness currently relies on mocked data and randomised scores, so the evidence is not yet audit-ready.
-- **Other processes**: The company operates critical business workflows in a 15-year-old shared Excel workbook and similar manual forms. While not the focus of this pass, the architecture should allow future CRUD backends to emit skins through Templum so operational teams can leave those brittle tools behind.
+- **Templum** - This operates as the universal control layer for QMS tasks. It is intended to run the same actions from a command-line window, VS Code, or any other "skin" (an interchangeable view of the same workflow). The skin ingestion capabilities remain unfinished, and selected enterprise-grade ambitions can be deferred until after the Minimum Viable Product (MVP).
+- **Phoenix Code Lite (PCL)** - This is the workflow engine. It stores the regulated data, keeps track of which requirements map to which tests (traceability), and should produce the reports that currently live in Word/Excel. The goal is to link dependent steps so that, for example, testing a new build automatically triggers the compliance checks and produces the audit-ready report. The implementation still carries legacy workflows and cannot yet export skins.
+- **Haruspex** - This tool analyses our repositories and provides developer-facing insights. Instead of presenting its own interface, it should supply structured analysis data and skin definitions to Templum so that a single interface serves the user. The current version still references placeholder code paths from its early VS Code plugin days.
+- **Validation System** - This component coordinates automated validation runs. It can assert "pass" or "fail" with supporting evidence. PCL will consume those results to build the quality records.
+- **Other processes** - The company runs other critical workflows (for example in manufacturing or customer support) that will eventually transition away from Word/Excel. The same tooling approach should support them once the QMS pathfinder succeeds.
 
-## 5. Core Problem Statement
+## 5. Problem Statement Summary
 
-We must deliver an internal QMS tooling stack that replaces manual Word/Excel checklists and produces auditor-ready evidence for VDL2 development teams so they can ship compliant software on schedule, despite legacy processes, brittle templates, and the absence of skin-driven interfaces today.
+Continuing to rely on the manual QMS workflow puts release speed, traceability, and compliance at risk. The existing templates, manual evidence gathering, and partial automation attempts are insufficient for VDL2's scope. We need a system that reduces manual effort without compromising auditor confidence.
 
-## 6. Scope Boundaries
+## 6. Proposed Focus
 
-**In scope now:**
-- Build a Templum-first MVP that developers, firmware engineers, and operations staff can use to run QMS workflows without touching Word/Excel.
-- Consolidate PCL, Haruspex, and Validation System capabilities where they accelerate VDL2 development, even if some modules need rewriting.
-- Produce machine-readable artefacts (reports, traceability exports, validator logs) that auditors can understand in lieu of the old SOP documents.
+- Automate evidence capture by integrating Validation System outputs directly into the traceability chain in PCL (so test results are stored automatically).
+- Provide a universal interface through Templum skins so colleagues can run QMS actions inside familiar tools (command line or VS Code) without relying on manual file copies.
+- Retire the Word/Excel templates by generating audit-ready artifacts directly from the automated workflows.
+- Remain aligned with the regulatory standards listed above by ensuring the new setup captures the required documents, signatures, and traceability links.
 
-**Out of scope / deferred:**
-- Handling or storing real patient data, implementing HIPAA/GDPR workflows, or introducing production-grade cybersecurity features in the internal tooling.
-- Replacing the company’s entire Excel-based ERP stack during this pass—future CRUD backends may be added once approved.
-- Preserving every “enterprise-grade” capability documented for Templum; the priority is a reliable interface, even if the zero-knowledge contract temporarily allows controlled manual configuration.
+## 7. Alternatives Considered
 
-## 7. Desired Outcomes & Signals of Success
+### 7.1 Current SOP/QF Workflow (Status Quo)
 
-- Teams can run QMS, release, and hardware checklists entirely inside the new tooling with no manual Word/Excel edits, confirmed by an auditor-ready export per release.
-- Traceability from requirement to validation result is generated automatically, with validator identifiers and logs captured from the Validation System or its successor.
-- Release evidence packages are produced within a sprint cadence (e.g., 24–48 hours after a tagged build) and presented in a format auditors accept without rework.
-- Operations staff avoid re-entering data across multiple forms; when CRUD pilots land, a single entry propagates to all required artefacts.
-- Developers experience faster iteration because automated checks replace the current thousand-step manual GUI scripts.
+- **Strengths:** Already approved for the existing Visi-Download releases. Auditors recognise document IDs like SSI-SOP-20 and SSI-QF-20A through 20S, and the process ties clearly back to the BS EN 62304 clauses. It also works for hardware development and test logging.
+- **Limitations:** Everything is manual. Every checklist or report is a Word/Excel template that people must copy, rename, and complete. The SOP does not connect to source control, automated tests, or validator outputs, so developers must re-create evidence outside their primary tools. Updating versions means editing every form by hand, including ones that were already filled in, which increases the risk of drift or transcription errors. There is no real-time traceability or safeguard to guarantee Class B expectations are met.
+- **Fit for VDL2:** Poor. The SOP leaves out legacy software like Visi-Download, and it assumes manual reviews for Class A/B software. It cannot scale to continuous integration, to releases that happen often, or to both online and offline deployments. It also cannot surface evidence quickly enough for sprint reviews.
 
-## 8. Open Questions / Information Gaps
+### 7.2 Commercial QMS Platforms
 
-- **IEC 62304 classification:** Confirm Class B or adjust tooling expectations accordingly (owner: regulatory lead).
-- **Cloud/cybersecurity scope:** Determine which additional standards apply once VDL2 supports remote hosting (owner: regulatory lead with engineering support).
-- **Validation harness credibility:** Decide whether to rehabilitate the Phase 6 harness or replace it with deterministic validators that auditors can trust (owner: validation/QMS team).
-- **CRUD backend roadmap:** Identify when to introduce additional backends to replace company-wide Excel/Word processes and secure stakeholder approval (owner: product lead).
-- **Templum zero-knowledge contract:** Document any temporary deviations from the zero-knowledge registry and track remediation tasks so the MVP doesn’t ossify non-compliant patterns (owner: Templum tech lead).
+- **Strengths:** Offer hosted workflows, electronic signatures, and ready-made FDA/MDR templates. They reduce the effort needed to set up documentation from scratch.
+- **Limitations:** These tools run as separate web portals with limited ways to integrate (small APIs). They rarely align with our custom validation pipelines and cannot provide a single interface across all developer tools. Migrating Stowood's mix of hardware and software processes would still require significant bespoke work. Most vendors expect a cloud-first, patient-data-heavy environment, which would slow our internal development cadence. Licensing and data residency concerns add risk, and once adopted these products are difficult to exit.
+- **Fit for VDL2:** Partial. They can hold document libraries but cannot automate the testing and traceability evidence already living in code. Developers would still need to duplicate information between systems, and firmware work would stay separate.
 
-Update this problem statement as decisions land—the aims, solution alignment, and traceability matrix rely on it staying accurate.
+### 7.3 Proposed Internal Stack
+
+- **Strengths:** Places QMS actions inside the tools we already use (Templum in the command line and VS Code), reuses Validation System outputs, and keeps evidence together in version control. Skins mean future "CRUD" back-ends (systems that let you Create, Read, Update, and Delete records such as sales or shipping) can reuse the same interface, supporting the broader move away from Word/Excel. The architecture supports both online and offline deployments.
+- **Limitations:** We need upfront engineering time to finish the PCL exporters/traceability modules and to strengthen Validation System outputs. Governance features such as electronic signatures and an audit trail view must be built deliberately so auditors remain satisfied.
+
+## 8. Desired Outcomes & Signals of Success
+
+- Teams can complete QMS, release, and hardware checklists entirely inside the new tooling with no manual Word/Excel edits. Each release produces an export an auditor can accept without rework.
+- Traceability from each requirement to the matching validation result is produced automatically. Validator IDs and logs come directly from the Validation System or whichever tool replaces it.
+- Release evidence packages are ready within a sprint cadence (target 24-48 hours after tagging a build) and arrive in an auditor-ready format.
+- Operations staff avoid re-entering the same data in multiple places. When we implement CRUD pilots, entering information once updates every required artifact.
+- Developers can iterate faster because automated checks replace today's numerous manual GUI steps.
+
+## 9. Open Questions / Information Gaps
+
+- **IEC 62304 classification:** Confirm Class B or adjust tooling expectations accordingly. *(Owner: regulatory lead.)*
+- **Cloud/cybersecurity scope:** Decide which extra standards apply once VDL2 supports remote hosting. *(Owner: regulatory lead with engineering support.)*
+- **CRUD backend roadmap:** Plan when to add the other back-end systems that will replace company-wide Word/Excel processes, and secure stakeholder approval. *(Owner: product lead.)*
+- **Templum zero-knowledge contract:** Write down any temporary exceptions to the "zero-knowledge" rule (Templum should not assume details about a specific backend) and schedule fixes so the MVP does not cement bad patterns. *(Owner: Templum lead with product lead support.)*
+
+Update this problem statement as decisions are made. The goals, the link to the solution, and the traceability matrix rely on this document remaining accurate.
