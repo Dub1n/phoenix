@@ -20,6 +20,10 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` not started · `[!]` broken · 
   - Status 0% — exporter/ledger modules, CLI command, and tests have not been started; awaiting traceability dataset and compliance audit hooks.
 - [ ] [Regulatory metadata catalog live in system](../../dev/tasks/regulatory-metadata-catalog.md) (standards clauses, owners, timestamps)
   - Status 0% — no catalog modules or clause data are present; no tests cover ownership metadata or persistence.
+- [ ] [Risk register ledger](../../dev/tasks/risk-register-ledger.md)
+  - Status 0% — schema, storage, and validator linkage for sprint-level risk updates remain unimplemented; prerequisites include deterministic validator identifiers and requirement traceability.
+- [ ] [Evidence bundle schema & crosswalk](../../dev/tasks/evidence-bundle-schema-crosswalk.md)
+  - Status 0% — bundle structure and SSI-QF replacement mapping still need to be captured and reviewed with compliance.
 
 ## Workflow Automation
 
@@ -31,6 +35,12 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` not started · `[!]` broken · 
   - Status 0% — promotion service, Validation System gateway, and gating suites not yet scaffolded.
 - [ ] [Template variants for different release types](../../dev/tasks/release-template-variants.md)
   - Status 0% — configuration schema lacks release section; registry/tests/CLI toggles unresolved.
+- [ ] [Design review record store](../../dev/tasks/design-review-record-store.md)
+  - Status 0% — review ledger and exports for role/independence capture have not been started; depends on role vocabulary agreement with compliance.
+- [ ] [Practical Developer Guide metadata](../../dev/tasks/practical-developer-metadata.md)
+  - Status 0% — workflow metadata schema and automation hooks for branch/TDD/DoD checks pending; requires coordination with Templum for event consumption.
+- [ ] [Backlog tooling decision note](../../dev/tasks/backlog-tooling-decision.md)
+  - Status 0% — no documented decision comparing YouTrack recommendation to current tooling; outcome must be shared before MVP pilot.
 
 ## Interface & Skin Output
 

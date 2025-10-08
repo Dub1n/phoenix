@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "updatedAt": "2025-10-07T23:16:33Z",
+  "updatedAt": "2025-10-08T11:31:58Z",
   "patterns": [
     {
       "patternId": 1,
@@ -39,21 +39,312 @@
       "updatedAt": "2025-09-14T18:00:00Z"
     },
     {
-      "patternId": 2,
-      "name": "Error Handler Consolidation",
-      "description": "695 catch blocks with repeated manual error wrapping",
-      "stage": 1,
+      "patternId": 999,
+      "name": "CLI Stress Pattern",
+      "description": "Temporary pattern to exercise CLI flows across mixed stage/lane statuses.",
+      "stage": 4,
       "owner": {
         "agent": "unassigned",
-        "claimedAt": "2025-09-14T18:00:00Z"
+        "claimedAt": "2025-10-08T02:30:00Z"
       },
       "dependencies": [],
       "stageGates": {
         "1": {
+          "status": "complete",
+          "completedAt": "2025-10-05T10:00:00Z"
+        },
+        "2": {
+          "status": "complete",
+          "completedAt": "2025-10-06T11:00:00Z"
+        },
+        "3": {
+          "status": "complete",
+          "notes": "Plan locked"
+        },
+        "4": {
+          "status": "blocked"
+        },
+        "5": {
           "status": "open"
         }
       },
-      "lanes": {},
+      "lanes": {
+        "4a": {
+          "status": "complete",
+          "scope": "Prototype guardrail alignment for Stage 4",
+          "commands": [
+            {
+              "command": "npm run test:ci"
+            }
+          ],
+          "updatedAt": "2025-10-08T10:48:49Z",
+          "notes": "Starting prerequisite"
+        },
+        "4b": {
+          "status": "blocked",
+          "scope": "Backfill missing evidence for prerequisites",
+          "commands": [
+            {
+              "command": "npm run phase6-validation"
+            }
+          ],
+          "updatedAt": "2025-10-08T11:10:11Z",
+          "notes": "Waiting on upstream\nWaiting on dependency\nWaiting on dependency\nWaiting on dependency\nWaiting on dependency\nWaiting on dependency\nWaiting\nWaiting"
+        },
+        "6a": {
+          "status": "pending",
+          "scope": "Trial migration lane to simulate execution edge-cases",
+          "commands": [
+            {
+              "command": "npm run consolidate -- status 999"
+            }
+          ],
+          "dependencies": [
+            {
+              "patternId": 999,
+              "gate": "stage-4"
+            }
+          ],
+          "updatedAt": "2025-10-06T11:10:00Z"
+        }
+      },
+      "handoff": {
+        "guardrails": [
+          "Temporary pattern; do not ship changes from this entry."
+        ],
+        "sharedFiles": [],
+        "acknowledgements": []
+      },
+      "notes": [
+        {
+          "id": "stage-3-claim-20251008T104805",
+          "timestamp": "2025-10-08T10:48:05Z",
+          "body": "Beginning orchestration",
+          "scope": [
+            "stage-3"
+          ],
+          "author": "999-stage3"
+        }
+      ],
+      "evidence": [],
+      "activity": [
+        {
+          "stage": "stage-3",
+          "timestamp": "2025-10-08T10:48:05Z",
+          "summary": "Stage 3 activation",
+          "agent": "999-stage3"
+        },
+        {
+          "stage": "lane-4a",
+          "timestamp": "2025-10-08T10:48:21Z",
+          "summary": "Picking up 4a",
+          "agent": "999-4a"
+        },
+        {
+          "stage": "stage-3",
+          "timestamp": "2025-10-08T10:48:31Z",
+          "summary": "Stage 3 ready"
+        },
+        {
+          "stage": "lane-4a",
+          "timestamp": "2025-10-08T10:48:49Z",
+          "summary": "4a done"
+        },
+        {
+          "stage": "lane-4b",
+          "timestamp": "2025-10-08T10:49:16Z",
+          "summary": "4b blocked"
+        },
+        {
+          "stage": "lane-4b",
+          "timestamp": "2025-10-08T11:05:25Z",
+          "summary": "4b scheduled"
+        },
+        {
+          "stage": "lane-4b",
+          "timestamp": "2025-10-08T11:05:32Z",
+          "summary": "Picking up 4b",
+          "agent": "999-4b"
+        },
+        {
+          "stage": "lane-4b",
+          "timestamp": "2025-10-08T11:05:39Z",
+          "summary": "4b blocked again"
+        },
+        {
+          "stage": "lane-4b",
+          "timestamp": "2025-10-08T11:06:28Z",
+          "summary": "4b blocked again"
+        },
+        {
+          "stage": "lane-4b",
+          "timestamp": "2025-10-08T11:06:55Z",
+          "summary": "4b blocked again"
+        },
+        {
+          "stage": "lane-4b",
+          "timestamp": "2025-10-08T11:07:15Z",
+          "summary": "reset 4b"
+        },
+        {
+          "stage": "lane-4b",
+          "timestamp": "2025-10-08T11:07:25Z",
+          "summary": "Try again 4b",
+          "agent": "999-4b"
+        },
+        {
+          "stage": "lane-4b",
+          "timestamp": "2025-10-08T11:07:31Z",
+          "summary": "4b blocked again"
+        },
+        {
+          "stage": "lane-4b",
+          "timestamp": "2025-10-08T11:08:05Z",
+          "summary": "4b blocked again"
+        },
+        {
+          "stage": "lane-4b",
+          "timestamp": "2025-10-08T11:08:39Z",
+          "summary": "4b blocked again"
+        },
+        {
+          "stage": "lane-4b",
+          "timestamp": "2025-10-08T11:09:01Z",
+          "summary": "reset for test"
+        },
+        {
+          "stage": "lane-4b",
+          "timestamp": "2025-10-08T11:09:09Z",
+          "summary": "claim for guidance",
+          "agent": "999-4b"
+        },
+        {
+          "stage": "lane-4b",
+          "timestamp": "2025-10-08T11:09:55Z",
+          "summary": "final reset"
+        },
+        {
+          "stage": "lane-4b",
+          "timestamp": "2025-10-08T11:10:03Z",
+          "summary": "claim final",
+          "agent": "999-4b"
+        },
+        {
+          "stage": "lane-4b",
+          "timestamp": "2025-10-08T11:10:11Z",
+          "summary": "4b blocked final"
+        }
+      ],
+      "updatedAt": "2025-10-08T11:10:11Z"
+    },
+    {
+      "patternId": 2,
+      "name": "Error Handler Consolidation",
+      "description": "695 catch blocks with repeated manual error wrapping",
+      "stage": 4,
+      "owner": {
+        "agent": "Codex",
+        "claimedAt": "2025-10-08T00:58:06Z"
+      },
+      "dependencies": [],
+      "stageGates": {
+        "1": {
+          "status": "complete",
+          "notes": "Stage 1 complete: inventory logged for backend/service discovery/skin/interface adapters; guardrails documented for centralizing error handling"
+        },
+        "2": {
+          "status": "complete",
+          "notes": "Stage 2 complete: TDD plan logged covering new ErrorHandler unit coverage + backend/service-discovery integration guardrails"
+        },
+        "3": {
+          "status": "complete",
+          "notes": "Stage 3 complete: Stage 4/6 lanes sequenced and dependencies logged for ErrorHandler rollout"
+        },
+        "4": {
+          "status": "open"
+        },
+        "6": {
+          "status": "open"
+        }
+      },
+      "lanes": {
+        "4a": {
+          "status": "pending",
+          "scope": "Backend core migration",
+          "commands": [
+            {
+              "command": "rg 'catch \\(' src/backend/service-discovery.ts"
+            },
+            {
+              "command": "npm run test -- --runTestsByPath tests/service-discovery/discovery-cache.integration.test.ts"
+            }
+          ],
+          "updatedAt": "2025-10-08T02:01:21Z",
+          "dependencies": [
+            {
+              "patternId": 3,
+              "gate": "stage-2"
+            }
+          ],
+          "notes": "Requires Pattern 3 Stage 2 completion for aligned async-utils retries."
+        },
+        "4b": {
+          "status": "pending",
+          "scope": "Connectivity & IPC migration",
+          "commands": [
+            {
+              "command": "rg 'catch \\' src/backend/connection-factory.ts"
+            },
+            {
+              "command": "npm run test -- --runTestsByPath tests/backend/connection-factory.test.ts"
+            }
+          ],
+          "updatedAt": "2025-10-08T02:01:27Z",
+          "notes": "Requires Haruspex/Phoenix spec alignment on IPC handshake telemetry."
+        },
+        "4c": {
+          "status": "pending",
+          "scope": "Interface & skin adapter migration",
+          "commands": [
+            {
+              "command": "rg 'catch \\(' src/interfaces/cli-adapter-abstracted.ts"
+            },
+            {
+              "command": "npm run test -- --runTestsByPath tests/interfaces/interface-adapter-integration.test.ts"
+            }
+          ],
+          "updatedAt": "2025-10-08T02:01:33Z",
+          "notes": "Coordinate with interface guild + skin engine maintainers; proceed after lanes 4a/4b validated."
+        },
+        "6a": {
+          "status": "pending",
+          "scope": "Regression & coverage validation",
+          "commands": [
+            {
+              "command": "npm run test -- --runTestsByPath src/tests/utils/error-handler.test.ts"
+            },
+            {
+              "command": "npm run test -- --runTestsByPath tests/backend/connection-factory.test.ts"
+            },
+            {
+              "command": "npm run test:ci"
+            }
+          ],
+          "updatedAt": "2025-10-08T02:01:40Z",
+          "notes": "Capture outputs under tmp/error-handler-stage2.log and attach coverage delta in registry."
+        },
+        "6b": {
+          "status": "pending",
+          "scope": "Phase 6 connectivity validation",
+          "commands": [
+            {
+              "command": "npm run phase6-validation"
+            }
+          ],
+          "updatedAt": "2025-10-08T02:01:45Z",
+          "notes": "Ensure .templum/services cleared before run; capture logs for registry evidence."
+        }
+      },
       "handoff": {
         "guardrails": [],
         "sharedFiles": [],
@@ -68,28 +359,208 @@
             "stage-1"
           ],
           "body": "Category: Core Infrastructure Utilities (CRITICAL Priority)\nPattern doc: Templum/dev/patterns/utilities/core/error-handler.md\nUtility focus: (Templum/src/utils/error-handler.ts)\nProblem: 695 catch blocks with repeated manual error wrapping\nAPI intent: await wrap(() => operation(), 'context') - One-line error handling\nImpact: ~400 catch blocks standardizable, consistent error patterns\nStarter files:\n  • src/backend/backend-service-router.ts (87 catch blocks)\n  • src/backend/service-discovery.ts (76 catch blocks)\n  • src/backend/connection-factory.ts (54 catch blocks)\n  • src/interfaces/cli-adapter-abstracted.ts (63 catch blocks)\n  • src/skin/universal-skin-engine.ts (71 catch blocks)"
+        },
+        {
+          "id": "stage-1-note-20251008T005231",
+          "timestamp": "2025-10-08T00:52:31Z",
+          "body": "Stage 1 discovery snapshot:\nConsumers: backend service router, service discovery layer, connection factory, skin engine, CLI/VSCode adapters, window system utilities; all rely on manual try/catch logging and ad-hoc createTemplumError wrappers.\nCommands: rg \"catch \\(\" src/backend --stats (113 matches/10 files); rg \"catch \\(\" src/interfaces --stats (121 matches/20 files); rg \"catch \\(\" src/skin/universal-skin-engine.ts -n; rg \"createTemplumError\" src --stats (322 matches/39 files); rg \"ProbabilisticErrorHandler\" -n.\nObservations: fallback flows reimplement logging + timeout control (router/service discovery cache path, connection factory IPC timeouts, CLI orchestrator guard rails); console.* logging dominates instead of structured logger; universal skin engine manually wraps rendering/compatibility errors before rethrowing.\nGuardrails: preserve zero-knowledge backend registry + cache fallback semantics; retain timeout + retry behaviour from async-utils/ProbabilisticErrorHandler; surface errors through structured logger (no swallowed telemetry); coordinate with Haruspex/Phoenix specs before touching connection factory or adapter seams.\nNext focus: prepare consolidation play for standard wrap()/handleAsync adoption starting with backend router + service discovery where fallbacks are already clustered.",
+          "scope": [
+            "stage-1"
+          ],
+          "author": "Codex"
+        },
+        {
+          "id": "stage-2-note-20251008T005942",
+          "timestamp": "2025-10-08T00:59:42Z",
+          "body": "Stage 2 TDD plan:\nSuites: add new src/tests/utils/error-handler.test.ts covering normalizeError/handleAsync fallback + retry; extend tests/backend/connection-factory.test.ts to assert wrap() usage for IPC fallback; introduce integration harness in tests/service-discovery/discovery-cache.integration.test.ts to cover cached fallback path with ErrorHandler instrumentation; run npm run test -- --runTestsByPath src/tests/utils/error-handler.test.ts tests/backend/connection-factory.test.ts tests/service-discovery/discovery-cache.integration.test.ts plus npm run test:ci for regression.\nGuardrails: respect zero-knowledge registry (no backend-specific branches inside ErrorHandler); preserve existing timeout semantics from async-utils and ProbabilisticErrorHandler; ensure logger wiring remains DI-friendly for adapters.\nCoverage: target ≥85% statements/branches on src/utils/error-handler.ts and surface coverage delta in coverage/lcov-report/utils/error-handler.ts.html; capture Jest outputs under tmp/error-handler-stage2.log for Stage 3 handoff.",
+          "scope": [
+            "stage-2"
+          ],
+          "author": "Codex"
+        },
+        {
+          "id": "stage-3-note-20251008T010427",
+          "timestamp": "2025-10-08T01:04:27Z",
+          "body": "Stage 3 orchestration plan:\nStage 4 lanes:\n - 4a Backend core (Codex) — migrate backend-service-router + service-discovery to ErrorHandler.wrap/handleAsync once async-utils consolidation (Pattern 3 Stage 2) lands; keep zero-knowledge registry guardrails.\n - 4b Connectivity + IPC (Codex partnering with Haruspex owners) — refactor connection-factory + IPC client to central error utilities, gated on Haruspex spec sync.\n - 4c Interface + skin adapters (Interface guild) — roll CLI/VSCode adapters + universal-skin-engine onto ErrorHandler after backend lanes verified; coordinate with Skin Engine migration notes.\nStage 6 validation lanes:\n - 6a Regression + coverage (QA automation) — execute targeted Jest runs from Stage 2 plan + npm run test:ci, capture tmp/error-handler-stage2.log and coverage deltas.\n - 6b Phase 6 connectivity (Backend validation squad) — run npm run phase6-validation with registry cleared, record evidence in utility plan + phase6 logs.\nSequencing & dependencies: Run 4a → 4b → 4c to avoid adapter regressions; 4b contingent on Haruspex/Phoenix spec alignment; 6b waits for Pattern 3 async-utils retries to ship so timeout semantics match. Notify Pattern 3 owner if retry API changes. Coordination touchpoints recorded via stage-note updates + activity log entries.",
+          "scope": [
+            "stage-3"
+          ],
+          "author": "Codex"
         }
       ],
       "evidence": [],
-      "activity": [],
-      "updatedAt": "2025-09-14T18:00:00Z"
+      "activity": [
+        {
+          "stage": "stage-1",
+          "timestamp": "2025-10-08T00:50:58Z",
+          "summary": "Stage 1 status set to in_progress",
+          "agent": "Codex"
+        },
+        {
+          "stage": "stage-1",
+          "timestamp": "2025-10-08T00:52:39Z",
+          "summary": "Stage 1 status set to complete",
+          "agent": "Codex"
+        },
+        {
+          "stage": "stage-2",
+          "timestamp": "2025-10-08T00:59:23Z",
+          "summary": "Stage 2 status set to in_progress",
+          "agent": "Codex"
+        },
+        {
+          "stage": "stage-2",
+          "timestamp": "2025-10-08T00:59:50Z",
+          "summary": "Stage 2 status set to complete",
+          "agent": "Codex"
+        },
+        {
+          "stage": "stage-3",
+          "timestamp": "2025-10-08T01:04:08Z",
+          "summary": "Stage 3 status set to in_progress",
+          "agent": "Codex"
+        },
+        {
+          "stage": "stage-3",
+          "timestamp": "2025-10-08T01:04:31Z",
+          "summary": "Stage 3 status set to complete",
+          "agent": "Codex"
+        },
+        {
+          "stage": "stage-4",
+          "timestamp": "2025-10-08T02:01:21Z",
+          "summary": "Migrate backend service router & discovery to ErrorHandler",
+          "agent": "Codex"
+        },
+        {
+          "stage": "stage-4",
+          "timestamp": "2025-10-08T02:01:27Z",
+          "summary": "Refactor connection-factory + IPC client to ErrorHandler",
+          "agent": "Codex"
+        },
+        {
+          "stage": "stage-4",
+          "timestamp": "2025-10-08T02:01:33Z",
+          "summary": "Adopt ErrorHandler across CLI/VSCode adapters & universal skin engine",
+          "agent": "Codex"
+        },
+        {
+          "stage": "stage-6",
+          "timestamp": "2025-10-08T02:01:40Z",
+          "summary": "Execute targeted Jest suites + CI guard for ErrorHandler consolidation",
+          "agent": "Codex"
+        },
+        {
+          "stage": "stage-6",
+          "timestamp": "2025-10-08T02:01:45Z",
+          "summary": "Run phase6 validation after ErrorHandler rollout",
+          "agent": "Codex"
+        }
+      ],
+      "updatedAt": "2025-10-08T02:01:45Z"
     },
     {
       "patternId": 3,
       "name": "Async Utils Consolidation",
       "description": "316 setTimeout/setInterval calls with manual timeout management",
-      "stage": 1,
+      "stage": 4,
       "owner": {
-        "agent": "unassigned",
-        "claimedAt": "2025-09-14T18:00:00Z"
+        "agent": "Codex",
+        "claimedAt": "2025-10-08T00:53:14Z"
       },
       "dependencies": [],
       "stageGates": {
         "1": {
+          "status": "complete",
+          "notes": "Stage 1 inventory captured: rg verified 132 setTimeout + 35 setInterval calls, logged priority consumers and guardrails for backend-service-router first-pass migration and AsyncUtils cleanup reuse."
+        },
+        "2": {
+          "status": "complete",
+          "notes": "Results: Added src/tests/utils/async-utils.test.ts covering timeout, retry, debounce/throttle, interval cleanup; command npm run test -- --runTestsByPath src/tests/utils/async-utils.test.ts --runInBand --no-cache (pass); bound AsyncUtils static helpers to class to support named exports without leaking timers."
+        },
+        "3": {
+          "status": "complete",
+          "notes": "Stage 3 orchestration locked: Stage 4 prerequisites + Stage 6 migration lanes defined with sequencing, guardrails, and cross-pattern dependencies captured."
+        },
+        "4": {
+          "status": "in_progress"
+        },
+        "6": {
           "status": "open"
         }
       },
-      "lanes": {},
+      "lanes": {
+        "4a": {
+          "status": "complete",
+          "scope": "Baseline backend router + lifecycle gating",
+          "commands": [
+            {
+              "command": "npm run test -- --runTestsByPath src/tests/backend/backend-connection-lifecycle.test.ts src/tests/backend/manual-override-flow.test.ts --runInBand --no-cache"
+            }
+          ],
+          "updatedAt": "2025-10-08T11:03:00Z"
+        },
+        "4b": {
+          "status": "in_progress",
+          "scope": "Hybrid validation suite baseline",
+          "commands": [
+            {
+              "command": "npm run test -- --runTestsByPath src/tests/validation/hybrid-validation-system-v3c.test.ts --runInBand --no-cache"
+            }
+          ],
+          "updatedAt": "2025-10-08T11:31:58Z"
+        },
+        "4c": {
+          "status": "pending",
+          "scope": "Phase 6 health/cleanup baseline",
+          "commands": [
+            {
+              "command": "npm run phase6-health"
+            }
+          ],
+          "updatedAt": "2025-10-08T10:54:29Z"
+        },
+        "6a": {
+          "status": "pending",
+          "scope": "Backend service router lifecycle timers",
+          "commands": [
+            {
+              "command": "npm run test -- --runTestsByPath src/tests/backend/backend-connection-lifecycle.test.ts src/tests/backend/manual-override-flow.test.ts src/tests/backend/comprehensive-backend-validation.test.ts --runInBand --no-cache"
+            }
+          ],
+          "updatedAt": "2025-10-08T10:55:18Z"
+        },
+        "6b": {
+          "status": "pending",
+          "scope": "Connection factory + discovery timers",
+          "commands": [
+            {
+              "command": "npm run test -- --runTestsByPath src/tests/backend/service-discovery.test.ts src/tests/backend/generic-backend-integration.test.ts src/tests/backend/backend-dependency-integration.test.ts --runInBand --no-cache"
+            }
+          ],
+          "updatedAt": "2025-10-08T10:55:23Z"
+        },
+        "6c": {
+          "status": "pending",
+          "scope": "Validation + session timer consolidation",
+          "commands": [
+            {
+              "command": "npm run test -- --runTestsByPath src/tests/validation/hybrid-validation-system-v3c.test.ts tests/session/unified-session-manager.integration.test.ts --runInBand --no-cache"
+            }
+          ],
+          "updatedAt": "2025-10-08T10:55:39Z"
+        },
+        "6d": {
+          "status": "pending",
+          "scope": "Interface adapters + CLI timers",
+          "commands": [
+            {
+              "command": "npm run test -- --runTestsByPath tests/interfaces/interface-adapter-integration.test.ts tests/interfaces/universal-interaction-manager.session.test.ts --runInBand --no-cache"
+            }
+          ],
+          "updatedAt": "2025-10-08T10:55:44Z"
+        }
+      },
       "handoff": {
         "guardrails": [],
         "sharedFiles": [],
@@ -104,11 +575,131 @@
             "stage-1"
           ],
           "body": "Category: Core Infrastructure Utilities (CRITICAL Priority)\nPattern doc: Templum/dev/patterns/utilities/core/async-utils.md\nUtility focus: (Templum/src/utils/async-utils.ts)\nProblem: 316 setTimeout/setInterval calls with manual timeout management\nAPI intent: await timeout(promise, 5000) - Auto-cleanup, retry with backoff\nImpact: ~200 timeout calls consolidatable, reliable retry patterns\nStarter files:\n  • src/backend/service-discovery.ts (43 timeout calls) (post-MVP)\n  • src/backend/connection-factory.ts (38 timeout calls) (post-MVP)\n  • src/backend/backend-service-router.ts (52 timeout calls) (MVP focus: lifecycle/health timers keeping Jest alive)\n  • src/interfaces/terminal-ui-components.ts (29 timeout calls) (post-MVP)\n  • src/core/templum-core.ts (34 timeout calls) (post-MVP)"
+        },
+        {
+          "id": "stage-1-note-20251008T005403",
+          "timestamp": "2025-10-08T00:54:03Z",
+          "body": "Orientation: reviewed pattern doc and src/utils/async-utils.ts to confirm existing API surface (retry, debounce, managed intervals) covers registry expectations; current registry counts are stale (rg shows 132 setTimeout + 35 setInterval entries across src). Consumers: backend/connection-factory.ts (5 setTimeout), backend/service-health-check.ts (3 setTimeout), backend/backend-service-router.ts (3 setTimeout + 2 setInterval), backend/pcl-backend-integration.ts (4 setTimeout + 2 setInterval), interfaces/cli-adapter-abstracted.ts (3 setTimeout), interfaces/navigation/exit-handler.ts (3 setTimeout), state/enhanced-state-synchronization.ts (2 setTimeout + 4 setInterval), validation/hybrid-validation-system-v3c.ts (13 setTimeout + 2 setInterval). Commands: rg -c \"setTimeout\" src | sort -t: -k2 -nr | head -n 15; rg -c \"setInterval\" src | sort -t: -k2 -nr | head -n 15; sed -n '1,200p' src/utils/async-utils.ts. Guardrails: Stage 2 must start with backend-service-router timers to stabilise lifecycle/health probes, reuse AsyncUtils.cleanup within existing shutdown handlers, and stage UI/validation migrations until Universal Skin + session timing specs settle.",
+          "scope": [
+            "stage-1"
+          ]
+        },
+        {
+          "id": "stage-2-note-20251008T010356",
+          "timestamp": "2025-10-08T01:03:56Z",
+          "body": "Tests: add src/tests/utils/async-utils.test.ts covering withTimeout rejection/cleanup, retry backoff+jitter toggles, debounce/throttle scheduling, createInterval stop+cleanup, and global cleanup() semantics; Commands: npm run test -- --runTestsByPath src/tests/utils/async-utils.test.ts --runInBand --no-cache; Guardrails: no production code changes unless tests expose gaps, avoid fake timers that mask real cleanup logic, ensure AsyncUtils logger spies remain stub-free.",
+          "scope": [
+            "stage-2"
+          ],
+          "author": "Codex"
+        },
+        {
+          "id": "stage-3-note-20251008T105557",
+          "timestamp": "2025-10-08T10:55:57Z",
+          "body": "Lane owners: 4a/6a Codex + Backend Connectivity crew; 4b/6c Validation team; 4c Release readiness (Phase6 harness) with support from Observability. Sequencing: complete Stage 4 lanes in order (4a → 4b → 4c) before claiming Stage 6. Stage 6 migration order locked to 6a (backend-service-router) → 6b (connection factory/discovery) → 6c (validation + session) → 6d (interface/CLI). Dependencies: 6b requires 6a green; 6c waits on 6b + Terminal Formatter Pattern 7 Stage 6 lanes; 6d depends on Pattern 7 Stage 7 close-out and AsyncUtils cleanup hooks wired in Stage 4c. Guardrails: reuse AsyncUtils.cleanup in each module’s shutdown path, retain zero-knowledge registry invariants, and coordinate with Haruspex integration before touching MCP timers.",
+          "scope": [
+            "stage-3"
+          ],
+          "author": "Codex"
+        },
+        {
+          "id": "stage-4-note-20251008T110304",
+          "timestamp": "2025-10-08T11:03:04Z",
+          "body": "Lane 4a evidence: jest backend lifecycle + manual override suites pass; log tmp/consolidation-pattern3-lane4a-20251008T120251.log; Risks: none identified",
+          "scope": [
+            "stage-4"
+          ]
         }
       ],
       "evidence": [],
-      "activity": [],
-      "updatedAt": "2025-09-14T18:00:00Z"
+      "activity": [
+        {
+          "stage": "stage-1",
+          "timestamp": "2025-10-08T00:54:10Z",
+          "summary": "Stage 1 status set to complete",
+          "agent": "Codex"
+        },
+        {
+          "stage": "stage-2",
+          "timestamp": "2025-10-08T01:03:42Z",
+          "summary": "Stage 2 status set to in_progress",
+          "agent": "Codex"
+        },
+        {
+          "stage": "stage-2",
+          "timestamp": "2025-10-08T01:06:27Z",
+          "summary": "Stage 2 status set to complete",
+          "agent": "Codex"
+        },
+        {
+          "stage": "stage-3",
+          "timestamp": "2025-10-08T10:53:40Z",
+          "summary": "Stage 3 status set to in_progress",
+          "agent": "Codex"
+        },
+        {
+          "stage": "stage-4",
+          "timestamp": "2025-10-08T10:54:19Z",
+          "summary": "Created lane 4a (Baseline backend router + lifecycle gating)"
+        },
+        {
+          "stage": "stage-4",
+          "timestamp": "2025-10-08T10:54:24Z",
+          "summary": "Created lane 4b (Hybrid validation suite baseline)"
+        },
+        {
+          "stage": "stage-4",
+          "timestamp": "2025-10-08T10:54:29Z",
+          "summary": "Created lane 4c (Phase 6 health/cleanup baseline)"
+        },
+        {
+          "stage": "stage-6",
+          "timestamp": "2025-10-08T10:55:18Z",
+          "summary": "Created lane 6a (Backend service router lifecycle timers)"
+        },
+        {
+          "stage": "stage-6",
+          "timestamp": "2025-10-08T10:55:23Z",
+          "summary": "Created lane 6b (Connection factory + discovery timers)"
+        },
+        {
+          "stage": "stage-6",
+          "timestamp": "2025-10-08T10:55:39Z",
+          "summary": "Created lane 6c (Validation + session timer consolidation)"
+        },
+        {
+          "stage": "stage-6",
+          "timestamp": "2025-10-08T10:55:44Z",
+          "summary": "Created lane 6d (Interface adapters + CLI timers)"
+        },
+        {
+          "stage": "stage-3",
+          "timestamp": "2025-10-08T10:56:08Z",
+          "summary": "Stage 3 status set to complete",
+          "agent": "Codex"
+        },
+        {
+          "stage": "lane-4a",
+          "timestamp": "2025-10-08T11:02:37Z",
+          "summary": "Lane 4a claimed",
+          "agent": "3-4a"
+        },
+        {
+          "stage": "lane-4a",
+          "timestamp": "2025-10-08T11:03:00Z",
+          "summary": "Ran backend lifecycle + manual override jest suites; all pass",
+          "files": [
+            "tmp/consolidation-pattern3-lane4a-20251008T120251.log"
+          ]
+        },
+        {
+          "stage": "lane-4b",
+          "timestamp": "2025-10-08T11:31:58Z",
+          "summary": "Lane 4b claimed",
+          "agent": "3-4b"
+        }
+      ],
+      "updatedAt": "2025-10-08T11:31:58Z"
     },
     {
       "patternId": 4,

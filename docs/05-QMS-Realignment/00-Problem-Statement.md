@@ -1,7 +1,5 @@
 # Problem Statement
 
-Plain-language note: This version retains the original structure and adds clear explanations so colleagues who primarily work in Word and Excel can follow along without technical jargon.
-
 ## 1. Business & Product Context
 
 VDL2 is the next major release of our hospital reporting software. It replaces today's VDL program, which hospitals license to view device readings, analyse results, and produce regulatory reports. Each hospital runs the software on a central on-site computer, and staff connect to it from their desks. VDL2 keeps that "installed per hospital" model but modernises the experience:
@@ -21,12 +19,12 @@ In day-to-day operations:
 - Forgetting to duplicate a template can overwrite the official checklist. Typos in filenames or serial numbers spread through audit bundles.
 - Tools such as TestComplete can automate only limited portions of the workflow, so testers are left with an inefficient half-manual, half-automated process that can be slower than performing the entire workflow manually.
 - Excel forms in our current QMS have fragile formulas. When numbering schemes, regulations, or hardware versions change, someone must adjust every single template across the library, whether it is already filled or still blank.
-- Formal design reviews required by IEC 62304 Section 5.6 live in email threads, meeting minutes, or personal notebooks rather than a central log. Independent reviewer participation is hard to prove because the Word/Excel workflow does not capture roles or timestamps (Development-Process-1.pdf §3.2).
-- Risk management updates outlined in IEC 62304 Section 7 rely on ad-hoc spreadsheets or personal reminders. Sprint reviews rarely revisit the risk register, and there is no single place where mitigations, requirements, and verification results are linked (Development-Process-1.pdf §7).
+- Formal design reviews required by IEC 62304 Section 5.6 live in email threads, meeting minutes, or personal notebooks rather than a central log. Independent reviewer participation is hard to prove because the Word/Excel workflow does not capture roles or timestamps. - 'DP' (Development Process.pdf) §3.2
+- Risk management updates outlined in IEC 62304 Section 7 rely on ad-hoc spreadsheets or personal reminders. Sprint reviews rarely revisit the risk register, and there is no single place where mitigations, requirements, and verification results are linked ('DP' §7).
 - Traceability between requirements, implementation, and verification is rebuilt sprint-by-sprint. The official matrix (SSI-QF-20C) often lags by weeks, so engineers do not trust it during planning even though the PDF stresses continuous traceability (§4.2, §9.3).
-- Release evidence bundles are assembled manually from assorted folders and emails, making it difficult to satisfy the pre-release checks called out in Development-Process-1.pdf §§6.3–6.4 and §§8.1–8.3.
-- Developer discipline items described in the Practical Developer Guide (branch naming, TDD, Definition of Done checkpoints) are enforced by tribal knowledge. There is no automation to show whether the expected unit tests or documentation updates happened, so audit evidence is fragile (Development-Process-1.pdf Practical Developer Guide pp.14–22).
-- Backlog tooling is fragmented. Some teams track QMS actions in Trello, others in GitHub Projects, and the knowledge base is scattered. The PDF recommends YouTrack because it combines backlog management, knowledge base, and GitHub integration, but we have not made a definitive decision or communicated it broadly (Development-Process-1.pdf Software Comparison pp.29–31).
+- Release evidence bundles are assembled manually from assorted folders and emails, making it difficult to satisfy the pre-release checks called out in 'DP' §§6.3–6.4 and §§8.1–8.3.
+- Developer discipline items described in the Practical Developer Guide (branch naming, TDD, Definition of Done checkpoints) are enforced by tribal knowledge. There is no automation to show whether the expected unit tests or documentation updates happened, so audit evidence is fragile ('DP' Practical Developer Guide pp.14–22).
+- Backlog tooling is fragmented. Some teams track QMS actions in Trello, others in GitHub Projects, and the knowledge base is scattered. The PDF recommends YouTrack because it combines backlog management, knowledge base, and GitHub integration, but we have not made a definitive decision or communicated it broadly ('DP' Software Comparison pp.29–31).
 
 This overhead delays releases, increases the likelihood of errors, and makes it difficult to gather evidence for both software and hardware workstreams.
 
@@ -38,7 +36,7 @@ VDL2 must still meet all regulatory obligations. The key standards and laws are:
 - **EU MDR 2017/745** and **MDD 93/42/EEC** - European medical device rules defining safety and performance.
 - **UK MDR 2002 (as amended)** - the UK version of medical device regulations.
 - **Canadian Medical Device Regulations SOR/98-282** and comparable US FDA expectations - the North American rule set.
-- **AAMI TIR45-2023** - guidance on how to use Agile practices inside a regulated environment (we already outlined this in "Development Process.pdf").
+- **AAMI TIR45-2023** - guidance on how to use Agile practices inside a regulated environment (we already outlined this in 'DP').
 
 We expect the software safety class under IEC 62304 to be **Class B** (medium risk), but the final risk assessment will confirm that. The classification determines the depth of traceability and evidence required. Because VDL2 introduces an option to host parts of the system in the cloud, we also need to determine which cybersecurity or data-protection rules apply in addition to the existing hardware-focused requirements.
 
@@ -85,10 +83,14 @@ Continuing to rely on the manual QMS workflow puts release speed, traceability, 
 ## 8. Desired Outcomes & Signals of Success
 
 - Teams can complete QMS, release, and hardware checklists entirely inside the new tooling with no manual Word/Excel edits. Each release produces an export an auditor can accept without rework.
-- Traceability from each requirement to the matching validation result is produced automatically. Validator IDs and logs come directly from the Validation System or whichever tool replaces it.
-- Release evidence packages are ready within a sprint cadence (target 24-48 hours after tagging a build) and arrive in an auditor-ready format.
+- Traceability from each requirement to the matching validation result is produced automatically. Validator IDs and logs come directly from the Validation System or whichever tool replaces it, consistent with Development-Process-1.pdf §4.2 and §9.3.
+- Release evidence packages are ready within a sprint cadence (target 24–48 hours after tagging a build) and arrive in an auditor-ready format.
 - Operations staff avoid re-entering the same data in multiple places. When we implement CRUD pilots, entering information once updates every required artifact.
 - Developers can iterate faster because automated checks replace today's numerous manual GUI steps.
+- Design reviews capture the named reviewer roles, independence confirmation, and approval timestamps that Development-Process-1.pdf §3.2 calls for.
+- Risk controls and mitigations stay current during the sprint cadence (Development-Process-1.pdf §7) with a live register that links to verification evidence.
+- Practical Developer Guide checkpoints (branch discipline, TDD, Definition of Done, documentation updates per Development-Process-1.pdf pp.14–21) show up where engineers work, logging confirmations automatically when deterministic signals are available.
+- Backlog tooling choices preserve simplicity, integrated knowledge capture, and GitHub visibility on par with the YouTrack recommendations in Development-Process-1.pdf (pp.29–31), even if we pick an alternative.
 
 ## 9. Open Questions / Information Gaps
 

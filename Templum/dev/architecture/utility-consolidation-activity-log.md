@@ -27,6 +27,33 @@ If a Stage 3 phase exposes new helper or dependency work, add a fresh Stage 2.5 
 
 ## Running Log
 
+### 2025-10-08 — Async Utils (Pattern 3) — Stage 2
+
+- **Agent**: Codex
+- **Stage**: 2
+- **Summary**: Authored AsyncUtils regression suite (timeouts, retries, debounce/throttle, managed intervals) and corrected static helper binding so named exports retain cleanup tracking.
+- **Commands / Evidence**: `npm run test -- --runTestsByPath src/tests/utils/async-utils.test.ts --runInBand --no-cache`
+- **Files touched**: `Templum/src/tests/utils/async-utils.test.ts`, `Templum/src/utils/async-utils.ts`, `Templum/dev/architecture/utility-consolidation-plans/pattern-3.generated.md`, `Templum/dev/architecture/registry-status.generated.md`, `Templum/docs/current/progress.md`
+- **Follow-ups / Risks**: Stage 3 must sequence backend/service timers first to validate cleanup hooks; logger warnings during retry loops are expected but worth monitoring once migrations begin.
+
+### 2025-10-08 — Async Utils (Pattern 3) — Stage 3
+
+- **Agent**: Codex
+- **Stage**: 3
+- **Summary**: Locked orchestration plan with Stage 4 prerequisites (backend lifecycle, hybrid validation, phase6 health) and Stage 6 migration lanes sequenced router → factory → validation/session → interfaces, including cross-pattern dependencies on Terminal Formatter work.
+- **Commands / Evidence**: `npm run consolidate -- update-stage 3 3 --status in_progress --notes "Stage 3 planning kickoff: mapping backend-first migration lanes and prerequisite test batteries."`, `npm run consolidate -- create-lane 3 4a ...`, `npm run consolidate -- create-lane 3 4b ...`, `npm run consolidate -- create-lane 3 4c ...`, `npm run consolidate -- create-lane 3 6a ...`, `npm run consolidate -- create-lane 3 6b ...`, `npm run consolidate -- create-lane 3 6c ...`, `npm run consolidate -- create-lane 3 6d ...`, `npm run consolidate -- stage-note 3 3 --body "Lane owners: ..."`, `npm run consolidate -- update-stage 3 3 --status complete --notes "Stage 3 orchestration locked..."`
+- **Files touched**: `Templum/dev/architecture/utility-consolidation-plans/pattern-3.generated.md`, `Templum/dev/architecture/registry-status.generated.md`, `Templum/docs/current/progress.md`
+- **Follow-ups / Risks**: Stage 4 lanes must land in order before migrations; coordinate with Pattern 7 owners for interface timers and avoid touching MCP timers until Haruspex integration confirms readiness.
+
+### 2025-10-08 — Async Utils (Pattern 3) — Stage 1
+
+- **Agent**: Codex
+- **Stage**: 1
+- **Summary**: Completed Stage 1 timing inventory; verified the AsyncUtils API matches registry expectations, reconciled stale 316-call estimate with current 132 `setTimeout` / 35 `setInterval` findings, and logged priority consumers plus guardrails for lifecycle-safe migrations.
+- **Commands / Evidence**: `rg -c "setTimeout" src | sort -t: -k2 -nr | head -n 15`, `rg -c "setInterval" src | sort -t: -k2 -nr | head -n 15`, `sed -n '1,200p' src/utils/async-utils.ts`, `npm run consolidate -- stage-note 3 1 --body ...`
+- **Files touched**: `Templum/dev/architecture/utility-consolidation-plans/pattern-3.generated.md`, `Templum/dev/architecture/registry-status.generated.md`, `Templum/docs/current/progress.md`
+- **Follow-ups / Risks**: Stage 2 should prioritise `backend/backend-service-router.ts` timers (keeps Jest alive), wire `AsyncUtils.cleanup` into shutdown paths before moving UI/test harness consumers, and refresh registry metrics as new hotspots surface.
+
 ### 2025-10-03 — Display Utils (Pattern 5) — Stage 7 Validation & Reporting
 
 - **Agent**: Codex

@@ -42,7 +42,7 @@
   - CLI/skin rendering layer mid-refactor; enterprise feature set (multi-interface adapters, resilience utilities) may be over-scoped for immediate deliverables.
   - Utilities consolidation and logging/error handling refactors planned but not executed.
   - [Pattern taxonomy reference](Templum/docs/current/pattern-taxonomy.md): Canonical category enum and maintenance process.
-- **MVP Focus (must-land before first release):** zero-knowledge discovery + multi-protocol registration, schema-backed skin validation, shared session/context, skin-driven rendering (including CLI generator & procedural TUI), manual overrides & lifecycle broadcasts, observability instrumentation with clean shutdown, Haruspex/PCL skin ingestion, and stable coverage/CI tooling.
+- **MVP Focus (must-land before first release):** zero-knowledge discovery + multi-protocol registration, schema-backed skin validation, shared session/context, skin-driven rendering (including CLI generator & procedural TUI), Practical Developer Guide prompts/notifications that auto-complete deterministic checks, backlog tooling visibility aligned with the final YouTrack decision, manual overrides & lifecycle broadcasts, observability instrumentation with clean shutdown, Haruspex/PCL skin ingestion, and stable coverage/CI tooling.
 - **Post-MVP Opportunities (Deferred):**
   - Universal Skin Engine convergence refactor.
   - Asset/localisation validator suite.
@@ -67,6 +67,7 @@
   - **Interface Delivery**
     - Provides CLI experience with dynamic windowed TUI, menu navigation, command execution, and contextual help sourced from skin.
     - Provides VSCode extension views (webviews/tree views) that mirror the same skin hierarchy, including interaction state syncing with CLI.
+    - Surfaces developer-discipline notifications, design-review acknowledgements, and sprint risk prompts driven by Phoenix Code Lite metadata, auto-completing deterministic checks and limiting manual confirmations to outstanding actions.
     - Offers extensible adapter contract for future interfaces (e.g., command-only mode) without touching backend router logic.
   - **Operations & Observability**
     - Emits structured metrics (connection stats, command latency, user interactions) for QMS/validation consumption.
@@ -81,6 +82,8 @@
   - Sample skin definition currently consumed (if any) and validation of schema vs. specs.
   - CLI generation status: commands produced, gaps, TODO markers in code.
   - Inventory of enterprise features vs. MVP requirements to decide on deferral.
+  - Proof that developer-discipline prompts auto-complete deterministic checks, including stored acknowledgements for design reviews and sprint risk updates.
+  - Updated onboarding/help content reflecting backlog tooling decision and links into Phoenix Code Lite workflows.
 - **Open Risks & Unknowns:**
   - Potential over-engineering delaying functional MVP.
   - Discovery code depending on file system state not aligned with current dev setups.
@@ -107,12 +110,17 @@
     - Supports bidirectional traceability (requirement ⇄ design ⇄ test ⇄ release) with exportable matrices suitable for IEC 62304 and AAMI TIR45 evidence.
     - Stores regulatory metadata (standards clauses, status, owners, timestamps) in structured, queryable form.
     - Ingests regulatory source material (e.g., EN 62304, MDR Rule 11) via guided workflows or assisted parsing so classifications/obligations become first-class data.
+    - Maintains a live risk register linking mitigations to requirements and deterministic validator evidence.
+    - Documents release evidence bundle schema and SSI-QF replacement crosswalk so compliance can trace obligations without legacy forms.
   - **Workflow Automation & Assistance**
     - Orchestrates lifecycle states for work items (draft → review → approved → released) with gated transitions and electronic signatures where needed.
     - Generates QMS artifacts (forms, reports, SOP references) programmatically from data model; exports to markdown/PDF.
     - Guides developers and QA through compliance-critical tasks with contextual instructions, checklists, and SOP shortcuts.
     - Integrates with Validation System to attach automated check results to work items, blocking promotion when validators fail.
     - Provides configurable templates for different release types (prototype, production, emergency fix) with tailored validation bundles.
+    - Stores formal design review records including reviewer roles, independence flags, and timestamps sourced from Templum acknowledgements.
+    - Emits Practical Developer Guide metadata/events so deterministic follow-ups auto-complete and manual prompts are minimised.
+    - Records backlog tooling decision (YouTrack or justified alternative) and surfaces integration hooks for Templum onboarding.
   - **Interface & Skin Output**
     - Emits Templum skin describing dashboards, task boards, review flows, and report viewers—no bespoke UI code remains.
     - Supplies contextual help and SOP references alongside each workflow step within the skin definition.
@@ -135,6 +143,8 @@
   - Code areas still oriented around code-gen vs. QMS workflows.
   - Data models supporting QMS (requirements, traceability) and their readiness for UI exposure.
   - Dependency audit for regulated environment compatibility.
+  - Drafted crosswalk documenting evidence bundle schema + SSI-QF replacement and backlog tooling decision note.
+  - Proof that risk register ledger, design review record store, and developer metadata events produce exports consumed by Templum.
 - **Open Risks & Unknowns:**
   - Legacy logic causing dead paths or conflicting assumptions once skins added.
   - Potential security/compliance gaps if old agent features remain active.

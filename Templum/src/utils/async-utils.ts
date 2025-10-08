@@ -27,22 +27,22 @@ export class AsyncUtils {
 
     return new Promise<T>((resolve, reject) => {
       const timer = setTimeout(() => {
-        this.activeTimeouts.delete(timer);
+        AsyncUtils.activeTimeouts.delete(timer);
         const error = timeoutError ?? new Error(`Operation timed out after ${timeoutMs}ms`);
         reject(error);
       }, timeoutMs);
 
-      this.activeTimeouts.add(timer);
+      AsyncUtils.activeTimeouts.add(timer);
 
       promise
         .then(result => {
           clearTimeout(timer);
-          this.activeTimeouts.delete(timer);
+          AsyncUtils.activeTimeouts.delete(timer);
           resolve(result);
         })
         .catch(error => {
           clearTimeout(timer);
-          this.activeTimeouts.delete(timer);
+          AsyncUtils.activeTimeouts.delete(timer);
           reject(error);
         });
     });
@@ -79,14 +79,14 @@ export class AsyncUtils {
           onRetry(error, attempt, delay);
         }
 
-        this.logger.warn('Retrying async operation', {
+        AsyncUtils.logger.warn('Retrying async operation', {
           attempt,
           maxAttempts,
           delayMs: Math.round(delay),
           error: error instanceof Error ? error.message : String(error)
         });
 
-        await this.sleep(delay);
+        await AsyncUtils.sleep(delay);
       }
     }
 
@@ -96,10 +96,10 @@ export class AsyncUtils {
   static sleep(ms: number): Promise<void> {
     return new Promise(resolve => {
       const timer = setTimeout(() => {
-        this.activeTimeouts.delete(timer);
+        AsyncUtils.activeTimeouts.delete(timer);
         resolve();
       }, ms);
-      this.activeTimeouts.add(timer);
+      AsyncUtils.activeTimeouts.add(timer);
     });
   }
 
@@ -109,16 +109,16 @@ export class AsyncUtils {
     const debounced = ((...args: Parameters<T>) => {
       if (timeout) {
         clearTimeout(timeout);
-        this.activeTimeouts.delete(timeout);
+        AsyncUtils.activeTimeouts.delete(timeout);
       }
 
       timeout = setTimeout(() => {
-        this.activeTimeouts.delete(timeout!);
+        AsyncUtils.activeTimeouts.delete(timeout!);
         timeout = undefined;
         fn(...args);
       }, delayMs);
 
-      this.activeTimeouts.add(timeout);
+      AsyncUtils.activeTimeouts.add(timeout);
     }) as T;
 
     return debounced;
@@ -144,7 +144,7 @@ export class AsyncUtils {
       if (!timeout) {
         const remaining = limitMs - elapsed;
         timeout = setTimeout(() => {
-          this.activeTimeouts.delete(timeout!);
+          AsyncUtils.activeTimeouts.delete(timeout!);
           timeout = undefined;
           lastExecution = Date.now();
           if (pendingArgs) {
@@ -153,7 +153,7 @@ export class AsyncUtils {
             fn(...toRun);
           }
         }, remaining);
-        this.activeTimeouts.add(timeout);
+        AsyncUtils.activeTimeouts.add(timeout);
       }
     }) as T;
 
@@ -171,7 +171,7 @@ export class AsyncUtils {
       try {
         await handler();
       } catch (error) {
-        this.logger.error('Managed interval handler failed', {
+        AsyncUtils.logger.error('Managed interval handler failed', {
           error: error instanceof Error ? error.message : String(error)
         });
       }
@@ -189,12 +189,12 @@ export class AsyncUtils {
       interval.unref();
     }
 
-    this.activeIntervals.add(interval);
+    AsyncUtils.activeIntervals.add(interval);
 
     return {
       stop: () => {
         clearInterval(interval);
-        this.activeIntervals.delete(interval);
+        AsyncUtils.activeIntervals.delete(interval);
       },
       ref: () => {
         interval.ref?.();
@@ -206,29 +206,29 @@ export class AsyncUtils {
   }
 
   static async raceWithTimeout<T>(promise: Promise<T>, timeoutMs: number, timeoutError?: Error): Promise<T> {
-    return this.withTimeout(promise, timeoutMs, timeoutError);
+    return AsyncUtils.withTimeout(promise, timeoutMs, timeoutError);
   }
 
   static async allWithTimeout<T>(promises: Promise<T>[], timeoutMs: number): Promise<T[]> {
-    return Promise.all(promises.map(promise => this.withTimeout(promise, timeoutMs)));
+    return Promise.all(promises.map(promise => AsyncUtils.withTimeout(promise, timeoutMs)));
   }
 
   static async delay<T>(fn: () => T | Promise<T>, delayMs: number): Promise<T> {
-    await this.sleep(delayMs);
+    await AsyncUtils.sleep(delayMs);
     return fn();
   }
 
   static cleanup(): void {
-    for (const timeout of this.activeTimeouts) {
+    for (const timeout of AsyncUtils.activeTimeouts) {
       clearTimeout(timeout);
     }
-    this.activeTimeouts.clear();
+    AsyncUtils.activeTimeouts.clear();
 
-    for (const interval of this.activeIntervals) {
+    for (const interval of AsyncUtils.activeIntervals) {
       clearInterval(interval);
     }
-    this.activeIntervals.clear();
-    this.logger.debug('Cleared active timeouts and intervals');
+    AsyncUtils.activeIntervals.clear();
+    AsyncUtils.logger.debug('Cleared active timeouts and intervals');
   }
 }
 
@@ -253,4 +253,3 @@ export const TIMEOUTS = Object.freeze({
 });
 
 export const cleanupTimeouts = AsyncUtils.cleanup.bind(AsyncUtils);
-

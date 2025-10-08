@@ -87,6 +87,7 @@ const stageGuidance = {
   '1': {
     title: 'Stage 1 — Scope & Inventory',
     reminders: [
+      'Run `npm run consolidate -- guide <patternId>` first to confirm Stage 1 is ready, then claim it with `npm run consolidate -- claim <patternId> --stage 1` before updating statuses.',
       'Review the Stage 1 orientation note in this guide and compare it with current findings.',
       'Capture discovery commands, consumer inventory, and guardrails directly in the registry before moving forward.',
       'Leave a Stage 1 exit summary so Stage 2/3 owners inherit the right context.'
@@ -95,9 +96,11 @@ const stageGuidance = {
   '2': {
     title: 'Stage 2 — Test-First Utility Updates',
     reminders: [
+      'Always start by running `npm run consolidate -- guide <patternId> --stage 2` to confirm readiness, then claim with `npm run consolidate -- claim <patternId> --stage 2` when you begin work.',
       'Author or refresh regression suites before implementation per Testing Guide expectations.',
       'Keep DI seams and shared utility guardrails aligned with Stage 1 notes.',
-      'Record executed commands, logs, and outcomes in the registry so generated plans stay accurate.'
+      'Record executed commands, logs, and outcomes in the registry so generated plans stay accurate.',
+      'When later stages surface new coverage gaps, reopen Stage 2 and add fresh tests—do not reopen completed lanes or repurpose executed suites.'
     ]
   },
   '3': {
@@ -105,7 +108,8 @@ const stageGuidance = {
     reminders: [
       'Capture Stage 4/6 ownership, sequencing, and lane definitions inside the Stage 3 note; use `create-lane` to add missing entries before marking the gate ready.',
       'Keep cross-pattern coordination in the registry (Stage 3 note + activity) so downstream owners have a single source.',
-      'If dependencies shift, add a Stage 3 note and notify the affected pattern owners instead of editing manual trackers.'
+      'If dependencies shift, add a Stage 3 note and notify the affected pattern owners instead of editing manual trackers.',
+      'Completed lanes stay sealed; when new migration cohorts emerge, create additional Stage 6 lanes and capture the change in a fresh Stage 3 note rather than reopening prior work.'
     ]
   },
   '4': {
@@ -131,9 +135,10 @@ const stageGuidance = {
     reminders: [
       'Work one lane at a time; coordinate assignments via schedule and activity log.',
       'Run mandated commands from the registry entry and attach logs before marking complete.',
-      'Flip Stage 3 glyph back to `[~]` if new blockers require reprioritisation.',
-      'Use `claim-lane` to avoid lane collisions as dependencies unlock.',
-      'Introduce additional Stage 6 execution slices with `create-lane` when dependencies demand parallel tracks.'
+      'Flip Stage 3 glyph back to `[~]` when new migration scope appears, but keep completed lanes closed—add a new lane instead of reopening the finished one.',
+      'Use `claim` with `--lane` to avoid lane collisions as dependencies unlock.',
+      'Introduce additional Stage 6 execution slices with `create-lane` when dependencies demand parallel tracks.',
+      'If a lane exposes missing coverage, reopen Stage 2/3/5 as scheduled prerequisites and set the lane dependency on Stage 5—do not leave the lane blocked once new tests are planned.'
     ]
   },
   '7': {
@@ -148,47 +153,51 @@ const stageGuidance = {
 
 const stageActionGuidance = {
   '1': [
-    '1. Claim ownership if needed: `npm run consolidate -- claim <patternId> --agent <name>` (updates registry owner metadata).',
+    '1. Begin with `npm run consolidate -- guide <patternId>` to confirm Stage 1 readiness, then claim it via `npm run consolidate -- claim <patternId> --stage 1` before changing any statuses.',
     '2. Log discovery work with `npm run consolidate -- stage-note <patternId> 1 --body "Consumers: …; Commands: rg …"` (scope auto-tags the note for Stage 1).',
     '3. Summarise outstanding risks, leave Stage 4 lane planning for the Stage 3 pass, and keep the note focused on hand-off guardrails.',
     '4. When ready, mark Stage 1 complete via `npm run consolidate -- update-stage <patternId> 1 --status complete --notes "Summary…" [--agent <name>]`.',
     'Need a full snapshot? Run `npm run consolidate -- status <patternId>` if additional detail is required before hand-off.'
   ],
   '2': [
-    '1. Flip Stage 2 to `in_progress` when your TDD cycle begins: `npm run consolidate -- update-stage <patternId> 2 --status in_progress --notes "Tests planned…" [--agent <name>]`.',
+    '1. Start by running `npm run consolidate -- guide <patternId> --stage 2`, then claim the stage with `npm run consolidate -- claim <patternId> --stage 2` to move it into `in_progress`.',
     '2. Capture suites, guardrails, and coverage updates with `npm run consolidate -- stage-note <patternId> 2 --body "Suites: …; Guardrails: …" [--agent <name>]` so Stage 3 inherits the context.',
     '3. After the battery passes, record exit details/logs and mark Stage 2 `complete`: `npm run consolidate -- update-stage <patternId> 2 --status complete --notes "Results: …" [--files tmp/...log]`.',
+    '4. If later lanes expose missing coverage, flip Stage 2 back to `scheduled`, log the new suites, and author fresh tests—keep previously completed lanes closed.',
     'Need more detail later? Re-run `guide --recent` to review the latest Stage 2 activity without opening external docs.'
   ],
   '3': [
-    '1. Review Stage 4/6 targets with `npm run consolidate -- guide <patternId> --lanes` before planning migrations.',
+    '1. Claim the stage via `npm run consolidate -- claim <patternId> --stage 3` when ready to begin work.',
     '2. Define missing Stage 4 lanes via `npm run consolidate -- create-lane <patternId> 4a --scope "Prereq description" --command "Command to run" [--depends 8:stage-2]` (repeat for each lane; CLI enforces scopes and command lists).',
     '3. Document orchestration owners, sequencing, and cross-pattern dependencies via `npm run consolidate -- stage-note <patternId> 3 --body "Lane owners: …; Dependencies: …" [--agent <name>]`.',
-    '4. Once plans are locked, set Stage 3 `complete` with `npm run consolidate -- update-stage <patternId> 3 --status complete --notes "Ready for Stage 4" [--agent <name>]` (reopen with `in_progress` if plans change).',
+    '4. Keep completed lanes sealed; when new migration work appears, add fresh Stage 4/6 lanes and capture the change in a new Stage 3 note instead of editing closed scopes.',
+    '5. Once plans are locked, set Stage 3 `complete` with `npm run consolidate -- update-stage <patternId> 3 --status complete --notes "Ready for Stage 4" [--agent <name>]` (reopen with `in_progress` if plans change).',
     'Need coordination history? The Stage 3 note and `guide --recent` output are the single source of truth.'
   ],
   '4': [
-    '1. Start each prerequisite by moving the lane to `in_progress`: `npm run consolidate -- update-lane <patternId> 4a --status in_progress --agent <name>`.',
+    '1. Start each prerequisite by reviewing guidance: `npm run consolidate -- guide <patternId> --lane 4a`, then claim it with `npm run consolidate -- claim <patternId> --lane 4a` before changing status.',
     '2. Need another prerequisite slice? Add it first with `npm run consolidate -- create-lane <patternId> 4d --scope "New prerequisite" --command "Command to qualify"` so stage status stays authoritative.',
     '3. Run mandated commands and close the lane with evidence: `npm run consolidate -- update-lane <patternId> 4a --status complete --summary "Gating battery green" --files tmp/...log` (verify log paths manually; the CLI does not validate them).',
     '4. Use `npm run consolidate -- stage-note <patternId> 4 --body "Lane 4a evidence: …; Risks: …"` to log findings, then mark Stage 4 `complete` when every lane is `[x]`.',
     'Blocked prerequisites? Switch the lane to `blocked` (include a note) and let the CLI propagate scheduling hints.'
   ],
   '5': [
-    '1. Maintain guardrails/shared files/approvals with `npm run consolidate -- update-handoff <patternId> --add-guardrail "…" --add-file "…" --add-ack "Agent"` (use `--remove-ack-agent <name>` or removal indexes to tidy existing entries). Stage 5 captures all required approvals; no per-lane approval steps are needed.',
-    '2. Log alignment context (owners, risks, mitigations) via `npm run consolidate -- stage-note <patternId> 5 --body "Approvals: …; Risks: …" [--agent <name>]`.',
-    '3. Stand up Stage 6 execution lanes with `npm run consolidate -- create-lane <patternId> 6a --scope "Migration focus" --command "Command to validate"` (define all required lanes before signalling readiness).',
-    '4. After executing the gating battery, update related lanes with evidence and set Stage 5 to `ready`: `npm run consolidate -- update-stage <patternId> 5 --status ready --notes "Gating battery complete" [--files tmp/...log]`.',
+    '1. Begin by running `npm run consolidate -- guide <patternId> --stage 5`, then claim the stage with `npm run consolidate -- claim <patternId> --stage 5` before adjusting readiness.',
+    '2. Maintain guardrails/shared files/approvals with `npm run consolidate -- update-handoff <patternId> --add-guardrail "…" --add-file "…" --add-ack "Agent"` (use `--remove-ack-agent <name>` or removal indexes to tidy existing entries). Stage 5 captures all required approvals; no per-lane approval steps are needed.',
+    '3. Log alignment context (owners, risks, mitigations) via `npm run consolidate -- stage-note <patternId> 5 --body "Approvals: …; Risks: …" [--agent <name>]`.',
+    '4. Stand up Stage 6 execution lanes with `npm run consolidate -- create-lane <patternId> 6a --scope "Migration focus" --command "Command to validate"` (define all required lanes before signalling readiness).',
+    '5. After executing the gating battery, update related lanes with evidence and set Stage 5 to `ready`: `npm run consolidate -- update-stage <patternId> 5 --status ready --notes "Gating battery complete" [--files tmp/...log]`.',
     'Leave Stage 5 `in_progress` if approvals or evidence are missing—document the gap so Stage 6 owners stay aligned.'
   ],
   '6': [
-    '1. Use `npm run consolidate -- guide <patternId> --lanes` to identify the next assignable lane before touching consumers.',
+    '1. Use `npm run consolidate -- guide <patternId> --lane <laneId>` (from the next-work hint) to confirm availability before touching consumers.',
     '2. Need a fresh migration slice? Define it first with `npm run consolidate -- create-lane <patternId> 6d --scope "Parallel track" --command "Command to certify"` before claiming it.',
-    '3. Claim the lane via `npm run consolidate -- claim-lane <patternId> [laneId] --agent <name>` so status flips to `in_progress` safely.',
+    '3. Claim the lane via `npm run consolidate -- claim <patternId> --lane 6a` (adjust lane id as needed) so status flips to `in_progress` safely after the guide confirms availability.',
     '4. Run the required commands and finish with `npm run consolidate -- update-lane <patternId> <laneId> --status complete --summary "Suites green" --files tmp/...log` once evidence is captured (verify log paths manually; the CLI does not validate them).',
     '5. Capture collaborative evidence or follow-ups without changing lane status via `npm run consolidate -- append-activity <patternId> --lane <laneId> --summary "Notes…" [--files tmp/...log] [--agent <name>]` (include `--stage` when logging broader updates).',
-    '6. Review the handoff summary surfaced in the guide, then record cross-lane status in `npm run consolidate -- stage-note <patternId> 6 --body "Lanes complete: …; Blockers: …" [--agent <name>]`. Update Stage 6 to `complete` when all lanes are `[x]`.',
-    'Encounter a blocker? Set the lane to `blocked`/`scheduled` and accept the CLI propagation prompts so downstream work stays in sync.'
+    '6. If new consumers surface mid-lane, log the discovery, flip Stage 3 back to `scheduled`, create a new Stage 6 lane for the extra scope, and close the current lane as `complete`—do not reopen finished lanes.',
+    '7. When coverage gaps appear, set Stage 2, Stage 3, and Stage 5 to `scheduled`, add Stage 5 as a dependency on the affected lane, and return the lane to `scheduled` once the new tests are planned; use the Stage 6 note to track the dependency rather than leaving the lane blocked.',
+    '8. Review the handoff summary surfaced in the guide, then record cross-lane status in `npm run consolidate -- stage-note <patternId> 6 --body "Lanes complete: …; Blockers: …" [--agent <name>]`. Update Stage 6 to `complete` when all lanes are `[x]`.'
   ],
   '7': [
     '1. Execute the validation battery (targeted suites, `npm run phase6-validation`, etc.) and gather log paths for evidence.',
@@ -300,15 +309,6 @@ function laneDependenciesSatisfied(registry, pattern, laneId) {
   return deps.every((dep) => dependencySatisfied(registry, dep));
 }
 
-function orderedStage6Lanes(pattern) {
-  const laneMap = pattern.lanes || {};
-  const primary = stage6LaneOrder.filter((laneId) => laneMap[laneId]);
-  const others = Object.keys(laneMap)
-    .filter((laneId) => laneId.startsWith('6') && !stage6LaneOrder.includes(laneId))
-    .sort();
-  return [...primary, ...others];
-}
-
 const stageStatusMetadata = {
   open: { glyph: '[ ]', label: 'open' },
   scheduled: { glyph: '[<]', label: 'scheduled' },
@@ -318,6 +318,97 @@ const stageStatusMetadata = {
   complete: { glyph: '[x]', label: 'complete' },
   deferred: { glyph: '[>]', label: 'deferred' }
 };
+
+const assignableStageStatuses = ['open', 'scheduled', 'ready'];
+
+function deriveAgentId(patternId, scope) {
+  if (scope.lane) {
+    // TODO: Replace deterministic agent ids with unique random aliases once the alias pool is available.
+    return `${patternId}-${scope.lane}`;
+  }
+  return `${patternId}-stage${scope.stage}`;
+}
+
+function findNextAssignableLane(registry, pattern, stageId) {
+  const lanePrefix = `${stageId}`;
+  const laneIds = Object.keys(pattern.lanes || {})
+    .filter((laneId) => laneId.startsWith(lanePrefix))
+    .sort();
+  for (const laneId of laneIds) {
+    const lane = pattern.lanes?.[laneId];
+    if (!lane) {
+      continue;
+    }
+    if (!autoAssignableLaneStatuses.includes(lane.status)) {
+      continue;
+    }
+    if (!laneDependenciesSatisfied(registry, pattern, laneId)) {
+      continue;
+    }
+    return laneId;
+  }
+  return null;
+}
+
+function findNextWorkTarget(registry, pattern, fromStageId) {
+  const startIndex = stageOrder.indexOf(String(fromStageId));
+  if (startIndex === -1) {
+    return null;
+  }
+  for (let i = startIndex + 1; i < stageOrder.length; i += 1) {
+    const stageId = stageOrder[i];
+    const gateStatus = pattern.stageGates?.[stageId]?.status || 'open';
+    if (!assignableStageStatuses.includes(gateStatus)) {
+      continue;
+    }
+    if (stageId === '4' || stageId === '6') {
+      const nextLane = findNextAssignableLane(registry, pattern, stageId);
+      if (nextLane) {
+        return { type: 'lane', stageId, laneId: nextLane };
+      }
+      continue;
+    }
+    return { type: 'stage', stageId };
+  }
+  return null;
+}
+
+function printNextWorkHint(patternId, hint) {
+  if (!hint) {
+    return;
+  }
+  console.log('');
+  if (hint.type === 'stage') {
+    console.log(`Next-work hint: Stage ${hint.stageId} is now assignable.`);
+    console.log('Confirm with your coordinator, then:');
+    console.log(`  npm run consolidate -- guide ${patternId} --stage ${hint.stageId}`);
+    console.log(`  npm run consolidate -- claim ${patternId} --stage ${hint.stageId}`);
+  } else if (hint.type === 'lane') {
+    console.log(`Next-work hint: Lane ${hint.laneId} (Stage ${hint.stageId}) is now assignable.`);
+    console.log('Confirm with your coordinator, then:');
+    console.log(`  npm run consolidate -- guide ${patternId} --lane ${hint.laneId}`);
+    console.log(`  npm run consolidate -- claim ${patternId} --lane ${hint.laneId}`);
+  }
+  console.log('If you are told to pause, commit any touched files with an appropriate message.');
+}
+
+function appendStageClaimNote(pattern, stageId, body, author) {
+  if (!body) {
+    return;
+  }
+  const notes = pattern.notes || (pattern.notes = []);
+  const timestamp = nowIso();
+  const entry = {
+    id: `stage-${stageId}-claim-${timestamp.replace(/[^0-9T]/g, '')}`,
+    timestamp,
+    body,
+    scope: [`stage-${stageId}`]
+  };
+  if (author) {
+    entry.author = author;
+  }
+  notes.push(entry);
+}
 
 function normaliseStageId(value) {
   const stageId = String(value);
@@ -505,18 +596,26 @@ function printGuide(pattern, options = {}) {
   const pointerIndex = stageOrder.indexOf(pointerStage);
   let targetStage = stageOverride || laneStage || pointerStage;
   if (options.focusNext && !stageOverride && !laneId && pointerIndex >= 0) {
-    const nextStage = stageOrder.slice(pointerIndex + 1).find((stage) => {
-      const gate = pattern.stageGates?.[stage];
-      if (gate && gate.status === 'complete') {
-        return false;
+    const pointerStatus = stageGate?.status || 'open';
+    const skipPointer = pointerStatus === 'complete' || pointerStatus === 'deferred';
+    if (skipPointer) {
+      const nextStage = stageOrder.slice(pointerIndex + 1).find((stage) => {
+        const gate = pattern.stageGates?.[stage];
+        if (gate && (gate.status === 'complete' || gate.status === 'deferred')) {
+          return false;
+        }
+        if (stage === '6') {
+          return Object.keys(pattern.lanes || {}).some((key) => key.startsWith('6'));
+        }
+        return true;
+      });
+      if (nextStage) {
+        targetStage = nextStage;
+      } else {
+        targetStage = pointerStage;
       }
-      if (stage === '6') {
-        return Object.keys(pattern.lanes || {}).some((key) => key.startsWith('6'));
-      }
-      return true;
-    });
-    if (nextStage) {
-      targetStage = nextStage;
+    } else {
+      targetStage = pointerStage;
     }
   }
   const focusedGate = pattern.stageGates?.[targetStage];
@@ -563,13 +662,28 @@ function printGuide(pattern, options = {}) {
     handoffPrinted = true;
   }
 
+  const stageStatus = focusedGate?.status || 'open';
+  let stageHasActionableWork = false;
+
   if (targetStage === '6') {
     if (laneId) {
       const lane = pattern.lanes?.[laneId];
       if (!lane) {
         throw new Error(`Lane ${laneId} not found for pattern ${pattern.patternId}.`);
       }
+      if (lane.status === 'in_progress' || autoAssignableLaneStatuses.includes(lane.status)) {
+        stageHasActionableWork = true;
+      }
       printLaneDetail(pattern, laneId, lane);
+      if (!stageHasActionableWork) {
+        stageHasActionableWork = Object.keys(pattern.lanes || {}).some((key) => {
+          if (!key.startsWith('6')) {
+            return false;
+          }
+          const candidate = pattern.lanes[key];
+          return candidate && autoAssignableLaneStatuses.includes(candidate.status);
+        });
+      }
     } else if (options.showLanes) {
       const laneKeys = Object.keys(pattern.lanes || {}).filter((key) => key.startsWith('6')).sort();
       if (!laneKeys.length) {
@@ -592,10 +706,15 @@ function printGuide(pattern, options = {}) {
             printLaneNotes(pattern, key, '   ');
           }
         });
+        stageHasActionableWork = laneKeys.some((key) => {
+          const lane = pattern.lanes[key];
+          return lane && autoAssignableLaneStatuses.includes(lane.status);
+        });
       }
     } else {
       const nextLane = nextIncompleteLane(pattern);
       if (nextLane) {
+        stageHasActionableWork = true;
         printLaneDetail(pattern, nextLane.id, nextLane.lane);
       } else {
         const laneKeys = Object.keys(pattern.lanes || {}).filter((key) => key.startsWith('6')).sort();
@@ -615,6 +734,9 @@ function printGuide(pattern, options = {}) {
               printLaneNotes(pattern, key, '   ');
             }
           });
+          console.log(
+            '\nAll Stage 6 lanes are blocked or queued. Coordinate with the current owner via `npm run consolidate -- append-activity <patternId> --lane <laneId> --summary "Blocker"` or resolve the blockers before claiming another lane.'
+          );
         } else {
           console.log('\nAll Stage 6 lanes are complete.');
         }
@@ -628,7 +750,19 @@ function printGuide(pattern, options = {}) {
       if (!lane) {
         throw new Error(`Lane ${laneId} not found for pattern ${pattern.patternId}.`);
       }
+      if (lane.status === 'in_progress' || autoAssignableLaneStatuses.includes(lane.status)) {
+        stageHasActionableWork = true;
+      }
       printLaneDetail(pattern, laneId, lane);
+      if (!stageHasActionableWork) {
+        stageHasActionableWork = Object.keys(pattern.lanes || {}).some((key) => {
+          if (!key.startsWith(lanePrefix)) {
+            return false;
+          }
+          const candidate = pattern.lanes[key];
+          return candidate && autoAssignableLaneStatuses.includes(candidate.status);
+        });
+      }
     } else {
       if (laneKeys.length) {
         console.log('');
@@ -643,6 +777,13 @@ function printGuide(pattern, options = {}) {
             printLaneNotes(pattern, key, '   ');
           }
         });
+        stageHasActionableWork = laneKeys.some((key) => {
+          const lane = pattern.lanes[key];
+          return lane && autoAssignableLaneStatuses.includes(lane.status);
+        });
+        if (!stageHasActionableWork) {
+          console.log('\nNo lanes are currently assignable. Coordinate with the stage owner or review blockers before reopening work.');
+        }
       }
       const scopedNotes = filterNotes(pattern, [`stage-${targetStage}`]);
       if (scopedNotes.length) {
@@ -662,7 +803,10 @@ function printGuide(pattern, options = {}) {
         console.log(` - ${note.timestamp}${author}: ${note.body}`);
       });
     }
+    const actionableStatuses = new Set(['open', 'scheduled', 'in_progress', 'ready']);
+    stageHasActionableWork = actionableStatuses.has(stageStatus);
   }
+
   if (options.showRecent && pattern.activity?.length) {
     console.log('\nRecent activity:');
     const recent = [...pattern.activity]
@@ -673,6 +817,13 @@ function printGuide(pattern, options = {}) {
       const agent = entry.agent ? ` — ${entry.agent}` : '';
       console.log(` - ${entry.timestamp} (${stageLabel})${agent}: ${entry.summary}`);
     });
+  }
+
+  const closedStatuses = new Set(['complete', 'deferred']);
+  if (!stageHasActionableWork && !closedStatuses.has(stageStatus)) {
+    console.log(
+      '\nNo actionable work is currently available for this stage. Coordinate with the current owner, resolve blockers, or review notes before attempting another claim.'
+    );
   }
 }
 
@@ -735,6 +886,58 @@ function parseGuideOptions(tokens) {
     const laneStage = laneIdToStage(options.lane);
     if (laneStage && laneStage !== options.stage) {
       throw new Error(`guide: lane ${options.lane} belongs to stage ${laneStage}, not ${options.stage}`);
+    }
+  }
+  return options;
+}
+
+function parseClaimOptions(tokens) {
+  const options = {};
+  for (let i = 0; i < tokens.length; i += 1) {
+    const token = tokens[i];
+    switch (token) {
+      case '--stage':
+        if (options.stage) {
+          throw new Error('claim: duplicate --stage flag');
+        }
+        if (i + 1 >= tokens.length) {
+          throw new Error('claim: --stage requires a value');
+        }
+        options.stage = tokens[i + 1];
+        i += 1;
+        break;
+      case '--lane':
+        if (options.lane) {
+          throw new Error('claim: duplicate --lane flag');
+        }
+        if (i + 1 >= tokens.length) {
+          throw new Error('claim: --lane requires a value');
+        }
+        options.lane = tokens[i + 1].toLowerCase();
+        i += 1;
+        break;
+      case '--summary':
+        if (options.summary) {
+          throw new Error('claim: duplicate --summary flag');
+        }
+        if (i + 1 >= tokens.length) {
+          throw new Error('claim: --summary requires a value');
+        }
+        options.summary = tokens[i + 1];
+        i += 1;
+        break;
+      case '--note':
+        if (options.note) {
+          throw new Error('claim: duplicate --note flag');
+        }
+        if (i + 1 >= tokens.length) {
+          throw new Error('claim: --note requires a value');
+        }
+        options.note = tokens[i + 1];
+        i += 1;
+        break;
+      default:
+        throw new Error(`claim: unknown flag ${token}`);
     }
   }
   return options;
@@ -1672,6 +1875,7 @@ function renderLaneTable(pattern, prefix) {
   }
   const rows = laneKeys.map((laneId) => {
     const lane = pattern.lanes[laneId];
+    const previousStatus = lane.status;
     return `| ${laneId} | ${lane.status} | ${lane.updatedAt || '—'} | ${lane.scope} |`;
   });
   return ['| Lane | Status | Updated At | Scope |', '| ---- | ------ | ---------- | ----- |', ...rows].join('\n');
@@ -1813,53 +2017,104 @@ async function main() {
       }
       case 'claim': {
         if (params.length === 0) {
-          throw new Error('Usage: claim <patternId> --agent <name> [--claimed-at ISO8601]');
+          throw new Error('Usage: claim <patternId> --stage <id>|--lane <laneId> [--summary text] [--note text]');
         }
-        const patternId = Number.parseInt(params[0], 10);
+        const idToken = params[0];
+        const patternId = Number.parseInt(idToken, 10);
         if (Number.isNaN(patternId)) {
-          throw new Error(`Invalid pattern id: ${params[0]}`);
+          throw new Error(`Invalid pattern id: ${idToken}`);
         }
         const pattern = registry.patterns.find((p) => p.patternId === patternId);
         if (!pattern) {
           throw new Error(`Pattern ${patternId} not found in registry.`);
         }
-        const options = params.slice(1);
-        let agent = null;
-        let claimedAt = null;
-        for (let i = 0; i < options.length; i += 1) {
-          const token = options[i];
-          switch (token) {
-            case '--agent':
-              if (i + 1 >= options.length) {
-                throw new Error('claim: --agent requires a value');
-              }
-              agent = options[i + 1];
-              i += 1;
-              break;
-            case '--claimed-at':
-              if (i + 1 >= options.length) {
-                throw new Error('claim: --claimed-at requires a value');
-              }
-              claimedAt = options[i + 1];
-              if (Number.isNaN(Date.parse(claimedAt))) {
-                throw new Error('claim: --claimed-at must be a valid ISO8601 timestamp');
-              }
-              i += 1;
-              break;
-            default:
-              throw new Error(`Unknown flag for claim: ${token}`);
+        const options = parseClaimOptions(params.slice(1));
+        const hasStage = Boolean(options.stage);
+        const hasLane = Boolean(options.lane);
+        if (!hasStage && !hasLane) {
+          throw new Error('claim requires --stage <id> or --lane <laneId>.');
+        }
+        if (hasStage && hasLane) {
+          throw new Error('claim accepts either --stage or --lane, not both.');
+        }
+
+        let outputMessage = '';
+
+        if (hasStage) {
+          const stageId = normaliseStageId(options.stage);
+          const gate = ensureStageGate(pattern, stageId);
+          const currentStatus = gate.status || 'open';
+          if (currentStatus === 'in_progress') {
+            throw new Error(`Stage ${stageId} is already in_progress. Choose another stage or coordinate with the current owner.`);
           }
+          if (!assignableStageStatuses.includes(currentStatus)) {
+            throw new Error(
+              `Stage ${stageId} cannot be claimed while it is ${currentStatus}. Coordinate with the current owner or resolve blockers first.`
+            );
+          }
+          setStageGate(pattern, stageId, 'in_progress');
+          recomputePatternStagePointer(pattern);
+          const agentId = deriveAgentId(patternId, { stage: stageId });
+          appendStageClaimNote(pattern, stageId, options.note, agentId);
+          const activityEntries = pattern.activity || (pattern.activity = []);
+          activityEntries.push({
+            stage: `stage-${stageId}`,
+            timestamp: nowIso(),
+            summary: options.summary || `Stage ${stageId} claimed`,
+            agent: agentId
+          });
+          outputMessage = `Stage ${stageId} for pattern ${patternId} claimed with agent id ${agentId}.`;
+        } else {
+          const laneId = options.lane;
+          if (!laneId) {
+            throw new Error('claim --lane requires a lane id (e.g., 4a, 6b).');
+          }
+          const lane = pattern.lanes?.[laneId];
+          if (!lane) {
+            throw new Error(`Lane ${laneId} not found for pattern ${patternId}.`);
+          }
+          const laneStage = laneIdToStage(laneId);
+          if (!laneStage) {
+            throw new Error(`Unable to determine stage for lane ${laneId}.`);
+          }
+          if (!autoAssignableLaneStatuses.includes(lane.status)) {
+            throw new Error(`Lane ${laneId} is not assignable (current status: ${lane.status}).`);
+          }
+          if (!laneDependenciesSatisfied(registry, pattern, laneId)) {
+            throw new Error(`Lane ${laneId} dependencies are not satisfied yet.`);
+          }
+          if (lane.status === 'in_progress') {
+            throw new Error(`Lane ${laneId} is already in_progress. Choose another lane or coordinate with the current owner.`);
+          }
+          setLaneStatus(pattern, laneId, 'in_progress', options.note);
+          const agentId = deriveAgentId(patternId, { lane: laneId });
+          const activityEntries = pattern.activity || (pattern.activity = []);
+          activityEntries.push({
+            stage: `lane-${laneId}`,
+            timestamp: nowIso(),
+            summary: options.summary || `Lane ${laneId} claimed`,
+            agent: agentId
+          });
+          if (laneStage) {
+            recomputeStageGateFromLanes(pattern, laneStage);
+          }
+          outputMessage = `Lane ${laneId} for pattern ${patternId} claimed with agent id ${agentId}.`;
         }
-        if (!agent) {
-          throw new Error('claim requires --agent <name>');
-        }
-        const owner = pattern.owner || (pattern.owner = {});
-        owner.agent = agent;
-        owner.claimedAt = claimedAt || nowIso();
-        recomputePatternStagePointer(pattern);
+
         touchPattern(pattern);
         await saveRegistry(registry);
-        console.log(`Pattern ${patternId} owner set to ${agent}.`);
+        console.log(outputMessage);
+        if (hasLane) {
+          const laneId = options.lane;
+          const lane = pattern.lanes?.[laneId];
+          const laneStage = laneIdToStage(laneId);
+          if (laneStage === '6') {
+            printHandoffSummary(pattern, '\nHandoff summary:');
+          }
+          if (lane) {
+            printLaneDetail(pattern, laneId, lane);
+          }
+        }
         break;
       }
       case 'update-stage': {
@@ -1906,9 +2161,17 @@ async function main() {
         }
         activityEntries.push(activityEntry);
 
+        let stageNextHint = null;
+        if (options.status === 'complete' || options.status === 'ready') {
+          stageNextHint = findNextWorkTarget(registry, pattern, stageId);
+        }
+
         touchPattern(pattern);
         await saveRegistry(registry);
         console.log(`Stage ${stageId} updated to ${options.status}.`);
+        if (stageNextHint) {
+          printNextWorkHint(patternId, stageNextHint);
+        }
         break;
       }
       case 'stage-note': {
@@ -2023,7 +2286,7 @@ async function main() {
         }
         if (status === 'in_progress') {
           throw new Error(
-            'create-lane cannot initialise a lane in `in_progress`. Create the lane first, then call `claim-lane`.'
+            'create-lane cannot initialise a lane in `in_progress`. Create the lane first, then call `claim` with `--lane`.'
           );
         }
         const laneCommands = options.commands.map((commandText) => ({
@@ -2064,135 +2327,6 @@ async function main() {
           console.log(`Dependencies: ${dependencyList}`);
         }
         printLaneDetail(pattern, laneId, laneEntry);
-        break;
-      }
-      case 'claim-lane': {
-        if (params.length === 0) {
-          throw new Error('Usage: claim-lane <patternId> [laneId] --agent <name> [--summary text] [--note text]');
-        }
-        const patternId = Number.parseInt(params[0], 10);
-        if (Number.isNaN(patternId)) {
-          throw new Error(`Invalid pattern id: ${params[0]}`);
-        }
-        const pattern = registry.patterns.find((p) => p.patternId === patternId);
-        if (!pattern) {
-          throw new Error(`Pattern ${patternId} not found in registry.`);
-        }
-        let laneId = null;
-        let index = 1;
-        if (params[1] && !params[1].startsWith('--')) {
-          laneId = params[1].toLowerCase();
-          index = 2;
-        }
-        const optionTokens = params.slice(index);
-        let agent = null;
-        let summary = null;
-        let note = null;
-        let laneFlag = null;
-        for (let i = 0; i < optionTokens.length; i += 1) {
-          const token = optionTokens[i];
-          switch (token) {
-            case '--lane':
-              if (i + 1 >= optionTokens.length) {
-                throw new Error('claim-lane: --lane requires a value');
-              }
-              laneFlag = optionTokens[i + 1].toLowerCase();
-              i += 1;
-              break;
-            case '--agent':
-              if (i + 1 >= optionTokens.length) {
-                throw new Error('claim-lane: --agent requires a value');
-              }
-              agent = optionTokens[i + 1];
-              i += 1;
-              break;
-            case '--summary':
-              if (i + 1 >= optionTokens.length) {
-                throw new Error('claim-lane: --summary requires a value');
-              }
-              summary = optionTokens[i + 1];
-              i += 1;
-              break;
-            case '--note':
-              if (i + 1 >= optionTokens.length) {
-                throw new Error('claim-lane: --note requires a value');
-              }
-              note = optionTokens[i + 1];
-              i += 1;
-              break;
-            default:
-              throw new Error(`claim-lane: unknown flag ${token}`);
-          }
-        }
-        if (!agent) {
-          throw new Error('claim-lane requires --agent <name>');
-        }
-        if (laneId && laneFlag && laneId !== laneFlag) {
-          throw new Error('claim-lane: lane specified twice with different values.');
-        }
-        if (laneFlag && !laneId) {
-          laneId = laneFlag;
-        }
-        const laneOrder = orderedStage6Lanes(pattern);
-        if (!laneOrder.length) {
-          throw new Error(`Pattern ${patternId} has no Stage 6 lanes to claim.`);
-        }
-        let targetLaneId = laneId;
-        if (targetLaneId) {
-          if (!pattern.lanes?.[targetLaneId]) {
-            throw new Error(`Lane ${targetLaneId} not found for pattern ${patternId}.`);
-          }
-          if (laneIdToStage(targetLaneId) !== '6') {
-            throw new Error(`Lane ${targetLaneId} is not a Stage 6 lane.`);
-          }
-        } else {
-          targetLaneId = laneOrder.find((candidate) => {
-            const lane = pattern.lanes?.[candidate];
-            if (!lane) {
-              return false;
-            }
-            if (!autoAssignableLaneStatuses.includes(lane.status)) {
-              return false;
-            }
-            return laneDependenciesSatisfied(registry, pattern, candidate);
-          });
-        }
-        if (!targetLaneId) {
-          throw new Error('No auto-assignable Stage 6 lanes available. Check statuses via `guide --lanes` or coordinate with the current owner.');
-        }
-        const lane = pattern.lanes?.[targetLaneId];
-        if (!lane) {
-          throw new Error(`Lane ${targetLaneId} not found for pattern ${patternId}.`);
-        }
-        if (!autoAssignableLaneStatuses.includes(lane.status)) {
-          throw new Error(`Lane ${targetLaneId} is not assignable (current status: ${lane.status}).`);
-        }
-        if (!laneDependenciesSatisfied(registry, pattern, targetLaneId)) {
-          throw new Error(`Lane ${targetLaneId} dependencies are not satisfied yet.`);
-        }
-        if (lane.status === 'in_progress') {
-          throw new Error(`Lane ${targetLaneId} is already in_progress. Choose another lane or coordinate with the current owner.`);
-        }
-        setLaneStatus(pattern, targetLaneId, 'in_progress', note);
-        const stage = laneIdToStage(targetLaneId);
-        if (stage) {
-          recomputeStageGateFromLanes(pattern, stage);
-        }
-        const activityEntries = pattern.activity || (pattern.activity = []);
-        const activityEntry = {
-          stage: `lane-${targetLaneId}`,
-          timestamp: nowIso(),
-          summary: summary || `Lane ${targetLaneId} claimed by ${agent}`,
-          agent
-        };
-        activityEntries.push(activityEntry);
-        touchPattern(pattern);
-        await saveRegistry(registry);
-        console.log(`Lane ${targetLaneId} claimed by ${agent}.`);
-        if (stage === '6') {
-          printHandoffSummary(pattern, '\nHandoff summary:');
-        }
-        printLaneDetail(pattern, targetLaneId, lane);
         break;
       }
       case 'update-handoff': {
@@ -2410,8 +2544,9 @@ async function main() {
         if (!pattern.lanes || !pattern.lanes[laneId]) {
           throw new Error(`Lane ${laneId} not found for pattern ${patternId}.`);
         }
-        const lane = pattern.lanes[laneId];
-        let options = parseLaneUpdateOptions(flagTokens);
+    const lane = pattern.lanes[laneId];
+    const previousStatus = lane.status;
+    let options = parseLaneUpdateOptions(flagTokens);
         if (!options.status) {
           throw new Error('update-lane requires --status');
         }
@@ -2421,7 +2556,7 @@ async function main() {
         const statusChanged = options.status !== lane.status;
         if (options.status === 'in_progress' && lane.status !== 'in_progress') {
           throw new Error(
-            'update-lane cannot move a lane into `in_progress`. Use `npm run consolidate -- claim-lane <patternId> [laneId] --agent <name>` instead.'
+            'update-lane cannot move a lane into `in_progress`. Use `npm run consolidate -- claim <patternId> --lane <laneId>` instead.'
           );
         }
         if (statusChanged && options.status === 'blocked' && !options.note && !options.skipPrompt) {
@@ -2444,6 +2579,20 @@ async function main() {
         const stage = laneIdToStage(laneId);
         if (stage) {
           recomputeStageGateFromLanes(pattern, stage);
+        }
+
+        let laneNextHint = null;
+        if (statusChanged && options.status === 'complete') {
+          if (stage === '4' || stage === '6') {
+            const nextLaneId = findNextAssignableLane(registry, pattern, stage);
+            if (nextLaneId && nextLaneId !== laneId) {
+              laneNextHint = { type: 'lane', stageId: stage, laneId: nextLaneId };
+            } else {
+              laneNextHint = findNextWorkTarget(registry, pattern, stage);
+            }
+          } else if (stage) {
+            laneNextHint = findNextWorkTarget(registry, pattern, stage);
+          }
         }
 
         const activityEntries = pattern.activity || (pattern.activity = []);
@@ -2473,6 +2622,14 @@ async function main() {
         }
         if (autoPromoted.length) {
           console.log(`Auto-scheduled lanes: ${autoPromoted.join(', ')}`);
+        }
+        if (laneNextHint) {
+          printNextWorkHint(patternId, laneNextHint);
+        }
+        if (statusChanged && options.status === 'blocked' && previousStatus === 'in_progress') {
+          console.log(
+            `Guidance: Lane ${laneId} paused mid-flight. Log blocker context with \`npm run consolidate -- append-activity ${patternId} --lane ${laneId} --summary "Blocker"\` if you have not already, then rerun \`npm run consolidate -- guide ${patternId} --lane ${laneId}\` before reclaiming once it clears.`
+          );
         }
         break;
       }
@@ -2620,8 +2777,8 @@ async function main() {
         console.log('Usage:');
         console.log('  guide <patternId> [--stage N] [--lane 6b] [--lanes] [--recent] [--next|-n]');
         console.log('                                Show targeted guidance for the pattern');
-        console.log('  claim <patternId> --agent <name> [--claimed-at ISO]');
-        console.log('                                Set or refresh ownership metadata');
+        console.log('  claim <patternId> --stage <id>|--lane <laneId> [--summary text] [--note text]');
+        console.log('                                Claim a stage or lane (moves to in_progress and logs activity)');
         console.log('  stage-note <patternId> <stageId> --body "text" [--agent name]');
         console.log('                                Add a stage-scoped note to the registry');
         console.log('  update-stage <patternId> <stageId> --status <value> [options]');
@@ -2630,8 +2787,6 @@ async function main() {
         console.log('                                Maintain guardrails, shared files, acknowledgements (`--list` to inspect)');
         console.log('  create-lane <patternId> <laneId> --scope "…" --command "…" [options]');
         console.log('                                Define Stage 4/6 lanes plus commands/dependencies before assignment');
-        console.log('  claim-lane <patternId> [laneId] --agent <name> [--summary text]');
-        console.log('                                Safely claim the next assignable Stage 6 lane');
         console.log('  update-lane <patternId> <laneId> --status <value> [options]');
         console.log('                                Update lane status, capture notes, and propagate impacts');
         console.log('  append-activity <patternId> --scope stage-6|lane-6b --summary "text" [options]');

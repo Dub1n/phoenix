@@ -36,7 +36,7 @@ last_updated: 2025-10-06
   - Interface adapters (`cli`, `vscode`, `command`) render skins and manage interaction state. **Status:** Present (operational yet reliant on fallback rendering). CLI now bridges into the shared session foundation via `CLISessionBridge`, has dropped its legacy caches in favour of bridge helpers, and VSCode receives the injected session manager instance; teardown paths clear listeners to keep Jest harnesses clean.
   - Display stack utilities (`DisplayUtils`, `TerminalFormatter`, `WindowUtils`) expose dependency-injected seams via `configureDisplayStack(...)`, wrapping `DisplayUtils.configure`, `WindowUtils.configure`, and `TerminalFormatter.configure` so CLI/session surfaces share formatter, logger, and column providers without importing `chalk` directly. **Status:** Present.
 - **Data/Control Flow:**
-  - Backends publish skins that discovery ingests. **Status:** Absent (partner exports not yet available).
+- Backends publish skins that discovery ingests. **Status:** Absent (partner exports not yet available). Practical Developer Guide notifications, design review acknowledgements, sprint risk prompts, and backlog tooling banners will arrive as skin elements emitted by Phoenix Code Lite; Templum will simply render them once available.
   - Discovery registers services and hydrates connection factories. **Status:** Partial (manifest-led integration works; live partner start deferred post-MVP).
   - Command router/skin engine expose functionality across adapters. **Status:** Broken (skin-driven output still falls back to hardcoded menus).
 - **Integration Points:**
