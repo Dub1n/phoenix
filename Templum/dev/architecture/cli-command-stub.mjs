@@ -103,7 +103,7 @@ const stageGuidance = {
   '3': {
     title: 'Stage 3 — Migration Orchestration',
     reminders: [
-      'Capture Stage 4/6 ownership and sequencing inside the Stage 3 note before marking the gate ready.',
+      'Capture Stage 4/6 ownership, sequencing, and lane definitions inside the Stage 3 note; use `create-lane` to add missing entries before marking the gate ready.',
       'Keep cross-pattern coordination in the registry (Stage 3 note + activity) so downstream owners have a single source.',
       'If dependencies shift, add a Stage 3 note and notify the affected pattern owners instead of editing manual trackers.'
     ]
@@ -113,7 +113,8 @@ const stageGuidance = {
     reminders: [
       'Drive lanes 4a/4b/4c to `[x]` before migrations; keep statuses current in the registry.',
       'Attach gating evidence via lane command summaries/log paths so generated plans capture the run history.',
-      'Re-run foundational suites after each lane and update the associated command entries.'
+      'Re-run foundational suites after each lane and update the associated command entries.',
+      'Add parallel prerequisites with `create-lane` when new scope emerges; stage gates stay accurate once the lane is defined.'
     ]
   },
   '5': {
@@ -121,6 +122,7 @@ const stageGuidance = {
     reminders: [
       'Capture guardrails/approvals in the registry (handoff block + Stage 5 notes) before unlocking lanes.',
       'Execute the Stage 6 gating battery and record command evidence before flipping Stage 6 lanes to assignable.',
+      'Create or refine Stage 6 lanes with `create-lane` so cohorts inherit a complete migration slate.',
       'Use Stage 5 notes/activity entries to broadcast readiness; no manual schedule updates required.'
     ]
   },
@@ -130,7 +132,8 @@ const stageGuidance = {
       'Work one lane at a time; coordinate assignments via schedule and activity log.',
       'Run mandated commands from the registry entry and attach logs before marking complete.',
       'Flip Stage 3 glyph back to `[~]` if new blockers require reprioritisation.',
-      'Use `claim-lane` to avoid lane collisions as dependencies unlock.'
+      'Use `claim-lane` to avoid lane collisions as dependencies unlock.',
+      'Introduce additional Stage 6 execution slices with `create-lane` when dependencies demand parallel tracks.'
     ]
   },
   '7': {
@@ -159,28 +162,32 @@ const stageActionGuidance = {
   ],
   '3': [
     '1. Review Stage 4/6 targets with `npm run consolidate -- guide <patternId> --lanes` before planning migrations.',
-    '2. Document orchestration owners, sequencing, and cross-pattern dependencies via `npm run consolidate -- stage-note <patternId> 3 --body "Lane owners: …; Dependencies: …" [--agent <name>]`.',
-    '3. Once plans are locked, set Stage 3 `complete` with `npm run consolidate -- update-stage <patternId> 3 --status complete --notes "Ready for Stage 4" [--agent <name>]` (reopen with `in_progress` if plans change).',
+    '2. Define missing Stage 4 lanes via `npm run consolidate -- create-lane <patternId> 4a --scope "Prereq description" --command "Command to run" [--depends 8:stage-2]` (repeat for each lane; CLI enforces scopes and command lists).',
+    '3. Document orchestration owners, sequencing, and cross-pattern dependencies via `npm run consolidate -- stage-note <patternId> 3 --body "Lane owners: …; Dependencies: …" [--agent <name>]`.',
+    '4. Once plans are locked, set Stage 3 `complete` with `npm run consolidate -- update-stage <patternId> 3 --status complete --notes "Ready for Stage 4" [--agent <name>]` (reopen with `in_progress` if plans change).',
     'Need coordination history? The Stage 3 note and `guide --recent` output are the single source of truth.'
   ],
   '4': [
     '1. Start each prerequisite by moving the lane to `in_progress`: `npm run consolidate -- update-lane <patternId> 4a --status in_progress --agent <name>`.',
-    '2. Run mandated commands and close the lane with evidence: `npm run consolidate -- update-lane <patternId> 4a --status complete --summary "Gating battery green" --files tmp/...log` (verify log paths manually; the CLI does not validate them).',
-    '3. Use `npm run consolidate -- stage-note <patternId> 4 --body "Lane 4a evidence: …; Risks: …"` to log findings, then mark Stage 4 `complete` when every lane is `[x]`.',
+    '2. Need another prerequisite slice? Add it first with `npm run consolidate -- create-lane <patternId> 4d --scope "New prerequisite" --command "Command to qualify"` so stage status stays authoritative.',
+    '3. Run mandated commands and close the lane with evidence: `npm run consolidate -- update-lane <patternId> 4a --status complete --summary "Gating battery green" --files tmp/...log` (verify log paths manually; the CLI does not validate them).',
+    '4. Use `npm run consolidate -- stage-note <patternId> 4 --body "Lane 4a evidence: …; Risks: …"` to log findings, then mark Stage 4 `complete` when every lane is `[x]`.',
     'Blocked prerequisites? Switch the lane to `blocked` (include a note) and let the CLI propagate scheduling hints.'
   ],
   '5': [
     '1. Maintain guardrails/shared files/approvals with `npm run consolidate -- update-handoff <patternId> --add-guardrail "…" --add-file "…" --add-ack "Agent"` (use `--remove-ack-agent <name>` or removal indexes to tidy existing entries). Stage 5 captures all required approvals; no per-lane approval steps are needed.',
     '2. Log alignment context (owners, risks, mitigations) via `npm run consolidate -- stage-note <patternId> 5 --body "Approvals: …; Risks: …" [--agent <name>]`.',
-    '3. After executing the gating battery, update related lanes with evidence and set Stage 5 to `ready`: `npm run consolidate -- update-stage <patternId> 5 --status ready --notes "Gating battery complete" [--files tmp/...log]`.',
+    '3. Stand up Stage 6 execution lanes with `npm run consolidate -- create-lane <patternId> 6a --scope "Migration focus" --command "Command to validate"` (define all required lanes before signalling readiness).',
+    '4. After executing the gating battery, update related lanes with evidence and set Stage 5 to `ready`: `npm run consolidate -- update-stage <patternId> 5 --status ready --notes "Gating battery complete" [--files tmp/...log]`.',
     'Leave Stage 5 `in_progress` if approvals or evidence are missing—document the gap so Stage 6 owners stay aligned.'
   ],
   '6': [
     '1. Use `npm run consolidate -- guide <patternId> --lanes` to identify the next assignable lane before touching consumers.',
-    '2. Claim the lane via `npm run consolidate -- claim-lane <patternId> [laneId] --agent <name>` so status flips to `in_progress` safely.',
-    '3. Run the required commands and finish with `npm run consolidate -- update-lane <patternId> <laneId> --status complete --summary "Suites green" --files tmp/...log` once evidence is captured (verify log paths manually; the CLI does not validate them).',
-    '4. Capture collaborative evidence or follow-ups without changing lane status via `npm run consolidate -- append-activity <patternId> --lane <laneId> --summary "Notes…" [--files tmp/...log] [--agent <name>]` (include `--stage` when logging broader updates).',
-    '5. Review the handoff summary surfaced in the guide, then record cross-lane status in `npm run consolidate -- stage-note <patternId> 6 --body "Lanes complete: …; Blockers: …" [--agent <name>]`. Update Stage 6 to `complete` when all lanes are `[x]`.',
+    '2. Need a fresh migration slice? Define it first with `npm run consolidate -- create-lane <patternId> 6d --scope "Parallel track" --command "Command to certify"` before claiming it.',
+    '3. Claim the lane via `npm run consolidate -- claim-lane <patternId> [laneId] --agent <name>` so status flips to `in_progress` safely.',
+    '4. Run the required commands and finish with `npm run consolidate -- update-lane <patternId> <laneId> --status complete --summary "Suites green" --files tmp/...log` once evidence is captured (verify log paths manually; the CLI does not validate them).',
+    '5. Capture collaborative evidence or follow-ups without changing lane status via `npm run consolidate -- append-activity <patternId> --lane <laneId> --summary "Notes…" [--files tmp/...log] [--agent <name>]` (include `--stage` when logging broader updates).',
+    '6. Review the handoff summary surfaced in the guide, then record cross-lane status in `npm run consolidate -- stage-note <patternId> 6 --body "Lanes complete: …; Blockers: …" [--agent <name>]`. Update Stage 6 to `complete` when all lanes are `[x]`.',
     'Encounter a blocker? Set the lane to `blocked`/`scheduled` and accept the CLI propagation prompts so downstream work stays in sync.'
   ],
   '7': [
@@ -738,6 +745,146 @@ function parseCommaList(value) {
     .split(',')
     .map((entry) => entry.trim())
     .filter(Boolean);
+}
+
+function parseDependencyDescriptor(value, context = 'create-lane') {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    throw new Error(`${context}: dependency entries cannot be blank`);
+  }
+  const parts = trimmed.split(':');
+  if (parts.length !== 2) {
+    throw new Error(`${context}: dependency entries must use patternId:gate format (received "${value}")`);
+  }
+  const patternToken = parts[0].trim();
+  const gateToken = parts[1].trim().toLowerCase();
+  const patternId = Number.parseInt(patternToken, 10);
+  if (Number.isNaN(patternId) || patternId < 1) {
+    throw new Error(`${context}: invalid dependency pattern id "${patternToken}"`);
+  }
+  if (!/^stage-[1-7]$/.test(gateToken) && !/^lane-[46][a-z]$/.test(gateToken)) {
+    throw new Error(
+      `${context}: dependency gate must be stage-<1-7> or lane-<4/6><id>; received "${parts[1].trim()}"`
+    );
+  }
+  return { patternId, gate: gateToken };
+}
+
+function parseCreateLaneOptions(tokens) {
+  const options = {
+    commands: [],
+    dependencies: []
+  };
+  for (let i = 0; i < tokens.length; i += 1) {
+    const token = tokens[i];
+    switch (token) {
+      case '--scope': {
+        if (options.scope) {
+          throw new Error('create-lane: duplicate --scope flag');
+        }
+        if (i + 1 >= tokens.length) {
+          throw new Error('create-lane: --scope requires a value');
+        }
+        const value = tokens[i + 1].trim();
+        if (!value) {
+          throw new Error('create-lane: --scope cannot be blank');
+        }
+        options.scope = value;
+        i += 1;
+        break;
+      }
+      case '--command': {
+        if (i + 1 >= tokens.length) {
+          throw new Error('create-lane: --command requires a value');
+        }
+        const value = tokens[i + 1];
+        if (!value.trim()) {
+          throw new Error('create-lane: --command cannot be blank');
+        }
+        options.commands.push(value);
+        i += 1;
+        break;
+      }
+      case '--status': {
+        if (options.status) {
+          throw new Error('create-lane: duplicate --status flag');
+        }
+        if (i + 1 >= tokens.length) {
+          throw new Error('create-lane: --status requires a value');
+        }
+        options.status = tokens[i + 1].toLowerCase();
+        i += 1;
+        break;
+      }
+      case '--depends': {
+        if (i + 1 >= tokens.length) {
+          throw new Error('create-lane: --depends requires a value');
+        }
+        const entries = parseCommaList(tokens[i + 1]);
+        if (!entries.length) {
+          throw new Error('create-lane: --depends value cannot be empty');
+        }
+        const parsed = entries.map((entry) => parseDependencyDescriptor(entry, 'create-lane'));
+        options.dependencies.push(...parsed);
+        i += 1;
+        break;
+      }
+      case '--note': {
+        if (options.note) {
+          throw new Error('create-lane: duplicate --note flag');
+        }
+        if (i + 1 >= tokens.length) {
+          throw new Error('create-lane: --note requires a value');
+        }
+        const value = tokens[i + 1];
+        if (!value.trim()) {
+          throw new Error('create-lane: --note cannot be blank');
+        }
+        options.note = value;
+        i += 1;
+        break;
+      }
+      case '--agent': {
+        if (options.agent) {
+          throw new Error('create-lane: duplicate --agent flag');
+        }
+        if (i + 1 >= tokens.length) {
+          throw new Error('create-lane: --agent requires a value');
+        }
+        options.agent = tokens[i + 1];
+        i += 1;
+        break;
+      }
+      case '--summary': {
+        if (options.summary) {
+          throw new Error('create-lane: duplicate --summary flag');
+        }
+        if (i + 1 >= tokens.length) {
+          throw new Error('create-lane: --summary requires a value');
+        }
+        options.summary = tokens[i + 1];
+        i += 1;
+        break;
+      }
+      default:
+        throw new Error(`create-lane: unknown flag ${token}`);
+    }
+  }
+  if (options.commands.length) {
+    options.commands = [...new Set(options.commands)];
+  }
+  if (options.dependencies.length) {
+    const seen = new Set();
+    options.dependencies = options.dependencies.filter((dep) => {
+      const key = `${dep.patternId}:${dep.gate}`;
+      if (seen.has(key)) {
+        return false;
+      }
+      seen.add(key);
+      return true;
+    });
+  }
+  return options;
 }
 
 function parseLaneUpdateOptions(tokens) {
@@ -1833,6 +1980,92 @@ async function main() {
         console.log(`Added stage-${stageId} note ${generatedId} to pattern ${patternId}.`);
         break;
       }
+      case 'create-lane': {
+        if (params.length < 2) {
+          throw new Error(
+            'Usage: create-lane <patternId> <laneId> --scope "description" --command "command to run" [--command "..."] [--status pending] [--depends 8:stage-4] [--note text] [--agent name] [--summary text]'
+          );
+        }
+        const patternId = Number.parseInt(params[0], 10);
+        if (Number.isNaN(patternId)) {
+          throw new Error(`Invalid pattern id: ${params[0]}`);
+        }
+        const laneIdToken = params[1];
+        if (!laneIdToken) {
+          throw new Error('create-lane requires a lane id (e.g., 4a, 6b).');
+        }
+        const laneId = laneIdToken.toLowerCase();
+        if (!/^4[a-z]$/.test(laneId) && !/^6[a-d]$/.test(laneId)) {
+          throw new Error('create-lane supports Stage 4 lanes (4a–4z) and Stage 6 lanes (6a–6d).');
+        }
+        const stageId = laneIdToStage(laneId);
+        if (!stageId || (stageId !== '4' && stageId !== '6')) {
+          throw new Error(`create-lane only supports Stage 4 or Stage 6 lanes (received ${laneId}).`);
+        }
+        const pattern = registry.patterns.find((p) => p.patternId === patternId);
+        if (!pattern) {
+          throw new Error(`Pattern ${patternId} not found in registry.`);
+        }
+        const laneMap = pattern.lanes || (pattern.lanes = {});
+        if (laneMap[laneId]) {
+          throw new Error(`Lane ${laneId} already exists for pattern ${patternId}.`);
+        }
+        const options = parseCreateLaneOptions(params.slice(2));
+        if (!options.scope) {
+          throw new Error('create-lane requires --scope "description"');
+        }
+        if (!options.commands.length) {
+          throw new Error('create-lane requires at least one --command "command to run"');
+        }
+        const status = (options.status || 'pending').toLowerCase();
+        if (!laneStatusMetadata[status]) {
+          throw new Error(`create-lane: unsupported status ${status}`);
+        }
+        if (status === 'in_progress') {
+          throw new Error(
+            'create-lane cannot initialise a lane in `in_progress`. Create the lane first, then call `claim-lane`.'
+          );
+        }
+        const laneCommands = options.commands.map((commandText) => ({
+          command: commandText
+        }));
+        const laneEntry = {
+          status,
+          scope: options.scope,
+          commands: laneCommands,
+          updatedAt: nowIso()
+        };
+        if (options.dependencies.length) {
+          laneEntry.dependencies = options.dependencies;
+        }
+        if (options.note) {
+          laneEntry.notes = options.note;
+        }
+        laneMap[laneId] = laneEntry;
+        recomputeStageGateFromLanes(pattern, stageId);
+        const activityEntries = pattern.activity || (pattern.activity = []);
+        const defaultSummary = `Created lane ${laneId} (${options.scope})`;
+        const activityEntry = {
+          stage: `stage-${stageId}`,
+          timestamp: nowIso(),
+          summary: options.summary || defaultSummary
+        };
+        if (options.agent) {
+          activityEntry.agent = options.agent;
+        }
+        activityEntries.push(activityEntry);
+        touchPattern(pattern);
+        await saveRegistry(registry);
+        console.log(`Lane ${laneId} created for pattern ${patternId}.`);
+        if (options.dependencies.length) {
+          const dependencyList = options.dependencies
+            .map((dep) => `${dep.patternId}:${dep.gate}`)
+            .join(', ');
+          console.log(`Dependencies: ${dependencyList}`);
+        }
+        printLaneDetail(pattern, laneId, laneEntry);
+        break;
+      }
       case 'claim-lane': {
         if (params.length === 0) {
           throw new Error('Usage: claim-lane <patternId> [laneId] --agent <name> [--summary text] [--note text]');
@@ -2395,6 +2628,8 @@ async function main() {
         console.log('                                Update stage gate status, notes, and activity log');
         console.log('  update-handoff <patternId> [options]');
         console.log('                                Maintain guardrails, shared files, acknowledgements (`--list` to inspect)');
+        console.log('  create-lane <patternId> <laneId> --scope "…" --command "…" [options]');
+        console.log('                                Define Stage 4/6 lanes plus commands/dependencies before assignment');
         console.log('  claim-lane <patternId> [laneId] --agent <name> [--summary text]');
         console.log('                                Safely claim the next assignable Stage 6 lane');
         console.log('  update-lane <patternId> <laneId> --status <value> [options]');

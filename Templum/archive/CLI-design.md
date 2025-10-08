@@ -288,3 +288,9 @@ Naming Convention is not case specific - can be lowerCase or CapitalisedCasing e
 The > is full colour when the textbox is selected and greyed out when the menu items are selected
 The type a command is greyed out until the user types and then it goes away until returned to that menu
 This Design 2.1 does not have a textbox below the Window and when input is need it is in the appropriate location in the window itself (similarly positioned to how it is in the 1.0 design)
+
+## Utility Consolidation CLI Addendum
+
+- Stage 3 orchestration agents now define pending Stage 4 work with `npm run consolidate -- create-lane <patternId> 4a --scope "Prerequisite scope" --command "Command to execute"` before they close the gate.
+- Stage 5 coordinators use the same command to stand up Stage 6 lanes (e.g., `6a`, `6b`) so migration teams inherit a complete queue.
+- Stage 4 and Stage 6 owners may add parallel lanes mid-flight when new prerequisites or migration slices surface; every lane definition must include scope, at least one command, and optional dependencies (`--depends 12:stage-4,15:lane-4b`).
