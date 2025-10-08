@@ -37,23 +37,23 @@ Pause at stage boundaries when the session ends. Always run `npm run consolidate
 **Inputs**: Registry entry (`status` command), pattern spec, architecture references, redundancy metrics.
 
 1. Run `npm run consolidate -- claim <patternId> --agent <name>` if not already claimed.
-2. Capture Stage 1 plan details using `npm run consolidate -- update-stage <patternId> 1 --status in_progress --notes "Mapped consumers …"`.
-3. Populate consumer inventory and guardrails in the registry `activity` log via CLI prompts (the CLI requests summary, touched files, and optional evidence links).
-4. Attach intended test modules, migration order, and guardrail notes to the pattern’s `lanes` (Stage 4 placeholder) using `update-lane` with `status pending` and descriptive `scope`.
-5. When Stage 1 readiness is met, re-run `update-stage` to mark status `complete`. CLI enforces required notes and at least one activity entry.
+2. Review the Stage 1 orientation block via `npm run consolidate -- guide <patternId>` and set the gate to `in_progress` when work begins (`update-stage … --status in_progress`).
+3. Capture consumer inventory, redundancy findings, and discovery commands with `npm run consolidate -- stage-note <patternId> 1 --body "Consumers: …; Commands: rg …" [--agent <name>]` so downstream owners inherit the context.
+4. Summarise outstanding risks/open questions in the same stage note (include evidence paths where helpful). Stage 1 does **not** pre-populate Stage 4 lanes—that work is owned by the Stage 3 planning pass.
+5. When Stage 1 readiness is met, mark the gate complete with `npm run consolidate -- update-stage <patternId> 1 --status complete --notes "Summary of findings" [--agent <name>]`.
 
 Outputs:
 
 - Stage 1 gate `complete` in registry (with timestamp/notes).
-- Stage 4 lanes pre-seeded with scope/commands.
-- Generated plan/ tracker reflect Stage 1 completion after regeneration.
+- Stage 1 note in the registry capturing consumers/commands/guardrails for Stage 2/3 references.
+- Generated plan/tracker reflect Stage 1 completion after regeneration.
 
 ## Stage 2 — Test-First Utility Implementation
 
 **Inputs**: Stage 1 plan details, testing guide, pattern spec.
 
 1. Draft Jest tests; record planned commands via `update-lane` on Stage 4 entries if they serve as prerequisites.
-2. Before implementation, log TDD intent using `npm run consolidate -- append-activity <patternId> --stage stage-2 --summary "Authored DisplayUtils suite …"`.
+2. Before implementation, log TDD intent using `npm run consolidate -- stage-note <patternId> 2 --body "Tests: …; Focus: …"` (or update the existing Stage 2 note).
 3. After tests pass, run `npm run consolidate -- update-stage <patternId> 2 --status complete --notes "Suite xyz executed"`.
 4. Provide command evidence (command string, timestamp, exit code, log path) when prompted; CLI stores it in `stageGates["2"]` and `evidence` array.
 
@@ -96,8 +96,8 @@ Outputs:
 
 **Inputs**: Completed Stage 4 lanes, cohort alignment spec, registry handoff data.
 
-1. Coordinator updates `handoff.guardrails`, `sharedFiles`, and `acknowledgements` using CLI `update-handoff` subcommand.
-2. Stage 5A: Run `update-stage` with `in_progress`, attaching summary of cohort alignment session (the CLI will prompt for dependent pattern IDs and acknowledgements).
+1. Coordinator records guardrails, shared files, and acknowledgements with `npm run consolidate -- update-handoff <patternId> --add-guardrail "…" --add-file "…" --add-ack "Agent" [--ack-note "…"]` (use `--list` to review entries and `--remove-ack-agent <name>`/indexes to tidy them).
+2. Stage 5A: Run `update-stage` with `in_progress`, attaching summary of cohort alignment session (include dependency pattern IDs in the notes/summary) and capture supporting details in a Stage 5 note when needed.
 3. Stage 5B: verify Stage 6 lanes `status` remain `pending` but have `commands` flagged as gating tests. Execute gating battery and record logs through CLI.
 4. Mark Stage 5 `ready` once all acknowledgements and evidence exist. CLI prevents `complete` until Stage 6 lanes begin.
 
@@ -112,11 +112,10 @@ Outputs:
 
 For each lane (`6a`–`6d`):
 
-1. `npm run consolidate -- update-lane <patternId> 6a --status in_progress` before modifying consumers.
-2. Execute commands; provide log paths and exit codes when CLI prompts.
-3. CLI enforces dependencies (e.g., Lane 6c requires Patterns 6/7 Stage 5 `ready`). Override requires `--force` and adds audit note.
-4. After migrations, mark lane `complete`. CLI updates Stage 6 gate when all lanes `complete` and logs aggregated summary.
-5. If new prerequisites emerge, set lane `blocked`; the CLI requests Stage 3 update before allowing further Stage 6 transitions.
+1. Claim the lane with `npm run consolidate -- claim-lane <patternId> [laneId] --agent <name>` so the status flips to `in_progress` safely (auto-skipping lanes whose dependencies are still blocked).
+2. Execute the required commands; provide log paths and exit codes when the CLI prompts.
+3. Finish with `npm run consolidate -- update-lane <patternId> <laneId> --status complete --summary "..." --files tmp/...log`. The CLI enforces dependencies (e.g., Lane 6c requires Patterns 6/7 Stage 5 `ready`); overrides require `--force` and add an audit note.
+4. If new prerequisites emerge, set the lane `blocked`; the CLI prompts for Stage 3 updates before allowing further Stage 6 transitions. When blockers clear, dependent lanes auto-transition to `scheduled` and become eligible for `claim-lane`.
 
 Outputs:
 

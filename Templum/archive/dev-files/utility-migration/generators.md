@@ -26,6 +26,7 @@ Translate the canonical registry (`consolidation-state.json`) into the existing 
   2. **Free-form appendix**: optional Markdown under `Templum/dev/architecture/consolidation-notes/pattern-<id>.md`. Agents can edit the appendix directly; generator injects it at the end.
 - Stage 6 lanes rendered as tables summarising commands, status, and last execution timestamp. Completed lanes get ✅ icon for quick scan.
 - When lane is `pending`, generator lists gating dependencies (pulled from schema) in a warning block.
+- Header timestamps use `pattern.updatedAt` (falling back to registry `updatedAt`) so patterns that were not touched keep their generated Markdown stable.
 
 ## Tracker Rendering
 
@@ -42,8 +43,8 @@ Translate the canonical registry (`consolidation-state.json`) into the existing 
 
 ## CLI Integration
 
-- Expose generator module as `generateViews({ registryPath, outputDir, checkOnly })` so CLI can call `generateViews` after state updates.
-- Provide standalone script `npm run consolidate -- regen` for manual use.
+- Expose generator module as `generateViews({ registryPath, outputDir, checkOnly })` so the CLI can invoke it immediately after a successful state update.
+- The CLI auto-runs generators after every write operation; `npm run consolidate -- regen [--check]` remains available for CI or manual dry-runs.
 - Add pre-commit hook (optional) to ensure Markdown views are up-to-date when registry changes.
 
 ## Testing Strategy

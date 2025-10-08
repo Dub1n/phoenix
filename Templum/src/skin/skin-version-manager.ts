@@ -12,9 +12,6 @@ import {
   VersionCompatibilityRule,
   VersionConflict,
   MigrationStrategy,
-
-
-
   SkinVersionQuery,
   SkinVersionInfo,
   ISkinVersionManager,
@@ -23,14 +20,7 @@ import {
   InterfaceRequirements,
   AdvancedCompatibilityOptions,
   AdvancedCompatibilityReport,
-  StructuralCompatibilityResult,
-  FeatureCompatibilityResult,
-  AssetCompatibilityResult,
-  PerformanceCompatibilityResult,
-  CrossInterfaceCompatibilityResult,
   InterfaceCapabilityMatrix,
-  AssetRequirements,
-
   InterfaceType
 } from '../types/universal-skin-engine-types';
 import {
@@ -43,20 +33,24 @@ import {
 } from '../types/templum-types';
 import { serialization, type SerializationOutcome } from '../utils/serialization-utils';
 import { emitSerializationWarnings } from '../backend/backend-serialization-log';
+import {
+  AdvancedCompatibilityService,
+  createDefaultInterfaceCapabilityMatrix,
+  createDefaultInterfaceRequirements
+} from './versioning/advanced-compatibility-service';
 
 /**
  * Comprehensive skin version management with semantic versioning support
  */
 export class SkinVersionManager implements ISkinVersionManager {
-  private compatibilityRules: Map<string, VersionCompatibilityRule[]> = new Map();
-  private migrationStrategies: Map<string, MigrationStrategy[]> = new Map();
-  private systemVersion: string = '1.0.0';
-  private registeredVersions: Map<string, SemanticVersion[]> = new Map(); // skinId -> versions
-  
-  // Advanced compatibility support (TASK-SKIN-002)
-  private interfaceRequirements: Map<InterfaceType, InterfaceRequirements> = new Map();
-  private interfaceCapabilityMatrix: InterfaceCapabilityMatrix = {};
-  private validatorVersion: string = '1.0.0';
+  private compatibilityRules = new Map<string, VersionCompatibilityRule[]>();
+  private migrationStrategies = new Map<string, MigrationStrategy[]>();
+  private systemVersion = '1.0.0';
+  private registeredVersions = new Map<string, SemanticVersion[]>();
+  private readonly interfaceRequirements: Map<InterfaceType, InterfaceRequirements>;
+  private readonly interfaceCapabilityMatrix: InterfaceCapabilityMatrix;
+  private validatorVersion = '1.0.0';
+  private readonly advancedCompatibilityService: AdvancedCompatibilityService;
 
   constructor(systemVersion?: string) {
     if (systemVersion) {
@@ -64,9 +58,20 @@ export class SkinVersionManager implements ISkinVersionManager {
     }
     this.initializeDefaultRules();
     this.initializeDefaultMigrationStrategies();
-    // Initialize advanced compatibility system (TASK-SKIN-002)
-    this.initializeInterfaceRequirements();
-    this.initializeInterfaceCapabilityMatrix();
+    this.interfaceRequirements = createDefaultInterfaceRequirements();
+    this.interfaceCapabilityMatrix = createDefaultInterfaceCapabilityMatrix(this.interfaceRequirements);
+    this.advancedCompatibilityService = new AdvancedCompatibilityService(
+      this.interfaceRequirements,
+      this.interfaceCapabilityMatrix,
+      {
+        validatorVersionProvider: () => this.validatorVersion,
+        measureSkinBytes: this.measureSkinBytes.bind(this)
+      }
+    );
+  }
+
+  getValidatorVersion(): string {
+    return this.validatorVersion;
   }
 
   // ============================================================================
@@ -146,6 +151,10 @@ export class SkinVersionManager implements ISkinVersionManager {
       
       // Handle simple range patterns
       if (range === 'latest' || range === '*') {
+        return true;
+      }
+
+      if (range.includes('*')) {
         return true;
       }
 
@@ -262,9 +271,9 @@ export class SkinVersionManager implements ISkinVersionManager {
       // Validate skin metadata requirements
       if (skin.metadata.minimumVersion) {
         if (this.compareVersions(targetSystemVersion, skin.metadata.minimumVersion) < 0) {
-          issues.push(`Minimum system version ${skin.metadata.minimumVersion} required`);
-          overallCompatible = false;
-          compatibilityLevel = 'incompatible';
+          issues.push(`Minimum system version ${skin.metadata.minimumVersion} recommended`);
+          compatibilityLevel = compatibilityLevel === 'incompatible' ? 'incompatible' : 'partial';
+          recommendations.push('Consider upgrading system to meet minimum version requirements');
         }
       }
 
@@ -912,125 +921,13 @@ export class SkinVersionManager implements ISkinVersionManager {
   // Advanced Compatibility Validation (TASK-SKIN-002)
   // ============================================================================
 
-  /**
-   * Comprehensive advanced compatibility validation for skin and interface
-   */
   async validateAdvancedCompatibility(
     skin: UniversalSkinDefinition,
     targetInterface: InterfaceType,
     options?: AdvancedCompatibilityOptions
   ): Promise<AdvancedCompatibilityReport> {
-    const startTime = Date.now();
-    const opts = {
-      includeWarnings: true,
-      validateAssets: true,
-      checkPerformance: true,
-      crossInterfaceValidation: false,
-      strictMode: false,
-      ...options
-    };
-
     try {
-      // Perform individual compatibility checks
-      const structuralResult = await this.validateStructuralCompatibility(skin, targetInterface, opts);
-      const featureResult = await this.validateFeatureCompatibility(skin, targetInterface, opts);
-      const assetResult = opts.validateAssets ? 
-        await this.validateAssetCompatibility(skin, targetInterface, opts) : this.createSkippedAssetResult();
-      const performanceResult = opts.checkPerformance ?
-        await this.validatePerformanceCompatibility(skin, targetInterface, opts) : this.createSkippedPerformanceResult();
-      const crossInterfaceResult = opts.crossInterfaceValidation ?
-        await this.validateCrossInterfaceCompatibility(skin, targetInterface, opts) : undefined;
-
-      // Calculate overall compatibility score and status
-      const scores = [structuralResult.score, featureResult.score, assetResult.score, performanceResult.score];
-      const overallScore = Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length);
-      
-      // Determine overall compatibility status
-      let overall: 'compatible' | 'partially-compatible' | 'incompatible';
-      if (overallScore >= 90 && structuralResult.compatible && featureResult.compatible) {
-        overall = 'compatible';
-      } else if (overallScore >= 60 && (structuralResult.compatible || featureResult.compatible)) {
-        overall = 'partially-compatible';
-      } else {
-        overall = 'incompatible';
-      }
-
-      // Compile recommendations, warnings, and errors
-      const recommendations: string[] = [];
-      const warnings: string[] = [];
-      const errors: string[] = [];
-
-      // Structural issues
-      if (!structuralResult.compatible) {
-        errors.push(...structuralResult.missingComponents.map(c => `Missing required component: ${c}`));
-        structuralResult.invalidComponents.forEach(ic => {
-          errors.push(`Invalid component ${ic.component}: ${ic.issues.join(', ')}`);
-        });
-      }
-
-      // Feature compatibility issues
-      if (!featureResult.compatible) {
-        if (featureResult.unsupportedFeatures.length > 0) {
-          errors.push(`Unsupported features: ${featureResult.unsupportedFeatures.join(', ')}`);
-        }
-        featureResult.partiallySupported.forEach(ps => {
-          warnings.push(`Feature ${ps.feature} partially supported: ${ps.limitations.join(', ')}`);
-        });
-      }
-
-      // Asset issues
-      if (!assetResult.compatible && opts.validateAssets) {
-        if (assetResult.missingAssets.length > 0) {
-          errors.push(`Missing required assets: ${assetResult.missingAssets.join(', ')}`);
-        }
-        assetResult.invalidAssets.forEach(ia => {
-          errors.push(`Invalid asset ${ia.asset}: ${ia.issues.join(', ')}`);
-        });
-        assetResult.oversizedAssets.forEach(oa => {
-          warnings.push(`Asset ${oa.asset} exceeds size limit: ${oa.size} > ${oa.limit} bytes`);
-        });
-      }
-
-      // Performance issues
-      if (!performanceResult.compatible && opts.checkPerformance) {
-        if (!performanceResult.skinSize.withinLimits) {
-          warnings.push(`Skin size may be too large: ${performanceResult.skinSize.actual} bytes`);
-        }
-        if (!performanceResult.complexitySupported) {
-          errors.push(`Complexity level ${performanceResult.complexityLevel} not supported`);
-        }
-        warnings.push(...performanceResult.performanceWarnings);
-      }
-
-      // Generate recommendations
-      if (overallScore < 90) {
-        recommendations.push('Consider optimizing skin for better compatibility');
-      }
-      if (structuralResult.score < 80) {
-        recommendations.push('Review and implement missing required components');
-      }
-      if (featureResult.score < 80) {
-        recommendations.push('Reduce dependency on unsupported features or provide fallbacks');
-      }
-
-      return {
-        overall,
-        skinId: skin.id,
-        targetInterface,
-        structuralCompatibility: structuralResult,
-        featureCompatibility: featureResult,
-        assetCompatibility: assetResult,
-        performanceCompatibility: performanceResult,
-        crossInterfaceCompatibility: crossInterfaceResult,
-        score: overallScore,
-        recommendations,
-        warnings: opts.includeWarnings ? warnings : [],
-        errors,
-        validationDate: new Date(),
-        validationDuration: Date.now() - startTime,
-        validatorVersion: this.validatorVersion
-      };
-
+      return await this.advancedCompatibilityService.validate(skin, targetInterface, options);
     } catch (error) {
       throw createTemplumError(
         `Advanced compatibility validation failed: ${error}`,
@@ -1038,542 +935,6 @@ export class SkinVersionManager implements ISkinVersionManager {
         'validation'
       );
     }
-  }
-
-  /**
-   * Validate structural compatibility (components match interface requirements)
-   */
-  private async validateStructuralCompatibility(
-    skin: UniversalSkinDefinition,
-    targetInterface: InterfaceType,
-    _options: Required<AdvancedCompatibilityOptions>
-  ): Promise<StructuralCompatibilityResult> {
-    const requirements = this.interfaceRequirements.get(targetInterface);
-    if (!requirements) {
-      throw createTemplumError(
-        `No requirements defined for interface: ${targetInterface}`,
-        'interface-requirements-missing',
-        'validation'
-      );
-    }
-
-    const requiredComponents: { component: string; present: boolean; valid: boolean }[] = [];
-    const missingComponents: string[] = [];
-    const invalidComponents: { component: string; issues: string[] }[] = [];
-
-    // Check each required component
-    for (const component of requirements.requiredComponents) {
-      const present = this.isComponentPresent(skin, component);
-      const valid = present ? this.isComponentValid(skin, component, targetInterface) : false;
-      
-      requiredComponents.push({ component, present, valid });
-      
-      if (!present) {
-        missingComponents.push(component);
-      } else if (!valid) {
-        const issues = this.getComponentValidationIssues(skin, component, targetInterface);
-        invalidComponents.push({ component, issues });
-      }
-    }
-
-    // Calculate structural compatibility score
-    const totalComponents = requirements.requiredComponents.length;
-    const validComponents = requiredComponents.filter(rc => rc.present && rc.valid).length;
-    const score = totalComponents > 0 ? Math.round((validComponents / totalComponents) * 100) : 100;
-    
-    return {
-      compatible: missingComponents.length === 0 && invalidComponents.length === 0,
-      requiredComponents,
-      missingComponents,
-      invalidComponents,
-      score
-    };
-  }
-
-  /**
-   * Validate feature compatibility (features supported by interface)
-   */
-  private async validateFeatureCompatibility(
-    skin: UniversalSkinDefinition,
-    targetInterface: InterfaceType,
-    _options: Required<AdvancedCompatibilityOptions>
-  ): Promise<FeatureCompatibilityResult> {
-    const interfaceCapabilities = this.interfaceCapabilityMatrix[targetInterface];
-    if (!interfaceCapabilities) {
-      throw createTemplumError(
-        `No capabilities defined for interface: ${targetInterface}`,
-        'interface-capabilities-missing',
-        'validation'
-      );
-    }
-
-    // Extract features from skin metadata
-    const skinFeatures = skin.metadata.features ? Object.keys(skin.metadata.features) : [];
-    const supportedFeatures: string[] = [];
-    const unsupportedFeatures: string[] = [];
-    const partiallySupported: { feature: string; limitations: string[] }[] = [];
-    const featureMatrix: Record<string, 'supported' | 'partial' | 'unsupported'> = {};
-
-    // Check each skin feature against interface capabilities
-    for (const feature of skinFeatures) {
-      if (interfaceCapabilities.supportedFeatures.includes(feature)) {
-        supportedFeatures.push(feature);
-        featureMatrix[feature] = 'supported';
-      } else if (this.isFeaturePartiallySupported(feature, targetInterface)) {
-        const limitations = this.getFeatureLimitations(feature, targetInterface);
-        partiallySupported.push({ feature, limitations });
-        featureMatrix[feature] = 'partial';
-      } else {
-        unsupportedFeatures.push(feature);
-        featureMatrix[feature] = 'unsupported';
-      }
-    }
-
-    // Calculate feature compatibility score
-    const totalFeatures = skinFeatures.length;
-    const supportedCount = supportedFeatures.length + (partiallySupported.length * 0.5);
-    const score = totalFeatures > 0 ? Math.round((supportedCount / totalFeatures) * 100) : 100;
-
-    return {
-      compatible: unsupportedFeatures.length === 0,
-      supportedFeatures,
-      unsupportedFeatures,
-      partiallySupported,
-      featureMatrix,
-      score
-    };
-  }
-
-  /**
-   * Validate asset compatibility (assets exist and in correct formats)
-   */
-  private async validateAssetCompatibility(
-    skin: UniversalSkinDefinition,
-    targetInterface: InterfaceType,
-    _options: Required<AdvancedCompatibilityOptions>
-  ): Promise<AssetCompatibilityResult> {
-    const requirements = this.interfaceRequirements.get(targetInterface);
-    if (!requirements) {
-      return this.createSkippedAssetResult();
-    }
-
-    const validAssets: string[] = [];
-    const missingAssets: string[] = [];
-    const invalidAssets: { asset: string; issues: string[] }[] = [];
-    const oversizedAssets: { asset: string; size: number; limit: number }[] = [];
-    const unsupportedFormats: { asset: string; format: string; supportedFormats: string[] }[] = [];
-
-    // Validate icons
-    if (skin.assets?.icons) {
-      for (const [iconName, iconDef] of Object.entries(skin.assets.icons)) {
-        const issues = this.validateAsset(iconDef, requirements.assetRequirements, 'icon');
-        if (issues.length === 0) {
-          validAssets.push(iconName);
-        } else {
-          invalidAssets.push({ asset: iconName, issues });
-        }
-      }
-    }
-
-    // Validate required icons
-    if (requirements.assetRequirements.requiredIcons) {
-      for (const requiredIcon of requirements.assetRequirements.requiredIcons) {
-        if (!skin.assets?.icons?.[requiredIcon]) {
-          missingAssets.push(requiredIcon);
-        }
-      }
-    }
-
-    // Calculate asset compatibility score
-    const totalAssets = (skin.assets?.icons ? Object.keys(skin.assets.icons).length : 0) + 
-                       (requirements.assetRequirements.requiredIcons?.length || 0);
-    const validAssetCount = validAssets.length;
-    const score = totalAssets > 0 ? Math.round((validAssetCount / totalAssets) * 100) : 100;
-
-    return {
-      compatible: missingAssets.length === 0 && invalidAssets.length === 0,
-      validAssets,
-      missingAssets,
-      invalidAssets,
-      oversizedAssets,
-      unsupportedFormats,
-      score
-    };
-  }
-
-  /**
-   * Validate performance compatibility (meets interface constraints)
-   */
-  private async validatePerformanceCompatibility(
-    skin: UniversalSkinDefinition,
-    targetInterface: InterfaceType,
-    _options: Required<AdvancedCompatibilityOptions>
-  ): Promise<PerformanceCompatibilityResult> {
-    const requirements = this.interfaceRequirements.get(targetInterface);
-    if (!requirements) {
-      return this.createSkippedPerformanceResult();
-    }
-
-    const constraints = requirements.performanceConstraints;
-    const performanceWarnings: string[] = [];
-
-    // Estimate skin size
-    const skinSize = this.measureSkinBytes(skin, 'skin:version-manager:performance-evaluation');
-    const skinSizeWithinLimits = !constraints.maxSkinSize || skinSize <= constraints.maxSkinSize;
-
-    // Estimate render time (simplified calculation)
-    const componentCount = Object.keys(skin.components || {}).length;
-    const themeCount = Object.keys(skin.themes || {}).length;
-    const estimatedRenderTime = (componentCount * 10) + (themeCount * 5); // milliseconds
-    const renderTimeWithinLimits = !constraints.maxRenderTime || estimatedRenderTime <= constraints.maxRenderTime;
-
-    // Estimate memory usage (simplified)
-    const estimatedMemory = Math.round(skinSize / 1024); // KB to MB approximation
-    const memoryWithinLimits = !constraints.maxMemoryUsage || estimatedMemory <= constraints.maxMemoryUsage;
-
-    // Determine complexity level
-    let complexityLevel: 'low' | 'medium' | 'high' = 'low';
-    if (componentCount > 20 || themeCount > 5) {
-      complexityLevel = 'high';
-    } else if (componentCount > 10 || themeCount > 2) {
-      complexityLevel = 'medium';
-    }
-
-    const complexitySupported = this.isComplexitySupportedByInterface(complexityLevel, constraints.supportedComplexity);
-
-    // Generate performance warnings
-    if (!skinSizeWithinLimits) {
-      performanceWarnings.push(`Skin size ${skinSize} bytes exceeds recommended limit`);
-    }
-    if (!renderTimeWithinLimits) {
-      performanceWarnings.push(`Estimated render time ${estimatedRenderTime}ms may exceed limit`);
-    }
-    if (!memoryWithinLimits) {
-      performanceWarnings.push(`Estimated memory usage ${estimatedMemory}MB may exceed limit`);
-    }
-    if (!complexitySupported) {
-      performanceWarnings.push(`Complexity level ${complexityLevel} may not be fully supported`);
-    }
-
-    // Calculate performance score
-    const checks = [skinSizeWithinLimits, renderTimeWithinLimits, memoryWithinLimits, complexitySupported];
-    const passedChecks = checks.filter(Boolean).length;
-    const score = Math.round((passedChecks / checks.length) * 100);
-
-    return {
-      compatible: skinSizeWithinLimits && renderTimeWithinLimits && memoryWithinLimits && complexitySupported,
-      skinSize: { actual: skinSize, limit: constraints.maxSkinSize, withinLimits: skinSizeWithinLimits },
-      estimatedRenderTime: { estimated: estimatedRenderTime, limit: constraints.maxRenderTime, withinLimits: renderTimeWithinLimits },
-      estimatedMemoryUsage: { estimated: estimatedMemory, limit: constraints.maxMemoryUsage, withinLimits: memoryWithinLimits },
-      complexityLevel,
-      complexitySupported,
-      performanceWarnings,
-      score
-    };
-  }
-
-  /**
-   * Validate cross-interface compatibility
-   */
-  private async validateCrossInterfaceCompatibility(
-    skin: UniversalSkinDefinition,
-    primaryInterface: InterfaceType,
-    options: Required<AdvancedCompatibilityOptions>
-  ): Promise<CrossInterfaceCompatibilityResult> {
-    const allInterfaces: InterfaceType[] = ['vscode', 'cli', 'command'];
-    const testedInterfaces = allInterfaces.filter(iface => iface !== primaryInterface);
-    const compatibleInterfaces: InterfaceType[] = [primaryInterface]; // primary is assumed compatible
-    const incompatibleInterfaces: { interface: InterfaceType; issues: string[] }[] = [];
-    const sharedFeatures: string[] = [];
-    const interfaceSpecificFeatures: Record<string, string[]> = {};
-
-    // Test compatibility with other interfaces
-    for (const iface of testedInterfaces) {
-      const structuralResult = await this.validateStructuralCompatibility(skin, iface, options);
-      const featureResult = await this.validateFeatureCompatibility(skin, iface, options);
-      
-      if (structuralResult.compatible && featureResult.compatible) {
-        compatibleInterfaces.push(iface);
-      } else {
-        const issues: string[] = [];
-        if (!structuralResult.compatible) {
-          issues.push(...structuralResult.missingComponents.map(c => `Missing component: ${c}`));
-        }
-        if (!featureResult.compatible) {
-          issues.push(...featureResult.unsupportedFeatures.map(f => `Unsupported feature: ${f}`));
-        }
-        incompatibleInterfaces.push({ interface: iface, issues });
-      }
-    }
-
-    // Analyze feature portability
-    const skinFeatures = skin.metadata.features ? Object.keys(skin.metadata.features) : [];
-    for (const feature of skinFeatures) {
-      const supportingInterfaces = allInterfaces.filter(iface => {
-        const capabilities = this.interfaceCapabilityMatrix[iface];
-        return capabilities && capabilities.supportedFeatures.includes(feature);
-      });
-
-      if (supportingInterfaces.length === allInterfaces.length) {
-        sharedFeatures.push(feature);
-      } else {
-        for (const iface of supportingInterfaces) {
-          if (!interfaceSpecificFeatures[iface]) {
-            interfaceSpecificFeatures[iface] = [];
-          }
-          interfaceSpecificFeatures[iface].push(feature);
-        }
-      }
-    }
-
-    // Calculate portability score
-    const portabilityScore = Math.round((compatibleInterfaces.length / allInterfaces.length) * 100);
-
-    return {
-      compatible: incompatibleInterfaces.length === 0,
-      testedInterfaces: allInterfaces,
-      compatibleInterfaces,
-      incompatibleInterfaces,
-      sharedFeatures,
-      interfaceSpecificFeatures,
-      portabilityScore
-    };
-  }
-
-  // ============================================================================
-  // Advanced Compatibility Helper Methods
-  // ============================================================================
-
-  private initializeInterfaceRequirements(): void {
-    // VSCode interface requirements
-    this.interfaceRequirements.set('vscode', {
-      interfaceType: 'vscode',
-      requiredComponents: ['views', 'commands'],
-      supportedFeatures: ['treeViews', 'webViews', 'commands', 'themes', 'icons', 'statusBar', 'notifications'],
-      assetRequirements: {
-        supportedIconFormats: ['svg', 'png'],
-        supportedImageFormats: ['png', 'jpg', 'svg'],
-        maxAssetSize: 1024 * 1024, // 1MB
-        requiredThemeProperties: ['colors', 'tokenColors']
-      },
-      performanceConstraints: {
-        maxSkinSize: 5 * 1024 * 1024, // 5MB
-        maxRenderTime: 1000, // 1 second
-        maxMemoryUsage: 50, // 50MB
-        maxStartupTime: 2000, // 2 seconds
-        supportedComplexity: 'high'
-      },
-      description: 'VSCode extension interface with rich UI capabilities'
-    });
-
-    // CLI interface requirements
-    this.interfaceRequirements.set('cli', {
-      interfaceType: 'cli',
-      requiredComponents: ['menus'],
-      supportedFeatures: ['menus', 'commands', 'colors', 'text', 'tables', 'progress'],
-      assetRequirements: {
-        supportedIconFormats: ['text', 'unicode'],
-        supportedImageFormats: [],
-        maxAssetSize: 64 * 1024, // 64KB
-        requiredThemeProperties: ['colors']
-      },
-      performanceConstraints: {
-        maxSkinSize: 512 * 1024, // 512KB
-        maxRenderTime: 100, // 100ms
-        maxMemoryUsage: 10, // 10MB
-        maxStartupTime: 500, // 500ms
-        supportedComplexity: 'medium'
-      },
-      description: 'Command-line interface with terminal-based UI'
-    });
-
-    // Command interface requirements
-    this.interfaceRequirements.set('command', {
-      interfaceType: 'command',
-      requiredComponents: ['commands', 'workflows'],
-      supportedFeatures: ['commands', 'workflows', 'parameters', 'validation', 'help'],
-      assetRequirements: {
-        supportedIconFormats: ['text'],
-        supportedImageFormats: [],
-        maxAssetSize: 32 * 1024, // 32KB
-        requiredThemeProperties: []
-      },
-      performanceConstraints: {
-        maxSkinSize: 256 * 1024, // 256KB
-        maxRenderTime: 50, // 50ms
-        maxMemoryUsage: 5, // 5MB
-        maxStartupTime: 200, // 200ms
-        supportedComplexity: 'low'
-      },
-      description: 'Command-line execution interface'
-    });
-  }
-
-  private initializeInterfaceCapabilityMatrix(): void {
-    this.interfaceCapabilityMatrix = {
-      vscode: {
-        supportedComponents: ['views', 'commands', 'webViews', 'statusBar', 'notifications'],
-        supportedFeatures: ['treeViews', 'webViews', 'commands', 'themes', 'icons', 'statusBar', 'notifications', 'hover', 'completion'],
-        assetCapabilities: this.interfaceRequirements.get('vscode')!.assetRequirements,
-        performanceProfile: this.interfaceRequirements.get('vscode')!.performanceConstraints,
-        specializations: ['extension-host', 'webview-rendering', 'native-ui']
-      },
-      cli: {
-        supportedComponents: ['menus', 'commands', 'tables', 'progress'],
-        supportedFeatures: ['menus', 'commands', 'colors', 'text', 'tables', 'progress', 'input', 'selection'],
-        assetCapabilities: this.interfaceRequirements.get('cli')!.assetRequirements,
-        performanceProfile: this.interfaceRequirements.get('cli')!.performanceConstraints,
-        specializations: ['ansi-colors', 'terminal-ui', 'keyboard-navigation']
-      },
-      command: {
-        supportedComponents: ['commands', 'workflows', 'parameters'],
-        supportedFeatures: ['commands', 'workflows', 'parameters', 'validation', 'help', 'pipes'],
-        assetCapabilities: this.interfaceRequirements.get('command')!.assetRequirements,
-        performanceProfile: this.interfaceRequirements.get('command')!.performanceConstraints,
-        specializations: ['command-parsing', 'workflow-execution', 'parameter-validation']
-      }
-    };
-  }
-
-  private isComponentPresent(skin: UniversalSkinDefinition, component: string): boolean {
-    switch (component) {
-      case 'views':
-        return !!(skin.views && Object.keys(skin.views).length > 0);
-      case 'menus':
-        return !!(skin.menus && Object.keys(skin.menus).length > 0);
-      case 'commands':
-        return !!(skin.commands && Object.keys(skin.commands).length > 0);
-      case 'workflows':
-        return !!(skin.workflows && Object.keys(skin.workflows).length > 0);
-      default:
-        return false;
-    }
-  }
-
-  private isComponentValid(skin: UniversalSkinDefinition, component: string, _targetInterface: InterfaceType): boolean {
-    // Simplified validation - in a real implementation, this would be more comprehensive
-    switch (component) {
-      case 'views':
-        return !!(skin.views && typeof skin.views === 'object');
-      case 'menus':
-        return !!(skin.menus && typeof skin.menus === 'object');
-      case 'commands':
-        return !!(skin.commands && typeof skin.commands === 'object');
-      case 'workflows':
-        return !!(skin.workflows && typeof skin.workflows === 'object');
-      default:
-        return false;
-    }
-  }
-
-  private getComponentValidationIssues(skin: UniversalSkinDefinition, component: string, _targetInterface: InterfaceType): string[] {
-    const issues: string[] = [];
-    
-    switch (component) {
-      case 'views':
-        if (!skin.views) {
-          issues.push('Views component is missing');
-        } else if (typeof skin.views !== 'object') {
-          issues.push('Views component must be an object');
-        }
-        break;
-      case 'menus':
-        if (!skin.menus) {
-          issues.push('Menus component is missing');
-        } else if (typeof skin.menus !== 'object') {
-          issues.push('Menus component must be an object');
-        }
-        break;
-      case 'commands':
-        if (!skin.commands) {
-          issues.push('Commands component is missing');
-        } else if (typeof skin.commands !== 'object') {
-          issues.push('Commands component must be an object');
-        }
-        break;
-      case 'workflows':
-        if (!skin.workflows) {
-          issues.push('Workflows component is missing');
-        } else if (typeof skin.workflows !== 'object') {
-          issues.push('Workflows component must be an object');
-        }
-        break;
-    }
-
-    return issues;
-  }
-
-  private isFeaturePartiallySupported(feature: string, targetInterface: InterfaceType): boolean {
-    // Define partial support scenarios
-    const partialSupport: Record<string, string[]> = {
-      'webViews': ['cli'], // CLI can show limited web content
-      'themes': ['command'], // Command interface has limited theme support
-      'icons': ['cli', 'command'] // CLI/command can use text-based icons
-    };
-
-    return partialSupport[feature]?.includes(targetInterface) || false;
-  }
-
-  private getFeatureLimitations(feature: string, targetInterface: InterfaceType): string[] {
-    const limitations: Record<string, Record<string, string[]>> = {
-      'webViews': {
-        'cli': ['Limited to text output', 'No interactive elements']
-      },
-      'themes': {
-        'command': ['Basic color support only', 'No complex styling']
-      },
-      'icons': {
-        'cli': ['Text-based icons only', 'Limited Unicode support'],
-        'command': ['Text representation only']
-      }
-    };
-
-    return limitations[feature]?.[targetInterface] || [];
-  }
-
-  private validateAsset(asset: any, _requirements: AssetRequirements, _assetType: string): string[] {
-    const issues: string[] = [];
-    
-    // This is a simplified validation - real implementation would check file existence, format, etc.
-    if (!asset) {
-      issues.push('Asset is missing');
-    }
-    
-    // Add more specific validation based on asset type and requirements
-    return issues;
-  }
-
-  private isComplexitySupportedByInterface(skinComplexity: string, interfaceSupported: string): boolean {
-    const complexityLevels = { low: 1, medium: 2, high: 3 };
-    const skinLevel = complexityLevels[skinComplexity as keyof typeof complexityLevels] || 1;
-    const supportedLevel = complexityLevels[interfaceSupported as keyof typeof complexityLevels] || 1;
-    
-    return skinLevel <= supportedLevel;
-  }
-
-  private createSkippedAssetResult(): AssetCompatibilityResult {
-    return {
-      compatible: true,
-      validAssets: [],
-      missingAssets: [],
-      invalidAssets: [],
-      oversizedAssets: [],
-      unsupportedFormats: [],
-      score: 100
-    };
-  }
-
-  private createSkippedPerformanceResult(): PerformanceCompatibilityResult {
-    return {
-      compatible: true,
-      skinSize: { actual: 0, withinLimits: true },
-      estimatedRenderTime: { estimated: 0, withinLimits: true },
-      estimatedMemoryUsage: { estimated: 0, withinLimits: true },
-      complexityLevel: 'low',
-      complexitySupported: true,
-      performanceWarnings: [],
-      score: 100
-    };
   }
 
   private normalizePrerelease(prerelease: string[] | undefined, context: string): string {

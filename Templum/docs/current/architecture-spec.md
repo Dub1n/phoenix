@@ -23,7 +23,7 @@ last_updated: 2025-10-06
 
 - Backend discovery (`ServiceDiscovery`, `ConnectionFactory`) enumerates locally registered services; watcher overrides keep `.templum/services` scoped to the active workspace/tests and regression suites cover manifest add/change/remove plus router promotion. Lifecycle broadcasting now flows through a dedicated `BackendLifecycleChannel`, allowing the router to emit normalized `connected/disconnected/recovered/failed/health-degraded` events that `TemplumCore` relays to the enhanced state manager/observability layer. Live partner boots remain deferred and are tracked under `dev/tasks/phase6-validation-signal.md`. **Status:** Present (real-service run deferred post-MVP).
 - Manual override manager sits between the router and discovery caches, enforcing zero-knowledge constraints (redacted service descriptors, hashed observability logs) while surfacing `apply`/`clear` controls through `TemplumCore` and the shared command registry. Automated watcher tests drop manifests into `.templum/services` to prove add/remove flows; these run in CI via the backend bundle, with partner-live runs optional post-MVP. **Status:** Present.
-- Skins are not yet produced by backends; renderer still mixes hardcoded menus with skin stubs. **Status:** Absent.
+- Skin payload consumption now flows through `TemplumCore` → `UniversalSkinEngine`; adapters render cached backend skins without bespoke fallbacks while partner exports remain pending. **Status:** Present (awaiting live backend payloads).
 - CLI/daemon process separation is scaffolded; IPC contracts need integration tests. **Status:** Broken.
 - Observability/health monitoring blueprints exist; instrumentation must be validated before relying on metrics dashboards. **Status:** Broken.
 
@@ -50,7 +50,7 @@ last_updated: 2025-10-06
 | Zero-knowledge backend registry     | `[~]`  | Local suites green; real backend run deferred to post-MVP follow-up. |
 | Versioned skin contract enforcement | `[x]`  | Ajv-backed validator enforces the canonical schema, emits registration metadata, and contract/adapter suites cover rejection flows. |
 | Unified session/context layer       | `[~]`  | Core now constructs a single `TemplumUniversalSessionManager` shared by adapters; CLI uses the bridge wrapper, VSCode receives the injected manager, follow-up work is tightening interaction-manager syncing. |
-| Skin-driven CLI/VSCode UI           | `[ ]`  | Renderer refactor outstanding.                    |
+| Skin-driven CLI/VSCode UI           | `[x]`  | Adapters render cached/backend skins via `UniversalSkinEngine`; fallback scaffolds removed pending live payload validation. |
 | Observability instrumentation       | `[?]`  | Blueprint archived; confirm runtime wiring.       |
 | Haruspex backend integration        | `[~]`  | Pending skin output + API alignment.              |
 | PCL skin ingestion                  | `[ ]`  | Awaiting PCL exporter prototype.                  |

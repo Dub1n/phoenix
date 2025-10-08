@@ -50,6 +50,7 @@ import {
 } from './cli-display-consistency-engine';
 import { ServiceInfo } from './service-ordering-manager';
 import { CLISessionBridge, CLISessionSnapshot } from './cli-session-bridge';
+import { renderCliSkin } from './cli/cli-skin-presenter';
 
 /**
  * CLI Input Types (Interface-specific)
@@ -338,40 +339,55 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
       // Skin themes are for content rendering, not terminal UI components
       // Use orchestrator's skin engine through abstraction
       const skinEngine = this.orchestrator.getUniversalSkinEngine();
+      if (!skinEngine?.renderForInterface) {
+        console.warn('CLIInterfaceAdapter: Skin engine does not implement renderForInterface');
+        return;
+      }
       
       // Render skin for CLI interface
-      if (skinEngine.renderForInterface) {
-        const renderResult = await skinEngine.renderForInterface(
-          skinDefinition, 
-          'cli', 
-          { 
-            interfaceType: 'cli',
-            interactive: this.config.enableInteractiveMode,
-            colorDepth: this.config.enableColorOutput ? 8 : 0
-          }
+      const renderResult = await skinEngine.renderForInterface(
+        skinDefinition,
+        'cli',
+        {
+          interfaceType: 'cli',
+          interactive: this.config.enableInteractiveMode,
+          colorDepth: this.config.enableColorOutput ? 8 : 0,
+        }
+      );
+
+      if (renderResult?.success === false) {
+        console.warn(
+          'CLIInterfaceAdapter: Skin engine reported an unsuccessful render',
+          renderResult.metadata?.fallbackReason ?? 'unknown reason'
         );
-
-        // Generate CLI output using skin engine abstraction
-        let renderedOutput = '';
-        if (skinEngine.generateSkinHTML) {
-          // Use HTML generation method and convert to CLI format
-          const htmlOutput = skinEngine.generateSkinHTML(renderResult, skinDefinition);
-          renderedOutput = this.convertHTMLToCLI(htmlOutput, skinDefinition);
-        } else {
-          // Fallback rendering if skin engine doesn't provide HTML generation
-          renderedOutput = this.generateFallbackCLIOutput(renderResult, skinDefinition);
-        }
-
-        // Output the rendered CLI content
-        console.log(renderedOutput);
-        
-        // Show keyboard shortcuts if enabled
-        if (this.config.enableKeyboardShortcuts && this.keyboardShortcuts.size > 0) {
-          this.displayKeyboardShortcuts();
-        }
-
-        console.log(`CLIInterfaceAdapter: Applied skin ${skinDefinition.metadata.name} via orchestrator abstraction`);
       }
+
+      const capabilities = this.formatter.getCapabilities();
+      const presentation = renderCliSkin(renderResult, skinDefinition, {
+        width: capabilities.width,
+      });
+
+      if (presentation.output.trim().length > 0) {
+        console.log(presentation.output);
+      }
+
+      if (presentation.menuId) {
+        this.sessionManager.navigateToMenu(presentation.menuId, false);
+      }
+
+      // Show keyboard shortcuts if enabled
+      if (this.config.enableKeyboardShortcuts && this.keyboardShortcuts.size > 0) {
+        this.displayKeyboardShortcuts();
+      }
+
+      this.emit('skinRendered', {
+        interfaceType: 'cli' as InterfaceType,
+        skinId: skinDefinition.metadata.id,
+        renderTime: renderResult?.performance?.renderTime,
+        items: presentation.items.length,
+      });
+
+      console.log(`CLIInterfaceAdapter: Applied skin ${skinDefinition.metadata.name} via orchestrator abstraction`);
       
     } catch (error) {
       const errorMessage = isTemplumError(error) ? error.message : (error instanceof Error ? error.message : 'Unknown error');
@@ -1372,7 +1388,28 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
       // Get system status with real backend connection information
       const systemStatus = this.orchestrator.getSystemStatus();
       const backendConnections = systemStatus.coreEngine?.backendConnections || { backends: {}, totalConnections: 0, healthyConnections: 0 };
-      
+
+      // Attempt to render any skins already loaded into the orchestrator before falling back to backend discovery
+      const preloadedSkins =
+        typeof this.orchestrator.getLoadedSkins === 'function'
+          ? this.orchestrator.getLoadedSkins().filter((skin) =>
+              skin?.metadata?.compatibleInterfaces?.includes('cli'))
+          : [];
+
+      let skinLoaded = false;
+
+      for (const skin of preloadedSkins) {
+        try {
+          console.log(`CLIInterfaceAdapter: Rendering preloaded skin ${skin.metadata?.name ?? skin.id}`);
+          await this.applySkin(skin);
+          skinLoaded = true;
+          break;
+        } catch (preloadedError) {
+          const message = preloadedError instanceof Error ? preloadedError.message : String(preloadedError);
+          console.warn(`CLIInterfaceAdapter: Failed to render preloaded skin ${skin.metadata?.id ?? skin.id}: ${message}`);
+        }
+      }
+
       // Display backend status
       this.displayBackendStatus(backendConnections);
       
@@ -1387,9 +1424,11 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
 
       console.log(`CLIInterfaceAdapter: Found ${healthyBackends.length} healthy backend(s) for integration`);
 
-      // Attempt to load real skin from healthy backends
-      let skinLoaded = false;
+      // If no preloaded skin rendered successfully, attempt to load from healthy backends
       for (const [backendId] of healthyBackends) {
+        if (skinLoaded) {
+          break;
+        }
         try {
           console.log(`CLIInterfaceAdapter: Attempting to load skin from ${backendId} backend...`);
           
@@ -1768,58 +1807,6 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
       console.log('  ⚠️  Orchestrator not initialized');
     }
     console.log();
-  }
-
-  /**
-   * Convert HTML output to CLI format
-   * @private
-   */
-  private convertHTMLToCLI(htmlOutput: string, skinDefinition: UniversalSkinDefinition): string {
-    // Basic HTML to CLI conversion
-    // Remove HTML tags and format for CLI display
-    let cliOutput = htmlOutput
-      .replace(/<[^>]*>/g, '') // Remove HTML tags
-      .replace(/&nbsp;/g, ' ') // Convert non-breaking spaces
-      .replace(/&lt;/g, '<') // Convert HTML entities
-      .replace(/&gt;/g, '>')
-      .replace(/&amp;/g, '&');
-    
-    // Add CLI-specific formatting
-    const skinName = skinDefinition.metadata.name;
-    const skinId = skinDefinition.metadata.id;
-    
-    return `
-🌟 ${skinName} (${skinId})
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-${cliOutput}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Generated via CLI Interface Adapter (Abstraction Layer)
-    `;
-  }
-
-  /**
-   * Generate fallback CLI output when skin engine doesn't provide CLI generation
-   * @private
-   */
-  private generateFallbackCLIOutput(renderResult: any, skinDefinition: UniversalSkinDefinition): string {
-    const skinId = skinDefinition.metadata.id;
-    const skinName = skinDefinition.metadata.name;
-    const timestamp = Date.now();
-    
-    return `
-🌟 Templum CLI Interface (Abstraction Layer)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Skin: ${skinName} (${skinId})
-Loaded via CLI Interface Adapter with Orchestrator Abstraction
-
-${renderResult ? JSON.stringify(renderResult, null, 2) : 'No render result available'}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Timestamp: ${new Date(timestamp).toISOString()}
-    `;
   }
 
   /**

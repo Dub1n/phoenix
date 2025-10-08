@@ -13,11 +13,20 @@
 
 ### Unblocked Actions
 
-- [x] Standardise `.templum/services` manifest parsing in `src/backend/service-discovery.ts` (focus on `ServiceDiscovery.parseServiceDescriptor`, `RegistryBasedDiscoveryStrategy.discoverFromServicesDirectory`) by introducing a typed manifest schema that captures `protocol`, `healthCheck` (type + endpoint), `capabilities`, and `lastSeen`, then route `ServiceDiscovery.validateServiceHealth` through protocol-aware helpers (HTTP `http.get`, WebSocket ping via `ws`, IPC handshake via `ConnectionFactory.create`).
-- [x] Update auto-registration producers (`src/core/templum-core.ts:575`, `examples/minimal-backend/server.js:240`) to emit the enriched manifest fields for IPC and HTTP services so discovery receives accurate health metadata instead of HTTP-only defaults. *(MCP auto-registration requirements have been removed from the MVP scope and are intentionally omitted.)*
-- [x] Extend `src/tests/backend/service-discovery.test.ts:45` with fixtures that drop HTTP, WebSocket, and IPC manifests into a temporary services directory, then assert `serviceDiscovered` events fire and `getBackendConfigs()` retains healthy entries while rejecting malformed or unhealthy manifests per protocol.
-- [~] Add integration assertions in `src/tests/backend/backend-dependency-integration.test.ts:20` and `src/tests/backend/generic-backend-integration.test.ts:520` that seed multi-protocol manifests, stub protocol-specific health probes, and confirm `ServiceDiscoveryValidator.validateAllServices()` plus `TemplumBackendServiceRouter.discoverAndConnect()` report the services as healthy and connected. *(Backend dependency validator now exercises HTTP/WebSocket manifests; `generic-backend-integration` coverage will be refreshed after the router refactor clears.)*
-- [x] Document the runtime verification flow in `docs/current/1.2-Backend-Integration-Guide.md:204`, covering the minimal HTTP backend, `npm run phase6-services` Haruspex/Templum runs, expected `.templum/services/*.json` artefacts for each protocol, and the log signatures proving health checks passed.
+Completed foundations
+
+- [x] Standardise `.templum/services` manifest parsing in `src/backend/service-discovery.ts` ...
+- [x] Update auto-registration producers ...
+- [x] Extend `src/tests/backend/service-discovery.test.ts:45` ...
+- [x] Add integration assertions in `src/tests/backend/backend-dependency-integration.test.ts:20` ...
+- [x] Document the runtime verification flow in `docs/current/1.2-Backend-Integration-Guide.md:204` ...
+
+Remaining work (execute in order)
+
+1. [x] **Fix router discovery state** — Resolve `TemplumBackendServiceRouter.discoverAndConnect()` assuming `discoveredBackends.length`; ensure the service cache is initialised before connection attempts (`backend-service-router.ts:904`).
+2. [x] **Restore generic integration coverage** — Re-enable `src/tests/backend/generic-backend-integration.test.ts:520` once the router fix lands, updating stubs/mocks so manifest-driven discovery populates command routes and connection factory expectations.
+3. [x] **Rerun targeted Jest suite** — `npm test -- src/tests/backend/generic-backend-integration.test.ts` to confirm end-to-end parity after the state fix.
+4. [~] **Capture live Phase 6 evidence** — `npm run phase6-services -- start --use-real-backends` (when real services are available) and archive the `[SERVICE_DISCOVERY]` log output alongside manifest snapshots for task evidence. *Rescheduled post-MVP; tracked in `docs/target/post-mvp-progress.md` and `dev/tasks/haruspex-integration.md`.*
 
 ### Blocked Actions (if any)
 
@@ -26,7 +35,7 @@
 ## Definition of Done
 
 - Tests: `npm test -- src/tests/backend/service-discovery.test.ts src/tests/backend/backend-dependency-integration.test.ts src/tests/backend/generic-backend-integration.test.ts`; `npm run test:health`.
-- Validation: `npm run phase6-services` to start the multi-protocol suite and confirm `.templum/services/*.json` entries remain after health validation; tail `logs/service-discovery.log` for `[SERVICE_DISCOVERY]` success messages.
+- Validation: `npm run phase6-services` to start the multi-protocol suite and confirm `.templum/services/*.json` entries remain after health validation; tail `logs/service-discovery.log` for `[SERVICE_DISCOVERY]` success messages. *(Real service run deferred post-MVP—execute once partner builds are green.)*
 - Documentation: Update `docs/current/progress.md`, `docs/current/architecture-spec.md` (ServiceDiscovery/Backend Connectivity), and `docs/current/1.2-Backend-Integration-Guide.md` with recorded verification outcomes.
 
 ## References
@@ -46,7 +55,8 @@
 
 - Implementation: `ServiceDiscovery` now parses manifests through `service-manifest.ts`, feeds protocol-aware health checks, and retains only validated entries. Core/minimal-backend producers emit enriched manifests (IPC + HTTP); MCP emission is deferred per updated MVP scope. `ServiceDiscoveryValidator` consumes the upgraded configs without manual patching.
 - Tests:
-  - `npm test -- src/tests/backend/service-discovery.test.ts src/tests/backend/backend-dependency-integration.test.ts` (pass) covers watcher ingestion/removal across HTTP/WebSocket/IPC manifests and validates the dependency resolver against healthy entries.
-  - `npm test -- src/tests/backend/generic-backend-integration.test.ts` still pending; router assertions will be refreshed alongside the discovery/connect refactor follow-up.
+  - `npm test -- src/tests/backend/service-discovery.test.ts src/tests/backend/backend-dependency-integration.test.ts src/tests/backend/generic-backend-integration.test.ts` (pass) alongside `npm run test:health` now covers service cache initialisation, manifest ingestion, and ConnectionFactory routing.
+- Validation: Real Phase 6 run is deferred; track re-enablement in `docs/target/post-mvp-progress.md` and `dev/tasks/haruspex-integration.md`.
+- Status: Functional parity achieved for this build (mocked + health suites green); live-service verification remains scheduled post-MVP.
 - Coverage tooling remains flaky under `npm run test:coverage`; no new attempts were made in this pass.
-- Next steps: update the generic backend integration suite once router adapters finish stabilisation, run `npm run test:health`, and capture a `phase6-services` log bundle to close out the Definition of Done.
+- Next steps: unblock partner builds, rerun Phase 6 services for live evidence, and retain manifests/logs once Haruspex compilation is green.

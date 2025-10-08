@@ -38,32 +38,40 @@ Introduce the registry-driven workflow so agents can execute utility consolidati
    - Verify the Stage 1 gate is `open/ready`. If `blocked`, inspect `dependencies` and resolve before continuing.
 
 2. **Plan (Stages 1–3)**
-   - Use the CLI `status` command to list outstanding Stage 4 prerequisites and Stage 6 lanes.
-   - Record Stage 1 findings (consumer inventory, guardrails) using `npm run consolidate -- append-activity <patternId> --stage stage-1 --summary "..."` (proposed extension).
-   - When Stage 1 plan is ready, mark the Stage 1 gate via `npm run consolidate -- update-stage <patternId> 1 --status complete --notes "..."` (see playbook for command details).
+   - Start with `npm run consolidate -- guide <patternId>` to review the Stage 1 orientation block and Stage actions.
+   - Log consumer inventory, redundancy metrics, and discovery commands with `npm run consolidate -- stage-note <patternId> 1 --body "Consumers: …; Commands: rg …" [--agent <name>]` (notes surface directly in the guide).
+   - Move the Stage 1 gate through `open → in_progress → complete` using `npm run consolidate -- update-stage <patternId> 1 --status <value> [--notes "..."]` so downstream owners can pick up immediately.
+   - Leave Stage 4 lane definitions for the Stage 3 owner; Stage 1’s job is to capture context and guardrails, not to pre-seed lanes.
 
 3. **Prerequisites (Stage 4)**
    - Before implementing migrations, ensure each Stage 4 lane has explicit tasks/tests in the registry. Use `update-lane` to capture progress, evidence, and blockers.
    - The CLI refuses Stage 6 lane transitions until Stage 4 gates are `complete`.
 
 4. **Alignment (Stage 5)**
-   - Coordinators run `npm run consolidate -- update-stage <patternId> 5 --status ready` only after all cohort acknowledgements are recorded in the registry `handoff.acknowledgements` section.
+   - Maintain guardrails/shared files/acknowledgements with `npm run consolidate -- update-handoff <patternId> --add-guardrail "…" --add-file "…" --add-ack "Agent"` (use `--remove-ack-agent <name>`/index flags to tidy entries, `--list` to review) as alignment decisions are made.
+   - Log alignment context (owners, risks, mitigations) via `npm run consolidate -- stage-note <patternId> 5 --body "Approvals: …; Risks: …" [--agent <name>]` so Stage 6 inherits the narrative.
+   - Coordinators run `npm run consolidate -- update-stage <patternId> 5 --status ready` only after handoff updates and gating evidence are captured in the registry.
 
 5. **Migrations (Stage 6)**
    - For each lane (`6a`–`6d`), use `update-lane` to move status from `pending` → `in_progress` → `complete`. Provide command evidence (`executedAt`, `exitCode`, `logPath`).
-   - The CLI regenerates plan/tracker/log views after each lane completion when invoked with `--regen` or if `CONSOLIDATION_REGEN=auto` is set.
+   - Claim lanes with `npm run consolidate -- claim-lane <patternId> [laneId] --agent <name>` to avoid collisions as dependencies lift.
+   - Summarise cross-lane status or blockers with `npm run consolidate -- stage-note <patternId> 6 --body "Lanes complete: …; Blockers: …"` as you progress.
+   - Review the handoff summary surfaced in `guide` to respect guardrails/approvals before touching each lane.
+   - The CLI regenerates plan/tracker/log views automatically after each write; manual `regen` calls are only needed for CI dry-runs (`--check`).
 
 6. **Validation & Closeout (Stage 7)**
    - Execute the validation suite as defined in the registry. Mark Stage 7 complete and attach evidence (logs, docs) via CLI.
+   - Capture final follow-ups in `npm run consolidate -- stage-note <patternId> 7 --body "Validation: …; Outstanding: …"` before updating the stage gate.
    - Ensure final activity entry summarises completion, remaining risks, and follow-ups.
 
 ## 3. Agent Checklist
 
 - ✅ Registry entry claimed and Stage 1–3 notes captured.
-- ✅ Stage 4 lanes populated with tasks, commands, dependencies.
+- ✅ Stage 4 lanes populated with tasks, commands, dependencies (Stage 3 owner action).
+- ✅ Stage 5 handoff block updated via `update-handoff` (guardrails, shared files, acknowledgements).
 - ✅ Cohort alignment approvals recorded in registry (`handoff.acknowledgements`).
 - ✅ Stage 6 lanes updated with command evidence (log paths, exit codes, timestamps).
-- ✅ Generated artefacts (`plan`, `tracker`, `activity log`) refreshed via `npm run consolidate -- regen`.
+- ✅ Generated artefacts (`plan`, `tracker`, `activity log`) refreshed automatically (run `npm run consolidate -- regen --check` only when you need a diff in CI).
 - ✅ Stage 7 validation logged, documentation references updated (pattern doc, testing guide pointers).
 
 ## 4. Expectations

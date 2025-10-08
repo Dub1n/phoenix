@@ -1,5 +1,5 @@
 version: 0.1
-updated: 2025-10-05
+updated: 2025-10-07
 roles:
   ladder:
     - id: learner
@@ -41,7 +41,8 @@ nodes:
     test_cooldown: 0
     confidence: medium
     evidence:
-      - '2025-10-05: Recognised auto-registration as prerequisite for cross-protocol discovery coverage during registry planning review.'
+      - "2025-10-05: Recognised auto-registration as prerequisite for
+        cross-protocol discovery coverage during registry planning review."
     last_test: null
     next_test_hint: null
     achievements: {}
@@ -87,30 +88,37 @@ nodes:
     title: Integration Architecture
     parent: engineering_execution
     level: junior
-    readiness: 0.2
+    readiness: 0.30000000000000004
     test_cooldown: 0
     confidence: medium
-    evidence: []
+    evidence:
+      - "2025-10-06: Closed multi-protocol auto-registration loop, aligned
+        docs/task logs, deferred live Phase6 run post-MVP so registry
+        verification can proceed."
     last_test: null
     next_test_hint: null
     achievements: {}
     priority: false
+    check_ins: 1
   - id: tooling_automation
     title: Tooling & Automation
     parent: engineering_execution
     level: learner
-    readiness: 0.3
+    readiness: 0.35
     test_cooldown: 0
-    confidence: low
+    confidence: medium
     evidence:
-      - '2025-10-04: Understood VSCODE_SERVER_TAR override while configuring VSCodium
-        WSL wrapper.'
-      - '2025-10-05: Planned safe WSL repo relocation, covering backups, tar usage,
-        and mv progress trade-offs.'
+      - "2025-10-04: Understood VSCODE_SERVER_TAR override while configuring
+        VSCodium WSL wrapper."
+      - "2025-10-05: Planned safe WSL repo relocation, covering backups, tar
+        usage, and mv progress trade-offs."
+      - "2025-10-07: Expanded consolidation CLI guidance, auto-promoted
+        dependencies, and shipped claim-lane helper."
     last_test: null
     next_test_hint: null
     achievements: {}
     priority: false
+    check_ins: 1
   - id: product_delivery
     title: Product & Delivery Leadership
     parent: null

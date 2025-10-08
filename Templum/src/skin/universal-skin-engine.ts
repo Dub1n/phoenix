@@ -66,6 +66,8 @@ import { SkinVersionManager } from './skin-version-manager';
 import { serialization, type SerializationOutcome } from '../utils/serialization-utils';
 import { emitSerializationWarnings } from '../backend/backend-serialization-log';
 import { summariseThemeUsage, ThemeMetricsSummary, ThemeUsageRecord, ThemeFallbackMode } from '../utils/service-utils';
+import { validateSkinDefinition as runSkinValidation } from '../validation/skin-validator';
+import type { SkinValidationResult } from '../validation/skin-validator';
 
 // All type definitions imported from types files - removing duplicates
 
@@ -1353,29 +1355,25 @@ export class UniversalSkinEngine extends EventEmitter {
   }
 
   private async validateSkinDefinition(skin: UniversalSkinDefinition): Promise<{ valid: boolean; errors: string[] }> {
-    const errors: string[] = [];
+    let validation: SkinValidationResult;
 
-    if (!skin.id) errors.push('Skin ID is required');
-    if (!skin.name) errors.push('Skin name is required');
-    if (!skin.version) errors.push('Skin version is required');
-    const supportedInterfaces = skin.metadata?.supportedInterfaces || [];
-    if (!supportedInterfaces.length) errors.push('At least one supported interface is required');
-    if (!skin.themes || !Object.keys(skin.themes).length) errors.push('At least one theme is required');
-
-    // Validate PCL compatibility
-    if (skin.pclCompatibility && (skin.pclCompatibility.reusePercentage < 0 || skin.pclCompatibility.reusePercentage > 100)) {
-      errors.push('PCL reuse percentage must be between 0 and 100');
+    try {
+      validation = runSkinValidation(skin, {
+        expectedValidatorVersion: this.versionManager.getValidatorVersion()
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown validation failure';
+      return { valid: false, errors: [message] };
     }
 
-    // Validate themes
-    if (skin.themes) {
-      for (const [themeName, theme] of Object.entries(skin.themes)) {
-        if (!theme.colors) errors.push(`Theme ${themeName} missing color palette`);
-        if (!theme.typography) errors.push(`Theme ${themeName} missing typography configuration`);
-      }
+    if (validation.warnings && validation.warnings.length > 0) {
+      console.warn(`Skin ${skin.id ?? 'unknown'} validation warnings:`, validation.warnings);
     }
 
-    return { valid: errors.length === 0, errors };
+    return {
+      valid: validation.valid,
+      errors: validation.errors
+    };
   }
 
   /**

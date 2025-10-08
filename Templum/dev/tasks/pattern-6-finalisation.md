@@ -11,7 +11,7 @@ Tags: `#infra`
 - [x] Finish migrating residual CLI/window helpers (`src/rendering/content-layout-system.ts`, `src/interfaces/terminal-compatibility-detector.ts`, `src/interfaces/universal-interaction-manager.ts`) to `TerminalFormatter` semantics and delete remaining direct `chalk` imports.
 - [x] Eliminate adaptive CLI integration teardown warnings by hardening listener cleanup or logging filters so tests exit cleanly without globalTeardown noise.
 - [x] Update pattern/docs trackers (`utility-consolidation-plans/pattern-6.md`, `utility-consolidation-activity-log.md`, `safe-consolidation-candidates.md`, `docs/current/progress.md`) with the final validation evidence.
-- [ ] Commit with message `templum: lock in terminal formatter validation` after tests.
+- [x] Commit with message `templum: lock in terminal formatter validation` after tests.
 
 ## References
 

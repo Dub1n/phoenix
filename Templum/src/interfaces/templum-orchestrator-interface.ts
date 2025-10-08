@@ -78,6 +78,11 @@ export interface ITemplumOrchestrator {
   getSystemStatus(): TemplumSystemStatus;
 
   /**
+   * Retrieve the skins currently loaded into the orchestrator
+   */
+  getLoadedSkins(): UniversalSkinDefinition[];
+
+  /**
    * Refresh backend service connections and rediscover available services
    */
   refreshBackendServices(): Promise<void>;

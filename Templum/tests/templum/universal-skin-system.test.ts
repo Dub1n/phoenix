@@ -301,7 +301,9 @@ describe('Phase 5: Universal Skin System Cross-Interface Consistency', () => {
         }
       };
       
-      const validationResult = validateSkinDefinition(testSkinDefinition, universalSkinEngineValidationSchema);
+      const validationResult = validateSkinDefinition(testSkinDefinition, {
+        schema: universalSkinEngineValidationSchema
+      });
       expect(validationResult.valid).toBe(true);
       expect(validationResult.errors).toHaveLength(0);
     });
@@ -526,7 +528,7 @@ describe('Phase 5: Universal Skin System Cross-Interface Consistency', () => {
 });
 
 // Test Helper Functions
-function createTestFeatureMatrix(): any {
+export function createTestFeatureMatrix(): any {
   return {
     vscode: {
       treeViews: true,
@@ -560,7 +562,7 @@ function createTestFeatureMatrix(): any {
   };
 }
 
-function createTestPerformanceHints(): any {
+export function createTestPerformanceHints(): any {
   return {
     loadingStrategy: 'lazy',
     cacheStrategy: 'lru',
@@ -574,7 +576,7 @@ function createTestPerformanceHints(): any {
   };
 }
 
-function createTestPCLSkinDefinition(): UniversalSkinDefinition {
+export function createTestPCLSkinDefinition(): UniversalSkinDefinition {
   return {
     id: 'pcl-tdd-workflow',
     name: 'PCL TDD Workflow Skin',

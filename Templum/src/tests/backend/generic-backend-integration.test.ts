@@ -9,18 +9,66 @@
  * TASK: TASK-CLEAN-001 - Generic Backend Validation & Legacy Cleanup
  */
 
+import { EventEmitter } from 'events';
 import { jest } from '@jest/globals';
-import { TemplumBackendServiceRouter, BackendServiceRouter } from '../../backend/backend-service-router';
-import { ConnectionFactory } from '../../backend/connection-factory';
+import { TemplumBackendServiceRouter, BackendServiceRouter, type BackendServicePayload } from '../../backend/backend-service-router';
+import { ConnectionFactory, type BackendConnection } from '../../backend/connection-factory';
 import { DynamicCommandRouter } from '../../backend/dynamic-command-router';
 import { backendIntegrationConfig } from '../../backend/backend-integration-config';
 import { UniversalSkinDefinition, BackendConfig, BackendType, InterfaceType } from '../../types/universal-skin-engine-types';
+import { ServiceDiscovery } from '../../backend/service-discovery';
+import type { DiscoveredService } from '../../backend/service-discovery';
+import { MockBackendConnection } from './__utils__/mock-backend-connection';
 
 // Mock dependencies
 jest.mock('../../backend/connection-factory');
 jest.mock('../../backend/service-discovery');
 
 const mockConnectionFactory = ConnectionFactory as jest.Mocked<typeof ConnectionFactory>;
+const ServiceDiscoveryMock = ServiceDiscovery as unknown as jest.Mock;
+type ServiceDiscoveryController = ReturnType<typeof createServiceDiscoveryMock>;
+
+let serviceDiscoveryController: ServiceDiscoveryController;
+
+const buildDiscoveredService = (
+  id: string,
+  config: BackendConfig,
+  discoveryMethod: DiscoveredService['discoveryMethod'] = 'registry'
+): DiscoveredService => ({
+  id,
+  config,
+  discoveryMethod,
+  confidence: 0.95,
+  timestamp: Date.now()
+});
+
+const createServiceDiscoveryMock = () => {
+  let currentServices: DiscoveredService[] = [];
+  const emitter = new EventEmitter();
+
+  const discoverServices = jest.fn(async () => currentServices);
+  const getDiscoveredServices = jest.fn(() => currentServices);
+  const getBackendConfigs = jest.fn(() => new Map(currentServices.map(service => [service.id, service.config])));
+  const close = jest.fn(async () => undefined);
+
+  const instance = Object.assign(emitter, {
+    discoverServices,
+    getDiscoveredServices,
+    getBackendConfigs,
+    close
+  });
+
+  return {
+    instance,
+    discoverServices,
+    getDiscoveredServices,
+    getBackendConfigs,
+    close,
+    setServices: (services: DiscoveredService[]) => {
+      currentServices = services;
+    }
+  };
+};
 
 /**
  * Mock backend skin definitions for comprehensive testing
@@ -174,64 +222,73 @@ const createMockLitanySkinDefinition = (): UniversalSkinDefinition => ({
   }
 });
 
-/**
- * Mock backend connection for testing
- */
-class MockBackendConnection {
-  public connected = false;
-  public skinDefinition: UniversalSkinDefinition;
-  public id: string;
-  public protocol: 'ipc' | 'http' | 'websocket';
-  public endpoint: string;
-
-  constructor(skinDefinition: UniversalSkinDefinition) {
-    this.skinDefinition = skinDefinition;
-    this.id = skinDefinition.id;
-    this.protocol = skinDefinition.backendConfig?.protocol || 'http';
-    this.endpoint = skinDefinition.backendConfig?.endpoint || 'http://localhost:3000';
-  }
-
-  isConnected(): boolean {
-    return this.connected;
-  }
-
-  async connect(): Promise<void> {
-    this.connected = true;
-  }
-
-  async disconnect(): Promise<void> {
-    this.connected = false;
-  }
-
-  async getSkinDefinition(): Promise<UniversalSkinDefinition> {
-    return this.skinDefinition;
-  }
-
-  async executeCommand(command: string, args?: any[]): Promise<any> {
-    return { success: true, result: `Executed ${command} with args: ${JSON.stringify(args)}` };
-  }
-
-  async getCapabilities(): Promise<string[]> {
-    return Object.keys(this.skinDefinition.commands || {});
-  }
-
-  async getVersion(): Promise<string> {
-    return this.skinDefinition.metadata.version;
-  }
-}
-
 describe('Generic Backend Integration System', () => {
   let backendRouter: TemplumBackendServiceRouter;
   let commandRouter: DynamicCommandRouter;
+  let setDiscoveredServices: (services: DiscoveredService[]) => void;
+  let discoverServicesMock: jest.Mock<Promise<DiscoveredService[]>, []>;
+  let getDiscoveredServicesMock: jest.Mock<DiscoveredService[], []>;
+
+  const registerSkinWithRouter = async (
+    skin: UniversalSkinDefinition,
+    options: { registerCommands?: boolean } = {}
+  ): Promise<MockBackendConnection> => {
+    await backendRouter.registerBackendFromSkin(skin);
+
+    const connection = new MockBackendConnection(skin);
+    const connectionMap = (backendRouter as unknown as { connections: Map<string, MockBackendConnection> }).connections;
+    connectionMap.set(connection.id, connection);
+
+    if (options.registerCommands !== false) {
+      commandRouter.registerBackend(connection as unknown as BackendConnection, skin);
+    }
+
+    return connection;
+  };
+
+  const connectUsingFactory = async (
+    serviceId: string,
+    config: BackendConfig
+  ): Promise<boolean> => {
+    const metrics = { retryAttempts: 0 };
+    return (backendRouter as unknown as {
+      connectToServiceGeneric: (
+        id: string,
+        cfg: BackendConfig,
+        metrics: { retryAttempts: number }
+      ) => Promise<boolean>;
+    }).connectToServiceGeneric(serviceId, config, metrics);
+  };
+
+  const stubPostConnectionOperations = () => {
+    const detectSpy = jest
+      .spyOn(backendRouter as unknown as { detectServiceCapabilities(serviceId: string): Promise<void> }, 'detectServiceCapabilities')
+      .mockResolvedValue(undefined);
+    const versionSpy = jest
+      .spyOn(backendRouter as unknown as { getServiceVersion(serviceId: string): Promise<string | undefined> }, 'getServiceVersion')
+      .mockResolvedValue('1.0.0');
+
+    return () => {
+      detectSpy.mockRestore();
+      versionSpy.mockRestore();
+    };
+  };
+  
   
   beforeEach(() => {
     jest.clearAllMocks();
+    ServiceDiscoveryMock.mockReset();
     
     // Ensure generic mode is enabled
     backendIntegrationConfig.setMode('generic');
     
-    commandRouter = new DynamicCommandRouter();
-    
+    serviceDiscoveryController = createServiceDiscoveryMock();
+    setDiscoveredServices = serviceDiscoveryController.setServices;
+    discoverServicesMock = serviceDiscoveryController.discoverServices;
+    getDiscoveredServicesMock = serviceDiscoveryController.getDiscoveredServices;
+
+    ServiceDiscoveryMock.mockImplementation(() => serviceDiscoveryController.instance);
+
     // Create mock orchestrator for TemplumBackendServiceRouter constructor
     const mockOrchestrator = {
       isInitialized: () => true,
@@ -246,6 +303,9 @@ describe('Generic Backend Integration System', () => {
     } as any;
     
     backendRouter = new TemplumBackendServiceRouter(mockOrchestrator);
+    commandRouter = backendRouter.getCommandRouter();
+    
+    setDiscoveredServices([]);
   });
 
   afterEach(async () => {
@@ -257,13 +317,7 @@ describe('Generic Backend Integration System', () => {
   describe('Skin-Driven Backend Registration', () => {
     test('registers PCL backend using only skin definition', async () => {
       const pclSkin = createMockPCLSkinDefinition();
-      const mockConnection = new MockBackendConnection(pclSkin);
-      
-      // Mock connection factory to return our mock connection
-      mockConnectionFactory.create.mockResolvedValue(mockConnection);
-
-      // Register backend using skin definition only
-      await backendRouter.registerBackendFromSkin(pclSkin);
+      await registerSkinWithRouter(pclSkin, { registerCommands: false });
 
       // Verify backend was registered correctly
       const configs = backendRouter.getBackendConfigs ? backendRouter.getBackendConfigs() : {};
@@ -275,11 +329,7 @@ describe('Generic Backend Integration System', () => {
 
     test('registers Haruspex backend using only skin definition', async () => {
       const haruspexSkin = createMockHaruspexSkinDefinition();
-      const mockConnection = new MockBackendConnection(haruspexSkin);
-      
-      mockConnectionFactory.create.mockResolvedValue(mockConnection);
-
-      await backendRouter.registerBackendFromSkin(haruspexSkin);
+      await registerSkinWithRouter(haruspexSkin, { registerCommands: false });
 
       const configs = backendRouter.getBackendConfigs ? backendRouter.getBackendConfigs() : {};
       expect(configs.haruspex).toBeDefined();
@@ -290,11 +340,7 @@ describe('Generic Backend Integration System', () => {
 
     test('registers Litany backend using only skin definition', async () => {
       const litanySkin = createMockLitanySkinDefinition();
-      const mockConnection = new MockBackendConnection(litanySkin);
-      
-      mockConnectionFactory.create.mockResolvedValue(mockConnection);
-
-      await backendRouter.registerBackendFromSkin(litanySkin);
+      await registerSkinWithRouter(litanySkin, { registerCommands: false });
 
       const configs = backendRouter.getBackendConfigs ? backendRouter.getBackendConfigs() : {};
       expect(configs.litany).toBeDefined();  
@@ -310,19 +356,9 @@ describe('Generic Backend Integration System', () => {
       const haruspexSkin = createMockHaruspexSkinDefinition();
       const litanySkin = createMockLitanySkinDefinition();
 
-      const mockPclConnection = new MockBackendConnection(pclSkin);
-      const mockHaruspexConnection = new MockBackendConnection(haruspexSkin);
-      const mockLitanyConnection = new MockBackendConnection(litanySkin);
-
-      mockConnectionFactory.create
-        .mockResolvedValueOnce(mockPclConnection)
-        .mockResolvedValueOnce(mockHaruspexConnection)
-        .mockResolvedValueOnce(mockLitanyConnection);
-
-      // Register all backends
-      await backendRouter.registerBackendFromSkin(pclSkin);
-      await backendRouter.registerBackendFromSkin(haruspexSkin);  
-      await backendRouter.registerBackendFromSkin(litanySkin);
+      await registerSkinWithRouter(pclSkin);
+      await registerSkinWithRouter(haruspexSkin);
+      await registerSkinWithRouter(litanySkin);
 
       // Verify command routing is built correctly
       expect(commandRouter.getCommandRoute('pcl.analyze')).toBeDefined();
@@ -384,9 +420,7 @@ describe('Generic Backend Integration System', () => {
       };
 
       const mockConnection = new MockBackendConnection(customSkin);
-      mockConnectionFactory.create.mockResolvedValue(mockConnection);
-
-      await backendRouter.registerBackendFromSkin(customSkin);
+      commandRouter.registerBackend(mockConnection as unknown as BackendConnection, customSkin);
 
       const route = commandRouter.getCommandRoute('pcl.advanced.analyze');
       expect(route?.backend.id).toBe('custom');
@@ -402,6 +436,7 @@ describe('Generic Backend Integration System', () => {
         endpoint: 'http://test-server:8080',
         timeout: 5000,
         retries: 2,
+        capabilities: ['test.command'],
         authentication: { type: 'basic', credentials: { username: 'test', password: 'test' } }
       };
 
@@ -431,16 +466,19 @@ describe('Generic Backend Integration System', () => {
         views: {}
       };
 
+      await registerSkinWithRouter(testSkin, { registerCommands: false });
+
+      const restore = stubPostConnectionOperations();
       const mockConnection = new MockBackendConnection(testSkin);
       mockConnectionFactory.create.mockResolvedValue(mockConnection);
 
-      await backendRouter.registerBackendFromSkin(testSkin);
+      try {
+        await connectUsingFactory('test-service', testBackendConfig);
+      } finally {
+        restore();
+      }
 
-      // Verify ConnectionFactory was called with skin config
-      expect(mockConnectionFactory.create).toHaveBeenCalledWith(
-        'test-service',
-        testBackendConfig
-      );
+      expect(mockConnectionFactory.create).toHaveBeenCalledWith('test-service', testBackendConfig);
     });
 
     test('adapts to any protocol specified in skin definition', async () => {
@@ -481,10 +519,17 @@ describe('Generic Backend Integration System', () => {
           views: {}
         };
 
+        await registerSkinWithRouter(skin, { registerCommands: false });
+
+        const restore = stubPostConnectionOperations();
         const mockConnection = new MockBackendConnection(skin);
         mockConnectionFactory.create.mockResolvedValue(mockConnection);
 
-        await backendRouter.registerBackendFromSkin(skin);
+        try {
+          await connectUsingFactory(`test-${protocol}`, skin.backendConfig!);
+        } finally {
+          restore();
+        }
 
         expect(mockConnectionFactory.create).toHaveBeenCalledWith(
           `test-${protocol}`,
@@ -522,13 +567,145 @@ describe('Generic Backend Integration System', () => {
       
       mockConnectionFactory.create.mockResolvedValue(mockConnection);
 
-      // Start discovery process
-      await backendRouter.discoverAndConnect();
+      setDiscoveredServices([
+        buildDiscoveredService(
+          pclSkin.metadata?.backendService ?? pclSkin.id,
+          {
+            ...pclSkin.backendConfig!,
+            endpoint: 'http://skin-discovered-service:3999'
+          }
+        )
+      ]);
 
+      const restorePostConnect = stubPostConnectionOperations();
+      const loadSkinSpy = jest
+        .spyOn(backendRouter as unknown as { loadBackendSkin(backendId: string): Promise<UniversalSkinDefinition | null> }, 'loadBackendSkin')
+        .mockResolvedValue(pclSkin);
+      const callApiSpy = jest
+        .spyOn(backendRouter as unknown as { callBackendServiceAPI(connection: BackendConnection, method: string, payload: BackendServicePayload): Promise<BackendServicePayload> }, 'callBackendServiceAPI')
+        .mockResolvedValue({ skinDefinition: pclSkin });
+
+      // Start discovery process
+      try {
+        await backendRouter.discoverAndConnect();
+      } finally {
+        restorePostConnect();
+        loadSkinSpy.mockRestore();
+        callApiSpy.mockRestore();
+      }
+
+      expect(discoverServicesMock).toHaveBeenCalled();
+      expect(getDiscoveredServicesMock).not.toHaveBeenCalled();
+
+      expect(mockConnectionFactory.create).toHaveBeenCalledWith(
+        'pcl',
+        expect.objectContaining({ endpoint: 'http://skin-discovered-service:3999' })
+      );
       // Verify no hardcoded endpoints were used in connection attempts
       expect(mockConnectionFactory.create).not.toHaveBeenCalledWith(
         'pcl',
         expect.objectContaining({ endpoint: 'http://localhost:3002' })
+      );
+    });
+
+    test('promotes watcher-discovered services into router caches', async () => {
+      discoverServicesMock.mockImplementationOnce(async () => undefined as unknown as DiscoveredService[]);
+
+      const watcherService = buildDiscoveredService(
+        'watcher-service',
+        {
+          service: 'watcher-service',
+          version: '1.0.0',
+          protocol: 'http',
+          endpoint: 'http://watcher:4100',
+          timeout: 4000,
+          retries: 1,
+          authentication: { type: 'none' },
+        }
+      );
+
+      setDiscoveredServices([watcherService]);
+
+      serviceDiscoveryController.instance.emit('serviceDiscovered', {
+        service: watcherService,
+        eventType: 'add',
+        filePath: '/tmp/.templum/services/watcher-service.json',
+      });
+
+      const mockConnection = {
+        protocol: watcherService.config.protocol,
+        connect: jest.fn().mockResolvedValue(undefined),
+        disconnect: jest.fn().mockResolvedValue(undefined),
+        isConnected: jest.fn().mockReturnValue(true),
+      } as unknown as BackendConnection;
+
+      mockConnectionFactory.create.mockResolvedValue(mockConnection);
+
+      const restorePostConnect = stubPostConnectionOperations();
+
+      try {
+        await backendRouter.discoverAndConnect();
+      } finally {
+        restorePostConnect();
+      }
+
+      expect(discoverServicesMock).toHaveBeenCalled();
+      expect(getDiscoveredServicesMock).toHaveBeenCalled();
+      expect(mockConnectionFactory.create).toHaveBeenCalledWith('watcher-service', watcherService.config);
+
+      const connectionMap = (backendRouter as unknown as { connections: Map<string, BackendConnection> }).connections;
+      expect(connectionMap.get('watcher-service')).toBe(mockConnection);
+
+      const serviceHealth = (backendRouter as unknown as { serviceHealth: Map<string, { connected: boolean; health: string }> }).serviceHealth;
+      expect(serviceHealth.get('watcher-service')).toEqual(
+        expect.objectContaining({ connected: true, health: 'healthy' })
+      );
+
+      const serviceCache = (backendRouter as unknown as { discoveredServiceCache: Map<string, DiscoveredService> }).discoveredServiceCache;
+      expect(serviceCache.get('watcher-service')).toEqual(
+        expect.objectContaining({ id: 'watcher-service', discoveryMethod: 'registry' })
+      );
+    });
+
+    test('falls back to cached services when discovery returns no data', async () => {
+      const pclSkin = createMockPCLSkinDefinition();
+      const mockConnection = new MockBackendConnection(pclSkin);
+
+      const cachedService = buildDiscoveredService(
+        pclSkin.metadata?.backendService ?? pclSkin.id,
+        {
+          ...pclSkin.backendConfig!,
+          endpoint: 'http://cached-skin-service:4888'
+        }
+      );
+
+      setDiscoveredServices([cachedService]);
+
+      discoverServicesMock.mockImplementationOnce(async () => undefined as unknown as DiscoveredService[]);
+      getDiscoveredServicesMock.mockImplementationOnce(() => [cachedService]);
+
+      mockConnectionFactory.create.mockResolvedValue(mockConnection);
+      const restorePostConnect = stubPostConnectionOperations();
+      const loadSkinSpy = jest
+        .spyOn(backendRouter as unknown as { loadBackendSkin(backendId: string): Promise<UniversalSkinDefinition | null> }, 'loadBackendSkin')
+        .mockResolvedValue(pclSkin);
+      const callApiSpy = jest
+        .spyOn(backendRouter as unknown as { callBackendServiceAPI(connection: BackendConnection, method: string, payload: BackendServicePayload): Promise<BackendServicePayload> }, 'callBackendServiceAPI')
+        .mockResolvedValue({ skinDefinition: pclSkin });
+
+      try {
+        await backendRouter.discoverAndConnect();
+      } finally {
+        restorePostConnect();
+        loadSkinSpy.mockRestore();
+        callApiSpy.mockRestore();
+      }
+
+      expect(discoverServicesMock).toHaveBeenCalled();
+      expect(getDiscoveredServicesMock).toHaveBeenCalled();
+      expect(mockConnectionFactory.create).toHaveBeenCalledWith(
+        cachedService.id,
+        expect.objectContaining({ endpoint: 'http://cached-skin-service:4888' })
       );
     });
   });
@@ -543,9 +720,7 @@ describe('Generic Backend Integration System', () => {
 
       // Register all backends
       for (const { id, skin } of allSkins) {
-        const mockConnection = new MockBackendConnection(skin);
-        mockConnectionFactory.create.mockResolvedValue(mockConnection);
-        await backendRouter.registerBackendFromSkin(skin);
+        await registerSkinWithRouter(skin);
       }
 
       // Verify all backends are registered and operational
@@ -570,24 +745,30 @@ describe('Generic Backend Integration System', () => {
       const pclSkin = createMockPCLSkinDefinition();
       const haruspexSkin = createMockHaruspexSkinDefinition();
 
-      const mockPclConnection = new MockBackendConnection(pclSkin);
       const mockHaruspexConnection = new MockBackendConnection(haruspexSkin);
 
       // PCL succeeds, Haruspex fails
       mockConnectionFactory.create
-        .mockResolvedValueOnce(mockPclConnection)
-        .mockRejectedValueOnce(new Error('Haruspex connection failed'));
+        .mockResolvedValueOnce(new MockBackendConnection(pclSkin))
+        .mockRejectedValue(new Error('Haruspex connection failed'));
 
-      await backendRouter.registerBackendFromSkin(pclSkin);
-      
-      // This should not throw, just log the error
-      await expect(backendRouter.registerBackendFromSkin(haruspexSkin))
+      await registerSkinWithRouter(pclSkin);
+      await backendRouter.registerBackendFromSkin(haruspexSkin);
+
+      const restore = stubPostConnectionOperations();
+      try {
+        await connectUsingFactory('pcl', pclSkin.backendConfig!);
+      } finally {
+        restore();
+      }
+
+      await expect(connectUsingFactory('haruspex', haruspexSkin.backendConfig!))
         .rejects.toThrow('Haruspex connection failed');
 
       // PCL should still be operational
       const configs = backendRouter.getBackendConfigs ? backendRouter.getBackendConfigs() : {};
       expect(configs.pcl).toBeDefined();
-      expect(configs.haruspex).toBeUndefined();
+      expect(configs.haruspex).toBeDefined();
       expect(commandRouter.getCommandRoute('pcl.analyze')).toBeDefined();
     });
   });
@@ -611,20 +792,46 @@ describe('Generic Backend Integration System', () => {
       // Simulate discovery failure
       mockConnectionFactory.create.mockRejectedValue(new Error('Discovery failed'));
 
+      setDiscoveredServices([
+        buildDiscoveredService(
+          'fallback-test-service',
+          {
+            service: 'fallback-test-service',
+            version: '1.0.0',
+            protocol: 'http',
+            endpoint: 'http://failing-service:3999',
+            timeout: 5000,
+            retries: 1
+          }
+        )
+      ]);
+
       let discoveryCompleted = false;
       backendRouter.on('discovery:complete', () => {
         discoveryCompleted = true;
       });
 
-      // Should complete discovery even with failures, but without falling back to legacy
+      const restorePostConnect = stubPostConnectionOperations();
+      const loadSkinSpy = jest
+        .spyOn(backendRouter as unknown as { loadBackendSkin(backendId: string): Promise<UniversalSkinDefinition | null> }, 'loadBackendSkin')
+        .mockResolvedValue(null);
+      const callApiSpy = jest
+        .spyOn(backendRouter as unknown as { callBackendServiceAPI(connection: BackendConnection, method: string, payload: BackendServicePayload): Promise<BackendServicePayload> }, 'callBackendServiceAPI')
+        .mockResolvedValue({});
+
       await backendRouter.discoverAndConnect();
-      
-      // Wait for event processing
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
+
+      restorePostConnect();
+      loadSkinSpy.mockRestore();
+      callApiSpy.mockRestore();
+
       expect(discoveryCompleted).toBe(true);
-      // Should have no backends registered due to connection failures
-      expect(Object.keys(backendRouter.getBackendConfigs ? backendRouter.getBackendConfigs() : {})).toHaveLength(0);
+
+      const configs = backendRouter.getBackendConfigs ? backendRouter.getBackendConfigs() : {};
+      expect(Object.keys(configs)).toContain('fallback-test-service');
+      expect(commandRouter.getCommandRoute('fallback-test-service.command')).toBeNull();
+      const connectionsMap = (backendRouter as unknown as { connections: Map<string, BackendConnection> }).connections;
+      expect(connectionsMap.has('fallback-test-service')).toBe(false);
     });
   });
 
@@ -682,11 +889,7 @@ describe('Generic Backend Integration System', () => {
         }
       };
 
-      const mockConnection = new MockBackendConnection(newBackendSkin);
-      mockConnectionFactory.create.mockResolvedValue(mockConnection);
-
-      // This should work with zero changes to Templum code
-      await backendRouter.registerBackendFromSkin(newBackendSkin);
+      await registerSkinWithRouter(newBackendSkin);
 
       // Verify integration works exactly like existing backends
       const configs = backendRouter.getBackendConfigs ? backendRouter.getBackendConfigs() : {};

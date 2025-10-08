@@ -1,0 +1,1038 @@
+{
+  "schemaVersion": "1.0.0",
+  "updatedAt": "2025-10-07T23:16:33Z",
+  "patterns": [
+    {
+      "patternId": 1,
+      "name": "Logger Consolidation",
+      "description": "2,810 console.log/warn/error calls with inconsistent formatting",
+      "stage": 1,
+      "owner": {
+        "agent": "unassigned",
+        "claimedAt": "2025-09-14T18:00:00Z"
+      },
+      "dependencies": [],
+      "stageGates": {
+        "1": {
+          "status": "open"
+        }
+      },
+      "lanes": {},
+      "handoff": {
+        "guardrails": [],
+        "sharedFiles": [],
+        "acknowledgements": []
+      },
+      "notes": [
+        {
+          "id": "stage1-import-pattern-1",
+          "timestamp": "2025-09-14T18:00:00Z",
+          "author": "safe-consolidation-candidates",
+          "scope": [
+            "stage-1"
+          ],
+          "body": "Category: Core Infrastructure Utilities (CRITICAL Priority)\nPattern doc: Templum/dev/patterns/utilities/core/logger.md\nUtility focus: (Templum/src/utils/logger.ts)\nProblem: 2,810 console.log/warn/error calls with inconsistent formatting\nAPI intent: log.info('message') - Auto-context detection, structured output\nImpact: ~1,500-2,000 lines removable, consistent logging across codebase\nStarter files:\n  • src/backend/backend-service-router.ts (315 console calls)\n  • src/backend/service-discovery.ts (287 console calls)\n  • src/backend/connection-factory.ts (156 console calls)\n  • src/backend/dynamic-command-router.ts (89 console calls)\n  • src/interfaces/cli-adapter.ts (198 console calls)"
+        }
+      ],
+      "evidence": [],
+      "activity": [],
+      "updatedAt": "2025-09-14T18:00:00Z"
+    },
+    {
+      "patternId": 2,
+      "name": "Error Handler Consolidation",
+      "description": "695 catch blocks with repeated manual error wrapping",
+      "stage": 1,
+      "owner": {
+        "agent": "unassigned",
+        "claimedAt": "2025-09-14T18:00:00Z"
+      },
+      "dependencies": [],
+      "stageGates": {
+        "1": {
+          "status": "open"
+        }
+      },
+      "lanes": {},
+      "handoff": {
+        "guardrails": [],
+        "sharedFiles": [],
+        "acknowledgements": []
+      },
+      "notes": [
+        {
+          "id": "stage1-import-pattern-2",
+          "timestamp": "2025-09-14T18:00:00Z",
+          "author": "safe-consolidation-candidates",
+          "scope": [
+            "stage-1"
+          ],
+          "body": "Category: Core Infrastructure Utilities (CRITICAL Priority)\nPattern doc: Templum/dev/patterns/utilities/core/error-handler.md\nUtility focus: (Templum/src/utils/error-handler.ts)\nProblem: 695 catch blocks with repeated manual error wrapping\nAPI intent: await wrap(() => operation(), 'context') - One-line error handling\nImpact: ~400 catch blocks standardizable, consistent error patterns\nStarter files:\n  • src/backend/backend-service-router.ts (87 catch blocks)\n  • src/backend/service-discovery.ts (76 catch blocks)\n  • src/backend/connection-factory.ts (54 catch blocks)\n  • src/interfaces/cli-adapter-abstracted.ts (63 catch blocks)\n  • src/skin/universal-skin-engine.ts (71 catch blocks)"
+        }
+      ],
+      "evidence": [],
+      "activity": [],
+      "updatedAt": "2025-09-14T18:00:00Z"
+    },
+    {
+      "patternId": 3,
+      "name": "Async Utils Consolidation",
+      "description": "316 setTimeout/setInterval calls with manual timeout management",
+      "stage": 1,
+      "owner": {
+        "agent": "unassigned",
+        "claimedAt": "2025-09-14T18:00:00Z"
+      },
+      "dependencies": [],
+      "stageGates": {
+        "1": {
+          "status": "open"
+        }
+      },
+      "lanes": {},
+      "handoff": {
+        "guardrails": [],
+        "sharedFiles": [],
+        "acknowledgements": []
+      },
+      "notes": [
+        {
+          "id": "stage1-import-pattern-3",
+          "timestamp": "2025-09-14T18:00:00Z",
+          "author": "safe-consolidation-candidates",
+          "scope": [
+            "stage-1"
+          ],
+          "body": "Category: Core Infrastructure Utilities (CRITICAL Priority)\nPattern doc: Templum/dev/patterns/utilities/core/async-utils.md\nUtility focus: (Templum/src/utils/async-utils.ts)\nProblem: 316 setTimeout/setInterval calls with manual timeout management\nAPI intent: await timeout(promise, 5000) - Auto-cleanup, retry with backoff\nImpact: ~200 timeout calls consolidatable, reliable retry patterns\nStarter files:\n  • src/backend/service-discovery.ts (43 timeout calls) (post-MVP)\n  • src/backend/connection-factory.ts (38 timeout calls) (post-MVP)\n  • src/backend/backend-service-router.ts (52 timeout calls) (MVP focus: lifecycle/health timers keeping Jest alive)\n  • src/interfaces/terminal-ui-components.ts (29 timeout calls) (post-MVP)\n  • src/core/templum-core.ts (34 timeout calls) (post-MVP)"
+        }
+      ],
+      "evidence": [],
+      "activity": [],
+      "updatedAt": "2025-09-14T18:00:00Z"
+    },
+    {
+      "patternId": 4,
+      "name": "Event Utils Consolidation",
+      "description": "528 EventEmitter uses with repeated event management patterns",
+      "stage": 1,
+      "owner": {
+        "agent": "unassigned",
+        "claimedAt": "2025-09-14T18:00:00Z"
+      },
+      "dependencies": [],
+      "stageGates": {
+        "1": {
+          "status": "open"
+        }
+      },
+      "lanes": {},
+      "handoff": {
+        "guardrails": [],
+        "sharedFiles": [],
+        "acknowledgements": []
+      },
+      "notes": [
+        {
+          "id": "stage1-import-pattern-4",
+          "timestamp": "2025-09-14T18:00:00Z",
+          "author": "safe-consolidation-candidates",
+          "scope": [
+            "stage-1"
+          ],
+          "body": "Category: Core Infrastructure Utilities (CRITICAL Priority)\nPattern doc: Templum/dev/patterns/utilities/core/event-utils.md\nUtility focus: (Templum/src/utils/event-utils.ts)\nProblem: 528 EventEmitter uses with repeated event management patterns\nAPI intent: events.typed<EventMap>().emit('event', data) - Typed events, auto-cleanup\nImpact: Standardized event handling, reduced boilerplate\nStarter files:\n  • All components using EventEmitter pattern (528 uses across codebase)\n  • Event handling, debouncing, aggregation patterns\n  • Typed event management systems"
+        }
+      ],
+      "evidence": [],
+      "activity": [],
+      "updatedAt": "2025-09-14T18:00:00Z"
+    },
+    {
+      "patternId": 5,
+      "name": "Display Utils",
+      "description": "Align display-related helpers and migrate CLI consumers to shared DisplayUtils API.",
+      "stage": 6,
+      "owner": {
+        "agent": "Codex",
+        "claimedAt": "2025-10-02T16:20:00Z"
+      },
+      "dependencies": [
+        6,
+        7
+      ],
+      "stageGates": {
+        "1": {
+          "status": "complete",
+          "completedAt": "2025-10-02T16:30:00Z",
+          "notes": "Plan drafted; consumer inventory captured in Stage 1 log."
+        },
+        "2": {
+          "status": "complete",
+          "completedAt": "2025-10-02T17:00:00Z",
+          "notes": "Display Utils DI seams implemented with TDD coverage."
+        },
+        "3": {
+          "status": "complete",
+          "completedAt": "2025-10-02T17:10:00Z",
+          "notes": "Orchestration plan established; Stage 4/5 dependencies recorded."
+        },
+        "4": {
+          "status": "complete",
+          "completedAt": "2025-10-09T18:45:00Z",
+          "notes": "All prerequisites satisfied; handoff block populated."
+        },
+        "5": {
+          "status": "ready",
+          "completedAt": "2025-10-10T14:24:00Z",
+          "notes": "Cohort alignment approvals logged; Stage 6 lanes marked Ready."
+        },
+        "6": {
+          "status": "in_progress",
+          "notes": "Lane 6a complete; remaining lanes pending migration."
+        },
+        "7": {
+          "status": "open"
+        }
+      },
+      "lanes": {
+        "6a": {
+          "status": "complete",
+          "scope": "Validate backend footprint and run consolidated backend test harness.",
+          "commands": [
+            {
+              "command": "rg -n \"DisplayUtils\" Templum/src/backend",
+              "status": "passed",
+              "executedAt": "2025-10-02T22:23:00Z",
+              "summary": "No backend matches"
+            },
+            {
+              "command": "cd Templum && npm run test -- --runTestsByPath src/tests/backend/comprehensive-backend-validation.test.ts --testNamePattern \"Display\" --runInBand --no-cache --forceExit",
+              "status": "passed",
+              "executedAt": "2025-10-02T22:25:16Z",
+              "exitCode": 0,
+              "logPath": "tmp/stage6/pattern-5/20251002T222516Z-lane6a.log",
+              "summary": "22 tests skipped (no backend Display cases)"
+            }
+          ],
+          "updatedAt": "2025-10-02T22:25:16Z",
+          "notes": "Backend scope remains N/A; rerun if new Display Utils imports appear."
+        },
+        "6b": {
+          "status": "pending",
+          "scope": "Migrate service-ordering-manager to DisplayUtils orderings and refresh related tests.",
+          "commands": [
+            {
+              "command": "cd Templum && npm run test -- --runTestsByPath src/interfaces/__tests__/service-ordering-manager.test.ts --runInBand --no-cache --forceExit",
+              "status": "pending"
+            },
+            {
+              "command": "cd Templum && npm run test -- --runTestsByPath src/tests/utils/display-utils.test.ts --runInBand --no-cache --forceExit",
+              "status": "pending"
+            }
+          ],
+          "dependencies": [
+            {
+              "patternId": 5,
+              "gate": "stage-5"
+            }
+          ]
+        },
+        "6c": {
+          "status": "pending",
+          "scope": "Centralise interface/navigation layout logic on DisplayUtils calculator.",
+          "commands": [
+            {
+              "command": "cd Templum && npm run test -- --runTestsByPath src/interfaces/__tests__/adaptive-cli-integration.test.ts --runInBand --no-cache --forceExit",
+              "status": "pending"
+            },
+            {
+              "command": "cd Templum && npm run test -- --runTestsByPath src/interfaces/navigation/__tests__/navigation-system.test.ts --runInBand --no-cache --forceExit",
+              "status": "pending"
+            }
+          ],
+          "dependencies": [
+            {
+              "patternId": 6,
+              "gate": "stage-5"
+            },
+            {
+              "patternId": 7,
+              "gate": "stage-5"
+            }
+          ]
+        },
+        "6d": {
+          "status": "pending",
+          "scope": "Audit shared utilities and documentation alignment for DisplayUtils DI seams.",
+          "commands": [
+            {
+              "command": "cd Templum && npm run test -- --runTestsByPath src/tests/utils/terminal-formatter.test.ts src/tests/utils/display-utils.test.ts --runInBand --no-cache --forceExit",
+              "status": "pending"
+            }
+          ],
+          "dependencies": [
+            {
+              "patternId": 6,
+              "gate": "lane-6c"
+            }
+          ]
+        }
+      },
+      "handoff": {
+        "guardrails": [
+          "Inject DisplayUtils columnsProvider and formatter for deterministic tests",
+          "Preserve logger severity at debug for ordering flows"
+        ],
+        "sharedFiles": [
+          "Templum/src/tests/helpers/display-columns-provider.ts",
+          "Templum/dev/architecture/display-stack-alignment.md"
+        ],
+        "acknowledgements": [
+          {
+            "agent": "Codex",
+            "timestamp": "2025-10-10T14:22:00Z",
+            "note": "Pattern 5 owner acknowledges Stage 5 alignment"
+          },
+          {
+            "agent": "Codex",
+            "timestamp": "2025-10-10T14:23:00Z",
+            "note": "Pattern 6 owner acknowledges Stage 5 alignment"
+          },
+          {
+            "agent": "Codex",
+            "timestamp": "2025-10-10T14:24:00Z",
+            "note": "Pattern 7 owner acknowledges Stage 5 alignment"
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "type": "log",
+          "path": "tmp/stage6/pattern-5/20251002T214624Z-display-utils.test.log",
+          "description": "Stage 5B gating evidence"
+        },
+        {
+          "type": "log",
+          "path": "tmp/stage6/pattern-5/20251002T222516Z-lane6a.log",
+          "description": "Backend validation rerun"
+        }
+      ],
+      "activity": [
+        {
+          "stage": "stage-5",
+          "timestamp": "2025-10-10T14:24:00Z",
+          "agent": "Codex",
+          "summary": "Stage 5 alignment approvals captured for display stack cohort.",
+          "files": [
+            "Templum/dev/architecture/utility-consolidation-plans/pattern-5.md"
+          ]
+        },
+        {
+          "stage": "lane-6a",
+          "timestamp": "2025-10-02T22:28:00Z",
+          "agent": "Codex",
+          "summary": "Lane 6a complete — backend scope confirmed N/A and validation suite rerun.",
+          "files": [
+            "Templum/dev/architecture/utility-consolidation-plans/pattern-5.md",
+            "Templum/dev/architecture/safe-consolidation-candidates.md"
+          ]
+        }
+      ],
+      "notes": [
+        {
+          "id": "stage1-import-pattern-5",
+          "timestamp": "2025-09-14T18:00:00Z",
+          "author": "safe-consolidation-candidates",
+          "scope": [
+            "stage-1"
+          ],
+          "body": "Category: Display & UI Utilities (HIGH Priority)\nPattern doc: Templum/dev/patterns/utilities/display/display-utils.md\nUtility focus: (Templum/src/utils/display-utils.ts)\nProblem: Display calculations repeated in multiple places\nAPI intent: display.calculate().width(80).order('connected-first') - Fluent API\nImpact: ~25 files, ~400 lines reduction, consistent display standards\nStarter files:\n  • src/interfaces/cli-display-consistency-engine.ts - Delegates layout + ordering to Display Utils stack (Stage 6 lane c validation 2025-10-03T19:27Z).\n  • src/interfaces/service-ordering-manager.ts - Service display ordering\n  • src/rendering/universal-layout-engine.ts - Layout calculations migrated to Display Utils (Stage 6 lane c validation 2025-10-03T19:27Z).\n  • Display consistency patterns consolidated across CLI components per Stage 6 lane c close-out (evidence: tmp/stage6/pattern-5/*.log)."
+        }
+      ],
+      "updatedAt": "2025-10-10T14:24:00Z"
+    },
+    {
+      "patternId": 6,
+      "name": "Window Utils Consolidation",
+      "description": "Border and window layout logic duplicated",
+      "stage": 1,
+      "owner": {
+        "agent": "unassigned",
+        "claimedAt": "2025-09-14T18:00:00Z"
+      },
+      "dependencies": [],
+      "stageGates": {
+        "1": {
+          "status": "open"
+        }
+      },
+      "lanes": {},
+      "handoff": {
+        "guardrails": [],
+        "sharedFiles": [],
+        "acknowledgements": []
+      },
+      "notes": [
+        {
+          "id": "stage1-import-pattern-6",
+          "timestamp": "2025-09-14T18:00:00Z",
+          "author": "safe-consolidation-candidates",
+          "scope": [
+            "stage-1"
+          ],
+          "body": "Category: Display & UI Utilities (HIGH Priority)\nPattern doc: Templum/dev/patterns/utilities/display/window-utils.md\nUtility focus: (Templum/src/utils/window-utils.ts)\nProblem: Border and window layout logic duplicated\nAPI intent: window.border('double').title('Menu').render() - Chainable window API\nImpact: ~15 files, ~300 lines reduction, consistent window management\nStarter files:\n  • src/rendering/content-layout-system.ts - BorderRenderer, WindowLayout\n  • src/interfaces/terminal-ui-components.ts - Window management\n  • Border rendering patterns across CLI components"
+        }
+      ],
+      "evidence": [],
+      "activity": [],
+      "updatedAt": "2025-09-14T18:00:00Z"
+    },
+    {
+      "patternId": 7,
+      "name": "Terminal Formatter Consolidation",
+      "description": "266 chalk calls with inconsistent color usage",
+      "stage": 1,
+      "owner": {
+        "agent": "unassigned",
+        "claimedAt": "2025-09-14T18:00:00Z"
+      },
+      "dependencies": [],
+      "stageGates": {
+        "1": {
+          "status": "open"
+        }
+      },
+      "lanes": {},
+      "handoff": {
+        "guardrails": [],
+        "sharedFiles": [],
+        "acknowledgements": []
+      },
+      "notes": [
+        {
+          "id": "stage1-import-pattern-7",
+          "timestamp": "2025-09-14T18:00:00Z",
+          "author": "safe-consolidation-candidates",
+          "scope": [
+            "stage-1"
+          ],
+          "body": "Category: Display & UI Utilities (HIGH Priority)\nPattern doc: Templum/dev/patterns/utilities/display/terminal-formatter.md\nUtility focus: (Templum/src/utils/terminal-formatter.ts)\nProblem: 266 chalk calls with inconsistent color usage\nAPI intent: fmt.success('text').border() - Semantic formatting, auto-fallback\nImpact: ~13 files, ~200 lines reduction, consistent terminal styling\nStarter files:\n  • src/cli-entry.ts (51 chalk calls)\n  • src/mcp-channel/src/visual-feedback-system.ts (47 chalk calls)\n  • src/interfaces/cli-adapter-abstracted.ts (44 chalk calls)\n  • src/interfaces/terminal-ui-components.ts (35 chalk calls)\n  • src/interfaces/interactive-menu-renderer.ts (27 chalk calls)"
+        }
+      ],
+      "evidence": [],
+      "activity": [],
+      "updatedAt": "2025-09-14T18:00:00Z"
+    },
+    {
+      "patternId": 8,
+      "name": "Theme Utils Consolidation",
+      "description": "Theme management scattered across rendering components",
+      "stage": 1,
+      "owner": {
+        "agent": "unassigned",
+        "claimedAt": "2025-09-14T18:00:00Z"
+      },
+      "dependencies": [],
+      "stageGates": {
+        "1": {
+          "status": "open"
+        }
+      },
+      "lanes": {},
+      "handoff": {
+        "guardrails": [],
+        "sharedFiles": [],
+        "acknowledgements": []
+      },
+      "notes": [
+        {
+          "id": "stage1-import-pattern-8",
+          "timestamp": "2025-09-14T18:00:00Z",
+          "author": "safe-consolidation-candidates",
+          "scope": [
+            "stage-1"
+          ],
+          "body": "Category: Display & UI Utilities (HIGH Priority)\nPattern doc: Templum/dev/patterns/utilities/display/theme-utils.md\nUtility focus: (Templum/src/utils/theme-utils.ts)\nProblem: Theme management scattered across rendering components\nAPI intent: theme.load('dark').apply().colors - Theme switching with fallbacks\nImpact: ~8 files, ~150 lines reduction, centralized theme management\nStarter files:\n  • Theme loading and switching patterns\n  • Color palette management beyond chalk\n  • Interface-specific theme adaptations"
+        }
+      ],
+      "evidence": [],
+      "activity": [],
+      "updatedAt": "2025-09-14T18:00:00Z"
+    },
+    {
+      "patternId": 9,
+      "name": "Validator Consolidation",
+      "description": "Validation logic scattered, repeated patterns",
+      "stage": 1,
+      "owner": {
+        "agent": "unassigned",
+        "claimedAt": "2025-09-14T18:00:00Z"
+      },
+      "dependencies": [],
+      "stageGates": {
+        "1": {
+          "status": "open"
+        }
+      },
+      "lanes": {},
+      "handoff": {
+        "guardrails": [],
+        "sharedFiles": [],
+        "acknowledgements": []
+      },
+      "notes": [
+        {
+          "id": "stage1-import-pattern-9",
+          "timestamp": "2025-09-14T18:00:00Z",
+          "author": "safe-consolidation-candidates",
+          "scope": [
+            "stage-1"
+          ],
+          "body": "Category: Data Management Utilities (HIGH Priority)\nPattern doc: Templum/dev/patterns/utilities/data/validator.md\nUtility focus: (Templum/src/utils/validator.ts) — removed placeholder implementation; rebuild once migration plan is finalised\nProblem: Validation logic scattered, repeated patterns\nAPI intent: validate.port(3000).url('http://...').schema(data, schema) - Chainable validation\nImpact: ~12 files, ~200 lines reduction, consistent validation\nStarter files:\n  • src/backend/connection-factory.ts - validateConfig method\n  • src/backend/service-discovery.ts - health validation, process validation\n  • src/backend/backend-service-router.ts - BackendConfig validation\n  • Schema validation patterns across components"
+        }
+      ],
+      "evidence": [],
+      "activity": [],
+      "updatedAt": "2025-09-14T18:00:00Z"
+    },
+    {
+      "patternId": 10,
+      "name": "Type Guards Consolidation",
+      "description": "Repeated type checking boilerplate across components",
+      "stage": 1,
+      "owner": {
+        "agent": "unassigned",
+        "claimedAt": "2025-09-14T18:00:00Z"
+      },
+      "dependencies": [],
+      "stageGates": {
+        "1": {
+          "status": "open"
+        }
+      },
+      "lanes": {},
+      "handoff": {
+        "guardrails": [],
+        "sharedFiles": [],
+        "acknowledgements": []
+      },
+      "notes": [
+        {
+          "id": "stage1-import-pattern-10",
+          "timestamp": "2025-09-14T18:00:00Z",
+          "author": "safe-consolidation-candidates",
+          "scope": [
+            "stage-1"
+          ],
+          "body": "Category: Data Management Utilities (HIGH Priority)\nPattern doc: Templum/dev/patterns/utilities/data/type-guards.md\nUtility focus: (Templum/src/utils/type-guards.ts) — removed placeholder implementation; rebuild once pattern doc is updated\nProblem: Repeated type checking boilerplate across components\nAPI intent: is.string(val) && has.property(obj, 'key') - Semantic type guards\nImpact: ~20 files, ~150 lines reduction, consistent type checking\nStarter files:\n  • Type checking patterns across all components\n  • Interface validation, property existence checks\n  • Runtime type safety patterns"
+        }
+      ],
+      "evidence": [],
+      "activity": [],
+      "updatedAt": "2025-09-14T18:00:00Z"
+    },
+    {
+      "patternId": 11,
+      "name": "Serialization Utils Consolidation",
+      "description": "JSON/serialization patterns repeated across components",
+      "stage": 1,
+      "owner": {
+        "agent": "unassigned",
+        "claimedAt": "2025-09-14T18:00:00Z"
+      },
+      "dependencies": [],
+      "stageGates": {
+        "1": {
+          "status": "open"
+        }
+      },
+      "lanes": {},
+      "handoff": {
+        "guardrails": [],
+        "sharedFiles": [],
+        "acknowledgements": []
+      },
+      "notes": [
+        {
+          "id": "stage1-import-pattern-11",
+          "timestamp": "2025-09-14T18:00:00Z",
+          "author": "safe-consolidation-candidates",
+          "scope": [
+            "stage-1"
+          ],
+          "body": "Category: Data Management Utilities (HIGH Priority)\nPattern doc: Templum/dev/patterns/utilities/data/serialization-utils.md\nUtility focus: (Templum/src/utils/serialization-utils.ts) — fluent serialization/parsing API implemented with logger/error-handler integration (baseline 2025-10-01; reconfirmed during 2025-10-06 Stage 7 validation)\nProblem: JSON/serialization patterns repeated across components\nAPI intent: serialize.json(obj).withDefaults() - Safe serialization with validation\nImpact: ~15 files, ~100 lines reduction, consistent data handling\nStarter files:\n  • JSON processing for skin definitions\n  • Configuration file serialization\n  • Backend communication data handling\n  • Stage 1 plan drafted — see Templum/dev/architecture/utility-consolidation-plans/pattern-11.md; consumer inventory prioritises service-discovery, backend-service-router, connection-factory, templum-core, cli-entry, observability system, and universal skin engine."
+        }
+      ],
+      "evidence": [],
+      "activity": [],
+      "updatedAt": "2025-09-14T18:00:00Z"
+    },
+    {
+      "patternId": 12,
+      "name": "String Utils Consolidation",
+      "description": "String manipulation repeated in multiple places",
+      "stage": 1,
+      "owner": {
+        "agent": "unassigned",
+        "claimedAt": "2025-09-14T18:00:00Z"
+      },
+      "dependencies": [],
+      "stageGates": {
+        "1": {
+          "status": "open"
+        }
+      },
+      "lanes": {},
+      "handoff": {
+        "guardrails": [],
+        "sharedFiles": [],
+        "acknowledgements": []
+      },
+      "notes": [
+        {
+          "id": "stage1-import-pattern-12",
+          "timestamp": "2025-09-14T18:00:00Z",
+          "author": "safe-consolidation-candidates",
+          "scope": [
+            "stage-1"
+          ],
+          "body": "Category: Data Management Utilities (HIGH Priority)\nPattern doc: Templum/dev/patterns/utilities/data/chainable-string-utils.md\nUtility focus: (Templum/src/utils/chainable-string-utils.ts) — fluent API implemented with logger/error-handler wiring and comprehensive Jest coverage.\nProblem: String manipulation repeated in multiple places\nAPI intent: str.truncate(50).pad().wrap(80) - Chainable text processing\nImpact: ~10 files, ~80 lines reduction, consistent text handling\nStarter files:\n  • Text truncation, padding, wrapping patterns\n  • Case conversion, string escaping\n  • Text processing across UI components"
+        }
+      ],
+      "evidence": [],
+      "activity": [],
+      "updatedAt": "2025-09-14T18:00:00Z"
+    },
+    {
+      "patternId": 13,
+      "name": "Path Utils Consolidation",
+      "description": "File system operations repeated with manual error handling",
+      "stage": 1,
+      "owner": {
+        "agent": "unassigned",
+        "claimedAt": "2025-09-14T18:00:00Z"
+      },
+      "dependencies": [],
+      "stageGates": {
+        "1": {
+          "status": "open"
+        }
+      },
+      "lanes": {},
+      "handoff": {
+        "guardrails": [],
+        "sharedFiles": [],
+        "acknowledgements": []
+      },
+      "notes": [
+        {
+          "id": "stage1-import-pattern-13",
+          "timestamp": "2025-09-14T18:00:00Z",
+          "author": "safe-consolidation-candidates",
+          "scope": [
+            "stage-1"
+          ],
+          "body": "Category: System Utilities (MEDIUM Priority)\nPattern doc: Templum/dev/patterns/utilities/system/path-utils.md\nUtility focus: (Templum/src/utils/path-utils.ts) — implemented sandboxed async helpers with confidence scoring; tests in src/tests/utils/path-utils.test.ts\nProblem: File system operations repeated with manual error handling\nAPI intent: PathUtils.from(...).join(...).readJSON() - Sandboxed async path operations with confidence scoring\nImpact: ~8 files, ~120 lines reduction, consistent file handling\nStarter files:\n  • src/backend/service-discovery.ts - Service file management\n  • src/backend/connection-factory.ts - Workspace detection\n  • Configuration file reading patterns across components"
+        }
+      ],
+      "evidence": [],
+      "activity": [],
+      "updatedAt": "2025-09-14T18:00:00Z"
+    },
+    {
+      "patternId": 14,
+      "name": "Config Utils Consolidation",
+      "description": "Configuration handling patterns scattered",
+      "stage": 1,
+      "owner": {
+        "agent": "unassigned",
+        "claimedAt": "2025-09-14T18:00:00Z"
+      },
+      "dependencies": [],
+      "stageGates": {
+        "1": {
+          "status": "open"
+        }
+      },
+      "lanes": {},
+      "handoff": {
+        "guardrails": [],
+        "sharedFiles": [],
+        "acknowledgements": []
+      },
+      "notes": [
+        {
+          "id": "stage1-import-pattern-14",
+          "timestamp": "2025-09-14T18:00:00Z",
+          "author": "safe-consolidation-candidates",
+          "scope": [
+            "stage-1"
+          ],
+          "body": "Category: System Utilities (MEDIUM Priority)\nPattern doc: Templum/dev/patterns/utilities/system/configuration-utils.md\nUtility focus: (Templum/src/utils/configuration-utils.ts)\nProblem: Configuration handling patterns scattered\nAPI intent: config.load().merge().env('NODE_ENV') - Unified config management\nImpact: ~10 files, ~150 lines reduction, consistent configuration\nStarter files:\n  • Configuration loading, validation, merging\n  • Environment variable handling\n  • Default configuration management"
+        }
+      ],
+      "evidence": [],
+      "activity": [],
+      "updatedAt": "2025-09-14T18:00:00Z"
+    },
+    {
+      "patternId": 15,
+      "name": "Cache Utils Consolidation",
+      "description": "Caching patterns not consistently implemented",
+      "stage": 1,
+      "owner": {
+        "agent": "unassigned",
+        "claimedAt": "2025-09-14T18:00:00Z"
+      },
+      "dependencies": [],
+      "stageGates": {
+        "1": {
+          "status": "open"
+        }
+      },
+      "lanes": {},
+      "handoff": {
+        "guardrails": [],
+        "sharedFiles": [],
+        "acknowledgements": []
+      },
+      "notes": [
+        {
+          "id": "stage1-import-pattern-15",
+          "timestamp": "2025-09-14T18:00:00Z",
+          "author": "safe-consolidation-candidates",
+          "scope": [
+            "stage-1"
+          ],
+          "body": "Category: System Utilities (MEDIUM Priority)\nPattern doc: Templum/dev/patterns/utilities/system/cache-utils.md\nUtility focus: (Templum/src/utils/cahce-utils.ts)\nProblem: Caching patterns not consistently implemented\nAPI intent: cache.get('key') ?? cache.set('key', value, ttl) - LRU with TTL\nImpact: ~6 files, ~100 lines reduction, consistent caching\nStarter files:\n  • Multi-level caching patterns mentioned in architecture\n  • Cache key generation, TTL management\n  • Cache invalidation patterns"
+        }
+      ],
+      "evidence": [],
+      "activity": [],
+      "updatedAt": "2025-09-14T18:00:00Z"
+    },
+    {
+      "patternId": 16,
+      "name": "Performance Utils Consolidation",
+      "description": "Performance monitoring not centralized",
+      "stage": 1,
+      "owner": {
+        "agent": "unassigned",
+        "claimedAt": "2025-09-14T18:00:00Z"
+      },
+      "dependencies": [],
+      "stageGates": {
+        "1": {
+          "status": "open"
+        }
+      },
+      "lanes": {},
+      "handoff": {
+        "guardrails": [],
+        "sharedFiles": [],
+        "acknowledgements": []
+      },
+      "notes": [
+        {
+          "id": "stage1-import-pattern-16",
+          "timestamp": "2025-09-14T18:00:00Z",
+          "author": "safe-consolidation-candidates",
+          "scope": [
+            "stage-1"
+          ],
+          "body": "Category: System Utilities (MEDIUM Priority)\nPattern doc: Templum/dev/patterns/utilities/system/performance-utils.md\nUtility focus: (Templum/src/utils/performance-utils.ts)\nProblem: Performance monitoring not centralized\nAPI intent: perf.time('operation').mark().measure() - Simple performance tracking\nImpact: ~8 files, ~80 lines reduction, consistent metrics\nStarter files:\n  • Performance tracking scattered across components\n  • Metrics collection patterns\n  • Timing and profiling utilities"
+        }
+      ],
+      "evidence": [],
+      "activity": [],
+      "updatedAt": "2025-09-14T18:00:00Z"
+    },
+    {
+      "patternId": 17,
+      "name": "Registry Utils Consolidation",
+      "description": "Registry patterns repeated with similar lifecycle management",
+      "stage": 1,
+      "owner": {
+        "agent": "unassigned",
+        "claimedAt": "2025-09-14T18:00:00Z"
+      },
+      "dependencies": [],
+      "stageGates": {
+        "1": {
+          "status": "open"
+        }
+      },
+      "lanes": {},
+      "handoff": {
+        "guardrails": [],
+        "sharedFiles": [],
+        "acknowledgements": []
+      },
+      "notes": [
+        {
+          "id": "stage1-import-pattern-17",
+          "timestamp": "2025-09-14T18:00:00Z",
+          "author": "safe-consolidation-candidates",
+          "scope": [
+            "stage-1"
+          ],
+          "body": "Category: Pattern Base Utilities (MEDIUM Priority)\nPattern doc: Templum/dev/patterns/utilities/registry-utils.md\nUtility focus: (Templum/src/utils/registry-utils.ts)\nProblem: Registry patterns repeated with similar lifecycle management\nAPI intent: registry.create<T>().register(key, item).lifecycle() - Base registry class\nImpact: ~5 files, ~200 lines reduction, consistent registry patterns\nStarter files:\n  • src/commands/universal-command-registry.ts - Command registration\n  • src/menus/universal-menu-registry.ts - Menu registration\n  • src/registry/pcl-command-registry.ts - PCL command patterns\n  • src/registry/pcl-menu-registry.ts - PCL menu patterns\n  • src/interfaces/interface-adapter-registry.ts - Adapter registration"
+        }
+      ],
+      "evidence": [],
+      "activity": [],
+      "updatedAt": "2025-09-14T18:00:00Z"
+    },
+    {
+      "patternId": 18,
+      "name": "Factory Utils Consolidation",
+      "description": "Factory patterns repeated without shared base",
+      "stage": 1,
+      "owner": {
+        "agent": "unassigned",
+        "claimedAt": "2025-09-14T18:00:00Z"
+      },
+      "dependencies": [],
+      "stageGates": {
+        "1": {
+          "status": "open"
+        }
+      },
+      "lanes": {},
+      "handoff": {
+        "guardrails": [],
+        "sharedFiles": [],
+        "acknowledgements": []
+      },
+      "notes": [
+        {
+          "id": "stage1-import-pattern-18",
+          "timestamp": "2025-09-14T18:00:00Z",
+          "author": "safe-consolidation-candidates",
+          "scope": [
+            "stage-1"
+          ],
+          "body": "Category: Pattern Base Utilities (MEDIUM Priority)\nPattern doc: Templum/dev/patterns/utilities/core/factory-utils.md\nUtility focus: (Templum/src/utils/factory-utils.ts)\nProblem: Factory patterns repeated without shared base\nAPI intent: factory.create<T>(type).withConfig().build() - Factory pattern base\nImpact: ~4 files, ~100 lines reduction, consistent factory patterns\nStarter files:\n  • src/backend/connection-factory.ts - Connection creation patterns\n  • Adapter factory patterns across interface components\n  • Component factory patterns in core"
+        }
+      ],
+      "evidence": [],
+      "activity": [],
+      "updatedAt": "2025-09-14T18:00:00Z"
+    },
+    {
+      "patternId": 19,
+      "name": "Resilience Utils Consolidation",
+      "description": "Resilience patterns scattered across risk management",
+      "stage": 1,
+      "owner": {
+        "agent": "unassigned",
+        "claimedAt": "2025-09-14T18:00:00Z"
+      },
+      "dependencies": [],
+      "stageGates": {
+        "1": {
+          "status": "open"
+        }
+      },
+      "lanes": {},
+      "handoff": {
+        "guardrails": [],
+        "sharedFiles": [],
+        "acknowledgements": []
+      },
+      "notes": [
+        {
+          "id": "stage1-import-pattern-19",
+          "timestamp": "2025-09-14T18:00:00Z",
+          "author": "safe-consolidation-candidates",
+          "scope": [
+            "stage-1"
+          ],
+          "body": "Category: Pattern Base Utilities (MEDIUM Priority)\nPattern doc: Templum/dev/patterns/utilities/resilience-utils.md\nUtility focus: (Templum/src/utils/resilience-utils.ts)\nProblem: Resilience patterns scattered across risk management\nAPI intent: resilience.fallback().monitor().rollback() - Unified resilience patterns\nImpact: ~3 files, ~150 lines reduction, consistent resilience handling\nStarter files:\n  • src/risk/fallback-manager.ts - Fallback strategies\n  • src/risk/performance-monitor.ts - Performance monitoring\n  • src/risk/rollback-criteria.ts - Rollback decision making"
+        }
+      ],
+      "evidence": [],
+      "activity": [],
+      "updatedAt": "2025-09-14T18:00:00Z"
+    },
+    {
+      "patternId": 20,
+      "name": "Navigation Utils Consolidation",
+      "description": "Navigation patterns duplicated across components",
+      "stage": 1,
+      "owner": {
+        "agent": "unassigned",
+        "claimedAt": "2025-09-14T18:00:00Z"
+      },
+      "dependencies": [],
+      "stageGates": {
+        "1": {
+          "status": "open"
+        }
+      },
+      "lanes": {},
+      "handoff": {
+        "guardrails": [],
+        "sharedFiles": [],
+        "acknowledgements": []
+      },
+      "notes": [
+        {
+          "id": "stage1-import-pattern-20",
+          "timestamp": "2025-09-14T18:00:00Z",
+          "author": "safe-consolidation-candidates",
+          "scope": [
+            "stage-1"
+          ],
+          "body": "Category: Business Logic Utilities (MEDIUM Priority)\nPattern doc: Templum/dev/patterns/utilities/core/navigation-utils-utility.md\nUtility focus: (Templum/src/utils/navigation-utils.ts) — removed placeholder implementation; rebuild after finalising pattern doc\nProblem: Navigation patterns duplicated across components\nAPI intent: nav.breadcrumb().back().home().exit() - Unified navigation API\nImpact: ~4 files, ~180 lines reduction, consistent navigation\nStarter files:\n  • src/navigation/breadcrumb-manager.ts - Breadcrumb management\n  • src/navigation/exit-handler.ts - Exit handling\n  • src/navigation/content-driven-navigation.ts - Content navigation\n  • src/navigation/skin-navigation-parser.ts - Skin-based navigation"
+        }
+      ],
+      "evidence": [],
+      "activity": [],
+      "updatedAt": "2025-09-14T18:00:00Z"
+    },
+    {
+      "patternId": 21,
+      "name": "Protocol Utils Consolidation",
+      "description": "Protocol patterns repeated across IPC/HTTP/WebSocket implementations",
+      "stage": 1,
+      "owner": {
+        "agent": "unassigned",
+        "claimedAt": "2025-09-14T18:00:00Z"
+      },
+      "dependencies": [],
+      "stageGates": {
+        "1": {
+          "status": "open"
+        }
+      },
+      "lanes": {},
+      "handoff": {
+        "guardrails": [],
+        "sharedFiles": [],
+        "acknowledgements": []
+      },
+      "notes": [
+        {
+          "id": "stage1-import-pattern-21",
+          "timestamp": "2025-09-14T18:00:00Z",
+          "author": "safe-consolidation-candidates",
+          "scope": [
+            "stage-1"
+          ],
+          "body": "Category: Business Logic Utilities (MEDIUM Priority)\nPattern doc: Templum/dev/patterns/utilities/core/protocol-utils.md\nUtility focus: (Templum/src/utils/protocol-utils.ts)\nProblem: Protocol patterns repeated across IPC/HTTP/WebSocket implementations\nAPI intent: protocol.connect().health().retry() - Shared protocol utilities\nImpact: ~6 files, ~250 lines reduction, consistent protocol handling\nStarter files:\n  • IPC protocol patterns - connection, retry, health\n  • HTTP protocol patterns - similar shared concerns\n  • WebSocket protocol patterns - connection management\n  • Shared protocol abstractions"
+        }
+      ],
+      "evidence": [],
+      "activity": [],
+      "updatedAt": "2025-09-14T18:00:00Z"
+    },
+    {
+      "patternId": 22,
+      "name": "Service Utils Consolidation",
+      "description": "Service management patterns scattered",
+      "stage": 1,
+      "owner": {
+        "agent": "unassigned",
+        "claimedAt": "2025-09-14T18:00:00Z"
+      },
+      "dependencies": [],
+      "stageGates": {
+        "1": {
+          "status": "open"
+        }
+      },
+      "lanes": {},
+      "handoff": {
+        "guardrails": [],
+        "sharedFiles": [],
+        "acknowledgements": []
+      },
+      "notes": [
+        {
+          "id": "stage1-import-pattern-22",
+          "timestamp": "2025-09-14T18:00:00Z",
+          "author": "safe-consolidation-candidates",
+          "scope": [
+            "stage-1"
+          ],
+          "body": "Category: Business Logic Utilities (MEDIUM Priority)\nPattern doc: Templum/dev/patterns/utilities/core/service-utils.md\nUtility focus: (Templum/src/utils/service-utils.ts) — removed placeholder implementation; recreate in tandem with refreshed pattern doc\nProblem: Service management patterns scattered\nAPI intent: service.order().health().resolve() - Service management utilities\nImpact: ~3 files, ~120 lines reduction, consistent service handling\nStarter files:\n  • src/interfaces/service-ordering-manager.ts - Service ordering\n  • Service health monitoring patterns\n  • Backend dependency resolution patterns"
+        }
+      ],
+      "evidence": [],
+      "activity": [],
+      "updatedAt": "2025-09-14T18:00:00Z"
+    },
+    {
+      "patternId": 23,
+      "name": "Test Utils Consolidation",
+      "description": "Massive test files with repeated mock/assertion patterns",
+      "stage": 1,
+      "owner": {
+        "agent": "unassigned",
+        "claimedAt": "2025-09-14T18:00:00Z"
+      },
+      "dependencies": [],
+      "stageGates": {
+        "1": {
+          "status": "open"
+        }
+      },
+      "lanes": {},
+      "handoff": {
+        "guardrails": [],
+        "sharedFiles": [],
+        "acknowledgements": []
+      },
+      "notes": [
+        {
+          "id": "stage1-import-pattern-23",
+          "timestamp": "2025-09-14T18:00:00Z",
+          "author": "safe-consolidation-candidates",
+          "scope": [
+            "stage-1"
+          ],
+          "body": "Category: Development Tools (LOW Priority)\nPattern doc: Templum/dev/patterns/utilities/dev/test-utils.md\nUtility focus: (Templum/src/utils/test-utils.ts)\nProblem: Massive test files with repeated mock/assertion patterns\nAPI intent: test.mock().assert().data() - Comprehensive testing utilities\nImpact: ~23 files, ~2,000+ lines reduction, consistent testing infrastructure\nStarter files:\n  • src/tests/integration-validation-framework.ts (4,234 lines - MASSIVE!)\n  • src/validation/hybrid-validation-system-v3c.ts (2,049 lines - HUGE!)\n  • Mock generation patterns across 21+ other test files\n  • Assertion helpers, test data factories"
+        }
+      ],
+      "evidence": [],
+      "activity": [],
+      "updatedAt": "2025-09-14T18:00:00Z"
+    },
+    {
+      "patternId": 24,
+      "name": "Debug Utils Consolidation",
+      "description": "Debug utilities not centralized or consistent",
+      "stage": 1,
+      "owner": {
+        "agent": "unassigned",
+        "claimedAt": "2025-09-14T18:00:00Z"
+      },
+      "dependencies": [],
+      "stageGates": {
+        "1": {
+          "status": "open"
+        }
+      },
+      "lanes": {},
+      "handoff": {
+        "guardrails": [],
+        "sharedFiles": [],
+        "acknowledgements": []
+      },
+      "notes": [
+        {
+          "id": "stage1-import-pattern-24",
+          "timestamp": "2025-09-14T18:00:00Z",
+          "author": "safe-consolidation-candidates",
+          "scope": [
+            "stage-1"
+          ],
+          "body": "Category: Development Tools (LOW Priority)\nPattern doc: Templum/dev/patterns/utilities/dev/debug-utils.md\nUtility focus: (Templum/src/utils/debug-utils.ts)\nProblem: Debug utilities not centralized or consistent\nAPI intent: debug.log().inspect().profile() - Development debugging utilities\nImpact: ~5 files, ~60 lines reduction, consistent debugging\nStarter files:\n  • Debug logging patterns scattered across components\n  • Inspection and profiling utilities\n  • Development-only debugging features"
+        }
+      ],
+      "evidence": [],
+      "activity": [],
+      "updatedAt": "2025-09-14T18:00:00Z"
+    }
+  ]
+}

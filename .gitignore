@@ -173,3 +173,8 @@ Pester.xml
 # WSL/Linux misc
 lost+found/
 .Trash-*/
+
+# Generated consolidation artefacts
+Templum/dev/architecture/utility-consolidation-plans/pattern-*.generated.md
+Templum/dev/architecture/utility-consolidation-activity-log.generated.md
+Templum/dev/architecture/registry-status.generated.md

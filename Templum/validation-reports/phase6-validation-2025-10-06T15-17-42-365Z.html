@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Phase 6 Integration Validation Report</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .header { background: #2c3e50; color: white; padding: 20px; border-radius: 5px; }
+        .summary { background: #ecf0f1; padding: 15px; margin: 20px 0; border-radius: 5px; }
+        .success { color: #27ae60; }
+        .failure { color: #e74c3c; }
+        .warning { color: #f39c12; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { border: 1px solid #bdc3c7; padding: 8px; text-align: left; }
+        th { background: #34495e; color: white; }
+        .score { font-size: 24px; font-weight: bold; }
+        .note { color: #7f8c8d; font-style: italic; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Phase 6 Integration Validation Report</h1>
+        <p>Generated: 10/6/2025, 4:17:42 PM</p>
+        <p>Report ID: phase6_1759763862349_1</p>
+    </div>
+
+    <div class="summary">
+        <h2>Overall Results</h2>
+        <div class="score">
+            Phase 6 Status: SKIPPED
+        </div>
+        <p class="note">Reason: Mocks in use; run with --use-real-backends for full validation.</p>
+        <p class="note">Phase 6 Note: Phase 6 readiness score disabled—use report.status for outcome.</p>
+        <p>Multi-System Workflows: 4/4 successful</p>
+        <p>Cross-Interface Consistency: 66.0%</p>
+        <p>Average Workflow Time: 1.0ms</p>
+    </div>
+
+    <h2>Service Health</h2>
+    <table>
+        <tr><th>Service</th><th>Status</th><th>Response Time</th><th>Memory Usage</th><th>Error Rate</th></tr>
+        
+        <tr>
+            <td>HARUSPEX</td>
+            <td class="success">✅ Operational</td>
+            <td>0.0ms</td>
+            <td>8.4MB</td>
+            <td>0.0%</td>
+        </tr>
+        
+        <tr>
+            <td>PCL</td>
+            <td class="success">✅ Operational</td>
+            <td>0.0ms</td>
+            <td>8.4MB</td>
+            <td>0.0%</td>
+        </tr>
+        
+        <tr>
+            <td>TEMPLUM</td>
+            <td class="success">✅ Operational</td>
+            <td>0.0ms</td>
+            <td>8.4MB</td>
+            <td>0.0%</td>
+        </tr>
+        
+    </table>
+
+    
+    <h2>🚨 Critical Issues</h2>
+    <ul class="failure">
+        <li>Performance regressions detected - investigate and resolve before proceeding</li>
+    </ul>
+
+    
+    <h2>⚠️ High Priority Issues</h2>
+    <ul class="warning">
+        <li>Cross-interface consistency below 90% - improve interface standardization</li>
+    </ul>
+
+    <h2>Performance Baselines</h2>
+    <table>
+        <tr><th>Metric</th><th>Baseline</th><th>Actual</th><th>Deviation</th><th>Status</th></tr>
+        
+        <tr>
+            <td>multi_system_workflow_time</td>
+            <td>0.0undefined</td>
+            <td>0.0undefined</td>
+            <td>0.0%</td>
+            <td class="success">✅ OK</td>
+        </tr>
+        
+        <tr>
+            <td>cross_interface_consistency</td>
+            <td>0.0undefined</td>
+            <td>0.0undefined</td>
+            <td>0.0%</td>
+            <td class="success">✅ OK</td>
+        </tr>
+        
+        <tr>
+            <td>system_integration_latency</td>
+            <td>0.0undefined</td>
+            <td>0.0undefined</td>
+            <td>0.0%</td>
+            <td class="success">✅ OK</td>
+        </tr>
+        
+        <tr>
+            <td>memory_usage_under_load</td>
+            <td>0.0undefined</td>
+            <td>0.0undefined</td>
+            <td>0.0%</td>
+            <td class="success">✅ OK</td>
+        </tr>
+        
+        <tr>
+            <td>concurrent_request_handling</td>
+            <td>0.0undefined</td>
+            <td>0.0undefined</td>
+            <td>0.0%</td>
+            <td class="success">✅ OK</td>
+        </tr>
+        
+        <tr>
+            <td>service_startup_time</td>
+            <td>0.0undefined</td>
+            <td>0.0undefined</td>
+            <td>0.0%</td>
+            <td class="success">✅ OK</td>
+        </tr>
+        
+        <tr>
+            <td>interface_switching_performance</td>
+            <td>0.0undefined</td>
+            <td>0.0undefined</td>
+            <td>0.0%</td>
+            <td class="success">✅ OK</td>
+        </tr>
+        
+        <tr>
+            <td>real_time_state_sync</td>
+            <td>0.0undefined</td>
+            <td>0.0undefined</td>
+            <td>0.0%</td>
+            <td class="success">✅ OK</td>
+        </tr>
+        
+    </table>
+</body>
+</html>

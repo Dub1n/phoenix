@@ -12,6 +12,7 @@ Tags: `#infra`
 - [x] Replace synthetic workflow/performance values in `Templum/src/tests/integration-validation-framework.ts` with instrumentation that records real timings, memory/CPU, and error rates from both mock and real backends.
 - [ ] Seed baseline data from an approved Phase 5/Stage 6 run (store in a committed JSON artefact) and teach the performance monitor to compare against those captured baselines instead of hard-coded thresholds/random delays.
 - [ ] Extend `Templum/src/scripts/run-phase6-integration-validation.ts` and `simple-phase6-validation.ts` to persist raw metrics alongside summary reports so future baselines can be regenerated without code edits.
+- [ ] Capture a post-MVP real-backend Phase 6 run covering the zero-knowledge registry flow (migrated from `dev/tasks/zero-knowledge-registry.md`) once partner services are stable; archive manifests/logs as part of the baseline evidence set.
 - [ ] Update reporting templates (`validation-reports/phase6-*.md/html/json`) to call out which inputs are real versus estimated until all metrics are live, and ensure the readiness score only reports on instrumented signals.
 - [ ] Update spec/progress/task file.
 - [ ] Commit with message `templum: harden phase6 validation signal` after tests.
@@ -26,6 +27,7 @@ Tags: `#infra`
 
 - Mock runs now record real workflow timings, memory deltas, and interface consistency via the consolidated harness; live backend baselines are still pending before the score becomes a release gate.
 - Capture at least one golden run (mocks + real backends) and store raw metrics in `validation-reports/phase6-baselines/` so the regression monitor can diff against lived data.
+- Zero-knowledge registry live verification now depends on this task; coordinate with backend owners before scheduling the post-MVP run.
 - Consider wiring results into existing observability tooling (e.g., structured logs or metrics exporters) so Phase 6 data is queryable outside the CLI.
 - When instrumentation lands, update CI to fail builds when the performance delta exceeds agreed thresholds—coordinate with pipeline owners before flipping the enforcement switch.
 - Coordinate with the Phase 7 release runner/report templates so the new raw-metrics artefacts surface in the Stage 7 gate; update the Phase 7 task file once the Phase 6 scripts persist metrics.

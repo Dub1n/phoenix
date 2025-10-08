@@ -44,8 +44,8 @@ last_updated: 2025-10-06
 
 - [ ] [Timer & Event cleanup for test harness](../../dev/architecture/safe-consolidation-candidates.md)
   Progress 0% — Migrate suites that keep Jest alive to `AsyncUtils.createInterval`/`cleanup` and the refactored `event-utils` wrapper per `Templum/dev/patterns/utilities/core/async-utils.md`, `Templum/src/utils/async-utils.ts`, and plan the broader adoption via `Templum/dev/architecture/utility-consolidation-playbook.md`.
-- [ ] [Skin payload consumption powering full UI without hardcoding](../../dev/tasks/skin-payload-consumption.md)
-  Progress 25% — Rendering scaffolding exists, but adapters still use fallback dumps instead of payload-driven menus.
+- [x] [Skin payload consumption powering full UI without hardcoding](../../dev/tasks/skin-payload-consumption.md)
+  Progress 100% — Orchestrator now caches backend skins and immediately replays them to active adapters, CLI/VSCode load flows render directly from `UniversalSkinDefinition` payloads, and integration coverage proves skins surface without fallback scaffolds (`npm test -- --runTestsByPath tests/rendering/skin-payload-consumption.integration.test.ts`).
 - [ ] [Procedural windowed TUI layout from skin descriptors](../../dev/tasks/procedural-windowed-tui.md)
   Progress 20% — `ContentLayoutSystem` is unused by CLI flows; no procedural layout specs run.
 - [~] [CLI generator uses skin metadata](../../dev/tasks/cli-skin-generator.md)

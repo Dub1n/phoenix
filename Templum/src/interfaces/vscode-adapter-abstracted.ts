@@ -124,35 +124,36 @@ export class VSCodeInterfaceAdapter implements IInterfaceAdapter {
       const skinEngine = this.orchestrator.getUniversalSkinEngine();
       
       // Render skin for VSCode interface
-      if (skinEngine.renderForInterface) {
-        const renderResult = await skinEngine.renderForInterface(
-          skinDefinition, 
-          'vscode', 
-          { webview: true, context: this.context }
-        );
-
-        // Generate HTML using skin engine abstraction
-        let renderedHTML = '';
-        if (skinEngine.generateSkinHTML) {
-          renderedHTML = skinEngine.generateSkinHTML(renderResult, skinDefinition);
-        } else {
-          // Fallback rendering if skin engine doesn't provide HTML generation
-          renderedHTML = this.generateFallbackHTML(renderResult, skinDefinition);
-        }
-
-        // Update webview content
-        await this.view.webview.postMessage({
-          type: 'render_skin',
-          payload: { 
-            renderResult, 
-            html: renderedHTML,
-            skinId: skinDefinition.metadata.id,
-            timestamp: Date.now()
-          }
-        });
-
-        console.log(`VSCodeInterfaceAdapter: Applied skin ${skinDefinition.metadata.name} via orchestrator abstraction`);
+      if (!skinEngine?.renderForInterface) {
+        this.logger.warn('VSCodeInterfaceAdapter: Skin engine does not implement renderForInterface');
+        return;
       }
+
+      const renderResult = await skinEngine.renderForInterface(
+        skinDefinition,
+        'vscode',
+        { webview: true, context: this.context }
+      );
+
+      const renderedHTML = renderResult.renderedContent?.html ??
+        (skinEngine.generateSkinHTML ? skinEngine.generateSkinHTML(renderResult, skinDefinition) : '');
+
+      if (!renderedHTML) {
+        this.logger.warn('VSCodeInterfaceAdapter: Render result did not include HTML content');
+      }
+
+      // Update webview content
+      await this.view.webview.postMessage({
+        type: 'render_skin',
+        payload: {
+          renderResult,
+          html: renderedHTML,
+          skinId: skinDefinition.metadata.id,
+          timestamp: Date.now()
+        }
+      });
+
+      console.log(`VSCodeInterfaceAdapter: Applied skin ${skinDefinition.metadata.name} via orchestrator abstraction`);
       
     } catch (error) {
       const errorMessage = isTemplumError(error) ? error.message : (error instanceof Error ? error.message : 'Unknown error');
@@ -218,7 +219,35 @@ export class VSCodeInterfaceAdapter implements IInterfaceAdapter {
       // Get system status with real backend connection information
       const systemStatus = this.orchestrator.getSystemStatus();
       const backendConnections = systemStatus.coreEngine.backendConnections;
-      
+
+      // Consume any orchestrator preloaded skins first to avoid hardcoded fallbacks
+      const preloadedSkins =
+        typeof this.orchestrator.getLoadedSkins === 'function'
+          ? this.orchestrator
+              .getLoadedSkins()
+              .filter((skin) => skin?.metadata?.compatibleInterfaces?.includes('vscode'))
+          : [];
+
+      let skinLoaded = false;
+
+      for (const skin of preloadedSkins) {
+        try {
+          this.logger.info('VSCodeInterfaceAdapter: Rendering preloaded skin', {
+            skinId: skin.metadata?.id ?? skin.id,
+            skinName: skin.metadata?.name ?? skin.name,
+          });
+          await this.applySkin(skin);
+          skinLoaded = true;
+          break;
+        } catch (preloadedError) {
+          const message = preloadedError instanceof Error ? preloadedError.message : String(preloadedError);
+          this.logger.warn('VSCodeInterfaceAdapter: Preloaded skin render failed', undefined, {
+            skinId: skin.metadata?.id ?? skin.id,
+            error: message,
+          });
+        }
+      }
+
       // Prioritize backends by health and capabilities for real integration
       const healthyBackends = Object.entries(backendConnections.backends)
         .filter(([_, status]) => status.connected && status.health === 'healthy')
@@ -234,8 +263,10 @@ export class VSCodeInterfaceAdapter implements IInterfaceAdapter {
       console.log(`VSCodeInterfaceAdapter: Found ${healthyBackends.length} healthy backend(s) for real integration`);
 
       // Attempt to load real skin from healthy backends with proper error handling
-      let skinLoaded = false;
       for (const [backendId, status] of healthyBackends) {
+        if (skinLoaded) {
+          break;
+        }
         try {
           console.log(`VSCodeInterfaceAdapter: Attempting to load real skin from ${backendId} backend...`);
           
@@ -385,31 +416,6 @@ export class VSCodeInterfaceAdapter implements IInterfaceAdapter {
         });
       }
     });
-  }
-
-  /**
-   * Generate fallback HTML when skin engine doesn't provide HTML generation
-   * @private
-   */
-  private generateFallbackHTML(renderResult: any, skinDefinition: UniversalSkinDefinition): string {
-    const skinId = skinDefinition.metadata.id;
-    const skinName = skinDefinition.metadata.name;
-    const timestamp = Date.now();
-    
-    return `
-      <div class="templum-skin-container" data-skin-id="${skinId}">
-        <div class="templum-header">
-          <h2>${skinName}</h2>
-          <p>Loaded via VSCode Interface Adapter (Abstraction Layer)</p>
-        </div>
-        <div class="templum-content">
-          ${renderResult ? JSON.stringify(renderResult, null, 2) : 'No render result available'}
-        </div>
-        <div class="templum-footer">
-          <small>Timestamp: ${timestamp}</small>
-        </div>
-      </div>
-    `;
   }
 
   /**

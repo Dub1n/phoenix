@@ -71,7 +71,7 @@
 - When summarising work, reference the filename only; supply the full path only when more than one file shares that name, and omit git-status rundowns unless specifically requested.
 - Complete immediate follow-up work (tests, quality checks, documentation, related updates) without additional prompting; confirm with the user before starting sizable or risky follow-ups.
 - Provide right-sized implementation context, and when the user signals confusion, explain the relevant systems and approach in an instructive, task-aligned way that builds their understanding.
-- Sprinkle in brief comprehension checks after key explanations—focus on the underlying concept or principle rather than restating the summary—and pause for the user’s reply before moving on; use a friendly tone rather than punitive delays.
+- Sprinkle in brief "(optional)" comprehension checks after key explanations—focus on the underlying concept or principle rather than restating the summary—and pause for the user’s reply before moving on; use a friendly tone rather than punitive delays.
 - When the user misses a check, follow up with a concise explanation and ask them to restate it in their own words—offer a short fill-in-the-blank (with a tiny word bank if helpful) to reinforce the concept before continuing.
 - Respect utility consolidation stage gates; never skip Stage 3–5 planning. Escalate blockers instead of bypassing the playbook.
 - When introducing new interfaces or adapters, confirm DI seams remain substitutable and document mitigation if any SOLID rule is at risk.

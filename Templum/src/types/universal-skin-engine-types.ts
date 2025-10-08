@@ -409,6 +409,9 @@ export interface ISkinVersionManager {
   registerSkinVersion(skinId: string, version: SemanticVersion): void;
   unregisterSkinVersion(skinId: string, version: string): void;
 
+  // Contract versioning
+  getValidatorVersion(): string;
+
   // Advanced compatibility validation (TASK-SKIN-002)
   validateAdvancedCompatibility(
     skin: UniversalSkinDefinition, 

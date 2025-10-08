@@ -101,6 +101,16 @@
         "handoff": {
           "$ref": "#/definitions/handoff"
         },
+        "notes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/noteEntry"
+          }
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
         "evidence": {
           "type": "array",
           "items": {
@@ -122,7 +132,15 @@
       "properties": {
         "status": {
           "type": "string",
-          "enum": ["open", "blocked", "ready", "complete"]
+          "enum": [
+            "open",
+            "scheduled",
+            "in_progress",
+            "blocked",
+            "ready",
+            "complete",
+            "deferred"
+          ]
         },
         "completedAt": {
           "type": "string",
@@ -146,7 +164,17 @@
       "properties": {
         "status": {
           "type": "string",
-          "enum": ["pending", "in_progress", "blocked", "complete"]
+          "enum": [
+            "pending",
+            "scheduled",
+            "in_progress",
+            "blocked",
+            "needs_verification",
+            "ready_for_handoff",
+            "complete",
+            "deferred",
+            "cancelled"
+          ]
         },
         "scope": {
           "type": "string",
@@ -303,6 +331,35 @@
         },
         "description": {
           "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "noteEntry": {
+      "type": "object",
+      "required": ["id", "timestamp", "body"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "author": {
+          "type": "string"
+        },
+        "scope": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "body": {
+          "type": "string",
+          "minLength": 1
         }
       },
       "additionalProperties": false

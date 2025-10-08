@@ -1,0 +1,181 @@
+{
+  "reportId": "phase6_1759763862349_1",
+  "generatedAt": 1759763862364,
+  "status": "skipped",
+  "statusReason": "Mocks in use; run with --use-real-backends for full validation.",
+  "phase6ReadinessScore": 0,
+  "phase6ReadinessScoreNote": "Phase 6 readiness score disabled—use report.status for outcome.",
+  "realIntegrationSummary": {
+    "totalWorkflows": 4,
+    "successfulWorkflows": 4,
+    "failedWorkflows": 0,
+    "averageWorkflowTime": 1,
+    "crossInterfaceConsistency": 66
+  },
+  "serviceHealth": {
+    "haruspex": {
+      "operational": true,
+      "responseTime": 0,
+      "memoryUsage": 8.392021179199219,
+      "errorRate": 0,
+      "lastHealthCheck": 1759763862364
+    },
+    "pcl": {
+      "operational": true,
+      "responseTime": 0,
+      "memoryUsage": 8.392021179199219,
+      "errorRate": 0,
+      "lastHealthCheck": 1759763862364
+    },
+    "templum": {
+      "operational": true,
+      "responseTime": 0,
+      "memoryUsage": 8.392021179199219,
+      "errorRate": 0,
+      "lastHealthCheck": 1759763862364
+    }
+  },
+  "performanceRegression": {
+    "baselineComparison": [
+      {
+        "metric": "multi_system_workflow_time",
+        "phase5Baseline": 2000,
+        "currentValue": 1,
+        "target": 1500,
+        "passed": false,
+        "improvement": 99.95,
+        "criticalThreshold": -20
+      },
+      {
+        "metric": "cross_interface_consistency",
+        "phase5Baseline": 5,
+        "currentValue": 5,
+        "target": 3,
+        "passed": false,
+        "improvement": 0,
+        "criticalThreshold": 10
+      },
+      {
+        "metric": "system_integration_latency",
+        "phase5Baseline": 100,
+        "currentValue": 4,
+        "target": 75,
+        "passed": false,
+        "improvement": 96,
+        "criticalThreshold": -25
+      },
+      {
+        "metric": "memory_usage_under_load",
+        "phase5Baseline": 50,
+        "currentValue": 0,
+        "target": 40,
+        "passed": false,
+        "improvement": 100,
+        "criticalThreshold": -30
+      },
+      {
+        "metric": "concurrent_request_handling",
+        "phase5Baseline": 100,
+        "currentValue": 6230.979933752199,
+        "target": 120,
+        "passed": false,
+        "improvement": -6130.979933752199,
+        "criticalThreshold": -15
+      },
+      {
+        "metric": "service_startup_time",
+        "phase5Baseline": 5000,
+        "currentValue": 0,
+        "target": 3000,
+        "passed": false,
+        "improvement": 100,
+        "criticalThreshold": -25
+      },
+      {
+        "metric": "interface_switching_performance",
+        "phase5Baseline": 200,
+        "currentValue": 2,
+        "target": 150,
+        "passed": false,
+        "improvement": 99,
+        "criticalThreshold": -30
+      },
+      {
+        "metric": "real_time_state_sync",
+        "phase5Baseline": 50,
+        "currentValue": 1,
+        "target": 30,
+        "passed": false,
+        "improvement": 98,
+        "criticalThreshold": -40
+      }
+    ],
+    "regressionDetected": true,
+    "criticalRegressions": [
+      "multi_system_workflow_time: 99.95% regression (threshold: -20%)",
+      "system_integration_latency: 96.00% regression (threshold: -25%)",
+      "memory_usage_under_load: 100.00% regression (threshold: -30%)",
+      "concurrent_request_handling: -6130.98% regression (threshold: -15%)",
+      "service_startup_time: 100.00% regression (threshold: -25%)",
+      "interface_switching_performance: 99.00% regression (threshold: -30%)",
+      "real_time_state_sync: 98.00% regression (threshold: -40%)"
+    ],
+    "performanceImprovement": -692.2537417190249
+  },
+  "productionReadiness": {
+    "deploymentValidation": true,
+    "healthMonitoring": true,
+    "failoverTesting": true,
+    "scalabilityTesting": false,
+    "securityValidation": true,
+    "overallReadiness": 80
+  },
+  "integrationMatrix": {
+    "pclToHaruspex": {
+      "functional": true,
+      "performant": false,
+      "reliable": true,
+      "consistent": false,
+      "securityCompliant": true,
+      "overallScore": 0
+    },
+    "haruspexToTemplum": {
+      "functional": true,
+      "performant": false,
+      "reliable": true,
+      "consistent": false,
+      "securityCompliant": true,
+      "overallScore": 0
+    },
+    "templumToPcl": {
+      "functional": true,
+      "performant": false,
+      "reliable": true,
+      "consistent": true,
+      "securityCompliant": true,
+      "overallScore": 0
+    },
+    "endToEndWorkflows": {
+      "functional": true,
+      "performant": false,
+      "reliable": true,
+      "consistent": false,
+      "securityCompliant": true,
+      "overallScore": 0
+    }
+  },
+  "recommendations": {
+    "critical": [
+      "Performance regressions detected - investigate and resolve before proceeding"
+    ],
+    "high": [
+      "Cross-interface consistency below 90% - improve interface standardization"
+    ],
+    "medium": [],
+    "improvements": [
+      "Implement continuous integration testing for Phase 6 components",
+      "Establish automated performance monitoring for production deployment",
+      "Create comprehensive Phase 6 documentation and runbooks"
+    ]
+  }
+}

@@ -10,10 +10,12 @@
  */
 
 import { jest } from '@jest/globals';
+import { EventEmitter } from 'events';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as http from 'http';
 import * as net from 'net';
+import * as chokidar from 'chokidar';
 import * as WebSocket from 'ws';
 
 import {
@@ -30,6 +32,12 @@ import * as backendSerializationLog from '../../backend/backend-serialization-lo
 import { serviceRegistryEntrySchema } from '../../backend/schemas/serialization-registry';
 import { buildServiceRegistryDefaults } from '../../backend/defaults/serialization-defaults';
 import { serializeServiceManifest } from '../../backend/schemas/service-manifest';
+import { performServiceHealthCheck } from '../../backend/service-health-check';
+
+jest.mock('chokidar');
+jest.mock('../../backend/service-health-check', () => ({
+  performServiceHealthCheck: jest.fn(async () => true),
+}));
 
 // Mock file system operations
 jest.mock('fs');
@@ -46,6 +54,8 @@ const mockWebSocket = WebSocket as jest.Mocked<typeof WebSocket>;
 // Mock net for IPC
 jest.mock('net');
 const mockNet = net as jest.Mocked<typeof net>;
+const mockChokidar = chokidar as jest.Mocked<typeof chokidar>;
+const mockPerformServiceHealthCheck = performServiceHealthCheck as jest.MockedFunction<typeof performServiceHealthCheck>;
 
 let emitSerializationWarningsSpy: jest.SpyInstance;
 const registryHealthSpy = jest.spyOn(RegistryBasedDiscoveryStrategy.prototype as any, 'validateServiceHealth');
@@ -57,6 +67,12 @@ describe('ServiceDiscovery', () => {
   beforeEach(() => {
     registryHealthSpy.mockResolvedValue(true);
     jest.clearAllMocks();
+    mockPerformServiceHealthCheck.mockResolvedValue(true);
+    mockChokidar.watch.mockReset();
+    mockChokidar.watch.mockReturnValue({
+      on: jest.fn().mockReturnThis(),
+      close: jest.fn().mockResolvedValue(undefined),
+    } as unknown as chokidar.FSWatcher);
     emitSerializationWarningsSpy = jest.spyOn(backendSerializationLog, 'emitSerializationWarnings');
     tempDir = '/tmp/templum-test';
 
@@ -99,6 +115,136 @@ describe('ServiceDiscovery', () => {
   afterEach(() => {
     emitSerializationWarningsSpy.mockRestore();
     registryHealthSpy.mockReset();
+  });
+
+  describe('File watcher integration', () => {
+    it('updates discovery state as manifests are added, updated, and removed', async () => {
+      await serviceDiscovery.close();
+
+      const directories = new Set<string>();
+      const fileContents = new Map<string, string>();
+      const watcherEvents: Record<string, (filePath: string) => unknown> = {};
+      const mockWatcher = new (class extends EventEmitter {
+        close = jest.fn(async () => undefined);
+        override on(event: string, handler: (filePath: string) => unknown): this {
+          watcherEvents[event] = handler;
+          return super.on(event, handler);
+        }
+      })() as unknown as chokidar.FSWatcher;
+
+      mockChokidar.watch.mockReturnValue(mockWatcher);
+
+      mockFs.existsSync.mockImplementation((target: fs.PathLike) => {
+        const normalized = target.toString();
+        return directories.has(normalized) || fileContents.has(normalized);
+      });
+
+      mockFs.mkdirSync.mockImplementation((target: fs.PathLike) => {
+        directories.add(target.toString());
+        return undefined as unknown as string;
+      });
+
+      mockFs.readFileSync.mockImplementation((target: fs.PathLike) => {
+        const content = fileContents.get(target.toString());
+        if (content === undefined) {
+          throw Object.assign(new Error(`ENOENT: ${String(target)}`), { code: 'ENOENT' });
+        }
+        return content;
+      });
+
+      mockFs.unlinkSync.mockImplementation((target: fs.PathLike) => {
+        fileContents.delete(target.toString());
+      });
+
+      const servicesDir = path.join(tempDir, '.templum', 'services');
+      const registryPath = path.join(tempDir, 'service-registry.json');
+      const manifestPath = path.join(servicesDir, 'watcher-service.json');
+
+      const watcherDiscovery = new ServiceDiscovery({
+        registryPath,
+        enableFileWatching: true,
+        enableHealthChecks: true,
+        watchDirectories: [servicesDir],
+        timeout: 2000,
+      });
+
+      const observedEvents: Array<{ type: string; serviceId: string }> = [];
+      watcherDiscovery.on('serviceDiscovered', ({ service, eventType }) => {
+        observedEvents.push({ type: eventType, serviceId: service.id });
+      });
+      watcherDiscovery.on('serviceRemoved', ({ serviceId }) => {
+        observedEvents.push({ type: 'removed', serviceId });
+      });
+
+      expect(mockChokidar.watch).toHaveBeenCalledWith(
+        expect.arrayContaining([expect.stringContaining('.templum/services')]),
+        expect.objectContaining({ ignoreInitial: true })
+      );
+
+      const baseManifest = {
+        id: 'watcher-service',
+        name: 'Watcher Service',
+        endpoint: 'http://localhost:4111',
+        protocol: 'http' as const,
+        version: '1.0.0',
+        capabilities: ['watcher.execute'],
+        registrationTime: Date.now(),
+        lastSeen: Date.now(),
+        healthCheck: {
+          type: 'http' as const,
+          endpoint: 'http://localhost:4111/health',
+        },
+      };
+
+      const writeManifest = (manifest: Record<string, unknown>) => {
+        fileContents.set(manifestPath, JSON.stringify(manifest));
+      };
+
+      const flushAsync = async () => {
+        await new Promise((resolve) => setImmediate(resolve));
+      };
+
+      writeManifest(baseManifest);
+      const addHandler = watcherEvents.add;
+      expect(addHandler).toBeDefined();
+      addHandler?.(manifestPath);
+      await flushAsync();
+
+      expect(mockPerformServiceHealthCheck).toHaveBeenCalledWith(
+        expect.objectContaining({
+          manifest: expect.objectContaining({ id: 'watcher-service' }),
+        })
+      );
+
+      const configsAfterAdd = watcherDiscovery.getBackendConfigs();
+      const addedConfig = configsAfterAdd.get('watcher-service');
+      expect(addedConfig).toBeDefined();
+      expect(addedConfig?.endpoint).toBe('http://localhost:4111');
+      expect(observedEvents).toContainEqual({ type: 'add', serviceId: 'watcher-service' });
+
+      mockPerformServiceHealthCheck.mockClear();
+      writeManifest({ ...baseManifest, endpoint: 'http://localhost:5222', version: '1.1.0' });
+      const changeHandler = watcherEvents.change;
+      expect(changeHandler).toBeDefined();
+      changeHandler?.(manifestPath);
+      await flushAsync();
+
+      expect(mockPerformServiceHealthCheck).toHaveBeenCalledTimes(1);
+      const configsAfterChange = watcherDiscovery.getBackendConfigs();
+      const updatedConfig = configsAfterChange.get('watcher-service');
+      expect(updatedConfig?.endpoint).toBe('http://localhost:5222');
+      expect(updatedConfig?.version).toBe('1.1.0');
+
+      const unlinkHandler = watcherEvents.unlink;
+      expect(unlinkHandler).toBeDefined();
+      unlinkHandler?.(manifestPath);
+      await flushAsync();
+
+      expect(watcherDiscovery.getBackendConfigs().has('watcher-service')).toBe(false);
+      expect(observedEvents).toContainEqual({ type: 'removed', serviceId: 'watcher-service' });
+
+      await watcherDiscovery.close();
+    });
   });
 
   describe('Multi-Strategy Discovery', () => {

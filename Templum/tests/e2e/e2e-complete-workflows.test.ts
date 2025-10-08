@@ -39,6 +39,8 @@ class MockE2EOrchestrator extends EventEmitter implements ITemplumOrchestrator {
   private registeredInterfaces: Map<InterfaceType, IInterfaceAdapter> = new Map();
   private supportedInterfaces: InterfaceType[] = ['vscode', 'cli', 'command'];
   private backendServices: Map<string, any> = new Map();
+  private manualOverrides = new Map<string, ManualOverrideDescriptor>();
+  private loadedSkins: UniversalSkinDefinition[] = [];
 
   async initialize(): Promise<void> {
     this.initialized = true;
@@ -158,6 +160,10 @@ class MockE2EOrchestrator extends EventEmitter implements ITemplumOrchestrator {
     };
   }
 
+  getLoadedSkins(): UniversalSkinDefinition[] {
+    return this.loadedSkins;
+  }
+
   async refreshBackendServices(): Promise<void> {
     // Mock backend service refresh
     await new Promise(resolve => setTimeout(resolve, 200));
@@ -186,6 +192,49 @@ class MockE2EOrchestrator extends EventEmitter implements ITemplumOrchestrator {
     // Dependencies: IResourceManager interface, mock resource monitoring
     // Implementation: Mock resource manager for E2E testing scenarios
     return {} as IResourceManager;
+  }
+
+  async applyManualOverride(
+    serviceId: string,
+    options: ManualOverrideOptions = {}
+  ): Promise<ManualOverrideDescriptor> {
+    const descriptor: ManualOverrideDescriptor = {
+      serviceId,
+      scope: options.scope ?? 'session',
+      appliedAt: Date.now(),
+      expiresAt: options.expiresAt,
+      reason: options.reason
+    };
+    this.manualOverrides.set(serviceId, descriptor);
+    return descriptor;
+  }
+
+  async clearManualOverride(serviceId?: string): Promise<ManualOverrideClearResult> {
+    if (serviceId) {
+      const descriptor = this.manualOverrides.get(serviceId);
+      this.manualOverrides.delete(serviceId);
+      return {
+        descriptor: descriptor ?? {
+          serviceId,
+          scope: 'session',
+          appliedAt: Date.now()
+        },
+        snapshot: this.getManualOverrideSnapshot()
+      };
+    }
+
+    this.manualOverrides.clear();
+    return {
+      descriptor: undefined,
+      snapshot: this.getManualOverrideSnapshot()
+    };
+  }
+
+  getManualOverrideSnapshot(): ManualOverrideSnapshot {
+    return {
+      overrides: Array.from(this.manualOverrides.values()),
+      updatedAt: Date.now()
+    };
   }
 
   async shutdown(): Promise<void> {

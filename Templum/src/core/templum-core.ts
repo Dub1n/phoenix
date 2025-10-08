@@ -545,6 +545,10 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
     };
   }
 
+  getLoadedSkins(): UniversalSkinDefinition[] {
+    return Array.from(this.loadedSkins.values());
+  }
+
   getStateManagerStatus(): StateManagerStatus {
     return {
       synchronized: true,
@@ -1331,7 +1335,19 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
         
         // Store in loaded skins for backward compatibility
         this.loadedSkins.set(rawSkinDefinition.metadata.id, rawSkinDefinition);
-        
+
+        // Immediately surface the newly loaded skin to active interfaces
+        try {
+          await this.applySkinToActiveInterfaces(rawSkinDefinition);
+        } catch (applyError) {
+          const message = applyError instanceof Error ? applyError.message : String(applyError);
+          this.logWarn('Templum Core: Failed to broadcast backend skin to active interfaces', {
+            backendId,
+            skinId: rawSkinDefinition.metadata.id,
+            error: message
+          });
+        }
+
         // Update resource access time
         this.dependencies.resourceManager.updateResourceAccess(resourceId);
         

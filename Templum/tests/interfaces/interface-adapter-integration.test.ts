@@ -115,6 +115,7 @@ class MockTemplumOrchestrator
   private backendRouterStub = createStubBackendRouter();
   private sessionManager: TemplumUniversalSessionManager | StubSessionManager;
   private manualOverrides = new Map<string, ManualOverrideDescriptor>();
+  private loadedSkins: UniversalSkinDefinition[] = [];
 
   constructor(options: {
     sessionManager?: TemplumUniversalSessionManager;
@@ -221,6 +222,10 @@ class MockTemplumOrchestrator
     };
   }
 
+  getLoadedSkins(): UniversalSkinDefinition[] {
+    return this.loadedSkins;
+  }
+
   async refreshBackendServices(): Promise<void> {
     this.emit("backend-services-refreshed");
   }
@@ -312,6 +317,10 @@ class MockTemplumOrchestrator
 
   getRegisteredInterfaceCount(): number {
     return this.registeredInterfaces.size;
+  }
+
+  setLoadedSkins(skins: UniversalSkinDefinition[]): void {
+    this.loadedSkins = skins;
   }
 }
 

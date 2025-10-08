@@ -15,8 +15,6 @@ import {
   RenderedComponent 
 } from '../types/universal-skin-engine-types';
 import {
-
-
   isTemplumError,
   createTemplumError,
   UniversalSkinDefinition as _TemplumSkinDefinition
@@ -24,6 +22,8 @@ import {
 import { SkinVersionManager } from './skin-version-manager';
 import { serialization } from '../utils/serialization-utils';
 import { emitSerializationWarnings } from '../backend/backend-serialization-log';
+import { validateSkinDefinition } from '../validation/skin-validator';
+import type { SkinValidationResult } from '../validation/skin-validator';
 
 export class UniversalSkinEngine extends EventEmitter {
   private skins: Map<string, UniversalSkinDefinition> = new Map();
@@ -44,44 +44,30 @@ export class UniversalSkinEngine extends EventEmitter {
    * Register a universal skin definition with comprehensive validation
    */
   async registerSkin(skinDefinition: UniversalSkinDefinition): Promise<void> {
+    const skinId = skinDefinition.id ?? skinDefinition.metadata?.id ?? 'unknown-skin';
+    let schemaValidation: SkinValidationResult | undefined;
+
     try {
-      // Step 1: Basic structure validation
-      if (!skinDefinition.id) {
-        throw createTemplumError('Skin ID is required', 'missing-id', 'validation');
-      }
-      if (!skinDefinition.name) {
-        throw createTemplumError('Skin name is required', 'missing-name', 'validation');
-      }
-      if (!skinDefinition.version) {
-        throw createTemplumError('Skin version is required', 'missing-version', 'validation');
-      }
-      if (!skinDefinition.metadata) {
-        throw createTemplumError('Skin metadata is required', 'missing-metadata', 'validation');
-      }
-      
-      // Validate version format
-      const versionRegex = /^\d+\.\d+\.\d+(-[a-zA-Z0-9.-]+)?(\+[a-zA-Z0-9.-]+)?$/;
-      if (!versionRegex.test(skinDefinition.version)) {
-        throw createTemplumError(
-          `Invalid version format: ${skinDefinition.version}. Must follow semantic versioning.`,
-          'invalid-version-format',
-          'validation'
-        );
-      }
-      
-      // Create a minimal validation result for consistency
-      const schemaValidation = {
-        valid: true,
-        errors: [] as string[],
-        warnings: [] as string[]
-      };
-      
+      schemaValidation = validateSkinDefinition(skinDefinition, {
+        expectedValidatorVersion: this.versionManager.getValidatorVersion()
+      });
+
       if (!schemaValidation.valid) {
+        const errorMessage = schemaValidation.errors.length > 0
+          ? schemaValidation.errors.join('; ')
+          : 'Schema validation failed';
         throw createTemplumError(
-          `Skin validation failed: ${schemaValidation.errors.join(', ')}`,
+          `Skin validation failed: ${errorMessage}`,
           'skin-validation-error',
           'validation'
         );
+      }
+
+      if (!skinDefinition.id) {
+        throw createTemplumError('Skin ID missing after schema validation', 'missing-id', 'validation');
+      }
+      if (!skinDefinition.version) {
+        throw createTemplumError('Skin version missing after schema validation', 'missing-version', 'validation');
       }
 
       // Step 2: Version compatibility validation
@@ -131,6 +117,7 @@ export class UniversalSkinEngine extends EventEmitter {
         version: skinDefinition.version,
         supportedInterfaces: skinDefinition.metadata?.supportedInterfaces || [],
         compatibilityLevel: compatibilityResult.level,
+        schemaVersion: schemaValidation.schemaVersion,
         validationWarnings: schemaValidation.warnings || [],
         timestamp: Date.now()
       });
@@ -145,15 +132,18 @@ export class UniversalSkinEngine extends EventEmitter {
       }
       
     } catch (error) {
-      // Emit error event for monitoring
+      const templumError = isTemplumError(error)
+        ? error
+        : createTemplumError(`Registration failed: ${error}`, 'registration-error', 'runtime');
+
       this.emit('skinRegistrationFailed', {
-        skinId: skinDefinition.id,
-        error: isTemplumError(error) ? error : createTemplumError(`Registration failed: ${error}`, 'registration-error', 'runtime'),
+        skinId,
+        error: templumError,
+        validationErrors: schemaValidation?.errors || [],
         timestamp: Date.now()
       });
-      
-      // Re-throw for caller handling
-      throw error;
+
+      throw templumError;
     }
   }
 

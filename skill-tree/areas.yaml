@@ -37,8 +37,12 @@ areas:
         label: WSL filesystem migration & backups
         status: learning
         last_covered: 2025-10-05
-        note: Covered repo move safeguards, tar snapshots, and pv-based progress tracking.
+        note: Covered repo move safeguards, tar snapshots, and pv-based progress
+          tracking.
         priority: false
+      - id: templum_cli_workflow
+        status: learning
+        note: CLI now surfaces handoff data and safe lane claims.
   - node: documentation_specs
     topics:
       - id: spec_acceptance_criteria
