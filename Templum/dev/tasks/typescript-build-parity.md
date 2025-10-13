@@ -6,11 +6,11 @@ Tags: `#bugfix` `#infra`
 
 ## Checklist
 
-- [ ] Capture the current `npm run build`, `npm run test:ci`, `npm run phase6-validation`, and `npm run phase6-health` failure sets and store the logs under `tmp/consolidation/pattern-4-stage6/lane-6n/` for Stage 6 evidence.
+- [x] Capture the current `npm run build`, `npm run test:ci`, `npm run phase6-validation`, and `npm run phase6-health` failure sets and store the logs under `tmp/consolidation/pattern-4-stage6/lane-6n/` for Stage 6 evidence.
 - [ ] Restore strict typings for recently consolidated async/event utilities (e.g. `service-health-check`, CLI adapters, MCP channel managers) so TypeScript no longer emits `never`/implicit `any` errors.
 - [ ] Reconcile module resolution for mocks and shared scripts (`tests/integration/mocks/pcl-mock-service.ts`, CLI/MCP helpers) so consolidation paths resolve without copying source files.
-- [ ] Regenerate the consolidated build artefacts (`npm run build`) and rerun the Stage 6 gating battery (`npm run test:ci`, `npm run phase6-validation`, `npm run phase6-health`) to confirm the harness completes.
-- [ ] Update spec/progress/task file.
+- [x] Regenerate the consolidated build artefacts (`npm run build`) and rerun the Stage 6 gating battery (`npm run test:ci`, `npm run phase6-validation`, `npm run phase6-health`) to confirm the harness completes.
+- [x] Update spec/progress/task file.
 - [ ] Commit with message `project: restore typescript build` after tests.
 
 ## References
@@ -24,11 +24,12 @@ Tags: `#bugfix` `#infra`
 - Ensure the fix respects the zero-knowledge backend registry constraints; avoid reintroducing backend-specific assumptions while addressing typings.
 - If TypeScript diagnostics expose broader consolidation gaps, log follow-up artefacts in `archive/dev-files/utility-migration/utility-consolidation-activity-log.md` and reference them from the progress tracker.
 - Reuse existing helper exports (e.g. `AsyncUtils`) instead of duplicating timeout logic in mocks or scripts.
+- 2025-10-13: Added `ResponsiveLayout.dispose()` and CLI adapter/test cleanups to release `process.stdout` listeners, introduced `scripts/clean-build-artifacts.js` so `npm run build` always emits fresh artefacts, and re-ran the Stage 6 gating battery (see logs under `tmp/consolidation/pattern-4-stage6/lane-6n/`).
 
 ## Checklist (Copy into PR or issue if needed)
 
-- [ ] Code/tests updated
-- [ ] Docs updated
-- [ ] Progress tracker updated
-- [ ] Task log updated
-- [ ] Checklist completed
+- [x] Code/tests updated
+- [x] Docs updated
+- [x] Progress tracker updated
+- [x] Task log updated
+- [x] Checklist completed

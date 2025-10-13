@@ -1145,6 +1145,7 @@ export class ResponsiveLayout extends EventDrivenComponent<ResponsiveLayoutEvent
   private static instanceCounter = 0;
   private config: ResponsiveLayoutConfig;
   private currentDimensions: TerminalDimensions;
+  private resizeListener: (() => void) | null = null;
 
   constructor(config: Partial<ResponsiveLayoutConfig> = {}) {
     super(`responsive-layout:${ResponsiveLayout.instanceCounter++}`, 20);
@@ -1362,14 +1363,32 @@ export class ResponsiveLayout extends EventDrivenComponent<ResponsiveLayoutEvent
   }
 
   private setupResizeListener(): void {
-    process.stdout.on('resize', () => {
+    this.resizeListener = () => {
       this.currentDimensions = {
         width: process.stdout.columns || 80,
         height: process.stdout.rows || 24
       };
       
       this.emit('resize', this.currentDimensions);
-    });
+    };
+
+    process.stdout.on('resize', this.resizeListener);
+  }
+
+  dispose(): void {
+    if (this.resizeListener) {
+      const stdout = process.stdout as typeof process.stdout & {
+        off?: (event: string | symbol, listener: (...args: any[]) => void) => typeof process.stdout;
+      };
+
+      if (typeof stdout.off === 'function') {
+        stdout.off('resize', this.resizeListener);
+      } else {
+        stdout.removeListener('resize', this.resizeListener);
+      }
+
+      this.resizeListener = null;
+    }
   }
 }
 
@@ -1574,6 +1593,7 @@ export class TerminalUI extends EventDrivenComponent<TerminalUIEvents> {
       cleanupContext(this.eventScope);
       DisplayUtils.reset();
       WindowUtils.reset();
+      this.layout.dispose();
       setTerminalUIFormatter(createFormatter());
     })();
 
@@ -2124,6 +2144,7 @@ export class InteractiveSearch extends EventDrivenComponent<InteractiveSearchEve
     }
     
     process.stdin.removeAllListeners('keypress');
+    this.layout.dispose();
   }
 }
 

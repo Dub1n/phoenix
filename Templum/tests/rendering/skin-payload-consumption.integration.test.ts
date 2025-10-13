@@ -260,16 +260,26 @@ describe('Skin payload consumption integration', () => {
     const adapter = new CLIInterfaceAdapter();
 
     await adapter.initialize(orchestrator);
-    await adapter.applySkin(baseSkin);
+    try {
+      await adapter.applySkin(baseSkin);
 
-    expect(skinEngine.renderForInterface).toHaveBeenCalledWith(
-      expect.objectContaining({ id: baseSkin.id }),
-      'cli',
-      expect.objectContaining({ interfaceType: 'cli' }),
-    );
+      expect(skinEngine.renderForInterface).toHaveBeenCalledWith(
+        expect.objectContaining({ id: baseSkin.id }),
+        'cli',
+        expect.objectContaining({ interfaceType: 'cli' }),
+      );
 
-    const loggedLines = (console.log as jest.Mock).mock.calls.flat();
-    expect(loggedLines.some((line) => typeof line === 'string' && line.includes('CLI_RENDER:Start Analysis | Configure Project'))).toBe(true);
+      const loggedLines = (console.log as jest.Mock).mock.calls.flat();
+      expect(
+        loggedLines.some(
+          (line) =>
+            typeof line === 'string' &&
+            line.includes('CLI_RENDER:Start Analysis | Configure Project'),
+        ),
+      ).toBe(true);
+    } finally {
+      await adapter.dispose();
+    }
   });
 
   test('VSCode adapter posts rendered HTML derived from skin payload', async () => {
@@ -306,23 +316,27 @@ describe('Skin payload consumption integration', () => {
       webview: fakeWebview as unknown as vscode.Webview,
     } as vscode.WebviewView;
 
-    await adapter.applySkin(baseSkin);
+    try {
+      await adapter.applySkin(baseSkin);
 
-    expect(skinEngine.renderForInterface).toHaveBeenCalledWith(
-      expect.objectContaining({ id: baseSkin.id }),
-      'vscode',
-      expect.objectContaining({ webview: true }),
-    );
+      expect(skinEngine.renderForInterface).toHaveBeenCalledWith(
+        expect.objectContaining({ id: baseSkin.id }),
+        'vscode',
+        expect.objectContaining({ webview: true }),
+      );
 
-    expect(fakeWebview.postMessage).toHaveBeenCalledWith(
-      expect.objectContaining({
-        type: 'render_skin',
-        payload: expect.objectContaining({
-          html: `<div data-skin="${baseSkin.id}">Start Analysis | Configure Project</div>`,
-          skinId: baseSkin.metadata.id,
+      expect(fakeWebview.postMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'render_skin',
+          payload: expect.objectContaining({
+            html: `<div data-skin="${baseSkin.id}">Start Analysis | Configure Project</div>`,
+            skinId: baseSkin.metadata.id,
+          }),
         }),
-      }),
-    );
+      );
+    } finally {
+      await adapter.dispose();
+    }
   });
 
   test('CLI loadInitialContent renders last loaded skin when no healthy backends', async () => {
@@ -341,19 +355,32 @@ describe('Skin payload consumption integration', () => {
     const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
 
     await adapter.initialize(orchestrator);
-    await (adapter as unknown as { loadInitialContent(): Promise<void> }).loadInitialContent();
+    try {
+      await (adapter as unknown as { loadInitialContent(): Promise<void> }).loadInitialContent();
 
-    expect(skinEngine.renderForInterface).toHaveBeenCalledWith(
-      expect.objectContaining({ id: baseSkin.id }),
-      'cli',
-      expect.objectContaining({ interfaceType: 'cli' }),
-    );
+      expect(skinEngine.renderForInterface).toHaveBeenCalledWith(
+        expect.objectContaining({ id: baseSkin.id }),
+        'cli',
+        expect.objectContaining({ interfaceType: 'cli' }),
+      );
 
-    const loggedLines = logSpy.mock.calls.flat().filter((value) => typeof value === 'string');
-    expect(loggedLines.some((line) => line.includes('CLI_RENDER:Start Analysis | Configure Project'))).toBe(true);
-    expect(loggedLines.some((line) => line.includes('Templum Universal Interface - CLI Mode'))).toBe(false);
-
-    logSpy.mockRestore();
+      const loggedLines = logSpy.mock.calls
+        .flat()
+        .filter((value) => typeof value === 'string');
+      expect(
+        loggedLines.some((line) =>
+          line.includes('CLI_RENDER:Start Analysis | Configure Project'),
+        ),
+      ).toBe(true);
+      expect(
+        loggedLines.some((line) =>
+          line.includes('Templum Universal Interface - CLI Mode'),
+        ),
+      ).toBe(false);
+    } finally {
+      await adapter.dispose();
+      logSpy.mockRestore();
+    }
   });
 
   test('VSCode loadInitialContent pushes rendered skin payload without backend fallback', async () => {

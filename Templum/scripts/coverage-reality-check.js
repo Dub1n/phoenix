@@ -1,257 +1,340 @@
 /**---
- * title: [Coverage Reality Check - Coverage Validation and Monitoring]
+ * title: [Coverage Governance Runner - Multi-suite Threshold Enforcement]
  * tags: [Testing, Coverage, Validation, Monitoring]
- * provides: [Coverage Reality Checks, Threshold Validation, Coverage Monitoring]
+ * provides: [Coverage Governance, Threshold Validation, Coverage Monitoring]
  * requires: [Node.js, Jest, Coverage Reports]
- * description: [Validates actual test coverage against realistic expectations and prevents coverage degradation]
+ * description: [Executes unit, backend, and E2E suites with coverage, enforces thresholds, and archives history]
  * ---*/
 
 const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const { coverageThresholds } = require('./coverage-thresholds');
+
+const SUITE_DEFINITIONS = [
+  {
+    name: 'unit',
+    label: 'Unit',
+    command: 'npx jest --config jest.config.js --coverage --runInBand',
+    summaryPath: 'coverage/unit/coverage-summary.json',
+    thresholds: coverageThresholds.unit
+  },
+  {
+    name: 'backend',
+    label: 'Backend Integration',
+    command: 'npx jest --config jest.backend.config.js --coverage --runInBand',
+    summaryPath: 'coverage/backend/coverage-summary.json',
+    thresholds: coverageThresholds.backend
+  },
+  {
+    name: 'e2e',
+    label: 'E2E',
+    command: 'npx jest --config jest.e2e.config.js --coverage --runInBand',
+    summaryPath: 'coverage/e2e/coverage-summary.json',
+    thresholds: coverageThresholds.e2e
+  }
+];
+
+const METRICS = ['statements', 'branches', 'functions', 'lines'];
 
 class CoverageRealityCheck {
-    constructor() {
-        this.thresholds = {
-            // Realistic thresholds for a developing project
-            statements: 60,  // 60% statement coverage minimum
-            branches: 50,    // 50% branch coverage minimum
-            functions: 65,   // 65% function coverage minimum
-            lines: 60        // 60% line coverage minimum
-        };
-        
-        this.coverageFile = path.join(process.cwd(), 'coverage/coverage-summary.json');
-        this.historyFile = path.join(process.cwd(), '.coverage-history.json');
-    }
+  constructor() {
+    this.projectRoot = process.cwd();
+    this.historyFile = path.join(this.projectRoot, '.coverage-history.json');
+    this.suites = SUITE_DEFINITIONS.map((suite) => ({
+      ...suite,
+      command: suite.command,
+      summaryPath: path.join(this.projectRoot, suite.summaryPath)
+    }));
+  }
 
-    /**
-     * Run coverage reality check
-     */
-    async runRealityCheck() {
-        console.log('📊 Running Coverage Reality Check...\n');
-        
-        try {
-            // Generate fresh coverage report
-            await this.generateCoverage();
-            
-            // Analyze coverage results
-            const coverageData = await this.analyzeCoverage();
-            
-            // Check against thresholds
-            const thresholdResults = this.checkThresholds(coverageData);
-            
-            // Track coverage history
-            await this.trackCoverageHistory(coverageData);
-            
-            // Generate coverage report
-            this.generateCoverageReport(coverageData, thresholdResults);
-            
-            return thresholdResults.passed;
-        } catch (error) {
-            console.error('❌ Coverage reality check failed:', error.message);
-            return false;
-        }
-    }
+  async runRealityCheck() {
+    console.log('📊 Running Coverage Governance (unit + backend + e2e)\n');
 
-    /**
-     * Generate coverage report with Jest
-     */
-    async generateCoverage() {
-        console.log('🔍 Generating coverage report...');
-        
-        try {
-            execSync('npm run test:coverage -- --passWithNoTests', { 
-                stdio: 'pipe',
-                cwd: process.cwd()
-            });
-            console.log('✅ Coverage report generated');
-        } catch (error) {
-            // Coverage might still be generated even if some tests fail
-            if (fs.existsSync(this.coverageFile)) {
-                console.log('⚠️  Coverage report generated with test failures');
-            } else {
-                throw new Error('Failed to generate coverage report');
-            }
-        }
+    try {
+      await this.generateCoverage();
+      const coverageResults = this.analyzeCoverage();
+      const thresholdResults = this.checkThresholds(coverageResults);
+      this.trackCoverageHistory(coverageResults);
+      this.generateCoverageReport(coverageResults, thresholdResults);
+      return thresholdResults.passed;
+    } catch (error) {
+      console.error('❌ Coverage governance failed:', error.message);
+      return false;
     }
+  }
 
-    /**
-     * Analyze coverage data from Jest output
-     */
-    async analyzeCoverage() {
-        if (!fs.existsSync(this.coverageFile)) {
-            throw new Error('Coverage summary file not found');
-        }
-        
-        const coverageData = JSON.parse(fs.readFileSync(this.coverageFile, 'utf8'));
-        return coverageData.total;
-    }
-
-    /**
-     * Check coverage against realistic thresholds
-     */
-    checkThresholds(coverageData) {
-        const results = {
-            passed: true,
-            checks: {}
-        };
-        
-        Object.entries(this.thresholds).forEach(([metric, threshold]) => {
-            const actual = coverageData[metric]?.pct || 0;
-            const passed = actual >= threshold;
-            
-            results.checks[metric] = {
-                actual,
-                threshold,
-                passed,
-                status: passed ? 'PASS' : 'FAIL'
-            };
-            
-            if (!passed) {
-                results.passed = false;
-            }
+  async generateCoverage() {
+    for (const suite of this.suites) {
+      console.log(`🔍 Generating coverage for ${suite.label} suite...`);
+      try {
+        execSync(suite.command, {
+          stdio: 'inherit',
+          cwd: this.projectRoot,
+          env: {
+            ...process.env,
+            FORCE_COLOR: process.env.FORCE_COLOR ?? '1'
+          }
         });
-        
-        return results;
-    }
-
-    /**
-     * Track coverage history for trend analysis
-     */
-    async trackCoverageHistory(coverageData) {
-        let history = [];
-        
-        if (fs.existsSync(this.historyFile)) {
-            history = JSON.parse(fs.readFileSync(this.historyFile, 'utf8'));
-        }
-        
-        const entry = {
-            timestamp: new Date().toISOString(),
-            coverage: {
-                statements: coverageData.statements?.pct || 0,
-                branches: coverageData.branches?.pct || 0,
-                functions: coverageData.functions?.pct || 0,
-                lines: coverageData.lines?.pct || 0
-            }
-        };
-        
-        history.push(entry);
-        
-        // Keep only last 50 entries to prevent file bloat
-        if (history.length > 50) {
-            history = history.slice(-50);
-        }
-        
-        fs.writeFileSync(this.historyFile, JSON.stringify(history, null, 2));
-    }
-
-    /**
-     * Analyze coverage trends
-     */
-    analyzeTrends() {
-        if (!fs.existsSync(this.historyFile)) {
-            return { trend: 'no-history', message: 'No coverage history available' };
-        }
-        
-        const history = JSON.parse(fs.readFileSync(this.historyFile, 'utf8'));
-        
-        if (history.length < 2) {
-            return { trend: 'insufficient-data', message: 'Insufficient data for trend analysis' };
-        }
-        
-        const latest = history[history.length - 1];
-        const previous = history[history.length - 2];
-        
-        const avgChange = Object.keys(this.thresholds).reduce((sum, metric) => {
-            return sum + (latest.coverage[metric] - previous.coverage[metric]);
-        }, 0) / Object.keys(this.thresholds).length;
-        
-        if (avgChange > 1) {
-            return { trend: 'improving', message: `Coverage improving (+${avgChange.toFixed(1)}%)` };
-        } else if (avgChange < -1) {
-            return { trend: 'declining', message: `Coverage declining (${avgChange.toFixed(1)}%)` };
+      } catch (error) {
+        if (fs.existsSync(suite.summaryPath)) {
+          console.warn(`⚠️  ${suite.label} suite completed with failures, coverage artefact captured for analysis.`);
         } else {
-            return { trend: 'stable', message: 'Coverage stable' };
+          throw new Error(`Failed to generate coverage for ${suite.label} suite`);
         }
+      }
+    }
+  }
+
+  analyzeCoverage() {
+    const suites = this.suites.map((suite) => {
+      if (!fs.existsSync(suite.summaryPath)) {
+        throw new Error(`Coverage summary missing for ${suite.label} suite at ${suite.summaryPath}`);
+      }
+
+      const summary = JSON.parse(fs.readFileSync(suite.summaryPath, 'utf8'));
+      return {
+        name: suite.name,
+        label: suite.label,
+        thresholds: suite.thresholds,
+        metrics: this.extractMetrics(summary.total)
+      };
+    });
+
+    return {
+      suites,
+      aggregate: this.combineSuiteMetrics(suites)
+    };
+  }
+
+  extractMetrics(totalSummary) {
+    const metrics = {};
+    METRICS.forEach((metric) => {
+      const { total = 0, covered = 0, pct = 0 } = totalSummary[metric] || {};
+      metrics[metric] = { total, covered, pct: Number(pct.toFixed(2)) };
+    });
+    return metrics;
+  }
+
+  combineSuiteMetrics(suites) {
+    const aggregate = {};
+
+    METRICS.forEach((metric) => {
+      const totals = suites.reduce(
+        (acc, suite) => {
+          const data = suite.metrics[metric];
+          return {
+            total: acc.total + data.total,
+            covered: acc.covered + data.covered
+          };
+        },
+        { total: 0, covered: 0 }
+      );
+
+      const pct = totals.total === 0 ? 100 : (totals.covered / totals.total) * 100;
+      aggregate[metric] = {
+        total: totals.total,
+        covered: totals.covered,
+        pct: Number(pct.toFixed(2))
+      };
+    });
+
+    return aggregate;
+  }
+
+  checkThresholds(coverageResults) {
+    const results = {
+      passed: true,
+      suites: {},
+      aggregate: {}
+    };
+
+    coverageResults.suites.forEach((suite) => {
+      results.suites[suite.name] = {};
+
+      METRICS.forEach((metric) => {
+        const actual = suite.metrics[metric].pct;
+        const threshold = suite.thresholds[metric];
+        const passed = actual >= threshold;
+        results.suites[suite.name][metric] = { actual, threshold, passed };
+        if (!passed) {
+          results.passed = false;
+        }
+      });
+    });
+
+    results.aggregate = {};
+    METRICS.forEach((metric) => {
+      const actual = coverageResults.aggregate[metric].pct;
+      const threshold = coverageThresholds.aggregate[metric];
+      const passed = actual >= threshold;
+      results.aggregate[metric] = { actual, threshold, passed };
+      if (!passed) {
+        results.passed = false;
+      }
+    });
+
+    return results;
+  }
+
+  trackCoverageHistory(coverageResults) {
+    let history = [];
+    if (fs.existsSync(this.historyFile)) {
+      try {
+        const raw = JSON.parse(fs.readFileSync(this.historyFile, 'utf8'));
+        if (Array.isArray(raw)) {
+          history = raw;
+        }
+      } catch (error) {
+        console.warn('⚠️  Unable to parse existing coverage history, starting fresh.');
+      }
     }
 
-    /**
-     * Generate and display coverage report
-     */
-    generateCoverageReport(coverageData, thresholdResults) {
-        console.log('\n📋 Coverage Reality Check Report');
-        console.log('==================================');
-        
-        Object.entries(thresholdResults.checks).forEach(([metric, result]) => {
-            const icon = result.passed ? '✅' : '❌';
-            console.log(`${icon} ${metric.toUpperCase()}: ${result.actual}% (threshold: ${result.threshold}%)`);
-        });
-        
-        // Show trend analysis
-        const trends = this.analyzeTrends();
-        console.log(`📈 Trend: ${trends.message}`);
-        
-        console.log(`\n${thresholdResults.passed ? '✅' : '❌'} Overall: ${thresholdResults.passed ? 'PASSED' : 'FAILED'}`);
-        
-        if (!thresholdResults.passed) {
-            console.log('\n💡 Coverage Reality Check Tips:');
-            console.log('  - Focus on testing critical business logic first');
-            console.log('  - Add tests for new features before marking tasks complete');
-            console.log('  - Consider integration tests for complex workflows');
-            console.log('  - Remember: Quality over quantity in test coverage');
-        }
+    const entry = {
+      timestamp: new Date().toISOString(),
+      suites: coverageResults.suites.reduce((acc, suite) => {
+        acc[suite.name] = this.toHistoryRecord(suite.metrics);
+        return acc;
+      }, {}),
+      aggregate: this.toHistoryRecord(coverageResults.aggregate)
+    };
+
+    history.push(entry);
+
+    if (history.length > 50) {
+      history = history.slice(-50);
     }
 
-    /**
-     * Set realistic coverage thresholds based on project state
-     */
-    setRealisticThresholds(projectPhase = 'development') {
-        switch (projectPhase) {
-            case 'initial':
-                this.thresholds = { statements: 30, branches: 25, functions: 35, lines: 30 };
-                break;
-            case 'development':
-                this.thresholds = { statements: 60, branches: 50, functions: 65, lines: 60 };
-                break;
-            case 'pre-production':
-                this.thresholds = { statements: 80, branches: 70, functions: 85, lines: 80 };
-                break;
-            case 'production':
-                this.thresholds = { statements: 90, branches: 80, functions: 90, lines: 90 };
-                break;
-        }
-        console.log(`📊 Coverage thresholds set for ${projectPhase} phase`);
+    fs.writeFileSync(this.historyFile, JSON.stringify(history, null, 2));
+  }
+
+  toHistoryRecord(metrics) {
+    return METRICS.reduce((acc, metric) => {
+      const data = metrics[metric];
+      acc[metric] = {
+        pct: data.pct,
+        covered: data.covered,
+        total: data.total
+      };
+      return acc;
+    }, {});
+  }
+
+  analyzeTrends() {
+    if (!fs.existsSync(this.historyFile)) {
+      return { trend: 'no-history', message: 'No coverage history available' };
     }
+
+    const history = JSON.parse(fs.readFileSync(this.historyFile, 'utf8'));
+    if (!Array.isArray(history) || history.length < 2) {
+      return { trend: 'insufficient-data', message: 'Insufficient data for trend analysis' };
+    }
+
+    const latest = history[history.length - 1];
+    const previous = history[history.length - 2];
+    const latestMetrics = latest.aggregate || latest.coverage;
+    const previousMetrics = previous.aggregate || previous.coverage;
+
+    const avgChange =
+      METRICS.reduce((sum, metric) => {
+        const latestValue = latestMetrics?.[metric]?.pct ?? 0;
+        const previousValue = previousMetrics?.[metric]?.pct ?? 0;
+        return sum + (latestValue - previousValue);
+      }, 0) / METRICS.length;
+
+    if (avgChange > 1) {
+      return { trend: 'improving', message: `Coverage improving (+${avgChange.toFixed(1)}%)` };
+    } else if (avgChange < -1) {
+      return { trend: 'declining', message: `Coverage declining (${avgChange.toFixed(1)}%)` };
+    }
+
+    return { trend: 'stable', message: 'Coverage stable' };
+  }
+
+  generateCoverageReport(coverageResults, thresholdResults) {
+    console.log('\n📋 Coverage Governance Report');
+    console.log('==================================');
+
+    coverageResults.suites.forEach((suite) => {
+      console.log(`\n${suite.label} suite:`);
+      METRICS.forEach((metric) => {
+        const status = thresholdResults.suites[suite.name][metric];
+        const icon = status.passed ? '✅' : '❌';
+        console.log(
+          `  ${icon} ${metric.toUpperCase()}: ${status.actual}% (threshold: ${status.threshold}%)`
+        );
+      });
+    });
+
+    console.log('\nAggregate thresholds:');
+    METRICS.forEach((metric) => {
+      const status = thresholdResults.aggregate[metric];
+      const icon = status.passed ? '✅' : '❌';
+      console.log(`  ${icon} ${metric.toUpperCase()}: ${status.actual}% (threshold: ${status.threshold}%)`);
+    });
+
+    const trends = this.analyzeTrends();
+    console.log(`\n📈 Trend: ${trends.message}`);
+    console.log(`\n${thresholdResults.passed ? '✅' : '❌'} Overall: ${thresholdResults.passed ? 'PASSED' : 'FAILED'}`);
+
+    if (!thresholdResults.passed) {
+      console.log('\n💡 Governance Tips:');
+      console.log('  - Strengthen tests at the suite that dipped below threshold.');
+      console.log('  - Add integration scenarios covering branching logic.');
+      console.log('  - Keep regression suites aligned with coverage expectations.');
+    }
+  }
+
+  setRealisticThresholds(projectPhase = 'development') {
+    switch (projectPhase) {
+      case 'initial':
+        return console.log(
+          'Initial phase guidance -> unit: 40/30/45/40, backend: 25/20/30/25, e2e: 15/10/20/15'
+        );
+      case 'development':
+        return console.log('Development phase thresholds codified in scripts/coverage-thresholds.js');
+      case 'pre-production':
+        return console.log(
+          'Pre-production hint -> target unit ≥85%, backend ≥70%, e2e ≥55%, aggregate ≥85%'
+        );
+      case 'production':
+        return console.log(
+          'Production hint -> enforce ≥90% across suites, ensure aggregate ≥92%'
+        );
+      default:
+        return console.log('Unknown phase. Supported phases: initial, development, pre-production, production.');
+    }
+  }
 }
 
-// CLI interface
 async function main() {
-    const command = process.argv[2];
-    const checker = new CoverageRealityCheck();
-    
-    switch (command) {
-        case 'check':
-        case undefined:
-            const passed = await checker.runRealityCheck();
-            process.exit(passed ? 0 : 1);
-            break;
-            
-        case 'set-thresholds':
-            const phase = process.argv[3] || 'development';
-            checker.setRealisticThresholds(phase);
-            console.log('Use this in your package.json scripts or CI/CD pipeline');
-            break;
-            
-        default:
-            console.log('Usage: node scripts/coverage-reality-check.js [check|set-thresholds <phase>]');
-            console.log('  check           - Run coverage reality check (default)');
-            console.log('  set-thresholds  - Show how to set thresholds for project phase');
-            console.log('                   phases: initial, development, pre-production, production');
+  const command = process.argv[2];
+  const checker = new CoverageRealityCheck();
+
+  switch (command) {
+    case 'check':
+    case 'governance':
+    case undefined: {
+      const passed = await checker.runRealityCheck();
+      process.exit(passed ? 0 : 1);
+      break;
     }
+    case 'set-thresholds': {
+      const phase = process.argv[3] || 'development';
+      checker.setRealisticThresholds(phase);
+      break;
+    }
+    default: {
+      console.log('Usage: node scripts/coverage-reality-check.js [governance|set-thresholds <phase>]');
+    }
+  }
 }
 
 if (require.main === module) {
-    main().catch(console.error);
+  main().catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });
 }
 
 module.exports = { CoverageRealityCheck };

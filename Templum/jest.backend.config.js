@@ -1,42 +1,22 @@
-/**
- * Jest Configuration for TASK-SKIN-007: Comprehensive Backend Validation Tests
- * 
- * This configuration is optimized for integration testing with real backend instances
- * and provides appropriate timeouts, environment setup, and resource management.
- */
+const { coverageThresholds } = require('./scripts/coverage-thresholds');
 
 module.exports = {
-  // Test environment setup
+  preset: 'ts-jest',
   testEnvironment: 'node',
-  
-  // File patterns for comprehensive backend tests
   testMatch: [
     '**/tests/backend/comprehensive-backend-validation.test.ts',
     '**/tests/backend/**/*.integration.test.ts'
   ],
-  
-  // TypeScript support
-  preset: 'ts-jest',
-  
-  // Extended timeouts for integration tests with real backends
-  testTimeout: 60000, // 60 seconds per test
-  
-  // Setup and teardown
+  testTimeout: 60000,
   setupFilesAfterEnv: ['<rootDir>/jest.backend.setup.js'],
-  
-  // Module resolution
-  moduleNameMapping: {
+  moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
     '^@tests/(.*)$': '<rootDir>/src/tests/$1'
   },
-  
-  // Test execution settings
-  maxWorkers: 1, // Run tests sequentially to avoid port conflicts
+  maxWorkers: 1,
   detectOpenHandles: true,
   forceExit: true,
-  
-  // Coverage settings (optional for integration tests)
-  collectCoverage: false,
+  collectCoverage: true,
   collectCoverageFrom: [
     'src/backend/**/*.ts',
     'src/core/templum-core.ts',
@@ -44,34 +24,22 @@ module.exports = {
     '!**/*.spec.ts',
     '!**/node_modules/**'
   ],
-  
-  // Output and reporting
+  coverageDirectory: '<rootDir>/coverage/backend',
+  coverageReporters: ['text', 'lcov', 'json-summary'],
+  coverageThreshold: {
+    global: coverageThresholds.backend
+  },
   verbose: true,
-  reporters: [
-    'default',
-    ['jest-junit', {
-      outputDirectory: 'test-results',
-      outputName: 'comprehensive-backend-validation.xml',
-      suiteName: 'Comprehensive Backend Validation Tests'
-    }]
-  ],
-  
-  // Transform configuration
+  reporters: ['default'],
   transform: {
     '^.+\\.ts$': 'ts-jest'
   },
-  
-  // Module file extensions
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
-  
-  // Ignore patterns
   testPathIgnorePatterns: [
     '/node_modules/',
     '/dist/',
     '/examples/minimal-backend/node_modules/'
   ],
-  
-  // Global test configuration
   globals: {
     'ts-jest': {
       tsconfig: {
@@ -79,18 +47,11 @@ module.exports = {
         module: 'commonjs',
         esModuleInterop: true,
         allowSyntheticDefaultImports: true,
-        strict: false // Relaxed for integration tests
+        strict: false
       }
     }
   },
-  
-  // Error handling
   errorOnDeprecated: false,
-  
-  // Cache configuration
   clearMocks: true,
-  restoreMocks: true,
-  
-  // Test result processor
-  testResultsProcessor: 'jest-sonar-reporter'
+  restoreMocks: true
 };

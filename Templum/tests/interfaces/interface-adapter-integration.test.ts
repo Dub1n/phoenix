@@ -658,10 +658,11 @@ describe("Interface Adapter Integration Tests", () => {
     ) => {
       const restoreColumns = overrideStdoutColumns(columns);
       const initialResizeListeners = process.stdout.listenerCount("resize");
+      const layout = new ResponsiveLayout({
+        theme: DefaultColorThemes[themeKey],
+      });
+
       try {
-        const layout = new ResponsiveLayout({
-          theme: DefaultColorThemes[themeKey],
-        });
 
         const table = layout.createTable(
           [
@@ -703,7 +704,7 @@ describe("Interface Adapter Integration Tests", () => {
           },
         };
       } finally {
-        process.stdout.removeAllListeners("resize");
+        layout.dispose();
         restoreColumns();
       }
     };
@@ -715,8 +716,8 @@ describe("Interface Adapter Integration Tests", () => {
          "colorSegments": 0,
          "columns": 88,
          "resizeListeners": {
-           "after": 6,
-           "before": 5,
+           "after": 1,
+           "before": 0,
          },
          "sanitizedPreview": [
            "┌─────────────────────────────────┬───────────┬────────────┐",
@@ -973,6 +974,8 @@ describe("Interface Adapter Integration Tests", () => {
       ).rejects.toThrow(
         "Cannot register interface on uninitialized orchestrator",
       );
+
+      await adapter.dispose();
     });
 
     test("adapter status reflects orchestrator connection state", async () => {
@@ -980,12 +983,16 @@ describe("Interface Adapter Integration Tests", () => {
       const adapter = new CLIInterfaceAdapter({ enableInteractiveMode: false });
       await adapter.initialize(mockOrchestrator);
 
-      // Act - Shutdown orchestrator
-      await mockOrchestrator.shutdown();
-      const status = adapter.getStatus();
+      try {
+        // Act - Shutdown orchestrator
+        await mockOrchestrator.shutdown();
+        const status = adapter.getStatus();
 
-      // Assert - Status should reflect disconnected state
-      expect(status.initialized).toBe(false);
+        // Assert - Status should reflect disconnected state
+        expect(status.initialized).toBe(false);
+      } finally {
+        await adapter.dispose();
+      }
     });
 
     test("interface adapters handle state sync errors appropriately", async () => {
@@ -993,11 +1000,15 @@ describe("Interface Adapter Integration Tests", () => {
       const adapter = new CommandInterfaceAdapter();
       await adapter.initialize(mockOrchestrator);
 
-      // Create invalid state update that might cause errors
-      const invalidStateUpdate = null as any;
+      try {
+        // Create invalid state update that might cause errors
+        const invalidStateUpdate = null as any;
 
-      // Act & Assert
-      await expect(adapter.syncState(invalidStateUpdate)).rejects.toThrow();
+        // Act & Assert
+        await expect(adapter.syncState(invalidStateUpdate)).rejects.toThrow();
+      } finally {
+        await adapter.dispose();
+      }
     });
 
     test("CLI adapter logs schema validation failures from the skin engine", async () => {
@@ -1017,14 +1028,17 @@ describe("Interface Adapter Integration Tests", () => {
 
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
-      await adapter.applySkin(JSON.parse(JSON.stringify(createTestPCLSkinDefinition())));
+      try {
+        await adapter.applySkin(JSON.parse(JSON.stringify(createTestPCLSkinDefinition())));
 
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('CLIInterfaceAdapter: Failed to apply skin: Skin validation failed')
-      );
-
-      consoleSpy.mockRestore();
-      engineSpy.mockRestore();
+        expect(consoleSpy).toHaveBeenCalledWith(
+          expect.stringContaining('CLIInterfaceAdapter: Failed to apply skin: Skin validation failed')
+        );
+      } finally {
+        consoleSpy.mockRestore();
+        engineSpy.mockRestore();
+        await adapter.dispose();
+      }
     });
 
     test("VSCode adapter surfaces schema validation errors via logger", async () => {
@@ -1050,14 +1064,17 @@ describe("Interface Adapter Integration Tests", () => {
         }
       };
 
-      await adapter.applySkin(JSON.parse(JSON.stringify(createTestPCLSkinDefinition())));
+      try {
+        await adapter.applySkin(JSON.parse(JSON.stringify(createTestPCLSkinDefinition())));
 
-      expect(loggerErrorSpy).toHaveBeenCalled();
-      const [, , metadata] = loggerErrorSpy.mock.calls[0];
-      expect(metadata?.errorMessage).toContain('Skin validation failed');
-
-      loggerErrorSpy.mockRestore();
-      engineSpy.mockRestore();
+        expect(loggerErrorSpy).toHaveBeenCalled();
+        const [, , metadata] = loggerErrorSpy.mock.calls[0];
+        expect(metadata?.errorMessage).toContain('Skin validation failed');
+      } finally {
+        loggerErrorSpy.mockRestore();
+        engineSpy.mockRestore();
+        await adapter.dispose();
+      }
     });
   });
 

@@ -2,7 +2,7 @@
 
 ## Requirement Summary
 
-- Status: `[ ]`
+- Status: `[x]`
 - Requirement text: "Test architecture consolidation and coverage governance (unit/integration/e2e thresholds codified)."
 
 ## Prerequisites
@@ -13,12 +13,12 @@
 
 ### Unblocked Actions
 
-- [ ] Capture the unit/integration/e2e test taxonomy and required coverage bands inside `docs/current/architecture-spec.md` (Verification & Validation), mapping existing suites (`tests/core`, `tests/backend`, `tests/e2e`, `tests/interfaces`) and referencing `scripts/coverage-reality-check.js` so expectations are explicit.
-- [ ] Introduce suite-specific coverage thresholds: add a `coverageThreshold` block to `jest.config.js` for unit scope, enable coverage collection and thresholds in `jest.backend.config.js`, and author a dedicated `jest.e2e.config.js` mirroring `tests/e2e/*.test.ts`.
-- [ ] Extend `scripts/coverage-reality-check.js` (functions `generateCoverage`, `analyzeCoverage`, `checkThresholds`) to execute the unit, backend integration, and e2e configs sequentially, merge their coverage artefacts, and persist aggregated metrics in `.coverage-history.json` while failing when any suite dips below its codified thresholds.
-- [ ] Update `package.json` (and any CI workflow scripts) to run the consolidated coverage check (e.g., expose `coverage:governance` that invokes the updated script) and ensure `scripts/check-tests.js` and precommit hooks invoke the new governance flow.
-- [ ] Backfill missing e2e instrumentation helpers under `src/tests/e2e/` (e.g., wiring mocks in `tests/e2e/e2e-complete-workflows.test.ts`) if coverage reveals gaps, so thresholds are realistically achievable without manual instrumentation.
-- [ ] Triage the failing suites observed on 2025-10-12 (`tests/e2e/e2e-complete-workflows.test.ts` variance regression, `tests/interfaces/interface-adapter-integration.test.ts` snapshot drift, `tests/scripts/cli-shared-parser.test.ts` missing `dev/architecture/cli-shared-parser.mjs`, `src/tests/utils/path-utils.test.ts` TypeScript syntax error) and the newly failing governance blockers captured on 2025-10-13 (`tests/core/interface-switching.test.ts` bootstrap expectations, `src/tests/core/templum-core-connection-events.test.ts` warning assertions, `tests/development-tools/debug-utils.test.ts` namespace/log-level drift) so the gating battery returns green before codifying thresholds.
+- [x] Capture the unit/integration/e2e test taxonomy and required coverage bands inside `docs/current/architecture-spec.md` (Verification & Validation), mapping existing suites (`tests/core`, `tests/backend`, `tests/e2e`, `tests/interfaces`) and referencing `scripts/coverage-reality-check.js` so expectations are explicit.
+- [x] Introduce suite-specific coverage thresholds: add a `coverageThreshold` block to `jest.config.js` for unit scope, enable coverage collection and thresholds in `jest.backend.config.js`, and author a dedicated `jest.e2e.config.js` mirroring `tests/e2e/*.test.ts`.
+- [x] Extend `scripts/coverage-reality-check.js` (functions `generateCoverage`, `analyzeCoverage`, `checkThresholds`) to execute the unit, backend integration, and e2e configs sequentially, merge their coverage artefacts, and persist aggregated metrics in `.coverage-history.json` while failing when any suite dips below its codified thresholds.
+- [x] Update `package.json` (and any CI workflow scripts) to run the consolidated coverage check (exposed as `coverage:governance`) and ensure `scripts/check-tests.js` and precommit hooks invoke the new governance flow.
+- [x] Backfill missing e2e instrumentation helpers under `src/tests/e2e/` (coverage run confirmed existing helpers deliver ≥35/12/30/35, no additional harness shims required).
+- [x] Triage the failing suites observed on 2025-10-12 (`tests/e2e/e2e-complete-workflows.test.ts` variance regression, `tests/interfaces/interface-adapter-integration.test.ts` snapshot drift, `tests/scripts/cli-shared-parser.test.ts` missing `dev/architecture/cli-shared-parser.mjs`, `src/tests/utils/path-utils.test.ts` TypeScript syntax error) and the newly failing governance blockers captured on 2025-10-13 (`tests/core/interface-switching.test.ts` bootstrap expectations, `src/tests/core/templum-core-connection-events.test.ts` warning assertions, `tests/development-tools/debug-utils.test.ts` namespace/log-level drift) so the gating battery returns green before codifying thresholds.
 
 ### Blocked Actions (if any)
 
@@ -26,11 +26,11 @@
 
 ## Definition of Done
 
-- Unit tests with coverage: `npm run test:coverage` (uses updated thresholds).
+- Unit tests with coverage: `npm run test:coverage` (writes to `coverage/unit` and honours 30/22/30/30 thresholds when run under governance).
 - Backend integration suite: `npx jest --config jest.backend.config.js --coverage`.
 - E2E suite: `npx jest --config jest.e2e.config.js --coverage`.
-- Governance check: `npm run coverage:reality-check` (or the renamed `coverage:governance`).
-- Documentation refreshed: `docs/current/progress.md` status/link updated, `docs/current/architecture-spec.md` Verification & Validation section reflects the codified coverage governance.
+- Governance check: `npm run coverage:governance`.
+- Documentation refreshed: `docs/current/progress.md` status/link updated, `docs/current/architecture-spec.md` Verification & Validation section reflects the codified coverage governance, and `docs/current/testing-guide.md` lists the new command set.
 
 ## References
 
@@ -41,8 +41,8 @@
 - jest.backend.config.js
 - tests/e2e/e2e-complete-workflows.test.ts
 
-## Current Assessment (2025-10-05)
+## Current Assessment (2025-10-13)
 
-- Implementation: `scripts/coverage-reality-check.js` still runs a single Jest config and lacks per-suite thresholds; `jest.backend.config.js` contains invalid options (e.g. `moduleNameMapping`, `jest-junit` reporter without dependency).
-- Commands: `node scripts/run-with-timeout.mjs --timeout 180000 -- npm run test:coverage -- --passWithNoTests` fails with `TypeError: The "original" argument must be of type function` thrown by `babel-plugin-istanbul`, so coverage artefacts are not generated.
-- Required follow-up: repair the coverage stack, introduce suite-specific configs and thresholds, and ensure governance scripts exit cleanly before updating documentation/checklists. As of 2025-10-12 the governance push is additionally blocked by red suites (see list above), so the fix plan must triage those regressions alongside coverage tooling.
+- Implementation: `scripts/coverage-reality-check.js` orchestrates unit/back/e2e configs in sequence, merges their `coverage-summary.json` files, and enforces thresholds sourced from `scripts/coverage-thresholds.js`. Coverage artefacts are written to `coverage/unit`, `coverage/backend`, and `coverage/e2e`, with aggregate metrics persisted in `.coverage-history.json` (bounded to 50 entries).
+- Commands: `npm run coverage:governance` passes on the baseline repo (unit 34.35/24.86/35.33/34.89, backend 23.96/14.43/23.05/24.29, e2e 39.86/14.15/34.65/40.5, aggregate 33.19/23.46/34.05/33.69). Pre-commit flow now runs `check:tests -- --skip-governance`, `coverage:governance`, and `test:health`.
+- Required follow-up: none; maintain the taxonomy and thresholds alongside future suite work, update documentation if bands shift, and retain coverage artefacts for audit trails when bumping the numbers.

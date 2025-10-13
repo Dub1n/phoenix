@@ -89,11 +89,11 @@
     }
   },
   "scripts": {
-    "build": "tsc",
+    "build": "node scripts/clean-build-artifacts.js && tsc",
     "build:component": "node ../scripts/validation/component-build.js",
     "dev": "ts-node src/index.ts",
     "test": "jest",
-    "test:ci": "node scripts/run-jest-ci.mjs && node scripts/run-jest-ci.mjs --runTestsByPath src/tests/backend/manual-override-flow.test.ts src/tests/backend/manual-override-watcher.integration.test.ts --no-cache",
+    "test:ci": "node scripts/run-jest-ci.mjs && node scripts/run-jest-ci.mjs --runTestsByPath src/tests/backend/manual-override-flow.test.ts src/tests/backend/manual-override-watcher.integration.test.ts --no-cache && npm run coverage:governance",
     "test:coverage": "jest --coverage",
     "test:watch": "jest --watch",
     "lint": "eslint src tests",
@@ -111,10 +111,11 @@
     "check:tests": "node scripts/check-tests.js",
     "test:health": "node scripts/test-health-monitor.js",
     "test:health-status": "node scripts/test-health-monitor.js status",
-    "coverage:reality-check": "node scripts/coverage-reality-check.js",
+    "coverage:governance": "node scripts/coverage-reality-check.js governance",
+    "coverage:reality-check": "npm run coverage:governance",
     "prepare": "cd .. && husky install Templum/.husky || true",
     "consolidate": "node dev/architecture/consolidation-scripts/cli-command-stub.mjs",
-    "precommit": "npm run check:types && npm run check:tests && npm run test:health",
+    "precommit": "npm run check:types && npm run check:tests -- --skip-governance && npm run coverage:governance && npm run test:health",
     "generate:pattern-readme": "ts-node dev/patterns/scripts/generate-readme.ts"
   },
   "keywords": [
@@ -166,6 +167,6 @@
     "yaml": "^2.8.1"
   },
   "overrides": {
-    "glob": "^10.0.0"
+    "glob": "^7.2.3"
   }
 }
