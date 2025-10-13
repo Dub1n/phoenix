@@ -10,7 +10,8 @@
  * Generated: 2025-08-21
  */
 
-import { EventEmitter } from 'events';
+import type { TypedEventMap } from '../utils/event-utils';
+import { EventDrivenComponent } from '../utils/event-bus-adapter';
 import { SessionContextFoundation } from '../session/session-context-foundation';
 import { StateSyncFoundation } from '../state/state-sync-foundation';
 
@@ -120,7 +121,17 @@ export type InterfaceType = 'vscode' | 'cli' | 'command';
  * Universal Menu Registry with Multi-Backend and Cross-Interface Support
  * Extends PCL menu registry for backend-specific menu loading and cross-interface state synchronization
  */
-export class UniversalMenuRegistry extends EventEmitter {
+interface UniversalMenuRegistryEvents extends TypedEventMap {
+  menusLoaded: (sources: string[]) => void;
+  backendMenusLoaded: (backendId: string, menuCount: number) => void;
+  coreMenuLoaded: (menuName: string) => void;
+  menuStateUpdated: (interfaceType: InterfaceType, state: MenuState) => void;
+  skinLoaded: (skinName: string, supportedInterfaces: InterfaceType[]) => void;
+  menuStateSynced: (interfaceType: InterfaceType, syncTime: number) => void;
+}
+
+export class UniversalMenuRegistry extends EventDrivenComponent<UniversalMenuRegistryEvents> {
+  private static instanceCounter = 0;
   private menus = new Map<string, UniversalMenuDefinition>();
   private skins = new Map<string, LoadedSkin>();
   private activeSkinsIds: string[] = [];
@@ -136,7 +147,7 @@ export class UniversalMenuRegistry extends EventEmitter {
     sessionContext: SessionContextFoundation,
     stateSync: StateSyncFoundation
   ) {
-    super();
+    super(`universal-menu-registry:${UniversalMenuRegistry.instanceCounter++}`, 100);
     this.sessionContext = sessionContext;
     this.stateSync = stateSync;
     this.setupEventHandlers();
@@ -608,6 +619,19 @@ export class UniversalMenuRegistry extends EventEmitter {
     };
   }
 
+  private isMenuState(value: unknown): value is MenuState {
+    if (!value || typeof value !== 'object') {
+      return false;
+    }
+
+    const candidate = value as Partial<MenuState>;
+    return (
+      typeof candidate.activeMenu === 'string' &&
+      Array.isArray(candidate.navigationHistory) &&
+      candidate.navigationHistory.every(item => typeof item === 'string')
+    );
+  }
+
   /**
    * Setup event handlers for cross-component coordination
    */
@@ -619,7 +643,7 @@ export class UniversalMenuRegistry extends EventEmitter {
 
     // Listen for state synchronization events
     this.stateSync.on('stateUpdated', async (key, value, interfaceId) => {
-      if (key === 'menuState') {
+      if (key === 'menuState' && this.isMenuState(value) && typeof interfaceId === 'string') {
         await this.handleCrossInterfaceMenuStateUpdate(interfaceId, value);
       }
     });
@@ -763,6 +787,7 @@ export class UniversalMenuRegistry extends EventEmitter {
     return icons[actionType] || 'circle-outline';
   }
 
+
   /**
    * Cleanup resources
    */
@@ -775,5 +800,6 @@ export class UniversalMenuRegistry extends EventEmitter {
     this.backendConfigurations.clear();
     this.menuCache.clear();
     this.removeAllListeners();
+    this.cleanupEvents();
   }
 }

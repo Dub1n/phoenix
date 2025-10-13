@@ -24,6 +24,7 @@ import {
   createCLIDisplayConsistencyEngine 
 } from './cli-display-consistency-engine';
 import { ServiceInfo } from './service-ordering-manager';
+import { sleep } from '../utils/async-utils';
 
 /**
  * Menu item definition for interactive display
@@ -711,19 +712,20 @@ export class InteractiveMenuRenderer {
     }
     console.log(this.formatter.palette.muted('Press any key to continue...'));
 
-    return new Promise((resolve) => {
-      const stdin = process.stdin;
-      if (stdin.isTTY) {
-        stdin.resume();
-        const listener = () => {
-          stdin.removeListener('data', listener);
-          stdin.pause();
-          resolve();
-        };
-        stdin.once('data', listener);
-      } else {
-        setTimeout(() => resolve(), 1500);
-      }
+    const stdin = process.stdin;
+    if (!stdin.isTTY) {
+      await sleep(1500);
+      return;
+    }
+
+    await new Promise<void>((resolve) => {
+      stdin.resume();
+      const listener = () => {
+        stdin.removeListener('data', listener);
+        stdin.pause();
+        resolve();
+      };
+      stdin.once('data', listener);
     });
   }
 

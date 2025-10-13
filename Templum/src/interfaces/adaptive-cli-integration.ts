@@ -24,7 +24,6 @@ tags: [cli, integration, adaptive, compatibility, mcp-channel]
  * Pattern-Info: { approach: "adaptive-integration", alternatives: "direct-replacement", trade-offs: "compatibility-complexity" }
  */
 
-import { EventEmitter } from 'events';
 import { CLIInterfaceAdapter } from './cli-adapter';
 import { UniversalCommandRegistry } from '../commands/universal-command-registry';
 import { UniversalMenuRegistry } from '../menus/universal-menu-registry';
@@ -49,6 +48,8 @@ import {
   checkTerminalCompatibility,
   getSafeTerminalConfig
 } from './navigation/terminal-compatibility';
+import { EventDrivenComponent } from '../utils/event-bus-adapter';
+import { TypedEventMap } from '../utils/event-utils';
 
 // TODO: [TASK-ID-001] Pattern: adaptive-integration | Complexity: 6 | Dependencies: mcp-channel-validation
 // Context: MCP Channel compatibility bridge for preserving agent-CLI interaction
@@ -165,6 +166,30 @@ export interface EnhancedCLIState {
   currentMode: 'original' | 'enhanced' | 'fallback' | 'accessibility';
   activeFallbacks: Set<string>;
   lastDetectionTime: Date | null;
+}
+
+type IntegrationMode = 'original' | 'enhanced' | 'fallback' | 'accessibility';
+type NavigationComponents = ReturnType<NavigationSystem['getComponents']>;
+
+interface AdaptiveCLIIntegrationEvents extends TypedEventMap {
+  initializationStarted: () => void;
+  initializationCompleted: (result: AdaptiveCLIResult) => void;
+  initializationError: (error: unknown) => void;
+  compatibilityDetectionStarted: () => void;
+  compatibilityDetectionCompleted: (result: CompatibilityTestResult) => void;
+  mcpValidationStarted: () => void;
+  mcpValidationCompleted: (result: MCPIntegrationResult) => void;
+  navigationSystemInitializationStarted: () => void;
+  navigationSystemInitializationCompleted: (result: NavigationSystemResult) => void;
+  navigationSystemInitializationFailed: (error: unknown) => void;
+  adaptiveConfigurationApplied: (mode: IntegrationMode) => void;
+  integrationFinalized: (mode: IntegrationMode) => void;
+  adapterEnhanced: (components: NavigationComponents) => void;
+  fallbackActivated: (mode: IntegrationMode) => void;
+  modeChanged: (mode: IntegrationMode, previousMode: IntegrationMode) => void;
+  modeSwitchError: (error: unknown) => void;
+  cleanupWarning: (error: unknown) => void;
+  cleanup: () => void;
 }
 
 // TODO: [TASK-ID-002] Pattern: compatibility-management | Complexity: 5 | Dependencies: terminal-detection
@@ -307,7 +332,8 @@ class MCPCompatibilityBridgeImpl implements MCPCompatibilityBridge {
  * Main integration system that combines all components with adaptive compatibility
  * management while preserving MCP Channel functionality.
  */
-export class AdaptiveCLIIntegration extends EventEmitter {
+export class AdaptiveCLIIntegration extends EventDrivenComponent<AdaptiveCLIIntegrationEvents> {
+  private static instanceCounter = 0;
   private config: AdaptiveCLIConfig;
   private state: EnhancedCLIState;
   private initializationPromise: Promise<AdaptiveCLIResult> | null = null;
@@ -316,7 +342,7 @@ export class AdaptiveCLIIntegration extends EventEmitter {
     originalAdapter: CLIInterfaceAdapter,
     config: AdaptiveCLIConfig = {}
   ) {
-    super();
+    super(`adaptive-cli-integration:${AdaptiveCLIIntegration.instanceCounter++}`, 100);
 
     this.config = {
       navigation: {

@@ -11,7 +11,8 @@
  * Generated: 2025-08-21
  */
 
-import { EventEmitter } from 'events';
+import type { TypedEventMap } from '../utils/event-utils';
+import { EventDrivenComponent } from '../utils/event-bus-adapter';
 import { UniversalLayoutEngine, UniversalSkinMenuDefinition, InterfaceType } from './universal-layout-engine';
 import { buildSkinMenuFromUniversalDefinition, coerceUniversalMenuDefinition } from './menu-definition-adapter';
 import { UniversalMenuRegistry } from '../menus/universal-menu-registry';
@@ -100,11 +101,31 @@ export interface SkinCacheEntry {
   sessionId?: string;
 }
 
+interface UniversalSkinRendererEvents extends TypedEventMap {
+  cacheHit: (cacheKey: string) => void;
+  menuRendered: (result: UniversalMenuRenderResult) => void;
+  menuRenderError: (result: UniversalMenuRenderResult) => void;
+  legacyMenuRendered: (result: UniversalMenuRenderResult) => void;
+  batchRenderCompleted: (results: Record<InterfaceType, UniversalMenuRenderResult>) => void;
+  cacheCleared: (interfaceType: InterfaceType | undefined, cleared: number) => void;
+  constraintsUpdated: (interfaceType: InterfaceType, constraints: any) => void;
+  cacheCleanup: (expiredCount: number) => void;
+  sessionChanged: (sessionId: string) => void;
+  performanceWarning: (payload: {
+    skinId: string;
+    menuId: string;
+    interfaceType: InterfaceType;
+    renderTime: number;
+    threshold: number;
+  }) => void;
+}
+
 /**
  * Universal Skin Renderer - Multi-Interface Enhancement of PCL Architecture
  * Extends PCL SkinMenuRenderer for VSCode, CLI, and Command interface support
  */
-export class UniversalSkinRenderer extends EventEmitter {
+export class UniversalSkinRenderer extends EventDrivenComponent<UniversalSkinRendererEvents> {
+  private static instanceCounter = 0;
   private layoutEngine: UniversalLayoutEngine;
   private menuRegistry: UniversalMenuRegistry;
   private sessionContext: SessionContextFoundation;
@@ -125,7 +146,7 @@ export class UniversalSkinRenderer extends EventEmitter {
       cacheConfig?: { maxSize?: number; expiryMs?: number };
     }
   ) {
-    super();
+    super(`universal-skin-renderer:${UniversalSkinRenderer.instanceCounter++}`, 75);
     this.layoutEngine = new UniversalLayoutEngine();
     this.menuRegistry = menuRegistry;
     this.sessionContext = sessionContext;
@@ -736,5 +757,6 @@ export class UniversalSkinRenderer extends EventEmitter {
     this.interfaceCache.clear();
     this.renderingMetrics.clear();
     this.removeAllListeners();
+    this.cleanupEvents();
   }
 }

@@ -24,25 +24,11 @@ tags: [cli, navigation, breadcrumbs, user-experience]
  * Pattern-Info: { approach: "enhanced-breadcrumbs", alternatives: "simple-path", trade-offs: "complexity-usability" }
  */
 
-import { EventEmitter } from 'events';
 import { TerminalColorTheme, DefaultColorThemes } from '../terminal-ui-components';
 import { StringUtils, StringWidthUtils } from '../../utils/chainable-string-utils';
 import { DisplayUtils } from '../../utils/display-utils';
-
-/**
- * Utility type to convert event function signatures to parameter arrays for EventEmitter compatibility
- * This ensures TypeScript compatibility while maintaining type safety
- */
-type EventMap<T> = {
-  [K in keyof T]: T[K] extends (...args: infer P) => void ? P : never;
-};
-
-type TypedEventEmitter<T> = {
-  emit<K extends keyof T>(event: K, ...args: EventMap<T>[K]): boolean;
-  on<K extends keyof T>(event: K, listener: T[K]): TypedEventEmitter<T>;
-  off<K extends keyof T>(event: K, listener: T[K]): TypedEventEmitter<T>;
-  once<K extends keyof T>(event: K, listener: T[K]): TypedEventEmitter<T>;
-} & EventEmitter;
+import { EventDrivenComponent } from '../../utils/event-bus-adapter';
+import { TypedEventMap } from '../../utils/event-utils';
 
 // TODO: [TASK-ID-007] Pattern: breadcrumb-navigation | Complexity: 3 | Dependencies: interactive-navigation
 // Context: Interactive breadcrumb selection and navigation with keyboard support
@@ -81,7 +67,7 @@ export interface BreadcrumbStyle {
 /**
  * Breadcrumb navigation events
  */
-export interface BreadcrumbEvents {
+export interface BreadcrumbEvents extends TypedEventMap {
   'breadcrumbClicked': (entry: BreadcrumbEntry, index: number) => void;
   'pathChanged': (path: BreadcrumbEntry[], currentIndex: number) => void;
   'styleChanged': (style: BreadcrumbStyle) => void;
@@ -510,14 +496,15 @@ export class NavigationRenderer {
 /**
  * Main breadcrumb manager
  */
-export class BreadcrumbManager extends EventEmitter implements TypedEventEmitter<BreadcrumbEvents> {
+export class BreadcrumbManager extends EventDrivenComponent<BreadcrumbEvents> {
+  private static instanceCounter = 0;
   private pathTracker: PathTracker;
   private renderer: NavigationRenderer;
   private config: BreadcrumbManagerConfig;
   private terminalWidth: number;
 
   constructor(config: Partial<BreadcrumbManagerConfig> = {}) {
-    super();
+    super(`breadcrumb-manager:${BreadcrumbManager.instanceCounter++}`, 40);
 
     this.config = {
       style: {

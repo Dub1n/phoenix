@@ -9,11 +9,17 @@ description: [Terminal UI components for progress indication, user interaction, 
 **/
 
 import * as readline from 'readline';
-import { EventEmitter } from 'events';
 import { StringUtils, StringWidthUtils } from '../utils/chainable-string-utils';
 import { TerminalFormatter, createFormatter } from '../utils/terminal-formatter';
+import { createInterval, createTimeout } from '../utils/async-utils';
 import { DisplayUtils, DisplayStandards } from '../utils/display-utils';
 import { WindowUtils } from '../utils/window-utils';
+import { EventDrivenComponent } from '../utils/event-bus-adapter';
+import {
+  subscribe,
+  cleanupContext,
+} from '../utils/event-utils';
+import type { TypedEventEmitter, TypedEventMap } from '../utils/event-utils';
 import { computeDisplayLayout } from './display-utils-layout';
 import {
   DefaultColorThemes,
@@ -57,7 +63,12 @@ export interface ProgressBarConfig {
   formatter?: TerminalFormatter;
 }
 
-export class ProgressBar extends EventEmitter {
+interface ProgressBarEvents extends TypedEventMap {
+  complete: () => void;
+}
+
+export class ProgressBar extends EventDrivenComponent<ProgressBarEvents> {
+  private static instanceCounter = 0;
   private config: ProgressBarConfig;
   private current: number = 0;
   private total: number = 100;
@@ -66,7 +77,7 @@ export class ProgressBar extends EventEmitter {
   private readonly formatter?: TerminalFormatter;
 
   constructor(config: Partial<ProgressBarConfig> = {}) {
-    super();
+    super(`progress-bar:${ProgressBar.instanceCounter++}`, 10);
     
     this.config = {
       width: 40,
@@ -199,14 +210,20 @@ export const SpinnerFrames = {
   clock: ['[CLOCK]', '[CLOCK]', '[CLOCK]', '[CLOCK]', '[CLOCK]', '[CLOCK]', '[CLOCK]', '[CLOCK]', '[CLOCK]', '[CLOCK]', '[CLOCK]', '[CLOCK]']
 };
 
-export class Spinner extends EventEmitter {
+interface SpinnerEvents extends TypedEventMap {
+  start: () => void;
+  stop: () => void;
+}
+
+export class Spinner extends EventDrivenComponent<SpinnerEvents> {
+  private static instanceCounter = 0;
   private config: SpinnerConfig;
   private currentFrame: number = 0;
-  private timer: NodeJS.Timeout | null = null;
+  private timer: ReturnType<typeof createInterval> | null = null;
   private isActive: boolean = false;
 
   constructor(config: Partial<SpinnerConfig> = {}) {
-    super();
+    super(`spinner:${Spinner.instanceCounter++}`, 10);
     
     this.config = {
       frames: SpinnerFrames.dots,
@@ -222,7 +239,7 @@ export class Spinner extends EventEmitter {
     this.isActive = true;
     if (text) this.config.text = text;
     
-    this.timer = setInterval(() => {
+    this.timer = createInterval(() => {
       this.render();
       this.currentFrame = (this.currentFrame + 1) % this.config.frames.length;
     }, this.config.interval);
@@ -240,7 +257,7 @@ export class Spinner extends EventEmitter {
     this.isActive = false;
     
     if (this.timer) {
-      clearInterval(this.timer);
+      this.timer.stop();
       this.timer = null;
     }
     
@@ -296,13 +313,16 @@ export interface PromptConfig {
   formatter?: TerminalFormatter;
 }
 
-export class InteractivePrompt extends EventEmitter {
+interface InteractivePromptEvents extends TypedEventMap {}
+
+export class InteractivePrompt extends EventDrivenComponent<InteractivePromptEvents> {
+  private static instanceCounter = 0;
   private rl: readline.Interface | null = null;
   private config: PromptConfig;
   private readonly formatter?: TerminalFormatter;
 
   constructor(config: Partial<PromptConfig> = {}) {
-    super();
+    super(`interactive-prompt:${InteractivePrompt.instanceCounter++}`, 10);
     
     this.config = {
       theme: DefaultColorThemes.default,
@@ -742,7 +762,10 @@ export interface MenuItemConfig {
   data?: any;
 }
 
-export class EnhancedInteractiveMenu extends EventEmitter {
+interface EnhancedInteractiveMenuEvents extends TypedEventMap {}
+
+export class EnhancedInteractiveMenu extends EventDrivenComponent<EnhancedInteractiveMenuEvents> {
+  private static instanceCounter = 0;
   private renderer: EnhancedWindowLayoutRenderer;
   private config: EnhancedMenuConfig;
   private isActive: boolean = false;
@@ -750,7 +773,7 @@ export class EnhancedInteractiveMenu extends EventEmitter {
   private ctrlCPressed: boolean = false;
 
   constructor(config: EnhancedMenuConfig) {
-    super();
+    super(`enhanced-interactive-menu:${EnhancedInteractiveMenu.instanceCounter++}`, 25);
     const formatter = config.formatter ?? createFormatter();
     this.config = { ...config, formatter };
     this.renderer = new EnhancedWindowLayoutRenderer(
@@ -1114,12 +1137,17 @@ export interface ResponsiveLayoutConfig {
   theme: TerminalColorTheme;
 }
 
-export class ResponsiveLayout extends EventEmitter {
+interface ResponsiveLayoutEvents extends TypedEventMap {
+  resize: (dimensions: TerminalDimensions) => void;
+}
+
+export class ResponsiveLayout extends EventDrivenComponent<ResponsiveLayoutEvents> {
+  private static instanceCounter = 0;
   private config: ResponsiveLayoutConfig;
   private currentDimensions: TerminalDimensions;
 
   constructor(config: Partial<ResponsiveLayoutConfig> = {}) {
-    super();
+    super(`responsive-layout:${ResponsiveLayout.instanceCounter++}`, 20);
     
     this.config = {
       minWidth: 40,
@@ -1355,15 +1383,34 @@ export interface TerminalUIConfig {
   columnsProvider?: () => number | undefined;
 }
 
-export class TerminalUI extends EventEmitter {
+type TerminalProcessEvents = {
+  SIGINT: () => void;
+  SIGTERM: () => void;
+};
+
+interface TerminalUIEvents extends TypedEventMap {
+  themeChanged: (theme: TerminalColorTheme) => void;
+}
+
+export class TerminalUI extends EventDrivenComponent<TerminalUIEvents> {
+  private static instanceCounter = 0;
+
   private theme: TerminalColorTheme;
   private layout: ResponsiveLayout;
   private activeComponents: Set<ProgressBar | Spinner | InteractivePrompt> = new Set();
   private readonly formatter: TerminalFormatter;
+  private readonly eventScope: string;
+  private cleanupPromise: Promise<void> | null = null;
+  private readonly handleCleanupSignal = async () => {
+    await this.cleanup();
+  };
 
   constructor(config: Partial<TerminalUIConfig> = {}) {
-    super();
+    const scope = `terminal-ui:${TerminalUI.instanceCounter++}`;
+    super(scope, 50);
     process.setMaxListeners(0);
+
+    this.eventScope = scope;
     
     this.formatter = config.formatter ?? createFormatter();
     setTerminalUIFormatter(this.formatter);
@@ -1461,32 +1508,87 @@ export class TerminalUI extends EventEmitter {
   }
 
   async cleanup(): Promise<void> {
-    // Stop all active components
-    const components = Array.from(this.activeComponents);
-    for (const component of components) {
-      if (component instanceof ProgressBar) {
-        component.complete();
-      } else if (component instanceof Spinner) {
-        component.stop();
-      }
+    if (this.cleanupPromise) {
+      return this.cleanupPromise;
     }
-    
-    this.activeComponents.clear();
 
-    DisplayUtils.reset();
-    WindowUtils.reset();
-    setTerminalUIFormatter(createFormatter());
+    this.cleanupPromise = (async () => {
+      const waiters: Promise<unknown>[] = [];
+
+      for (const component of Array.from(this.activeComponents)) {
+        if (component instanceof ProgressBar) {
+          const waiter = new Promise<void>(resolve => {
+            let settled = false;
+            const timeout = createTimeout(() => {
+              if (settled) {
+                return;
+              }
+              settled = true;
+              resolve();
+            }, 250, { unref: true });
+            component.once('complete', () => {
+              if (settled) {
+                return;
+              }
+              settled = true;
+              timeout.cancel();
+              resolve();
+            });
+          }).catch(() => undefined);
+          component.complete();
+          waiters.push(waiter);
+          component.removeAllListeners();
+        } else if (component instanceof Spinner) {
+          const waiter = new Promise<void>(resolve => {
+            let settled = false;
+            const timeout = createTimeout(() => {
+              if (settled) {
+                return;
+              }
+              settled = true;
+              resolve();
+            }, 250, { unref: true });
+            component.once('stop', () => {
+              if (settled) {
+                return;
+              }
+              settled = true;
+              timeout.cancel();
+              resolve();
+            });
+          }).catch(() => undefined);
+          component.stop();
+          waiters.push(waiter);
+          component.removeAllListeners();
+        } else if (component instanceof InteractivePrompt) {
+          component.removeAllListeners();
+        }
+      }
+
+      if (waiters.length > 0) {
+        await Promise.all(waiters);
+      }
+
+      this.activeComponents.clear();
+      this.removeAllListeners();
+      cleanupContext(this.eventScope);
+      DisplayUtils.reset();
+      WindowUtils.reset();
+      setTerminalUIFormatter(createFormatter());
+    })();
+
+    try {
+      await this.cleanupPromise;
+    } finally {
+      this.cleanupPromise = null;
+    }
   }
 
   private setupEventHandlers(): void {
-    // Handle process cleanup
-    process.on('SIGINT', async () => {
-      await this.cleanup();
-    });
-    
-    process.on('SIGTERM', async () => {
-      await this.cleanup();
-    });
+    const processEmitter = process as unknown as TypedEventEmitter<TerminalProcessEvents>;
+
+    subscribe(processEmitter, 'SIGINT', this.handleCleanupSignal, { context: this.eventScope });
+    subscribe(processEmitter, 'SIGTERM', this.handleCleanupSignal, { context: this.eventScope });
   }
 }
 
@@ -1525,7 +1627,16 @@ export interface InteractiveSearchConfig {
   };
 }
 
-export class InteractiveSearch extends EventEmitter {
+interface InteractiveSearchEvents extends TypedEventMap {
+  itemsUpdated: (totalItems: number) => void;
+  cancel: () => void;
+  error: (error: unknown) => void;
+  complete: (result: SearchResult) => void;
+  searchUpdated: (query: string, totalMatches: number) => void;
+}
+
+export class InteractiveSearch extends EventDrivenComponent<InteractiveSearchEvents> {
+  private static instanceCounter = 0;
   private config: InteractiveSearchConfig;
   private items: SearchableItem[] = [];
   private filteredItems: SearchResult[] = [];
@@ -1537,7 +1648,7 @@ export class InteractiveSearch extends EventEmitter {
   private layout: ResponsiveLayout;
 
   constructor(config: Partial<InteractiveSearchConfig> = {}) {
-    super();
+    super(`interactive-search:${InteractiveSearch.instanceCounter++}`, 50);
     
     this.config = {
       theme: DefaultColorThemes.default,
@@ -1600,9 +1711,9 @@ export class InteractiveSearch extends EventEmitter {
         resolve(result);
       };
 
-      const onError = (error: Error) => {
+      const onError = (error: unknown) => {
         this.cleanup();
-        reject(error);
+        reject(error instanceof Error ? error : new Error(String(error)));
       };
 
       this.once('complete', onComplete);

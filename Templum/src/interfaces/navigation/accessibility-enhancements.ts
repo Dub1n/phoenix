@@ -24,24 +24,10 @@ tags: [cli, navigation, accessibility, keyboard-support, inclusive-design]
  * Pattern-Info: { approach: "comprehensive-accessibility", alternatives: "basic-keyboard-support", trade-offs: "complexity-inclusivity" }
  */
 
-import { EventEmitter } from 'events';
 import { TerminalColorTheme, DefaultColorThemes } from '../terminal-ui-components';
 import { TerminalCapabilities } from './terminal-compatibility';
-
-/**
- * Utility type to convert event function signatures to parameter arrays for EventEmitter compatibility
- * This ensures TypeScript compatibility while maintaining type safety
- */
-type EventMap<T> = {
-  [K in keyof T]: T[K] extends (...args: infer P) => void ? P : never;
-};
-
-type TypedEventEmitter<T> = {
-  emit<K extends keyof T>(event: K, ...args: EventMap<T>[K]): boolean;
-  on<K extends keyof T>(event: K, listener: T[K]): TypedEventEmitter<T>;
-  off<K extends keyof T>(event: K, listener: T[K]): TypedEventEmitter<T>;
-  once<K extends keyof T>(event: K, listener: T[K]): TypedEventEmitter<T>;
-} & EventEmitter;
+import { EventDrivenComponent } from '../../utils/event-bus-adapter';
+import { TypedEventMap } from '../../utils/event-utils';
 
 // TODO: [TASK-ID-014] Pattern: accessibility-compliance | Complexity: 4 | Dependencies: wcag-guidelines
 // Context: WCAG 2.1 AA compliance implementation for terminal interfaces
@@ -131,7 +117,7 @@ export interface Announcement {
 /**
  * Accessibility events
  */
-export interface AccessibilityEvents {
+export interface AccessibilityEvents extends TypedEventMap {
   'focusChanged': (element: NavigableElement, context: NavigationContext) => void;
   'announcement': (announcement: Announcement) => void;
   'navigationModeChanged': (mode: string) => void;
@@ -339,14 +325,24 @@ export class ScreenReaderSupport {
 /**
  * Keyboard navigation manager
  */
-export class KeyboardNavigator extends EventEmitter {
+interface KeyboardNavigatorEvents extends TypedEventMap {
+  keyboardShortcut: (shortcut: string, action: string) => void;
+  navigationBack: () => void;
+  elementActivated: (element: NavigableElement) => void;
+  helpRequested: () => void;
+  focusChanged: (element: NavigableElement, context: NavigationContext) => void;
+  navigationModeChanged: (mode: string) => void;
+}
+
+export class KeyboardNavigator extends EventDrivenComponent<KeyboardNavigatorEvents> {
+  private static instanceCounter = 0;
   private config: AccessibilityConfig;
   private context: NavigationContext;
   private keyboardHandlers = new Map<string, (event: any) => void>();
   private focusHistory: string[] = [];
 
   constructor(config: AccessibilityConfig) {
-    super();
+    super(`keyboard-navigator:${KeyboardNavigator.instanceCounter++}`, 25);
     this.config = config;
     this.context = {
       currentFocus: '',
@@ -716,7 +712,8 @@ export class AccessibilityValidator {
 /**
  * Main accessibility manager
  */
-export class AccessibilityManager extends EventEmitter implements TypedEventEmitter<AccessibilityEvents> {
+export class AccessibilityManager extends EventDrivenComponent<AccessibilityEvents> {
+  private static instanceCounter = 0;
   private config: AccessibilityConfig;
   private screenReader: ScreenReaderSupport;
   private keyboardNavigator: KeyboardNavigator;
@@ -724,7 +721,7 @@ export class AccessibilityManager extends EventEmitter implements TypedEventEmit
   private terminalCapabilities: TerminalCapabilities | null = null;
 
   constructor(config: Partial<AccessibilityConfig> = {}) {
-    super();
+    super(`accessibility-manager:${AccessibilityManager.instanceCounter++}`, 50);
 
     this.config = {
       enableKeyboardNavigation: true,

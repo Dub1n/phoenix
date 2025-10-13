@@ -24,7 +24,6 @@ tags: [demo, integration, fallback, adaptive, cli]
  * Pattern-Info: { approach: "interactive-demonstration", alternatives: "static-documentation", trade-offs: "engagement-simplicity" }
  */
 
-import { EventEmitter } from 'events';
 import {
   AdaptiveCLIIntegration,
   AdaptiveCLIConfig,
@@ -43,6 +42,8 @@ import {
   TerminalCapabilities,
   CompatibilityTestResult
 } from './navigation/terminal-compatibility';
+import { EventDrivenComponent } from '../utils/event-bus-adapter';
+import { TypedEventMap } from '../utils/event-utils';
 
 // TODO: [TASK-ID-006] Pattern: fallback-demonstration | Complexity: 3 | Dependencies: terminal-simulation
 // Context: Interactive demonstration of fallback strategies for different terminal environments
@@ -83,6 +84,14 @@ export interface DemonstrationResult {
     functionalityLevel: 'full' | 'enhanced' | 'basic' | 'minimal';
     accessibilitySupport: 'complete' | 'partial' | 'basic' | 'none';
   };
+}
+
+interface CLIIntegrationDemoEvents extends TypedEventMap {
+  demonstrationStarted: (totalEnvironments: number) => void;
+  environmentTestStarted: (environmentName: string) => void;
+  environmentTestCompleted: (environmentName: string, result: DemonstrationResult) => void;
+  environmentTestError: (environmentName: string, error: unknown) => void;
+  demonstrationCompleted: (results: Map<string, DemonstrationResult>) => void;
 }
 
 /**
@@ -204,8 +213,13 @@ export const SIMULATED_ENVIRONMENTS: SimulatedTerminalEnvironment[] = [
 /**
  * CLI Integration Demonstration System
  */
-export class CLIIntegrationDemo extends EventEmitter {
+export class CLIIntegrationDemo extends EventDrivenComponent<CLIIntegrationDemoEvents> {
+  private static instanceCounter = 0;
   private results: Map<string, DemonstrationResult> = new Map();
+
+  constructor() {
+    super(`cli-integration-demo:${CLIIntegrationDemo.instanceCounter++}`, 25);
+  }
 
   /**
    * Run comprehensive demonstration across all simulated environments

@@ -10,10 +10,12 @@
  * Generated: 2025-08-21
  */
 
-import { EventEmitter } from 'events';
+import type { TypedEventMap } from '../utils/event-utils';
+import { EventDrivenComponent } from '../utils/event-bus-adapter';
 import { UniversalCommandRegistry } from '../commands/universal-command-registry';
 import { UniversalMenuRegistry } from '../menus/universal-menu-registry';
 import { SessionContextFoundation } from '../session/session-context-foundation';
+import { createInterval } from '../utils/async-utils';
 
 export interface VSCodeAdapter {
   type: 'vscode';
@@ -95,11 +97,32 @@ export interface VSCodeAdapterConfig {
   treeViewRefreshInterval?: number;
 }
 
+interface VSCodeInterfaceAdapterEvents extends TypedEventMap {
+  initialized: () => void;
+  rendered: (result: VSCodeRenderResult) => void;
+  cleanup: () => void;
+  commandRegistered: (command: string) => void;
+  treeViewRefresh: () => void;
+  treeViewDisposed: () => void;
+  treeViewProviderSetup: () => void;
+  webViewDisposed: () => void;
+  webViewPanelSetup: () => void;
+  statusBarItemShown: (itemId: string) => void;
+  statusBarItemHidden: (itemId: string) => void;
+  statusBarItemDisposed: (itemId: string) => void;
+  statusBarSetup: () => void;
+  treeViewNodeClicked: (nodeId?: string) => void;
+  treeViewRefreshed: () => void;
+  webViewOpened: () => void;
+  sessionContextUpdated: (sessionId?: string) => void;
+}
+
 /**
  * VSCode Interface Adapter Implementation
  * Integrates Templum with VSCode extension API using established patterns
  */
-export class VSCodeInterfaceAdapter extends EventEmitter implements VSCodeAdapter {
+export class VSCodeInterfaceAdapter extends EventDrivenComponent<VSCodeInterfaceAdapterEvents> implements VSCodeAdapter {
+  private static instanceCounter = 0;
   type: 'vscode' = 'vscode';
   
   private commandRegistry: UniversalCommandRegistry;
@@ -111,6 +134,7 @@ export class VSCodeInterfaceAdapter extends EventEmitter implements VSCodeAdapte
   private treeViewProvider: any = null;
   private webViewPanel: any = null;
   private statusBarItems = new Map<string, any>();
+  private treeViewRefreshHandle: ReturnType<typeof createInterval> | null = null;
 
   constructor(
     commandRegistry: UniversalCommandRegistry,
@@ -118,7 +142,7 @@ export class VSCodeInterfaceAdapter extends EventEmitter implements VSCodeAdapte
     sessionContext: SessionContextFoundation,
     config?: Partial<VSCodeAdapterConfig>
   ) {
-    super();
+    super(`vscode-interface-adapter:${VSCodeInterfaceAdapter.instanceCounter++}`, 60);
     this.commandRegistry = commandRegistry;
     this.menuRegistry = menuRegistry;
     this.sessionContext = sessionContext;
@@ -260,10 +284,16 @@ export class VSCodeInterfaceAdapter extends EventEmitter implements VSCodeAdapte
         }
       }
 
+      if (this.treeViewRefreshHandle) {
+        this.treeViewRefreshHandle.stop();
+        this.treeViewRefreshHandle = null;
+      }
+
       // Clear registrations
       this.registeredCommands.clear();
       this.statusBarItems.clear();
       this.removeAllListeners();
+      this.cleanupEvents();
 
       this.isInitialized = false;
       this.emit('cleanup');
@@ -408,8 +438,12 @@ export class VSCodeInterfaceAdapter extends EventEmitter implements VSCodeAdapte
 
     // Setup periodic refresh if configured
     if (this.config.treeViewRefreshInterval) {
-      setInterval(() => {
-        this.refreshTreeView();
+      if (this.treeViewRefreshHandle) {
+        this.treeViewRefreshHandle.stop();
+      }
+
+      this.treeViewRefreshHandle = createInterval(() => {
+        void this.refreshTreeView();
       }, this.config.treeViewRefreshInterval);
     }
   }

@@ -11,7 +11,8 @@
  * Generated: 2025-08-21
  */
 
-import { EventEmitter } from 'events';
+import type { TypedEventMap } from '../utils/event-utils';
+import { EventDrivenComponent } from '../utils/event-bus-adapter';
 import { createInterface, Interface } from 'readline';
 import { createFormatter, TerminalFormatter } from '../utils/terminal-formatter';
 import { UniversalCommandRegistry } from '../commands/universal-command-registry';
@@ -29,6 +30,8 @@ type ManagedInteractionState = {
   currentMenu?: string;
   navigationStack?: string[];
 };
+
+type InteractionMode = ManagedInteractionState['interactionMode'];
 
 const MAX_COMMAND_HISTORY = 50;
 
@@ -140,11 +143,27 @@ export type KeyboardShortcutMap = Map<string, {
 
 export type InterfaceType = 'vscode' | 'cli' | 'command';
 
+interface UniversalInteractionManagerEvents extends TypedEventMap {
+  interfaceSwitched: (from: InterfaceType, to: InterfaceType) => void;
+  keyboardShortcutAdded: (
+    key: string,
+    command: string,
+    interfaceSupport: InterfaceType[]
+  ) => void;
+  sessionChanged: (sessionId: string) => void;
+  backendsAvailable: (backendIds: string[]) => void;
+  menusAvailable: (sources: string[]) => void;
+  modeChanged: (mode: InteractionMode) => void;
+  configUpdated: (config: UniversalInteractionConfig) => void;
+  disposed: () => void;
+}
+
 /**
  * Universal Interaction Manager - Multi-Interface Input Handling
  * Extends PCL Interaction Manager for cross-interface input validation and session awareness
  */
-export class UniversalInteractionManager extends EventEmitter {
+export class UniversalInteractionManager extends EventDrivenComponent<UniversalInteractionManagerEvents> {
+  private static instanceCounter = 0;
   private config: UniversalInteractionConfig;
   private commandRegistry: UniversalCommandRegistry;
   private menuRegistry: UniversalMenuRegistry;
@@ -165,7 +184,7 @@ export class UniversalInteractionManager extends EventEmitter {
     config?: Partial<UniversalInteractionConfig>,
     dependencies: UniversalInteractionManagerDependencies = {}
   ) {
-    super();
+    super(`universal-interaction-manager:${UniversalInteractionManager.instanceCounter++}`, 80);
     this.formatter = dependencies.formatter ?? createFormatter();
     this.commandRegistry = commandRegistry;
     this.menuRegistry = menuRegistry;
@@ -1140,6 +1159,7 @@ export class UniversalInteractionManager extends EventEmitter {
       this.sessionStateListener = undefined;
     }
     this.removeAllListeners();
+    this.cleanupEvents();
     
     this.emit('disposed');
   }

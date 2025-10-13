@@ -8,7 +8,6 @@ description: [Registry for managing interface adapters through abstraction layer
  ---
  **/
 
-import { EventEmitter } from 'events';
 import { 
   InterfaceType,
   TemplumError as _TemplumError,
@@ -21,6 +20,16 @@ import {
   IInterfaceAdapter,
   IInterfaceAdapterFactory
 } from './templum-orchestrator-interface';
+import { EventDrivenComponent } from '../utils/event-bus-adapter';
+import { TypedEventMap } from '../utils/event-utils';
+
+interface InterfaceAdapterRegistryEvents extends TypedEventMap {
+  initialized: (payload: { timestamp: number; adapterFactories: number }) => void;
+  adapterRegistered: (payload: { interfaceType: InterfaceType; timestamp: number; totalAdapters: number }) => void;
+  adapterRemoved: (payload: { interfaceType: InterfaceType; timestamp: number; remainingAdapters: number }) => void;
+  disposed: (payload: { timestamp: number }) => void;
+  vsCodeContextSet: (payload: { timestamp: number; hasContext: boolean; contextKeys: string[] }) => void;
+}
 
 /**
  * Interface Adapter Registry with Abstraction Layer
@@ -29,12 +38,19 @@ import {
  * ensuring that no adapter has direct coupling to concrete implementations.
  * All adapters depend only on the ITemplumOrchestrator abstraction.
  */
-export class InterfaceAdapterRegistry extends EventEmitter implements IInterfaceAdapterFactory {
+export class InterfaceAdapterRegistry
+  extends EventDrivenComponent<InterfaceAdapterRegistryEvents>
+  implements IInterfaceAdapterFactory {
+  private static instanceCounter = 0;
   private adapters: Map<InterfaceType, IInterfaceAdapter> = new Map();
   private adapterFactories: Map<InterfaceType, () => IInterfaceAdapter> = new Map();
   private orchestrator!: ITemplumOrchestrator;
   private initialized: boolean = false;
   private vsCodeContext: any = null;
+
+  constructor() {
+    super(`interface-adapter-registry:${InterfaceAdapterRegistry.instanceCounter++}`, 50);
+  }
 
   /**
    * Initialize the registry with orchestrator abstraction

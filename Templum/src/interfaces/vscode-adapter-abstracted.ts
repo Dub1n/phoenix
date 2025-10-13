@@ -21,6 +21,7 @@ import {
   IInterfaceAdapter 
 } from './templum-orchestrator-interface';
 import { createLogger, LogLevel } from '../utils/logger';
+import { withTimeout } from '../utils/async-utils';
 import type { TemplumSessionManagerContract } from '../session/universal-session-manager.types';
 
 /**
@@ -241,7 +242,7 @@ export class VSCodeInterfaceAdapter implements IInterfaceAdapter {
           break;
         } catch (preloadedError) {
           const message = preloadedError instanceof Error ? preloadedError.message : String(preloadedError);
-          this.logger.warn('VSCodeInterfaceAdapter: Preloaded skin render failed', undefined, {
+          this.logger.warn('VSCodeInterfaceAdapter: Preloaded skin render failed', {
             skinId: skin.metadata?.id ?? skin.id,
             error: message,
           });
@@ -271,12 +272,11 @@ export class VSCodeInterfaceAdapter implements IInterfaceAdapter {
           console.log(`VSCodeInterfaceAdapter: Attempting to load real skin from ${backendId} backend...`);
           
           // Load real skin definition with timeout handling
-          const skinDefinition = await Promise.race([
-            this.orchestrator.loadBackendSkin(backendId),
-            new Promise<null>((_, reject) => 
-              setTimeout(() => reject(new Error('Skin loading timeout')), 5000)
-            )
-          ]);
+          const skinDefinition = await withTimeout(
+            Promise.resolve(this.orchestrator.loadBackendSkin(backendId)),
+            5000,
+            new Error('Skin loading timeout')
+          );
           
           if (skinDefinition) {
             console.log(`VSCodeInterfaceAdapter: Successfully loaded real skin from ${backendId}`);

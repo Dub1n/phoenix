@@ -24,26 +24,13 @@ tags: [cli, navigation, exit-behavior, user-safety]
  * Pattern-Info: { approach: "double-confirmation", alternatives: "immediate-exit", trade-offs: "safety-convenience" }
  */
 
-import { EventEmitter } from 'events';
 import * as readline from 'readline';
 import { TerminalColorTheme, DefaultColorThemes, InteractivePrompt } from '../terminal-ui-components';
+import { delay, sleep, withTimeout } from '../../utils/async-utils';
+import { EventDrivenComponent } from '../../utils/event-bus-adapter';
+import { TypedEventMap } from '../../utils/event-utils';
 
 type FatalEventType = 'uncaughtException' | 'unhandledRejection';
-
-/**
- * Utility type to convert event function signatures to parameter arrays for EventEmitter compatibility
- * This ensures TypeScript compatibility while maintaining type safety
- */
-type EventMap<T> = {
-  [K in keyof T]: T[K] extends (...args: infer P) => void ? P : never;
-};
-
-type TypedEventEmitter<T> = {
-  emit<K extends keyof T>(event: K, ...args: EventMap<T>[K]): boolean;
-  on<K extends keyof T>(event: K, listener: T[K]): TypedEventEmitter<T>;
-  off<K extends keyof T>(event: K, listener: T[K]): TypedEventEmitter<T>;
-  once<K extends keyof T>(event: K, listener: T[K]): TypedEventEmitter<T>;
-} & EventEmitter;
 
 // TODO: [TASK-ID-008] Pattern: graceful-exit | Complexity: 3 | Dependencies: signal-handling
 // Context: Comprehensive signal handling for graceful shutdown in all scenarios
@@ -78,7 +65,7 @@ export interface ExitContext {
 /**
  * Exit handler events
  */
-export interface ExitHandlerEvents {
+export interface ExitHandlerEvents extends TypedEventMap {
   'exitRequested': (context: ExitContext) => void;
   'confirmationStarted': (context: ExitContext) => void;
   'confirmationCompleted': (confirmed: boolean, context: ExitContext) => void;
@@ -172,7 +159,7 @@ export class ExitConfirmationDialog {
     }
 
     // Brief pause for user to reconsider
-    await this.sleep(1000);
+    await sleep(1000);
 
     // Second confirmation with more specific message
     let secondMessage = 'Are you sure you want to exit?';
@@ -212,13 +199,6 @@ export class ExitConfirmationDialog {
     }
     
     return message;
-  }
-
-  /**
-   * Sleep utility
-   */
-  private sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
   }
 
   /**
@@ -299,21 +279,13 @@ export class CleanupManager {
    * Execute single task with timeout
    */
   private async executeTaskWithTimeout(task: CleanupTask): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        reject(new Error(`Task '${task.name}' timed out after ${task.timeout}ms`));
-      }, task.timeout);
-
-      task.executor()
-        .then(() => {
-          clearTimeout(timeout);
-          resolve();
-        })
-        .catch(error => {
-          clearTimeout(timeout);
-          reject(error);
-        });
-    });
+    await withTimeout(
+      (async () => {
+        await task.executor();
+      })(),
+      task.timeout,
+      new Error(`Task '${task.name}' timed out after ${task.timeout}ms`)
+    );
   }
 
   /**
@@ -334,7 +306,8 @@ export class CleanupManager {
 /**
  * Main exit handler implementation
  */
-export class ExitHandler extends EventEmitter implements TypedEventEmitter<ExitHandlerEvents> {
+export class ExitHandler extends EventDrivenComponent<ExitHandlerEvents> {
+  private static instanceCounter = 0;
   private static activeHandlers = new Set<ExitHandler>();
   private static processingFatalEvent = false;
   private static registered = false;
@@ -353,10 +326,10 @@ export class ExitHandler extends EventEmitter implements TypedEventEmitter<ExitH
   private sessionState: SessionState;
   private signalHandlers: Map<string, () => void> = new Map();
   private exitInProgress = false;
-  private forceExitTimer: NodeJS.Timeout | null = null;
+  private forceExitHandle: { cancel: () => void } | null = null;
 
   constructor(config: Partial<ExitConfirmationConfig> = {}) {
-    super();
+    super(`exit-handler:${ExitHandler.instanceCounter++}`, 50);
 
     this.config = {
       requireConfirmation: true,
@@ -476,25 +449,47 @@ export class ExitHandler extends EventEmitter implements TypedEventEmitter<ExitH
   /**
    * Handle force exit (for emergencies or timeouts)
    */
-  forceExit(code = 0, delay = 5000): void {
-    console.log(`Force exit in ${delay / 1000} seconds...`);
-    
-    this.forceExitTimer = setTimeout(() => {
+  forceExit(code = 0, delayMs = 5000): void {
+    console.log(`Force exit in ${delayMs / 1000} seconds...`);
+
+    if (this.forceExitHandle) {
+      this.forceExitHandle.cancel();
+    }
+
+    let cancelled = false;
+    const handle = {
+      cancel: () => {
+        cancelled = true;
+      }
+    };
+
+    this.forceExitHandle = handle;
+
+    void delay(async () => {
+      if (cancelled) {
+        return;
+      }
+
       this.emit('forceExit', code);
       this.performExit(code);
-    }, delay);
+    }, delayMs).finally(() => {
+      if (this.forceExitHandle === handle) {
+        this.forceExitHandle = null;
+      }
+    });
   }
 
   /**
    * Cancel force exit
    */
   cancelForceExit(): boolean {
-    if (this.forceExitTimer) {
-      clearTimeout(this.forceExitTimer);
-      this.forceExitTimer = null;
-      return true;
+    if (!this.forceExitHandle) {
+      return false;
     }
-    return false;
+
+    this.forceExitHandle.cancel();
+    this.forceExitHandle = null;
+    return true;
   }
 
   /**
@@ -643,8 +638,9 @@ export class ExitHandler extends EventEmitter implements TypedEventEmitter<ExitH
    */
   private performExit(code: number): void {
     // Clear any pending timers
-    if (this.forceExitTimer) {
-      clearTimeout(this.forceExitTimer);
+    if (this.forceExitHandle) {
+      this.forceExitHandle.cancel();
+      this.forceExitHandle = null;
     }
 
     // Remove signal handlers
@@ -684,10 +680,10 @@ export class ExitHandler extends EventEmitter implements TypedEventEmitter<ExitH
     ExitHandler.unregisterProcessListeners(this);
     this.signalHandlers.clear();
     this.cleanupManager.clearTasks();
-    
-    if (this.forceExitTimer) {
-      clearTimeout(this.forceExitTimer);
-      this.forceExitTimer = null;
+
+    if (this.forceExitHandle) {
+      this.forceExitHandle.cancel();
+      this.forceExitHandle = null;
     }
   }
 }

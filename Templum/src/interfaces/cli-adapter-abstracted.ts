@@ -8,7 +8,6 @@ description: [Abstracted CLI interface adapter that depends on ITemplumOrchestra
 ---
 */
 
-import { EventEmitter } from 'events';
 import * as readline from 'readline';
 import { 
   createTemplumError, 
@@ -23,6 +22,13 @@ import {
   ITemplumOrchestrator, 
   IInterfaceAdapter 
 } from './templum-orchestrator-interface';
+import {
+  EventUtils,
+  ScopedEventBus,
+  SubscriptionOptions,
+  TypedEventMap,
+  UnsubscribeFn
+} from '../utils/event-utils';
 import {
   TerminalUI,
   DefaultColorThemes,
@@ -51,6 +57,7 @@ import {
 import { ServiceInfo } from './service-ordering-manager';
 import { CLISessionBridge, CLISessionSnapshot } from './cli-session-bridge';
 import { renderCliSkin } from './cli/cli-skin-presenter';
+import { sleep } from '../utils/async-utils';
 
 /**
  * CLI Input Types (Interface-specific)
@@ -88,6 +95,33 @@ export interface CLIRenderResult {
   errors?: string[];
 }
 
+interface CLIInteractiveSessionEvent {
+  menu: string;
+  timestamp: number;
+}
+
+interface CLIInteractiveSessionStoppedEvent {
+  timestamp: number;
+}
+
+interface CLISkinRenderedEvent {
+  interfaceType: InterfaceType;
+  skinId: string;
+  renderTime?: number;
+  items: number;
+}
+
+interface CLIInterfaceAdapterEvents extends TypedEventMap {
+  stateUpdated: (state: StateUpdate) => void;
+  skinRendered: (payload: CLISkinRenderedEvent) => void;
+  interactiveSessionStarted: (payload: CLIInteractiveSessionEvent) => void;
+  interactiveSessionStopped: (payload: CLIInteractiveSessionStoppedEvent) => void;
+  interruptReceived: () => void;
+}
+
+type CLIEventKey = Extract<keyof CLIInterfaceAdapterEvents, string>;
+type AnyListener = (...args: any[]) => unknown;
+
 /**
  * Abstracted CLI Interface Adapter
  * 
@@ -95,7 +129,12 @@ export interface CLIRenderResult {
  * to concrete implementations like UniversalCommandRegistry, UniversalMenuRegistry, etc.
  * This provides proper separation of concerns and enables dependency inversion.
  */
-export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapter {
+export class CLIInterfaceAdapter implements IInterfaceAdapter {
+  private static instanceCounter = 0;
+
+  private readonly eventScope: string;
+  private readonly events: ScopedEventBus<CLIInterfaceAdapterEvents>;
+  private readonly listenerRegistry = new Map<CLIEventKey, Map<AnyListener, UnsubscribeFn>>();
   private orchestrator!: ITemplumOrchestrator;
   private readlineInterface: readline.Interface | null = null;
   private keyboardShortcuts = new Map<string, string>();
@@ -108,6 +147,146 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
   private sessionManager!: CLISessionBridge;
   private consistencyEngine: CLIDisplayConsistencyEngine;
   private readonly formatter: TerminalFormatter;
+
+  constructor(config?: CLIAdapterInitializationOptions) {
+    const { formatter, formatterCapabilities, ...adapterConfig } = config ?? {};
+
+    this.eventScope = `cli-interface-adapter:${CLIInterfaceAdapter.instanceCounter++}`;
+    this.events = EventUtils.createScopedBus<CLIInterfaceAdapterEvents>(this.eventScope, 75);
+
+    this.config = {
+      enableInteractiveMode: true,
+      enableKeyboardShortcuts: true,
+      enableColorOutput: true,
+      enableProgressIndicators: true,
+      clearScreenOnRender: true,
+      maxHistorySize: 50,
+      inputTimeout: 30000,
+      terminalTheme: 'default',
+      enableResponsiveLayout: true,
+      ...adapterConfig
+    };
+
+    const capabilities = this.resolveFormatterCapabilities(formatterCapabilities);
+    this.formatter = formatter ?? createFormatter({}, capabilities);
+
+    // Initialize terminal UI with centralized defaults
+    this.terminalUI = createDefaultTerminalUI(this.config.terminalTheme, {
+      formatter: this.formatter,
+      columnsProvider: () => this.formatter.getCapabilities().width,
+    });
+
+    // Initialize session manager
+    // TODO: [TASK-ID-004] Pattern: session-manager-integration | Complexity: 4 | Dependencies: session-persistence
+    // Initialize consistency engine with responsive layout integration
+    // TODO: [TASK-ID-005] Pattern: display-consistency-integration | Complexity: 6 | Dependencies: consistency-framework,responsive-layout
+    // Context: Integration of CLI display consistency engine for uniform formatting across all display elements
+    this.consistencyEngine = createCLIDisplayConsistencyEngine({
+      enforceWidthStandards: this.config.enableResponsiveLayout,
+      enforceServiceOrdering: true,
+      enforceLayoutNormalization: true,
+      skinCompatibilityMode: true,
+      responsiveBreakpoints: {
+        small: getFormatterSeparatorLength(),
+        medium: 100,
+        large: 140
+      }
+    });
+  }
+
+  emit<K extends CLIEventKey>(event: K, ...args: Parameters<CLIInterfaceAdapterEvents[K]>): boolean {
+    return this.events.emit(event, ...args);
+  }
+
+  on<K extends CLIEventKey>(event: K, listener: CLIInterfaceAdapterEvents[K]): this {
+    this.registerListener(event, listener);
+    return this;
+  }
+
+  addListener<K extends CLIEventKey>(event: K, listener: CLIInterfaceAdapterEvents[K]): this {
+    return this.on(event, listener);
+  }
+
+  once<K extends CLIEventKey>(event: K, listener: CLIInterfaceAdapterEvents[K]): this {
+    this.registerListener(event, listener, { once: true });
+    return this;
+  }
+
+  off<K extends CLIEventKey>(event: K, listener: CLIInterfaceAdapterEvents[K]): this {
+    this.unregisterListener(event, listener);
+    return this;
+  }
+
+  removeListener<K extends CLIEventKey>(event: K, listener: CLIInterfaceAdapterEvents[K]): this {
+    return this.off(event, listener);
+  }
+
+  removeAllListeners(event?: CLIEventKey): this {
+    if (event) {
+      this.flushListeners(event);
+    } else {
+      for (const eventName of Array.from(this.listenerRegistry.keys())) {
+        this.flushListeners(eventName);
+      }
+      this.events.cleanup();
+    }
+    return this;
+  }
+
+  listenerCount(event: CLIEventKey): number {
+    return this.events.getListenerCount(event);
+  }
+
+  eventNames(): CLIEventKey[] {
+    return this.events.getEventNames();
+  }
+
+  private registerListener<K extends CLIEventKey>(
+    event: K,
+    listener: CLIInterfaceAdapterEvents[K],
+    options?: SubscriptionOptions
+  ): void {
+    const unsubscribe = EventUtils.subscribe(this.events.emitter, event, listener, {
+      context: this.eventScope,
+      ...options
+    });
+
+    if (!this.listenerRegistry.has(event)) {
+      this.listenerRegistry.set(event, new Map());
+    }
+
+    this.listenerRegistry.get(event)!.set(listener as unknown as AnyListener, unsubscribe);
+  }
+
+  private unregisterListener<K extends CLIEventKey>(
+    event: K,
+    listener: CLIInterfaceAdapterEvents[K]
+  ): void {
+    const registry = this.listenerRegistry.get(event);
+    const unsubscribe = registry?.get(listener as unknown as AnyListener);
+
+    if (unsubscribe) {
+      unsubscribe();
+      registry!.delete(listener as unknown as AnyListener);
+      if (registry!.size === 0) {
+        this.listenerRegistry.delete(event);
+      }
+    } else {
+      this.events.emitter.off(event, listener);
+    }
+  }
+
+  private flushListeners(event: CLIEventKey): void {
+    const registry = this.listenerRegistry.get(event);
+    if (registry) {
+      for (const unsubscribe of registry.values()) {
+        unsubscribe();
+      }
+      registry.clear();
+      this.listenerRegistry.delete(event);
+    }
+    this.events.emitter.removeAllListeners(event);
+  }
 
   private formatColumn(
     value: unknown,
@@ -164,53 +343,6 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
 
   private formatCommandPrompt(prompt: string): string {
     return this.formatter.system.command(prompt);
-  }
-
-  constructor(config?: CLIAdapterInitializationOptions) {
-    super();
-    
-    const { formatter, formatterCapabilities, ...adapterConfig } = config ?? {};
-
-    this.config = {
-      enableInteractiveMode: true,
-      enableKeyboardShortcuts: true,
-      enableColorOutput: true,
-      enableProgressIndicators: true,
-      clearScreenOnRender: true,
-      maxHistorySize: 50,
-      inputTimeout: 30000,
-      terminalTheme: 'default',
-      enableResponsiveLayout: true,
-      ...adapterConfig
-    };
-
-    const capabilities = this.resolveFormatterCapabilities(formatterCapabilities);
-    this.formatter = formatter ?? createFormatter({}, capabilities);
-
-    // Initialize terminal UI with centralized defaults
-    this.terminalUI = createDefaultTerminalUI(this.config.terminalTheme, {
-      formatter: this.formatter,
-      columnsProvider: () => this.formatter.getCapabilities().width,
-    });
-
-    // Initialize session manager
-    // TODO: [TASK-ID-004] Pattern: session-manager-integration | Complexity: 4 | Dependencies: session-persistence
-    // Initialize consistency engine with responsive layout integration
-    // TODO: [TASK-ID-005] Pattern: display-consistency-integration | Complexity: 6 | Dependencies: consistency-framework,responsive-layout
-    // Context: Integration of CLI display consistency engine for uniform formatting across all display elements
-    // Validation-Required: consistency-enforcement, skin-compatibility, responsive-behavior
-    // Pattern-Info: { approach: "centralized-consistency-engine", alternatives: "distributed-formatting", trade-offs: "uniformity-vs-flexibility" }
-    this.consistencyEngine = createCLIDisplayConsistencyEngine({
-      enforceWidthStandards: this.config.enableResponsiveLayout,
-      enforceServiceOrdering: true, // Always enforce connected-first, alphabetical ordering
-      enforceLayoutNormalization: true,
-      skinCompatibilityMode: true,
-      responsiveBreakpoints: {
-        small: getFormatterSeparatorLength(),
-        medium: 100,
-        large: 140
-      }
-    });
   }
 
   private getSessionSnapshot(): CLISessionSnapshot {
@@ -629,38 +761,38 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
                 // Pattern-Info: { approach: "timeout-based-continuation", alternatives: "immediate-return", trade-offs: "result-visibility-vs-flow-speed" }
                 // Brief pause to show result, then return to menu
                 // CLI-design compliance: No Press Enter messages
-                await new Promise(resolve => setTimeout(resolve, 1500));
+                await sleep(1500);
               }
               break;
               
             case 'help':
               // Help is displayed by the menu renderer, just wait for user
-              await this.waitForKeypress();
-              break;
-              
-            case 'quit':
-              sessionRunning = false;
-              break;
-          }
-          
-        } catch (error) {
-          if ((error as any).isTtyError === false || (error as any).name === 'ExitPromptError') {
-            // User pressed Ctrl+C
+            await this.waitForKeypress();
+            break;
+            
+          case 'quit':
             sessionRunning = false;
-          } else {
-            console.error(this.formatError('Menu interaction error:'), error);
-            // TODO: [TASK-MCP-010-003] Pattern: cli-design-compliance | Complexity: 3 | Dependencies: error-handling,navigation-flow
-            // Context: Replaced Press Enter message with timeout-based error handling per CLI-design specification
-            // Validation-Required: error-display-timing, user-experience-flow, cli-design-compliance
-            // Pattern-Info: { approach: "timeout-based-error-handling", alternatives: "immediate-return", trade-offs: "error-visibility-vs-flow-interruption" }
-            // Brief pause to display error, then return to menu
-            // CLI-design compliance: No Press Enter messages
-            await new Promise(resolve => setTimeout(resolve, 2000));
-          }
+            break;
+        }
+        
+      } catch (error) {
+        if ((error as any).isTtyError === false || (error as any).name === 'ExitPromptError') {
+          // User pressed Ctrl+C
+          sessionRunning = false;
+        } else {
+          console.error(this.formatError('Menu interaction error:'), error);
+          // TODO: [TASK-MCP-010-003] Pattern: cli-design-compliance | Complexity: 3 | Dependencies: error-handling,navigation-flow
+          // Context: Replaced Press Enter message with timeout-based error handling per CLI-design specification
+          // Validation-Required: error-display-timing, user-experience-flow, cli-design-compliance
+          // Pattern-Info: { approach: "timeout-based-error-handling", alternatives: "immediate-return", trade-offs: "error-visibility-vs-flow-interruption" }
+          // Brief pause to display error, then return to menu
+          // CLI-design compliance: No Press Enter messages
+          await sleep(2000);
         }
       }
-      
-    } finally {
+    }
+    
+  } finally {
       // Store session history for potential debugging
       console.log(this.formatWarning('\n🛑 Interactive session ended'));
       console.log(this.formatMuted(`Session history: ${sessionHistory.length} interactions recorded`));
@@ -855,24 +987,24 @@ export class CLIInterfaceAdapter extends EventEmitter implements IInterfaceAdapt
    * TASK-CLI-009: Fixed nested inquirer calls causing terminal state corruption
    */
   private async waitForKeypress(): Promise<void> {
-    return new Promise((resolve) => {
-      const stdin = process.stdin;
-      
-      // Check if we're in a TTY environment
-      if (stdin.isTTY) {
-        // Use a simple one-time listener without changing terminal modes
-        // This avoids conflicts with the main inquirer session
-        stdin.resume();
-        const listener = () => {
-          stdin.removeListener('data', listener);
-          stdin.pause();
-          resolve();
-        };
-        stdin.once('data', listener);
-      } else {
-        // Non-TTY environment (automated testing, etc.)
-        setTimeout(() => resolve(), 1000);
-      }
+    const stdin = process.stdin;
+
+    // Non-TTY environments (automated testing, etc.) do not support keypress
+    if (!stdin.isTTY) {
+      await sleep(1000);
+      return;
+    }
+
+    await new Promise<void>((resolve) => {
+      // Use a simple one-time listener without changing terminal modes
+      // This avoids conflicts with the main inquirer session
+      stdin.resume();
+      const listener = () => {
+        stdin.removeListener('data', listener);
+        stdin.pause();
+        resolve();
+      };
+      stdin.once('data', listener);
     });
   }
 

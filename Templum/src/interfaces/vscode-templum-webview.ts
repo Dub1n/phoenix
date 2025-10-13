@@ -17,6 +17,7 @@ import {
   isTemplumError,
   UniversalSkinDefinition
 } from '../types/templum-types';
+import { withTimeout } from '../utils/async-utils';
 
 /**
  * Universal WebView Provider for Backend Service Integration
@@ -603,13 +604,11 @@ export class TemplumUniversalWebViewProvider implements vscode.WebviewViewProvid
     try {
       // Real-time service availability check with timeout protection
       const healthCheckTimeout = 5000; // 5 second timeout
-      const healthCheckPromise = backendRouter.isServiceAvailable(backendId);
-      
-      const timeoutPromise = new Promise<boolean>((_, reject) => {
-        setTimeout(() => reject(new Error('Health check timeout')), healthCheckTimeout);
-      });
-      
-      return await Promise.race([healthCheckPromise, timeoutPromise]);
+      return await withTimeout(
+        Promise.resolve(backendRouter.isServiceAvailable(backendId)),
+        healthCheckTimeout,
+        new Error('Health check timeout')
+      );
       
     } catch (_error) {
       // Health check failed - service is not available

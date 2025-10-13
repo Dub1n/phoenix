@@ -75,6 +75,8 @@ export class InterfaceAdapterRegistry
       return;
     }
 
+    const start = Date.now();
+
     try {
       if (!config?.orchestrator) {
         throw createTemplumError(
@@ -94,9 +96,11 @@ export class InterfaceAdapterRegistry
       await super.initialize(config);
       this.registryReady = true;
 
+      const durationMs = Date.now() - start;
       this.emit('initialized', {
         timestamp: Date.now(),
-        adapterFactories: this.adapterFactories.size
+        adapterFactories: this.adapterFactories.size,
+        durationMs
       });
 
       this.logger.info('InterfaceAdapterRegistry: Initialized with abstraction layer', {

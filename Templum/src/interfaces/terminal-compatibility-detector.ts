@@ -20,12 +20,13 @@ tags: [terminal-ui, compatibility, progressive-enhancement, border-rendering]
  * TASK-MCP-006: Structured window system with progressive enhancement
  */
 
-import { EventEmitter } from 'events';
 import {
   createFormatter,
   TerminalFormatter,
   type TerminalCapabilities as FormatterCapabilities,
 } from '../utils/terminal-formatter';
+import { EventDrivenComponent } from '../utils/event-bus-adapter';
+import { TypedEventMap } from '../utils/event-utils';
 
 export interface TerminalCapabilities {
   supportsBoxDrawing: boolean;
@@ -97,13 +98,18 @@ export const BORDER_SETS = {
 
 export type BorderSetType = keyof typeof BORDER_SETS;
 
-export class TerminalCompatibilityDetector extends EventEmitter {
+interface TerminalCompatibilityDetectorEvents extends TypedEventMap {
+  detected: (capabilities: TerminalCapabilities) => void;
+}
+
+export class TerminalCompatibilityDetector extends EventDrivenComponent<TerminalCompatibilityDetectorEvents> {
+  private static instanceCounter = 0;
   private capabilities: TerminalCapabilities | null = null;
   private detectionCompleted: boolean = false;
   private readonly formatter: TerminalFormatter;
   
   constructor(formatter: TerminalFormatter = createFormatter()) {
-    super();
+    super(`terminal-compatibility-detector:${TerminalCompatibilityDetector.instanceCounter++}`, 20);
     this.formatter = formatter;
   }
 

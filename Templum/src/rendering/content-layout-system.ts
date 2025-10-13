@@ -39,7 +39,8 @@ tags:
  * - Terminal compatibility with graceful degradation
  */
 
-import { EventEmitter } from 'events';
+import type { TypedEventMap } from '../utils/event-utils';
+import { EventDrivenComponent } from '../utils/event-bus-adapter';
 import {
   createFormatter,
   TerminalFormatter,
@@ -815,13 +816,23 @@ export interface ContentLayoutSystemDependencies {
   capabilityDetector?: TerminalCapabilityDetector;
 }
 
-export class ContentLayoutSystem extends EventEmitter {
+interface ContentLayoutSystemEvents extends TypedEventMap {
+  contentRendered: (payload: {
+    content: WindowContent;
+    layout: CalculatedLayout;
+    capabilities: TerminalCapabilities;
+    config: WindowLayoutConfig;
+  }) => void;
+}
+
+export class ContentLayoutSystem extends EventDrivenComponent<ContentLayoutSystemEvents> {
+  private static instanceCounter = 0;
   private borderRenderer: BorderRenderer;
   private windowLayout: WindowLayout;
   private capabilityDetector: TerminalCapabilityDetector;
 
   constructor(dependencies: ContentLayoutSystemDependencies = {}) {
-    super();
+    super(`content-layout-system:${ContentLayoutSystem.instanceCounter++}`, 25);
     const formatter = dependencies.formatter ?? createFormatter();
     this.capabilityDetector = dependencies.capabilityDetector ?? new TerminalCapabilityDetector(formatter);
     this.windowLayout = dependencies.windowLayout ?? new WindowLayout(this.capabilityDetector);

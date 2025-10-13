@@ -24,10 +24,11 @@ tags: [cli, navigation, compatibility, cross-platform]
  * Pattern-Info: { approach: "comprehensive-detection", alternatives: "basic-environment-check", trade-offs: "accuracy-complexity" }
  */
 
-import { EventEmitter } from 'events';
 import * as os from 'os';
 import * as fs from 'fs';
 import * as path from 'path';
+import { EventDrivenComponent } from '../../utils/event-bus-adapter';
+import { TypedEventMap } from '../../utils/event-utils';
 
 // TODO: [TASK-ID-013] Pattern: terminal-detection | Complexity: 4 | Dependencies: platform-specific
 // Context: Platform-specific terminal detection and capability probing
@@ -275,9 +276,20 @@ const TERMINAL_IDENTIFICATION_PATTERNS = [
 /**
  * Terminal capability detector
  */
-export class TerminalCapabilityDetector extends EventEmitter {
+interface TerminalCapabilityDetectorEvents extends TypedEventMap {
+  detectionStarted: () => void;
+  detectionCompleted: (capabilities: TerminalCapabilities) => void;
+  detectionError: (error: unknown) => void;
+}
+
+export class TerminalCapabilityDetector extends EventDrivenComponent<TerminalCapabilityDetectorEvents> {
+  private static instanceCounter = 0;
   private cachedCapabilities: TerminalCapabilities | null = null;
   private detectionResults: Map<string, FeatureTestResult> = new Map();
+  
+  constructor() {
+    super(`terminal-capability-detector:${TerminalCapabilityDetector.instanceCounter++}`, 30);
+  }
   
   /**
    * Detect comprehensive terminal capabilities
@@ -858,13 +870,21 @@ export class FallbackManager {
 /**
  * Complete terminal compatibility system
  */
-export class TerminalCompatibilitySystem extends EventEmitter {
+interface TerminalCompatibilitySystemEvents extends TypedEventMap {
+  detectionStarted: () => void;
+  detectionCompleted: (capabilities: TerminalCapabilities) => void;
+  detectionError: (error: unknown) => void;
+  initialized: (result: CompatibilityTestResult) => void;
+}
+
+export class TerminalCompatibilitySystem extends EventDrivenComponent<TerminalCompatibilitySystemEvents> {
+  private static instanceCounter = 0;
   private detector: TerminalCapabilityDetector;
   private fallbackManager: FallbackManager | null = null;
   private capabilities: TerminalCapabilities | null = null;
 
   constructor() {
-    super();
+    super(`terminal-compatibility-system:${TerminalCompatibilitySystem.instanceCounter++}`, 40);
     this.detector = new TerminalCapabilityDetector();
     
     // Forward detector events

@@ -24,25 +24,11 @@ tags: [cli, navigation, windows, state-management]
  * Pattern-Info: { approach: "stack-based-navigation", alternatives: "flat-navigation", trade-offs: "memory-complexity" }
  */
 
-import { EventEmitter } from 'events';
 import { BorderRenderer, WindowBorderConfig, createBorderRenderer } from './border-renderer';
 import { WidthCalculator, WidthCalculationResult, createWidthCalculator } from './width-calculator';
 import { TerminalColorTheme, DefaultColorThemes } from '../terminal-ui-components';
-
-/**
- * Utility type to convert event function signatures to parameter arrays for EventEmitter compatibility
- * This ensures TypeScript compatibility while maintaining type safety
- */
-type EventMap<T> = {
-  [K in keyof T]: T[K] extends (...args: infer P) => void ? P : never;
-};
-
-type TypedEventEmitter<T> = {
-  emit<K extends keyof T>(event: K, ...args: EventMap<T>[K]): boolean;
-  on<K extends keyof T>(event: K, listener: T[K]): TypedEventEmitter<T>;
-  off<K extends keyof T>(event: K, listener: T[K]): TypedEventEmitter<T>;
-  once<K extends keyof T>(event: K, listener: T[K]): TypedEventEmitter<T>;
-} & EventEmitter;
+import { EventDrivenComponent } from '../../utils/event-bus-adapter';
+import { TypedEventMap } from '../../utils/event-utils';
 
 // TODO: [TASK-ID-005] Pattern: window-management | Complexity: 4 | Dependencies: session-context
 // Context: Window state persistence and restoration for session continuity
@@ -103,7 +89,7 @@ export interface BreadcrumbEntry {
 /**
  * Window stack events
  */
-export interface WindowStackEvents {
+export interface WindowStackEvents extends TypedEventMap {
   'windowPushed': (window: WindowDefinition, context: NavigationContext) => void;
   'windowPopped': (window: WindowDefinition, context: NavigationContext) => void;
   'navigationChanged': (context: NavigationContext) => void;
@@ -126,7 +112,8 @@ export interface WindowStackConfig {
 /**
  * Main window stack implementation
  */
-export class WindowStack extends EventEmitter implements TypedEventEmitter<WindowStackEvents> {
+export class WindowStack extends EventDrivenComponent<WindowStackEvents> {
+  private static instanceCounter = 0;
   private stack: WindowDefinition[] = [];
   private forwardStack: WindowDefinition[] = []; // For forward navigation
   protected currentIndex = -1;
@@ -136,7 +123,7 @@ export class WindowStack extends EventEmitter implements TypedEventEmitter<Windo
   private persistedState: any = null;
 
   constructor(config: Partial<WindowStackConfig> = {}) {
-    super();
+    super(`window-stack:${WindowStack.instanceCounter++}`, 40);
     
     this.config = {
       maxStackSize: 50,

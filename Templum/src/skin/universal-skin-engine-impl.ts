@@ -6,7 +6,8 @@
  * description: [Phase 5 Universal Skin Engine implementation with performance targets and multi-backend support]
  * ---*/
 
-import { EventEmitter } from 'events';
+import type { TypedEventMap } from '../utils/event-utils';
+import { EventDrivenComponent } from '../utils/event-bus-adapter';
 import { 
   UniversalSkinDefinition, 
   SkinRenderResult, 
@@ -25,7 +26,32 @@ import { emitSerializationWarnings } from '../backend/backend-serialization-log'
 import { validateSkinDefinition } from '../validation/skin-validator';
 import type { SkinValidationResult } from '../validation/skin-validator';
 
-export class UniversalSkinEngine extends EventEmitter {
+interface UniversalSkinEngineEvents extends TypedEventMap {
+  skinRegistered: (payload: {
+    skinId: string;
+    name?: string;
+    version: string;
+    supportedInterfaces: string[];
+    compatibilityLevel: string;
+    schemaVersion?: string;
+    validationWarnings: string[];
+    timestamp: number;
+  }) => void;
+  skinValidationWarnings: (payload: {
+    skinId: string;
+    warnings: string[];
+    timestamp: number;
+  }) => void;
+  skinRegistrationFailed: (payload: {
+    skinId: string;
+    error: unknown;
+    validationErrors: string[];
+    timestamp: number;
+  }) => void;
+}
+
+export class UniversalSkinEngine extends EventDrivenComponent<UniversalSkinEngineEvents> {
+  private static instanceCounter = 0;
   private skins: Map<string, UniversalSkinDefinition> = new Map();
   private renderCache: Map<string, SkinRenderResult> = new Map();
   private interfaceStates: Map<string, any> = new Map();
@@ -36,7 +62,7 @@ export class UniversalSkinEngine extends EventEmitter {
   };
 
   constructor() {
-    super();
+    super(`universal-skin-engine-impl:${UniversalSkinEngine.instanceCounter++}`, 100);
     this.versionManager = new SkinVersionManager();
   }
 
@@ -117,7 +143,7 @@ export class UniversalSkinEngine extends EventEmitter {
         version: skinDefinition.version,
         supportedInterfaces: skinDefinition.metadata?.supportedInterfaces || [],
         compatibilityLevel: compatibilityResult.level,
-        schemaVersion: schemaValidation.schemaVersion,
+        schemaVersion: schemaValidation.schemaVersion ?? undefined,
         validationWarnings: schemaValidation.warnings || [],
         timestamp: Date.now()
       });
@@ -321,6 +347,7 @@ export class UniversalSkinEngine extends EventEmitter {
     this.renderCache.clear();
     this.interfaceStates.clear();
     this.skins.clear();
+    this.cleanupEvents();
   }
 
   /**

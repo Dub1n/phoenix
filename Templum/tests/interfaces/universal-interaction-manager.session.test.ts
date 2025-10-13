@@ -1,4 +1,4 @@
-import { EventEmitter } from 'events';
+import { EventUtils, type GenericEventMap } from '../../src/utils/event-utils';
 import { UniversalInteractionManager } from '../../src/interfaces/universal-interaction-manager';
 import { SessionContextFoundation } from '../../src/session/session-context-foundation';
 import type { TemplumSessionManagerContract } from '../../src/session/universal-session-manager.types';
@@ -30,7 +30,7 @@ const createSessionManagerMock = (
   sessionContext: SessionContextFoundation,
   sessionId: string,
 ) => {
-  const events = new EventEmitter();
+  const events = EventUtils.createTypedEmitter<GenericEventMap>();
 
   const mock: jest.Mocked<TemplumSessionManagerContract> = {
     initialize: jest.fn().mockResolvedValue(undefined),

@@ -257,7 +257,7 @@ export class AdvancedCompatibilityService {
     const missingAssets: string[] = [];
     const invalidAssets: { asset: string; issues: string[] }[] = [];
     const oversizedAssets: { asset: string; size: number; limit: number }[] = [];
-    const unsupportedFormats: { asset: string; format: string }[] = [];
+    const unsupportedFormats: AssetCompatibilityResult['unsupportedFormats'] = [];
 
     const themeAssets = skin.themes || {};
     Object.entries(themeAssets).forEach(([themeName, theme]) => {

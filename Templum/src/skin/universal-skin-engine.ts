@@ -6,7 +6,8 @@
  * description: [Universal skin engine leveraging PCL-Skins architecture for 70% reuse potential with theme consistency]
  * ---*/
 
-import { EventEmitter } from 'events';
+import type { TypedEventMap } from '../utils/event-utils';
+import { EventDrivenComponent } from '../utils/event-bus-adapter';
 import { 
   UniversalSkinDefinition, 
   SkinRenderResult, 
@@ -131,7 +132,61 @@ export interface SkinEngineStats {
   }>;
 }
 
-export class UniversalSkinEngine extends EventEmitter {
+interface UniversalSkinEngineEvents extends TypedEventMap {
+  skinRegistered: (payload: {
+    skinId: string;
+    name: string;
+    version: string;
+    action: 'updated' | 'registered';
+    conflicts: number;
+    migrations: number;
+    pclReusePercentage: number;
+    supportedInterfaces?: InterfaceType[];
+    timestamp: number;
+  }) => void;
+  'performance:metric': (payload: MetricsSignalPayload) => void;
+  'skin-engine:error': (payload: ErrorSignalPayload) => void;
+  'fallback:used': (payload: {
+    component: string;
+    fallbackType: string;
+    originalError: string;
+    success: boolean;
+    timestamp: number;
+  }) => void;
+  'fallback:failed': (payload: {
+    component: string;
+    fallbackType: string;
+    originalError: string;
+    fallbackError: string;
+    timestamp: number;
+  }) => void;
+  renderCacheHit: (payload: { skinId: string; interfaceType: string; themeName: string }) => void;
+  skinRendered: (payload: SkinRenderResult) => void;
+  skinRenderError: (payload: SkinRenderResult) => void;
+  themeApplied: (payload: {
+    interfaceType: string;
+    skinId: string;
+    themeName: string;
+    renderResult: SkinRenderResult;
+    timestamp: number;
+  }) => void;
+  themeVariantCreated: (payload: {
+    baseSkinId: string;
+    baseThemeName: string;
+    variantName: string;
+    timestamp: number;
+  }) => void;
+  skinVersionUnregistered: (payload: { skinId: string; version: string; timestamp: number }) => void;
+  pclSkinsConnected: (payload: { serviceVersion: string; supportedPatterns: string[]; timestamp: number }) => void;
+  interfaceAdapterRegistered: (payload: {
+    interfaceType: string;
+    capabilities: unknown[];
+    timestamp: number;
+  }) => void;
+}
+
+export class UniversalSkinEngine extends EventDrivenComponent<UniversalSkinEngineEvents> {
+  private static instanceCounter = 0;
   private skins: Map<string, UniversalSkinDefinition> = new Map();
   private skinVersions: Map<string, Map<string, UniversalSkinDefinition>> = new Map(); // skinId -> version -> skin
   private activeThemes: Map<string, string> = new Map(); // interface -> theme
@@ -150,7 +205,7 @@ export class UniversalSkinEngine extends EventEmitter {
   };
 
   constructor(systemVersion?: string) {
-    super();
+    super(`universal-skin-engine:${UniversalSkinEngine.instanceCounter++}`, 200);
     this.config = {
       cacheTimeout: 300000, // 5 minutes
       maxCacheSize: 100, // 100 rendered skins
@@ -736,6 +791,7 @@ export class UniversalSkinEngine extends EventEmitter {
     this.activeThemes.clear();
     this.renderingEngines.clear();
     this.interfaceAdapters.clear();
+    this.cleanupEvents();
   }
 
   /**

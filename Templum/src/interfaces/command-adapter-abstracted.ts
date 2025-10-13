@@ -6,7 +6,6 @@
  * description: [Abstracted command interface adapter that depends on ITemplumOrchestrator interface, not concrete implementations]
  * ---*/
 
-import { EventEmitter } from 'events';
 import {
   ErrorSignalPayload,
   createTemplumError,
@@ -21,6 +20,13 @@ import {
 import { ITemplumOrchestrator, IInterfaceAdapter } from './templum-orchestrator-interface';
 import { TypeGuards } from '../utils/type-guards';
 import { createLogger, LogLevel } from '../utils/logger';
+import {
+  EventUtils,
+  ScopedEventBus,
+  SubscriptionOptions,
+  TypedEventMap,
+  UnsubscribeFn
+} from '../utils/event-utils';
 
 /**
  * Command Input Types (Interface-specific)
@@ -54,6 +60,23 @@ export interface CommandExecutionResult extends CommandResult {
   metadata?: Record<string, any>;
 }
 
+interface CommandMetricsEvent {
+  timestamp: number;
+  source: 'command';
+  executionTime: number;
+  success: boolean;
+  command: string;
+}
+
+interface CommandInterfaceAdapterEvents extends TypedEventMap {
+  error: (payload: ErrorSignalPayload) => void;
+  stateUpdated: (state: StateUpdate) => void;
+  'command-metrics': (metrics: CommandMetricsEvent) => void;
+}
+
+type CommandEventKey = Extract<keyof CommandInterfaceAdapterEvents, string>;
+type CommandListener = (...args: any[]) => unknown;
+
 /**
  * Abstracted Command Interface Adapter
  * 
@@ -61,7 +84,12 @@ export interface CommandExecutionResult extends CommandResult {
  * to concrete implementations. This provides proper separation of concerns and enables 
  * dependency inversion for programmatic command execution.
  */
-export class CommandInterfaceAdapter extends EventEmitter implements IInterfaceAdapter {
+export class CommandInterfaceAdapter implements IInterfaceAdapter {
+  private static instanceCounter = 0;
+
+  private readonly eventScope: string;
+  private readonly events: ScopedEventBus<CommandInterfaceAdapterEvents>;
+  private readonly listenerRegistry = new Map<CommandEventKey, Map<CommandListener, UnsubscribeFn>>();
   private orchestrator!: ITemplumOrchestrator;
   private config: CommandAdapterConfig;
   private executionQueue: CommandInput[] = [];
@@ -71,8 +99,9 @@ export class CommandInterfaceAdapter extends EventEmitter implements IInterfaceA
   private readonly logger = createLogger('command-interface-adapter', { level: LogLevel.ERROR });
 
   constructor(config?: Partial<CommandAdapterConfig>) {
-    super();
-    
+    this.eventScope = `command-interface-adapter:${CommandInterfaceAdapter.instanceCounter++}`;
+    this.events = EventUtils.createScopedBus<CommandInterfaceAdapterEvents>(this.eventScope, 50);
+
     this.config = {
       enableBatchExecution: true,
       enableAsynchronousExecution: true,
@@ -83,6 +112,100 @@ export class CommandInterfaceAdapter extends EventEmitter implements IInterfaceA
       enableMetrics: true,
       ...config
     };
+  }
+
+  emit<K extends CommandEventKey>(event: K, ...args: Parameters<CommandInterfaceAdapterEvents[K]>): boolean {
+    return this.events.emit(event, ...args);
+  }
+
+  on<K extends CommandEventKey>(event: K, listener: CommandInterfaceAdapterEvents[K]): this {
+    this.registerListener(event, listener);
+    return this;
+  }
+
+  addListener<K extends CommandEventKey>(event: K, listener: CommandInterfaceAdapterEvents[K]): this {
+    return this.on(event, listener);
+  }
+
+  once<K extends CommandEventKey>(event: K, listener: CommandInterfaceAdapterEvents[K]): this {
+    this.registerListener(event, listener, { once: true });
+    return this;
+  }
+
+  off<K extends CommandEventKey>(event: K, listener: CommandInterfaceAdapterEvents[K]): this {
+    this.unregisterListener(event, listener);
+    return this;
+  }
+
+  removeListener<K extends CommandEventKey>(event: K, listener: CommandInterfaceAdapterEvents[K]): this {
+    return this.off(event, listener);
+  }
+
+  removeAllListeners(event?: CommandEventKey): this {
+    if (event) {
+      this.flushListeners(event);
+    } else {
+      for (const eventName of Array.from(this.listenerRegistry.keys())) {
+        this.flushListeners(eventName);
+      }
+      this.events.cleanup();
+    }
+    return this;
+  }
+
+  listenerCount(event: CommandEventKey): number {
+    return this.events.getListenerCount(event);
+  }
+
+  eventNames(): CommandEventKey[] {
+    return this.events.getEventNames();
+  }
+
+  private registerListener<K extends CommandEventKey>(
+    event: K,
+    listener: CommandInterfaceAdapterEvents[K],
+    options?: SubscriptionOptions
+  ): void {
+    const unsubscribe = EventUtils.subscribe(this.events.emitter, event, listener, {
+      context: this.eventScope,
+      ...options
+    });
+
+    if (!this.listenerRegistry.has(event)) {
+      this.listenerRegistry.set(event, new Map());
+    }
+
+    this.listenerRegistry.get(event)!.set(listener as unknown as CommandListener, unsubscribe);
+  }
+
+  private unregisterListener<K extends CommandEventKey>(
+    event: K,
+    listener: CommandInterfaceAdapterEvents[K]
+  ): void {
+    const registry = this.listenerRegistry.get(event);
+    const unsubscribe = registry?.get(listener as unknown as CommandListener);
+
+    if (unsubscribe) {
+      unsubscribe();
+      registry!.delete(listener as unknown as CommandListener);
+      if (registry!.size === 0) {
+        this.listenerRegistry.delete(event);
+      }
+    } else {
+      this.events.emitter.off(event, listener);
+    }
+  }
+
+  private flushListeners(event: CommandEventKey): void {
+    const registry = this.listenerRegistry.get(event);
+    if (registry) {
+      for (const unsubscribe of registry.values()) {
+        unsubscribe();
+      }
+      registry.clear();
+      this.listenerRegistry.delete(event);
+    }
+    this.events.emitter.removeAllListeners(event);
   }
 
   /**
@@ -140,6 +263,7 @@ export class CommandInterfaceAdapter extends EventEmitter implements IInterfaceA
    */
   async syncState(stateUpdate: StateUpdate): Promise<void> {
     try {
+      this.validateStateUpdate(stateUpdate);
       console.log(`CommandInterfaceAdapter: Received state update at ${new Date(stateUpdate.timestamp).toISOString()}`);
       
       // Command interface state synchronization affects execution context
@@ -156,15 +280,26 @@ export class CommandInterfaceAdapter extends EventEmitter implements IInterfaceA
       this.emit('stateUpdated', stateUpdate);
       
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      this.logger.warn('CommandInterfaceAdapter: State sync failed', { errorMessage });
-      
+      const templumError = isTemplumError(error)
+        ? error
+        : createTemplumError(
+            `State synchronization failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            'STATE_SYNC_FAILED',
+            'runtime'
+          );
+
+      this.logger.error('CommandInterfaceAdapter: State sync failed', undefined, {
+        errorMessage: templumError.message
+      });
+
       this.emit('error', {
         timestamp: Date.now(),
         source: 'command',
-        error: createTemplumError(`State synchronization failed: ${errorMessage}`, 'STATE_SYNC_FAILED', 'runtime'),
+        error: templumError,
         severity: 'medium' as const
       } as ErrorSignalPayload);
+
+      throw templumError;
     }
   }
 
@@ -276,6 +411,16 @@ export class CommandInterfaceAdapter extends EventEmitter implements IInterfaceA
       } as ErrorSignalPayload);
       
       return executionResult;
+    }
+  }
+
+  private validateStateUpdate(stateUpdate: StateUpdate): void {
+    if (!stateUpdate) {
+      throw createTemplumError('State synchronization failed: state update is undefined', 'STATE_SYNC_FAILED', 'runtime');
+    }
+
+    if (typeof stateUpdate.timestamp !== 'number' || Number.isNaN(stateUpdate.timestamp)) {
+      throw createTemplumError('State synchronization failed: invalid timestamp', 'STATE_SYNC_FAILED', 'runtime');
     }
   }
 

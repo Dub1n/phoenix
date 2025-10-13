@@ -11,7 +11,6 @@
  * Generated: 2025-08-21
  */
 
-import { EventEmitter } from 'events';
 import * as readline from 'readline';
 import { UniversalCommandRegistry } from '../commands/universal-command-registry';
 import { UniversalMenuRegistry, LoadedSkin, UniversalMenuDefinition } from '../menus/universal-menu-registry';
@@ -30,6 +29,14 @@ import {
 } from './terminal-ui-components';
 import { StringUtils } from '../utils/chainable-string-utils';
 import { TypeGuards, TypeValidators } from '../utils/type-guards';
+import { EventDrivenComponent } from '../utils/event-bus-adapter';
+import { TypedEventMap } from '../utils/event-utils';
+
+type ManualOverrideController = {
+  applyManualOverride: (...args: Parameters<ITemplumOrchestrator['applyManualOverride']>) => ReturnType<ITemplumOrchestrator['applyManualOverride']>;
+  clearManualOverride: (...args: Parameters<ITemplumOrchestrator['clearManualOverride']>) => ReturnType<ITemplumOrchestrator['clearManualOverride']>;
+  getManualOverrideSnapshot: () => ReturnType<ITemplumOrchestrator['getManualOverrideSnapshot']>;
+};
 
 export interface CLIAdapter {
   type: 'cli';
@@ -99,12 +106,25 @@ export interface CLIAdapterConfig {
   terminalTheme?: 'default' | 'dark' | 'light';
 }
 
+interface CLIInterfaceAdapterEvents extends TypedEventMap {
+  initialized: () => void;
+  rendered: (menuDefinition: UniversalMenuDefinition) => void;
+  interactiveSessionStarted: (sessionId: string) => void;
+  interactiveSessionStopped: () => void;
+  cleanup: () => void;
+  interruptReceived: () => void;
+  sessionChanged: (sessionId: string) => void;
+  keyboardShortcutAdded: (key: string, command: string) => void;
+  keyboardShortcutRemoved: (key: string) => void;
+}
+
 /**
  * CLI Interface Adapter Implementation
  * Transfers interactive menu navigation from PCL Interaction Manager and 
  * implements skin-based menu rendering using established session context
  */
-export class CLIInterfaceAdapter extends EventEmitter implements CLIAdapter {
+export class CLIInterfaceAdapter extends EventDrivenComponent<CLIInterfaceAdapterEvents> implements CLIAdapter {
+  private static instanceCounter = 0;
   type: 'cli' = 'cli';
   
   private commandRegistry: UniversalCommandRegistry;
@@ -138,7 +158,7 @@ export class CLIInterfaceAdapter extends EventEmitter implements CLIAdapter {
     config?: Partial<CLIAdapterConfig>,
     orchestrator?: ITemplumOrchestrator
   ) {
-    super();
+    super(`cli-interface-adapter:${CLIInterfaceAdapter.instanceCounter++}`, 75);
     this.commandRegistry = commandRegistry;
     this.menuRegistry = menuRegistry;
     this.sessionContext = sessionContext;
@@ -170,12 +190,16 @@ export class CLIInterfaceAdapter extends EventEmitter implements CLIAdapter {
       columnsProvider: () => formatter.getCapabilities().width,
     });
 
-    if (this.orchestrator) {
-      this.commandRegistry.attachManualOverrideController({
-        applyManualOverride: (serviceId, options) =>
-          this.orchestrator!.applyManualOverride(serviceId, options),
-        clearManualOverride: (serviceId) =>
-          this.orchestrator!.clearManualOverride(serviceId),
+    const manualOverrideAttacher = (this.commandRegistry as unknown as {
+      attachManualOverrideController?: (controller: ManualOverrideController) => void;
+    }).attachManualOverrideController;
+
+    if (this.orchestrator && typeof manualOverrideAttacher === 'function') {
+      manualOverrideAttacher({
+        applyManualOverride: (...args) =>
+          this.orchestrator!.applyManualOverride(...args),
+        clearManualOverride: (...args) =>
+          this.orchestrator!.clearManualOverride(...args),
         getManualOverrideSnapshot: () =>
           this.orchestrator!.getManualOverrideSnapshot(),
       });
