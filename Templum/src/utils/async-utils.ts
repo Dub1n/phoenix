@@ -11,6 +11,18 @@ export interface RetryOptions {
 
 type AnyFunction = (...args: any[]) => any;
 
+export interface ManagedTimeout {
+  cancel: () => void;
+  ref: () => void;
+  unref: () => void;
+}
+
+export interface ManagedInterval {
+  stop: () => void;
+  ref: () => void;
+  unref: () => void;
+}
+
 export class AsyncUtils {
   private static logger: Logger = createLogger('async-utils');
   private static activeTimeouts: Set<NodeJS.Timeout> = new Set();
@@ -99,6 +111,7 @@ export class AsyncUtils {
         AsyncUtils.activeTimeouts.delete(timer);
         resolve();
       }, ms);
+      timer.unref?.();
       AsyncUtils.activeTimeouts.add(timer);
     });
   }
@@ -164,16 +177,18 @@ export class AsyncUtils {
     handler: () => void | Promise<void>,
     intervalMs: number,
     options: { immediate?: boolean; unref?: boolean } = {}
-  ): { stop: () => void; ref: () => void; unref: () => void } {
+  ): ManagedInterval {
     const { immediate = false, unref = false } = options;
 
     const invokeHandler = async () => {
       try {
         await handler();
       } catch (error) {
-        AsyncUtils.logger.error('Managed interval handler failed', {
-          error: error instanceof Error ? error.message : String(error)
-        });
+        AsyncUtils.logger.error(
+          'Managed interval handler failed',
+          undefined,
+          { error: error instanceof Error ? error.message : String(error) }
+        );
       }
     };
 
@@ -201,6 +216,57 @@ export class AsyncUtils {
       },
       unref: () => {
         interval.unref?.();
+      }
+    };
+  }
+
+  static createTimeout(
+    handler: () => void | Promise<void>,
+    timeoutMs: number,
+    options: { unref?: boolean } = {}
+  ): ManagedTimeout {
+    const { unref = false } = options;
+    let active = true;
+
+    const executeHandler = () => {
+      void Promise.resolve(handler()).catch(error => {
+        AsyncUtils.logger.error(
+          'Managed timeout handler failed',
+          undefined,
+          { error: error instanceof Error ? error.message : String(error) }
+        );
+      });
+    };
+
+    const timeout = setTimeout(() => {
+      AsyncUtils.activeTimeouts.delete(timeout);
+      if (!active) {
+        return;
+      }
+      active = false;
+      executeHandler();
+    }, timeoutMs);
+
+    if (unref) {
+      timeout.unref?.();
+    }
+
+    AsyncUtils.activeTimeouts.add(timeout);
+
+    return {
+      cancel: () => {
+        if (!active) {
+          return;
+        }
+        active = false;
+        clearTimeout(timeout);
+        AsyncUtils.activeTimeouts.delete(timeout);
+      },
+      ref: () => {
+        timeout.ref?.();
+      },
+      unref: () => {
+        timeout.unref?.();
       }
     };
   }
@@ -239,6 +305,7 @@ export const {
   debounce,
   throttle,
   createInterval,
+  createTimeout,
   raceWithTimeout,
   allWithTimeout,
   delay,

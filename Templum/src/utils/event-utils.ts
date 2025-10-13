@@ -1,10 +1,13 @@
 import { EventEmitter } from 'events';
 import { createLogger, Logger } from './logger';
 import { handle as handleError } from './error-handler';
+import { createTimeout, ManagedTimeout } from './async-utils';
 
 export interface TypedEventMap {
   [event: string]: (...args: any[]) => any;
 }
+
+export type GenericEventMap = Record<string, (...args: any[]) => unknown>;
 
 type EventKey<TEventMap extends TypedEventMap> = Extract<keyof TEventMap, string>;
 
@@ -14,6 +17,49 @@ export interface SubscriptionOptions {
   once?: boolean;
   prepend?: boolean;
   context?: string;
+}
+
+export interface EventBusHostOptions {
+  /**
+   * Context key used for EventUtils subscription tracking.
+   * Defaults to a generated identifier when omitted.
+   */
+  context?: string;
+  /**
+   * Optional override for the emitter max listener threshold.
+   */
+  maxListeners?: number;
+}
+
+export interface EventBusHost<TEventMap extends TypedEventMap> {
+  readonly emitter: TypedEventEmitter<TEventMap>;
+  readonly context: string;
+  emit<K extends EventKey<TEventMap>>(event: K, ...args: Parameters<TEventMap[K]>): boolean;
+  on<K extends EventKey<TEventMap>>(
+    event: K,
+    handler: TEventMap[K],
+    options?: SubscriptionOptions
+  ): UnsubscribeFn;
+  once<K extends EventKey<TEventMap>>(
+    event: K,
+    handler: TEventMap[K],
+    options?: Omit<SubscriptionOptions, 'once'>
+  ): UnsubscribeFn;
+  prepend<K extends EventKey<TEventMap>>(
+    event: K,
+    handler: TEventMap[K],
+    options?: SubscriptionOptions
+  ): UnsubscribeFn;
+  prependOnce<K extends EventKey<TEventMap>>(
+    event: K,
+    handler: TEventMap[K],
+    options?: Omit<SubscriptionOptions, 'once'>
+  ): UnsubscribeFn;
+  off<K extends EventKey<TEventMap>>(event: K, handler: TEventMap[K]): void;
+  removeAll(event?: EventKey<TEventMap>): void;
+  listenerCount<K extends EventKey<TEventMap>>(event: K): number;
+  getEventNames(): EventKey<TEventMap>[];
+  cleanup(): void;
 }
 
 export interface BatchSubscription<TEventMap extends TypedEventMap> {
@@ -52,6 +98,8 @@ export type TypedEventEmitter<TEventMap extends TypedEventMap> = EventEmitter & 
   eventNames(): EventKey<TEventMap>[];
 };
 
+export type AnyTypedEventEmitter = TypedEventEmitter<GenericEventMap>;
+
 export class EventUtils {
   private static logger: Logger = createLogger('event-utils');
   private static globalEmitter: EventEmitter = new EventEmitter();
@@ -59,13 +107,13 @@ export class EventUtils {
   private static subscriptions: Map<string, Set<UnsubscribeFn>> = new Map();
 
   static {
-    this.globalEmitter.setMaxListeners(200);
+    EventUtils.globalEmitter.setMaxListeners(200);
   }
 
   static createTypedEmitter<TEventMap extends TypedEventMap>(): TypedEventEmitter<TEventMap> {
     const emitter = new EventEmitter();
     emitter.setMaxListeners(50);
-    this.activeEmitters.add(emitter);
+    EventUtils.activeEmitters.add(emitter);
 
     const typedEmitter = emitter as TypedEventEmitter<TEventMap>;
     const originalEmit = emitter.emit.bind(emitter);
@@ -77,7 +125,7 @@ export class EventUtils {
       try {
         return originalEmit(event, ...args);
       } catch (error) {
-        this.logger.error('Event emission failed', undefined, {
+        EventUtils.logger.error('Event emission failed', undefined, {
           event: String(event),
           error: error instanceof Error ? error.message : error
         });
@@ -97,8 +145,8 @@ export class EventUtils {
   ): UnsubscribeFn {
     const { once = false, prepend = false, context = 'default' } = options;
 
-    if (!this.subscriptions.has(context)) {
-      this.subscriptions.set(context, new Set());
+    if (!EventUtils.subscriptions.has(context)) {
+      EventUtils.subscriptions.set(context, new Set());
     }
 
     if (once) {
@@ -115,10 +163,10 @@ export class EventUtils {
 
     const unsubscribe: UnsubscribeFn = () => {
       emitter.off(event, handler);
-      this.subscriptions.get(context)?.delete(unsubscribe);
+      EventUtils.subscriptions.get(context)?.delete(unsubscribe);
     };
 
-    this.subscriptions.get(context)!.add(unsubscribe);
+    EventUtils.subscriptions.get(context)!.add(unsubscribe);
     return unsubscribe;
   }
 
@@ -128,13 +176,13 @@ export class EventUtils {
     ...args: Parameters<TEventMap[K]>
   ): boolean {
     try {
-      this.logger.debug('Emitting event', {
+      EventUtils.logger.debug('Emitting event', {
         event: String(event),
         listeners: emitter.listenerCount(event)
       });
       return emitter.emit(event, ...args);
     } catch (error) {
-      this.logger.error('Event emission failed', undefined, {
+      EventUtils.logger.error('Event emission failed', undefined, {
         event: String(event),
         error: error instanceof Error ? error.message : error
       });
@@ -144,23 +192,23 @@ export class EventUtils {
   }
 
   static get globalBus(): TypedEventEmitter<any> {
-    return this.globalEmitter as TypedEventEmitter<any>;
+    return EventUtils.globalEmitter as TypedEventEmitter<any>;
   }
 
   static createScopedBus<TEventMap extends TypedEventMap>(
     scope: string,
     maxListeners = 50
   ): ScopedEventBus<TEventMap> {
-    const emitter = this.createTypedEmitter<TEventMap>();
+    const emitter = EventUtils.createTypedEmitter<TEventMap>();
     emitter.setMaxListeners(maxListeners);
 
     return {
       emitter,
       scope,
-      emit: (event, ...args) => this.emit(emitter, event, ...args),
+      emit: (event, ...args) => EventUtils.emit(emitter, event, ...args),
       subscribe: (event, handler, options) =>
-        this.subscribe(emitter, event, handler, { ...options, context: scope }),
-      cleanup: () => this.cleanupContext(scope),
+        EventUtils.subscribe(emitter, event, handler, { ...options, context: scope }),
+      cleanup: () => EventUtils.cleanupContext(scope),
       getListenerCount: event => emitter.listenerCount(event),
       getEventNames: () => emitter.eventNames() as EventKey<TEventMap>[]
     };
@@ -172,7 +220,7 @@ export class EventUtils {
     context?: string
   ): UnsubscribeFn[] {
     return subscriptions.map(({ event, handler, options }) =>
-      this.subscribe(emitter, event, handler, { ...options, context })
+      EventUtils.subscribe(emitter, event, handler, { ...options, context })
     );
   }
 
@@ -184,9 +232,9 @@ export class EventUtils {
   ): UnsubscribeFn[] {
     const forwardSingle = <K extends EventKey<TEventMap>>(event: K): UnsubscribeFn => {
       const forwarder = ((...args: Parameters<TEventMap[K]>) => {
-        this.emit(to, event, ...args);
+        EventUtils.emit(to, event, ...args);
       }) as TEventMap[K];
-      return this.subscribe(from, event, forwarder, { context });
+      return EventUtils.subscribe(from, event, forwarder, { context });
     };
 
     return events.map(event => forwardSingle(event));
@@ -198,52 +246,112 @@ export class EventUtils {
     timeoutMs = 5000
   ): Promise<Parameters<TEventMap[K]>> {
     return new Promise((resolve, reject) => {
-      const timer = setTimeout(() => {
-        emitter.off(event, handler as any);
-        reject(new Error(`Event '${String(event)}' not received within ${timeoutMs}ms`));
-      }, timeoutMs);
+      let timeoutHandle: ManagedTimeout | null = null;
 
       const handler = (...args: Parameters<TEventMap[K]>) => {
-        clearTimeout(timer);
+        timeoutHandle?.cancel();
         emitter.off(event, handler as any);
         resolve(args);
       };
+
+      timeoutHandle = createTimeout(() => {
+        emitter.off(event, handler as any);
+        reject(new Error(`Event '${String(event)}' not received within ${timeoutMs}ms`));
+      }, timeoutMs, { unref: true });
 
       emitter.once(event, handler as any);
     });
   }
 
   static cleanupContext(context: string): void {
-    const subscriptions = this.subscriptions.get(context);
+    const subscriptions = EventUtils.subscriptions.get(context);
     if (!subscriptions) {
       return;
     }
 
     subscriptions.forEach(unsubscribe => unsubscribe());
     subscriptions.clear();
-    this.subscriptions.delete(context);
-    this.logger.debug('Cleaned subscriptions for context', { context });
+    EventUtils.subscriptions.delete(context);
+    EventUtils.logger.debug('Cleaned subscriptions for context', { context });
   }
 
   static cleanup(): void {
-    this.subscriptions.forEach(subs => subs.forEach(unsubscribe => unsubscribe()));
-    this.subscriptions.clear();
-    this.globalEmitter.removeAllListeners();
-    this.logger.info('Event utilities cleanup completed');
+    EventUtils.subscriptions.forEach(subs => subs.forEach(unsubscribe => unsubscribe()));
+    EventUtils.subscriptions.clear();
+    EventUtils.globalEmitter.removeAllListeners();
+    EventUtils.logger.info('Event utilities cleanup completed');
   }
 
   static getDiagnostics(): EventDiagnostics {
     const contextStats = new Map<string, number>();
-    this.subscriptions.forEach((subs, context) => {
+    EventUtils.subscriptions.forEach((subs, context) => {
       contextStats.set(context, subs.size);
     });
 
     return {
-      totalContexts: this.subscriptions.size,
-      totalSubscriptions: Array.from(this.subscriptions.values()).reduce((sum, set) => sum + set.size, 0),
+      totalContexts: EventUtils.subscriptions.size,
+      totalSubscriptions: Array.from(EventUtils.subscriptions.values()).reduce((sum, set) => sum + set.size, 0),
       contextStats,
-      globalBusListeners: this.globalEmitter.eventNames().length
+      globalBusListeners: EventUtils.globalEmitter.eventNames().length
     };
+  }
+
+  static createEventBusHost<TEventMap extends TypedEventMap>(
+    options: EventBusHostOptions = {}
+  ): EventBusHost<TEventMap> {
+    const { maxListeners = 50 } = options;
+    const baseContext = options.context?.trim();
+    const context =
+      baseContext && baseContext.length > 0
+        ? baseContext
+        : `event-bus-host-${Date.now().toString(36)}-${Math.random().toString(16).slice(2, 6)}`;
+
+    const emitter = EventUtils.createTypedEmitter<TEventMap>();
+    emitter.setMaxListeners(maxListeners);
+
+    const subscribeWithContext = <K extends EventKey<TEventMap>>(
+      event: K,
+      handler: TEventMap[K],
+      subscriptionOptions: SubscriptionOptions = {}
+    ): UnsubscribeFn => {
+      const mergedOptions: SubscriptionOptions = {
+        ...subscriptionOptions,
+        context: subscriptionOptions.context ?? context
+      };
+      return EventUtils.subscribe(emitter, event, handler, mergedOptions);
+    };
+
+    const host: EventBusHost<TEventMap> = {
+      emitter,
+      context,
+      emit: (event, ...args) => EventUtils.emit(emitter, event, ...args),
+      on: (event, handler, subscriptionOptions) =>
+        subscribeWithContext(event, handler, subscriptionOptions),
+      once: (event, handler, subscriptionOptions) =>
+        subscribeWithContext(event, handler, { ...(subscriptionOptions || {}), once: true }),
+      prepend: (event, handler, subscriptionOptions) =>
+        subscribeWithContext(event, handler, { ...(subscriptionOptions || {}), prepend: true }),
+      prependOnce: (event, handler, subscriptionOptions) =>
+        subscribeWithContext(event, handler, {
+          ...(subscriptionOptions || {}),
+          once: true,
+          prepend: true
+        }),
+      off: (event, handler) => {
+        emitter.off(event, handler);
+      },
+      removeAll: event => {
+        emitter.removeAllListeners(event);
+      },
+      listenerCount: event => emitter.listenerCount(event),
+      getEventNames: () => emitter.eventNames() as EventKey<TEventMap>[],
+      cleanup: () => {
+        EventUtils.cleanupContext(context);
+        emitter.removeAllListeners();
+      }
+    };
+
+    return host;
   }
 }
 
@@ -257,6 +365,7 @@ export const {
   forward,
   waitForEvent,
   cleanupContext,
+  createEventBusHost,
   cleanup: cleanupEvents
 } = EventUtils;
 

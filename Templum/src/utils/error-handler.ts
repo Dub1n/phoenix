@@ -1,5 +1,5 @@
 import { createLogger, Logger } from './logger';
-import { withTimeout as asyncWithTimeout } from './async-utils';
+import { sleep, withTimeout as asyncWithTimeout } from './async-utils';
 import {
   createTemplumError,
   isTemplumError,
@@ -157,7 +157,7 @@ export class ErrorHandler {
           onRetry(context, error, attempt, delay);
         }
 
-        await new Promise(resolve => setTimeout(resolve, delay));
+        await sleep(delay);
       }
     }
 

@@ -6,9 +6,10 @@ import {
   debounce,
   throttle,
   createInterval,
+  createTimeout,
 } from '../../utils/async-utils';
 
-const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+const wait = sleep;
 
 describe('AsyncUtils', () => {
   afterEach(() => {
@@ -130,5 +131,27 @@ describe('AsyncUtils', () => {
 
     expect(race).toBe('still-pending');
   });
-});
 
+  test('createTimeout executes the handler after the delay', async () => {
+    const handler = jest.fn();
+    createTimeout(() => {
+      handler();
+    }, 10);
+
+    await wait(25);
+
+    expect(handler).toHaveBeenCalledTimes(1);
+  });
+
+  test('createTimeout cancel prevents the handler from running', async () => {
+    const handler = jest.fn();
+    const timeout = createTimeout(() => {
+      handler();
+    }, 20);
+
+    timeout.cancel();
+    await wait(30);
+
+    expect(handler).not.toHaveBeenCalled();
+  });
+});
