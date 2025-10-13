@@ -15,7 +15,7 @@ Translate the canonical registry (`consolidation-state.json`) into the existing 
    - `patternView`: combines registry entry with static template (Stage 1 intent, coordination notes). Allows inclusion of optional free-form sections from sidecar Markdown if needed.
    - `trackerView`: summarises status per pattern (current stage, outstanding lanes, dependencies, next action).
    - `activityView`: chronological list of activity entries expanded into Markdown sections.
-3. Render templates using `handlebars` (or `eta`, whichever is lighter). Templates live under `Templum/dev/architecture/consolidation-state/templates/` and compile to Markdown.
+3. Render templates using `handlebars` (or `eta`, whichever is lighter). Templates live under `Templum/dev/architecture/consolidation-scripts/templates/` and compile to Markdown.
 4. Write outputs to their respective files; compare with existing content to avoid no-op rewrites.
 5. Exit non-zero if outputs differ but `--check` flag used (CI dry-run).
 

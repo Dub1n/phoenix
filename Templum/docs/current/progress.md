@@ -3,7 +3,7 @@ doc-type: progress
 name: Templum MVP Progress Tracker
 tags: [templum, progress, mvp]
 status: current
-last_updated: 2025-10-12
+last_updated: 2025-10-13
 ---
 
 # Templum — MVP Route Tracker
@@ -71,14 +71,14 @@ last_updated: 2025-10-12
 - [ ] [Templum backlog tooling visibility](../../dev/tasks/backlog-tooling-visibility.md)
   Progress 0% — Awaiting final backlog tooling decision from Phoenix Code Lite to update CLI/VS Code onboarding and help flows (Development-Process-1.pdf Software Comparison, pp.29–31).
 - [ ] [Restore consolidation CLI shared parser](../../dev/tasks/cli-shared-parser-restoration.md)
-  Progress 0% — `tests/scripts/cli-shared-parser.test.ts` currently errors with `ERR_MODULE_NOT_FOUND` for `dev/architecture/cli-shared-parser.mjs`; reinstate the shared parser helper so consolidate workflows and acknowledgement handling stay covered.
+  Progress 40% — Added compatibility re-exports under `dev/architecture/cli-shared-parser.mjs` and `dev/architecture/cli-command-registry.mjs`, restoring the coverage probe (`npm run test -- --runTestsByPath tests/scripts/cli-shared-parser.test.ts --runInBand --no-cache`). Follow-up: sweep consolidate workflows for lingering path assumptions and refresh docs/tasks before declaring the parser fully restored.
 
 ## Quality & Runtime Stability
 
 - [ ] [Test architecture consolidation and coverage governance](../../dev/tasks/test-architecture-governance.md)
-  Progress 20% — Coverage command still fails with `babel-plugin-istanbul` errors and the 2025-10-12 run surfaced additional regressions (E2E variance, CLI snapshot drift, missing `dev/architecture/cli-shared-parser.mjs`, `src/tests/utils/path-utils.test.ts` syntax error); triage the red suites while repairing the governance flow.
+  Progress 25% — Stage 7 async-utils validation reran `npm run test:ci` (evidence: `tmp/consolidation/pattern-3-stage7/test-ci.log`) and confirmed ongoing red suites: `tests/core/interface-switching.test.ts`, `src/tests/core/templum-core-connection-events.test.ts`, `tests/development-tools/debug-utils.test.ts`, plus the lingering `src/tests/utils/path-utils.test.ts` snapshot drift. Governance stays blocked until these and the earlier E2E variance issues are resolved.
 - [ ] [TypeScript build parity restoration](../../dev/tasks/typescript-build-parity.md)
-  Progress 0% — `npm run build` currently reports 19 TypeScript diagnostics (e.g. `service-health-check` scheduler returning `never`, CLI adapter implicit `any`, MCP channel listener overload mismatch, mock services resolving `src/utils/async-utils`) which block Stage 7 validation (`npm run phase6-validation`/`npm run phase6-health`); unblock the build so the Async Utils consolidation close-out can finish.
+  Progress 10% — `npm run build` succeeds after purging the stale `.tsbuildinfo`, but repeated runs without cleaning still trigger `TS5055` emit conflicts on `dist/src/utils/async-utils.d.ts`, and both `npm run phase6-health` and `npm run phase6-validation` exit early with the same error (logs: `tmp/consolidation/pattern-3-stage7/phase6-health.log`, `tmp/consolidation/pattern-3-stage7/phase6-validation.log`). Restore reliable incremental builds and harness scripts before closing the task.
 - [ ] [Process signal listener consolidation](../../dev/tasks/process-signal-listener-consolidation.md)
   Progress 10% — Dozens of direct `process.on` registrations remain, leaving Jest hanging.
 - [ ] [Phase 6 validation signal overhaul](../../dev/tasks/phase6-validation-signal.md)

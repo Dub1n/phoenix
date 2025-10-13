@@ -5,8 +5,8 @@ import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const registryPath = path.join(__dirname, '..', 'consolidation-state.json');
-const candidatesPath = path.join(__dirname, '..', '..', 'safe-consolidation-candidates.md');
+const registryPath = path.join(__dirname, 'config', 'consolidation-state.json');
+const candidatesPath = path.join(__dirname, '..', 'safe-consolidation-candidates.md');
 
 const NOTE_TIMESTAMP = '2025-09-14T18:00:00Z';
 const NOTE_AUTHOR = 'safe-consolidation-candidates';
@@ -281,7 +281,7 @@ function upsertPattern(registry, patternData) {
     owner: { ...OWNER_PLACEHOLDER },
     dependencies: [],
     stageGates: {
-      '1': { status: 'open' }
+      '1': { status: 'pending' }
     },
     lanes: {},
     handoff: {

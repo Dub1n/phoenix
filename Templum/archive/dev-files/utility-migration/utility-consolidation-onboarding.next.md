@@ -14,7 +14,7 @@ Introduce the registry-driven workflow so agents can execute utility consolidati
 
 ## 0. Orientation Checklist (45–60 min)
 
-1. **Review the registry**: Open `Templum/dev/architecture/consolidation-state/consolidation-state.json` and skim your assigned pattern entry. Note current stage, pending lanes, dependencies, and guardrails.
+1. **Review the registry**: Open `Templum/dev/architecture/consolidation-scripts/config/consolidation-state.json` and skim your assigned pattern entry. Note current stage, pending lanes, dependencies, and guardrails.
 2. **Read generated views**: Inspect the rendered plan (`utility-consolidation-plans/pattern-<id>.md`), tracker (`safe-consolidation-candidates.md`), and activity log sections for your pattern. These files will soon be generated from the registry, so treat them as read-only context.
 3. **Refresh architectural baselines**: Revisit `architecture-restructuring-plan.md`, `safe-consolidation-candidates.md`, and pattern specs to confirm guardrails and target impact.
 4. **Validate toolchain**: Ensure `npm install` has been run inside `Templum/`. Confirm you can execute `npm run consolidate -- status <patternId>` without errors.

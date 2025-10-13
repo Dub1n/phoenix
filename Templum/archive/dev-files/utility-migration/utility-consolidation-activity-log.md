@@ -83,6 +83,49 @@ If a Stage 3 phase exposes new helper or dependency work, add a fresh Stage 2.5 
 
 > _(Add new entries below this line. Maintain reverse chronological order if multiple entries occur on the same date.)_
 
+### 2025-10-12 — Async Utils (Pattern 3) — Stage 6 lane 6e
+
+- **Agent**: Codex
+- **Stage**: 6 lane 6e
+- **Summary**: Created lane 6e to sweep remaining state/core/CLI/test harness timers, wired the new cleanup guard, and reopened Stage 6 so the migration can’t close until the sweep passes.
+- **Commands / Evidence**: `cd Templum && npm run consolidate -- create-lane 3 6e --scope "State/core/CLI timer sweep & harness cleanup" --command "npm run consolidate -- sweep 3 --lane 6e" --plan-files …`, `cd Templum && npm run consolidate -- sweep 3 --lane 6e`
+- **Files touched**: `Templum/dev/architecture/consolidation-scripts/config/cleanup-guards.json`, `Templum/dev/architecture/consolidation-scripts/cli-command-stub.mjs`, `Templum/dev/architecture/consolidation-scripts/cli-command-registry.mjs`, `Templum/dev/architecture/consolidation-scripts/cli-cleanup-guards.mjs`, `Templum/dev/architecture/consolidation-scripts/config/consolidation-state.schema.json`, `Templum/docs/current/progress.md`
+- **Follow-ups / Risks**: Replace every match highlighted by the sweep (manual `setTimeout`/`setInterval` usage) before closing lane 6e; once clean, Stage 7 can finish without reopening.
+
+### 2025-10-12 — Async Utils (Pattern 3) — Cleanup Guard Enforcement
+
+- **Agent**: Codex
+- **Stage**: 6/7 tooling
+- **Summary**: Added repo-wide cleanup guards and the `npm run consolidate -- sweep` command so Stage 6 lanes and Stage 7 cannot close while legacy timers remain.
+- **Commands / Evidence**: `cd Templum && npm run consolidate -- sweep 3 --stage 7`, `cd Templum && npm run consolidate -- sweep 3 --lane 6e`
+- **Files touched**: `Templum/dev/architecture/consolidation-scripts/config/cleanup-guards.json`, `Templum/dev/architecture/consolidation-scripts/cli-cleanup-guards.mjs`, `Templum/dev/architecture/consolidation-scripts/cli-command-stub.mjs`, `Templum/dev/architecture/consolidation-scripts/cli-command-registry.mjs`, `Templum/dev/architecture/consolidation-scripts/cli-shared-parser.mjs`, `Templum/dev/architecture/consolidation-cli-design.md`
+- **Follow-ups / Risks**: Extend guard definitions for future patterns as they declare their own mandatory sweeps; keep the guard file current with any scoped exceptions.
+
+### 2025-10-12 — Async Utils (Pattern 3) — Stage 7 Validation & Close-Out
+
+- **Agent**: Codex
+- **Stage**: 7
+- **Summary**: Ran the Stage 7 validation battery for Async Utils—backend lifecycle/manual override/comprehensive suites, service discovery + dependency integrations, hybrid validation + unified session, and interface adapter harnesses all passed under the timeout wrapper, and Phase 6 health/validation produced fresh artefacts while logging the expected mock-only skip.
+- **Commands / Evidence**:
+  - `cd Templum && npm run test -- --runTestsByPath src/tests/utils/async-utils.test.ts --runInBand --no-cache --forceExit` (`tmp/consolidation/pattern-3-stage7-async-utils-20251012T180354Z.log`)
+  - `cd Templum && node scripts/run-with-timeout.mjs --timeout 240000 -- npm test -- --runTestsByPath src/tests/backend/backend-connection-lifecycle.test.ts src/tests/backend/manual-override-flow.test.ts src/tests/backend/comprehensive-backend-validation.test.ts --runInBand --no-cache --detectOpenHandles` (`tmp/consolidation/pattern-3-stage7-backend-lifecycle-20251012T180401Z.log`)
+  - `cd Templum && node scripts/run-with-timeout.mjs --timeout 30000 -- npm test -- --runTestsByPath src/tests/backend/service-discovery.test.ts src/tests/backend/generic-backend-integration.test.ts src/tests/backend/backend-dependency-integration.test.ts --runInBand --detectOpenHandles --forceExit --no-cache` (`tmp/consolidation/pattern-3-stage7-service-discovery-20251012T180419Z.log`)
+  - `cd Templum && node scripts/run-with-timeout.mjs --timeout 180000 -- npm test -- --runTestsByPath src/tests/validation/hybrid-validation-system-v3c.test.ts tests/session/unified-session-manager.integration.test.ts --runInBand --no-cache --detectOpenHandles` (`tmp/consolidation/pattern-3-stage7-validation-suite-20251012T180442Z.log`)
+  - `cd Templum && node scripts/run-with-timeout.mjs --timeout 180000 -- npm test -- --runTestsByPath tests/interfaces/interface-adapter-integration.test.ts tests/interfaces/universal-interaction-manager.session.test.ts --runInBand --no-cache --detectOpenHandles --forceExit` (`tmp/consolidation/pattern-3-stage7-interface-adapters-20251012T180453Z.log`)
+  - `cd Templum && npm run phase6-validation` (`tmp/consolidation/pattern-3-stage7-phase6-validation-20251012T180501Z.log`, `validation-reports/phase6-validation-2025-10-12T18-05-03-893Z.*`)
+  - `cd Templum && npm run phase6-health` (`tmp/consolidation/pattern-3-stage7-phase6-health-20251012T180509Z.log`)
+- **Files touched**: `Templum/docs/current/progress.md`, `validation-reports/phase6-validation-2025-10-12T18-05-03-893Z.md`
+- **Follow-ups / Risks**: Real-backend Phase 6 validation remains outstanding; coordinate via `dev/tasks/phase6-validation-signal.md` once partner services are ready, and continue to monitor the expected state-sync warnings emitted during interface adapter stress cases.
+
+### 2025-10-12 — Async Utils (Pattern 3) — Stage 7 Reopened Audit
+
+- **Agent**: Codex
+- **Stage**: 7
+- **Summary**: Reopened Stage 7 after an audit found 30+ manual `setTimeout`/`setInterval` usages still active across backend/core/CLI modules and 20+ more in tests; consolidation remains incomplete.
+- **Commands / Evidence**: `rg "setTimeout\\(" src --glob '!src/tests/**'`, `rg "setInterval\\(" src --glob '!src/tests/**'`, `rg "setTimeout\\(" src/tests`, `rg "setInterval\\(" src/tests`
+- **Files touched**: _Audit only_
+- **Follow-ups / Risks**: Replace remaining timers with `AsyncUtils` helpers (or documented exceptions) before re-closing Stage 7; update progress tracker and safe-consolidation checklist once consolidation is verifiable.
+
 ### 2025-10-03 — Terminal Formatter (Pattern 6) — Stage 6 lane d
 
 - **Agent**: Codex
