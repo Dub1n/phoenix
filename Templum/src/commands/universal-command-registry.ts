@@ -10,8 +10,9 @@
  * Generated: 2025-08-21
  */
 
-import { EventEmitter } from 'events';
 import { SessionContextFoundation, SessionContext } from '../session/session-context-foundation';
+import { EventDrivenComponent } from '../utils/event-bus-adapter';
+import type { TypedEventMap } from '../utils/event-utils';
 import type {
   ManualOverrideOptions,
   ManualOverrideDescriptor,
@@ -130,7 +131,22 @@ interface ManualOverrideController {
  * Universal Command Registry with Multi-Backend Support
  * Extends PCL command registry for cross-backend and cross-interface operation
  */
-export class UniversalCommandRegistry extends EventEmitter {
+interface UniversalCommandRegistryEvents extends TypedEventMap {
+  backendsLoaded: (backendIds: string[]) => void;
+  backendCommandsLoaded: (backendId: string, commandCount: number) => void;
+  commandExecuted: (commandId: string, backendId: string | undefined, result: CommandResult) => void;
+  commandFailed: (commandId: string, result: CommandResult) => void;
+  interfaceAdapterRegistered: (interfaceType: InterfaceType) => void;
+  performanceWarning: (payload: {
+    commandId: string;
+    backendId: string | undefined;
+    executionTime: number;
+    threshold: number;
+  }) => void;
+}
+
+export class UniversalCommandRegistry extends EventDrivenComponent<UniversalCommandRegistryEvents> {
+  private static instanceCounter = 0;
   private handlers = new Map<string, UniversalCommandHandler>();
   private backendRegistries = new Map<string, Map<string, UniversalCommandHandler>>();
   private interfaceAdapters = new Map<InterfaceType, any>();
@@ -144,7 +160,7 @@ export class UniversalCommandRegistry extends EventEmitter {
   private manualOverrideCommandsRegistered = false;
 
   constructor(sessionContext: SessionContextFoundation) {
-    super();
+    super(`universal-command-registry:${UniversalCommandRegistry.instanceCounter++}`, 80);
     this.sessionContext = sessionContext;
     this.setupEventHandlers();
   }
@@ -916,6 +932,6 @@ export class UniversalCommandRegistry extends EventEmitter {
     this.auditLog = [];
     this.backendIntegrations.clear();
     this.performanceMetrics.clear();
-    this.removeAllListeners();
+    this.cleanupEvents();
   }
 }

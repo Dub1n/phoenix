@@ -113,7 +113,7 @@
     "test:health-status": "node scripts/test-health-monitor.js status",
     "coverage:reality-check": "node scripts/coverage-reality-check.js",
     "prepare": "cd .. && husky install Templum/.husky || true",
-    "consolidate": "node dev/architecture/cli-command-stub.mjs",
+    "consolidate": "node dev/architecture/consolidation-scripts/cli-command-stub.mjs",
     "precommit": "npm run check:types && npm run check:tests && npm run test:health",
     "generate:pattern-readme": "ts-node dev/patterns/scripts/generate-readme.ts"
   },

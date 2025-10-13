@@ -6,7 +6,12 @@ import tseslint from 'typescript-eslint';
 export default tseslint.config(
   {
     // config with just ignores is the replacement for `.eslintignore`
-    ignores: ['**/dist/**', '**/node_modules/**', '**/*.js', '**/*.d.ts'],
+    ignores: ['**/dist/**', '**/node_modules/**', '**/*.d.ts'],
+    languageOptions: {
+      globals: {
+        console: 'readonly',
+      },
+    },
   },
   eslint.configs.recommended,
   tseslint.configs.recommended,
@@ -27,7 +32,24 @@ export default tseslint.config(
       }],
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-non-null-assertion': 'warn',
-      'no-console': 'warn',
+      'no-console': 'off',
+    },
+  },
+  {
+    files: ['**/*.mjs'],
+    rules: {
+      'no-console': 'off',
+    },
+  },
+  {
+    files: ['**/*.js'],
+    languageOptions: {
+      globals: {
+        console: 'readonly',
+      },
+    },
+    rules: {
+      'no-console': 'off',
     },
   },
 );

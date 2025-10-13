@@ -304,170 +304,24 @@ sequenceDiagram
 - **Dynamic Generation**: Pages created based on actual backend capabilities
 - **Unified Interface**: Same navigation system for Templum and backend services
 
-## 4. MCP Agent Integration Architecture [2.1 NEW]
+## 4. MCP Agent Integration Architecture — Superseded
 
-### MCP Server Architecture
+> **Status (2025-10-09):** The enterprise-grade MCP plan (health monitors, caches, registry hooks, multi-tool orchestration) proposed for CLI 2.1 has been **retired**.
+> The minimal FastMCP ↔ PTY bridge documented in `docs/current/PTY.md` replaces this scope. Historical diagrams and component breakdowns were removed to prevent drift with the implemented solution.
 
-```mermaid
-graph TB
-    subgraph "MCP Integration System [2.1 NEW]"
-        MCP_SERVER[MCP Server<br/>CLI Tools Provider]
-        PTY_MGR[PTY Manager<br/>Session Lifecycle]
-        TOOL_REG[Tool Registry<br/>5 Core Tools]
-        HEALTH_MON[Health Monitor<br/>Performance Tracking]
-        
-        subgraph "MCP Tools"
-            T1[cli-create-session<br/>Session Creation]
-            T2[cli-navigate<br/>Keyboard Simulation]
-            T3[cli-send-text<br/>Command Input]
-            T4[cli-get-state<br/>Status Monitoring]
-            T5[cli-destroy-session<br/>Resource Cleanup]
-        end
-        
-        subgraph "Service Integration"
-            SR[Service Registry<br/>Auto-Discovery]
-            HC[Health Check<br/>Availability Monitoring]
-            PM[Performance Monitor<br/><100ms Target]
-        end
-    end
-    
-    subgraph "Agent Interaction Flow"
-        AGENT[AI Agent<br/>MCP Client]
-        SESSION[CLI Session<br/>PTY Instance]
-        TEMPLUM[Templum CLI<br/>Target Interface]
-    end
-    
-    MCP_SERVER ==> PTY_MGR
-    MCP_SERVER ==> TOOL_REG
-    TOOL_REG ==> T1
-    TOOL_REG ==> T2
-    TOOL_REG ==> T3
-    TOOL_REG ==> T4
-    TOOL_REG ==> T5
-    MCP_SERVER ==> HEALTH_MON
-    HEALTH_MON ==> SR
-    HEALTH_MON ==> HC
-    HEALTH_MON ==> PM
-    
-    AGENT ==> MCP_SERVER
-    PTY_MGR ==> SESSION
-    SESSION ==> TEMPLUM
-    
-    classDef new fill:#d4f4dd,stroke:#4caf50,stroke-width:2px
-    class MCP_SERVER,PTY_MGR,TOOL_REG,HEALTH_MON,T1,T2,T3,T4,T5,SR,HC,PM,AGENT,SESSION,TEMPLUM new
-```
+### Current Direction
 
-### MCP Tool Interaction Flow
+- **Implementation:** A lean FastMCP server at `scripts/mcp/minimal_terminal_bridge/server.py` exposes `create_session`, `send_input`, `get_state`, and `destroy_session`, forwarding keystrokes/text directly to the compiled Templum CLI.
+- **Dropped Components:** Health monitor pipelines, response caches, tool registries, and performance collectors described in the original design are no longer part of the CLI roadmap. If future requirements demand them, they will be reintroduced via dedicated tasks referencing the minimal bridge.
+- **State Handling:** Snapshot history + diff packaging lives inside the bridge (`PTYSession.diff_since`) instead of an external cache service.
+- **Documentation Source:** See `docs/current/PTY.md` (Sections 3–9) for the up-to-date architecture, runbook, and cleanup ledger.
 
-```mermaid
-sequenceDiagram
-    participant AGENT as AI Agent
-    participant MCP as MCP Server
-    participant PTY as PTY Manager
-    participant CLI as Templum CLI
-    participant SVC as Service Registry
-    
-    Note over AGENT,SVC: MCP Agent Interaction Process [2.1 NEW]
-    
-    AGENT->>MCP: cli-create-session(sessionId)
-    MCP->>PTY: spawnPTY(sessionId, shell)
-    PTY->>CLI: Launch Templum CLI
-    CLI->>PTY: Ready state
-    PTY->>MCP: Session created
-    MCP->>AGENT: Session ready
-    
-    Note over AGENT,SVC: Navigation and Command Execution
-    
-    AGENT->>MCP: cli-navigate("arrow-down")
-    MCP->>PTY: sendKeypress(arrow-down)
-    PTY->>CLI: Key navigation
-    CLI->>PTY: Menu update
-    PTY->>MCP: State change
-    MCP->>AGENT: Navigation result
-    
-    AGENT->>MCP: cli-send-text("backends")
-    MCP->>PTY: sendText("backends")
-    PTY->>CLI: Command execution
-    CLI->>SVC: Query backend services
-    SVC->>CLI: Backend list
-    CLI->>PTY: Display results
-    PTY->>MCP: Output capture
-    MCP->>AGENT: Command result
-    
-    Note over AGENT,SVC: Session Cleanup
-    
-    AGENT->>MCP: cli-destroy-session(sessionId)
-    MCP->>PTY: terminateSession(sessionId)
-    PTY->>CLI: Graceful shutdown
-    CLI->>PTY: Exit confirmation
-    PTY->>MCP: Session cleaned
-    MCP->>AGENT: Cleanup complete
-```
+### Migration Notes
 
-### Why MCP Integration Is Complex
-
-**Technical Complexity Factors**:
-
-1. **PTY Management**:
-   - Pseudoterminal creation and lifecycle management
-   - Session isolation and resource tracking
-   - Process cleanup and orphan prevention
-
-2. **Performance Requirements**:
-   - <100ms response time target for all MCP tools
-   - Intelligent caching for frequently accessed operations
-   - Connection pooling and resource optimization
-
-3. **Session State Management**:
-   - Real-time state parsing and interpretation
-   - Command completion detection
-   - Error state recognition and recovery
-
-4. **Service Integration**:
-   - Automatic service registry registration
-   - Health monitoring and availability tracking
-   - Tool versioning and compatibility management
-
-**Current Challenges** (from validation report):
-
-- **Build Failures**: MCP channel compilation issues affecting tool availability
-- **Tool Registration**: Verification processes timing out during service discovery
-- **Session Lifecycle**: PTY spawn and cleanup processes experiencing timeout issues
-
-### MCP Performance Architecture
-
-```mermaid
-graph LR
-    subgraph "Performance Optimization [2.1 NEW]"
-        CACHE[Response Cache<br/>5s TTL, 100 items]
-        POOL[Connection Pool<br/>Session Reuse]
-        METRIC[Metrics Collector<br/>Performance Tracking]
-        
-        subgraph "Caching Strategy"
-            TC[Tool List Cache<br/>tools/list responses]
-            SC[State Cache<br/>Frequently accessed]
-            HC[Health Cache<br/>Service status]
-        end
-        
-        subgraph "Performance Targets"
-            T1[Tool Response<br/><100ms]
-            T2[Service Registration<br/><100ms]
-            T3[Health Check<br/><5000ms]
-            T4[File Watch Events<br/><50ms]
-        end
-    end
-    
-    CACHE ==> TC
-    CACHE ==> SC
-    CACHE ==> HC
-    METRIC ==> T1
-    METRIC ==> T2
-    METRIC ==> T3
-    METRIC ==> T4
-    
-    classDef new fill:#d4f4dd,stroke:#4caf50
-    class CACHE,POOL,METRIC,TC,SC,HC,T1,T2,T3,T4 new
-```
+1. **Service Registry & Health Checks:** Removed from the MCP layer. Agents interact purely with the CLI process; service discovery stays inside Templum’s existing zero-knowledge registry.
+2. **Performance Targets:** The previous <100 ms SLAs tied to cache/metrics infrastructure are discarded. Observability for the bridge will be tackled once real usage data is available.
+3. **Tool Surface:** The five-tool orchestration (including `cli-navigate` and dedicated state polling tools) collapsed into the minimal trio noted above (plus passive `get_state`) to simplify agent scripting.
+4. **Next Steps:** Stage 4 cleanup tracked under `dev/tasks/minimal-mcp-terminal-bridge.md` keeps downstream specs/tasks synced with the new bridge and avoids reintroducing superseded components.
 
 ## 5. Enhanced Backend Service Discovery & Connection Flow
 

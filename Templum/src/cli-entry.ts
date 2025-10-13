@@ -27,6 +27,8 @@ import {
   serialization,
   type SerializationOutcome
 } from './utils/serialization-utils';
+import { createTimeout, sleep } from './utils/async-utils';
+import type { ManagedTimeout } from './utils/async-utils';
 
 const cliFormatter: TerminalFormatter = createFormatter();
 
@@ -325,10 +327,12 @@ class RemoteTemplumAdapter {
   private async attemptIPCCommunication(pid: number, message: any, timeoutMs: number): Promise<any> {
     return new Promise((resolve, reject) => {
       try {
+        const fs = require('fs');
+        const path = require('path');
         const tempDir = require('os').tmpdir();
         const requestId = `cli-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-        const requestFile = require('path').join(tempDir, `templum-${requestId}-request.json`);
-        const responseFile = require('path').join(tempDir, `templum-${requestId}-response.json`);
+        const requestFile = path.join(tempDir, `templum-${requestId}-request.json`);
+        const responseFile = path.join(tempDir, `templum-${requestId}-response.json`);
         
         // Enhanced request structure with metadata
         const ipcRequest = buildCliIpcRequest({
@@ -359,77 +363,92 @@ class RemoteTemplumAdapter {
           throw new Error(`Failed to serialize IPC request ${requestId}`);
         }
 
-        require('fs').writeFileSync(requestFile, serializedRequest, 'utf8');
+        fs.writeFileSync(requestFile, serializedRequest, 'utf8');
+
+        let settled = false;
+        let timeoutGuard: ManagedTimeout | null = null;
+        const finish = (state: 'resolve' | 'reject', value: unknown) => {
+          if (settled) {
+            return;
+          }
+          settled = true;
+          timeoutGuard?.cancel();
+          timeoutGuard = null;
+          this.safeCleanupTempFiles(requestFile, responseFile);
+          if (state === 'resolve') {
+            resolve(value);
+          } else {
+            reject(value);
+          }
+        };
 
         // Enhanced timeout with cleanup
-        const timeout = setTimeout(() => {
-          this.safeCleanupTempFiles(requestFile, responseFile);
-          reject(new Error(`IPC timeout after ${timeoutMs}ms for PID ${pid} (request: ${requestId})`));
-        }, timeoutMs);
+        timeoutGuard = createTimeout(() => {
+          finish('reject', new Error(`IPC timeout after ${timeoutMs}ms for PID ${pid} (request: ${requestId})`));
+        }, timeoutMs, { unref: true });
 
         // Optimized response polling with adaptive intervals
         let pollInterval = 50; // Start with 50ms
         let pollCount = 0;
-        
-        const checkResponse = () => {
+
+        const pollForResponse = async () => {
           try {
-            if (require('fs').existsSync(responseFile)) {
-              clearTimeout(timeout);
-              
-              const responseData = require('fs').readFileSync(responseFile, 'utf8');
-              const responseOutcome = serialization.fromJson<Record<string, unknown>>(responseData, {
-                context: `cli:ipc:response:${requestId}`,
-                fallback: {}
-              }).parse();
+            while (!settled) {
+              if (fs.existsSync(responseFile)) {
+                const responseData = fs.readFileSync(responseFile, 'utf8');
+                const responseOutcome = serialization.fromJson<Record<string, unknown>>(responseData, {
+                  context: `cli:ipc:response:${requestId}`,
+                  fallback: {}
+                }).parse();
 
-              const response = reportCliSerializationOutcome<Record<string, unknown>>(
-                `IPC response ${requestId}`,
-                responseOutcome
-              );
+                const response = reportCliSerializationOutcome<Record<string, unknown>>(
+                  `IPC response ${requestId}`,
+                  responseOutcome
+                );
 
-              if (!response) {
-                throw new Error('IPC response parsing failed');
-              }
-
-              const responseMeta = (response.serializationMeta && typeof response.serializationMeta === 'object')
-                ? (response.serializationMeta as any).request
-                : undefined;
-
-              if (responseMeta && Array.isArray(responseMeta.warnings) && responseMeta.warnings.length > 0) {
-                console.warn(cliFormat.warning(`⚠ IPC warnings: ${responseMeta.warnings.join('; ')}`));
-              }
-
-              // Cleanup temp files safely
-              this.safeCleanupTempFiles(requestFile, responseFile);
-
-              // Enhanced response validation
-              if ('success' in response) {
-                if (response.success) {
-                  resolve((response as any).result ?? (response as any).data);
-                } else {
-                  reject(new Error((response as any).error || (response as any).message || 'Command execution failed'));
+                if (!response) {
+                  throw new Error('IPC response parsing failed');
                 }
-              } else {
-                // Legacy response format support
-                resolve(response);
+
+                const responseMeta = (response.serializationMeta && typeof response.serializationMeta === 'object')
+                  ? (response.serializationMeta as any).request
+                  : undefined;
+
+                if (responseMeta && Array.isArray(responseMeta.warnings) && responseMeta.warnings.length > 0) {
+                  console.warn(cliFormat.warning(`⚠ IPC warnings: ${responseMeta.warnings.join('; ')}`));
+                }
+
+                // Enhanced response validation
+                if ('success' in response) {
+                  if (response.success) {
+                    finish('resolve', (response as any).result ?? (response as any).data);
+                  } else {
+                    finish(
+                      'reject',
+                      new Error((response as any).error || (response as any).message || 'Command execution failed')
+                    );
+                  }
+                } else {
+                  // Legacy response format support
+                  finish('resolve', response);
+                }
+                return;
               }
-            } else {
+
               pollCount++;
               // Adaptive polling: increase interval after initial fast polls
               if (pollCount > 10) {
                 pollInterval = Math.min(200, pollInterval * 1.1);
               }
-              setTimeout(checkResponse, pollInterval);
+              await sleep(pollInterval);
             }
           } catch (error) {
-            clearTimeout(timeout);
-            this.safeCleanupTempFiles(requestFile, responseFile);
-            reject(new Error(`IPC response processing failed: ${error}`));
+            finish('reject', new Error(`IPC response processing failed: ${error instanceof Error ? error.message : String(error)}`));
           }
         };
 
         // Start response polling
-        setTimeout(checkResponse, pollInterval);
+        void pollForResponse();
         
       } catch (error) {
         reject(new Error(`Failed to initiate IPC communication: ${error}`));
@@ -441,7 +460,7 @@ class RemoteTemplumAdapter {
    * Utility for exponential backoff delays
    */
   private delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return sleep(ms);
   }
 
   /**

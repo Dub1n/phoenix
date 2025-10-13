@@ -9,6 +9,22 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
+let asyncUtils;
+try {
+  asyncUtils = require('./dist/src/utils/async-utils.js');
+} catch (distError) {
+  try {
+    require('ts-node/register/transpile-only');
+    asyncUtils = require('./src/utils/async-utils.ts');
+  } catch (tsError) {
+    // Re-throw the original dist error if the fallback also fails to help diagnose build issues
+    console.error('Failed to load managed async utilities for Jest backend setup. Ensure the project is built or ts-node is available.');
+    throw distError;
+  }
+}
+
+const { createTimeout, sleep } = asyncUtils;
+
 // Global test configuration
 global.BACKEND_TEST_CONFIG = {
   // Port ranges for test backends
@@ -41,7 +57,7 @@ global.testUtils = {
       if (await condition()) {
         return true;
       }
-      await new Promise(resolve => setTimeout(resolve, interval));
+      await sleep(interval);
     }
     throw new Error(`Condition not met within ${timeout}ms`);
   },
@@ -172,11 +188,11 @@ afterAll(async () => {
       backend.process.kill('SIGTERM');
       
       // Force kill after 2 seconds
-      setTimeout(() => {
+      createTimeout(() => {
         if (!backend.process.killed) {
           backend.process.kill('SIGKILL');
         }
-      }, 2000);
+      }, 2000, { unref: true });
     }
   }
   
@@ -184,7 +200,7 @@ afterAll(async () => {
   global.testUtils.cleanupTestArtifacts();
   
   // Wait a moment for cleanup
-  await new Promise(resolve => setTimeout(resolve, 1000));
+  await sleep(1000);
   
   console.log('✅ Test environment cleanup complete');
 }, 10000); // 10 second timeout for global teardown
