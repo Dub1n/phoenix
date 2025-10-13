@@ -6,7 +6,6 @@
  * description: IPC-based state synchronization with conflict resolution and change coalescing for multi-interface coordination, addressing Phase 2 realignment architectural gaps
  * ---*/
 
-import { EventEmitter } from 'events';
 import { performance } from 'perf_hooks';
 import {
   TemplumError,
@@ -15,6 +14,14 @@ import {
   BackendConnectionLifecycleEvent,
   BackendConnectionLifecycleState
 } from '../types/templum-types';
+import {
+  createInterval,
+  createTimeout,
+  ManagedInterval,
+  ManagedTimeout
+} from '../utils/async-utils';
+import { type TypedEventMap } from '../utils/event-utils';
+import { EventDrivenComponent } from '../utils/event-bus-adapter';
 
 // Core interfaces for IPC-based state coordination
 export interface IPCStateMessage {
@@ -65,20 +72,28 @@ interface PerformanceMetrics {
   coalescingEfficiency: number;
 }
 
+interface IPCCoordinatorEvents extends TypedEventMap {
+  [event: `message:${string}`]: (message: IPCStateMessage) => void;
+  'message:broadcast': (message: IPCStateMessage) => void;
+  'performance:ipc-message': (payload: { duration: number; messageType: IPCStateMessage['type'] }) => void;
+  'error:ipc-send': (payload: { error: unknown; message: IPCStateMessage; targetInterface?: string }) => void;
+  'interface:registered': (payload: { interfaceType: string; timestamp: number }) => void;
+  'warning:queue-overflow': (payload: { queueKey: string; queueSize: number }) => void;
+}
+
 /**
  * IPCCoordinator - Handles IPC message routing and communication
- * Provides async coordination between multiple interfaces via EventEmitter-based IPC
+ * Provides async coordination between multiple interfaces via typed EventUtils infrastructure
  */
-export class IPCCoordinator extends EventEmitter {
+export class IPCCoordinator extends EventDrivenComponent<IPCCoordinatorEvents> {
   private messageQueue: Map<string, IPCStateMessage[]> = new Map();
   private processingQueue: boolean = false;
   private readonly maxQueueSize: number = 1000;
   private readonly processingIntervalMs: number = 10; // High-frequency processing for <50ms targets
-  private processingHandle?: NodeJS.Timeout;
+  private processingHandle?: ManagedInterval;
 
   constructor() {
-    super();
-    this.setMaxListeners(50); // Support multiple interface connections
+    super('ipc-coordinator', 100);
     this.startMessageProcessing();
   }
 
@@ -138,19 +153,16 @@ export class IPCCoordinator extends EventEmitter {
 
   private startMessageProcessing(): void {
     this.stopMessageProcessing();
-    this.processingHandle = setInterval(() => {
+    this.processingHandle = createInterval(() => {
       if (!this.processingQueue && this.messageQueue.size > 0) {
         this.processAllQueues();
       }
-    }, this.processingIntervalMs);
-    this.processingHandle.unref?.();
+    }, this.processingIntervalMs, { unref: true });
   }
 
   private stopMessageProcessing(): void {
-    if (this.processingHandle) {
-      clearInterval(this.processingHandle);
-      this.processingHandle = undefined;
-    }
+    this.processingHandle?.stop();
+    this.processingHandle = undefined;
   }
 
   private async processAllQueues(): Promise<void> {
@@ -185,6 +197,7 @@ export class IPCCoordinator extends EventEmitter {
     this.stopMessageProcessing();
     this.removeAllListeners();
     this.messageQueue.clear();
+    this.cleanupEvents();
   }
 }
 
@@ -196,7 +209,7 @@ export class ConflictResolver {
   private conflictHistory: Map<string, StateChange[]> = new Map();
   private coalescingConfig: StateCoalescingConfig;
   private pendingChanges: Map<string, StateChange[]> = new Map();
-  private coalescingTimers: Map<string, NodeJS.Timeout> = new Map();
+  private coalescingTimers: Map<string, ManagedTimeout> = new Map();
 
   constructor(coalescingConfig: Partial<StateCoalescingConfig> = {}) {
     this.coalescingConfig = {
@@ -264,19 +277,17 @@ export class ConflictResolver {
     this.pendingChanges.get(coalescingKey)!.push(change);
 
     // Clear existing timer and set new one
-    if (this.coalescingTimers.has(coalescingKey)) {
-      clearTimeout(this.coalescingTimers.get(coalescingKey)!);
-    }
+    this.coalescingTimers.get(coalescingKey)?.cancel();
 
-    return new Promise((resolve) => {
-      const timer = setTimeout(() => {
+    return new Promise(resolve => {
+      const timer = createTimeout(() => {
         const changes = this.pendingChanges.get(coalescingKey) || [];
         this.pendingChanges.delete(coalescingKey);
         this.coalescingTimers.delete(coalescingKey);
         
         const coalesced = this.performCoalescing(changes);
         resolve(coalesced);
-      }, this.coalescingConfig.windowMs);
+      }, this.coalescingConfig.windowMs, { unref: true });
 
       this.coalescingTimers.set(coalescingKey, timer);
     });
@@ -408,7 +419,7 @@ export class StatePersistence {
     compressionEnabled: boolean;
     snapshotIntervalMs: number;
   };
-  private snapshotTimer?: NodeJS.Timeout;
+  private snapshotTimer?: ManagedInterval;
 
   constructor(config: Partial<StatePersistence['persistenceConfig']> = {}) {
     this.persistenceConfig = {
@@ -544,18 +555,15 @@ export class StatePersistence {
 
   private startSnapshotTimer(): void {
     this.stopSnapshotTimer();
-    this.snapshotTimer = setInterval(() => {
+    this.snapshotTimer = createInterval(() => {
       // Periodic cleanup and optimization
       this.manageMemoryUsage();
-    }, this.persistenceConfig.snapshotIntervalMs);
-    this.snapshotTimer.unref?.();
+    }, this.persistenceConfig.snapshotIntervalMs, { unref: true });
   }
 
   private stopSnapshotTimer(): void {
-    if (this.snapshotTimer) {
-      clearInterval(this.snapshotTimer);
-      this.snapshotTimer = undefined;
-    }
+    this.snapshotTimer?.stop();
+    this.snapshotTimer = undefined;
   }
 
   private emitMetrics(operation: string, duration: number, operationCount: number): void {
@@ -600,7 +608,7 @@ export class CrossInterfaceSync {
   
   private syncQueue: Map<string, any[]> = new Map();
   private readonly syncIntervalMs = 50; // High-frequency sync for responsive interfaces
-  private syncIntervalHandle?: NodeJS.Timeout;
+  private syncIntervalHandle?: ManagedInterval;
 
   constructor() {
     this.startSyncProcessor();
@@ -686,17 +694,14 @@ export class CrossInterfaceSync {
 
   private startSyncProcessor(): void {
     this.stopSyncProcessor();
-    this.syncIntervalHandle = setInterval(() => {
+    this.syncIntervalHandle = createInterval(() => {
       this.processSyncQueue();
-    }, this.syncIntervalMs);
-    this.syncIntervalHandle.unref?.();
+    }, this.syncIntervalMs, { unref: true });
   }
 
   private stopSyncProcessor(): void {
-    if (this.syncIntervalHandle) {
-      clearInterval(this.syncIntervalHandle);
-      this.syncIntervalHandle = undefined;
-    }
+    this.syncIntervalHandle?.stop();
+    this.syncIntervalHandle = undefined;
   }
 
   private async processSyncQueue(): Promise<void> {
@@ -758,7 +763,54 @@ export class CrossInterfaceSync {
  * EnhancedStateManager - Main orchestrator for state synchronization
  * Coordinates all state operations with performance monitoring and integration hooks
  */
-export class EnhancedStateManager extends EventEmitter {
+type BackendLifecycleBroadcastPayload = {
+  event: BackendConnectionLifecycleEvent;
+  snapshot: Record<string, BackendConnectionLifecycleEvent>;
+};
+
+interface EnhancedStateManagerEvents extends TypedEventMap {
+  initialized: (payload: { timestamp: number }) => void;
+  error: (payload: unknown) => void;
+  'performance-warning': (payload: {
+    operation: string;
+    duration: number;
+    componentId?: string;
+    threshold: number;
+  }) => void;
+  'interface-registered': (payload: {
+    interfaceId: string;
+    interfaceType: string;
+    capabilities: string[];
+  }) => void;
+  'warning:backend-lifecycle-ipc': (payload: {
+    error: string;
+    event: BackendConnectionLifecycleEvent;
+  }) => void;
+  'warning:backend-lifecycle-sync': (payload: {
+    error: string;
+    event: BackendConnectionLifecycleEvent;
+  }) => void;
+  'backend-lifecycle': (payload: BackendLifecycleBroadcastPayload) => void;
+  'state-changed': (payload: { change: StateChange; options: Record<string, unknown> }) => void;
+  'conflict-detected': (payload: { message: IPCStateMessage; interfaceId: string }) => void;
+  'sync-to-interface': (payload: { interfaceId: string; state: unknown }) => void;
+  'performance-threshold-exceeded': (payload: {
+    currentPerformance: { degradationPercentage: number; averageResponseTime: number };
+    threshold: number;
+    timestamp: number;
+  }) => void;
+  'rollback-recommended': (payload: { degradationPercentage?: number } & Record<string, unknown>) => void;
+  'shutting-down': (payload: { timestamp: number }) => void;
+  'shutdown-complete': (payload: { timestamp: number }) => void;
+  'state-response': (payload: { componentId: string; state: unknown }) => void;
+  'component-transfer-start': (payload: { componentId: string }) => void;
+  'component-transfer-complete': (payload: { componentId: string; newState: unknown }) => void;
+  'pcl-registry-update': (payload: { registryType: string; path: string; newValue: unknown }) => void;
+  'performance-degradation-detected': (payload: { degradationPercentage: number }) => void;
+  'skin-theme-change': (payload: { newTheme: string }) => void;
+}
+
+export class EnhancedStateManager extends EventDrivenComponent<EnhancedStateManagerEvents> {
   private ipcCoordinator: IPCCoordinator;
   private conflictResolver: ConflictResolver;
   private statePersistence: StatePersistence;
@@ -782,7 +834,7 @@ export class EnhancedStateManager extends EventEmitter {
     coalescingConfig?: Partial<StateCoalescingConfig>;
     persistenceConfig?: Partial<StatePersistence['persistenceConfig']>;
   } = {}) {
-    super();
+    super('enhanced-state-manager', 200);
     
     // Initialize core components
     this.ipcCoordinator = new IPCCoordinator();
@@ -1046,17 +1098,20 @@ export class EnhancedStateManager extends EventEmitter {
 
   private async waitForStateResponse(componentId: string, timeoutMs: number): Promise<any> {
     return new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        reject(new Error(`State request timeout for ${componentId}`));
-      }, timeoutMs);
+      let timeoutHandle: ManagedTimeout | null = null;
 
       const handler = (data: any) => {
         if (data.componentId === componentId) {
-          clearTimeout(timeout);
+          timeoutHandle?.cancel();
           this.off('state-response', handler);
           resolve(data.state);
         }
       };
+
+      timeoutHandle = createTimeout(() => {
+        this.off('state-response', handler);
+        reject(new Error(`State request timeout for ${componentId}`));
+      }, timeoutMs, { unref: true });
 
       this.on('state-response', handler);
     });
@@ -1086,7 +1141,7 @@ export class EnhancedStateManager extends EventEmitter {
 
   private setupPerformanceMonitoring(): void {
     // Performance monitoring integration for 30% degradation threshold
-    const handle = setInterval(() => {
+    const handle: ManagedInterval = createInterval(() => {
       const currentPerformance = this.calculateCurrentPerformance();
       
       if (currentPerformance.degradationPercentage > this.performanceThreshold) {
@@ -1096,9 +1151,8 @@ export class EnhancedStateManager extends EventEmitter {
           timestamp: Date.now()
         });
       }
-    }, 5000); // Check every 5 seconds
-    handle.unref?.();
-    this.registerCleanup(() => clearInterval(handle));
+    }, 5000, { unref: true }); // Check every 5 seconds
+    this.registerCleanup(() => handle.stop());
   }
 
   private setupComponentTransferIntegration(): void {
@@ -1188,7 +1242,8 @@ export class EnhancedStateManager extends EventEmitter {
     
     // Clean up timers and resources
     this.removeAllListeners();
-    
+    this.cleanupEvents();
+
     this.emit('shutdown-complete', { timestamp: Date.now() });
   }
 

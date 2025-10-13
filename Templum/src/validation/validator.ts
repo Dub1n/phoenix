@@ -24,6 +24,7 @@
 
 import { EventEmitter } from 'events';
 import { performance } from 'perf_hooks';
+import { sleep, withTimeout } from '../utils/async-utils';
 
 // Core validation interfaces
 export interface ValidationResult<T = any> {
@@ -418,10 +419,11 @@ export class ErrorRecoveryManager extends EventEmitter {
       try {
         console.log(`[VALIDATOR] Attempting recovery with strategy: ${strategy.name}`);
         
-        const success = await Promise.race([
-          strategy.execute(error, context),
-          this.createTimeout(strategy.timeout)
-        ]);
+        const success = await withTimeout(
+          Promise.resolve(strategy.execute(error, context)),
+          strategy.timeout,
+          new Error('Recovery timeout')
+        );
         
         this.recordRecoveryAttempt(strategy.name, success);
         
@@ -482,15 +484,6 @@ export class ErrorRecoveryManager extends EventEmitter {
   }
 
   /**
-   * Create timeout promise
-   */
-  private createTimeout(timeoutMs: number): Promise<boolean> {
-    return new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('Recovery timeout')), timeoutMs);
-    });
-  }
-
-  /**
    * Initialize default recovery strategies
    */
   private initializeDefaultStrategies(): void {
@@ -500,7 +493,7 @@ export class ErrorRecoveryManager extends EventEmitter {
       cost: 10,
       timeout: 5000,
       execute: async (error, context) => {
-        await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
+        await sleep(1000 + Math.random() * 2000);
         return Math.random() > 0.4; // 60% success rate
       }
     });
@@ -523,7 +516,7 @@ export class ErrorRecoveryManager extends EventEmitter {
       timeout: 2000,
       execute: async (error, context) => {
         console.log('[VALIDATOR] Resetting component state');
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await sleep(500);
         return Math.random() > 0.3; // 70% success rate
       }
     });

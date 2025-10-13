@@ -17,6 +17,7 @@ import {
 } from '../types/templum-types';
 import {TemplumResourceManager, ResourceUsage} from '../core/templum-resource-manager';
 import { PerformanceValidator, PerformanceMetrics } from './performance-validation';
+import { sleep } from '../utils/async-utils';
 
 // ============================================================================
 // Production Readiness Interfaces
@@ -208,7 +209,7 @@ export class RealSystemMetricsCollector {
     const startTime = performance.now();
     
     // Wait 100ms to get a meaningful sample
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await sleep(100);
     
     const endUsage = process.cpuUsage(startUsage);
     const endTime = performance.now();
@@ -739,7 +740,7 @@ export class RealPerformanceValidator {
       samples.push(endTime - startTime);
       
       // Small delay between samples
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await sleep(10);
     }
     
     // Return average response time

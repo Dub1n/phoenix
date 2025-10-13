@@ -29,6 +29,8 @@ export interface SkinValidationIssue {
 export interface SkinValidationSchema extends Record<string, unknown> {
   $id?: string;
   version?: string;
+  definitions?: Record<string, unknown>;
+  additionalProperties?: boolean | Record<string, unknown>;
 }
 
 export interface SkinValidationOptions {
@@ -45,42 +47,44 @@ function cloneSchema<T extends Record<string, unknown>>(schema: T): T {
 }
 
 function ensureSchemaDefinitions(schema: SkinValidationSchema): SkinValidationSchema {
-  if (!schema.definitions) {
+  if (typeof schema.definitions !== 'object' || schema.definitions === null) {
     schema.definitions = {};
   }
 
-    schema.additionalProperties = true;
+  schema.additionalProperties = true;
 
-const missing = new Set<string>();
+  const missing = new Set<string>();
 
-  const visit = (node: any) => {
+  const visit = (node: unknown): void => {
     if (!node || typeof node !== 'object') {
       return;
     }
 
-    if (typeof node.$ref === 'string') {
-      const match = node.$ref.match(/^#\/definitions\/(.+)$/);
+    const candidate = node as Record<string, unknown>;
+
+    if (typeof candidate.$ref === 'string') {
+      const match = candidate.$ref.match(/^#\/definitions\/(.+)$/);
       if (match) {
         const definitionName = match[1];
-        if (!schema.definitions || !(definitionName in schema.definitions)) {
+        const definitions = schema.definitions as Record<string, unknown>;
+        if (!(definitionName in definitions)) {
           missing.add(definitionName);
         }
       }
     }
 
-    for (const value of Object.values(node)) {
+    for (const value of Object.values(candidate)) {
       visit(value);
     }
   };
 
   visit(schema);
 
-  if (!schema.definitions) {
-    schema.definitions = {};
-  }
-
+  const definitions = schema.definitions as Record<string, unknown>;
   for (const definitionName of missing) {
-    schema.definitions[definitionName] = schema.definitions[definitionName] ?? {};
+    if (!(definitionName in definitions)) {
+      definitions[definitionName] = {};
+    }
   }
 
   return schema;

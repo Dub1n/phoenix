@@ -7,6 +7,7 @@
  * ---*/
 
 import { EventEmitter } from 'events';
+import { createInterval, ManagedInterval } from '../utils/async-utils';
 
 export interface PerformanceMetric {
   componentId: string;
@@ -96,7 +97,7 @@ export class PerformanceMonitor extends EventEmitter {
   private metrics: Map<string, PerformanceMetric[]> = new Map();
   private degradations: Map<string, PerformanceDegradation> = new Map();
   private alerts: Map<string, PerformanceAlert> = new Map();
-  private monitoringInterval: NodeJS.Timeout | null = null;
+  private monitoringInterval: ManagedInterval | null = null;
   private isMonitoring: boolean = false;
   private config: {
     defaultDegradationThreshold: number; // 30% from Phase 1
@@ -126,7 +127,7 @@ export class PerformanceMonitor extends EventEmitter {
     }
 
     this.isMonitoring = true;
-    this.monitoringInterval = setInterval(() => {
+    this.monitoringInterval = createInterval(() => {
       this.collectMetrics();
     }, this.config.samplingInterval);
 
@@ -143,10 +144,8 @@ export class PerformanceMonitor extends EventEmitter {
     }
 
     this.isMonitoring = false;
-    if (this.monitoringInterval) {
-      clearInterval(this.monitoringInterval);
-      this.monitoringInterval = null;
-    }
+    this.monitoringInterval?.stop();
+    this.monitoringInterval = null;
 
     this.emit('monitoringStopped', { timestamp: Date.now() });
     console.log('Performance Monitor: Stopped monitoring');

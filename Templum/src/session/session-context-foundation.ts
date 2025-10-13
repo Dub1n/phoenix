@@ -10,7 +10,14 @@
  * Generated: 2025-08-21
  */
 
-import { EventEmitter } from 'events';
+import {
+  EventUtils,
+  ScopedEventBus,
+  SubscriptionOptions,
+  TypedEventMap,
+  UnsubscribeFn
+} from '../utils/event-utils';
+import { createInterval } from '../utils/async-utils';
 
 export interface SessionContext {
   sessionId: string;
@@ -39,11 +46,151 @@ export interface SessionLookupOptions {
  * Foundation component for cross-interface session management
  * Provides minimal session tracking required by all dependent components
  */
-export class SessionContextFoundation extends EventEmitter {
+interface SessionContextFoundationEvents extends TypedEventMap {
+  initialized: () => void;
+  sessionCreated: (context: SessionContext) => void;
+  activeSessionChanged: (sessionId: string) => void;
+  sessionStateUpdated: (sessionId: string, updates: Partial<Record<string, any>>) => void;
+  sessionClosed: (sessionId: string) => void;
+  interfaceSwitched: (sessionId: string, oldInterface: string, newInterface: string) => void;
+  sessionExpired: (sessionId: string) => void;
+  cleanup: () => void;
+}
+
+type SessionEventKey = Extract<keyof SessionContextFoundationEvents, string>;
+type SessionListener = (...args: any[]) => unknown;
+
+export class SessionContextFoundation {
+  private static instanceCounter = 0;
+
+  private readonly eventScope: string;
+  private readonly events: ScopedEventBus<SessionContextFoundationEvents>;
+  private readonly listenerRegistry = new Map<SessionEventKey, Map<SessionListener, UnsubscribeFn>>();
   private sessions: Map<string, SessionContext> = new Map();
   private activeSession: string | null = null;
   private initialized = false;
-  private cleanupInterval: NodeJS.Timeout | null = null;
+  private cleanupInterval: ReturnType<typeof createInterval> | null = null;
+
+  constructor() {
+    this.eventScope = `session-context-foundation:${SessionContextFoundation.instanceCounter++}`;
+    this.events = EventUtils.createScopedBus<SessionContextFoundationEvents>(this.eventScope, 40);
+  }
+
+  emit<K extends SessionEventKey>(
+    event: K,
+    ...args: Parameters<SessionContextFoundationEvents[K]>
+  ): boolean {
+    return this.events.emit(event, ...args);
+  }
+
+  on<K extends SessionEventKey>(
+    event: K,
+    listener: SessionContextFoundationEvents[K]
+  ): this {
+    this.registerListener(event, listener);
+    return this;
+  }
+
+  addListener<K extends SessionEventKey>(
+    event: K,
+    listener: SessionContextFoundationEvents[K]
+  ): this {
+    return this.on(event, listener);
+  }
+
+  once<K extends SessionEventKey>(
+    event: K,
+    listener: SessionContextFoundationEvents[K]
+  ): this {
+    this.registerListener(event, listener, { once: true });
+    return this;
+  }
+
+  off<K extends SessionEventKey>(
+    event: K,
+    listener: SessionContextFoundationEvents[K]
+  ): this {
+    this.unregisterListener(event, listener);
+    return this;
+  }
+
+  removeListener<K extends SessionEventKey>(
+    event: K,
+    listener: SessionContextFoundationEvents[K]
+  ): this {
+    return this.off(event, listener);
+  }
+
+  removeAllListeners(event?: SessionEventKey): this {
+    if (event) {
+      this.flushListeners(event);
+    } else {
+      for (const eventName of Array.from(this.listenerRegistry.keys())) {
+        this.flushListeners(eventName);
+      }
+      this.events.cleanup();
+    }
+    return this;
+  }
+
+  listenerCount(event: SessionEventKey): number {
+    return this.events.getListenerCount(event);
+  }
+
+  eventNames(): SessionEventKey[] {
+    return this.events.getEventNames();
+  }
+
+  getEventEmitter(): typeof this.events.emitter {
+    return this.events.emitter;
+  }
+
+  private registerListener<K extends SessionEventKey>(
+    event: K,
+    listener: SessionContextFoundationEvents[K],
+    options?: SubscriptionOptions
+  ): void {
+    const unsubscribe = EventUtils.subscribe(this.events.emitter, event, listener, {
+      context: this.eventScope,
+      ...options
+    });
+
+    if (!this.listenerRegistry.has(event)) {
+      this.listenerRegistry.set(event, new Map());
+    }
+
+    this.listenerRegistry.get(event)!.set(listener as SessionListener, unsubscribe);
+  }
+
+  private unregisterListener<K extends SessionEventKey>(
+    event: K,
+    listener: SessionContextFoundationEvents[K]
+  ): void {
+    const registry = this.listenerRegistry.get(event);
+    const unsubscribe = registry?.get(listener as SessionListener);
+
+    if (unsubscribe) {
+      unsubscribe();
+      registry!.delete(listener as SessionListener);
+      if (registry!.size === 0) {
+        this.listenerRegistry.delete(event);
+      }
+    } else {
+      this.events.emitter.off(event, listener);
+    }
+  }
+
+  private flushListeners(event: SessionEventKey): void {
+    const registry = this.listenerRegistry.get(event);
+    if (registry) {
+      for (const unsubscribe of registry.values()) {
+        unsubscribe();
+      }
+      registry.clear();
+      this.listenerRegistry.delete(event);
+    }
+    this.events.emitter.removeAllListeners(event);
+  }
 
   /**
    * Initialize the session context foundation
@@ -249,7 +396,7 @@ export class SessionContextFoundation extends EventEmitter {
    */
   async cleanup(): Promise<void> {
     if (this.cleanupInterval) {
-      clearInterval(this.cleanupInterval);
+      this.cleanupInterval.stop();
       this.cleanupInterval = null;
     }
 
@@ -273,11 +420,11 @@ export class SessionContextFoundation extends EventEmitter {
    */
   private setupCleanupInterval(): void {
     // Clean up expired sessions every 5 minutes
-    this.cleanupInterval = setInterval(() => {
+    this.cleanupInterval = createInterval(() => {
       const cleaned = this.cleanupExpiredSessions();
       if (cleaned > 0) {
         console.debug(`Cleaned up ${cleaned} expired sessions`);
       }
-    }, 5 * 60 * 1000);
+    }, 5 * 60 * 1000, { unref: true });
   }
 }

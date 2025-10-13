@@ -1,4 +1,4 @@
-import { EventEmitter } from 'events';
+import { EventUtils, type GenericEventMap } from '../../src/utils/event-utils';
 import { TemplumUniversalSessionManager } from '../../src/session/templum-universal-session-manager';
 import type { InterfaceAdapter, InterfaceType } from '../../src/types/templum-types';
 
@@ -14,7 +14,7 @@ const createStubBackendRouter = () => ({
 });
 
 const createAdapter = (interfaceType: InterfaceType): InterfaceAdapter => {
-  const emitter = new EventEmitter();
+  const emitter = EventUtils.createTypedEmitter<GenericEventMap>();
   return {
     applySkin: jest.fn().mockResolvedValue(undefined),
     syncState: jest.fn().mockResolvedValue(undefined),

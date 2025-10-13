@@ -7,6 +7,7 @@
  * ---*/
 
 import { EventEmitter } from 'events';
+import { sleep } from '../utils/async-utils';
 
 export interface ComponentComplexity {
   id: string;
@@ -523,7 +524,7 @@ export class ComponentTransferStrategy extends EventEmitter {
   private async executeRollback(componentId: string, component: ComponentComplexity): Promise<void> {
     this.emit('rollbackInitiated', { componentId, reason: 'Performance degradation' });
     // Simulate rollback operation
-    await new Promise(resolve => setTimeout(resolve, component.fallbackStrategy.fallbackTimeout));
+    await sleep(component.fallbackStrategy.fallbackTimeout);
     this.emit('rollbackCompleted', { componentId });
   }
 
@@ -533,7 +534,7 @@ export class ComponentTransferStrategy extends EventEmitter {
     this.emit('fallbackInitiated', { componentId });
     
     // Simulate fallback execution
-    await new Promise(resolve => setTimeout(resolve, component.fallbackStrategy.fallbackTimeout));
+    await sleep(component.fallbackStrategy.fallbackTimeout);
     
     // Simulate fallback success rate
     const fallbackSuccess = Math.random() < 0.8; // 80% fallback success rate

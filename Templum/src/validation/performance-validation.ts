@@ -8,9 +8,10 @@
 
 import { EventEmitter } from 'events';
 import { performance } from 'perf_hooks';
-import { 
+import {
   isTemplumError
 } from '../types/templum-types';
+import { sleep, createInterval, ManagedInterval } from '../utils/async-utils';
 
 // Performance baseline definitions from Phase 1 requirements
 export interface ComponentPerformanceBaseline {
@@ -348,7 +349,7 @@ export class ComponentBaselineManager extends EventEmitter {
       });
 
       // Small delay between samples
-      await new Promise(resolve => setTimeout(resolve, 200));
+      await sleep(200);
     }
 
     // Calculate averages from real measurements
@@ -388,7 +389,7 @@ export class ComponentBaselineManager extends EventEmitter {
     const startTime = performance.now();
     
     // Wait 50ms to get a meaningful sample
-    await new Promise(resolve => setTimeout(resolve, 50));
+    await sleep(50);
     
     const endUsage = process.cpuUsage(startUsage);
     const endTime = performance.now();
@@ -644,7 +645,7 @@ export class ContinuousMonitor extends EventEmitter {
   private config: ContinuousMonitoringConfig;
   private baselineManager: ComponentBaselineManager;
   private regressionDetector: RegressionDetector;
-  private monitoringTimer?: NodeJS.Timeout;
+  private monitoringTimer?: ManagedInterval;
   private metricsBuffer: Map<string, PerformanceMetrics[]> = new Map();
   private lastAlerts: Map<string, number> = new Map();
 
@@ -675,7 +676,7 @@ export class ContinuousMonitor extends EventEmitter {
   start(): void {
     if (!this.config.enabled) return;
 
-    this.monitoringTimer = setInterval(() => {
+    this.monitoringTimer = createInterval(() => {
       this.performMonitoringCycle();
     }, this.config.samplingInterval);
 
@@ -686,10 +687,8 @@ export class ContinuousMonitor extends EventEmitter {
    * Stop continuous monitoring
    */
   stop(): void {
-    if (this.monitoringTimer) {
-      clearInterval(this.monitoringTimer);
-      this.monitoringTimer = undefined;
-    }
+    this.monitoringTimer?.stop();
+    this.monitoringTimer = undefined;
 
     this.emit('monitoringStopped', { timestamp: Date.now() });
   }

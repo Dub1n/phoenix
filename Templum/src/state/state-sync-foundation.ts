@@ -10,7 +10,9 @@
  * Generated: 2025-08-21
  */
 
-import { EventEmitter } from 'events';
+import { createTimeout, ManagedTimeout, sleep } from '../utils/async-utils';
+import { type TypedEventMap } from '../utils/event-utils';
+import { EventDrivenComponent } from '../utils/event-bus-adapter';
 
 export interface StateUpdate {
   interfaceId: string;
@@ -44,7 +46,16 @@ export interface CoalescingWindow {
  * Foundation component for cross-interface state synchronization
  * Provides basic state management required by all dependent components
  */
-export class StateSyncFoundation extends EventEmitter {
+interface StateSyncFoundationEvents extends TypedEventMap {
+  initialized: () => void;
+  stateUpdateQueued: (update: StateUpdate) => void;
+  cleanup: () => void;
+  coalescingComplete: (count: number) => void;
+  conflictResolved: (conflict: StateConflict) => void;
+  stateUpdated: (key: string, value: unknown, interfaceId: string) => void;
+}
+
+export class StateSyncFoundation extends EventDrivenComponent<StateSyncFoundationEvents> {
   private globalState: Record<string, any> = {};
   private interfaceStates: Map<string, Record<string, any>> = new Map();
   private updateQueue: StateUpdate[] = [];
@@ -57,8 +68,12 @@ export class StateSyncFoundation extends EventEmitter {
     lastSyncTimestamp: new Date()
   };
   private initialized = false;
-  private processingTimeout: NodeJS.Timeout | null = null;
+  private processingTimeout: ManagedTimeout | null = null;
   private versionCounter = 0;
+
+  constructor() {
+    super('state-sync-foundation', 50);
+  }
 
   /**
    * Initialize the state synchronization foundation
@@ -176,17 +191,18 @@ export class StateSyncFoundation extends EventEmitter {
    */
   async cleanup(): Promise<void> {
     if (this.processingTimeout) {
-      clearTimeout(this.processingTimeout);
+      this.processingTimeout.cancel();
       this.processingTimeout = null;
     }
 
     this.updateQueue = [];
     this.coalescingWindow = null;
     this.conflictResolution.clear();
-    this.interfaceStates.clear();
-    this.globalState = {};
-    this.initialized = false;
-    this.removeAllListeners();
+   this.interfaceStates.clear();
+   this.globalState = {};
+   this.initialized = false;
+   this.removeAllListeners();
+    this.cleanupEvents();
 
     this.emit('cleanup');
   }
@@ -206,9 +222,11 @@ export class StateSyncFoundation extends EventEmitter {
       };
 
       // Schedule processing
-      this.processingTimeout = setTimeout(() => {
-        this.processCoalescingWindow();
-      }, 100);
+      this.processingTimeout = createTimeout(
+        () => void this.processCoalescingWindow(),
+        100,
+        { unref: true }
+      );
     } else {
       // Extend window if not already processing
       if (!this.coalescingWindow.isProcessing) {
@@ -314,22 +332,9 @@ export class StateSyncFoundation extends EventEmitter {
    * Wait for current coalescing window to complete
    */
   private async waitForCoalescingComplete(): Promise<void> {
-    return new Promise((resolve) => {
-      if (!this.coalescingWindow?.isProcessing) {
-        resolve();
-        return;
-      }
-
-      const checkComplete = () => {
-        if (!this.coalescingWindow?.isProcessing) {
-          resolve();
-        } else {
-          setTimeout(checkComplete, 10);
-        }
-      };
-
-      checkComplete();
-    });
+    while (this.coalescingWindow?.isProcessing) {
+      await sleep(10);
+    }
   }
 
   /**

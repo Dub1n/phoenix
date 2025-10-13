@@ -6,7 +6,6 @@
  * description: [Coordinates universal interface sessions across VSCode/CLI/Command modes with multi-backend support, adapted from PCL unified session manager patterns]
  * ---*/
 
-import { EventEmitter } from 'events';
 import {
   InterfaceType,
   InterfaceAdapter,
@@ -39,12 +38,218 @@ import type {
   TemplumSessionState,
   TemplumSessionManagerContract,
 } from './universal-session-manager.types';
+import {
+  EventUtils,
+  ScopedEventBus,
+  SubscriptionOptions,
+  TypedEventMap,
+  UnsubscribeFn
+} from '../utils/event-utils';
 
 export interface InterfaceAdapterRegistry {
   vscode?: InterfaceAdapter;
   cli?: InterfaceAdapter;
   command?: InterfaceAdapter;
 }
+
+interface BackendIntegrationWarningEvent {
+  error: string;
+  timestamp: number;
+  impact: string;
+}
+
+interface SessionStartedEvent {
+  sessionId: string;
+  interfaceType: InterfaceType;
+  timestamp: number;
+}
+
+interface InterfaceDisconnectedEvent {
+  interfaceType: InterfaceType;
+  sessionId?: string;
+  reason: string;
+  timestamp: number;
+}
+
+interface InterfaceRegisteredEvent {
+  interfaceType: InterfaceType;
+  timestamp: number;
+  totalInterfaces: number;
+}
+
+interface InterfaceSwitchedEvent {
+  sessionId: string;
+  previousInterface: InterfaceType;
+  newInterface: InterfaceType;
+  switchTime: number;
+  timestamp: number;
+}
+
+interface SkinLoadedEvent {
+  sessionId: string | null;
+  skinId: string;
+  skinName?: string;
+  compatibleInterfaces: InterfaceType[];
+  timestamp: number;
+}
+
+interface CommandExecutedEvent {
+  sessionId: string | null;
+  command: string;
+  result: CommandResult;
+  executionTime: number;
+  timestamp: number;
+}
+
+interface CommandErrorEvent {
+  sessionId: string | null;
+  command: string;
+  error: string;
+  timestamp: number;
+}
+
+interface SessionStoppedEvent {
+  sessionId: string;
+  metrics?: TemplumSessionMetrics;
+  timestamp: number;
+}
+
+interface BackendServiceChangedEvent {
+  serviceId: string;
+  status: 'connected' | 'disconnected';
+  activeBackends: string[];
+  timestamp: number;
+}
+
+interface FallbackStateRestoreSuccessEvent {
+  interface: InterfaceType;
+  method: string;
+  originalError: string;
+  timestamp: number;
+}
+
+interface InterfaceResetToDefaultEvent {
+  interface: InterfaceType;
+  originalError: string;
+  fallbackError: string;
+  timestamp: number;
+}
+
+interface InterfaceStateSyncCompleteFailureEvent {
+  interface: InterfaceType;
+  originalError: string;
+  fallbackError: string;
+  resetError: string;
+  timestamp: number;
+}
+
+interface ComprehensiveRecoverySuccessEvent {
+  fromInterface: InterfaceType;
+  toInterface: InterfaceType;
+  originalError: string;
+  recoveryMethod: string;
+  recoveryTime: number;
+  timestamp: number;
+}
+
+interface ComprehensiveRecoveryCompletedEvent {
+  fromInterface: InterfaceType;
+  toInterface: InterfaceType;
+  originalError: string;
+  recoveryMethod: string;
+  recoveryTime: number;
+  status: string;
+  timestamp: number;
+}
+
+interface ProgressiveRestorationCompletedEvent {
+  fromInterface: InterfaceType;
+  toInterface: InterfaceType;
+  completedSteps: string[];
+  failedSteps: Array<{ name: string; error: string }>;
+  successRate: number;
+  timestamp: number;
+}
+
+interface EmergencyStatePreservedEvent {
+  fromInterface: InterfaceType;
+  toInterface: InterfaceType;
+  emergencyData: Record<string, unknown>;
+  sessionId: string;
+  timestamp: number;
+}
+
+interface SessionStateIsolatedEvent {
+  fromInterface: InterfaceType;
+  toInterface: InterfaceType;
+  sessionId: string;
+  isolationData: Record<string, unknown>;
+  timestamp: number;
+}
+
+interface BackendSessionStateSynchronizedEvent {
+  fromInterface: InterfaceType;
+  toInterface: InterfaceType;
+  sessionId: string;
+  results: Array<{
+    backendId: string;
+    status: 'success' | 'partial' | 'failed';
+    method: string;
+    error?: string;
+  }>;
+  successRate: number;
+  synchronizationTime: number;
+  timestamp: number;
+}
+
+interface BackendSessionStateSyncErrorEvent {
+  fromInterface: InterfaceType;
+  toInterface: InterfaceType;
+  sessionId: string;
+  error: string;
+  timestamp: number;
+}
+
+interface TimestampedEvent {
+  timestamp: number;
+}
+
+interface TemplumSessionManagerEvents extends TypedEventMap {
+  backendIntegrationWarning: (payload: BackendIntegrationWarningEvent) => void;
+  initialized: (payload: TimestampedEvent) => void;
+  initializationError: (payload: ErrorSignalPayload) => void;
+  sessionStarted: (payload: SessionStartedEvent) => void;
+  interfaceDisconnected: (payload: InterfaceDisconnectedEvent) => void;
+  interfaceRegistered: (payload: InterfaceRegisteredEvent) => void;
+  interfaceSwitched: (payload: InterfaceSwitchedEvent) => void;
+  interfaceSwitchError: (payload: ErrorSignalPayload) => void;
+  skinLoaded: (payload: SkinLoadedEvent) => void;
+  commandExecuted: (payload: CommandExecutedEvent) => void;
+  commandError: (payload: CommandErrorEvent) => void;
+  sessionStopped: (payload: SessionStoppedEvent) => void;
+  shutdown: (payload: TimestampedEvent) => void;
+  interfaceStateSyncError: (payload: ErrorSignalPayload) => void;
+  backendServiceChanged: (payload: BackendServiceChangedEvent) => void;
+  fallbackStateRestoreSuccess: (payload: FallbackStateRestoreSuccessEvent) => void;
+  interfaceResetToDefault: (payload: InterfaceResetToDefaultEvent) => void;
+  interfaceStateSyncCompleteFailure: (payload: InterfaceStateSyncCompleteFailureEvent) => void;
+  comprehensiveRecoverySuccess: (payload: ComprehensiveRecoverySuccessEvent) => void;
+  comprehensiveRecoveryCompleted: (payload: ComprehensiveRecoveryCompletedEvent) => void;
+  progressiveRestorationCompleted: (payload: ProgressiveRestorationCompletedEvent) => void;
+  emergencyStatePreserved: (payload: EmergencyStatePreservedEvent) => void;
+  sessionStateIsolated: (payload: SessionStateIsolatedEvent) => void;
+  backendSessionStateSynchronized: (payload: BackendSessionStateSynchronizedEvent) => void;
+  backendSessionStateSyncError: (payload: BackendSessionStateSyncErrorEvent) => void;
+  sessionCreated: (context: SessionContext) => void;
+  activeSessionChanged: (sessionId: string) => void;
+  sessionStateUpdated: (sessionId: string, updates: Partial<Record<string, any>>) => void;
+  sessionClosed: (sessionId: string) => void;
+  sessionExpired: (sessionId: string) => void;
+  cleanup: () => void;
+}
+
+type SessionManagerEventKey = Extract<keyof TemplumSessionManagerEvents, string>;
+type SessionManagerListener = (...args: any[]) => unknown;
 
 /**
  * Universal Session Manager for Templum
@@ -56,9 +261,15 @@ export interface InterfaceAdapterRegistry {
  * - Universal skin definition management across interfaces
  * - Backend service router integration for session coordination
  */
-export class TemplumUniversalSessionManager
-  extends EventEmitter
-  implements TemplumSessionManagerContract {
+export class TemplumUniversalSessionManager implements TemplumSessionManagerContract {
+  private static instanceCounter = 0;
+
+  private readonly eventScope: string;
+  private readonly events: ScopedEventBus<TemplumSessionManagerEvents>;
+  private readonly listenerRegistry = new Map<SessionManagerEventKey, Map<SessionManagerListener, UnsubscribeFn>>();
+  private foundationForwarders: UnsubscribeFn[] = [];
+  private backendRouterDisposers: Array<() => void> = [];
+  private backendMonitoringConfigured = false;
   private sessionFoundation: SessionContextFoundation;
   private backendServiceRouter: TemplumBackendServiceRouter;
   private config: TemplumConfiguration;
@@ -84,13 +295,177 @@ export class TemplumUniversalSessionManager
   private running: boolean = false;
   private initialized: boolean = false;
 
+  emit<K extends SessionManagerEventKey>(
+    event: K,
+    ...args: Parameters<TemplumSessionManagerEvents[K]>
+  ): boolean {
+    return this.events.emit(event, ...args);
+  }
+
+  on<K extends SessionManagerEventKey>(
+    event: K,
+    listener: TemplumSessionManagerEvents[K]
+  ): this;
+  on(event: string, listener: (...args: any[]) => void): this;
+  on(event: string, listener: (...args: any[]) => void): this {
+    this.registerListener(
+      event as SessionManagerEventKey,
+      listener as TemplumSessionManagerEvents[SessionManagerEventKey]
+    );
+    return this;
+  }
+
+  addListener<K extends SessionManagerEventKey>(
+    event: K,
+    listener: TemplumSessionManagerEvents[K]
+  ): this {
+    return this.on(event, listener);
+  }
+
+  once<K extends SessionManagerEventKey>(
+    event: K,
+    listener: TemplumSessionManagerEvents[K]
+  ): this;
+  once(event: string, listener: (...args: any[]) => void): this;
+  once(event: string, listener: (...args: any[]) => void): this {
+    this.registerListener(
+      event as SessionManagerEventKey,
+      listener as TemplumSessionManagerEvents[SessionManagerEventKey],
+      { once: true }
+    );
+    return this;
+  }
+
+  off<K extends SessionManagerEventKey>(
+    event: K,
+    listener: TemplumSessionManagerEvents[K]
+  ): this;
+  off(event: string, listener: (...args: any[]) => void): this;
+  off(event: string, listener: (...args: any[]) => void): this {
+    this.unregisterListener(
+      event as SessionManagerEventKey,
+      listener as TemplumSessionManagerEvents[SessionManagerEventKey]
+    );
+    return this;
+  }
+
+  removeListener<K extends SessionManagerEventKey>(
+    event: K,
+    listener: TemplumSessionManagerEvents[K]
+  ): this;
+  removeListener(event: string, listener: (...args: any[]) => void): this;
+  removeListener(event: string, listener: (...args: any[]) => void): this {
+    return this.off(event, listener);
+  }
+
+  removeAllListeners(event?: SessionManagerEventKey): this {
+    if (event) {
+      this.flushListeners(event);
+    } else {
+      for (const eventName of Array.from(this.listenerRegistry.keys())) {
+        this.flushListeners(eventName);
+      }
+      this.events.cleanup();
+    }
+    return this;
+  }
+
+  listenerCount(event: SessionManagerEventKey): number {
+    return this.events.getListenerCount(event);
+  }
+
+  eventNames(): SessionManagerEventKey[] {
+    return this.events.getEventNames();
+  }
+
+  private registerListener<K extends SessionManagerEventKey>(
+    event: K,
+    listener: TemplumSessionManagerEvents[K],
+    options?: SubscriptionOptions
+  ): void {
+    const unsubscribe = EventUtils.subscribe(this.events.emitter, event, listener, {
+      context: this.eventScope,
+      ...options
+    });
+
+    if (!this.listenerRegistry.has(event)) {
+      this.listenerRegistry.set(event, new Map());
+    }
+
+    this.listenerRegistry.get(event)!.set(listener as SessionManagerListener, unsubscribe);
+  }
+
+  private unregisterListener<K extends SessionManagerEventKey>(
+    event: K,
+    listener: TemplumSessionManagerEvents[K]
+  ): void {
+    const registry = this.listenerRegistry.get(event);
+    const unsubscribe = registry?.get(listener as SessionManagerListener);
+
+    if (unsubscribe) {
+      unsubscribe();
+      registry!.delete(listener as SessionManagerListener);
+      if (registry!.size === 0) {
+        this.listenerRegistry.delete(event);
+      }
+    } else {
+      this.events.emitter.off(event, listener);
+    }
+  }
+
+  private flushListeners(event: SessionManagerEventKey): void {
+    const registry = this.listenerRegistry.get(event);
+    if (registry) {
+      for (const unsubscribe of registry.values()) {
+        unsubscribe();
+      }
+      registry.clear();
+      this.listenerRegistry.delete(event);
+    }
+    this.events.emitter.removeAllListeners(event);
+  }
+
+  private cleanupForwarders(): void {
+    if (this.foundationForwarders.length === 0) {
+      return;
+    }
+
+    for (const unsubscribe of this.foundationForwarders) {
+      try {
+        unsubscribe();
+      } catch {
+        // ignore cleanup errors
+      }
+    }
+
+    this.foundationForwarders = [];
+  }
+
+  private cleanupBackendRouterListeners(): void {
+    if (this.backendRouterDisposers.length === 0) {
+      return;
+    }
+
+    for (const dispose of this.backendRouterDisposers) {
+      try {
+        dispose();
+      } catch {
+        // swallow cleanup errors
+      }
+    }
+
+    this.backendRouterDisposers = [];
+    this.backendMonitoringConfigured = false;
+  }
+
   constructor(
     config: Partial<TemplumConfiguration> = {},
     orchestrator?: ITemplumOrchestrator,
     backendServiceRouter?: TemplumBackendServiceRouter
   ) {
-    super();
-    
+    this.eventScope = `templum-session-manager:${TemplumUniversalSessionManager.instanceCounter++}`;
+    this.events = EventUtils.createScopedBus<TemplumSessionManagerEvents>(this.eventScope, 120);
+
     this.config = {
       maxConcurrentSessions: 5,
       sessionTimeoutMs: 3600000, // 1 hour
@@ -107,6 +482,13 @@ export class TemplumUniversalSessionManager
     this.sessionFoundation = new SessionContextFoundation();
     this.orchestrator = orchestrator;
     this.backendServiceRouter = backendServiceRouter || new TemplumBackendServiceRouter(orchestrator);
+
+    this.foundationForwarders = EventUtils.forward(
+      this.sessionFoundation.getEventEmitter(),
+      this.events.emitter,
+      ['sessionCreated', 'activeSessionChanged', 'sessionStateUpdated', 'sessionClosed', 'sessionExpired', 'cleanup'],
+      this.eventScope
+    );
 
     this.setupEventListeners();
   }
@@ -415,11 +797,6 @@ export class TemplumUniversalSessionManager
       timestamp: Date.now(),
     });
   }
-
-  off(event: string, listener: (...args: any[]) => void): void {
-    this.removeListener(event, listener);
-  }
-
   /**
    * Register interface adapter with the session
    * PCL Pattern: Renderer management adapted for interface adapters
@@ -1125,6 +1502,9 @@ export class TemplumUniversalSessionManager
       this.initialized = false;
       this.running = false;
 
+      this.cleanupBackendRouterListeners();
+      this.cleanupForwarders();
+
       this.emit('shutdown', { timestamp: Date.now() });
       this.removeAllListeners();
 
@@ -1470,10 +1850,14 @@ export class TemplumUniversalSessionManager
    * TASK-NEW-010: Setup backend health monitoring for session resilience
    */
   private setupBackendHealthMonitoring(): void {
+    if (this.backendMonitoringConfigured) {
+      return;
+    }
+
     // Monitor backend service health for session coordination
     if (this.backendServiceRouter && typeof this.backendServiceRouter.on === 'function') {
       // Listen for service disconnection events
-      this.backendServiceRouter.on('serviceDisconnected', (serviceId: string) => {
+      const handleDisconnect = (serviceId: string) => {
         console.log(`Backend service ${serviceId} disconnected - updating session coordination`);
         
         // Remove from active backends
@@ -1496,10 +1880,12 @@ export class TemplumUniversalSessionManager
             sessionState.lastActivity = new Date();
           }
         }
-      });
+      };
+      this.backendServiceRouter.on('serviceDisconnected', handleDisconnect);
+      this.backendRouterDisposers.push(() => this.backendServiceRouter.off('serviceDisconnected', handleDisconnect));
       
       // Listen for service reconnection events
-      this.backendServiceRouter.on('serviceConnected', async (serviceId: string) => {
+      const handleConnect = async (serviceId: string) => {
         console.log(`Backend service ${serviceId} connected - establishing session coordination`);
         
         try {
@@ -1554,9 +1940,12 @@ export class TemplumUniversalSessionManager
         } catch (error) {
           console.warn(`Failed to establish coordination with reconnected service ${serviceId}:`, error);
         }
-      });
+      };
+      this.backendServiceRouter.on('serviceConnected', handleConnect);
+      this.backendRouterDisposers.push(() => this.backendServiceRouter.off('serviceConnected', handleConnect));
       
       console.log('Backend health monitoring setup complete');
+      this.backendMonitoringConfigured = true;
     }
   }
 

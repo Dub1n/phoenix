@@ -33,6 +33,7 @@ import {
   validateWithRecovery,
   ValidationPatterns
 } from './validator';
+import { sleep } from '../utils/async-utils';
 
 // Example schemas for validation
 const componentConfigSchema: SchemaDefinition = {
@@ -237,7 +238,7 @@ export async function validatePerformanceMetrics(
     execute: async (error, context) => {
       console.log(`[RECOVERY] Attempting performance optimization for ${error.code}`);
       // Simulate performance optimization
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await sleep(1000);
       return Math.random() > 0.3; // 70% success rate
     }
   });
@@ -269,7 +270,7 @@ export async function validateMCPConnection(config: any): Promise<ValidationResu
       execute: async (error, context) => {
         console.log('[MCP_RECOVERY] Retrying connection with exponential backoff');
         const delay = Math.min(5000, 1000 * Math.pow(2, context.attempt - 1));
-        await new Promise(resolve => setTimeout(resolve, delay));
+        await sleep(delay);
         return Math.random() > 0.4;
       }
     })
@@ -583,7 +584,7 @@ export class ValidationCodeReductionExamples {
       if (data.errors && data.errors.length > 0) {
         console.log('Attempting error recovery...');
         // Complex recovery logic here...
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await sleep(2000);
       }
       
       return true;

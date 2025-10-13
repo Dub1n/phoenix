@@ -7,6 +7,7 @@
  * ---*/
 
 import { EventEmitter } from 'events';
+import { sleep } from '../utils/async-utils';
 
 export interface RollbackCriterion {
   id: string;
@@ -882,31 +883,31 @@ export class RollbackCriteria extends EventEmitter {
   // Placeholder implementations for rollback phase executors
   private async executePreparationPhase(execution: RollbackExecution, phase: RollbackPhase): Promise<void> {
     // Simulate preparation work
-    await new Promise(resolve => setTimeout(resolve, Math.min(phase.expectedDuration, 2000)));
+    await sleep(Math.min(phase.expectedDuration, 2000));
     console.log(`Executing preparation phase for ${execution.componentId}`);
   }
 
   private async executeComponentRestorationPhase(execution: RollbackExecution, phase: RollbackPhase): Promise<void> {
     // Simulate component restoration
-    await new Promise(resolve => setTimeout(resolve, Math.min(phase.expectedDuration, 5000)));
+    await sleep(Math.min(phase.expectedDuration, 5000));
     console.log(`Executing component restoration phase for ${execution.componentId}`);
   }
 
   private async executeStateRecoveryPhase(execution: RollbackExecution, phase: RollbackPhase): Promise<void> {
     // Simulate state recovery
-    await new Promise(resolve => setTimeout(resolve, Math.min(phase.expectedDuration, 3000)));
+    await sleep(Math.min(phase.expectedDuration, 3000));
     console.log(`Executing state recovery phase for ${execution.componentId}`);
   }
 
   private async executeValidationPhase(execution: RollbackExecution, phase: RollbackPhase): Promise<void> {
     // Simulate validation
-    await new Promise(resolve => setTimeout(resolve, Math.min(phase.expectedDuration, 2000)));
+    await sleep(Math.min(phase.expectedDuration, 2000));
     console.log(`Executing validation phase for ${execution.componentId}`);
   }
 
   private async executeCleanupPhase(execution: RollbackExecution, _phase: RollbackPhase): Promise<void> {
     // Simulate cleanup
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await sleep(1000);
     console.log(`Executing cleanup phase for ${execution.componentId}`);
   }
 

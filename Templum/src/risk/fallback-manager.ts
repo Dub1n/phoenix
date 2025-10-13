@@ -7,6 +7,7 @@
  * ---*/
 
 import { EventEmitter } from 'events';
+import { withTimeout } from '../utils/async-utils';
 
 export interface FallbackStrategy {
   id: string;
@@ -531,21 +532,11 @@ export class FallbackManager extends EventEmitter {
   }
 
   private async executeWithTimeout<T>(operation: () => Promise<T>, timeout: number): Promise<T> {
-    return new Promise((resolve, reject) => {
-      const timer = setTimeout(() => {
-        reject(new Error(`Operation timed out after ${timeout}ms`));
-      }, timeout);
-
-      operation()
-        .then(result => {
-          clearTimeout(timer);
-          resolve(result);
-        })
-        .catch(error => {
-          clearTimeout(timer);
-          reject(error);
-        });
-    });
+    return withTimeout(
+      operation(),
+      timeout,
+      new Error(`Operation timed out after ${timeout}ms`)
+    );
   }
 
   private async performFallback(
