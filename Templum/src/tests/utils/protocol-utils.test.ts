@@ -3,9 +3,10 @@ import {
   ProtocolAdapter,
   ProtocolConfig,
   ProtocolMessage,
-  ProtocolTransport,
+  ProtocolTransport
 } from '../../utils/protocol-utils';
 import { createLogger } from '../../utils/logger';
+import { createTypedEventRecorder } from '../../../tests/helpers/typed-event-recorder';
 
 describe('ProtocolSession', () => {
   const sessions: ProtocolSession[] = [];
@@ -22,7 +23,7 @@ describe('ProtocolSession', () => {
       },
       isConnected(): boolean {
         return true;
-      },
+      }
     };
 
     const adapter: ProtocolAdapter = {
@@ -30,18 +31,18 @@ describe('ProtocolSession', () => {
       name: 'fake-ipc',
       async connect(): Promise<ProtocolTransport> {
         return transport;
-      },
+      }
     };
 
     const config: ProtocolConfig = {
       type: 'ipc',
       connection: {},
-      ...configOverrides,
+      ...configOverrides
     };
 
     const session = new ProtocolSession(adapter, transport, config, createLogger('protocol-session-test'));
     sessions.push(session);
-    return session;
+    return { session, transport, adapter };
   };
 
   afterEach(async () => {
@@ -50,7 +51,7 @@ describe('ProtocolSession', () => {
   });
 
   test('throws templum error when attempting to send invalid messages', async () => {
-    const session = createSession();
+    const { session } = createSession();
 
     const invalidMessage: ProtocolMessage = {
       type: '',
@@ -66,7 +67,7 @@ describe('ProtocolSession', () => {
   });
 
   test('succeeds for structurally valid messages', async () => {
-    const session = createSession();
+    const { session } = createSession();
 
     const validMessage: ProtocolMessage = {
       type: 'get_status',
@@ -74,6 +75,80 @@ describe('ProtocolSession', () => {
     };
 
     await expect(session.send(validMessage)).resolves.toBeUndefined();
+  });
+
+  test('emits validationFailed event when message validation fails', async () => {
+    const { session } = createSession();
+    const events = createTypedEventRecorder();
+
+    session.on('validationFailed', events.record('validationFailed'));
+
+    const invalidMessage: ProtocolMessage = {
+      type: '',
+      payload: undefined,
+    };
+
+    await expect(session.send(invalidMessage)).rejects.toMatchObject({
+      code: 'PROTOCOL_MESSAGE_INVALID',
+    });
+
+    const [validation] = events.find('validationFailed');
+    expect(validation).toBeDefined();
+    expect(validation?.payload[0]).toEqual(
+      expect.objectContaining({
+        message: invalidMessage,
+        validation: expect.objectContaining({ isValid: false })
+      })
+    );
+  });
+
+  test('emits messageSent event with latency metadata on success', async () => {
+    const { session } = createSession();
+    const events = createTypedEventRecorder();
+
+    session.on('messageSent', events.record('messageSent'));
+
+    const validMessage: ProtocolMessage = {
+      type: 'get_status',
+      payload: { requestId: 'event-123' },
+    };
+
+    await session.send(validMessage);
+
+    const [sent] = events.find('messageSent');
+    expect(sent).toBeDefined();
+    expect(sent?.payload[0]).toEqual(
+      expect.objectContaining({
+        message: validMessage,
+        latencyMs: expect.any(Number)
+      })
+    );
+  });
+
+  test('emits sendFailed event when transport rejects', async () => {
+    const { session, transport } = createSession();
+    const events = createTypedEventRecorder();
+
+    session.on('sendFailed', events.record('sendFailed'));
+
+    const validMessage: ProtocolMessage = {
+      type: 'get_status',
+      payload: { requestId: 'failure' },
+    };
+
+    const failure = new Error('transport failure');
+    transport.send = jest.fn().mockRejectedValue(failure);
+
+    await expect(session.send(validMessage)).rejects.toThrow('transport failure');
+
+    const [failed] = events.find('sendFailed');
+    expect(failed).toBeDefined();
+    expect(failed?.payload[0]).toEqual(
+      expect.objectContaining({
+        message: validMessage,
+        error: failure
+      })
+    );
   });
 
   test('rejects configs without a protocol type', () => {

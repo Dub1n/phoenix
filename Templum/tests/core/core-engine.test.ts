@@ -6,8 +6,9 @@
  * description: [Comprehensive test suite validating core Templum engine functionality following TDD principles]
  * ---*/
 
-import { TemplumCore } from '../../src/core/templum-core';
 import { InterfaceType, UniversalSkinDefinition, CommandContext, CommandResult } from '../../src/types/templum-types';
+import { TemplumCore } from '../../src/core/templum-core';
+import { createTypedEventRecorder } from '../helpers/typed-event-recorder';
 
 describe('Templum Core Engine', () => {
   let templumCore: TemplumCore;
@@ -166,6 +167,56 @@ describe('Templum Core Engine', () => {
       const finalStatus = templumCore.getStateManagerStatus();
       expect(finalStatus.synchronized).toBeDefined();
       expect(result.source).toBe('cli');
+    });
+  });
+
+  describe('Event-driven behavior', () => {
+    test('emits initialized event with timestamp metadata', async () => {
+      const events = createTypedEventRecorder();
+      templumCore.on('initialized', events.record('initialized'));
+
+      await templumCore.initialize();
+
+      const [initialized] = events.find('initialized');
+      expect(initialized).toBeDefined();
+      expect(initialized?.payload[0]).toEqual(
+        expect.objectContaining({
+          timestamp: expect.any(Number)
+        })
+      );
+    });
+
+    test('emits command events for success and failure cases', async () => {
+      await templumCore.initialize();
+      const events = createTypedEventRecorder();
+
+      templumCore.on('commandExecuted', events.record('commandExecuted'));
+      templumCore.on('commandError', events.record('commandError'));
+
+      await templumCore.executeCommand('analyze-code', 'cli', ['event-driven.ts'], {
+        sessionId: 'core-event-test'
+      });
+      await templumCore.executeCommand('non-existent-command', 'cli', []);
+
+      const executed = events.find('commandExecuted');
+      expect(executed).not.toHaveLength(0);
+      expect(executed[0].payload[0]).toEqual(
+        expect.objectContaining({
+          command: 'analyze-code',
+          sourceInterface: 'cli',
+          result: expect.objectContaining({ success: expect.any(Boolean) })
+        })
+      );
+
+      const errors = events.find('commandError');
+      expect(errors).not.toHaveLength(0);
+      expect(errors[0].payload[0]).toEqual(
+        expect.objectContaining({
+          command: 'non-existent-command',
+          sourceInterface: 'cli',
+          error: expect.stringContaining('Unknown command')
+        })
+      );
     });
   });
 

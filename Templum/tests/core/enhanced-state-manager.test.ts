@@ -6,7 +6,7 @@
  * description: [Comprehensive test suite validating enhanced state management functionality following TDD principles]
  * ---*/
 
-import { 
+import {
   EnhancedStateManager,
   IPCCoordinator,
   ConflictResolver,
@@ -16,10 +16,8 @@ import {
   ConflictResolutionStrategy,
   StateCoalescingConfig
 } from '../../src/state/enhanced-state-synchronization';
-import { 
-  TemplumError,
-  createTemplumError
-} from '../../src/types/templum-types';
+import { TemplumError, createTemplumError } from '../../src/types/templum-types';
+import { createTypedEventRecorder } from '../helpers/typed-event-recorder';
 
 describe('IPCCoordinator', () => {
   let ipcCoordinator: IPCCoordinator;
@@ -118,10 +116,46 @@ describe('IPCCoordinator', () => {
       expect(mockHandler2).toHaveBeenCalledWith(message);
     });
 
+    test('emits typed message events for targeted and broadcast paths', async () => {
+      const events = createTypedEventRecorder();
+      ipcCoordinator.on('message:vscode', events.record('message:vscode'));
+      ipcCoordinator.on('message:broadcast', events.record('message:broadcast'));
+
+      const targetedMessage: IPCStateMessage = {
+        type: 'state-update',
+        componentId: 'targeted-component',
+        interfaceType: 'vscode',
+        stateData: { key: 'value' },
+        timestamp: Date.now(),
+        changeId: 'targeted-change'
+      };
+
+      await ipcCoordinator.sendMessage(targetedMessage, 'vscode');
+
+      const [targeted] = events.find('message:vscode');
+      expect(targeted).toBeDefined();
+      expect(targeted?.payload[0]).toEqual(expect.objectContaining({ interfaceType: 'vscode' }));
+
+      const broadcastMessage: IPCStateMessage = {
+        type: 'state-update',
+        componentId: 'broadcast-component',
+        interfaceType: 'broadcast',
+        stateData: { key: 'broadcast' },
+        timestamp: Date.now(),
+        changeId: 'broadcast-change'
+      };
+
+      await ipcCoordinator.sendMessage(broadcastMessage);
+
+      const [broadcast] = events.find('message:broadcast');
+      expect(broadcast).toBeDefined();
+      expect(broadcast?.payload[0]).toEqual(expect.objectContaining({ interfaceType: 'broadcast' }));
+    });
+
     test('emits performance metrics for message sending', async () => {
       // Arrange
-      const performanceSpy = jest.fn();
-      ipcCoordinator.on('performance:ipc-message', performanceSpy);
+      const events = createTypedEventRecorder();
+      ipcCoordinator.on('performance:ipc-message', events.record('performance:ipc-message'));
       
       const message: IPCStateMessage = {
         type: 'state-request',
@@ -136,10 +170,14 @@ describe('IPCCoordinator', () => {
       await ipcCoordinator.sendMessage(message, 'vscode');
 
       // Assert
-      expect(performanceSpy).toHaveBeenCalledWith(expect.objectContaining({
-        duration: expect.any(Number),
-        messageType: 'state-request'
-      }));
+      const [metrics] = events.find('performance:ipc-message');
+      expect(metrics).toBeDefined();
+      expect(metrics?.payload[0]).toEqual(
+        expect.objectContaining({
+          duration: expect.any(Number),
+          messageType: 'state-request'
+        })
+      );
     });
 
     test('handles message sending errors gracefully', async () => {
@@ -193,8 +231,8 @@ describe('IPCCoordinator', () => {
 
     test('handles queue overflow with immediate processing', () => {
       // Arrange
-      const overflowSpy = jest.fn();
-      ipcCoordinator.on('warning:queue-overflow', overflowSpy);
+      const events = createTypedEventRecorder();
+      ipcCoordinator.on('warning:queue-overflow', events.record('warning:queue-overflow'));
       
       const baseMessage: IPCStateMessage = {
         type: 'state-update',
@@ -214,7 +252,14 @@ describe('IPCCoordinator', () => {
       }
 
       // Assert
-      expect(overflowSpy).toHaveBeenCalled();
+      const [overflow] = events.find('warning:queue-overflow');
+      expect(overflow).toBeDefined();
+      expect(overflow?.payload[0]).toEqual(
+        expect.objectContaining({
+          queueKey: 'test-component:vscode',
+          queueSize: expect.any(Number)
+        })
+      );
     });
   });
 });
