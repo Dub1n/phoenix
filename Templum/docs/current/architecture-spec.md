@@ -3,7 +3,7 @@ doc-type: architecture-spec
 title: Templum Architecture Specification
 tags: [templum, universal_interface, architecture]
 status: current
-last_updated: 2025-10-12
+last_updated: 2025-10-13
 ---
 
 # Templum — Architecture Specification (Current State)
@@ -23,7 +23,7 @@ last_updated: 2025-10-12
 
 - Backend discovery (`ServiceDiscovery`, `ConnectionFactory`) enumerates locally registered services; watcher overrides keep `.templum/services` scoped to the active workspace/tests and regression suites cover manifest add/change/remove plus router promotion. Lifecycle broadcasting now flows through a dedicated `BackendLifecycleChannel`, allowing the router to emit normalized `connected/disconnected/recovered/failed/health-degraded` events that `TemplumCore` relays to the enhanced state manager/observability layer. All connection/discovery timeouts are now routed through the managed `AsyncUtils.createTimeout`/`createInterval` helpers so timers unref automatically and teardown can assert the active-handle budget. Live partner boots remain deferred and are tracked under `dev/tasks/phase6-validation-signal.md`. **Status:** Present (real-service run deferred post-MVP).
 - Manual override manager sits between the router and discovery caches, enforcing zero-knowledge constraints (redacted service descriptors, hashed observability logs) while surfacing `apply`/`clear` controls through `TemplumCore` and the shared command registry. Automated watcher tests drop manifests into `.templum/services` to prove add/remove flows; these run in CI via the backend bundle, with partner-live runs optional post-MVP. **Status:** Present.
-- Skin payload consumption now flows through `TemplumCore` → `UniversalSkinEngine`; adapters render cached backend skins without bespoke fallbacks while partner exports remain pending. **Status:** Present (awaiting live backend payloads).
+- Skin payload consumption now flows through `TemplumCore` → `UniversalSkinEngine`; adapters render cached backend skins without bespoke fallbacks while partner exports remain pending. The universal layout engine now normalises PCL-style `layout.items` definitions into canonical menu items so CLI/VSCode rendering stays consistent and compatibility mode reporting reflects the incoming schema. **Status:** Present (awaiting live backend payloads).
 - CLI/daemon process separation is scaffolded; IPC contracts need integration tests. **Status:** Broken.
 - Observability/health monitoring blueprints exist; instrumentation must be validated before relying on metrics dashboards. **Status:** Broken.
 
@@ -32,11 +32,11 @@ last_updated: 2025-10-12
 - **Core Components:**
   - `TemplumCore` orchestrates adapters, state, and backend routing. **Status:** Present (initialises but still tied to legacy session managers).
 - `ServiceDiscovery` + `ConnectionFactory` provide zero-knowledge backend connections (IPC/HTTP/WebSocket/gRPC). Timeout/abort contracts are centralised via `AsyncUtils`, and the router now guards against recursive fallback loading by tracking visited services during migrations. **Status:** Partial (local multi-protocol tests pass; partner boot captured as post-MVP follow-up).
-  - `UniversalSkinEngine` is responsible for consuming `UniversalSkinDefinition` payloads (pending full implementation). **Status:** Broken (schema enforcement and payload rendering incomplete).
-  - Interface adapters (`cli`, `vscode`, `command`) render skins and manage interaction state. **Status:** Present (operational yet reliant on fallback rendering). CLI now bridges into the shared session foundation via `CLISessionBridge`, has dropped its legacy caches in favour of bridge helpers, and VSCode receives the injected session manager instance; teardown paths clear listeners to keep Jest harnesses clean.
+  - `UniversalSkinEngine` is responsible for consuming `UniversalSkinDefinition` payloads (pending full implementation). **Status:** Broken (schema enforcement and payload rendering incomplete) — current work adds automatic conversion for legacy PCL layout definitions and records compatibility mode for adapters during the migration.
+  - Interface adapters (`cli`, `vscode`, `command`) render skins and manage interaction state. **Status:** Present (operational yet reliant on fallback rendering). CLI now bridges into the shared session foundation via `CLISessionBridge`, has dropped its legacy caches in favour of bridge helpers, and VSCode receives the injected session manager instance; teardown paths clear listeners to keep Jest harnesses clean. A lightweight fallback adapter now registers automatically for any interface missing a concrete implementation so `TemplumCore.switchInterface` and Stage 7 validation continue to pass even when the VSCode or command adapters are not initialised in-process.
   - Display stack utilities (`DisplayUtils`, `TerminalFormatter`, `WindowUtils`) expose dependency-injected seams via `configureDisplayStack(...)`, wrapping `DisplayUtils.configure`, `WindowUtils.configure`, and `TerminalFormatter.configure` so CLI/session surfaces share formatter, logger, and column providers without importing `chalk` directly. **Status:** Present.
 - **Data/Control Flow:**
-- Backends publish skins that discovery ingests. **Status:** Absent (partner exports not yet available). Practical Developer Guide notifications, design review acknowledgements, sprint risk prompts, and backlog tooling banners will arrive as skin elements emitted by Phoenix Code Lite; Templum will simply render them once available.
+  - Backends publish skins that discovery ingests. **Status:** Absent (partner exports not yet available). Practical Developer Guide notifications, design review acknowledgements, sprint risk prompts, and backlog tooling banners will arrive as skin elements emitted by Phoenix Code Lite; Templum will simply render them once available.
   - Discovery registers services and hydrates connection factories. **Status:** Partial (manifest-led integration works; live partner start deferred post-MVP).
   - Command router/skin engine expose functionality across adapters. **Status:** Broken (skin-driven output still falls back to hardcoded menus).
 - **Integration Points:**
@@ -96,9 +96,22 @@ Mock orchestration now validates request/response contracts via `Templum/src/tes
 
 ## 6. Verification & Validation
 
-- Smoke tests: run backend discovery against stub backend; exercise CLI wire-up once skin support lands.
-- Plan for automated validation using Validation System categories once skin/command execution is in place.
-- Manual checklist: follow `meta/DOC_CHANGE_CHECKLIST.md` when modifying architecture-critical components.
+### Test Taxonomy & Coverage Bands
+
+| Suite                               | Scope & Entry Points                                                                                                           | Coverage Thresholds (statements/branches/functions/lines) | Notes                                                                                                            |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| **Unit** (`jest.config.js`)         | `src/**`, `tests/**` (core services, adapters, utilities, session contracts)                                                   | ≥30 / 22 / 30 / 30                                         | Aggregated into `coverage/unit`; reporters `text`, `lcov`, `html`, `json-summary`.                               |
+| **Backend integration** (`jest.backend.config.js`) | `tests/backend/**/*.integration.test.ts`, `tests/backend/comprehensive-backend-validation.test.ts` (connection factory, discovery, manual override flow) | ≥20 / 12 / 20 / 20                                         | Serialised (`maxWorkers:1`) to avoid port conflicts; coverage landed in `coverage/backend`.                     |
+| **E2E** (`jest.e2e.config.js`)      | `tests/e2e/**/*.test.ts` (CLI/VSCode orchestration, scenario harness, cross-interface telemetry)                               | ≥35 / 12 / 30 / 35                                         | Focused on harness determinism; runs with mocked backends, coverage written to `coverage/e2e`.                   |
+| **Aggregate governance**            | Union of all suites via `npm run coverage:governance`                                                                           | ≥32 / 22 / 32 / 32                                         | `scripts/coverage-reality-check.js` merges summaries, enforces suite bands, and records `.coverage-history.json`. |
+
+### Governance Flow
+
+- **Primary command:** `npm run coverage:governance` executes the unit, backend, and e2e configs sequentially, merges their `coverage-summary.json` artefacts, and fails the run if any suite or the aggregate drops below the thresholds above.
+- **History & trend analysis:** `scripts/coverage-reality-check.js` keeps a bounded `.coverage-history.json` (50 entries) so regressions are visible when the command is re-run locally or in CI. Trend output is surfaced alongside the threshold report.
+- **Pre-commit hooks:** `scripts/check-tests.js` invokes the governance flow unless `--skip-governance` is passed (the pre-commit script runs `check:tests -- --skip-governance` followed by an explicit `npm run coverage:governance` to surface failures early).
+- **CI enforcement:** `npm run test:ci` now runs the leak-guarded Jest pass followed by `npm run coverage:governance`, so every pipeline verifies suite health and coverage thresholds together.
+- **Documentation discipline:** any change that alters the taxonomy or thresholds must update this section, the testing guide, and the active task tracker (`dev/tasks/test-architecture-governance.md`) in the same change set.
 
 ## Appendix
 
