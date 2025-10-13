@@ -15,6 +15,7 @@ import * as os from 'os';
 import { CLIMCPServer } from './cli-mcp-server';
 import { PTYManager } from './pty-manager';
 import { ProgressiveTimeoutManager, createOperationSpecificTimeoutManager } from './progressive-timeout-manager';
+import { AsyncUtils, type ManagedInterval } from '../../utils/async-utils';
 import { serialization, type SerializationOutcome } from '../../utils/serialization-utils';
 import { emitSerializationWarnings } from '../../backend/backend-serialization-log';
 
@@ -58,7 +59,7 @@ export interface ServiceRegistrationOptions {
 export class MCPServiceRegistration {
   private config: MCPServiceConfig;
   private options: Required<ServiceRegistrationOptions>;
-  private healthCheckTimer?: NodeJS.Timeout;
+  private healthCheckTimer?: ManagedInterval;
   private isRegistered: boolean = false;
   private serviceFilePath: string;
   private mcpServer?: CLIMCPServer;
@@ -193,21 +194,11 @@ export class MCPServiceRegistration {
    * Perform registration with traditional timeout
    */
   private async performRegistrationWithTimeout(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        reject(new Error(`Registration timed out after ${this.options.registrationTimeout}ms`));
-      }, this.options.registrationTimeout);
-
-      this.performRegistration()
-        .then(() => {
-          clearTimeout(timeout);
-          resolve();
-        })
-        .catch(error => {
-          clearTimeout(timeout);
-          reject(error);
-        });
-    });
+    await AsyncUtils.withTimeout(
+      this.performRegistration(),
+      this.options.registrationTimeout,
+      new Error(`Registration timed out after ${this.options.registrationTimeout}ms`)
+    );
   }
 
   /**
@@ -216,10 +207,8 @@ export class MCPServiceRegistration {
   async unregister(): Promise<void> {
     try {
       // Stop health checking
-      if (this.healthCheckTimer) {
-        clearInterval(this.healthCheckTimer);
-        this.healthCheckTimer = undefined;
-      }
+      this.healthCheckTimer?.stop();
+      this.healthCheckTimer = undefined;
 
       // Cleanup progressive timeout manager
       this.cleanupProgressiveTimeout();
@@ -305,13 +294,11 @@ export class MCPServiceRegistration {
    * Start periodic health checking
    */
   private startHealthChecking(): void {
-    if (this.healthCheckTimer) {
-      clearInterval(this.healthCheckTimer);
-    }
+    this.healthCheckTimer?.stop();
 
-    this.healthCheckTimer = setInterval(async () => {
+    this.healthCheckTimer = AsyncUtils.createInterval(async () => {
       await this.updateHealth();
-    }, this.options.healthCheckInterval);
+    }, this.options.healthCheckInterval, { unref: true });
 
     console.log(`[MCP_REGISTRATION] Health checking started (interval: ${this.options.healthCheckInterval}ms)`);
   }

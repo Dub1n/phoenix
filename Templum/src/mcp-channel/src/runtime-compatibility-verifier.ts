@@ -27,8 +27,8 @@ tags: ["runtime-verification", "compatibility-check", "defensive-programming", "
 
 import * as os from 'os';
 import * as process from 'process';
-import { EventEmitter } from 'events';
 import { eventManager } from './event-listener-manager';
+import { EventUtils, type GenericEventMap } from '../../utils/event-utils';
 
 export interface CompatibilityResult {
   compatible: boolean;
@@ -253,7 +253,7 @@ export class RuntimeCompatibilityVerifier {
   private testEventIntrospection(): boolean {
     try {
       // Test if we can introspect process events
-      const testEmitter = new EventEmitter();
+      const testEmitter = EventUtils.createTypedEmitter<GenericEventMap>();
       testEmitter.on('test', () => {});
       
       const listeners = testEmitter.listeners('test');

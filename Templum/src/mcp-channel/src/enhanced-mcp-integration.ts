@@ -21,14 +21,15 @@
  * @author VDL Vault Execution Agent
  * @since 2025-09-13
  */
-
-import { EventEmitter } from 'events';
+import { EventDrivenComponent } from '../../utils/event-bus-adapter';
+import type { TypedEventMap } from '../../utils/event-utils';
 import { CLIMCPServer, MCPRequest, MCPResponse } from './cli-mcp-server';
 import { VisualFeedbackSystem } from './visual-feedback-system';
 import { RealTimeMonitor } from './real-time-monitor';
 import { MCPHealthMonitor } from './health-monitor';
 import { ProgressiveTimeoutManager } from './progressive-timeout-manager';
 import { PTYManager } from './pty-manager';
+import { AsyncUtils } from '../../utils/async-utils';
 
 export interface EnhancedMCPConfig {
   enableVisualFeedback: boolean;
@@ -87,6 +88,10 @@ export interface ErrorRecoveryResult {
   timestamp: number;
 }
 
+interface EnhancedMCPIntegrationEvents extends TypedEventMap {
+  'integration-ready': (status: IntegrationStatus) => void;
+}
+
 /**
  * Enhanced MCP Integration System
  * 
@@ -97,7 +102,8 @@ export interface ErrorRecoveryResult {
  * - Integration robustness monitoring with visual indicators
  * - Progressive error recovery with visual status updates
  */
-export class EnhancedMCPIntegration extends EventEmitter {
+export class EnhancedMCPIntegration extends EventDrivenComponent<EnhancedMCPIntegrationEvents> {
+  private static instanceCounter = 0;
   private config: EnhancedMCPConfig;
   
   // Core components
@@ -117,7 +123,7 @@ export class EnhancedMCPIntegration extends EventEmitter {
   private isMonitoring: boolean = false;
 
   constructor(config?: Partial<EnhancedMCPConfig>) {
-    super();
+    super(`enhanced-mcp-integration:${EnhancedMCPIntegration.instanceCounter++}`, 40);
     
     this.config = {
       enableVisualFeedback: true,
@@ -732,7 +738,7 @@ export class EnhancedMCPIntegration extends EventEmitter {
       if (this.isTransientError(error)) {
         strategy = 'simple-retry';
         
-        await new Promise(resolve => setTimeout(resolve, 1000)); // 1 second delay
+        await AsyncUtils.sleep(1000); // 1 second delay
         
         try {
           recoveryResponse = await this.mcpServer.handleMCPRequest(request);
@@ -749,7 +755,7 @@ export class EnhancedMCPIntegration extends EventEmitter {
         // This would trigger circuit breaker reset in timeout manager
         this.timeoutManager.resetCircuitBreaker();
         
-        await new Promise(resolve => setTimeout(resolve, 2000)); // 2 second delay
+        await AsyncUtils.sleep(2000); // 2 second delay
         
         try {
           recoveryResponse = await this.mcpServer.handleMCPRequest(request);
@@ -869,7 +875,7 @@ export class EnhancedMCPIntegration extends EventEmitter {
     // This is a simplified restart - in reality would be more sophisticated
     this.updateIntegrationStatus('recovering');
     
-    await new Promise(resolve => setTimeout(resolve, 3000)); // Simulate restart time
+    await AsyncUtils.sleep(3000); // Simulate restart time
     
     this.updateIntegrationStatus('ready');
   }

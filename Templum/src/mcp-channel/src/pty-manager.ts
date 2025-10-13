@@ -13,6 +13,7 @@
 // Requires: Visual Studio 2022 with "Desktop development with C++" workload
 // Alternative: Use existing PTY MCP servers like pty-mcp-server or terminal-controller-mcp
 import { spawn, IPty, SpawnOptions } from './node-pty-types';
+import { AsyncUtils, type ManagedInterval } from '../../utils/async-utils';
 import { v4 as uuidv4 } from 'uuid';
 import { 
   CLISession, 
@@ -33,11 +34,15 @@ export class PTYManager {
   private sessions: Map<string, CLISession> = new Map();
   private readonly defaultTimeout = 30000; // 30 seconds
   private readonly cleanupInterval = 60000; // 1 minute
-  private cleanupTimer?: NodeJS.Timeout;
+  private cleanupTimer?: ManagedInterval;
 
   constructor() {
     // Start cleanup timer for idle sessions
-    this.cleanupTimer = setInterval(() => this.cleanupIdleSessions(), this.cleanupInterval);
+    this.cleanupTimer = AsyncUtils.createInterval(
+      () => this.cleanupIdleSessions(),
+      this.cleanupInterval,
+      { unref: true }
+    );
   }
 
   /**
@@ -283,10 +288,8 @@ export class PTYManager {
     console.log(`Cleaning up ${this.sessions.size} PTY sessions...`);
     
     // Clear the cleanup timer to prevent process hanging
-    if (this.cleanupTimer) {
-      clearInterval(this.cleanupTimer);
-      this.cleanupTimer = undefined;
-    }
+    this.cleanupTimer?.stop();
+    this.cleanupTimer = undefined;
     
     // Fixed Map.keys() MapIterator compatibility for cleanup operations
     for (const sessionId of Array.from(this.sessions.keys())) {

@@ -11,6 +11,7 @@
  * @since 2025-09-05
  */
 
+import { AsyncUtils, type ManagedInterval } from '../../utils/async-utils';
 import { PTYManager } from './pty-manager';
 import { serialization } from '../../utils/serialization-utils';
 import { emitSerializationWarnings } from '../../backend/backend-serialization-log';
@@ -169,6 +170,7 @@ export class CLIMCPServer {
   private responseCache: Map<string, { result: any; timestamp: number }>;
   private readonly CACHE_TTL = 5000; // 5 seconds
   private readonly MAX_CACHE_SIZE = 100;
+  private cacheCleanupInterval?: ManagedInterval;
 
   constructor() {
     this.ptyManager = new PTYManager();
@@ -179,9 +181,13 @@ export class CLIMCPServer {
       lastOptimization: Date.now()
     };
     this.responseCache = new Map();
-    
+
     // Start cache cleanup timer
-    setInterval(() => this.cleanupCache(), 30000); // Every 30 seconds
+    this.cacheCleanupInterval = AsyncUtils.createInterval(
+      () => this.cleanupCache(),
+      30000,
+      { unref: true }
+    );
   }
 
   /**
@@ -569,6 +575,8 @@ export class CLIMCPServer {
   cleanup(): void {
     this.ptyManager.cleanup();
     this.responseCache.clear();
+    this.cacheCleanupInterval?.stop();
+    this.cacheCleanupInterval = undefined;
   }
 
   /**

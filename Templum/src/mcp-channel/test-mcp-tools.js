@@ -14,6 +14,7 @@
 const { initializeMCPChannelWithServiceDiscovery } = require('./dist/index');
 const path = require('path');
 const os = require('os');
+const { AsyncUtils } = require('../../dist/src/utils/async-utils');
 
 async function testMCPToolInvocation() {
   console.log('🧪 Testing MCP Tool Invocation Patterns...');
@@ -139,7 +140,7 @@ async function testMCPToolInvocation() {
     console.log('\\n🔧 Test 5: Get State After Command Execution');
     
     // Wait a moment for command to execute
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await AsyncUtils.sleep(500);
     
     response = await mcpServer.handleMCPRequest({
       id: 'req-5',

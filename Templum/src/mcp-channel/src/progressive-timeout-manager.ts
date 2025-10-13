@@ -24,10 +24,10 @@
  * - Error recovery mechanisms with fallback activation
  * - Service communication stability with monitoring integration
  */
-
-
-import { EventEmitter } from 'events';
-import { safeRegisterListener, cleanupComponentListeners } from './event-listener-manager';
+import { EventDrivenComponent } from '../../utils/event-bus-adapter';
+import type { TypedEventMap } from '../../utils/event-utils';
+import { AsyncUtils } from '../../utils/async-utils';
+import { cleanupComponentListeners } from './event-listener-manager';
 
 /**
  * Progressive timeout configuration levels
@@ -39,12 +39,14 @@ export interface TimeoutLevels {
   fallbackTimeout: number; // Fallback when all levels fail (180s)
 }
 
+type TimeoutLevel = 1 | 2 | 3 | 'fallback';
+
 /**
  * Timeout adaptation context for algorithmic coordination
  */
 export interface TimeoutContext {
   operationType: 'tool-registration' | 'service-discovery' | 'health-check' | 'connectivity-validation';
-  currentLevel: 1 | 2 | 3 | 'fallback';
+  currentLevel: TimeoutLevel;
   attemptCount: number;
   lastSuccessTime?: number;
   lastFailureTime?: number;
@@ -60,10 +62,10 @@ export interface TimeoutContext {
 export interface TimeoutResult {
   success: boolean;
   responseTime: number;
-  timeoutLevel: 1 | 2 | 3 | 'fallback';
+  timeoutLevel: TimeoutLevel;
   errorType?: 'timeout' | 'connection' | 'service-unavailable' | 'circuit-breaker-open';
   retryRecommended: boolean;
-  nextTimeoutLevel?: 1 | 2 | 3 | 'fallback';
+  nextTimeoutLevel?: TimeoutLevel;
 }
 
 /**
@@ -90,6 +92,54 @@ export interface AdaptationMetrics {
   communicationStability: number;
 }
 
+interface CircuitBreakerThresholds {
+  failureRate: number;
+  minimumOperations: number;
+  openDuration: number;
+  halfOpenMaxAttempts: number;
+}
+
+interface AdaptationConfig {
+  successThreshold: number;
+  escalationThreshold: number;
+  responseTimeThreshold: number;
+  algorithmicCoordinationEnabled: boolean;
+  templateDrivenEfficiencyEnabled: boolean;
+}
+
+interface OperationSuccessEvent {
+  operationId: string;
+  operationType: TimeoutContext['operationType'];
+  timeoutLevel: TimeoutLevel;
+  responseTime: number;
+  context: TimeoutContext;
+}
+
+interface OperationFailureEvent extends OperationSuccessEvent {
+  error: unknown;
+  retryRecommended: boolean;
+}
+
+interface TimeoutSuccessEvent {
+  context: TimeoutContext;
+  timeoutLevel: TimeoutLevel;
+  responseTime: number;
+}
+
+interface TimeoutFailureEvent extends TimeoutSuccessEvent {
+  error: unknown;
+  errorType?: TimeoutResult['errorType'];
+}
+
+interface ProgressiveTimeoutManagerEvents extends TypedEventMap {
+  'operation-success': (payload: OperationSuccessEvent) => void;
+  'operation-failure': (payload: OperationFailureEvent) => void;
+  'timeout-success': (payload: TimeoutSuccessEvent) => void;
+  'timeout-failure': (payload: TimeoutFailureEvent) => void;
+  'timeout-levels-updated': (levels: TimeoutLevels) => void;
+  'adaptation-config-updated': (config: AdaptationConfig) => void;
+}
+
 /**
  * Progressive Timeout Manager
  * 
@@ -97,26 +147,16 @@ export interface AdaptationMetrics {
  * Provides circuit breaker patterns, error recovery mechanisms, and service
  * communication stability monitoring.
  */
-export class ProgressiveTimeoutManager extends EventEmitter {
+export class ProgressiveTimeoutManager extends EventDrivenComponent<ProgressiveTimeoutManagerEvents> {
+  private static instanceCounter = 0;
   private timeoutLevels: TimeoutLevels;
   private contexts: Map<string, TimeoutContext>;
   private metrics: AdaptationMetrics;
-  private circuitBreakerThresholds: {
-    failureRate: number;
-    minimumOperations: number;
-    openDuration: number;
-    halfOpenMaxAttempts: number;
-  };
-  private adaptationConfig: {
-    successThreshold: number; // Success rate to lower timeout level
-    escalationThreshold: number; // Failure rate to raise timeout level
-    responseTimeThreshold: number; // Response time threshold for adaptation
-    algorithmicCoordinationEnabled: boolean;
-    templateDrivenEfficiencyEnabled: boolean;
-  };
+  private circuitBreakerThresholds: CircuitBreakerThresholds;
+  private adaptationConfig: AdaptationConfig;
 
   constructor(customTimeouts?: Partial<TimeoutLevels>) {
-    super();
+    super(`progressive-timeout-manager:${ProgressiveTimeoutManager.instanceCounter++}`, 80);
     
     // TODO: [TASK-MCP-007-TIMEOUT-001] Pattern: progressive-timeout-escalation | Complexity: 7 | Dependencies: circuit-breaker,algorithmic-coordination
     // Context: Progressive timeout management with 30s->60s->120s escalation strategy
@@ -254,7 +294,7 @@ export class ProgressiveTimeoutManager extends EventEmitter {
   /**
    * Determine timeout level using algorithmic coordination
    */
-  private determineTimeoutLevel(context: TimeoutContext): 1 | 2 | 3 | 'fallback' {
+  private determineTimeoutLevel(context: TimeoutContext): TimeoutLevel {
     if (!this.adaptationConfig.algorithmicCoordinationEnabled) {
       return context.currentLevel;
     }
@@ -295,7 +335,7 @@ export class ProgressiveTimeoutManager extends EventEmitter {
   /**
    * Get timeout value for specified level
    */
-  private getTimeoutForLevel(level: 1 | 2 | 3 | 'fallback'): number {
+  private getTimeoutForLevel(level: TimeoutLevel): number {
     switch (level) {
       case 1: return this.timeoutLevels.level1;
       case 2: return this.timeoutLevels.level2;
@@ -308,27 +348,17 @@ export class ProgressiveTimeoutManager extends EventEmitter {
    * Execute operation with timeout
    */
   private async executeWithTimeout<T>(operation: () => Promise<T>, timeout: number): Promise<T> {
-    return new Promise((resolve, reject) => {
-      const timer = setTimeout(() => {
-        reject(new Error(`Operation timed out after ${timeout}ms`));
-      }, timeout);
-
-      operation()
-        .then(result => {
-          clearTimeout(timer);
-          resolve(result);
-        })
-        .catch(error => {
-          clearTimeout(timer);
-          reject(error);
-        });
-    });
+    return AsyncUtils.withTimeout(
+      operation(),
+      timeout,
+      new Error(`Operation timed out after ${timeout}ms`)
+    );
   }
 
   /**
    * Record successful operation
    */
-  private recordSuccess(context: TimeoutContext, timeoutLevel: 1 | 2 | 3 | 'fallback', responseTime: number): TimeoutResult {
+  private recordSuccess(context: TimeoutContext, timeoutLevel: TimeoutLevel, responseTime: number): TimeoutResult {
     // Update context
     context.lastSuccessTime = Date.now();
     context.currentLevel = timeoutLevel;
@@ -365,7 +395,7 @@ export class ProgressiveTimeoutManager extends EventEmitter {
    */
   private recordFailure(
     context: TimeoutContext, 
-    timeoutLevel: 1 | 2 | 3 | 'fallback', 
+    timeoutLevel: TimeoutLevel, 
     responseTime: number, 
     error: any
   ): TimeoutResult {
@@ -426,12 +456,16 @@ export class ProgressiveTimeoutManager extends EventEmitter {
           console.log(`[PROGRESSIVE_TIMEOUT] Circuit breaker opened for ${context.operationType} (failure rate: ${(currentFailureRate * 100).toFixed(1)}%)`);
           
           // Schedule transition to half-open after timeout
-          setTimeout(() => {
-            if (context.circuitBreakerState === 'open') {
-              context.circuitBreakerState = 'half-open';
-              console.log(`[PROGRESSIVE_TIMEOUT] Circuit breaker half-open for ${context.operationType}`);
-            }
-          }, this.circuitBreakerThresholds.openDuration);
+          AsyncUtils.createTimeout(
+            () => {
+              if (context.circuitBreakerState === 'open') {
+                context.circuitBreakerState = 'half-open';
+                console.log(`[PROGRESSIVE_TIMEOUT] Circuit breaker half-open for ${context.operationType}`);
+              }
+            },
+            this.circuitBreakerThresholds.openDuration,
+            { unref: true }
+          );
         }
         break;
 
@@ -534,7 +568,7 @@ export class ProgressiveTimeoutManager extends EventEmitter {
   /**
    * Get next timeout level for retry
    */
-  private getNextTimeoutLevel(context: TimeoutContext, errorType: TimeoutResult['errorType']): 1 | 2 | 3 | 'fallback' {
+  private getNextTimeoutLevel(context: TimeoutContext, errorType: TimeoutResult['errorType']): TimeoutLevel {
     // For timeout errors, escalate to next level
     if (errorType === 'timeout') {
       if (context.currentLevel === 1) return 2;
@@ -554,7 +588,7 @@ export class ProgressiveTimeoutManager extends EventEmitter {
   /**
    * Update level-specific metrics
    */
-  private updateLevelMetrics(level: 1 | 2 | 3 | 'fallback', responseTime: number): void {
+  private updateLevelMetrics(level: TimeoutLevel, responseTime: number): void {
     this.safeUpdateResponseTimeMetrics(level, responseTime);
   }
 
@@ -603,7 +637,7 @@ export class ProgressiveTimeoutManager extends EventEmitter {
   /**
    * Update adaptation configuration
    */
-  updateAdaptationConfig(newConfig: Partial<typeof this.adaptationConfig>): void {
+  updateAdaptationConfig(newConfig: Partial<AdaptationConfig>): void {
     this.adaptationConfig = { ...this.adaptationConfig, ...newConfig };
     console.log('[PROGRESSIVE_TIMEOUT] Updated adaptation config:', this.adaptationConfig);
     this.emit('adaptation-config-updated', this.adaptationConfig);
@@ -625,7 +659,11 @@ export class ProgressiveTimeoutManager extends EventEmitter {
       const { operationType, timeoutLevel, responseTime } = event;
       
       // Tool registration pattern optimization
-      if (operationType === 'tool-registration' && responseTime < 5000 && timeoutLevel > 1) {
+      if (
+        operationType === 'tool-registration' &&
+        responseTime < 5000 &&
+        this.safeGetNumericLevel(timeoutLevel) > 1
+      ) {
         // Fast tool registration - can use lower timeout level
         const context = this.contexts.get(event.operationId);
         if (context) {
@@ -653,7 +691,7 @@ export class ProgressiveTimeoutManager extends EventEmitter {
    * Risk-adaptive type safety helper: safely convert currentLevel to numeric
    * Implements defensive programming for mixed type handling
    */
-  private safeGetNumericLevel(level: 1 | 2 | 3 | 'fallback'): number {
+  private safeGetNumericLevel(level: TimeoutLevel): number {
     // TODO: [TASK-MCP-007-SAFETY-001] Pattern: defensive-type-conversion | Complexity: 3 | Dependencies: none
     // Context: Safely handle mixed types in currentLevel to prevent arithmetic operation errors
     // Validation-Required: type-conversion-accuracy, fallback-handling, runtime-safety
@@ -684,7 +722,7 @@ export class ProgressiveTimeoutManager extends EventEmitter {
    * Safe metrics level key mapping for timeout tracking
    * Prevents index access errors with proper key mapping
    */
-  private getMetricsLevelKey(level: 1 | 2 | 3 | 'fallback'): keyof AdaptationMetrics['timeoutsByLevel'] {
+  private getMetricsLevelKey(level: TimeoutLevel): keyof AdaptationMetrics['timeoutsByLevel'] {
     // TODO: [TASK-MCP-007-SAFETY-002] Pattern: safe-key-mapping | Complexity: 2 | Dependencies: metrics-structure
     // Context: Map timeout levels to correct metrics keys to prevent property access errors
     // Validation-Required: key-mapping-accuracy, metrics-consistency
@@ -704,7 +742,7 @@ export class ProgressiveTimeoutManager extends EventEmitter {
   /**
    * Safely increment timeout metrics with runtime compatibility verification
    */
-  private safeIncrementTimeoutsByLevel(level: 1 | 2 | 3 | 'fallback'): void {
+  private safeIncrementTimeoutsByLevel(level: TimeoutLevel): void {
     // TODO: [TASK-MCP-007-SAFETY-003] Pattern: safe-metrics-update | Complexity: 2 | Dependencies: metrics-tracking
     // Context: Safely update timeout metrics to prevent undefined property access
     // Validation-Required: metrics-accuracy, error-prevention
@@ -728,7 +766,7 @@ export class ProgressiveTimeoutManager extends EventEmitter {
   /**
    * Safely update response time metrics with exponential moving average
    */
-  private safeUpdateResponseTimeMetrics(level: 1 | 2 | 3 | 'fallback', responseTime: number): void {
+  private safeUpdateResponseTimeMetrics(level: TimeoutLevel, responseTime: number): void {
     // TODO: [TASK-MCP-007-SAFETY-004] Pattern: safe-response-time-tracking | Complexity: 3 | Dependencies: metrics-smoothing
     // Context: Update response time averages with safe property access and error handling
     // Validation-Required: averaging-accuracy, overflow-protection, error-recovery

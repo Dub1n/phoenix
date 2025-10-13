@@ -10,6 +10,17 @@
 
 // TODO: [TASK-MCP-001] Replace with real node-pty when C++ build tools are available
 
+type AsyncUtilsModule = typeof import('../../utils/async-utils');
+
+let asyncUtilsModule: AsyncUtilsModule | undefined;
+
+function getAsyncUtils(): AsyncUtilsModule['AsyncUtils'] {
+  if (!asyncUtilsModule) {
+    asyncUtilsModule = require('../../utils/async-utils') as AsyncUtilsModule;
+  }
+  return asyncUtilsModule.AsyncUtils;
+}
+
 export interface IPty {
   write(data: string): void;
   onData(callback: (data: string) => void): void;
@@ -37,7 +48,7 @@ export function spawn(file: string, args: string[], options: SpawnOptions): IPty
     onData: (callback: (data: string) => void) => {
       console.log('[MOCK PTY] Setting up data handler');
       // Mock some initial output
-      setTimeout(() => callback('Mock PTY output\n$ '), 100);
+      getAsyncUtils().createTimeout(() => callback('Mock PTY output\n$ '), 100, { unref: true });
     },
     onExit: (callback: (exitCode: number, signal: number) => void) => {
       console.log('[MOCK PTY] Setting up exit handler');

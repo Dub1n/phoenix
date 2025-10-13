@@ -28,6 +28,3 @@ afterAll(async () => {
     jest.restoreAllMocks();
   }
 });
-
-// Test timeout configuration
-jest.setTimeout(10000);

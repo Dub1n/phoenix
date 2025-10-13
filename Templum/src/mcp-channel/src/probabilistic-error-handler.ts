@@ -24,9 +24,10 @@ tags: ["error-handling", "probabilistic-recovery", "adaptive-strategies", "risk-
 * - Predictive failure prevention
 * - Learning-based strategy optimization
 */
-
-import { EventEmitter } from 'events';
-import { safeRegisterListener, cleanupComponentListeners } from './event-listener-manager';
+import { EventDrivenComponent } from '../../utils/event-bus-adapter';
+import type { TypedEventMap } from '../../utils/event-utils';
+import { cleanupComponentListeners } from './event-listener-manager';
+import { AsyncUtils, type ManagedInterval } from '../../utils/async-utils';
 
 export interface ErrorPattern {
   errorType: string;
@@ -91,13 +92,23 @@ export interface RiskAssessment {
   recommendedActions: string[];
 }
 
+interface ProbabilisticErrorHandlerEvents extends TypedEventMap {
+  'recovery-attempt': (payload: {
+    errorSignature: string;
+    strategy: string;
+    success: boolean;
+    executionTime: number;
+  }) => void;
+}
+
 /**
  * Probabilistic Error Handler
  * 
  * Implements intelligent error handling with statistical analysis and
  * probabilistic recovery strategies for MCP channel integration.
  */
-export class ProbabilisticErrorHandler extends EventEmitter {
+export class ProbabilisticErrorHandler extends EventDrivenComponent<ProbabilisticErrorHandlerEvents> {
+  private static instanceCounter = 0;
   private errorPatterns: Map<string, ErrorPattern> = new Map();
   private recoveryStrategies: Map<string, RecoveryStrategy> = new Map();
   private recentErrors: ErrorContext[] = [];
@@ -108,6 +119,7 @@ export class ProbabilisticErrorHandler extends EventEmitter {
   private readonly PATTERN_ANALYSIS_WINDOW = 3600000; // 1 hour
   private readonly MIN_PATTERN_OCCURRENCES = 3;
   private readonly RECOVERY_TIMEOUT = 30000; // 30 seconds
+  private patternAnalysisInterval?: ManagedInterval;
   
   // Probabilistic parameters
   private readonly SUCCESS_PROBABILITY_THRESHOLD = 0.7;
@@ -115,7 +127,7 @@ export class ProbabilisticErrorHandler extends EventEmitter {
   private readonly PATTERN_CONFIDENCE_THRESHOLD = 0.8;
 
   constructor() {
-    super();
+    super(`probabilistic-error-handler:${ProbabilisticErrorHandler.instanceCounter++}`, 40);
     
     // TODO: [TASK-MCP-007-PROB-001] Pattern: probabilistic-error-management | Complexity: 8 | Dependencies: statistical-analysis
     // Context: Initialize probabilistic error handling with learning capabilities
@@ -361,23 +373,21 @@ export class ProbabilisticErrorHandler extends EventEmitter {
    * Execute recovery strategy with timeout
    */
   private async executeRecoveryStrategy(strategy: RecoveryStrategy, context: ErrorContext): Promise<boolean> {
-    return new Promise<boolean>((resolve) => {
-      const timeout = setTimeout(() => {
+    try {
+      const result = await AsyncUtils.withTimeout(
+        strategy.implementation(),
+        this.RECOVERY_TIMEOUT,
+        new Error(`Recovery strategy ${strategy.name} timed out after ${this.RECOVERY_TIMEOUT}ms`)
+      );
+      return Boolean(result);
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('timed out')) {
         console.warn(`[PROBABILISTIC_ERROR] Recovery strategy ${strategy.name} timed out`);
-        resolve(false);
-      }, this.RECOVERY_TIMEOUT);
-      
-      strategy.implementation()
-        .then(result => {
-          clearTimeout(timeout);
-          resolve(result);
-        })
-        .catch(error => {
-          clearTimeout(timeout);
-          console.error(`[PROBABILISTIC_ERROR] Recovery strategy ${strategy.name} failed:`, error);
-          resolve(false);
-        });
-    });
+      } else {
+        console.error(`[PROBABILISTIC_ERROR] Recovery strategy ${strategy.name} failed:`, error);
+      }
+      return false;
+    }
   }
 
   /**
@@ -482,7 +492,7 @@ export class ProbabilisticErrorHandler extends EventEmitter {
       prerequisites: [],
       implementation: async () => {
         // Implement exponential backoff retry
-        await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
+        await AsyncUtils.sleep(Math.random() * 2000 + 1000);
         return Math.random() > 0.3; // 70% success rate
       }
     });
@@ -523,7 +533,7 @@ export class ProbabilisticErrorHandler extends EventEmitter {
       implementation: async () => {
         // Restart service components
         console.log('[RECOVERY] Restarting service components');
-        await new Promise(resolve => setTimeout(resolve, 5000));
+        await AsyncUtils.sleep(5000);
         return Math.random() > 0.4; // 60% success rate
       }
     });
@@ -533,11 +543,16 @@ export class ProbabilisticErrorHandler extends EventEmitter {
    * Setup periodic pattern analysis
    */
   private setupPeriodicAnalysis(): void {
-    setInterval(() => {
-      this.analyzePatterns();
-      this.generatePredictions();
-      this.assessRisk();
-    }, 300000); // Every 5 minutes
+    this.patternAnalysisInterval?.stop();
+    this.patternAnalysisInterval = AsyncUtils.createInterval(
+      () => {
+        this.analyzePatterns();
+        this.generatePredictions();
+        this.assessRisk();
+      },
+      300000,
+      { unref: true }
+    ); // Every 5 minutes
   }
 
   /**
@@ -679,6 +694,8 @@ export class ProbabilisticErrorHandler extends EventEmitter {
    * Cleanup and shutdown
    */
   public cleanup(): void {
+    this.patternAnalysisInterval?.stop();
+    this.patternAnalysisInterval = undefined;
     cleanupComponentListeners('probabilistic-error-handler');
     this.removeAllListeners();
   }

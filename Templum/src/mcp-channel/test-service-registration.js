@@ -13,6 +13,7 @@ const { initializeMCPChannelWithServiceDiscovery } = require('./dist/index');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const { AsyncUtils } = require('../../dist/src/utils/async-utils');
 
 async function testServiceRegistration() {
   console.log('🧪 Testing MCP Service Registration...');
@@ -40,7 +41,7 @@ async function testServiceRegistration() {
     console.log('✅ Service started');
     
     // Wait a moment for registration to complete
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await AsyncUtils.sleep(2000);
     
     // Check if service file was created
     const serviceFilePath = path.join(options.servicesDir, `${options.serviceId}.json`);

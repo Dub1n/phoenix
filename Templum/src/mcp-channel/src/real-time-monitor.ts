@@ -22,12 +22,14 @@
  * @since 2025-09-13
  */
 
-import { EventEmitter } from 'events';
+import { EventDrivenComponent } from '../../utils/event-bus-adapter';
+import type { TypedEventMap } from '../../utils/event-utils';
 import { VisualFeedbackSystem, VisualDashboard, VisualSection } from './visual-feedback-system';
 import { HealthStatus, MCPHealthMonitor } from './health-monitor';
 import { ProgressiveTimeoutManager } from './progressive-timeout-manager';
 import { serialization, type SerializationOutcome } from '../../utils/serialization-utils';
 import { emitSerializationWarnings } from '../../backend/backend-serialization-log';
+import { AsyncUtils, type ManagedInterval } from '../../utils/async-utils';
 
 export interface MonitoringConfig {
   updateInterval: number;
@@ -80,6 +82,19 @@ export interface ValidationResult {
   details: any;
 }
 
+interface RealTimeMonitorEvents extends TypedEventMap {
+  'monitoring-started': (payload: { timestamp: number }) => void;
+  'monitoring-stopped': (payload: { timestamp: number }) => void;
+  'monitoring-cycle-completed': (payload: {
+    snapshot: PerformanceSnapshot;
+    healthStatus: HealthStatus;
+    trends: TrendAnalysis[];
+  }) => void;
+  alert: (event: MonitoringEvent) => void;
+  'validation-recorded': (validation: ValidationResult) => void;
+  'monitoring-error': (error: unknown) => void;
+}
+
 /**
  * Real-Time Monitoring System
  * 
@@ -90,7 +105,8 @@ export interface ValidationResult {
  * - Live validation monitoring
  * - Performance optimization recommendations
  */
-export class RealTimeMonitor extends EventEmitter {
+export class RealTimeMonitor extends EventDrivenComponent<RealTimeMonitorEvents> {
+  private static instanceCounter = 0;
   private config: MonitoringConfig;
   private visualFeedback: VisualFeedbackSystem;
   private healthMonitor: MCPHealthMonitor;
@@ -101,7 +117,7 @@ export class RealTimeMonitor extends EventEmitter {
   private validationHistory: ValidationResult[];
   private trendAnalysis: Map<string, TrendAnalysis>;
   
-  private monitoringInterval: NodeJS.Timeout | null = null;
+  private monitoringInterval: ManagedInterval | null = null;
   private dashboard: VisualDashboard | null = null;
   private isMonitoring: boolean = false;
   private startTime: number;
@@ -112,7 +128,7 @@ export class RealTimeMonitor extends EventEmitter {
     timeoutManager: ProgressiveTimeoutManager,
     config?: Partial<MonitoringConfig>
   ) {
-    super();
+    super(`real-time-monitor:${RealTimeMonitor.instanceCounter++}`, 60);
     
     this.visualFeedback = visualFeedback;
     this.healthMonitor = healthMonitor;
@@ -167,9 +183,11 @@ export class RealTimeMonitor extends EventEmitter {
     this.createMonitoringDashboard();
 
     // Start periodic monitoring
-    this.monitoringInterval = setInterval(() => {
-      this.performMonitoringCycle();
-    }, this.config.updateInterval);
+    this.monitoringInterval = AsyncUtils.createInterval(
+      () => this.performMonitoringCycle(),
+      this.config.updateInterval,
+      { unref: true }
+    );
 
     // Start visual dashboard
     this.visualFeedback.startDashboard();
@@ -194,10 +212,8 @@ export class RealTimeMonitor extends EventEmitter {
 
     this.isMonitoring = false;
 
-    if (this.monitoringInterval) {
-      clearInterval(this.monitoringInterval);
-      this.monitoringInterval = null;
-    }
+    this.monitoringInterval?.stop();
+    this.monitoringInterval = null;
 
     this.visualFeedback.stopDashboard();
 

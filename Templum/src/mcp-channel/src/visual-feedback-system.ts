@@ -35,6 +35,7 @@ import {
 import type { WindowBorderStyle } from '../../utils/window-theme-constants';
 
 import { WindowUtils, type WindowUtilsDependencies } from '../../utils/window-utils';
+import { AsyncUtils, type ManagedInterval } from '../../utils/async-utils';
 
 type WindowRenderer = Pick<typeof WindowUtils, 'render'>;
 
@@ -119,7 +120,7 @@ export class VisualFeedbackSystem {
   private indicators: StatusIndicator[];
   private maxIndicators: number = 50;
   private dashboard: VisualDashboard | null = null;
-  private refreshInterval: NodeJS.Timeout | null = null;
+  private refreshInterval: ManagedInterval | null = null;
   private currentLine: number = 0;
   private terminalWidth: number;
   private resizeListener?: () => void;
@@ -348,11 +349,15 @@ export class VisualFeedbackSystem {
     this.renderDashboard();
 
     // Set up periodic refresh
-    this.refreshInterval = setInterval(() => {
-      if (!this.disposed) {
-        this.refreshDashboard();
-      }
-    }, this.dashboard.refreshRate);
+    this.refreshInterval = AsyncUtils.createInterval(
+      () => {
+        if (!this.disposed) {
+          this.refreshDashboard();
+        }
+      },
+      this.dashboard.refreshRate,
+      { unref: true }
+    );
 
     this.addIndicator({
       status: 'info',
@@ -366,7 +371,7 @@ export class VisualFeedbackSystem {
    */
   stopDashboard(): void {
     if (this.refreshInterval) {
-      clearInterval(this.refreshInterval);
+      this.refreshInterval.stop();
       this.refreshInterval = null;
     }
 
@@ -984,7 +989,8 @@ export class VisualFeedbackSystem {
    */
   cleanup(): void {
     if (this.refreshInterval) {
-      clearInterval(this.refreshInterval);
+      this.refreshInterval.stop();
+      this.refreshInterval = null;
     }
 
     if (this.dashboard) {

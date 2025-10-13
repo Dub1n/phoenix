@@ -25,9 +25,39 @@ tags: ["memory-management", "event-cleanup", "leak-prevention", "process-listene
 */
 
 import { EventEmitter } from 'events';
+import type { AnyTypedEventEmitter } from '../../utils/event-utils';
+
+type ManagedEmitter = AnyTypedEventEmitter | NodeJS.Process;
+
+const hasListenerControls = (
+  emitter: ManagedEmitter
+): emitter is ManagedEmitter & {
+  getMaxListeners(): number;
+  setMaxListeners(limit: number): void;
+} =>
+  typeof (emitter as any)?.setMaxListeners === 'function' &&
+  typeof (emitter as any)?.getMaxListeners === 'function';
+
+const addListener = (emitter: ManagedEmitter, event: string, listener: (...args: any[]) => void): void => {
+  const target = emitter as unknown as EventEmitter;
+  if (typeof target.on === 'function') {
+    target.on(event, listener);
+  } else if (typeof (target as any).addListener === 'function') {
+    (target as any).addListener(event, listener);
+  }
+};
+
+const removeListener = (emitter: ManagedEmitter, event: string, listener: (...args: any[]) => void): void => {
+  const target = emitter as unknown as EventEmitter;
+  if (typeof target.removeListener === 'function') {
+    target.removeListener(event, listener);
+  } else if (typeof (target as any).off === 'function') {
+    (target as any).off(event, listener);
+  }
+};
 
 export interface EventListenerRegistration {
-  emitter: EventEmitter | NodeJS.Process;
+  emitter: ManagedEmitter;
   event: string;
   listener: (...args: any[]) => void;
   componentId: string;
@@ -79,11 +109,11 @@ export class EventListenerManager {
   }
 
   /**
-   * Register an event listener with automatic tracking
-   * Implements defensive programming for listener registration
-   */
+ * Register an event listener with automatic tracking
+ * Implements defensive programming for listener registration
+ */
   public registerListener(
-    emitter: EventEmitter | NodeJS.Process,
+    emitter: ManagedEmitter,
     event: string,
     listener: (...args: any[]) => void,
     componentId: string
@@ -120,12 +150,12 @@ export class EventListenerManager {
       };
 
       // Set appropriate max listeners if needed
-      if (emitter instanceof EventEmitter && emitter.getMaxListeners() < this.DEFAULT_MAX_LISTENERS) {
+      if (hasListenerControls(emitter) && emitter.getMaxListeners() < this.DEFAULT_MAX_LISTENERS) {
         emitter.setMaxListeners(this.DEFAULT_MAX_LISTENERS);
       }
 
       // Register the listener
-      emitter.on(event, listener);
+      addListener(emitter, event, listener);
       
       // Track registration
       this.registrations.set(registrationId, registration);
@@ -158,7 +188,7 @@ export class EventListenerManager {
       }
 
       // Remove the listener with type safety
-      registration.emitter.removeListener(registration.event, registration.listener as any);
+      removeListener(registration.emitter, registration.event, registration.listener as any);
       
       // Remove tracking
       this.registrations.delete(registrationId);
@@ -382,7 +412,7 @@ export class EventListenerManager {
 export const eventManager = EventListenerManager.getInstance();
 
 export function safeRegisterListener(
-  emitter: EventEmitter | NodeJS.Process,
+  emitter: ManagedEmitter,
   event: string,
   listener: (...args: any[]) => void,
   componentId: string

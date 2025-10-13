@@ -11,6 +11,7 @@
 
 import * as path from 'path';
 import * as os from 'os';
+import { AsyncUtils, type ManagedInterval } from '../../utils/async-utils';
 import { CLIMCPServer } from './cli-mcp-server';
 import { PTYManager } from './pty-manager';
 import { MCPServiceRegistration, ServiceRegistrationOptions } from './service-registration';
@@ -58,8 +59,8 @@ export class MCPLifecycleCoordinator {
   private healthMonitor?: MCPHealthMonitor;
   
   // Monitoring
-  private healthCheckTimer?: NodeJS.Timeout;
-  private performanceOptimizationTimer?: NodeJS.Timeout;
+  private healthCheckTimer?: ManagedInterval;
+  private performanceOptimizationTimer?: ManagedInterval;
   
   constructor(options: LifecycleOptions = {}) {
     this.startTime = Date.now();
@@ -299,11 +300,8 @@ export class MCPLifecycleCoordinator {
    * Start health checking timer
    */
   private startHealthChecking(): void {
-    if (this.healthCheckTimer) {
-      clearInterval(this.healthCheckTimer);
-    }
-
-    this.healthCheckTimer = setInterval(async () => {
+    this.healthCheckTimer?.stop();
+    this.healthCheckTimer = AsyncUtils.createInterval(async () => {
       try {
         if (this.healthMonitor) {
           const health = await this.healthMonitor.performHealthCheck();
@@ -319,21 +317,21 @@ export class MCPLifecycleCoordinator {
       } catch (error) {
         console.error('[MCP_LIFECYCLE] Health check failed:', error);
       }
-    }, this.options.healthCheckInterval);
+    }, this.options.healthCheckInterval, { unref: true });
   }
 
   /**
    * Start performance optimization
    */
   private startPerformanceOptimization(): void {
-    if (this.performanceOptimizationTimer) {
-      clearInterval(this.performanceOptimizationTimer);
-    }
+    this.performanceOptimizationTimer?.stop();
 
     // Run optimization checks every 5 minutes
-    this.performanceOptimizationTimer = setInterval(() => {
-      this.optimizePerformance();
-    }, 5 * 60 * 1000);
+    this.performanceOptimizationTimer = AsyncUtils.createInterval(
+      () => this.optimizePerformance(),
+      5 * 60 * 1000,
+      { unref: true }
+    );
   }
 
   /**
@@ -378,15 +376,11 @@ export class MCPLifecycleCoordinator {
    * Stop all timers
    */
   private stopTimers(): void {
-    if (this.healthCheckTimer) {
-      clearInterval(this.healthCheckTimer);
-      this.healthCheckTimer = undefined;
-    }
-    
-    if (this.performanceOptimizationTimer) {
-      clearInterval(this.performanceOptimizationTimer);
-      this.performanceOptimizationTimer = undefined;
-    }
+    this.healthCheckTimer?.stop();
+    this.healthCheckTimer = undefined;
+
+    this.performanceOptimizationTimer?.stop();
+    this.performanceOptimizationTimer = undefined;
   }
 
   /**

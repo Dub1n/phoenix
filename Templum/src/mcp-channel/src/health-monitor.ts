@@ -521,7 +521,14 @@ export class MCPHealthMonitor {
       // Track failed operations and circuit breaker trips
       this.updateCommunicationStability(false);
       
-      if (event.error?.message?.includes('circuit breaker')) {
+      const message =
+        typeof event.error === 'string'
+          ? event.error
+          : typeof event.error === 'object' && event.error !== null && 'message' in event.error
+            ? String((event.error as { message?: unknown }).message ?? '')
+            : null;
+
+      if (message?.includes('circuit breaker')) {
         this.communicationMetrics.circuitBreakerTrips++;
       }
     });
