@@ -6,8 +6,9 @@
  * description: [Continuous performance monitoring with >30% degradation threshold detection and automatic response]
  * ---*/
 
-import { EventEmitter } from 'events';
 import { createInterval, ManagedInterval } from '../utils/async-utils';
+import { EventDrivenComponent } from '../utils/event-bus-adapter';
+import type { TypedEventMap } from '../utils/event-utils';
 
 export interface PerformanceMetric {
   componentId: string;
@@ -92,7 +93,52 @@ export interface MonitoringStats {
   };
 }
 
-export class PerformanceMonitor extends EventEmitter {
+interface PerformanceMonitorEvents extends TypedEventMap {
+  monitoringStarted: (payload: { timestamp: number }) => void;
+  monitoringStopped: (payload: { timestamp: number }) => void;
+  baselineRegistered: (payload: {
+    componentId: string;
+    metricType: PerformanceBaseline['metricType'];
+    baselineValue: number;
+    criticalThreshold: number;
+  }) => void;
+  metricRecorded: (metric: PerformanceMetric) => void;
+  performanceDegradation: (degradation: PerformanceDegradation) => void;
+  automaticResponseTriggered: (payload: {
+    componentId: string;
+    severity: PerformanceDegradation['severity'];
+    actions: string[];
+    timestamp: number;
+  }) => void;
+  alertAcknowledged: (payload: { alertId: string; userId?: string; timestamp: number }) => void;
+  alertResolved: (payload: { alertId: string; userId?: string; timestamp: number }) => void;
+  degradationCleared: (payload: {
+    componentId: string;
+    metricType: string;
+    timestamp: number;
+  }) => void;
+  alertCreated: (alert: PerformanceAlert) => void;
+  emergencyFallback: (payload: {
+    componentId: string;
+    degradation: number;
+    action: string;
+    timestamp: number;
+  }) => void;
+  criticalFallback: (payload: {
+    componentId: string;
+    degradation: number;
+    action: string;
+    timestamp: number;
+  }) => void;
+}
+
+export class PerformanceMonitor extends EventDrivenComponent<PerformanceMonitorEvents> {
+  private static instanceCounter = 0;
+
+  private static createScope(): string {
+    return `performance-monitor:${PerformanceMonitor.instanceCounter++}`;
+  }
+
   private baselines: Map<string, PerformanceBaseline> = new Map();
   private metrics: Map<string, PerformanceMetric[]> = new Map();
   private degradations: Map<string, PerformanceDegradation> = new Map();
@@ -107,7 +153,7 @@ export class PerformanceMonitor extends EventEmitter {
   };
 
   constructor() {
-    super();
+    super(PerformanceMonitor.createScope(), 100);
     this.config = {
       defaultDegradationThreshold: 30, // >30% degradation threshold from Phase 1
       alertCooldown: 60000, // 1 minute between similar alerts

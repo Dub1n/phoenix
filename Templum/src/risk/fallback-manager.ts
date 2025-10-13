@@ -6,8 +6,9 @@
  * description: [Interface-specific fallback mechanisms for high-complexity operations with automatic failover coordination]
  * ---*/
 
-import { EventEmitter } from 'events';
 import { withTimeout } from '../utils/async-utils';
+import { EventDrivenComponent } from '../utils/event-bus-adapter';
+import type { TypedEventMap } from '../utils/event-utils';
 
 export interface FallbackStrategy {
   id: string;
@@ -115,7 +116,49 @@ export interface FallbackStats {
   }>;
 }
 
-export class FallbackManager extends EventEmitter {
+interface FallbackManagerEvents extends TypedEventMap {
+  strategyRegistered: (payload: {
+    strategyId: string;
+    componentId: string;
+    interfaceType: string;
+    complexity: FallbackStrategy['complexity'];
+    timestamp: number;
+  }) => void;
+  fallbackCompleted: (execution: FallbackExecution) => void;
+  fallbackFailed: (execution: FallbackExecution) => void;
+  automaticFallbackEnabled: (payload: {
+    componentId: string;
+    interfaceType: string;
+    strategyId: string;
+    timestamp: number;
+  }) => void;
+  recoveryCompleted: (payload: {
+    executionId: string;
+    componentId: string;
+    interfaceType: string;
+    recoveryTime: number;
+    newPerformance?: FallbackExecution['performance'];
+  }) => void;
+  recoveryFailed: (payload: {
+    executionId: string;
+    componentId: string;
+    error?: string;
+  }) => void;
+  interfaceAdapterRegistered: (payload: {
+    interfaceType: string;
+    availableStrategies: number;
+  }) => void;
+  rollbackCompleted: (execution: FallbackExecution) => void;
+  rollbackFailed: (execution: FallbackExecution) => void;
+}
+
+export class FallbackManager extends EventDrivenComponent<FallbackManagerEvents> {
+  private static instanceCounter = 0;
+
+  private static createScope(): string {
+    return `fallback-manager:${FallbackManager.instanceCounter++}`;
+  }
+
   private strategies: Map<string, FallbackStrategy> = new Map();
   private activeExecutions: Map<string, FallbackExecution> = new Map();
   private executionHistory: FallbackExecution[] = [];
@@ -129,7 +172,7 @@ export class FallbackManager extends EventEmitter {
   };
 
   constructor() {
-    super();
+    super(FallbackManager.createScope(), 50);
     this.config = {
       maxConcurrentFallbacks: 5,
       executionTimeout: 30000, // 30 seconds

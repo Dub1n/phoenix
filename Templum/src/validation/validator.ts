@@ -22,9 +22,10 @@
  * Estimated code reduction: ~200 lines across ~12 files
  */
 
-import { EventEmitter } from 'events';
 import { performance } from 'perf_hooks';
 import { sleep, withTimeout } from '../utils/async-utils';
+import { EventDrivenComponent } from '../utils/event-bus-adapter';
+import type { TypedEventMap } from '../utils/event-utils';
 
 // Core validation interfaces
 export interface ValidationResult<T = any> {
@@ -86,15 +87,44 @@ export interface SchemaDefinition {
   pattern?: string;
 }
 
+interface ConfidenceSystemEvents extends TypedEventMap {}
+
+interface ErrorRecoveryManagerEvents extends TypedEventMap {
+  recoverySuccess: (payload: {
+    strategy: string;
+    error: ValidationError;
+    context: ValidationContext;
+  }) => void;
+  recoveryFailed: (payload: {
+    error: ValidationError;
+    context: ValidationContext;
+    attemptedStrategies: number;
+  }) => void;
+}
+
+interface ValidatorUtilityEvents extends TypedEventMap {
+  validationComplete: (payload: {
+    success: boolean;
+    confidence: number;
+    meetsThreshold: boolean;
+    executionTime: number;
+    errorCount: number;
+    recoveryAttempts: number;
+  }) => void;
+  recoverySuccess: ErrorRecoveryManagerEvents['recoverySuccess'];
+  recoveryFailed: ErrorRecoveryManagerEvents['recoveryFailed'];
+}
+
 /**
  * Confidence-based validation system with statistical tracking
  */
-export class ConfidenceSystem extends EventEmitter {
+export class ConfidenceSystem extends EventDrivenComponent<ConfidenceSystemEvents> {
+  private static instanceCounter = 0;
   private confidenceHistory: Map<string, number[]> = new Map();
   private config: ConfidenceConfig;
 
   constructor(config: Partial<ConfidenceConfig> = {}) {
-    super();
+    super(`confidence-system:${ConfidenceSystem.instanceCounter++}`, 25);
     this.config = {
       minThreshold: 0.7,
       targetThreshold: 0.9,
@@ -397,12 +427,13 @@ export class SchemaValidator {
 /**
  * Error recovery manager with probabilistic strategies
  */
-export class ErrorRecoveryManager extends EventEmitter {
+export class ErrorRecoveryManager extends EventDrivenComponent<ErrorRecoveryManagerEvents> {
+  private static instanceCounter = 0;
   private strategies: Map<string, RecoveryStrategy> = new Map();
   private recoveryHistory: Map<string, boolean[]> = new Map();
 
   constructor() {
-    super();
+    super(`error-recovery-manager:${ErrorRecoveryManager.instanceCounter++}`, 50);
     this.initializeDefaultStrategies();
   }
 
@@ -526,7 +557,8 @@ export class ErrorRecoveryManager extends EventEmitter {
 /**
  * Main ValidatorUtility class with chainable API
  */
-export class ValidatorUtility extends EventEmitter {
+export class ValidatorUtility extends EventDrivenComponent<ValidatorUtilityEvents> {
+  private static instanceCounter = 0;
   private confidenceSystem: ConfidenceSystem;
   private schemaValidator: SchemaValidator;
   private errorRecovery: ErrorRecoveryManager;
@@ -541,7 +573,7 @@ export class ValidatorUtility extends EventEmitter {
   private currentSchema?: SchemaDefinition;
 
   constructor(confidenceConfig?: Partial<ConfidenceConfig>) {
-    super();
+    super(`validator-utility:${ValidatorUtility.instanceCounter++}`, 100);
     this.confidenceSystem = new ConfidenceSystem(confidenceConfig);
     this.schemaValidator = new SchemaValidator();
     this.errorRecovery = new ErrorRecoveryManager();

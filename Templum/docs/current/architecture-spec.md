@@ -25,7 +25,7 @@ last_updated: 2025-10-13
 - Manual override manager sits between the router and discovery caches, enforcing zero-knowledge constraints (redacted service descriptors, hashed observability logs) while surfacing `apply`/`clear` controls through `TemplumCore` and the shared command registry. Automated watcher tests drop manifests into `.templum/services` to prove add/remove flows; these run in CI via the backend bundle, with partner-live runs optional post-MVP. **Status:** Present.
 - Skin payload consumption now flows through `TemplumCore` → `UniversalSkinEngine`; adapters render cached backend skins without bespoke fallbacks while partner exports remain pending. The universal layout engine now normalises PCL-style `layout.items` definitions into canonical menu items so CLI/VSCode rendering stays consistent and compatibility mode reporting reflects the incoming schema. **Status:** Present (awaiting live backend payloads).
 - CLI/daemon process separation is scaffolded; IPC contracts need integration tests. **Status:** Broken.
-- Observability/health monitoring blueprints exist; instrumentation must be validated before relying on metrics dashboards. **Status:** Broken.
+- Observability/health monitoring blueprints exist; instrumentation must be validated before relying on metrics dashboards. Stage 6 lane 6j (2025-10-13) migrated `TemplumObservabilitySystem`, `CLIPerformanceMonitor`, risk managers, and the hybrid validation stack onto the shared `EventDrivenComponent`/`EventUtils` seams so emitters stay typed and scoped without backend-specific knowledge, but the dashboards still require end-to-end verification. **Status:** Partial (evidence captured under `tmp/consolidation/pattern-4-lane-6j/`).
 
 ## 2. Architecture Overview
 

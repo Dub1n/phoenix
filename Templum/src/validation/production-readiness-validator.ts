@@ -6,7 +6,6 @@
  * description: Comprehensive production readiness validation system that verifies resource management, error handling, and performance benchmarks with real system measurements
  * ---*/
 
-import { EventEmitter } from 'events';
 import { performance } from 'perf_hooks';
 import * as os from 'os';
 import * as fs from 'fs/promises';
@@ -18,6 +17,8 @@ import {
 import {TemplumResourceManager, ResourceUsage} from '../core/templum-resource-manager';
 import { PerformanceValidator, PerformanceMetrics } from './performance-validation';
 import { sleep } from '../utils/async-utils';
+import { EventDrivenComponent } from '../utils/event-bus-adapter';
+import type { TypedEventMap } from '../utils/event-utils';
 
 // ============================================================================
 // Production Readiness Interfaces
@@ -892,7 +893,14 @@ export class SystemHealthChecker {
 // Production Readiness Validator - Main Orchestrator
 // ============================================================================
 
-export class ProductionReadinessValidator extends EventEmitter {
+interface ProductionReadinessValidatorEvents extends TypedEventMap {
+  validationStarted: (payload: { timestamp: number }) => void;
+  validationCompleted: (result: ProductionReadinessResult) => void;
+  validationFailed: (payload: { error: string; result: ProductionReadinessResult }) => void;
+}
+
+export class ProductionReadinessValidator extends EventDrivenComponent<ProductionReadinessValidatorEvents> {
+  private static instanceCounter = 0;
   private config: ProductionReadinessConfig;
   private metricsCollector: RealSystemMetricsCollector;
   private resourceValidator: ResourcePolicyValidator;
@@ -905,7 +913,7 @@ export class ProductionReadinessValidator extends EventEmitter {
     performanceValidator: PerformanceValidator,
     config: Partial<ProductionReadinessConfig> = {}
   ) {
-    super();
+    super(`production-readiness-validator:${ProductionReadinessValidator.instanceCounter++}`, 120);
 
     this.config = {
       performanceThresholds: {

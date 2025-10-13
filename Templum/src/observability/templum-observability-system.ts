@@ -6,7 +6,6 @@
 - description: [Centralized observability infrastructure replacing hardcoded metrics with enterprise-grade logging, metrics collection, alerting, and monitoring]        
 - ---*/
 
-import { EventEmitter } from 'events';
 import {
   TemplumError,
   isTemplumError,
@@ -34,6 +33,7 @@ import type {
 } from '../utils/event-utils';
 import { createInterval } from '../utils/async-utils';
 import type { ManagedInterval } from '../utils/async-utils';
+import { EventDrivenComponent } from '../utils/event-bus-adapter';
 
 // TODO: [TASK-NEW-038] Enhanced metrics correlation across interface adapters
 // Priority: Medium | Complexity: 6
@@ -762,8 +762,12 @@ export class AlertManager {
 // Main Observability System
 // ============================================================================
 
-export class TemplumObservabilitySystem extends EventEmitter {
+export class TemplumObservabilitySystem extends EventDrivenComponent<ObservabilityEvents> {
   private static instanceCounter = 0;
+
+  private static createScope(): string {
+    return `observability-system:${TemplumObservabilitySystem.instanceCounter++}`;
+  }
 
   private readonly eventScope: string;
   private readonly eventBus: ObservabilityBus;
@@ -775,9 +779,9 @@ export class TemplumObservabilitySystem extends EventEmitter {
   private forwarders: UnsubscribeFn[] = [];
   
   constructor(private config: ObservabilityConfig) {
-    super();
+    super(TemplumObservabilitySystem.createScope(), 100);
 
-    this.eventScope = `observability-system:${TemplumObservabilitySystem.instanceCounter++}`;
+    this.eventScope = this.eventContext;
     this.eventBus = createScopedBus<ObservabilityEvents>(this.eventScope, 100);
 
     this.logger = new ObservabilityLogger(config, this.eventBus.emitter);
@@ -862,7 +866,7 @@ export class TemplumObservabilitySystem extends EventEmitter {
       ...forward(this.eventBus.emitter, globalBus, ['templum:error', 'templum:metrics'], this.eventScope),
       ...forward(
         this.eventBus.emitter,
-        this as unknown as TypedEventEmitter<ObservabilityEvents>,
+        this.eventEmitter,
         ['templum:error', 'templum:metrics'],
         this.eventScope
       )

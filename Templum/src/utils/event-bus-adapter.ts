@@ -1,8 +1,9 @@
 import {
-  EventUtils,
-  ScopedEventBus,
+  createEventBusHost,
+  EventBusHost,
   SubscriptionOptions,
   TypedEventMap,
+  TypedEventEmitter,
   UnsubscribeFn
 } from './event-utils';
 
@@ -10,6 +11,8 @@ type EventKey<TEventMap extends TypedEventMap> = Extract<keyof TEventMap, string
 type ListenerFn = (...args: any[]) => unknown;
 
 export interface EventBusAdapter<TEventMap extends TypedEventMap> {
+  readonly emitter: TypedEventEmitter<TEventMap>;
+  readonly context: string;
   emit<K extends EventKey<TEventMap>>(event: K, ...args: Parameters<TEventMap[K]>): boolean;
   on<K extends EventKey<TEventMap>>(event: K, listener: TEventMap[K], options?: SubscriptionOptions): void;
   once<K extends EventKey<TEventMap>>(event: K, listener: TEventMap[K], options?: SubscriptionOptions): void;
@@ -29,7 +32,10 @@ export function createEventBusAdapter<TEventMap extends TypedEventMap>(
   config: AdapterConfig
 ): EventBusAdapter<TEventMap> {
   const { scope, maxListeners = 50 } = config;
-  const events: ScopedEventBus<TEventMap> = EventUtils.createScopedBus<TEventMap>(scope, maxListeners);
+  const host: EventBusHost<TEventMap> = createEventBusHost<TEventMap>({
+    context: scope,
+    maxListeners
+  });
   const listenerRegistry = new Map<EventKey<TEventMap>, Map<ListenerFn, UnsubscribeFn>>();
 
   const storeListener = <K extends EventKey<TEventMap>>(
@@ -48,14 +54,21 @@ export function createEventBusAdapter<TEventMap extends TypedEventMap>(
     listener: TEventMap[K],
     options?: SubscriptionOptions
   ) => {
-    const unsubscribe = events.subscribe(event, listener, options);
+    const unsubscribe =
+      options?.once && options?.prepend
+        ? host.prependOnce(event, listener, options)
+        : options?.once
+          ? host.once(event, listener, options)
+          : options?.prepend
+            ? host.prepend(event, listener, options)
+            : host.on(event, listener, options);
     storeListener(event, listener, unsubscribe);
   };
 
   const emit = <K extends EventKey<TEventMap>>(
     event: K,
     ...args: Parameters<TEventMap[K]>
-  ): boolean => events.emit(event, ...args);
+  ): boolean => host.emit(event, ...args);
 
   const on = <K extends EventKey<TEventMap>>(
     event: K,
@@ -93,7 +106,7 @@ export function createEventBusAdapter<TEventMap extends TypedEventMap>(
         listeners.forEach(unsubscribe => unsubscribe());
         listenerRegistry.delete(event);
       }
-      events.emitter.removeAllListeners(event);
+      host.removeAll(event);
       return;
     }
 
@@ -101,19 +114,21 @@ export function createEventBusAdapter<TEventMap extends TypedEventMap>(
       listeners.forEach(unsubscribe => unsubscribe());
     });
     listenerRegistry.clear();
-    events.cleanup();
+    host.cleanup();
   };
 
   const listenerCount = <K extends EventKey<TEventMap>>(event: K): number =>
-    events.getListenerCount(event);
+    host.listenerCount(event);
 
-  const eventNames = (): EventKey<TEventMap>[] => events.getEventNames();
+  const eventNames = (): EventKey<TEventMap>[] => host.getEventNames();
 
   const cleanup = () => {
     removeAllListeners();
   };
 
   return {
+    emitter: host.emitter,
+    context: host.context,
     emit,
     on,
     once,
@@ -165,6 +180,14 @@ export abstract class EventDrivenComponent<TEventMap extends TypedEventMap> {
   removeAllListeners(event?: EventKey<TEventMap>): this {
     this.events.removeAllListeners(event);
     return this;
+  }
+
+  protected get eventEmitter(): TypedEventEmitter<TEventMap> {
+    return this.events.emitter;
+  }
+
+  protected get eventContext(): string {
+    return this.events.context;
   }
 
   listenerCount(event: EventKey<TEventMap>): number {

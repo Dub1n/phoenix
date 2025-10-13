@@ -6,12 +6,13 @@
  * description: Component-specific performance baselines with continuous performance monitoring and real-time validation addressing Phase 2 realignment requirements
  * ---*/
 
-import { EventEmitter } from 'events';
 import { performance } from 'perf_hooks';
 import {
   isTemplumError
 } from '../types/templum-types';
 import { sleep, createInterval, ManagedInterval } from '../utils/async-utils';
+import { EventDrivenComponent } from '../utils/event-bus-adapter';
+import type { TypedEventMap } from '../utils/event-utils';
 
 // Performance baseline definitions from Phase 1 requirements
 export interface ComponentPerformanceBaseline {
@@ -136,16 +137,72 @@ export interface ValidationReport {
   };
 }
 
+interface ComponentBaselineManagerEvents extends TypedEventMap {
+  baselineSet: (payload: {
+    componentId: string;
+    baseline: ComponentPerformanceBaseline;
+    timestamp: number;
+  }) => void;
+  baselineUpdated: (payload: {
+    componentId: string;
+    oldBaseline: ComponentPerformanceBaseline;
+    newBaseline: ComponentPerformanceBaseline;
+    sampleCount: number;
+  }) => void;
+}
+
+interface RegressionDetectorEvents extends TypedEventMap {
+  regressionDetected: (payload: {
+    componentId: string;
+    confidence: number;
+    trend: number;
+    significance: number;
+  }) => void;
+}
+
+interface ContinuousMonitorEvents extends TypedEventMap {
+  monitoringStarted: (payload: { config: ContinuousMonitoringConfig }) => void;
+  monitoringStopped: (payload: { timestamp: number }) => void;
+  metricsRecorded: (payload: { metrics: PerformanceMetrics }) => void;
+  monitoringError: (payload: { error: string }) => void;
+  validationCompleted: (result: ValidationResult) => void;
+  criticalAlert: (payload: {
+    componentId: string;
+    alerts: ValidationResult['alerts'];
+    validationResult: ValidationResult;
+  }) => void;
+  regressionAlert: (payload: {
+    componentId: string;
+    alerts: ValidationResult['alerts'];
+    validationResult: ValidationResult;
+  }) => void;
+}
+
+interface ValidationReporterEvents extends TypedEventMap {
+  reportGenerated: (report: ValidationReport) => void;
+}
+
+interface PerformanceValidatorEvents extends TypedEventMap {
+  initialized: (payload: { timestamp: number }) => void;
+  error: (payload: { error: string; operation: string }) => void;
+  validationCompleted: (result: ValidationResult) => void;
+  criticalAlert: ContinuousMonitorEvents['criticalAlert'];
+  regressionAlert: ContinuousMonitorEvents['regressionAlert'];
+  baselineUpdated: ComponentBaselineManagerEvents['baselineUpdated'];
+  shutdown: (payload: { timestamp: number }) => void;
+}
+
 /**
  * ComponentBaselineManager - Manages performance baselines for Phase 2 components
  */
-export class ComponentBaselineManager extends EventEmitter {
+export class ComponentBaselineManager extends EventDrivenComponent<ComponentBaselineManagerEvents> {
+  private static instanceCounter = 0;
   private baselines: Map<string, ComponentPerformanceBaseline> = new Map();
   private baselineHistory: Map<string, ComponentPerformanceBaselineWithTimestamp[]> = new Map();
   private readonly maxHistorySize: number = 100;
 
   constructor() {
-    super();
+    super(`component-baseline-manager:${ComponentBaselineManager.instanceCounter++}`, 75);
     // Initialize with empty baselines, populate with real measurements on first use
     this.initializationPromise = this.initializePhase2Baselines();
   }
@@ -515,7 +572,8 @@ export class ComponentBaselineManager extends EventEmitter {
 /**
  * RegressionDetector - Statistical regression detection
  */
-export class RegressionDetector extends EventEmitter {
+export class RegressionDetector extends EventDrivenComponent<RegressionDetectorEvents> {
+  private static instanceCounter = 0;
   private metricsHistory: Map<string, PerformanceMetrics[]> = new Map();
   private regressionState: Map<string, {
     detected: boolean;
@@ -525,7 +583,7 @@ export class RegressionDetector extends EventEmitter {
   }> = new Map();
 
   constructor() {
-    super();
+    super(`regression-detector:${RegressionDetector.instanceCounter++}`, 50);
   }
 
   /**
@@ -641,7 +699,8 @@ export class RegressionDetector extends EventEmitter {
 /**
  * ContinuousMonitor - Real-time performance monitoring
  */
-export class ContinuousMonitor extends EventEmitter {
+export class ContinuousMonitor extends EventDrivenComponent<ContinuousMonitorEvents> {
+  private static instanceCounter = 0;
   private config: ContinuousMonitoringConfig;
   private baselineManager: ComponentBaselineManager;
   private regressionDetector: RegressionDetector;
@@ -654,7 +713,7 @@ export class ContinuousMonitor extends EventEmitter {
     regressionDetector: RegressionDetector,
     config: Partial<ContinuousMonitoringConfig> = {}
   ) {
-    super();
+    super(`continuous-monitor:${ContinuousMonitor.instanceCounter++}`, 120);
     this.baselineManager = baselineManager;
     this.regressionDetector = regressionDetector;
     
@@ -901,13 +960,14 @@ export class ContinuousMonitor extends EventEmitter {
 /**
  * ValidationReporter - Generate performance validation reports
  */
-export class ValidationReporter extends EventEmitter {
+export class ValidationReporter extends EventDrivenComponent<ValidationReporterEvents> {
+  private static instanceCounter = 0;
   private validationResults: Map<string, ValidationResult[]> = new Map();
   private reportHistory: ValidationReport[] = [];
   private readonly maxHistorySize: number = 50;
 
   constructor() {
-    super();
+    super(`validation-reporter:${ValidationReporter.instanceCounter++}`, 50);
   }
 
   /**
@@ -1074,14 +1134,15 @@ export class ValidationReporter extends EventEmitter {
 /**
  * PerformanceValidator - Main orchestrator for performance validation
  */
-export class PerformanceValidator extends EventEmitter {
+export class PerformanceValidator extends EventDrivenComponent<PerformanceValidatorEvents> {
+  private static instanceCounter = 0;
   private baselineManager: ComponentBaselineManager;
   private regressionDetector: RegressionDetector;
   private continuousMonitor: ContinuousMonitor;
   private validationReporter: ValidationReporter;
   
   constructor() {
-    super();
+    super(`performance-validator:${PerformanceValidator.instanceCounter++}`, 150);
     
     // Initialize components
     this.baselineManager = new ComponentBaselineManager();

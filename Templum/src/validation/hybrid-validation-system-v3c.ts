@@ -17,7 +17,6 @@
  * Provides >95% validation coverage, reliability metrics, performance optimization <2s, and graceful degradation.
  */
 
-import { EventEmitter } from 'events';
 import { performance } from 'perf_hooks';
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -25,6 +24,8 @@ import { PerformanceValidator, ValidationResult as PerfValidationResult } from '
 import { BackendServiceRouter } from '../backend/backend-service-router';
 import { TemplumCore } from '../core/templum-core';
 import { createInterval, ManagedInterval } from '../utils/async-utils';
+import { EventDrivenComponent } from '../utils/event-bus-adapter';
+import type { TypedEventMap } from '../utils/event-utils';
 
 // TODO: [TASK-MCP-007-VALIDATION-001] Pattern: hybrid-validation-enhancement | Complexity: 8 | Dependencies: performance-validation,backend-integration
 // Context: Enhanced validation system with comprehensive coverage, reliability metrics, and performance optimization
@@ -169,7 +170,42 @@ export interface QualityDashboard {
 
 const ONE_HOUR_MS = 60 * 60 * 1000;
 
-export class ReliabilityTracker extends EventEmitter {
+interface ReliabilityTrackerEvents extends TypedEventMap {
+  componentFailure: (payload: { component: string; error: string; timestamp: number }) => void;
+  componentRecovery: (payload: {
+    component: string;
+    recoveryDurationMs: number;
+    timestamp: number;
+  }) => void;
+}
+
+interface PerformanceOptimizerEvents extends TypedEventMap {
+  optimizationNeeded: (payload: { duration: number; threshold: number; strategies: string[] }) => void;
+}
+
+interface GracefulDegradationManagerEvents extends TypedEventMap {
+  degradationEvent: (event: DegradationEvent) => void;
+}
+
+interface QualityMetricsDashboardEvents extends TypedEventMap {
+  thresholdAlert: (alert: ThresholdAlert) => void;
+}
+
+interface HybridValidationSystemEvents extends TypedEventMap {
+  configurationLoaded: (payload: { configPath: string; version?: string }) => void;
+  configurationLoadFailed: (payload: { error: string; fallbackToDefaults: boolean }) => void;
+  optimizationNeeded: PerformanceOptimizerEvents['optimizationNeeded'];
+  degradationEvent: (event: DegradationEvent) => void;
+  thresholdAlert: (alert: ThresholdAlert) => void;
+  systemStarted: (payload: { timestamp: number; config: ValidationConfig }) => void;
+  systemStartFailed: (payload: { error: unknown; timestamp: number }) => void;
+  validationCycleFailed: (payload: { cycle: ValidationCycle; error: unknown }) => void;
+  validationCycleCompleted: (cycle: ValidationCycle) => void;
+  systemStopped: (payload: { timestamp: number }) => void;
+}
+
+export class ReliabilityTracker extends EventDrivenComponent<ReliabilityTrackerEvents> {
+  private static instanceCounter = 0;
   private readonly startTime = Date.now();
   private readonly componentStats = new Map<
     string,
@@ -189,6 +225,10 @@ export class ReliabilityTracker extends EventEmitter {
   private totalRecoveryTime = 0;
   private totalRecoveries = 0;
   private totalDowntimeMs = 0;
+
+  constructor() {
+    super(`reliability-tracker:${ReliabilityTracker.instanceCounter++}`, 50);
+  }
 
   recordComponentFailure(component: string, error: string): void {
     const timestamp = Date.now();
@@ -329,7 +369,8 @@ export class ReliabilityTracker extends EventEmitter {
   }
 }
 
-export class PerformanceOptimizer extends EventEmitter {
+export class PerformanceOptimizer extends EventDrivenComponent<PerformanceOptimizerEvents> {
+  private static instanceCounter = 0;
   private readonly responseThreshold: number;
   private readonly maxCycleDuration: number;
   private readonly cycleDurations: number[] = [];
@@ -341,7 +382,7 @@ export class PerformanceOptimizer extends EventEmitter {
   private readonly maxSamples = 50;
 
   constructor(thresholds: ValidationConfig['performanceThresholds']) {
-    super();
+    super(`performance-optimizer:${PerformanceOptimizer.instanceCounter++}`, 50);
     this.responseThreshold = thresholds.responseTime ?? 100;
     this.maxCycleDuration = 2000;
   }
@@ -422,14 +463,15 @@ export class PerformanceOptimizer extends EventEmitter {
   }
 }
 
-export class GracefulDegradationManager extends EventEmitter {
+export class GracefulDegradationManager extends EventDrivenComponent<GracefulDegradationManagerEvents> {
+  private static instanceCounter = 0;
   private readonly config: ValidationConfig;
   private readonly degradedComponents = new Set<string>();
   private readonly activeDegradations = new Map<string, DegradationEvent>();
   private readonly recentEvents: DegradationEvent[] = [];
 
   constructor(config: ValidationConfig) {
-    super();
+    super(`graceful-degradation-manager:${GracefulDegradationManager.instanceCounter++}`, 50);
     this.config = config;
   }
 
@@ -563,7 +605,8 @@ export class GracefulDegradationManager extends EventEmitter {
   }
 }
 
-export class QualityMetricsDashboard extends EventEmitter {
+export class QualityMetricsDashboard extends EventDrivenComponent<QualityMetricsDashboardEvents> {
+  private static instanceCounter = 0;
   private static readonly instances = new Set<QualityMetricsDashboard>();
   private readonly thresholds: ValidationConfig['qualityThresholds'];
   private readonly dashboard: QualityDashboard;
@@ -571,7 +614,7 @@ export class QualityMetricsDashboard extends EventEmitter {
   private readonly maxSamples = 50;
 
   constructor(thresholds: ValidationConfig['qualityThresholds']) {
-    super();
+    super(`quality-metrics-dashboard:${QualityMetricsDashboard.instanceCounter++}`, 75);
     this.thresholds = thresholds;
     this.dashboard = this.createInitialDashboard();
     QualityMetricsDashboard.instances.add(this);
@@ -870,7 +913,13 @@ export class QualityMetricsDashboard extends EventEmitter {
 /**
  * HybridValidationSystemV3C - Main orchestrator for enhanced validation system
  */
-export class HybridValidationSystemV3C extends EventEmitter {
+export class HybridValidationSystemV3C extends EventDrivenComponent<HybridValidationSystemEvents> {
+  private static instanceCounter = 0;
+
+  private static createScope(): string {
+    return `hybrid-validation-system:${HybridValidationSystemV3C.instanceCounter++}`;
+  }
+
   private config: ValidationConfig;
   private templumConfig?: TemplumValidationConfig;
   private performanceValidator!: PerformanceValidator;
@@ -886,8 +935,8 @@ export class HybridValidationSystemV3C extends EventEmitter {
   private currentCycle: ValidationCycle | null = null;
 
   constructor(config: Partial<ValidationConfig> = {}) {
-    super();
-    
+    super(HybridValidationSystemV3C.createScope(), 150);
+
     this.config = {
       targetCoverage: 95,
       minCoverage: 85,

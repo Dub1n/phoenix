@@ -13,10 +13,11 @@
  * Generated: 2025-09-12
  */
 
-import { EventEmitter } from 'events';
 import { performance } from 'perf_hooks';
 import { createInterval } from '../utils/async-utils';
 import type { ManagedInterval } from '../utils/async-utils';
+import { EventDrivenComponent } from '../utils/event-bus-adapter';
+import type { TypedEventMap } from '../utils/event-utils';
 
 // TODO: [TASK-ID-CLI-PERF-001] Pattern: real-time-performance-monitoring | Complexity: 25 | Dependencies: CLI-stress-testing-infrastructure,performance-baselines
 // Context: Real-time performance monitoring with adaptive threshold detection for CLI stress testing
@@ -69,7 +70,20 @@ export interface TrendAnalysis {
  * CLI Performance Monitor with Adaptive Threshold Detection
  * Provides real-time performance monitoring and alerting for CLI stress testing
  */
-export class CLIPerformanceMonitor extends EventEmitter {
+interface PerformanceMonitorEvents extends TypedEventMap {
+  monitoringStarted: () => void;
+  monitoringStopped: () => void;
+  snapshotCollected: (snapshot: PerformanceSnapshot) => void;
+  performanceAlert: (alert: PerformanceAlert) => void;
+}
+
+export class CLIPerformanceMonitor extends EventDrivenComponent<PerformanceMonitorEvents> {
+  private static instanceCounter = 0;
+
+  private static createScope(): string {
+    return `cli-performance-monitor:${CLIPerformanceMonitor.instanceCounter++}`;
+  }
+
   private config: MonitoringConfiguration;
   private snapshots: PerformanceSnapshot[] = [];
   private alerts: PerformanceAlert[] = [];
@@ -80,8 +94,8 @@ export class CLIPerformanceMonitor extends EventEmitter {
   private adaptiveThresholds = new Map<string, number>();
   
   constructor(config?: Partial<MonitoringConfiguration>) {
-    super();
-    
+    super(CLIPerformanceMonitor.createScope(), 50);
+
     this.config = {
       samplingInterval: 1000, // 1 second
       retentionPeriod: 300000, // 5 minutes

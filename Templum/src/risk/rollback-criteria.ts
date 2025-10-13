@@ -6,8 +6,9 @@
  * description: [Automated rollback criteria validation framework implementing Phase 1 rollback safety requirements]
  * ---*/
 
-import { EventEmitter } from 'events';
 import { sleep } from '../utils/async-utils';
+import { EventDrivenComponent } from '../utils/event-bus-adapter';
+import type { TypedEventMap } from '../utils/event-utils';
 
 export interface RollbackCriterion {
   id: string;
@@ -130,7 +131,34 @@ export interface CriteriaStats {
   };
 }
 
-export class RollbackCriteria extends EventEmitter {
+interface RollbackCriteriaEvents extends TypedEventMap {
+  criterionRegistered: (payload: {
+    criterionId: string;
+    type: RollbackCriterion['type'];
+    severity: RollbackCriterion['severity'];
+    weight: number;
+  }) => void;
+  rollbackDecisionMade: (decision: RollbackDecision) => void;
+  rollbackDecisionError: (decision: RollbackDecision) => void;
+  rollbackCompleted: (execution: RollbackExecution) => void;
+  rollbackFailed: (execution: RollbackExecution) => void;
+  continuousMonitoringStarted: (payload: {
+    componentId: string;
+    interfaceType: RollbackExecution['interfaceType'];
+    timestamp: number;
+  }) => void;
+  rollbackAborted: (payload: { executionId: string; reason: string; timestamp: number }) => void;
+  rollbackPhaseCompleted: (payload: { executionId: string; phaseId: string; duration: number }) => void;
+  rollbackPhaseFailed: (payload: { executionId: string; phaseId: string; error: string }) => void;
+}
+
+export class RollbackCriteria extends EventDrivenComponent<RollbackCriteriaEvents> {
+  private static instanceCounter = 0;
+
+  private static createScope(): string {
+    return `rollback-criteria:${RollbackCriteria.instanceCounter++}`;
+  }
+
   private criteria: Map<string, RollbackCriterion> = new Map();
   private decisions: Map<string, RollbackDecision> = new Map();
   private executions: Map<string, RollbackExecution> = new Map();
@@ -148,7 +176,7 @@ export class RollbackCriteria extends EventEmitter {
   };
 
   constructor() {
-    super();
+    super(RollbackCriteria.createScope(), 100);
     this.config = {
       emergencyThreshold: 80,  // Risk score >80 triggers emergency action
       rollbackThreshold: 60,   // Risk score >60 triggers rollback
