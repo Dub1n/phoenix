@@ -6,7 +6,6 @@
  * description: [Coordinates interface switching with state preservation and session management]
  * ---*/
 
-import { EventEmitter } from 'events';
 import {
   InterfaceType,
   InterfaceAdapter,
@@ -17,6 +16,8 @@ import {
   ITemplumCoreDependencies
 } from '../interfaces/core-component-interfaces';
 import { SemanticValidators, TypeGuards } from '../utils/type-guards';
+import { type TypedEventMap } from '../utils/event-utils';
+import { EventDrivenComponent } from '../utils/event-bus-adapter';
 
 export interface InterfaceSwitchOptions {
   preserveSession?: boolean;
@@ -52,7 +53,40 @@ export interface InterfaceManagerStatus {
  * Implements the Universal Interface Orchestration pattern
  * Coordinates interface switching with state preservation and session management
  */
-export class UniversalInterfaceManager extends EventEmitter {
+interface UniversalInterfaceManagerEvents extends TypedEventMap {
+  interfaceAdapterRegistered: (payload: { interfaceType: InterfaceType; adapter: InterfaceAdapter }) => void;
+  interfaceSwitchPrepared: (payload: {
+    targetInterface: InterfaceType;
+    options: InterfaceSwitchOptions;
+    result: InterfaceSwitchPreparation;
+    preparationTime: number;
+  }) => void;
+  interfaceSwitchExecuted: (payload: {
+    from: InterfaceType | null;
+    to: InterfaceType;
+    switchTime: number;
+    options: InterfaceSwitchOptions;
+  }) => void;
+  interfaceSwitchFailed: (payload: {
+    from: InterfaceType | null;
+    to: InterfaceType;
+    error: string;
+    switchTime: number;
+    recovered: boolean;
+    fallbackInterface?: InterfaceType;
+  }) => void;
+  adapterStateUpdate: (payload: { interfaceType: InterfaceType; update: StateUpdate }) => void;
+  interfaceSwitchError: (payload: {
+    operation: string;
+    targetInterface: InterfaceType;
+    previousInterface: InterfaceType | null;
+    duration: number;
+    error: string;
+  }) => void;
+  disposed: () => void;
+}
+
+export class UniversalInterfaceManager extends EventDrivenComponent<UniversalInterfaceManagerEvents> {
   private interfaceAdapters: Map<InterfaceType, InterfaceAdapter> = new Map();
   private activeInterface: InterfaceType | null = null;
   private dependencies: ITemplumCoreDependencies;
@@ -69,7 +103,7 @@ export class UniversalInterfaceManager extends EventEmitter {
   private sessionIntegrationEnabled: boolean = true;
   
   constructor(dependencies: ITemplumCoreDependencies) {
-    super();
+    super('universal-interface-manager', 100);
     this.dependencies = dependencies;
   }
 
@@ -818,5 +852,6 @@ export class UniversalInterfaceManager extends EventEmitter {
     this.removeAllListeners();
     
     this.emit('disposed');
+    this.cleanupEvents();
   }
 }

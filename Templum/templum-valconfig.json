@@ -22,107 +22,15 @@
     "degradationStrategy": "adaptive",
     "maxDegradationLevel": "moderate"
   },
-  "mcpIntegration": {
-    "enabled": true,
-    "serverConfig": {
-      "host": "localhost",
-      "port": 3000,
-      "protocol": "pty"
-    },
-    "timeoutConfig": {
-      "connectionTimeout": 5000,
-      "requestTimeout": 10000,
-      "keepAliveTimeout": 30000,
-      "adaptiveTimeout": {
-        "enabled": true,
-        "baseTimeout": 5000,
-        "maxTimeout": 30000,
-        "backoffMultiplier": 1.5,
-        "jitterMaxMs": 1000
-      }
-    },
-    "retryConfig": {
-      "maxRetries": 3,
-      "retryDelay": 1000,
-      "exponentialBackoff": true,
-      "retryOnTimeout": true,
-      "retryOnConnectionError": true
-    },
-    "circuitBreaker": {
-      "enabled": true,
-      "failureThreshold": 5,
-      "recoveryTimeout": 60000,
-      "halfOpenMaxCalls": 3,
-      "resetTimeout": 300000
-    }
-  },
-  "adaptiveResilience": {
-    "enabled": true,
-    "fallbackStrategies": {
-      "mcpUnavailable": "localValidation",
-      "timeoutExceeded": "degradedValidation",
-      "connectionLost": "cachedValidation"
-    },
-    "healthChecks": {
-      "enabled": true,
-      "interval": 30000,
-      "timeout": 5000,
-      "failureThreshold": 3
-    },
-    "loadBalancing": {
-      "enabled": false,
-      "strategy": "roundRobin",
-      "healthCheckRequired": true
-    },
-    "caching": {
-      "enabled": true,
-      "ttl": 300000,
-      "maxSize": 1000,
-      "strategy": "lru"
-    }
-  },
-  "cliValidation": {
-    "enabled": true,
-    "commandTimeout": 15000,
-    "interactiveTimeout": 30000,
-    "menuNavigationTimeout": 10000,
-    "promptDetection": {
-      "patterns": [
-        "] templum$",
-        "? Select option:",
-        "templum>",
-        "Enter command:",
-        "Continue? (y/n):"
-      ],
-      "timeout": 5000
-    },
-    "validationScenarios": [
-      {
-        "name": "cliStartup",
-        "timeout": 10000,
-        "retries": 2,
-        "fallback": "skipTest"
-      },
-      {
-        "name": "menuNavigation",
-        "timeout": 15000,
-        "retries": 3,
-        "fallback": "basicValidation"
-      },
-      {
-        "name": "commandExecution",
-        "timeout": 20000,
-        "retries": 1,
-        "fallback": "mockValidation"
-      }
-    ]
-  },
   "monitoring": {
     "enabled": true,
     "realTimeMetrics": true,
     "alerting": {
       "enabled": true,
-      "channels": ["console", "log"],
+      "channels": [
+        "console",
+        "log"
+      ],
       "thresholds": {
         "criticalTimeout": 25000,
         "warningTimeout": 15000,
@@ -138,13 +46,6 @@
     }
   },
   "testingEnhancements": {
-    "mcpIntegrationTests": {
-      "enabled": true,
-      "timeoutScenarios": true,
-      "connectionFailureTests": true,
-      "adaptiveBackoffTests": true,
-      "circuitBreakerTests": true
-    },
     "performanceBenchmarks": {
       "enabled": true,
       "baselineTimeout": 2000,

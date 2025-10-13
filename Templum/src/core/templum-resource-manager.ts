@@ -6,7 +6,6 @@
  * description: [Templum-native resource management system for comprehensive resource allocation, monitoring, and cleanup]
  * ---*/
 
-import { EventEmitter } from 'events';
 import { 
   isTemplumError,
   createTemplumError,
@@ -14,6 +13,9 @@ import {
   MetricsSignalPayload,
   BackendType
 } from '../types/templum-types';
+import { createInterval, type ManagedInterval } from '../utils/async-utils';
+import { type TypedEventMap } from '../utils/event-utils';
+import { EventDrivenComponent } from '../utils/event-bus-adapter';
 
 // ============================================================================
 // Resource Management Interfaces
@@ -107,18 +109,62 @@ export interface ResourceManagerStatus {
 // Templum Native Resource Manager Implementation  
 // ============================================================================
 
-export class TemplumResourceManager extends EventEmitter {
+interface TemplumResourceManagerEvents extends TypedEventMap {
+  initialized: (payload: { timestamp: number; policy: ResourcePolicy }) => void;
+  shutdown: (payload: { timestamp: number }) => void;
+  resourceAllocated: (payload: {
+    resourceId: string;
+    type: ResourceHandle['type'];
+    owner: string;
+    size: number;
+    timestamp: number;
+  }) => void;
+  resourceDeallocated: (payload: {
+    resourceId: string;
+    type: ResourceHandle['type'];
+    owner: string;
+    size: number;
+    lifetime: number;
+    timestamp: number;
+  }) => void;
+  serviceRegistered: (payload: { serviceId: string; type: ServiceHealth['type']; timestamp: number }) => void;
+  serviceHealthChanged: (payload: {
+    serviceId: string;
+    previousStatus: ServiceHealth['status'];
+    newStatus: ServiceHealth['status'];
+    timestamp: number;
+  }) => void;
+  serviceUnhealthy: (payload: {
+    serviceId: string;
+    status: ServiceHealth['status'];
+    responseTime: number;
+    errorRate: number;
+    timestamp: number;
+  }) => void;
+  resourceMetrics: (payload: MetricsSignalPayload) => void;
+  automaticCleanup: (payload: { cleanedResources: number; timestamp: number }) => void;
+  policyViolation: (payload: {
+    type: string;
+    severity: 'low' | 'medium' | 'high';
+    current: number;
+    limit: number;
+    timestamp: number;
+  }) => void;
+  policyUpdated: (payload: { policy: ResourcePolicy; timestamp: number }) => void;
+}
+
+export class TemplumResourceManager extends EventDrivenComponent<TemplumResourceManagerEvents> {
   private initialized: boolean = false;
   private policy: ResourcePolicy;
   private resources: Map<string, ResourceHandle> = new Map();
   private services: Map<string, ServiceHealth> = new Map();
-  private cleanupInterval: NodeJS.Timeout | null = null;
-  private monitoringInterval: NodeJS.Timeout | null = null;
+  private cleanupInterval: ManagedInterval | null = null;
+  private monitoringInterval: ManagedInterval | null = null;
   private usageHistory: ResourceUsage[] = [];
   private maxHistorySize: number = 100;
 
   constructor(policy?: Partial<ResourcePolicy>) {
-    super();
+    super('templum-resource-manager', 100);
     
     this.policy = {
       maxMemoryMB: 512,
@@ -200,12 +246,12 @@ export class TemplumResourceManager extends EventEmitter {
     try {
       // Stop monitoring and cleanup intervals
       if (this.cleanupInterval) {
-        clearInterval(this.cleanupInterval);
+        this.cleanupInterval.stop();
         this.cleanupInterval = null;
       }
       
       if (this.monitoringInterval) {
-        clearInterval(this.monitoringInterval);
+        this.monitoringInterval.stop();
         this.monitoringInterval = null;
       }
 
@@ -219,7 +265,8 @@ export class TemplumResourceManager extends EventEmitter {
       this.initialized = false;
       this.emit('shutdown', { timestamp: Date.now() });
       this.removeAllListeners();
-      
+      this.cleanupEvents();
+
       console.log('TemplumResourceManager: Shutdown complete');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -550,10 +597,11 @@ export class TemplumResourceManager extends EventEmitter {
 
   // ============================================================================
   // Monitoring and Metrics
-  // ============================================================================
+  // ============================================================================ 
 
   private startResourceMonitoring(): void {
-    this.monitoringInterval = setInterval(() => {
+    this.monitoringInterval?.stop();
+    this.monitoringInterval = createInterval(() => {
       try {
         const usage = this.getResourceUsage();
         
@@ -586,13 +634,14 @@ export class TemplumResourceManager extends EventEmitter {
       } catch (error) {
         console.error('Resource monitoring error:', error);
       }
-    }, 10000); // Every 10 seconds
+    }, 10000, { unref: true }); // Every 10 seconds
 
     console.log('TemplumResourceManager: Resource monitoring started');
   }
 
   private startAutomaticCleanup(): void {
-    this.cleanupInterval = setInterval(async () => {
+    this.cleanupInterval?.stop();
+    this.cleanupInterval = createInterval(async () => {
       try {
         const cleanedCount = await this.cleanupLowPriorityResources();
         if (cleanedCount > 0) {
@@ -604,7 +653,7 @@ export class TemplumResourceManager extends EventEmitter {
       } catch (error) {
         console.error('Automatic cleanup error:', error);
       }
-    }, this.policy.cleanupIntervalMs);
+    }, this.policy.cleanupIntervalMs, { unref: true });
 
     console.log('TemplumResourceManager: Automatic cleanup started');
   }

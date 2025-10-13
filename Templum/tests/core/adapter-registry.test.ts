@@ -455,6 +455,24 @@ describe('TemplumAdapterRegistry', () => {
       consoleSpy.mockRestore();
     });
 
+    test('shuts down session manager and observability service during disposal', async () => {
+      // Arrange
+      await registry.initialize();
+      const dependencies = registry.getDependencies();
+      const sessionShutdownSpy = jest.spyOn(dependencies.sessionManager as any, 'shutdown');
+      const observabilityShutdownSpy = jest.spyOn(dependencies.observabilityService, 'shutdown');
+
+      // Act
+      await registry.dispose();
+
+      // Assert
+      expect(sessionShutdownSpy).toHaveBeenCalledTimes(1);
+      expect(observabilityShutdownSpy).toHaveBeenCalledTimes(1);
+
+      sessionShutdownSpy.mockRestore();
+      observabilityShutdownSpy.mockRestore();
+    });
+
     test('returns comprehensive status information', async () => {
       // Arrange
       await registry.initialize();

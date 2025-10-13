@@ -1,4 +1,5 @@
-import { EventEmitter } from 'events';
+import { EventDrivenComponent } from '../../utils/event-bus-adapter';
+import type { GenericEventMap } from '../../utils/event-utils';
 import { jest } from '@jest/globals';
 import { TemplumCore } from '../../core/templum-core';
 import type {
@@ -10,8 +11,14 @@ import type {
 } from '../../interfaces/core-component-interfaces';
 import type { InterfaceAdapter } from '../../types/templum-types';
 
-class StubBackendServiceRouter extends EventEmitter implements IBackendServiceRouter {
+class StubBackendServiceRouter
+  extends EventDrivenComponent<GenericEventMap>
+  implements IBackendServiceRouter {
   discoverCallCount = 0;
+
+  constructor() {
+    super('stub-backend-service-router', 20);
+  }
 
   async discoverAndConnect(): Promise<void> {
     this.discoverCallCount += 1;
@@ -24,6 +31,9 @@ class StubBackendServiceRouter extends EventEmitter implements IBackendServiceRo
   executeCommand = jest.fn();
   isServiceAvailable = jest.fn();
   getConnectionStatus = jest.fn(() => ({ totalConnections: 0, healthyConnections: 0, backends: {} }));
+  cleanup = jest.fn(async () => {
+    this.removeAllListeners();
+  });
 
   onLifecycleEvent(listener: (event: Record<string, any>) => void): () => void {
     this.on('connection:lifecycle', listener);
@@ -109,9 +119,29 @@ const createDependencyConfig = (overrides: Partial<IDependencyInjectionConfig> =
 };
 
 describe('TemplumCore backend lifecycle bridge', () => {
+  const cores: TemplumCore[] = [];
+  const routers: StubBackendServiceRouter[] = [];
+
+  beforeEach(() => {
+    jest.useRealTimers();
+  });
+
+  afterEach(async () => {
+    try {
+      await Promise.all(cores.map(async (core) => core.shutdown()));
+    } finally {
+      cores.length = 0;
+      routers.forEach((router) => router.removeAllListeners());
+      routers.length = 0;
+      jest.clearAllTimers();
+    }
+  });
+
   it('re-emits lifecycle events and forwards them to the state manager', async () => {
     const { config, backendServiceRouter, handleBackendLifecycleEvent, syncState, observabilityService } = createDependencyConfig();
     const core = new TemplumCore({}, config);
+    cores.push(core);
+    routers.push(backendServiceRouter);
 
     const lifecycleEvents: Array<Record<string, any>> = [];
     core.on('backend:lifecycle', (event) => lifecycleEvents.push(event));
@@ -156,6 +186,8 @@ describe('TemplumCore backend lifecycle bridge', () => {
   it('logs degraded or failed events with warnings', async () => {
     const { config, backendServiceRouter, observabilityService } = createDependencyConfig();
     const core = new TemplumCore({}, config);
+    cores.push(core);
+    routers.push(backendServiceRouter);
     await core.initialize();
 
     backendServiceRouter.emitLifecycle({

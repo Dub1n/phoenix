@@ -6,19 +6,20 @@
  * description: [Comprehensive test suite validating observability adapter functionality following TDD principles]
  * ---*/
 
-import { 
-  ObservabilityAdapter, 
-  IObservabilityService 
+import {
+  ObservabilityAdapter,
+  IObservabilityService
 } from '../../src/observability/observability-adapter';
-import { 
+import {
   TemplumObservabilitySystem,
   ObservabilityConfig
 } from '../../src/observability/templum-observability-system';
-import { 
+import {
   TemplumError,
   createTemplumError,
   isTemplumError
 } from '../../src/types/templum-types';
+import { sleep } from '../../src/utils/async-utils';
 
 describe('ObservabilityAdapter', () => {
   let observabilityAdapter: ObservabilityAdapter;
@@ -288,7 +289,7 @@ describe('ObservabilityAdapter', () => {
       expect(observabilityAdapter.isInitialized()).toBe(true);
     });
 
-    test('creates and uses timer functions', () => {
+    test('creates and uses timer functions', async () => {
       // Arrange
       const timerName = 'operation_timer';
 
@@ -296,9 +297,8 @@ describe('ObservabilityAdapter', () => {
       const stopTimer = observabilityAdapter.startTimer(timerName);
       
       // Simulate some operation time
-      setTimeout(() => {
-        stopTimer(); // This should record the timing
-      }, 10);
+      await sleep(10);
+      stopTimer(); // This should record the timing
 
       // Assert
       expect(stopTimer).toBeInstanceOf(Function);

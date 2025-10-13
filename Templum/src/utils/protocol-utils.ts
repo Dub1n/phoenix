@@ -1,9 +1,17 @@
-import { EventEmitter } from 'events';
 import { createLogger, Logger } from './logger';
 import { handleAsync } from './error-handler';
-import { AsyncUtils, TIMEOUTS } from './async-utils';
+import {
+  AsyncUtils,
+  TIMEOUTS,
+  createInterval,
+  ManagedInterval,
+  createTimeout,
+  ManagedTimeout
+} from './async-utils';
 import { TypeAssertions, TypeGuards, TypeValidators } from './type-guards';
 import { createTemplumError } from '../types/templum-types';
+import { type TypedEventMap } from './event-utils';
+import { EventDrivenComponent } from './event-bus-adapter';
 
 type ProtocolType = 'ipc' | 'http' | 'https' | 'websocket' | 'custom';
 
@@ -191,7 +199,21 @@ const DEFAULT_CONFIG: Required<Pick<ProtocolConfig, 'timeoutMs' | 'retries' | 'a
 
 const createId = (prefix: string): string => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
-export class ProtocolSession extends EventEmitter {
+interface ProtocolSessionEvents extends TypedEventMap {
+  validationFailed: (payload: { message: ProtocolMessage; validation: ProtocolMessageValidationResult }) => void;
+  messageSent: (payload: { message: ProtocolMessage; latencyMs: number }) => void;
+  sendFailed: (payload: { message: ProtocolMessage; error: unknown }) => void;
+  closed: (payload: { code?: number; reason?: string }) => void;
+  messageReceived: (payload: unknown) => void;
+  error: (error: unknown) => void;
+  disconnected: () => void;
+  statusChanged: (status: ProtocolStatus) => void;
+  reconnected: () => void;
+  reconnectFailed: (error: unknown) => void;
+  idle: (payload: { idleTimeoutMs: number }) => void;
+}
+
+export class ProtocolSession extends EventDrivenComponent<ProtocolSessionEvents> {
   readonly id: string;
   readonly type: ProtocolType;
 
@@ -214,7 +236,7 @@ export class ProtocolSession extends EventEmitter {
   };
   private readonly state: ProtocolState;
   private readonly pendingQueue: PendingMessage[] = [];
-  private idleTimer?: NodeJS.Timeout;
+  private idleTimer?: ManagedTimeout;
   private isShuttingDown = false;
   private readonly validator: ProtocolMessageValidator;
   private transportMessageHandler?: (payload: unknown) => void;
@@ -323,10 +345,11 @@ export class ProtocolSession extends EventEmitter {
   }
 
   constructor(adapter: ProtocolAdapter, transport: ProtocolTransport, config: ProtocolConfig, logger: Logger) {
-    super();
     const normalizedConfig = ProtocolSession.normalizeConfig(config);
+    const sessionId = normalizedConfig.id ?? transport.id ?? createId(`protocol-${normalizedConfig.type}`);
+    super(`protocol-session-${sessionId}`);
 
-    this.id = normalizedConfig.id ?? transport.id ?? createId(`protocol-${normalizedConfig.type}`);
+    this.id = sessionId;
     this.type = normalizedConfig.type;
     this.adapter = adapter;
     this.transport = transport;
@@ -461,10 +484,8 @@ export class ProtocolSession extends EventEmitter {
     }
     this.isShuttingDown = true;
 
-    if (this.idleTimer) {
-      clearTimeout(this.idleTimer);
-      this.idleTimer = undefined;
-    }
+    this.idleTimer?.cancel();
+    this.idleTimer = undefined;
 
     try {
       await this.transport.close(code, reason);
@@ -555,13 +576,13 @@ export class ProtocolSession extends EventEmitter {
 
     this.resetIdleTimer();
 
-    const uptimeInterval = setInterval(() => {
+    const uptimeInterval: ManagedInterval = createInterval(() => {
       if (this.status === 'disconnected' || this.isShuttingDown) {
-        clearInterval(uptimeInterval);
+        uptimeInterval.stop();
         return;
       }
       this.metrics.uptimeMs = Date.now() - connectedAt;
-    }, 1000).unref?.();
+    }, 1000, { unref: true });
   }
 
   private removeTransportListeners(): void {
@@ -624,20 +645,18 @@ export class ProtocolSession extends EventEmitter {
   }
 
   private resetIdleTimer(): void {
-    if (!this.config.idleTimeoutMs || this.config.idleTimeoutMs <= 0) {
+    const idleTimeoutMs = this.config.idleTimeoutMs;
+    if (!idleTimeoutMs || idleTimeoutMs <= 0) {
       return;
     }
 
-    if (this.idleTimer) {
-      clearTimeout(this.idleTimer);
-    }
-
-    this.idleTimer = setTimeout(() => {
-      this.emit('idle', { idleTimeoutMs: this.config.idleTimeoutMs });
+    this.idleTimer?.cancel();
+    this.idleTimer = createTimeout(() => {
+      this.emit('idle', { idleTimeoutMs });
       if (this.config.autoReconnect) {
         void this.reconnect('idle-timeout');
       }
-    }, this.config.idleTimeoutMs);
+    }, idleTimeoutMs);
   }
 
   private calculateConfidence(): ProtocolConfidence {
@@ -694,7 +713,13 @@ export interface ProtocolUtilsOptions {
   adapters?: ProtocolAdapter[];
 }
 
-export class ProtocolUtils extends EventEmitter {
+interface ProtocolUtilsEvents extends TypedEventMap {
+  sessionCreated: (session: ProtocolSession) => void;
+  sessionClosed: (payload: { id: string; code?: number; reason?: string }) => void;
+  sessionDisposed: (sessionId: string) => void;
+}
+
+export class ProtocolUtils extends EventDrivenComponent<ProtocolUtilsEvents> {
   private static globalInstance: ProtocolUtils | null = null;
 
   private readonly logger: Logger;
@@ -702,7 +727,7 @@ export class ProtocolUtils extends EventEmitter {
   private readonly sessions = new Map<string, ProtocolSession>();
 
   constructor(options: ProtocolUtilsOptions = {}) {
-    super();
+    super('protocol-utils', 100);
     this.logger = options.logger ?? createLogger('protocol-utils');
     if (options.adapters) {
       for (const adapter of options.adapters) {
@@ -821,4 +846,3 @@ export const connectProtocol = (config: ProtocolConfig): Promise<ProtocolSession
 export const getProtocolDiagnostics = (): ProtocolDiagnostics[] => {
   return protocolUtils.getDiagnostics();
 };
-

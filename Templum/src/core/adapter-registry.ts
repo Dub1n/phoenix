@@ -6,7 +6,6 @@
  * description: [Centralized registry for managing component adapters and dependency injection following PCL pattern]
  * ---*/
 
-import { EventEmitter } from 'events';
 import { 
   ISkinEngine,
   IStateManager, 
@@ -21,10 +20,11 @@ import {
   ValidationReport
 } from '../interfaces/core-component-interfaces';
 import { IObservabilityService } from '../observability/observability-adapter';
-import { 
+import {
   isTemplumError,
   createTemplumError,
-  ErrorSignalPayload
+  ErrorSignalPayload,
+  InterfaceType
 } from '../types/templum-types';
 import { SemanticValidators, TypeAssertions, TypeGuards } from '../utils/type-guards';
 
@@ -46,6 +46,18 @@ import type {
 } from '../backend/manual-override-manager';
 import { TemplumUniversalSessionManager } from '../session/templum-universal-session-manager';
 import type { TemplumSessionManagerContract } from '../session/universal-session-manager.types';
+import { type TypedEventMap } from '../utils/event-utils';
+import { EventDrivenComponent } from '../utils/event-bus-adapter';
+
+interface AdapterRegistryEvents extends TypedEventMap {
+  initialized: (payload: {
+    timestamp: number;
+    components: string[];
+    initializationPhases: number;
+  }) => void;
+  componentRegistered: (payload: { name: keyof ITemplumCoreDependencies; timestamp: number }) => void;
+  disposed: (payload: { timestamp: number }) => void;
+}
 
 /**
  * Component adapter implementations wrapping real components
@@ -748,7 +760,7 @@ export class TemplumComponentFactory implements IComponentFactory {
 /**
  * Main adapter registry for dependency injection
  */
-export class TemplumAdapterRegistry extends EventEmitter {
+export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistryEvents> {
   private dependencies: Partial<ITemplumCoreDependencies> = {};
   private factory: IComponentFactory;
   private config: IDependencyInjectionConfig;
@@ -757,7 +769,7 @@ export class TemplumAdapterRegistry extends EventEmitter {
   private sessionManager?: TemplumSessionManagerContract;
 
   constructor(config: IDependencyInjectionConfig = {}) {
-    super();
+    super('templum-adapter-registry', 50);
     this.config = {
       enableSkinEngine: true,
       enableStateManager: true,
@@ -1684,6 +1696,11 @@ export class TemplumAdapterRegistry extends EventEmitter {
     }
 
     const backendServiceRouter = this.dependencies.backendServiceRouter as TemplumBackendServiceRouter | undefined;
+    const resourceManager = this.dependencies.resourceManager as
+      | (TemplumResourceManager & {
+          registerService?: (serviceId: string, type: string, metadata?: Record<string, unknown>) => Promise<void>;
+        })
+      | undefined;
 
     if (!backendServiceRouter) {
       throw createTemplumError(
@@ -1703,6 +1720,21 @@ export class TemplumAdapterRegistry extends EventEmitter {
       await this.sessionManager.initialize();
 
       this.dependencies.sessionManager = this.sessionManager;
+
+      if (resourceManager?.registerService) {
+        try {
+          await resourceManager.registerService('templum-sessionManager', 'core', {
+            component: 'sessionManager'
+          });
+          console.log('TemplumAdapterRegistry: Registered sessionManager with resource manager');
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          console.warn(
+            'TemplumAdapterRegistry: Failed to register sessionManager with resource manager',
+            errorMessage
+          );
+        }
+      }
 
       console.log('TemplumAdapterRegistry: Session manager initialized and registered');
     } catch (error) {
@@ -1792,7 +1824,7 @@ export class TemplumAdapterRegistry extends EventEmitter {
 
     const adapters: Partial<Record<InterfaceType, IInterfaceAdapter>> = {};
 
-    adapters.cli = overrides.cli ?? new CLIInterfaceAdapter({ sessionManager: this.sessionManager });
+    adapters.cli = overrides.cli ?? new CLIInterfaceAdapter();
 
     if (overrides.vscode) {
       if (overrides.vscode.adapter) {
@@ -1814,11 +1846,28 @@ export class TemplumAdapterRegistry extends EventEmitter {
    */
   async dispose(): Promise<void> {
     try {
-      if (this.sessionManager && 'stopSession' in this.sessionManager) {
+      if (this.sessionManager) {
+        const manager = this.sessionManager as TemplumSessionManagerContract & {
+          shutdown?: () => Promise<void>;
+          stopSession?: () => Promise<void>;
+          getCurrentSession?: () => unknown;
+        };
+
         try {
-          await (this.sessionManager as any).stopSession?.();
+          if (typeof manager.shutdown === 'function') {
+            await manager.shutdown();
+            console.log('TemplumAdapterRegistry: Session manager shutdown complete');
+          } else if (typeof manager.stopSession === 'function') {
+            const hasActiveSession =
+              typeof manager.getCurrentSession === 'function' ? Boolean(manager.getCurrentSession()) : true;
+
+            if (hasActiveSession) {
+              await manager.stopSession();
+              console.log('TemplumAdapterRegistry: Session manager session stopped');
+            }
+          }
         } catch (error) {
-          console.warn('TemplumAdapterRegistry: Failed to stop session manager during disposal', error);
+          console.warn('TemplumAdapterRegistry: Failed to shutdown session manager during disposal', error);
         }
       }
 
@@ -1860,6 +1909,11 @@ export class TemplumAdapterRegistry extends EventEmitter {
           await this.dependencies.skinEngine.dispose();
           console.log('TemplumAdapterRegistry: Disposed skinEngine');
         }
+
+        if (this.dependencies.observabilityService?.shutdown) {
+          await this.dependencies.observabilityService.shutdown();
+          console.log('TemplumAdapterRegistry: Disposed observabilityService');
+        }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         console.error('Failed to dispose component:', errorMessage);
@@ -1870,6 +1924,7 @@ export class TemplumAdapterRegistry extends EventEmitter {
       this.sessionManager = undefined;
       this.emit('disposed', { timestamp: Date.now() });
       this.removeAllListeners();
+      this.cleanupEvents();
 
       console.log('TemplumAdapterRegistry: Disposal complete');
     } catch (error) {

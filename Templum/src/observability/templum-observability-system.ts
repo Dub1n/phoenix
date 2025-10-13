@@ -7,18 +7,33 @@
 - ---*/
 
 import { EventEmitter } from 'events';
-import { 
-  TemplumError, 
-  isTemplumError, 
+import {
+  TemplumError,
+  isTemplumError,
   createTemplumError,
-
-  ErrorSignalPayload, 
+  ErrorSignalPayload,
   MetricsSignalPayload,
-  PerformanceMetrics 
+  PerformanceMetrics
 } from '../types/templum-types';
 import { createObservabilityFallbackLog } from '../backend/defaults/serialization-defaults';
 import { serialization, type SerializationOutcome } from '../utils/serialization-utils';
 import { emitSerializationWarnings } from '../backend/backend-serialization-log';
+import {
+  batchSubscribe,
+  createScopedBus,
+  emit as emitEvent,
+  forward,
+  globalBus
+} from '../utils/event-utils';
+import type {
+  BatchSubscription,
+  ScopedEventBus,
+  TypedEventEmitter,
+  TypedEventMap,
+  UnsubscribeFn
+} from '../utils/event-utils';
+import { createInterval } from '../utils/async-utils';
+import type { ManagedInterval } from '../utils/async-utils';
 
 // TODO: [TASK-NEW-038] Enhanced metrics correlation across interface adapters
 // Priority: Medium | Complexity: 6
@@ -31,6 +46,17 @@ import { emitSerializationWarnings } from '../backend/backend-serialization-log'
 // Location: Observability infrastructure implementation  
 // Dependencies: External monitoring APIs, alerting channels
 // Phase: Integration
+
+// ============================================================================
+// Event Mapping
+// ============================================================================
+
+interface ObservabilityEvents extends TypedEventMap {
+  'templum:error': (payload: ErrorSignalPayload) => void;
+  'templum:metrics': (payload: MetricsSignalPayload) => void;
+}
+
+type ObservabilityBus = ScopedEventBus<ObservabilityEvents>;
 
 // ============================================================================
 // Core Observability Types
@@ -131,7 +157,7 @@ export class ObservabilityLogger {
   
   constructor(
     private config: ObservabilityConfig,
-    private emitter: EventEmitter
+    private emitter: TypedEventEmitter<ObservabilityEvents>
   ) {}
   
   // Core logging methods with structured output
@@ -202,7 +228,7 @@ export class ObservabilityLogger {
         source: logEntry.source,
         data: metadata
       };
-      this.emitter.emit('templum:error', errorPayload);
+      emitEvent(this.emitter, 'templum:error', errorPayload);
     }
     
     // Output to configured channels
@@ -444,7 +470,7 @@ export class MetricsCollector {
   
   constructor(
     private config: ObservabilityConfig,
-    private emitter: EventEmitter
+    private emitter: TypedEventEmitter<ObservabilityEvents>
   ) {}
   
   // Counter metrics (incrementing values)
@@ -523,7 +549,7 @@ export class MetricsCollector {
       category: this.categorizeMetric(metric.name)
     };
     
-    this.emitter.emit('templum:metrics', metricsPayload);
+    emitEvent(this.emitter, 'templum:metrics', metricsPayload);
     
     // Maintain buffer size
     if (metricsList.length > this.config.metrics.bufferSize) {
@@ -586,7 +612,7 @@ export class MetricsCollector {
 export class AlertManager {
   private alerts: Map<string, Alert> = new Map();
   private ruleLastTriggered: Map<string, number> = new Map();
-  private evaluationTimer?: NodeJS.Timeout;
+  private evaluationTimer?: ManagedInterval;
   
   constructor(
     private config: ObservabilityConfig,
@@ -597,9 +623,13 @@ export class AlertManager {
   start(): void {
     if (!this.config.alerting.enabled) return;
     
-    this.evaluationTimer = setInterval(() => {
-      this.evaluateRules();
-    }, this.config.alerting.evaluationInterval);
+    this.evaluationTimer = createInterval(
+      () => {
+        this.evaluateRules();
+      },
+      this.config.alerting.evaluationInterval,
+      { unref: true }
+    );
     
     this.logger.info('Alert manager started', { 
       rulesCount: this.config.alerting.rules.length,
@@ -608,10 +638,8 @@ export class AlertManager {
   }
   
   stop(): void {
-    if (this.evaluationTimer) {
-      clearInterval(this.evaluationTimer);
-      this.evaluationTimer = undefined;
-    }
+    this.evaluationTimer?.stop();
+    this.evaluationTimer = undefined;
     
     this.logger.info('Alert manager stopped', {}, 'AlertManager');
   }
@@ -735,16 +763,25 @@ export class AlertManager {
 // ============================================================================
 
 export class TemplumObservabilitySystem extends EventEmitter {
+  private static instanceCounter = 0;
+
+  private readonly eventScope: string;
+  private readonly eventBus: ObservabilityBus;
   private logger: ObservabilityLogger;
   private metrics: MetricsCollector;
   private alerts: AlertManager;
-  private systemMonitorTimer?: NodeJS.Timeout;
+  private systemMonitorTimer?: ManagedInterval;
+  private processSubscriptions: UnsubscribeFn[] = [];
+  private forwarders: UnsubscribeFn[] = [];
   
   constructor(private config: ObservabilityConfig) {
     super();
-    
-    this.logger = new ObservabilityLogger(config, this);
-    this.metrics = new MetricsCollector(config, this);  
+
+    this.eventScope = `observability-system:${TemplumObservabilitySystem.instanceCounter++}`;
+    this.eventBus = createScopedBus<ObservabilityEvents>(this.eventScope, 100);
+
+    this.logger = new ObservabilityLogger(config, this.eventBus.emitter);
+    this.metrics = new MetricsCollector(config, this.eventBus.emitter);
     this.alerts = new AlertManager(config, this.metrics, this.logger);
   }
   
@@ -766,6 +803,8 @@ export class TemplumObservabilitySystem extends EventEmitter {
       
       // Register default metrics
       this.registerDefaultMetrics();
+
+      this.setupEventBridges();
       
       this.logger.info('Templum Observability System initialized successfully', {}, 'TemplumObservabilitySystem');
       
@@ -781,43 +820,86 @@ export class TemplumObservabilitySystem extends EventEmitter {
       this.logger.info('Shutting down Templum Observability System', {}, 'TemplumObservabilitySystem');
       
       // Stop timers
-      if (this.systemMonitorTimer) {
-        clearInterval(this.systemMonitorTimer);
-        this.systemMonitorTimer = undefined;
-      }
+      this.systemMonitorTimer?.stop();
+      this.systemMonitorTimer = undefined;
       
       // Stop alert manager
       this.alerts.stop();
       
       // Final log flush
       this.logger.info('Templum Observability System shutdown complete', {}, 'TemplumObservabilitySystem');
+      this.teardownEventBridges();
       
     } catch (error) {
       const errorObj = error instanceof Error ? error : createTemplumError(String(error), 'SHUTDOWN_ERROR', 'runtime');
       this.logger.error('Error during observability system shutdown', errorObj, {}, 'TemplumObservabilitySystem');
     }
   }
+
+  private setupEventBridges(): void {
+    if (this.processSubscriptions.length > 0 || this.forwarders.length > 0) {
+      return;
+    }
+
+    const processEmitter = process as unknown as TypedEventEmitter<ObservabilityEvents>;
+    const subscriptions: BatchSubscription<ObservabilityEvents>[] = [
+      {
+        event: 'templum:error',
+        handler: payload => {
+          this.eventBus.emit('templum:error', payload);
+        }
+      },
+      {
+        event: 'templum:metrics',
+        handler: payload => {
+          this.eventBus.emit('templum:metrics', payload);
+        }
+      }
+    ];
+
+    this.processSubscriptions = batchSubscribe(processEmitter, subscriptions, this.eventScope);
+    this.forwarders = [
+      ...forward(this.eventBus.emitter, globalBus, ['templum:error', 'templum:metrics'], this.eventScope),
+      ...forward(
+        this.eventBus.emitter,
+        this as unknown as TypedEventEmitter<ObservabilityEvents>,
+        ['templum:error', 'templum:metrics'],
+        this.eventScope
+      )
+    ];
+  }
+
+  private teardownEventBridges(): void {
+    this.processSubscriptions.forEach(unsubscribe => unsubscribe());
+    this.processSubscriptions = [];
+    this.forwarders.forEach(unsubscribe => unsubscribe());
+    this.forwarders = [];
+    this.eventBus.cleanup();
+  }
   
   private startSystemMonitoring(): void {
     if (!this.config.performance.memoryMonitoring) return;
     
-    this.systemMonitorTimer = setInterval(() => {
-      try {
-        // Collect system metrics
-        const memoryUsage = process.memoryUsage();
-        const cpuUsage = process.cpuUsage();
-        
-        // Record as gauges
-        this.metrics.setGauge('memory_heap_used_mb', memoryUsage.heapUsed / 1024 / 1024, { unit: 'MB' }, 'SystemMonitor');
-        this.metrics.setGauge('memory_rss_mb', memoryUsage.rss / 1024 / 1024, { unit: 'MB' }, 'SystemMonitor');
-        this.metrics.setGauge('cpu_user_ms', cpuUsage.user / 1000, { unit: 'ms' }, 'SystemMonitor');
-        this.metrics.setGauge('cpu_system_ms', cpuUsage.system / 1000, { unit: 'ms' }, 'SystemMonitor');
-        
-      } catch (error) {
-        const errorObj = error instanceof Error ? error : createTemplumError(String(error), 'MONITORING_ERROR', 'runtime');
-        this.logger.error('System monitoring error', errorObj, {}, 'SystemMonitor');
-      }
-    }, this.config.metrics.collectionInterval);
+    this.systemMonitorTimer = createInterval(
+      () => {
+        try {
+          // Collect system metrics
+          const memoryUsage = process.memoryUsage();
+          const cpuUsage = process.cpuUsage();
+
+          // Record as gauges
+          this.metrics.setGauge('memory_heap_used_mb', memoryUsage.heapUsed / 1024 / 1024, { unit: 'MB' }, 'SystemMonitor');
+          this.metrics.setGauge('memory_rss_mb', memoryUsage.rss / 1024 / 1024, { unit: 'MB' }, 'SystemMonitor');
+          this.metrics.setGauge('cpu_user_ms', cpuUsage.user / 1000, { unit: 'ms' }, 'SystemMonitor');
+          this.metrics.setGauge('cpu_system_ms', cpuUsage.system / 1000, { unit: 'ms' }, 'SystemMonitor');
+        } catch (error) {
+          const errorObj = error instanceof Error ? error : createTemplumError(String(error), 'MONITORING_ERROR', 'runtime');
+          this.logger.error('System monitoring error', errorObj, {}, 'SystemMonitor');
+        }
+      },
+      this.config.metrics.collectionInterval,
+      { unref: true }
+    );
   }
   
   private registerDefaultMetrics(): void {

@@ -1,7 +1,8 @@
-import { EventEmitter } from 'events';
 import { createLogger, Logger } from './logger';
 import { handleAsync } from './error-handler';
-import { withTimeout } from './async-utils';
+import { createInterval, ManagedInterval, withTimeout } from './async-utils';
+import { EventDrivenComponent } from './event-bus-adapter';
+import type { TypedEventMap } from './event-utils';
 
 export interface PerformanceMetrics {
   averageResolveTimeMs: number;
@@ -122,7 +123,18 @@ const DEFAULT_CONFIGURATION: LifecycleConfiguration = {
 
 const clamp = (value: number, min: number, max: number): number => Math.max(min, Math.min(max, value));
 
-export abstract class BaseRegistry<TComponent, TConfig = unknown> extends EventEmitter {
+interface BaseRegistryEvents<TComponent, TConfig> extends TypedEventMap {
+  initialized: (payload: { config?: TConfig; durationMs: number } & Record<string, unknown>) => void;
+  disposed: (payload?: Record<string, unknown>) => void;
+  registered: (payload: { name: string; registration: ComponentRegistration<TComponent> } & Record<string, unknown>) => void;
+  unregistered: (payload: { name: string } & Record<string, unknown>) => void;
+  resolved: (payload: { name: string; component: TComponent | undefined } & Record<string, unknown>) => void;
+  validated: (payload: { context: string; report: ValidationReport | null } & Record<string, unknown>) => void;
+  intelligence: (payload: RegistryIntelligence | null) => void;
+}
+
+export abstract class BaseRegistry<TComponent, TConfig = unknown> extends EventDrivenComponent<BaseRegistryEvents<TComponent, TConfig>> {
+  private static instanceCounter = 0;
   protected readonly components = new Map<string, TComponent>();
   protected readonly registrations = new Map<string, ComponentRegistration<TComponent>>();
   protected readonly config: LifecycleConfiguration;
@@ -134,11 +146,11 @@ export abstract class BaseRegistry<TComponent, TConfig = unknown> extends EventE
   };
   protected validationReport: ValidationReport | null = null;
   protected intelligence: RegistryIntelligence | null = null;
-  private intelligenceTimer?: NodeJS.Timeout;
+  private intelligenceTimer: ManagedInterval | null = null;
   private initialized = false;
 
   protected constructor(configuration: Partial<LifecycleConfiguration> = {}, loggerContext = 'registry-utils') {
-    super();
+    super(`base-registry:${loggerContext}:${BaseRegistry.instanceCounter++}`, 100);
     this.config = {
       ...DEFAULT_CONFIGURATION,
       ...configuration
@@ -194,10 +206,8 @@ export abstract class BaseRegistry<TComponent, TConfig = unknown> extends EventE
       return;
     }
 
-    if (this.intelligenceTimer) {
-      clearInterval(this.intelligenceTimer);
-      this.intelligenceTimer = undefined;
-    }
+    this.intelligenceTimer?.stop();
+    this.intelligenceTimer = null;
 
     await handleAsync(
       (async () => {
@@ -467,11 +477,8 @@ export abstract class BaseRegistry<TComponent, TConfig = unknown> extends EventE
   }
 
   private scheduleIntelligenceUpdates(): void {
-    if (this.intelligenceTimer) {
-      clearInterval(this.intelligenceTimer);
-    }
-
-    this.intelligenceTimer = setInterval(() => {
+    this.intelligenceTimer?.stop();
+    this.intelligenceTimer = createInterval(() => {
       void this.generateIntelligence().then(intelligence => {
         this.intelligence = intelligence;
       }).catch(error => {
@@ -647,4 +654,3 @@ export function createRegistry<TComponent, TConfig = unknown>(
 
   return builder;
 }
-

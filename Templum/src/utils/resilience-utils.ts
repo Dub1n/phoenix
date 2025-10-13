@@ -1,6 +1,18 @@
-import { EventEmitter } from 'events';
+import {
+  batchSubscribe,
+  createScopedBus,
+  forward,
+  globalBus
+} from './event-utils';
+import type {
+  BatchSubscription,
+  ScopedEventBus,
+  SubscriptionOptions,
+  TypedEventMap,
+  UnsubscribeFn
+} from './event-utils';
 import { createLogger, Logger } from './logger';
-import { withTimeout, retry as asyncRetry, TIMEOUTS } from './async-utils';
+import { withTimeout, retry as asyncRetry, TIMEOUTS, createInterval, ManagedInterval } from './async-utils';
 import { handleAsync } from './error-handler';
 
 type Severity = 'low' | 'medium' | 'high' | 'critical';
@@ -108,6 +120,17 @@ export interface ResilienceExecutionOptions<TFallback = unknown> {
   fallbackReturnValue?: TFallback;
 }
 
+interface ResilienceEventMap extends TypedEventMap {
+  'fallback-triggered': (result: FallbackStrategyResult) => void;
+  'rollback-decision': (decision: RollbackDecision) => void;
+  'state-changed': (state: ResilienceState) => void;
+  'metrics-updated': (metrics: ResilienceMetrics) => void;
+}
+
+type ResilienceEventKey = Extract<keyof ResilienceEventMap, string>;
+type ResilienceBus = ScopedEventBus<ResilienceEventMap>;
+type AnyListener = (...args: any[]) => unknown;
+
 const DEFAULT_MONITORING_CONFIG: MonitoringConfig = {
   samplingIntervalMs: 5_000,
   performanceBudgetMs: 300,
@@ -156,36 +179,26 @@ const DEFAULT_ROLLBACK_CONFIG: RollbackConfig = {
 
 const clamp = (value: number, min: number, max: number): number => Math.max(min, Math.min(max, value));
 
-class ResilienceEventEmitter extends EventEmitter {
-  emitFallbackTriggered(data: FallbackStrategyResult): boolean {
-    return this.emit('fallback-triggered', data);
-  }
-
-  emitRollbackDecision(decision: RollbackDecision): boolean {
-    return this.emit('rollback-decision', decision);
-  }
-
-  emitStateChanged(state: ResilienceState): boolean {
-    return this.emit('state-changed', state);
-  }
-
-  emitMetricsUpdated(metrics: ResilienceMetrics): boolean {
-    return this.emit('metrics-updated', metrics);
-  }
-}
-
 export class ResilienceManager {
+  private static instanceCounter = 0;
+
   private readonly logger: Logger;
-  private readonly events = new ResilienceEventEmitter();
+  private readonly eventScope: string;
+  private readonly events: ResilienceBus;
+  private readonly listenerRegistry = new Map<ResilienceEventKey, Map<AnyListener, UnsubscribeFn>>();
+  private mirrorSubscriptions: UnsubscribeFn[] = [];
+  private forwarders: UnsubscribeFn[] = [];
   private fallbackConfig: FallbackConfig = DEFAULT_FALLBACK_CONFIG;
   private monitoringConfig: MonitoringConfig = DEFAULT_MONITORING_CONFIG;
   private rollbackConfig: RollbackConfig = DEFAULT_ROLLBACK_CONFIG;
   private metrics: ResilienceMetrics;
-  private monitoringTimer?: NodeJS.Timeout;
+  private monitoringTimer?: ManagedInterval;
   private active = false;
 
   constructor(private readonly componentId: string, private readonly interfaceType: string) {
     this.logger = createLogger('resilience-manager').child(`${componentId}:${interfaceType}`);
+    this.eventScope = `resilience-manager:${componentId}:${interfaceType}:${ResilienceManager.instanceCounter++}`;
+    this.events = createScopedBus<ResilienceEventMap>(this.eventScope, 40);
     this.metrics = {
       componentId,
       interfaceType,
@@ -198,19 +211,25 @@ export class ResilienceManager {
       state: 'idle',
       updatedAt: Date.now()
     };
+    this.setupEventBridges();
   }
 
-  on(event: 'fallback-triggered', listener: (result: FallbackStrategyResult) => void): this;
-  on(event: 'rollback-decision', listener: (decision: RollbackDecision) => void): this;
-  on(event: 'state-changed', listener: (state: ResilienceState) => void): this;
-  on(event: 'metrics-updated', listener: (metrics: ResilienceMetrics) => void): this;
-  on(event: string, listener: (...args: any[]) => void): this {
-    this.events.on(event, listener);
+  on<K extends ResilienceEventKey>(event: K, listener: ResilienceEventMap[K]): this {
+    this.registerListener(event, listener);
     return this;
   }
 
-  off(event: string, listener: (...args: any[]) => void): this {
-    this.events.off(event, listener);
+  off<K extends ResilienceEventKey>(event: K, listener: ResilienceEventMap[K]): this {
+    this.unregisterListener(event, listener);
+    return this;
+  }
+
+  removeListener<K extends ResilienceEventKey>(event: K, listener: ResilienceEventMap[K]): this {
+    return this.off(event, listener);
+  }
+
+  removeAllListeners(event?: ResilienceEventKey): this {
+    this.flushListeners(event);
     return this;
   }
 
@@ -259,7 +278,7 @@ export class ResilienceManager {
     this.active = true;
     this.metrics.state = 'active';
     this.metrics.updatedAt = Date.now();
-    this.events.emitStateChanged(this.metrics.state);
+    this.events.emit('state-changed', this.metrics.state);
     this.scheduleMonitoring();
     return this;
   }
@@ -268,13 +287,11 @@ export class ResilienceManager {
     if (!this.active) {
       return;
     }
-    if (this.monitoringTimer) {
-      clearInterval(this.monitoringTimer);
-      this.monitoringTimer = undefined;
-    }
+    this.monitoringTimer?.stop();
+    this.monitoringTimer = undefined;
     this.active = false;
     this.metrics.state = 'idle';
-    this.events.emitStateChanged(this.metrics.state);
+    this.events.emit('state-changed', this.metrics.state);
   }
 
   async execute<T, TFallback = T>(operation: () => Promise<T>, options: ResilienceExecutionOptions<TFallback> = {}): Promise<T | TFallback> {
@@ -360,7 +377,113 @@ export class ResilienceManager {
 
   cleanup(): void {
     void this.deactivate();
-    this.events.removeAllListeners();
+    this.flushListeners();
+    this.teardownEventBridges();
+  }
+
+  private registerListener<K extends ResilienceEventKey>(
+    event: K,
+    listener: ResilienceEventMap[K],
+    options: SubscriptionOptions = {}
+  ): void {
+    if (!this.listenerRegistry.has(event)) {
+      this.listenerRegistry.set(event, new Map());
+    }
+
+    const unsubscribe = this.events.subscribe(event, listener, options);
+    this.listenerRegistry.get(event)!.set(listener as AnyListener, unsubscribe);
+  }
+
+  private unregisterListener<K extends ResilienceEventKey>(
+    event: K,
+    listener: ResilienceEventMap[K]
+  ): void {
+    const registry = this.listenerRegistry.get(event);
+    const unsubscribe = registry?.get(listener as AnyListener);
+    if (unsubscribe) {
+      unsubscribe();
+      registry!.delete(listener as AnyListener);
+    }
+    if (registry && registry.size === 0) {
+      this.listenerRegistry.delete(event);
+    }
+  }
+
+  private flushListeners(event?: ResilienceEventKey): void {
+    if (event) {
+      const registry = this.listenerRegistry.get(event);
+      if (!registry) {
+        return;
+      }
+      registry.forEach(unsubscribe => unsubscribe());
+      registry.clear();
+      this.listenerRegistry.delete(event);
+      return;
+    }
+
+    for (const [eventKey, registry] of Array.from(this.listenerRegistry.entries())) {
+      registry.forEach(unsubscribe => unsubscribe());
+      registry.clear();
+      this.listenerRegistry.delete(eventKey);
+    }
+  }
+
+  private setupEventBridges(): void {
+    if (this.forwarders.length > 0 || this.mirrorSubscriptions.length > 0) {
+      return;
+    }
+
+    this.forwarders = forward(
+      this.events.emitter,
+      globalBus,
+      ['fallback-triggered', 'rollback-decision', 'state-changed', 'metrics-updated'],
+      this.eventScope
+    );
+
+    const mirrors: BatchSubscription<ResilienceEventMap>[] = [
+      {
+        event: 'state-changed',
+        handler: state => {
+          this.logger.debug('Resilience state change mirrored to telemetry', {
+            componentId: this.componentId,
+            interfaceType: this.interfaceType,
+            state
+          });
+        }
+      },
+      {
+        event: 'fallback-triggered',
+        handler: payload => {
+          this.logger.debug('Resilience fallback event forwarded', {
+            componentId: this.componentId,
+            interfaceType: this.interfaceType,
+            strategyId: payload.strategyId,
+            succeeded: payload.succeeded
+          });
+        }
+      },
+      {
+        event: 'rollback-decision',
+        handler: decision => {
+          this.logger.debug('Resilience rollback decision forwarded', {
+            componentId: this.componentId,
+            interfaceType: this.interfaceType,
+            decision: decision.decision,
+            confidence: decision.confidence
+          });
+        }
+      }
+    ];
+
+    this.mirrorSubscriptions = batchSubscribe(this.events.emitter, mirrors, this.eventScope);
+  }
+
+  private teardownEventBridges(): void {
+    this.mirrorSubscriptions.forEach(unsubscribe => unsubscribe());
+    this.mirrorSubscriptions = [];
+    this.forwarders.forEach(unsubscribe => unsubscribe());
+    this.forwarders = [];
+    this.events.cleanup();
   }
 
   private updateLatencyMetrics(durationMs: number): void {
@@ -370,7 +493,7 @@ export class ResilienceManager {
       : ((this.metrics.averageLatencyMs * (executions - 1)) + durationMs) / executions;
     this.metrics.peakLatencyMs = Math.max(this.metrics.peakLatencyMs, durationMs);
     this.metrics.updatedAt = Date.now();
-    this.events.emitMetricsUpdated(this.metrics);
+    this.events.emit('metrics-updated', this.metrics);
   }
 
   private async executeFallbackChain(error: unknown): Promise<FallbackStrategyResult> {
@@ -415,8 +538,8 @@ export class ResilienceManager {
       };
       this.metrics.lastFallback = fallbackResult;
       this.metrics.state = 'degraded';
-      this.events.emitFallbackTriggered(fallbackResult);
-      this.events.emitStateChanged(this.metrics.state);
+      this.events.emit('fallback-triggered', fallbackResult);
+      this.events.emit('state-changed', this.metrics.state);
       return fallbackResult;
     } catch (error) {
       const duration = Date.now() - start;
@@ -431,8 +554,8 @@ export class ResilienceManager {
       };
       this.metrics.lastFallback = fallbackResult;
       this.metrics.state = 'failing';
-      this.events.emitFallbackTriggered(fallbackResult);
-      this.events.emitStateChanged(this.metrics.state);
+      this.events.emit('fallback-triggered', fallbackResult);
+      this.events.emit('state-changed', this.metrics.state);
       this.logger.error(
         'Fallback strategy failed',
         error instanceof Error ? error : undefined,
@@ -446,18 +569,15 @@ export class ResilienceManager {
   }
 
   private scheduleMonitoring(): void {
-    if (this.monitoringTimer) {
-      clearInterval(this.monitoringTimer);
-    }
-
-    this.monitoringTimer = setInterval(() => {
+    this.monitoringTimer?.stop();
+    this.monitoringTimer = createInterval(() => {
       try {
         const decision = this.evaluateRollbackDecision();
         this.metrics.lastRollbackDecision = decision;
         if (decision.decision !== 'continue') {
           void this.executeRollback(decision);
         }
-        this.events.emitMetricsUpdated(this.metrics);
+        this.events.emit('metrics-updated', this.metrics);
       } catch (error) {
         this.logger.error(
           'Error during resilience monitoring',
@@ -485,7 +605,7 @@ export class ResilienceManager {
           recommendations: [recommendation],
           evaluatedAt: Date.now()
         };
-        this.events.emitRollbackDecision(decision);
+        this.events.emit('rollback-decision', decision);
         return decision;
       }
     }
@@ -512,8 +632,8 @@ export class ResilienceManager {
     }
 
     this.metrics.state = 'degraded';
-    this.metrics.updatedAt = Date.now();
-    this.events.emitStateChanged(this.metrics.state);
+   this.metrics.updatedAt = Date.now();
+    this.events.emit('state-changed', this.metrics.state);
   }
 }
 
@@ -539,4 +659,3 @@ export class ResilienceUtils {
 export const resilienceUtils = ResilienceUtils;
 export const forComponentResilience = ResilienceUtils.for.bind(ResilienceUtils);
 export const cleanupResilienceManagers = ResilienceUtils.cleanup.bind(ResilienceUtils);
-

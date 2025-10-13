@@ -9,7 +9,6 @@
 import { z } from 'zod';
 import { promises as fs } from 'fs';
 import { join, dirname } from 'path';
-import { EventEmitter } from 'events';
 import { 
   InterfaceType, 
   isTemplumError, 
@@ -21,6 +20,9 @@ import {
   serialization,
   type SerializationOutcome 
 } from '../utils/serialization-utils';
+import { createInterval, type ManagedInterval } from '../utils/async-utils';
+import { type TypedEventMap } from '../utils/event-utils';
+import { EventDrivenComponent } from '../utils/event-bus-adapter';
 
 // Enhanced Templum Configuration Schema
 export const TemplumConfigSchema = z.object({
@@ -293,19 +295,38 @@ export const TemplumConfigTemplates = {
 
 export type TemplumConfigTemplate = keyof typeof TemplumConfigTemplates;
 
+interface TemplumConfigManagerEvents extends TypedEventMap {
+  templumConfigInit: (payload: { configPath: string; timestamp: number }) => void;
+  templumConfigInitialized: (payload: { configPath: string; configTemplate: string; timestamp: number }) => void;
+  templumConfigError: (payload: ErrorSignalPayload) => void;
+  templumConfigUpdated: (payload: {
+    previousConfig: TemplumConfig;
+    updatedConfig: TemplumConfig;
+    changes: string[];
+    timestamp: number;
+  }) => void;
+  templumTemplateLoaded: (payload: {
+    templateName: TemplumConfigTemplate;
+    config: TemplumConfig;
+    timestamp: number;
+  }) => void;
+  templumConfigHotReload: (payload: { timestamp: number; config: TemplumConfig }) => void;
+  templumConfigShutdown: (payload: { finalConfig: TemplumConfig; timestamp: number }) => void;
+}
+
 /**
  * Templum Configuration management with validation, persistence, and hot reloading
  * Adapted from PCL ConfigManager for interface orchestration needs
  */
-export class TemplumConfigManager extends EventEmitter {
+export class TemplumConfigManager extends EventDrivenComponent<TemplumConfigManagerEvents> {
   private config: TemplumConfig;
   private configPath: string;
-  private watchInterval?: NodeJS.Timeout;
+  private watchInterval?: ManagedInterval;
   private lastModified?: Date;
   private callbacks: Map<string, (config: TemplumConfig) => void> = new Map();
 
   constructor(configPath?: string) {
-    super();
+    super('templum-config-manager', 75);
     this.configPath = configPath || join(process.cwd(), '.templum', 'config.json');
     
     // Initialize with default values for all required fields
@@ -771,7 +792,8 @@ export class TemplumConfigManager extends EventEmitter {
    * Setup file watching for hot reloading
    */
   private setupFileWatching(): void {
-    this.watchInterval = setInterval(async () => {
+    this.watchInterval?.stop();
+    this.watchInterval = createInterval(async () => {
       try {
         const stats = await fs.stat(this.configPath);
         
@@ -793,7 +815,7 @@ export class TemplumConfigManager extends EventEmitter {
       } catch (_error) {
         // File might have been deleted, ignore
       }
-    }, 5000); // Check every 5 seconds
+    }, 5000, { unref: true }); // Check every 5 seconds
   }
 
   /**
@@ -899,9 +921,8 @@ export class TemplumConfigManager extends EventEmitter {
    * Graceful shutdown
    */
   public async shutdown(): Promise<void> {
-    if (this.watchInterval) {
-      clearInterval(this.watchInterval);
-    }
+    this.watchInterval?.stop();
+    this.watchInterval = undefined;
 
     this.emit('templumConfigShutdown', {
       finalConfig: this.sanitizeConfig(this.config),
@@ -909,5 +930,7 @@ export class TemplumConfigManager extends EventEmitter {
     });
 
     this.callbacks.clear();
+    this.removeAllListeners();
+    this.cleanupEvents();
   }
 }

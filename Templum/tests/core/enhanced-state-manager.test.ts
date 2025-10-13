@@ -6,7 +6,6 @@
  * description: [Comprehensive test suite validating enhanced state management functionality following TDD principles]
  * ---*/
 
-import { EventEmitter } from 'events';
 import { 
   EnhancedStateManager,
   IPCCoordinator,

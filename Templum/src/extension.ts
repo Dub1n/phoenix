@@ -21,6 +21,7 @@ import {
 
 } from './types/templum-types';
 import { BackendCapabilityProfile } from './backend/backend-service-router';
+import { withTimeout, createInterval, type ManagedInterval } from './utils/async-utils';
 
 // Global extension state
 let templumCore: TemplumCore | undefined;
@@ -35,19 +36,29 @@ let registeredCommands: Map<string, vscode.Disposable> = new Map();
  * Enhanced Tree Data Provider for Backend Service Discovery
  * Implements VSCodeInterfaceAdapter pattern per Templum 1.1 spec
  */
-class BackendServiceTreeProvider implements vscode.TreeDataProvider<ServiceTreeItem> {
+class BackendServiceTreeProvider implements vscode.TreeDataProvider<ServiceTreeItem>, vscode.Disposable {
   private _onDidChangeTreeData: vscode.EventEmitter<ServiceTreeItem | undefined | void> = new vscode.EventEmitter<ServiceTreeItem | undefined | void>();
   readonly onDidChangeTreeData: vscode.Event<ServiceTreeItem | undefined | void> = this._onDidChangeTreeData.event;
   
   private serviceCache: Map<string, BackendServiceInfo> = new Map();
   private lastRefresh: number = 0;
   private refreshInterval: number = 30000; // 30 seconds
+  private refreshIntervalHandle: ManagedInterval | undefined;
 
   constructor(private templumCore: TemplumCore) {
     // Auto-refresh every 30 seconds
-    setInterval(() => {
-      this.refresh();
-    }, this.refreshInterval);
+    this.refreshIntervalHandle = createInterval(
+      () => {
+        this.refresh();
+      },
+      this.refreshInterval,
+      { unref: true }
+    );
+  }
+
+  dispose(): void {
+    this.refreshIntervalHandle?.stop();
+    this.refreshIntervalHandle = undefined;
   }
 
   refresh(): void {
@@ -1209,12 +1220,11 @@ async function registerCommands(context: vscode.ExtensionContext, _engineReady: 
       try {
         if (backendRouter.isServiceAvailable) {
           const timeout = 5000; // 5 second timeout
-          const availabilityPromise = backendRouter.isServiceAvailable(serviceId);
-          const timeoutPromise = new Promise<boolean>((_, reject) => {
-            setTimeout(() => reject(new Error('Availability check timeout')), timeout);
-          });
-          
-          return await Promise.race([availabilityPromise, timeoutPromise]);
+          return await withTimeout(
+            backendRouter.isServiceAvailable(serviceId),
+            timeout,
+            new Error('Availability check timeout')
+          );
         }
         return true; // Assume available if check not supported
       } catch (_error) {
@@ -1438,6 +1448,7 @@ async function registerServiceTreeProvider(context: vscode.ExtensionContext, eng
     if (engineReady && templumCore) {
       // Create enhanced tree data provider with backend integration
       serviceTreeProvider = new BackendServiceTreeProvider(templumCore);
+      context.subscriptions.push(serviceTreeProvider);
       
       // Register the tree view with VSCode
       const serviceTreeView = vscode.window.createTreeView('templum.serviceTree', {
@@ -1772,6 +1783,7 @@ export async function deactivate() {
       try {
         // Clear any intervals/timers if accessible
         console.log('🛑 Stopping service tree auto-refresh...');
+        serviceTreeProvider.dispose();
         serviceTreeProvider = undefined;
         console.log('✅ Service tree provider cleaned up');
       } catch (error) {
@@ -1855,12 +1867,11 @@ export async function deactivate() {
 
         // Graceful shutdown with timeout
         console.log('Initiating core engine shutdown...');
-        const shutdownPromise = templumCore.shutdown();
-        const timeoutPromise = new Promise<void>((_, reject) => {
-          setTimeout(() => reject(new Error('Shutdown timeout after 10 seconds')), 10000);
-        });
-
-        await Promise.race([shutdownPromise, timeoutPromise]);
+        await withTimeout(
+          templumCore.shutdown(),
+          10000,
+          new Error('Shutdown timeout after 10 seconds')
+        );
         templumCore = undefined;
         console.log('Templum Core engine shutdown completed');
         

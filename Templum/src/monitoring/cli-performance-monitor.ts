@@ -15,6 +15,8 @@
 
 import { EventEmitter } from 'events';
 import { performance } from 'perf_hooks';
+import { createInterval } from '../utils/async-utils';
+import type { ManagedInterval } from '../utils/async-utils';
 
 // TODO: [TASK-ID-CLI-PERF-001] Pattern: real-time-performance-monitoring | Complexity: 25 | Dependencies: CLI-stress-testing-infrastructure,performance-baselines
 // Context: Real-time performance monitoring with adaptive threshold detection for CLI stress testing
@@ -72,7 +74,7 @@ export class CLIPerformanceMonitor extends EventEmitter {
   private snapshots: PerformanceSnapshot[] = [];
   private alerts: PerformanceAlert[] = [];
   private monitoringActive = false;
-  private monitoringInterval?: NodeJS.Timeout;
+  private monitoringInterval?: ManagedInterval;
   private baselineMetrics = new Map<string, number>();
   private trendAnalysisCache = new Map<string, TrendAnalysis>();
   private adaptiveThresholds = new Map<string, number>();
@@ -134,9 +136,13 @@ export class CLIPerformanceMonitor extends EventEmitter {
     console.log(`  Adaptive Thresholds: ${this.config.adaptiveThresholds ? 'ENABLED' : 'DISABLED'}`);
     
     this.monitoringActive = true;
-    this.monitoringInterval = setInterval(() => {
-      this.collectPerformanceSnapshot();
-    }, this.config.samplingInterval);
+    this.monitoringInterval = createInterval(
+      () => {
+        this.collectPerformanceSnapshot();
+      },
+      this.config.samplingInterval,
+      { unref: true }
+    );
     
     this.emit('monitoringStarted');
   }
@@ -152,10 +158,8 @@ export class CLIPerformanceMonitor extends EventEmitter {
     console.log('🛑 Stopping CLI Performance Monitoring...');
     
     this.monitoringActive = false;
-    if (this.monitoringInterval) {
-      clearInterval(this.monitoringInterval);
-      this.monitoringInterval = undefined;
-    }
+    this.monitoringInterval?.stop();
+    this.monitoringInterval = undefined;
     
     this.generateMonitoringReport();
     this.emit('monitoringStopped');

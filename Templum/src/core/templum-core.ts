@@ -6,14 +6,16 @@
  * description: [Central orchestration engine managing all interface modalities]
  * ---*/
 
-import { EventEmitter } from 'events';
 import * as path from 'path';
+import type { EventEmitter } from 'events';
 import { 
   InterfaceType, 
   InterfaceAdapter, 
   UniversalSkinDefinition, 
   CommandContext, 
   CommandResult, 
+  CommandDefinition,
+  WorkflowDefinition,
   TemplumConfiguration,
   TemplumSystemStatus,
   StateManagerStatus,
@@ -36,6 +38,7 @@ import {
   type SerializationOutcome,
   type SerializationMeta
 } from '../utils/serialization-utils';
+import { createInterval, type ManagedInterval } from '../utils/async-utils';
 
 // Import dependency injection interfaces and registry
 import { 
@@ -55,13 +58,70 @@ import type {
   ManualOverrideSnapshot,
   ManualOverrideClearResult
 } from '../backend/manual-override-manager';
+interface TemplumCoreEvents extends TypedEventMap {
+  initialized: (payload: { timestamp: number }) => void;
+  initializationError: (payload: { error: string; timestamp: number }) => void;
+  interfaceRegistered: (payload: {
+    interfaceType: InterfaceType;
+    timestamp: number;
+    totalInterfaces: number;
+  }) => void;
+  skinLoaded: (payload: {
+    skinId: string;
+    skinName: string;
+    compatibleInterfaces?: InterfaceType[];
+    timestamp: number;
+    backend?: string;
+    cached?: boolean;
+    loadTime?: number;
+    validationStatus?: string;
+  }) => void;
+  skinLoadError: (payload: {
+    backend: string;
+    error: string;
+    loadTime: number;
+    timestamp: number;
+  }) => void;
+  commandExecuted: (payload: {
+    command: string;
+    sourceInterface: InterfaceType;
+    result: CommandResult;
+    timestamp: number;
+  }) => void;
+  commandError: (payload: {
+    command: string;
+    sourceInterface: InterfaceType;
+    error: string;
+    timestamp: number;
+  }) => void;
+  'backend-services-refreshed': (payload: { timestamp: number; status: unknown }) => void;
+  'backend-refresh-error': (payload: { timestamp: number; error: string }) => void;
+  'interface-switch': (payload: {
+    timestamp: number;
+    fromInterfaces: InterfaceType[];
+    toInterface: InterfaceType;
+    statePreserved: boolean;
+    orchestrated: boolean;
+    switchTime?: number;
+  }) => void;
+  shutdown: (payload: { timestamp: number }) => void;
+  'backend:lifecycle': (payload: BackendConnectionLifecycleEvent) => void;
+}
+import { type TypedEventMap } from '../utils/event-utils';
+import { EventDrivenComponent } from '../utils/event-bus-adapter';
 
-export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
+type RegisteredCommand = CommandDefinition & {
+  backend?: string;
+  source?: 'core' | 'skin' | 'backend';
+};
+
+export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> implements ITemplumOrchestrator {
   private config: TemplumConfiguration;
   private initialized: boolean = false;
   private activeInterfaces: Set<InterfaceType> = new Set();
   private loadedSkins: Map<string, UniversalSkinDefinition> = new Map();
   private interfaceAdapters: Map<InterfaceType, InterfaceAdapter> = new Map();
+  private commandRegistry: Map<string, RegisteredCommand> = new Map();
   
   // Dependency injection - components provided through registry
   private dependencies!: ITemplumCoreDependencies;
@@ -72,12 +132,13 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
   private teardownBackendLifecycleListener?: () => void;
   private backendLifecycleState: Map<string, BackendConnectionLifecycleEvent> = new Map();
   private sessionManager!: TemplumSessionManagerContract;
+  private ipcCommandMonitor?: ManagedInterval;
 
   constructor(
     config: Partial<TemplumConfiguration> = {},
     dependencyConfig?: IDependencyInjectionConfig
   ) {
-    super();
+    super('templum-core', 200);
     
     this.config = {
       maxConcurrentSessions: 10,
@@ -197,6 +258,9 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
       
       // Register core Templum services with resource manager for monitoring
       await this.registerCoreServicesForMonitoring();
+
+      // Seed command registry with core command definitions before exposing execution APIs
+      this.initializeDefaultCommands();
       
       this.initialized = true;
       this.emit('initialized', { timestamp: Date.now() });
@@ -290,10 +354,15 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
       await adapter.applySkin(skin);
     }
 
-    // Synchronize current state to new interface - use state sync functionality
-    console.log(`Synchronizing state to ${interfaceType} interface`);
-    // Note: Real state manager uses syncState for interface coordination
-    // await this.stateManager.syncState(interfaceType, {}, 'core-registration');
+    this.logInfo('Synchronizing state to newly registered interface', { interfaceType });
+    const stateSnapshot = await this.buildStateUpdate();
+    if (this.dependencies?.stateManager?.syncState) {
+      await this.dependencies.stateManager.syncState(interfaceType, stateSnapshot, 'core-registration');
+    }
+
+    if (typeof adapter.syncState === 'function') {
+      await adapter.syncState({ ...stateSnapshot, timestamp: Date.now() });
+    }
 
     this.emit('interfaceRegistered', { 
       interfaceType, 
@@ -311,14 +380,15 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
 
     // Basic skin validation - real component has different validation approach
     if (!skinDefinition.metadata?.id) {
-      throw createTemplumError('Skin definition missing required id', 'SKIN_VALIDATION_ERROR', 'validation');
+      throw createTemplumError('Invalid skin definition: missing required id', 'SKIN_VALIDATION_ERROR', 'validation');
     }
     if (!skinDefinition.metadata?.name) {
-      throw createTemplumError('Skin definition missing required name', 'SKIN_VALIDATION_ERROR', 'validation');
+      throw createTemplumError('Invalid skin definition: missing required name', 'SKIN_VALIDATION_ERROR', 'validation');
     }
 
     // Store skin definition
     this.loadedSkins.set(skinDefinition.metadata.id, skinDefinition);
+    this.registerCommandsFromSkin(skinDefinition);
 
     // Apply skin across all active interfaces
     await this.applySkinToActiveInterfaces(skinDefinition);
@@ -344,16 +414,45 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
     }
 
     const startTime = Date.now();
+    const resolvedCommand = this.resolveCommand(command);
+
+    if (!resolvedCommand) {
+      const errorMessage = `Unknown command: ${command}`;
+      this.logWarn(errorMessage, { sourceInterface });
+      const unknownResult: CommandResult = {
+        success: false,
+        error: errorMessage,
+        source: sourceInterface,
+        timestamp: Date.now(),
+        executionTime: Date.now() - startTime
+      };
+
+      this.emit('commandError', {
+        command,
+        sourceInterface,
+        error: errorMessage,
+        timestamp: Date.now()
+      });
+
+      return unknownResult;
+    }
 
     try {
-      console.log(`TemplumCore: Executing command '${command}' from ${sourceInterface} with enhanced real backend delegation...`);
+      this.logInfo(`Executing command '${command}'`, {
+        sourceInterface,
+        targetBackend: resolvedCommand.backend
+      });
       
       // Enhanced real backend command execution with intelligent routing
       let executionResult: any;
-      let selectedBackend: string | null = null;
-      
-      // Attempt real backend command execution through backend service router
-      if (this.dependencies.backendServiceRouter) {
+      let selectedBackend: string | null = resolvedCommand.backend ?? null;
+      const backendServiceRouter = this.dependencies.backendServiceRouter;
+      const shouldRouteToBackend =
+        !!backendServiceRouter &&
+        selectedBackend !== null &&
+        selectedBackend !== 'core';
+
+      if (shouldRouteToBackend) {
         try {
           // TASK-SKIN-005: Two-tier backend prioritization system
           const systemStatus = this.getSystemStatus();
@@ -363,36 +462,48 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
 
           // Get the prioritized backends using the two-tier system
           const prioritizedBackends = this.prioritizeBackendsTwoTier(availableBackends);
-          
+
           if (prioritizedBackends.length > 0) {
             // Select the best backend for command execution
-            selectedBackend = prioritizedBackends[0].backendId;
-            console.log(`TemplumCore: Routing command '${command}' to ${selectedBackend} backend...`);
+            const prioritizedMatch = selectedBackend
+              ? prioritizedBackends.find(candidate => candidate.backendId === selectedBackend)
+              : undefined;
+
+            selectedBackend = prioritizedMatch?.backendId ?? prioritizedBackends[0].backendId;
+            this.logInfo(`Routing command '${command}' to backend`, {
+              backendId: selectedBackend
+            });
             
             // Execute command through real backend service
-            if (!this.dependencies?.backendServiceRouter) {
+            if (!backendServiceRouter) {
               throw createTemplumError('Backend service router not initialized', 'SERVICE_NOT_READY', 'configuration');
             }
             
-            const router = this.dependencies!.backendServiceRouter!;
-            if (!router.executeCommand) {
+            if (!backendServiceRouter.executeCommand) {
               throw createTemplumError('Backend service router executeCommand method not available', 'SERVICE_NOT_READY', 'configuration');
             }
-            executionResult = await router.executeCommand(
+            executionResult = await backendServiceRouter.executeCommand(
               selectedBackend,
               command,
               args
             );
             
-            console.log(`TemplumCore: Command '${command}' executed successfully via ${selectedBackend} backend`);
+            this.logInfo(`Command '${command}' executed successfully`, {
+              backendId: selectedBackend
+            });
             
           } else {
-            console.warn('TemplumCore: No healthy backends available for command execution, creating local result');
+            this.logWarn('No healthy backends available for command execution', {
+              requestedBackend: resolvedCommand.backend
+            });
             throw new Error('No healthy backends available');
           }
           
         } catch (backendError) {
-          console.warn(`TemplumCore: Backend command execution failed (${backendError}), creating fallback result`);
+          this.logWarn('Backend command execution failed, creating fallback result', {
+            error: backendError instanceof Error ? backendError.message : String(backendError),
+            backendId: selectedBackend ?? resolvedCommand.backend
+          });
           
           // Fallback to local execution result
           executionResult = { 
@@ -403,7 +514,9 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
           };
         }
       } else {
-        console.warn('TemplumCore: Backend service router not available, creating local result');
+        this.logWarn('Backend service router not available for command execution, creating local result', {
+          requestedBackend: resolvedCommand.backend
+        });
         executionResult = { 
           executed: true, 
           timestamp: Date.now(),
@@ -422,10 +535,12 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
 
       // Synchronize state across interfaces after command execution
       try {
-        console.log(`TemplumCore: Synchronizing interface states after command: ${command}`);
-        await this.synchronizeInterfaceStates(result);
+        await this.synchronizeInterfaceStates({ commandResult: result });
       } catch (syncError) {
-        console.warn('TemplumCore: Interface state synchronization failed:', syncError);
+        this.logWarn('Interface state synchronization failed after command execution', {
+          error: syncError instanceof Error ? syncError.message : String(syncError),
+          command
+        });
         // Continue - synchronization failure shouldn't fail the command
       }
 
@@ -483,37 +598,234 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
     }
   }
 
-  resolveCommand(command: string): { backend: string; commandInfo: any } | null {
+  resolveCommand(command: string): { backend: string; commandInfo: RegisteredCommand } | null {
     if (!this.initialized) {
       return null;
     }
 
-    // Real PCL backend integrator doesn't have a simple resolveCommand
-    // Return a default PCL backend routing info
-    return { backend: 'pcl', commandInfo: { handler: command, type: 'component-request' } };
+    const commandInfo = this.commandRegistry.get(command);
+    if (!commandInfo) {
+      return null;
+    }
+
+    const workflow = commandInfo.workflow as (WorkflowDefinition & { backend?: string; targetBackend?: string }) | undefined;
+    const backendFromWorkflow = workflow?.backend ?? workflow?.targetBackend;
+
+    const backend =
+      commandInfo.backend ??
+      (typeof backendFromWorkflow === 'string' ? backendFromWorkflow : undefined) ??
+      (this.dependencies?.backendServiceRouter ? 'pcl' : 'core');
+
+    return {
+      backend,
+      commandInfo
+    };
   }
 
-  async synchronizeInterfaceStates(result: any): Promise<void> {
-    // State synchronization using dependency injection
-    for (const [interfaceType, _adapter] of Array.from(this.interfaceAdapters.entries())) {
+  async synchronizeInterfaceStates(update: any): Promise<void> {
+    const normalizedPayload = this.normalizeStateUpdate(update);
+    const baseUpdate = await this.buildStateUpdate(normalizedPayload);
+
+    for (const [interfaceType, adapter] of Array.from(this.interfaceAdapters.entries())) {
       try {
-        // Use injected state manager for synchronization
+        const interfaceUpdate: StateUpdate = {
+          ...baseUpdate,
+          timestamp: Date.now()
+        };
+
         if (this.dependencies?.stateManager?.syncState) {
           await this.dependencies.stateManager.syncState(
             interfaceType, 
-            { 
-              timestamp: Date.now(),
-              commandResult: result
-            }, 
+            { ...interfaceUpdate }, 
             'templum-core'
           );
         }
-        console.log(`State synchronized to ${interfaceType} interface via dependency injection`);
+
+        if (typeof adapter?.syncState === 'function') {
+          await adapter.syncState({ ...interfaceUpdate });
+        }
+
+        this.logInfo('State synchronized to interface', { interfaceType });
       } catch (error) {
         const errorMessage = isTemplumError(error) ? error.message : (error instanceof Error ? error.message : 'Unknown error');
-        console.error(`Failed to sync state to ${interfaceType} interface: ${errorMessage}`);
+        const errorInstance = error instanceof Error ? error : new Error(errorMessage);
+        this.logError(`Failed to sync state to ${interfaceType} interface`, errorInstance, {
+          interfaceType
+        });
       }
     }
+  }
+
+  private async buildStateUpdate(partialUpdate: Partial<StateUpdate> = {}): Promise<StateUpdate> {
+    let managerState: any = {};
+
+    if (this.dependencies?.stateManager?.getCurrentState) {
+      try {
+        const maybeState = this.dependencies.stateManager.getCurrentState();
+        managerState = await Promise.resolve(maybeState) ?? {};
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        this.logWarn('State manager getCurrentState failed', { error: errorMessage });
+        managerState = {};
+      }
+    }
+
+    const notificationsCandidate =
+      partialUpdate.notifications ??
+      (Array.isArray(managerState?.notifications) ? managerState.notifications : undefined);
+    const notifications = Array.isArray(notificationsCandidate) ? notificationsCandidate : [];
+
+    return {
+      timestamp: partialUpdate.timestamp ?? Date.now(),
+      globalState: partialUpdate.globalState ?? managerState?.globalState ?? {},
+      sessionState: partialUpdate.sessionState ?? managerState?.sessionState ?? {},
+      treeViewUpdates: partialUpdate.treeViewUpdates ?? managerState?.treeViewUpdates ?? {},
+      webviewUpdates: partialUpdate.webviewUpdates ?? managerState?.webviewUpdates ?? {},
+      menuUpdates: partialUpdate.menuUpdates ?? managerState?.menuUpdates ?? {},
+      statusUpdates: partialUpdate.statusUpdates ?? managerState?.statusUpdates ?? {},
+      commandResult: partialUpdate.commandResult ?? managerState?.commandResult,
+      notifications
+    };
+  }
+
+  private normalizeStateUpdate(update: any): Partial<StateUpdate> {
+    if (!update) {
+      return {};
+    }
+
+    if (typeof update !== 'object') {
+      return { commandResult: update };
+    }
+
+    const candidate = update as Partial<StateUpdate>;
+    const knownKeys: (keyof StateUpdate)[] = [
+      'globalState',
+      'sessionState',
+      'treeViewUpdates',
+      'webviewUpdates',
+      'menuUpdates',
+      'statusUpdates',
+      'commandResult',
+      'notifications'
+    ];
+
+    const hasKnownShape = knownKeys.some(key => key in candidate);
+    if (hasKnownShape) {
+      const { timestamp, ...rest } = candidate;
+      return {
+        ...rest,
+        timestamp: typeof timestamp === 'number' ? timestamp : Date.now()
+      };
+    }
+
+    return { commandResult: candidate };
+  }
+
+  private registerCommandsFromSkin(skinDefinition: UniversalSkinDefinition): void {
+    const { commands } = skinDefinition;
+    if (!commands) {
+      return;
+    }
+
+    Object.entries(commands).forEach(([key, value]) => {
+      if (!this.isCommandDefinition(value)) {
+        return;
+      }
+
+      const commandId = this.resolveCommandIdentifier(key, value);
+      if (!commandId) {
+        return;
+      }
+
+      this.registerCommand(commandId, {
+        ...value,
+        backend: skinDefinition.metadata?.backend,
+        source: 'skin'
+      });
+    });
+
+    if (Array.isArray(commands.primary)) {
+      commands.primary
+        .filter(item => this.isCommandDefinition(item))
+        .forEach(definition => {
+          const commandId = this.resolveCommandIdentifier(undefined, definition);
+          if (!commandId) {
+            return;
+          }
+          this.registerCommand(commandId, {
+            ...definition,
+            backend: skinDefinition.metadata?.backend,
+            source: 'skin'
+          });
+        });
+    }
+  }
+
+  private initializeDefaultCommands(): void {
+    const defaultCommands: Record<string, RegisteredCommand> = {
+      'test-command': {
+        title: 'Test Command',
+        description: 'Internal verification command for orchestration flows',
+        handler: 'templum.core.testCommand',
+        backend: 'pcl',
+        source: 'core'
+      },
+      'analyze-code': {
+        title: 'Analyze Code',
+        description: 'Triggers backend analysis pipeline for active code',
+        handler: 'templum.backend.analyzeCode',
+        backend: 'pcl',
+        source: 'core'
+      }
+    };
+
+    Object.entries(defaultCommands).forEach(([commandId, definition]) => {
+      if (!this.commandRegistry.has(commandId)) {
+        this.registerCommand(commandId, definition);
+      }
+    });
+  }
+
+  private registerCommand(commandId: string, commandDefinition: RegisteredCommand): void {
+    this.commandRegistry.set(commandId, {
+      ...commandDefinition,
+      source: commandDefinition.source ?? 'core'
+    });
+  }
+
+  private isCommandDefinition(value: unknown): value is CommandDefinition {
+    if (!value || typeof value !== 'object') {
+      return false;
+    }
+
+    const candidate = value as Partial<CommandDefinition>;
+    return typeof candidate.title === 'string' && typeof candidate.description === 'string';
+  }
+
+  private resolveCommandIdentifier(
+    candidateKey: string | undefined,
+    definition: CommandDefinition
+  ): string | undefined {
+    const reservedKeys = new Set(['primary', 'aliases', 'help', 'completions']);
+    if (candidateKey && !reservedKeys.has(candidateKey)) {
+      return candidateKey;
+    }
+
+    const extended = definition as CommandDefinition & Partial<Record<'id' | 'command' | 'name', string>>;
+
+    if (typeof extended.id === 'string' && extended.id.trim().length > 0) {
+      return extended.id;
+    }
+
+    if (typeof extended.command === 'string' && extended.command.trim().length > 0) {
+      return extended.command;
+    }
+
+    if (typeof extended.name === 'string' && extended.name.trim().length > 0) {
+      return extended.name;
+    }
+
+    return definition.title?.trim().length ? definition.title : undefined;
   }
 
   getSystemStatus(): TemplumSystemStatus {
@@ -820,6 +1132,8 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
     }
 
     try {
+      this.stopIPCCommandMonitoring();
+
       // Dispose of all interface adapters
       for (const [interfaceType, adapter] of Array.from(this.interfaceAdapters.entries())) {
         try {
@@ -862,6 +1176,7 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
 
       this.emit('shutdown', { timestamp: Date.now() });
       this.removeAllListeners();
+      this.cleanupEvents();
 
       console.log('Templum Core Engine: Shutdown complete with dependency injection cleanup');
     } catch (error) {
@@ -1859,6 +2174,15 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
     }
   }
 
+  private stopIPCCommandMonitoring(): void {
+    if (!this.ipcCommandMonitor) {
+      return;
+    }
+
+    this.ipcCommandMonitor.stop();
+    this.ipcCommandMonitor = undefined;
+  }
+
   /**
    * Start monitoring for IPC commands from CLI
    * Implements file-based IPC communication for CLI-to-Core commands
@@ -1870,21 +2194,22 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
 
     console.log('TemplumCore: Starting IPC command monitoring for CLI communication');
 
+    this.stopIPCCommandMonitoring();
+
     const tempDir = require('os').tmpdir();
     const fs = require('fs');
     const path = require('path');
 
-    // Monitor temp directory for CLI command files
-    const checkForIPCRequests = () => {
+    const checkForIPCRequests = async (): Promise<void> => {
       try {
         const files = fs.readdirSync(tempDir);
-        const requestFiles = files.filter((file: string) => 
+        const requestFiles = files.filter((file: string) =>
           file.startsWith('templum-cli-') && file.endsWith('-request.json')
         );
 
         for (const requestFile of requestFiles) {
           const requestPath = path.join(tempDir, requestFile);
-          
+
           try {
             const requestData = fs.readFileSync(requestPath, 'utf8');
             const requestId = this.extractCliRequestId(requestFile);
@@ -1924,17 +2249,12 @@ export class TemplumCore extends EventEmitter implements ITemplumOrchestrator {
             }
           }
         }
-
       } catch (_error) {
         // Continue monitoring even if directory scan fails
       }
-      
-      // Schedule next check
-      setTimeout(checkForIPCRequests, 100);
     };
 
-    // Start monitoring
-    setTimeout(checkForIPCRequests, 100);
+    this.ipcCommandMonitor = createInterval(checkForIPCRequests, 100, { unref: true });
   }
 
   private extractCliRequestId(fileName: string): string {
