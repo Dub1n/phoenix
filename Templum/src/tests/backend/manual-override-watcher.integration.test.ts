@@ -18,8 +18,6 @@ const removeIfExists = (targetPath: string) => {
 };
 
 describe('Manual override watcher integration', () => {
-  jest.setTimeout(15000);
-
   let tmpDir: string;
   let servicesDir: string;
   let router: TemplumBackendServiceRouter;
@@ -139,5 +137,5 @@ describe('Manual override watcher integration', () => {
       serviceId,
       expect.objectContaining({ endpoint: 'http://127.0.0.1:4311' })
     );
-  });
+  }, 15000);
 });

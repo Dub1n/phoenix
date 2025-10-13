@@ -8,12 +8,13 @@
  */
 
 import { ChildProcess } from 'child_process';
-import { EventEmitter } from 'events';
 // Unused imports removed: spawn, createServer
 import * as fs from 'fs';
 import * as net from 'net';
 import * as path from 'path';
 import * as WebSocket from 'ws';
+import { EventDrivenComponent } from '../utils/event-bus-adapter';
+import type { TypedEventMap } from '../utils/event-utils';
 import { UniversalSkinEngine } from '../skin/universal-skin-engine';
 import {
     BackendType,
@@ -64,6 +65,13 @@ import {
 } from '../utils/serialization-utils';
 import { emitSerializationWarnings } from './backend-serialization-log';
 import { BackendLifecycleChannel } from './lifecycle/backend-lifecycle-channel';
+import {
+  createInterval,
+  createTimeout,
+  sleep,
+  type ManagedInterval,
+  type ManagedTimeout
+} from '../utils/async-utils';
 
 // IPC Protocol Types (Based on Haruspex IPC Protocol)
 export type IPCMessageType = 
@@ -96,6 +104,36 @@ export interface BackendEventPayload extends BackendServicePayload {
   aliasCount?: number;
   commandsRemoved?: number;
   aliasesRemoved?: number;
+}
+
+interface DiscoveryMetrics {
+  totalAttempts: number;
+  successfulConnections: number;
+  retryAttempts: number;
+  discoveryStartTime: number;
+}
+
+interface BackendServiceRouterEvents extends TypedEventMap {
+  'manualOverride:applied': (descriptor: ManualOverrideDescriptor) => void;
+  'manualOverride:cleared': (descriptor?: ManualOverrideDescriptor) => void;
+  'manualOverride:snapshot': (snapshot: ManualOverrideSnapshot) => void;
+  discoveryStarted: (payload: { strategies: number }) => void;
+  discoveryCompleted: (payload: { discovered: number; strategies: number }) => void;
+  discoveryError: (payload: { strategy: string; error: unknown }) => void;
+  serviceDiscovered: (payload: { serviceId: string; discoveryMethod: string; confidence: number }) => void;
+  serviceRemoved: (payload: { serviceId: string }) => void;
+  connectionRecovered: (payload: { backendId: string; attempts: number }) => void;
+  recoveryFailed: (payload: { backendId: string; attempts: number; error: unknown }) => void;
+  'discovery:complete': (payload: {
+    discoveredServices: string[];
+    failedServices: string[];
+    metrics: DiscoveryMetrics;
+    successRate: number;
+    discoveryDuration: number;
+    generic: boolean;
+    discoveryMethod: string;
+  }) => void;
+  'connection:lifecycle': (event: BackendConnectionLifecycleEvent) => void;
 }
 
 export interface SkinDefinitionResponse {
@@ -320,7 +358,10 @@ function toJsonStringifyOptions<T>(options: RouterStringifyOptions<T>): JsonStri
 export interface BackendServiceRouter {
   discoverAndConnect(): Promise<void>;
   getConnectionStatus(): BackendConnectionStatus;
-  loadBackendSkin(backendId: string): Promise<UniversalSkinDefinition | null>;
+  loadBackendSkin(
+    backendId: string,
+    options?: { allowFallback?: boolean; visited?: Set<string> }
+  ): Promise<UniversalSkinDefinition | null>;
   executeCommand(backendId: string, command: string, args?: unknown[]): Promise<CommandExecutionResponse>;
   isServiceAvailable(backendId: string): Promise<boolean>;
   // TASK-NEW-050: Service Connection Management APIs
@@ -382,7 +423,10 @@ export interface BackendCapabilityProfile {
  * Manages connections to multiple backend services and routes commands appropriately.
  * Connects to real backend services: Haruspex, PCL, and Litany.
  */
-export class TemplumBackendServiceRouter extends EventEmitter implements BackendServiceRouter {
+export class TemplumBackendServiceRouter
+  extends EventDrivenComponent<BackendServiceRouterEvents>
+  implements BackendServiceRouter {
+  private static instanceCounter = 0;
   private connections: Map<string, BackendConnection> = new Map();
   private serviceHealth: Map<string, BackendStatus> = new Map();
   private backendConfigs: Map<string, BackendConfig> = new Map();
@@ -398,25 +442,16 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
   private manualOverrideSnapshot: ManualOverrideSnapshot = { overrides: [], updatedAt: Date.now() };
   
   // ENHANCED: Background health monitoring and recovery system
-  private healthMonitorInterval: NodeJS.Timeout | null = null;
+  private healthMonitorInterval: ManagedInterval | null = null;
   private healthCheckInterval: number = 30000; // 30 seconds default
   private recoveryAttempts: Map<string, number> = new Map();
   private maxRecoveryAttempts: number = 3;
   private healthMonitoringEnabled: boolean = true;
-  private healthCheckKickoffTimeout: NodeJS.Timeout | null = null;
-  private continuousHealthInterval: NodeJS.Timeout | null = null;
+  private healthCheckKickoffTimeout: ManagedTimeout | null = null;
+  private continuousHealthInterval: ManagedInterval | null = null;
 
-  private scheduleTimeout(callback: () => void, ms: number): NodeJS.Timeout {
-    const handle = setTimeout(callback, ms);
-    handle.unref?.();
-    return handle;
-  }
-
-  private async delay(ms: number): Promise<void> {
-    await new Promise<void>((resolve) => {
-      const handle = setTimeout(resolve, ms);
-      handle.unref?.();
-    });
+  private scheduleTimeout(callback: () => void | Promise<void>, ms: number): ManagedTimeout {
+    return createTimeout(callback, ms, { unref: true });
   }
 
   constructor(
@@ -428,7 +463,7 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
       healthMonitoringEnabled?: boolean;
     }
   ) {
-    super();
+    super(`backend-service-router:${TemplumBackendServiceRouter.instanceCounter++}`, 120);
     this.orchestrator = orchestrator;
     this.universalSkinEngine = new UniversalSkinEngine();
     this.commandRouter = new DynamicCommandRouter();
@@ -623,20 +658,21 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
    */
   private startHealthMonitoring(): void {
     if (this.healthMonitorInterval) {
-      clearInterval(this.healthMonitorInterval);
+      this.healthMonitorInterval.stop();
     }
     
     console.log(`[HEALTH_MONITOR] Starting background health monitoring (interval: ${this.healthCheckInterval}ms)`);
     
-    this.healthMonitorInterval = setInterval(() => {
-      this.performHealthCheck();
-    }, this.healthCheckInterval);
-    this.healthMonitorInterval.unref?.();
+    this.healthMonitorInterval = createInterval(
+      () => this.performHealthCheck(),
+      this.healthCheckInterval,
+      { unref: true }
+    );
     
     // Perform initial health check
-    this.healthCheckKickoffTimeout = this.scheduleTimeout(() => {
+    this.healthCheckKickoffTimeout = this.scheduleTimeout(async () => {
       this.healthCheckKickoffTimeout = null;
-      void this.performHealthCheck();
+      await this.performHealthCheck();
     }, 1000);
   }
 
@@ -708,15 +744,17 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
         const config = this.backendConfigs.get(backendId);
         if (config?.healthEndpoint) {
           const controller = new AbortController();
-          const timeoutId = this.scheduleTimeout(() => controller.abort(), 5000);
+          const timeout = this.scheduleTimeout(() => controller.abort(), 5000);
           
-          const response = await fetch(`${config.endpoint}${config.healthEndpoint}`, {
-            method: 'GET',
-            signal: controller.signal
-          });
-          
-          clearTimeout(timeoutId);
-          return response.ok;
+          try {
+            const response = await fetch(`${config.endpoint}${config.healthEndpoint}`, {
+              method: 'GET',
+              signal: controller.signal
+            });
+            return response.ok;
+          } finally {
+            timeout.cancel();
+          }
         }
       }
       
@@ -783,18 +821,18 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
    */
   private stopHealthMonitoring(): void {
     if (this.healthMonitorInterval) {
-      clearInterval(this.healthMonitorInterval);
+      this.healthMonitorInterval.stop();
       this.healthMonitorInterval = null;
       console.log('[HEALTH_MONITOR] Background health monitoring stopped');
     }
 
     if (this.healthCheckKickoffTimeout) {
-      clearTimeout(this.healthCheckKickoffTimeout);
+      this.healthCheckKickoffTimeout.cancel();
       this.healthCheckKickoffTimeout = null;
     }
 
     if (this.continuousHealthInterval) {
-      clearInterval(this.continuousHealthInterval);
+      this.continuousHealthInterval.stop();
       this.continuousHealthInterval = null;
     }
   }
@@ -892,6 +930,24 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
 
     // TASK-SKIN-005: Initialize connection stability tracking for new backend
     this.initializeConnectionStability(backendId);
+
+    // Automatically attempt to establish a live connection once the backend is registered.
+    // Stage 6 gating relies on the router being able to execute commands immediately after
+    // registration, so we initiate the connection here rather than waiting for a manual kick-off.
+    try {
+      const connectionResult = await this.connectToService(backendId);
+      if (connectionResult.success) {
+        console.log(
+          `[GENERIC] Backend ${backendId} auto-connected during skin registration (${connectionResult.responseTime}ms)`
+        );
+      } else {
+        console.warn(
+          `[GENERIC] Backend ${backendId} auto-connection deferred: ${connectionResult.message}`
+        );
+      }
+    } catch (error) {
+      console.warn(`[GENERIC] Backend ${backendId} auto-connection failed:`, error);
+    }
 
     console.log(`[GENERIC] Backend ${backendId} registered successfully with generic system`);
   }
@@ -1150,7 +1206,7 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
           const delayMs = baseDelayMs * Math.pow(2, attempt);
           console.log(`Backend Service Router: [GENERIC] Retrying ${serviceId} in ${delayMs}ms...`);
           metrics.retryAttempts++;
-          await this.delay(delayMs);
+          await sleep(delayMs);
         }
         
       } catch (error) {
@@ -1212,7 +1268,7 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
           const delayMs = baseDelayMs * Math.pow(2, attempt);
           console.log(`Backend Service Router: Retrying ${serviceId} in ${delayMs}ms...`);
           metrics.retryAttempts++;
-          await this.delay(delayMs);
+          await sleep(delayMs);
         }
         
       } catch (error) {
@@ -1289,17 +1345,27 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
       if (connection.connection && connection.isConnected()) {
         const childProcess = connection.connection as ChildProcess;
         return new Promise<boolean>((resolve) => {
-          const timeout = this.scheduleTimeout(() => resolve(false), 2000);
-          
+          let settled = false;
+          let timeout: ManagedTimeout;
+
+          const finish = (result: boolean) => {
+            if (settled) {
+              return;
+            }
+            settled = true;
+            timeout.cancel();
+            childProcess.off('message', pingHandler);
+            resolve(result);
+          };
+
           const pingHandler = (message: IPCMessage | IPCResponse) => {
-            // Fixed: Using proper interface types for message.success property access
             if (message.type === 'pong' || (message as IPCResponse).success) {
-              clearTimeout(timeout);
-              childProcess.off('message', pingHandler);
-              resolve(true);
+              finish(true);
             }
           };
-          
+
+          timeout = this.scheduleTimeout(() => finish(false), 2000);
+
           childProcess.on('message', pingHandler);
           childProcess.send({ type: 'ping', timestamp: Date.now() });
         });
@@ -1317,16 +1383,19 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
     try {
       // Test with service-specific health endpoint
       const controller = new AbortController();
-          const timeoutId = this.scheduleTimeout(() => controller.abort(), 3000);
-      
-      const response = await fetch(`${connection.endpoint}/api/status`, {
-        method: 'GET',
-        headers: { 'X-Service-Check': connection.id },
-        signal: controller.signal
-      });
-      
-      clearTimeout(timeoutId);
-      return response.ok || response.status === 404; // 404 acceptable - service running but endpoint may not exist
+      const timeout = this.scheduleTimeout(() => controller.abort(), 3000);
+
+      try {
+        const response = await fetch(`${connection.endpoint}/api/status`, {
+          method: 'GET',
+          headers: { 'X-Service-Check': connection.id },
+          signal: controller.signal
+        });
+
+        return response.ok || response.status === 404; // 404 acceptable - service running but endpoint may not exist
+      } finally {
+        timeout.cancel();
+      }
     } catch (_error) {
       // HTTP service may not have status endpoint yet - connection test was sufficient
       return true;
@@ -1341,8 +1410,19 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
       if (connection.connection && connection.isConnected()) {
         const ws = connection.connection as WebSocket.WebSocket;
         return new Promise<boolean>((resolve) => {
-          const timeout = this.scheduleTimeout(() => resolve(false), 2000);
-          
+          let settled = false;
+          let timeout: ManagedTimeout;
+
+          const finish = (result: boolean) => {
+            if (settled) {
+              return;
+            }
+            settled = true;
+            timeout.cancel();
+            ws.off('message', messageHandler);
+            resolve(result);
+          };
+
           const messageHandler = (data: WebSocket.RawData) => {
             const outcome = this.parseRouterMessage<IPCMessage | IPCResponse>(data.toString(), {
               context: 'backend:router:websocket:verification',
@@ -1353,13 +1433,13 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
             if (outcome.ok && outcome.value) {
               const message = outcome.value;
               if (message.type === 'pong' || (message as IPCResponse).success) {
-                clearTimeout(timeout);
-                ws.off('message', messageHandler);
-                resolve(true);
+                finish(true);
               }
             }
           };
-          
+
+          timeout = this.scheduleTimeout(() => finish(false), 2000);
+
           ws.on('message', messageHandler);
           const pingOutcome = this.stringifyRouterMessage(
             { type: 'ping', timestamp: Date.now() },
@@ -1523,13 +1603,14 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
     
     // For now, set up basic periodic health checks
     if (this.continuousHealthInterval) {
-      clearInterval(this.continuousHealthInterval);
+      this.continuousHealthInterval.stop();
     }
 
-    this.continuousHealthInterval = setInterval(() => {
-      this.performHealthChecks();
-    }, 30000); // Check every 30 seconds
-    this.continuousHealthInterval.unref?.();
+    this.continuousHealthInterval = createInterval(
+      () => this.performHealthChecks(),
+      30000,
+      { unref: true }
+    ); // Check every 30 seconds
   }
 
 
@@ -1542,12 +1623,13 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
     responseTime?: number
   ): void {
     const existingStatus = this.serviceHealth.get(serviceId);
+    const baselineCapabilities = existingStatus?.capabilities ?? [];
     const status: BackendStatus = existingStatus ?? {
       connected,
       health,
       lastCheck: Date.now(),
       lastError: error,
-      capabilities: existingStatus?.capabilities || []
+      capabilities: baselineCapabilities
     };
 
     if (!existingStatus) {
@@ -1844,10 +1926,9 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
           
           // Test real PCL HTTP service connection with enhanced health check
           const controller = new AbortController();
-          const timeoutId = this.scheduleTimeout(() => controller.abort(), 10000); // Longer timeout for real service
+          const timeout = this.scheduleTimeout(() => controller.abort(), 10000); // Longer timeout for real service
 
           try {
-            // Try multiple PCL service endpoints to verify real service availability
             const healthEndpoints = [
               `${endpoint}/api/health`,
               `${endpoint}/api/status`,
@@ -1866,31 +1947,27 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
 
                 if (response.ok) {
                   const data = await response.text();
-                  console.log(`[HTTP] Real ${serviceId} service health check successful at ${healthEndpoint}:`, data?.substring(0, 100) || 'OK');
+                  console.log(
+                    `[HTTP] Real ${serviceId} service health check successful at ${healthEndpoint}:`,
+                    data?.substring(0, 100) || 'OK'
+                  );
                   connected = true;
                   break;
                 }
               } catch (endpointError) {
                 console.log(`[HTTP] Health check failed for ${healthEndpoint}: ${endpointError}`);
-                // Continue to next endpoint
               }
             }
 
-            clearTimeout(timeoutId);
-            
             if (connected) {
               httpConnected = true;
               console.log(`[HTTP] Successfully connected to real ${serviceId} PCL service`);
-              
-              // Test service capabilities after connection
               await this.testPCLServiceCapabilities(endpoint, serviceId);
             } else {
               throw new Error(`All health endpoints failed for ${serviceId} service`);
             }
-            
-          } catch (fetchError) {
-            clearTimeout(timeoutId);
-            throw fetchError;
+          } finally {
+            timeout.cancel();
           }
         } catch (error) {
           httpConnected = false;
@@ -1966,33 +2043,43 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
           ws = new WebSocket.WebSocket(wsUrl);
 
           return new Promise<void>((resolve, reject) => {
-            const timeout = this.scheduleTimeout(() => {
+            let timeout: ManagedTimeout | null;
+            let settled = false;
+
+            const settle = (action: () => void) => {
+              if (settled) {
+                return;
+              }
+              settled = true;
+              timeout?.cancel();
+              timeout = null;
+              action();
+            };
+
+            timeout = this.scheduleTimeout(() => {
               wsConnected = false;
-              reject(new Error(`Real WebSocket connection timeout for ${serviceId}`));
+              settle(() => reject(new Error(`Real WebSocket connection timeout for ${serviceId}`)));
             }, 15000); // Longer timeout for real service connection
 
             ws!.onopen = async () => {
-              clearTimeout(timeout);
               console.log(`[WebSocket] Real connection established to ${serviceId} service`);
               
               try {
-                // Perform real Litany service handshake
                 await this.performLitanyHandshake(ws!, serviceId);
                 wsConnected = true;
                 console.log(`[WebSocket] Successfully connected to real ${serviceId} service`);
-                resolve();
+                settle(() => resolve());
               } catch (handshakeError) {
                 wsConnected = false;
                 console.error(`[WebSocket] Handshake failed with real ${serviceId} service:`, handshakeError);
-                reject(handshakeError);
+                settle(() => reject(handshakeError));
               }
             };
 
             ws!.onerror = (error) => {
-              clearTimeout(timeout);
               wsConnected = false;
               console.error(`[WebSocket] Real connection error for ${serviceId}:`, error);
-              reject(error);
+              settle(() => reject(error instanceof Error ? error : new Error(String(error))));
             };
 
             ws!.onclose = () => {
@@ -2045,8 +2132,21 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
     return new Promise<void>((resolve, reject) => {
       console.log(`[WebSocket] Performing real handshake with ${serviceId} Litany service`);
       
-      const handshakeTimeout = this.scheduleTimeout(() => {
-        reject(new Error(`Litany service handshake timeout for ${serviceId}`));
+      let settled = false;
+      let handshakeTimeout: ManagedTimeout;
+
+      const finish = (action: () => void) => {
+        if (settled) {
+          return;
+        }
+        settled = true;
+        handshakeTimeout.cancel();
+        ws.off('message', handshakeHandler);
+        action();
+      };
+
+      handshakeTimeout = this.scheduleTimeout(() => {
+        finish(() => reject(new Error(`Litany service handshake timeout for ${serviceId}`)));
       }, 5000);
 
       const handshakeMessage = {
@@ -2073,14 +2173,10 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
         const response = outcome.value as IPCResponse & { success?: boolean; error?: string };
 
         if (response.type === 'handshake_ack' && response.success) {
-          clearTimeout(handshakeTimeout);
-          ws.off('message', handshakeHandler);
           console.log(`[WebSocket] Litany service handshake successful for ${serviceId}`);
-          resolve();
+          finish(() => resolve());
         } else if (response.type === 'handshake_error') {
-          clearTimeout(handshakeTimeout);
-          ws.off('message', handshakeHandler);
-          reject(new Error(`Litany service handshake failed: ${response.error || 'Unknown error'}`));
+          finish(() => reject(new Error(`Litany service handshake failed: ${response.error || 'Unknown error'}`)));
         }
       };
 
@@ -2102,9 +2198,7 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
           );
         }
       } catch (sendError) {
-        clearTimeout(handshakeTimeout);
-        ws.off('message', handshakeHandler);
-        reject(new Error(`Failed to send handshake to Litany service: ${sendError}`));
+        finish(() => reject(new Error(`Failed to send handshake to Litany service: ${sendError}`)));
       }
     });
   }
@@ -2350,7 +2444,7 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
         console.log(`[HTTP] Trying ${connection.id} endpoint: ${attempt.method} ${attempt.endpoint}`);
         
         const controller = new AbortController();
-        const timeoutId = this.scheduleTimeout(() => controller.abort(), 30000);
+        const timeout = this.scheduleTimeout(() => controller.abort(), 30000);
 
         try {
           let body: string | undefined;
@@ -2378,8 +2472,6 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
             signal: controller.signal
           });
 
-          clearTimeout(timeoutId);
-
           if (response.ok) {
             const responseData = await response.json();
             console.log(`[HTTP] SUCCESS ${connection.id} endpoint: ${attempt.method} ${attempt.endpoint}`);
@@ -2394,8 +2486,9 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
           }
 
         } catch (fetchError) {
-          clearTimeout(timeoutId);
           throw fetchError;
+        } finally {
+          timeout.cancel();
         }
         
       } catch (error) {
@@ -2567,12 +2660,21 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
       
       // Enhanced WebSocket message handling with longer timeout for real services
       return new Promise((resolve, reject) => {
-        const timeout = this.scheduleTimeout(() => {
-          ws.off('message', messageHandler);
-          reject(createTemplumError(`Litany WebSocket call timeout for ${apiMethod}`, 'WEBSOCKET_TIMEOUT', 'integration'));
-        }, 15000);
+        let settled = false;
+        let timeout: ManagedTimeout;
+        let messageHandler: (data: WebSocket.RawData) => void;
 
-        const messageHandler = (data: WebSocket.RawData) => {
+        const finish = (action: () => void) => {
+          if (settled) {
+            return;
+          }
+          settled = true;
+          timeout.cancel();
+          ws.off('message', messageHandler);
+          action();
+        };
+
+        messageHandler = (data: WebSocket.RawData) => {
           const outcome = this.parseRouterMessage<Record<string, any>>(data.toString(), {
             context: 'backend:router:websocket:response',
             serviceId: connection.id,
@@ -2606,9 +2708,6 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
             (response.type === 'api_response' && response.method === apiMethod) ||
             (response.requestId === messageId)
           ) {
-            clearTimeout(timeout);
-            ws.off('message', messageHandler);
-
             console.log(`[WebSocket] Received response from ${connection.id}:`, {
               method: apiMethod,
               success: response.success !== false,
@@ -2617,37 +2716,52 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
 
             if (apiMethod === 'getSkinDefinition' && response.skinDefinition) {
               console.log(`[WebSocket] Successfully received Litany skin definition`);
-              resolve({ skinDefinition: response.skinDefinition });
+              finish(() => resolve({ skinDefinition: response.skinDefinition }));
               return;
             }
 
             if (apiMethod === 'executeCommand') {
-              console.log(`[WebSocket] Litany command execution result:`, response.success ? 'success' : 'failed');
-              if (response.result) {
-                resolve(response.result);
+              console.log(
+                `[WebSocket] Litany command execution result:`,
+                response.success ? 'success' : 'failed'
+              );
+              const resultPayload = response.result ?? response.data;
+              if (resultPayload) {
+                finish(() => resolve(resultPayload));
                 return;
               }
+
+              finish(() => resolve({ success: response.success !== false }));
+              return;
             }
 
             if (apiMethod === 'updateContext' || apiMethod === 'syncMemory') {
               console.log(`[WebSocket] Litany context operation completed:`, apiMethod);
-              resolve(response.data || { success: response.success });
+              finish(() => resolve(response.data || { success: response.success }));
               return;
             }
 
             if (response.success === false) {
-              reject(
+              finish(() => reject(
                 createTemplumError(
                   `Litany service error: ${response.error || 'Unknown error'}`,
                   'WEBSOCKET_SERVICE_ERROR',
                   'integration'
                 )
-              );
+              ));
             } else {
-              resolve(response.data || response);
+              finish(() => resolve(response.data || response));
             }
           }
         };
+
+        timeout = this.scheduleTimeout(() => {
+          finish(() => reject(createTemplumError(
+            `Litany WebSocket call timeout for ${apiMethod}`,
+            'WEBSOCKET_TIMEOUT',
+            'integration'
+          )));
+        }, 15000);
 
         ws.on('message', messageHandler);
         
@@ -2666,13 +2780,11 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
             throw new Error(`WebSocket serialization failed (${outbound.status})`);
           }
         } catch (sendError) {
-          clearTimeout(timeout);
-          ws.off('message', messageHandler);
-          reject(createTemplumError(
+          finish(() => reject(createTemplumError(
             `Failed to send WebSocket message to Litany service: ${sendError}`,
             'WEBSOCKET_SEND_FAILED',
             'integration'
-          ));
+          )));
         }
       });
       
@@ -2711,16 +2823,29 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
     };
   }
 
-  async loadBackendSkin(backendId: string): Promise<UniversalSkinDefinition | null> {
+  async loadBackendSkin(
+    backendId: string,
+    options: { allowFallback?: boolean; visited?: Set<string> } = {}
+  ): Promise<UniversalSkinDefinition | null> {
+    const { allowFallback = true } = options;
+    const visited = options.visited ?? new Set<string>();
+
+    if (visited.has(backendId)) {
+      console.warn(`[FALLBACK_GUARD] Detected recursive skin load attempt for ${backendId}; aborting to prevent infinite loop`);
+      return null;
+    }
+
+    visited.add(backendId);
+
     try {
       const connection = this.connections.get(backendId);
       if (!connection || !connection.isConnected()) {
         console.warn(`Backend ${backendId} is not available for skin loading - using Universal Skin Engine fallback`);
-        return await this.getUniversalSkinEngineFallback(backendId);
+        return allowFallback ? await this.getUniversalSkinEngineFallback(backendId, { visited }) : null;
       }
 
       console.log(`Loading skin definition from backend: ${backendId}`);
-      
+
       const skinDefinitionRequest = {
         backendId,
         timestamp: Date.now(),
@@ -2728,12 +2853,17 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
       };
 
       const response = await this.callBackendServiceAPI(connection, 'getSkinDefinition', skinDefinitionRequest);
-      
-      if (response && (response as { skinDefinition?: UniversalSkinDefinition }).skinDefinition) {
+
+      const skinPayload =
+        response && typeof response === 'object' && 'skinDefinition' in (response as Record<string, unknown>)
+          ? (response as { skinDefinition: UniversalSkinDefinition | null }).skinDefinition
+          : (response as unknown as UniversalSkinDefinition | null);
+
+      if (skinPayload) {
         console.log(`Successfully loaded skin definition from ${backendId}`);
-        
-        const skinResponse = response as { skinDefinition: UniversalSkinDefinition };
-        
+
+        const skinResponse = { skinDefinition: skinPayload };
+
         // TASK-SKIN-004: Update stored backend config with capabilities from skin definition
         if (skinResponse.skinDefinition.backendConfig) {
           const currentConfig = this.backendConfigs.get(backendId);
@@ -2752,7 +2882,7 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
             console.log(`[SKIN-CAPABILITIES] Stored new backend config for ${backendId}:`, skinResponse.skinDefinition.backendConfig.capabilities);
           }
         }
-        
+
         // DYNAMIC COMMAND ROUTING: Register backend commands with command router
         try {
           this.commandRouter.registerBackend(connection, skinResponse.skinDefinition);
@@ -2761,7 +2891,7 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
           console.warn(`[DYNAMIC_COMMAND_ROUTER] Failed to register commands for ${backendId}:`, routerError);
           // Don't fail the skin loading due to command router issues
         }
-        
+
         // TEMPLUM CORE INTEGRATION: Load skin into Templum Core for interface activation
         try {
           if (this.orchestrator) {
@@ -2774,39 +2904,43 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
           console.warn(`[TEMPLUM_CORE] Failed to load skin into Templum Core for ${backendId}:`, coreError);
           // Don't fail the entire skin loading process due to core loading issues
         }
-        
+
         return skinResponse.skinDefinition;
-      } else {
-        console.log(`No skin definition available from ${backendId} - using Universal Skin Engine fallback`);
-        const fallbackSkin = await this.getUniversalSkinEngineFallback(backendId);
-        
-        // Register fallback skin commands if available
-        if (fallbackSkin) {
-          try {
-            this.commandRouter.registerBackend(connection, fallbackSkin as UniversalSkinDefinition);
-            console.log(`[DYNAMIC_COMMAND_ROUTER] Registered fallback commands for backend: ${backendId}`);
-          } catch (routerError) {
-            console.warn(`[DYNAMIC_COMMAND_ROUTER] Failed to register fallback commands for ${backendId}:`, routerError);
-          }
-          
-          // TEMPLUM CORE INTEGRATION: Load fallback skin into Templum Core
-          try {
-            if (this.orchestrator) {
-              await this.orchestrator.loadSkin(fallbackSkin);
-              console.log(`[TEMPLUM_CORE] Successfully loaded fallback skin from ${backendId} into Templum Core`);
-            }
-          } catch (coreError) {
-            console.warn(`[TEMPLUM_CORE] Failed to load fallback skin into Templum Core for ${backendId}:`, coreError);
-          }
-        }
-        
-        return fallbackSkin;
       }
+
+      console.log(`No skin definition available from ${backendId} - using Universal Skin Engine fallback`);
+      const fallbackSkin = allowFallback
+        ? await this.getUniversalSkinEngineFallback(backendId, { visited })
+        : null;
+
+      // Register fallback skin commands if available
+      if (fallbackSkin) {
+        try {
+          this.commandRouter.registerBackend(connection, fallbackSkin as UniversalSkinDefinition);
+          console.log(`[DYNAMIC_COMMAND_ROUTER] Registered fallback commands for backend: ${backendId}`);
+        } catch (routerError) {
+          console.warn(`[DYNAMIC_COMMAND_ROUTER] Failed to register fallback commands for ${backendId}:`, routerError);
+        }
+
+        // TEMPLUM CORE INTEGRATION: Load fallback skin into Templum Core
+        try {
+          if (this.orchestrator) {
+            await this.orchestrator.loadSkin(fallbackSkin);
+            console.log(`[TEMPLUM_CORE] Successfully loaded fallback skin from ${backendId} into Templum Core`);
+          }
+        } catch (coreError) {
+          console.warn(`[TEMPLUM_CORE] Failed to load fallback skin into Templum Core for ${backendId}:`, coreError);
+        }
+      }
+
+      return fallbackSkin;
     } catch (error) {
       console.error(`Failed to load skin from backend ${backendId}:`, error);
       console.log(`Using Universal Skin Engine fallback for ${backendId}`);
-      const fallbackSkin = await this.getUniversalSkinEngineFallback(backendId);
-      
+      const fallbackSkin = allowFallback
+        ? await this.getUniversalSkinEngineFallback(backendId, { visited })
+        : null;
+
       // Register fallback skin commands if available
       const connection = this.connections.get(backendId);
       if (fallbackSkin && connection) {
@@ -2817,8 +2951,10 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
           console.warn(`[DYNAMIC_COMMAND_ROUTER] Failed to register fallback commands for ${backendId}:`, routerError);
         }
       }
-      
+
       return fallbackSkin;
+    } finally {
+      visited.delete(backendId);
     }
   }
 
@@ -2826,12 +2962,16 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
    * Get fallback skin definition through Universal Skin Engine coordination
    * Provides enhanced graceful degradation when backend services are unavailable
    */
-  private async getUniversalSkinEngineFallback(backendId: string): Promise<UniversalSkinDefinition | null> {
+  private async getUniversalSkinEngineFallback(
+    backendId: string,
+    options: { visited?: Set<string> } = {}
+  ): Promise<UniversalSkinDefinition | null> {
+    const visited = options.visited ?? new Set<string>();
     try {
       console.log(`[ENHANCED_FALLBACK_COORDINATION] Coordinating fallback skin generation with Universal Skin Engine for: ${backendId}`);
       
       // Enhanced coordination: delegate to Universal Skin Engine for sophisticated fallback
-      const fallbackSkin = await this.generateFallbackThroughEngine(backendId);
+      const fallbackSkin = await this.generateFallbackThroughEngine(backendId, { visited });
       
       if (fallbackSkin) {
         console.log(`[ENHANCED_FALLBACK_COORDINATION] Universal Skin Engine successfully generated fallback skin for ${backendId}`);
@@ -2862,7 +3002,11 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
    * ENHANCED: Generate intelligent fallback skin through Universal Skin Engine coordination
    * GENERIC ARCHITECTURE: Leverages skin-driven patterns for enhanced fallback quality
    */
-  private async generateFallbackThroughEngine(backendId: string): Promise<UniversalSkinDefinition | null> {
+  private async generateFallbackThroughEngine(
+    backendId: string,
+    options: { visited: Set<string> }
+  ): Promise<UniversalSkinDefinition | null> {
+    const { visited } = options;
     try {
       const fallbackSkinId = `enhanced-fallback-${backendId}-${Date.now()}`;
       
@@ -2877,7 +3021,10 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
         if (availableBackend !== backendId) {
           try {
             console.log(`[ENHANCED_COORDINATION] Attempting to derive fallback from ${availableBackend} skin definition`);
-            templateSkin = await this.loadBackendSkin(availableBackend);
+            templateSkin = await this.loadBackendSkin(availableBackend, {
+              allowFallback: false,
+              visited
+            });
             if (templateSkin) {
               console.log(`[ENHANCED_COORDINATION] Using ${availableBackend} as template for enhanced fallback`);
               break;
@@ -3603,7 +3750,7 @@ export class TemplumBackendServiceRouter extends EventEmitter implements Backend
     }
 
     // Remove all event listeners
-    this.removeAllListeners();
+    this.cleanupEvents();
     
     console.log('[BACKEND_SERVICE_ROUTER] Cleanup completed');
   }
@@ -3633,7 +3780,7 @@ class HaruspexIPCClient {
     private pendingRequests = new Map<string, {
       resolve: (value: unknown) => void;
       reject: (reason: Error) => void;
-      timeout: NodeJS.Timeout;
+      timeout: ManagedTimeout;
     }>();
     private messageBuffer = '';
     private connectionInfo: HaruspexConnectionInfo | null = null;
@@ -3653,10 +3800,8 @@ class HaruspexIPCClient {
       this.serviceId = 'haruspex';
     }
 
-    private scheduleTimeout(callback: () => void, ms: number): NodeJS.Timeout {
-      const handle = setTimeout(callback, ms);
-      handle.unref?.();
-      return handle;
+    private scheduleTimeout(callback: () => void | Promise<void>, ms: number): ManagedTimeout {
+      return createTimeout(callback, ms, { unref: true });
     }
 
     private parseIpcMessage<T>(raw: string, context: string): SerializationOutcome<T> {
@@ -3710,18 +3855,29 @@ class HaruspexIPCClient {
       return new Promise((resolve, reject) => {
         this.socket = new net.Socket();
 
-        const timeout = this.scheduleTimeout(() => {
+        let settled = false;
+        let timeout: ManagedTimeout;
+
+        const finish = (action: () => void) => {
+          if (settled) {
+            return;
+          }
+          settled = true;
+          timeout.cancel();
+          action();
+        };
+
+        timeout = this.scheduleTimeout(() => {
           this.socket?.destroy();
-          reject(new Error('Connection timeout'));
+          finish(() => reject(new Error('Connection timeout')));
         }, 10000);
 
         this.socket.connect(this.connectionInfo!.port, this.connectionInfo!.host, () => {
-          clearTimeout(timeout);
           this.isConnected = true;
           console.log(
             `[IPC] Connected to Haruspex service at ${this.connectionInfo!.host}:${this.connectionInfo!.port}`
           );
-          resolve();
+          finish(() => resolve());
         });
 
         this.socket.on('data', (data) => {
@@ -3729,9 +3885,8 @@ class HaruspexIPCClient {
         });
 
         this.socket.on('error', (error) => {
-          clearTimeout(timeout);
           this.isConnected = false;
-          reject(error);
+          finish(() => reject(error instanceof Error ? error : new Error(String(error))));
         });
 
         this.socket.on('close', () => {
@@ -3748,7 +3903,7 @@ class HaruspexIPCClient {
       this.isConnected = false;
 
       for (const [_requestId, request] of Array.from(this.pendingRequests.entries())) {
-        clearTimeout(request.timeout);
+        request.timeout.cancel();
         request.reject(new Error('Connection closed'));
       }
       this.pendingRequests.clear();
@@ -3789,7 +3944,7 @@ class HaruspexIPCClient {
         if (outbound.ok && outbound.value) {
           this.socket!.write(`${outbound.value}\n`);
         } else {
-          clearTimeout(timeout);
+          timeout.cancel();
           this.pendingRequests.delete(requestId);
           reject(new Error(`IPC serialization failed (${outbound.status})`));
         }
@@ -3827,7 +3982,7 @@ class HaruspexIPCClient {
     private handleMessage(message: IPCResponse): void {
       if (message.requestId && this.pendingRequests.has(message.requestId)) {
         const request = this.pendingRequests.get(message.requestId)!;
-        clearTimeout(request.timeout);
+        request.timeout.cancel();
         this.pendingRequests.delete(message.requestId);
 
         if (message.success) {

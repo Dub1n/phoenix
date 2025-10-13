@@ -8,13 +8,14 @@
  * Replaces pattern matching (e.g., "if command starts with 'haruspex.'") with dynamic mapping.
  */
 
-import { EventEmitter } from 'events';
 import { BackendConnection } from './connection-factory';
 import { 
   UniversalSkinDefinition,
   createTemplumError, 
   isTemplumError 
 } from '../types/templum-types';
+import { EventDrivenComponent } from '../utils/event-bus-adapter';
+import type { TypedEventMap } from '../utils/event-utils';
 
 /**
  * Command routing information
@@ -37,20 +38,36 @@ export interface RoutingStatistics {
   duplicateCommands: string[]; // Commands registered by multiple backends
 }
 
+interface DynamicCommandRouterEvents extends TypedEventMap {
+  backendRegistered: (payload: {
+    backendId: string;
+    commandCount: number;
+    aliasCount: number;
+    commands: string[];
+  }) => void;
+  backendUnregistered: (payload: {
+    backendId: string;
+    commandsRemoved: number;
+    aliasesRemoved: number;
+  }) => void;
+  cleared: () => void;
+}
+
 /**
  * Dynamic Command Router Implementation
  * 
  * Routes commands to appropriate backend services based on skin command definitions.
  * Eliminates hardcoded routing patterns by building routing tables from skin metadata.
  */
-export class DynamicCommandRouter extends EventEmitter {
+export class DynamicCommandRouter extends EventDrivenComponent<DynamicCommandRouterEvents> {
+  private static instanceCounter = 0;
   private commandMap: Map<string, BackendConnection> = new Map();
   private aliasMap: Map<string, string> = new Map(); // alias -> original command
   private backendCommands: Map<string, Set<string>> = new Map(); // backend ID -> command IDs
   private duplicateCommands: Set<string> = new Set(); // Commands registered by multiple backends
   
   constructor() {
-    super();
+    super(`dynamic-command-router:${DynamicCommandRouter.instanceCounter++}`, 80);
     this.setupEventHandlers();
   }
 

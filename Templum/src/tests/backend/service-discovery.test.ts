@@ -10,7 +10,6 @@
  */
 
 import { jest } from '@jest/globals';
-import { EventEmitter } from 'events';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as http from 'http';
@@ -33,6 +32,7 @@ import { serviceRegistryEntrySchema } from '../../backend/schemas/serialization-
 import { buildServiceRegistryDefaults } from '../../backend/defaults/serialization-defaults';
 import { serializeServiceManifest } from '../../backend/schemas/service-manifest';
 import { performServiceHealthCheck } from '../../backend/service-health-check';
+import { sleep } from '../../utils/async-utils';
 
 jest.mock('chokidar');
 jest.mock('../../backend/service-health-check', () => ({
@@ -124,13 +124,13 @@ describe('ServiceDiscovery', () => {
       const directories = new Set<string>();
       const fileContents = new Map<string, string>();
       const watcherEvents: Record<string, (filePath: string) => unknown> = {};
-      const mockWatcher = new (class extends EventEmitter {
-        close = jest.fn(async () => undefined);
-        override on(event: string, handler: (filePath: string) => unknown): this {
+      const mockWatcher = {
+        close: jest.fn(async () => undefined),
+        on: jest.fn((event: string, handler: (filePath: string) => unknown) => {
           watcherEvents[event] = handler;
-          return super.on(event, handler);
-        }
-      })() as unknown as chokidar.FSWatcher;
+          return mockWatcher;
+        })
+      } as unknown as chokidar.FSWatcher;
 
       mockChokidar.watch.mockReturnValue(mockWatcher);
 
@@ -293,11 +293,11 @@ describe('ServiceDiscovery', () => {
           },
         } as any;
 
-        setTimeout(() => {
+        void sleep(10).then(() => {
           if (typeof callback === 'function') {
             callback(response);
           }
-        }, 10);
+        });
 
         return { on: jest.fn() } as any;
       });
@@ -599,11 +599,11 @@ describe('ServiceDiscovery', () => {
           },
         } as any;
 
-        setTimeout(() => {
+        void sleep(10).then(() => {
           if (typeof callback === 'function') {
             callback(response);
           }
-        }, 10);
+        });
 
         return { on: jest.fn() } as any;
       });
@@ -842,7 +842,7 @@ describe('ServiceDiscovery', () => {
 
       mockHttp.get.mockImplementation((url: any, callback: any) => {
         if (url.includes(':3002/api/skin')) {
-          setTimeout(() => {
+          void sleep(10).then(() => {
             const mockResponse = {
               statusCode: 200,
               on: jest.fn((event: string, callback: (data?: any) => void) => {
@@ -858,12 +858,12 @@ describe('ServiceDiscovery', () => {
               })
             };
             callback(mockResponse);
-          }, 10);
+          });
         } else {
           // Simulate connection failure for other ports
-          setTimeout(() => {
+          void sleep(10).then(() => {
             mockRequest.on.mock.calls.find((call: any[]) => call[0] === 'error')?.[1]?.(new Error('Connection failed'));
-          }, 10);
+          });
         }
         return mockRequest;
       });
@@ -888,7 +888,7 @@ describe('ServiceDiscovery', () => {
       (mockWebSocket as any).mockImplementation(() => mockWs);
 
       // Simulate WebSocket connection and response
-      setTimeout(() => {
+      void sleep(50).then(() => {
         const openHandler = mockWs.on.mock.calls.find((call: any[]) => call[0] === 'open')?.[1] as Function;
         if (openHandler) openHandler();
 
@@ -903,7 +903,7 @@ describe('ServiceDiscovery', () => {
             }
           })));
         }
-      }, 50);
+      });
 
       const discovered = await strategy.discover();
 
@@ -934,10 +934,10 @@ describe('ServiceDiscovery', () => {
       } as any;
 
       mockHttp.get.mockImplementation((url: any, callback: any) => {
-        setTimeout(() => {
+        void sleep(10).then(() => {
           const errorHandler = mockRequest.on.mock.calls.find((call: any[]) => call[0] === 'error')?.[1];
           if (errorHandler) errorHandler(new Error('Network error'));
-        }, 10);
+        });
         return mockRequest;
       });
 

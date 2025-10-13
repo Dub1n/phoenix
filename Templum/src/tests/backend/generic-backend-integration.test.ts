@@ -9,7 +9,7 @@
  * TASK: TASK-CLEAN-001 - Generic Backend Validation & Legacy Cleanup
  */
 
-import { EventEmitter } from 'events';
+import { EventUtils, type GenericEventMap } from '../../utils/event-utils';
 import { jest } from '@jest/globals';
 import { TemplumBackendServiceRouter, BackendServiceRouter, type BackendServicePayload } from '../../backend/backend-service-router';
 import { ConnectionFactory, type BackendConnection } from '../../backend/connection-factory';
@@ -29,6 +29,38 @@ const ServiceDiscoveryMock = ServiceDiscovery as unknown as jest.Mock;
 type ServiceDiscoveryController = ReturnType<typeof createServiceDiscoveryMock>;
 
 let serviceDiscoveryController: ServiceDiscoveryController;
+const nativeFetch = globalThis.fetch;
+
+const defaultCallBackendServiceImplementation = async (
+  connection: BackendConnection,
+  method: string
+): Promise<BackendServicePayload> => {
+  const safeConnection = connection as unknown as {
+    getSkinDefinition?: () => Promise<UniversalSkinDefinition>;
+    getCapabilities?: () => Promise<string[]>;
+    getVersion?: () => Promise<string>;
+  };
+
+  switch (method) {
+    case 'getSkinDefinition':
+      if (safeConnection.getSkinDefinition) {
+        return { skinDefinition: await safeConnection.getSkinDefinition() };
+      }
+      return { skinDefinition: null };
+    case 'getCapabilities':
+      if (safeConnection.getCapabilities) {
+        return { capabilities: await safeConnection.getCapabilities() };
+      }
+      return { capabilities: [] };
+    case 'getVersion':
+      if (safeConnection.getVersion) {
+        return { version: await safeConnection.getVersion() };
+      }
+      return { version: '1.0.0' };
+    default:
+      return {};
+  }
+};
 
 const buildDiscoveredService = (
   id: string,
@@ -44,7 +76,7 @@ const buildDiscoveredService = (
 
 const createServiceDiscoveryMock = () => {
   let currentServices: DiscoveredService[] = [];
-  const emitter = new EventEmitter();
+  const emitter = EventUtils.createTypedEmitter<GenericEventMap>();
 
   const discoverServices = jest.fn(async () => currentServices);
   const getDiscoveredServices = jest.fn(() => currentServices);
@@ -231,19 +263,45 @@ describe('Generic Backend Integration System', () => {
 
   const registerSkinWithRouter = async (
     skin: UniversalSkinDefinition,
-    options: { registerCommands?: boolean } = {}
+    options: { registerCommands?: boolean; skipFactoryMock?: boolean } = {}
   ): Promise<MockBackendConnection> => {
-    await backendRouter.registerBackendFromSkin(skin);
+    const { registerCommands = true, skipFactoryMock = false } = options;
 
-    const connection = new MockBackendConnection(skin);
-    const connectionMap = (backendRouter as unknown as { connections: Map<string, MockBackendConnection> }).connections;
-    connectionMap.set(connection.id, connection);
+    const managedConnection = skipFactoryMock ? null : new MockBackendConnection(skin);
 
-    if (options.registerCommands !== false) {
-      commandRouter.registerBackend(connection as unknown as BackendConnection, skin);
+    if (!skipFactoryMock && managedConnection) {
+      mockConnectionFactory.create.mockResolvedValue(managedConnection as unknown as BackendConnection);
     }
 
-    return connection;
+    await backendRouter.registerBackendFromSkin(skin);
+
+    const connectionMap = (backendRouter as unknown as { connections: Map<string, MockBackendConnection> }).connections;
+    const backendId =
+      skin.backendConfig?.service ||
+      skin.metadata?.backendService ||
+      skin.metadata?.backend ||
+      skin.id;
+
+    const existingConnection = backendId ? connectionMap.get(backendId) ?? undefined : undefined;
+
+    let resolvedConnection = existingConnection;
+
+    if (!resolvedConnection && managedConnection) {
+      resolvedConnection = managedConnection;
+      connectionMap.set(managedConnection.id, managedConnection);
+    }
+
+    if (!resolvedConnection) {
+      resolvedConnection = new MockBackendConnection(skin);
+      connectionMap.set(resolvedConnection.id, resolvedConnection);
+    }
+
+    const shouldRegisterCommands = registerCommands && (!skipFactoryMock || !existingConnection);
+    if (shouldRegisterCommands && resolvedConnection) {
+      commandRouter.registerBackend(resolvedConnection as unknown as BackendConnection, skin);
+    }
+
+    return resolvedConnection;
   };
 
   const connectUsingFactory = async (
@@ -275,8 +333,11 @@ describe('Generic Backend Integration System', () => {
   };
   
   
+  let callBackendServiceSpy: jest.SpyInstance<Promise<BackendServicePayload>, [BackendConnection, string, BackendServicePayload]>;
+
   beforeEach(() => {
     jest.clearAllMocks();
+    mockConnectionFactory.create.mockReset();
     ServiceDiscoveryMock.mockReset();
     
     // Ensure generic mode is enabled
@@ -306,9 +367,60 @@ describe('Generic Backend Integration System', () => {
     commandRouter = backendRouter.getCommandRouter();
     
     setDiscoveredServices([]);
+
+    callBackendServiceSpy = jest
+      .spyOn(backendRouter as unknown as {
+        callBackendServiceAPI: (
+          connection: BackendConnection,
+          method: string,
+          payload: BackendServicePayload
+        ) => Promise<BackendServicePayload>;
+      }, 'callBackendServiceAPI')
+      .mockImplementation(async (connection, method) => {
+        const safeConnection = connection as unknown as {
+          getSkinDefinition?: () => Promise<UniversalSkinDefinition>;
+          getCapabilities?: () => Promise<string[]>;
+          getVersion?: () => Promise<string>;
+        };
+
+        switch (method) {
+          case 'getSkinDefinition':
+            if (safeConnection.getSkinDefinition) {
+              return { skinDefinition: await safeConnection.getSkinDefinition() };
+            }
+            return { skinDefinition: null };
+          case 'getCapabilities':
+            if (safeConnection.getCapabilities) {
+              return { capabilities: await safeConnection.getCapabilities() };
+            }
+            return { capabilities: [] };
+          case 'getVersion':
+            if (safeConnection.getVersion) {
+              return { version: await safeConnection.getVersion() };
+            }
+            return { version: '1.0.0' };
+          default:
+            return {};
+        }
+      });
+
+    (globalThis as any).fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({}),
+      text: async () => ''
+    });
   });
 
   afterEach(async () => {
+    callBackendServiceSpy.mockRestore();
+    if (nativeFetch) {
+      globalThis.fetch = nativeFetch;
+    } else {
+      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+      delete (globalThis as any).fetch;
+    }
+
     if (backendRouter && typeof backendRouter.dispose === 'function') {
       await backendRouter.dispose();
     }
@@ -356,7 +468,7 @@ describe('Generic Backend Integration System', () => {
       const haruspexSkin = createMockHaruspexSkinDefinition();
       const litanySkin = createMockLitanySkinDefinition();
 
-      await registerSkinWithRouter(pclSkin);
+      await registerSkinWithRouter(pclSkin, { skipFactoryMock: true });
       await registerSkinWithRouter(haruspexSkin);
       await registerSkinWithRouter(litanySkin);
 
@@ -581,9 +693,9 @@ describe('Generic Backend Integration System', () => {
       const loadSkinSpy = jest
         .spyOn(backendRouter as unknown as { loadBackendSkin(backendId: string): Promise<UniversalSkinDefinition | null> }, 'loadBackendSkin')
         .mockResolvedValue(pclSkin);
-      const callApiSpy = jest
-        .spyOn(backendRouter as unknown as { callBackendServiceAPI(connection: BackendConnection, method: string, payload: BackendServicePayload): Promise<BackendServicePayload> }, 'callBackendServiceAPI')
-        .mockResolvedValue({ skinDefinition: pclSkin });
+      const previousCallApiImplementation =
+        callBackendServiceSpy.getMockImplementation() ?? defaultCallBackendServiceImplementation;
+      callBackendServiceSpy.mockImplementation(async () => ({ skinDefinition: pclSkin }));
 
       // Start discovery process
       try {
@@ -591,7 +703,7 @@ describe('Generic Backend Integration System', () => {
       } finally {
         restorePostConnect();
         loadSkinSpy.mockRestore();
-        callApiSpy.mockRestore();
+        callBackendServiceSpy.mockImplementation(previousCallApiImplementation);
       }
 
       expect(discoverServicesMock).toHaveBeenCalled();
@@ -689,16 +801,16 @@ describe('Generic Backend Integration System', () => {
       const loadSkinSpy = jest
         .spyOn(backendRouter as unknown as { loadBackendSkin(backendId: string): Promise<UniversalSkinDefinition | null> }, 'loadBackendSkin')
         .mockResolvedValue(pclSkin);
-      const callApiSpy = jest
-        .spyOn(backendRouter as unknown as { callBackendServiceAPI(connection: BackendConnection, method: string, payload: BackendServicePayload): Promise<BackendServicePayload> }, 'callBackendServiceAPI')
-        .mockResolvedValue({ skinDefinition: pclSkin });
+      const previousCallApiImplementation =
+        callBackendServiceSpy.getMockImplementation() ?? defaultCallBackendServiceImplementation;
+      callBackendServiceSpy.mockImplementation(async () => ({ skinDefinition: pclSkin }));
 
       try {
         await backendRouter.discoverAndConnect();
       } finally {
         restorePostConnect();
         loadSkinSpy.mockRestore();
-        callApiSpy.mockRestore();
+        callBackendServiceSpy.mockImplementation(previousCallApiImplementation);
       }
 
       expect(discoverServicesMock).toHaveBeenCalled();
@@ -745,18 +857,16 @@ describe('Generic Backend Integration System', () => {
       const pclSkin = createMockPCLSkinDefinition();
       const haruspexSkin = createMockHaruspexSkinDefinition();
 
-      const mockHaruspexConnection = new MockBackendConnection(haruspexSkin);
-
       // PCL succeeds, Haruspex fails
-      mockConnectionFactory.create
-        .mockResolvedValueOnce(new MockBackendConnection(pclSkin))
-        .mockRejectedValue(new Error('Haruspex connection failed'));
+      mockConnectionFactory.create.mockResolvedValueOnce(new MockBackendConnection(pclSkin));
+      await registerSkinWithRouter(pclSkin, { skipFactoryMock: true });
 
-      await registerSkinWithRouter(pclSkin);
+      mockConnectionFactory.create.mockRejectedValue(new Error('Haruspex connection failed'));
       await backendRouter.registerBackendFromSkin(haruspexSkin);
 
       const restore = stubPostConnectionOperations();
       try {
+        mockConnectionFactory.create.mockResolvedValueOnce(new MockBackendConnection(pclSkin));
         await connectUsingFactory('pcl', pclSkin.backendConfig!);
       } finally {
         restore();
@@ -764,6 +874,8 @@ describe('Generic Backend Integration System', () => {
 
       await expect(connectUsingFactory('haruspex', haruspexSkin.backendConfig!))
         .rejects.toThrow('Haruspex connection failed');
+
+      mockConnectionFactory.create.mockReset();
 
       // PCL should still be operational
       const configs = backendRouter.getBackendConfigs ? backendRouter.getBackendConfigs() : {};
@@ -815,15 +927,15 @@ describe('Generic Backend Integration System', () => {
       const loadSkinSpy = jest
         .spyOn(backendRouter as unknown as { loadBackendSkin(backendId: string): Promise<UniversalSkinDefinition | null> }, 'loadBackendSkin')
         .mockResolvedValue(null);
-      const callApiSpy = jest
-        .spyOn(backendRouter as unknown as { callBackendServiceAPI(connection: BackendConnection, method: string, payload: BackendServicePayload): Promise<BackendServicePayload> }, 'callBackendServiceAPI')
-        .mockResolvedValue({});
+      const previousCallApiImplementation =
+        callBackendServiceSpy.getMockImplementation() ?? defaultCallBackendServiceImplementation;
+      callBackendServiceSpy.mockImplementation(async () => ({}));
 
       await backendRouter.discoverAndConnect();
 
       restorePostConnect();
       loadSkinSpy.mockRestore();
-      callApiSpy.mockRestore();
+      callBackendServiceSpy.mockImplementation(previousCallApiImplementation);
 
       expect(discoveryCompleted).toBe(true);
 

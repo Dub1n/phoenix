@@ -11,12 +11,15 @@
  * Pattern-Info: { approach: "multi-layer-validation", alternatives: "basic-ping-check", trade-offs: "thoroughness-vs-speed" }
  */
 
-import { EventEmitter } from 'events';
+import { EventDrivenComponent } from '../utils/event-bus-adapter';
+import type { TypedEventMap } from '../utils/event-utils';
 import { ServiceDiscovery, DiscoveredService } from './service-discovery';
 import { BackendDependencyResolver, DependencyResolutionResult } from './backend-dependency-resolver';
 import { BackendConfig } from '../types/universal-skin-engine-types';
 import { createTemplumError } from '../types/templum-types';
 import { SemanticValidators, TypeGuards, TypeValidators } from '../utils/type-guards';
+import { createTimeout } from '../utils/async-utils';
+import type { ManagedTimeout } from '../utils/async-utils';
 
 export interface ServiceValidationResult {
   serviceId: string;
@@ -64,7 +67,14 @@ export interface ServiceCapabilityProfile {
  * Service Discovery Validator
  * Provides comprehensive validation of discovered services with performance metrics
  */
-export class ServiceDiscoveryValidator extends EventEmitter {
+interface ServiceDiscoveryValidatorEvents extends TypedEventMap {
+  validationStarted: () => void;
+  validationCompleted: (metrics: ValidationMetrics) => void;
+  validationError: (error: unknown) => void;
+}
+
+export class ServiceDiscoveryValidator extends EventDrivenComponent<ServiceDiscoveryValidatorEvents> {
+  private static instanceCounter = 0;
   private serviceDiscovery: ServiceDiscovery;
   private dependencyResolver: BackendDependencyResolver;
   private validationCache = new Map<string, ServiceValidationResult>();
@@ -85,7 +95,7 @@ export class ServiceDiscoveryValidator extends EventEmitter {
     dependencyResolver: BackendDependencyResolver,
     options: Partial<typeof ServiceDiscoveryValidator.prototype.validationOptions> = {}
   ) {
-    super();
+    super(`service-discovery-validator:${ServiceDiscoveryValidator.instanceCounter++}`, 40);
     this.serviceDiscovery = serviceDiscovery;
     this.dependencyResolver = dependencyResolver;
     this.validationOptions = { ...this.validationOptions, ...options };
@@ -247,18 +257,20 @@ export class ServiceDiscoveryValidator extends EventEmitter {
     responseTime: number;
     error?: string;
   }> {
-    try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), this.validationOptions.healthCheckTimeout);
+    const controller = new AbortController();
+    let timeoutGuard: ManagedTimeout | null = createTimeout(
+      () => controller.abort(),
+      this.validationOptions.healthCheckTimeout,
+      { unref: true }
+    );
 
+    try {
       const response = await fetch(config.endpoint, {
         method: 'HEAD',
         signal: controller.signal,
         headers: { 'Accept': 'application/json' }
       });
 
-      clearTimeout(timeout);
-      
       return {
         connected: response.ok || response.status < 500, // Accept client errors but not server errors
         responseTime: Date.now() - startTime
@@ -270,6 +282,9 @@ export class ServiceDiscoveryValidator extends EventEmitter {
         responseTime: Date.now() - startTime,
         error: error instanceof Error ? error.message : String(error)
       };
+    } finally {
+      timeoutGuard?.cancel();
+      timeoutGuard = null;
     }
   }
 
@@ -284,33 +299,52 @@ export class ServiceDiscoveryValidator extends EventEmitter {
     return new Promise((resolve) => {
       try {
         const ws = new WebSocket(config.endpoint);
-        const timeout = setTimeout(() => {
+        let settled = false;
+        let timeoutGuard: ManagedTimeout | null = null;
+
+        const settle = (result: { connected: boolean; responseTime: number; error?: string }) => {
+          if (settled) {
+            return;
+          }
+          settled = true;
+          timeoutGuard?.cancel();
+          timeoutGuard = null;
+          resolve(result);
+        };
+
+        timeoutGuard = createTimeout(() => {
+          if (settled) {
+            return;
+          }
           ws.close();
-          resolve({
+          settle({
             connected: false,
             responseTime: Date.now() - startTime,
             error: 'Connection timeout'
           });
-        }, this.validationOptions.healthCheckTimeout);
+        }, this.validationOptions.healthCheckTimeout, { unref: true });
 
         ws.onopen = () => {
-          clearTimeout(timeout);
+          if (settled) {
+            return;
+          }
           ws.close();
-          resolve({
+          settle({
             connected: true,
             responseTime: Date.now() - startTime
           });
         };
 
-        ws.onerror = (error) => {
-          clearTimeout(timeout);
-          resolve({
+        ws.onerror = () => {
+          if (settled) {
+            return;
+          }
+          settle({
             connected: false,
             responseTime: Date.now() - startTime,
             error: 'WebSocket connection error'
           });
         };
-
       } catch (error) {
         resolve({
           connected: false,
@@ -360,28 +394,38 @@ export class ServiceDiscoveryValidator extends EventEmitter {
     for (const endpoint of healthEndpoints) {
       try {
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), this.validationOptions.healthCheckTimeout);
+        let timeoutGuard: ManagedTimeout | null = null;
+        try {
+          timeoutGuard = createTimeout(
+            () => controller.abort(),
+            this.validationOptions.healthCheckTimeout,
+            { unref: true }
+          );
 
-        const response = await fetch(endpoint, {
-          signal: controller.signal,
-          headers: { 'Accept': 'application/json' }
-        });
+          const response = await fetch(endpoint, {
+            signal: controller.signal,
+            headers: { 'Accept': 'application/json' }
+          });
 
-        clearTimeout(timeout);
-        
-        if (response.ok) {
-          const contentType = response.headers.get('content-type');
-          if (contentType?.includes('application/json')) {
-            const healthData = await response.json();
-            results.push({ endpoint, healthy: healthData.status === 'healthy' || healthData.healthy === true });
+          timeoutGuard?.cancel();
+          timeoutGuard = null;
+
+          if (response.ok) {
+            const contentType = response.headers.get('content-type');
+            if (contentType?.includes('application/json')) {
+              const healthData = await response.json();
+              results.push({ endpoint, healthy: healthData.status === 'healthy' || healthData.healthy === true });
+            } else {
+              results.push({ endpoint, healthy: true }); // Assume healthy if responds with 200
+            }
           } else {
-            results.push({ endpoint, healthy: true }); // Assume healthy if responds with 200
+            results.push({ endpoint, healthy: false });
+            errors.push(`Health check failed for ${endpoint}: ${response.status}`);
           }
-        } else {
-          results.push({ endpoint, healthy: false });
-          errors.push(`Health check failed for ${endpoint}: ${response.status}`);
+        } finally {
+          timeoutGuard?.cancel();
+          timeoutGuard = null;
         }
-
       } catch (error) {
         results.push({ endpoint, healthy: false });
         errors.push(`Health check error for ${endpoint}: ${error instanceof Error ? error.message : String(error)}`);
@@ -672,6 +716,6 @@ export class ServiceDiscoveryValidator extends EventEmitter {
    */
   async close(): Promise<void> {
     this.clearCache();
-    this.removeAllListeners();
+    this.cleanupEvents();
   }
 }

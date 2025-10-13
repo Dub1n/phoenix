@@ -1,5 +1,6 @@
-import { EventEmitter } from 'events';
 import type { DiscoveredService } from './service-discovery';
+import { EventDrivenComponent } from '../utils/event-bus-adapter';
+import type { TypedEventMap } from '../utils/event-utils';
 
 export type ManualOverrideScope = 'session' | 'global';
 
@@ -44,15 +45,18 @@ interface ManualOverrideRecord {
   descriptor: ManualOverrideDescriptor;
 }
 
-export declare interface ManualOverrideManager {
-  on(event: 'manualOverride:applied', listener: (payload: ManualOverrideAppliedEvent) => void): this;
-  on(event: 'manualOverride:cleared', listener: (payload: ManualOverrideClearedEvent) => void): this;
-  emit(event: 'manualOverride:applied', payload: ManualOverrideAppliedEvent): boolean;
-  emit(event: 'manualOverride:cleared', payload: ManualOverrideClearedEvent): boolean;
+interface ManualOverrideEvents extends TypedEventMap {
+  'manualOverride:applied': (payload: ManualOverrideAppliedEvent) => void;
+  'manualOverride:cleared': (payload: ManualOverrideClearedEvent) => void;
 }
 
-export class ManualOverrideManager extends EventEmitter {
+export class ManualOverrideManager extends EventDrivenComponent<ManualOverrideEvents> {
+  private static instanceCounter = 0;
   private overrides = new Map<string, ManualOverrideRecord>();
+
+  constructor() {
+    super(`manual-override-manager:${ManualOverrideManager.instanceCounter++}`, 20);
+  }
 
   applyOverride(
     serviceId: string,

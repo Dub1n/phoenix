@@ -6,7 +6,8 @@
  * description: [PCL-optimized command registry leveraging 75% reuse potential with backend routing patterns]
  * ---*/
 
-import { EventEmitter } from 'events';
+import { EventDrivenComponent } from '../utils/event-bus-adapter';
+import type { TypedEventMap } from '../utils/event-utils';
 
 export interface CommandDefinition {
   id: string;
@@ -163,7 +164,26 @@ export interface CommandExecutionResult {
   timestamp: number;
 }
 
-export class PCLCommandRegistry extends EventEmitter {
+interface PCLCommandRegistryEvents extends TypedEventMap {
+  commandRegistered: (payload: {
+    commandId: string;
+    pclReusePercentage: number;
+    backend: string;
+    mappingType: string;
+    timestamp: number;
+  }) => void;
+  cacheHit: (payload: { commandId: string; executionId: string; cacheKey: string }) => void;
+  commandExecuted: (result: CommandExecutionResult) => void;
+  commandFailed: (result: CommandExecutionResult) => void;
+  backendConnected: (payload: {
+    backendName: string;
+    commandSupport: string[];
+    routingStrategies: string[];
+  }) => void;
+}
+
+export class PCLCommandRegistry extends EventDrivenComponent<PCLCommandRegistryEvents> {
+  private static instanceCounter = 0;
   private commandDefinitions: Map<string, CommandDefinition> = new Map();
   private commandCache: Map<string, any> = new Map();
   private backendConnections: Map<string, any> = new Map();
@@ -172,7 +192,7 @@ export class PCLCommandRegistry extends EventEmitter {
   private stats: CommandRegistryStats;
 
   constructor() {
-    super();
+    super(`pcl-command-registry:${PCLCommandRegistry.instanceCounter++}`, 120);
     this.stats = this.initializeStats();
     this.initializeRoutingStrategies();
     this.initializePCLCommandMappings();

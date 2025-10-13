@@ -19,6 +19,10 @@ import * as path from 'path';
 import * as backendSerializationLog from '../../backend/backend-serialization-log';
 import { BackendConfig } from '../../types/universal-skin-engine-types';
 import { serializeServiceManifest } from '../../backend/schemas/service-manifest';
+import { sleep } from '../../utils/async-utils';
+
+const nativeFetch = globalThis.fetch;
+
 
 describe('Backend Dependency Resolution Integration', () => {
   let dependencyResolver: BackendDependencyResolver;
@@ -57,9 +61,25 @@ describe('Backend Dependency Resolution Integration', () => {
 
   afterEach(async () => {
     emitSerializationWarningsSpy.mockRestore();
-    await dependencyResolver.close();
-    await serviceValidator.close();
-    await serviceDiscovery.close();
+
+    if (dependencyResolver) {
+      await dependencyResolver.close();
+    }
+
+    if (serviceValidator) {
+      await serviceValidator.close();
+    }
+
+    if (serviceDiscovery) {
+      await serviceDiscovery.close();
+    }
+
+    if (nativeFetch) {
+      globalThis.fetch = nativeFetch;
+    } else {
+      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+      delete (globalThis as any).fetch;
+    }
   });
 
   describe('Phase 1 migrations', () => {
@@ -355,11 +375,10 @@ describe('Backend Dependency Resolution Integration', () => {
       const mockService = createMockService('performance-test', 'http://localhost:8080');
       
       // Mock successful responses with varying delays
-      global.fetch = jest.fn().mockImplementation(() => 
-        new Promise(resolve => 
-          setTimeout(() => resolve({ ok: true, status: 200 }), Math.random() * 100)
-        )
-      );
+      global.fetch = jest.fn().mockImplementation(async () => {
+        await sleep(Math.random() * 100);
+        return { ok: true, status: 200 };
+      });
 
       // Validate service multiple times to gather metrics
       for (let i = 0; i < 5; i++) {

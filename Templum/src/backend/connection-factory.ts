@@ -19,6 +19,8 @@ import { BackendConfig } from '../types/universal-skin-engine-types';
 
 import { serialization, type JsonParseOptions, type JsonStringifyOptions, type SerializationOutcome } from '../utils/serialization-utils';
 import { emitSerializationWarnings, getBackendSerializationLogger } from './backend-serialization-log';
+import { createTimeout, TIMEOUTS } from '../utils/async-utils';
+import type { ManagedTimeout } from '../utils/async-utils';
 import type { Logger } from '../utils/logger';
 
 const connectionLogger = getBackendSerializationLogger('connection-factory');
@@ -73,6 +75,39 @@ export interface BackendConnection {
  * Implements Factory Method pattern for extensible connection creation
  */
 export class ConnectionFactory {
+  private static normalizeBaseEndpoint(endpoint?: string): string | null {
+    if (!endpoint) {
+      return null;
+    }
+    return endpoint.endsWith('/') ? endpoint.slice(0, -1) : endpoint;
+  }
+
+  private static resolveEndpoint(base: string | null, candidate?: string): string | undefined {
+    if (!candidate) {
+      return undefined;
+    }
+    if (/^https?:\/\//i.test(candidate)) {
+      return candidate;
+    }
+    if (!base) {
+      return undefined;
+    }
+    const normalizedCandidate = candidate.startsWith('/') ? candidate : `/${candidate}`;
+    return `${base}${normalizedCandidate}`;
+  }
+
+  private static collectCandidates(values: Array<string | undefined>): string[] {
+    const deduped: string[] = [];
+    const seen = new Set<string>();
+    for (const value of values) {
+      if (!value || seen.has(value)) {
+        continue;
+      }
+      deduped.push(value);
+      seen.add(value);
+    }
+    return deduped;
+  }
   
   /**
    * Main factory method - creates connection based on backend configuration
@@ -199,6 +234,7 @@ export class ConnectionFactory {
     config: BackendConfig
   ): BackendConnection {
     let httpConnected = false;
+    const baseEndpoint = ConnectionFactory.normalizeBaseEndpoint(config.endpoint);
     
     return {
       id: serviceId,
@@ -206,68 +242,80 @@ export class ConnectionFactory {
       endpoint: config.endpoint,
       isConnected: () => httpConnected,
       connect: async () => {
+        httpLogger.info('Testing HTTP connection', { serviceId, endpoint: config.endpoint });
+
+        const controller = new AbortController();
+        const timeoutMs = config.timeout ?? TIMEOUTS.NORMAL;
+        const abortGuard = createTimeout(() => {
+          httpLogger.warn('HTTP connection attempt timed out', { serviceId, timeoutMs });
+          controller.abort();
+        }, timeoutMs);
+
         try {
-          httpLogger.info('Testing HTTP connection', { serviceId, endpoint: config.endpoint });
-          
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), config.timeout || 10000);
+          const healthEndpoints = ConnectionFactory.collectCandidates([
+            ConnectionFactory.resolveEndpoint(baseEndpoint, config.healthEndpoint),
+            ConnectionFactory.resolveEndpoint(baseEndpoint, '/api/health'),
+            ConnectionFactory.resolveEndpoint(baseEndpoint, '/api/status'),
+            ConnectionFactory.resolveEndpoint(baseEndpoint, '/health'),
+            ConnectionFactory.resolveEndpoint(baseEndpoint, '/ping')
+          ]);
 
-          try {
-            // Use configured health endpoint or fallback to defaults
-            const healthEndpoints = [
-              config.healthEndpoint,
-              `${config.endpoint}/api/health`,
-              `${config.endpoint}/api/status`,
-              `${config.endpoint}/health`,
-              `${config.endpoint}/ping`
-            ].filter(Boolean) as string[];
+          let connected = false;
+          for (const healthEndpoint of healthEndpoints) {
+            try {
+              const headers: Record<string, string> = { Accept: 'application/json' };
 
-            let connected = false;
-            for (const healthEndpoint of healthEndpoints) {
-              try {
-                const headers: Record<string, string> = { 'Accept': 'application/json' };
-                
-                // Add authentication headers if configured
-                if (config.authentication?.credentials) {
-                  ConnectionFactory.addAuthHeaders(headers, config.authentication);
-                }
-
-                const response = await fetch(healthEndpoint, {
-                  signal: controller.signal,
-                  method: 'GET',
-                  headers
-                });
-
-                if (response.ok) {
-                  httpLogger.info('HTTP service available', { serviceId, healthEndpoint });
-                  connected = true;
-                  break;
-                }
-              } catch (endpointError) {
-                httpLogger.warn('HTTP health check failed', { serviceId, healthEndpoint, error: endpointError instanceof Error ? endpointError.message : String(endpointError) });
+              if (config.authentication?.credentials) {
+                ConnectionFactory.addAuthHeaders(headers, config.authentication);
               }
-            }
 
-            clearTimeout(timeoutId);
-            
-            if (connected) {
-              httpConnected = true;
-              httpLogger.info('HTTP connection established', { serviceId });
-            } else {
-              throw new Error(`All health endpoints failed for ${serviceId} service`);
+              const response = await fetch(healthEndpoint, {
+                signal: controller.signal,
+                method: 'GET',
+                headers
+              });
+
+              if (response.ok) {
+                httpLogger.info('HTTP service available', { serviceId, healthEndpoint });
+                connected = true;
+                break;
+              }
+            } catch (endpointError) {
+              if (controller.signal.aborted) {
+                httpLogger.warn('HTTP health check aborted after timeout', {
+                  serviceId,
+                  healthEndpoint,
+                  timeoutMs
+                });
+                break;
+              }
+
+              httpLogger.warn('HTTP health check failed', {
+                serviceId,
+                healthEndpoint,
+                error: endpointError instanceof Error ? endpointError.message : String(endpointError)
+              });
             }
-            
-          } catch (fetchError) {
-            clearTimeout(timeoutId);
-            throw fetchError;
           }
+
+          if (!connected) {
+            const reason = controller.signal.aborted
+              ? `HTTP connection attempt timed out after ${timeoutMs}ms`
+              : `All health endpoints failed for ${serviceId} service`;
+            throw new Error(reason);
+          }
+
+          httpConnected = true;
+          httpLogger.info('HTTP connection established', { serviceId });
         } catch (error) {
           httpConnected = false;
           throw createTemplumError(
-            `Failed to establish HTTP connection to ${serviceId}: ${error}`, 
-            'HTTP_CONNECTION_FAILED', 
+            `Failed to establish HTTP connection to ${serviceId}: ${error}`,
+            'HTTP_CONNECTION_FAILED',
             'integration'
           );
+        } finally {
+          abortGuard.cancel();
         }
       },
       disconnect: async () => {
@@ -302,33 +350,70 @@ export class ConnectionFactory {
           ws = new WebSocket.WebSocket(wsUrl);
 
           return new Promise<void>((resolve, reject) => {
-            const timeout = setTimeout(() => {
+            const timeoutMs = config.timeout ?? TIMEOUTS.SLOW;
+            let settled = false;
+            let timeoutGuard: ManagedTimeout;
+
+            const cleanup = () => {
+              if (!ws) {
+                return;
+              }
+              ws.onopen = null;
+              ws.onerror = null;
+              ws.onclose = null;
+              ws.onmessage = null;
+            };
+
+            const finalize = (status: 'resolve' | 'reject', error?: unknown) => {
+              if (settled) {
+                return;
+              }
+              settled = true;
+              timeoutGuard.cancel();
+              cleanup();
+
+              if (status === 'resolve') {
+                resolve();
+              } else {
+                reject(error);
+              }
+            };
+
+            timeoutGuard = createTimeout(() => {
               wsConnected = false;
-              reject(new Error(`WebSocket connection timeout for ${serviceId}`));
-            }, config.timeout || 15000);
+              websocketLogger.error('WebSocket connection timed out', undefined, { serviceId, timeoutMs });
+              ws?.terminate?.();
+              ws = null;
+              finalize('reject', new Error(`WebSocket connection timeout for ${serviceId}`));
+            }, timeoutMs);
 
             ws!.onopen = async () => {
-              clearTimeout(timeout);
               websocketLogger.info('WebSocket connection established', { serviceId });
-              
+
               try {
-                // Perform service handshake with authentication if required
                 await ConnectionFactory.performWebSocketHandshake(ws!, serviceId, config);
                 wsConnected = true;
                 websocketLogger.info('WebSocket connection ready', { serviceId });
-                resolve();
+                finalize('resolve');
               } catch (handshakeError) {
                 wsConnected = false;
-                websocketLogger.error('WebSocket handshake failed', handshakeError instanceof Error ? handshakeError : new Error(String(handshakeError)), { serviceId });
-                reject(handshakeError);
+                websocketLogger.error(
+                  'WebSocket handshake failed',
+                  handshakeError instanceof Error ? handshakeError : new Error(String(handshakeError)),
+                  { serviceId }
+                );
+                finalize('reject', handshakeError);
               }
             };
 
             ws!.onerror = (error) => {
-              clearTimeout(timeout);
               wsConnected = false;
-              websocketLogger.error('WebSocket connection error', error instanceof Error ? error : new Error(String(error)), { serviceId });
-              reject(error);
+              websocketLogger.error(
+                'WebSocket connection error',
+                error instanceof Error ? error : new Error(String(error)),
+                { serviceId }
+              );
+              finalize('reject', error);
             };
 
             ws!.onclose = () => {
@@ -373,10 +458,29 @@ export class ConnectionFactory {
   ): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       websocketLogger.info('Performing WebSocket handshake', { serviceId });
-      
-      const handshakeTimeout = setTimeout(() => {
-        reject(new Error(`WebSocket handshake timeout for ${serviceId}`));
-      }, 5000);
+      let settled = false;
+      let timeoutGuard: ManagedTimeout;
+      let handshakeHandler: (data: WebSocket.RawData) => void;
+
+      const finalize = (status: 'resolve' | 'reject', error?: unknown) => {
+        if (settled) {
+          return;
+        }
+        settled = true;
+        timeoutGuard.cancel();
+        ws.off('message', handshakeHandler);
+
+        if (status === 'resolve') {
+          resolve();
+        } else {
+          reject(error);
+        }
+      };
+
+      timeoutGuard = createTimeout(() => {
+        websocketLogger.error('WebSocket handshake timed out', undefined, { serviceId });
+        finalize('reject', new Error(`WebSocket handshake timeout for ${serviceId}`));
+      }, TIMEOUTS.NORMAL);
 
       const handshakeMessage = {
         type: 'handshake',
@@ -388,7 +492,7 @@ export class ConnectionFactory {
         authentication: config.authentication?.credentials
       };
 
-      const handshakeHandler = (data: WebSocket.RawData) => {
+      handshakeHandler = (data: WebSocket.RawData) => {
         const response = parseJsonString<Record<string, unknown>>(
           'backend:connection-factory:websocket:handshake:response',
           data.toString(),
@@ -399,14 +503,10 @@ export class ConnectionFactory {
         }
 
         if (response.type === 'handshake_ack' && response.success) {
-          clearTimeout(handshakeTimeout);
-          ws.off('message', handshakeHandler);
           websocketLogger.info('WebSocket handshake successful', { serviceId });
-          resolve();
+          finalize('resolve');
         } else if (response.type === 'handshake_error') {
-          clearTimeout(handshakeTimeout);
-          ws.off('message', handshakeHandler);
-          reject(new Error(`WebSocket handshake failed: ${response.error || 'Unknown error'}`));
+          finalize('reject', new Error(`WebSocket handshake failed: ${response.error || 'Unknown error'}`));
         }
       };
 
@@ -422,9 +522,7 @@ export class ConnectionFactory {
         ws.send(payload);
         websocketLogger.debug('WebSocket handshake message sent', { serviceId });
       } catch (sendError) {
-        clearTimeout(handshakeTimeout);
-        ws.off('message', handshakeHandler);
-        reject(new Error(`Failed to send handshake: ${sendError}`));
+        finalize('reject', new Error(`Failed to send handshake: ${sendError}`));
       }
     });
   }
@@ -484,7 +582,7 @@ class HaruspexIPCClient {
   private pendingRequests = new Map<string, {
     resolve: (value: any) => void;
     reject: (reason: any) => void;
-    timeout: NodeJS.Timeout;
+    timeout: ManagedTimeout;
   }>();
   private messageBuffer = '';
   private connectionInfo: any = null;
@@ -559,23 +657,44 @@ class HaruspexIPCClient {
 
     return new Promise((resolve, reject) => {
       this.socket = new net.Socket();
-      
-      const timeout = setTimeout(() => {
+      const timeoutMs = 10000;
+      let settled = false;
+      let timeoutGuard: ManagedTimeout;
+
+      const finalize = (status: 'resolve' | 'reject', error?: unknown) => {
+        if (settled) {
+          return;
+        }
+        settled = true;
+        timeoutGuard.cancel();
+
+        if (status === 'resolve') {
+          resolve();
+        } else {
+          reject(error);
+        }
+      };
+
+      timeoutGuard = createTimeout(() => {
+        this.isConnected = false;
+        ipcLogger.error('IPC socket connection timed out', undefined, {
+          host: this.connectionInfo.host,
+          port: this.connectionInfo.port,
+          timeoutMs
+        });
         this.socket?.destroy();
-        reject(new Error('Connection timeout'));
-      }, 10000);
+        finalize('reject', new Error('Connection timeout'));
+      }, timeoutMs);
 
       this.socket.connect(this.connectionInfo.port, this.connectionInfo.host, () => {
-        clearTimeout(timeout);
         this.isConnected = true;
         ipcLogger.info('IPC socket connected', { host: this.connectionInfo.host, port: this.connectionInfo.port });
-        resolve();
+        finalize('resolve');
       });
 
       this.socket.on('error', (error) => {
-        clearTimeout(timeout);
         this.isConnected = false;
-        reject(error);
+        finalize('reject', error);
       });
 
       this.socket.on('close', () => {
@@ -592,7 +711,7 @@ class HaruspexIPCClient {
     this.isConnected = false;
     
     for (const request of Array.from(this.pendingRequests.values())) {
-      clearTimeout(request.timeout);
+      request.timeout.cancel();
       request.reject(new Error('Connection closed'));
     }
     this.pendingRequests.clear();
@@ -620,7 +739,7 @@ class HaruspexIPCClient {
     };
 
     return new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => {
+      const timeout = createTimeout(() => {
         this.pendingRequests.delete(requestId);
         reject(new Error(`Request timeout for ${type}`));
       }, 30000);
@@ -630,11 +749,20 @@ class HaruspexIPCClient {
       const serializedMessage = stringifyJsonValue('backend:connection-factory:ipc:message', message);
 
       if (!serializedMessage) {
-        throw new Error('Failed to serialize IPC request message');
+        timeout.cancel();
+        this.pendingRequests.delete(requestId);
+        reject(new Error('Failed to serialize IPC request message'));
+        return;
       }
 
       const messageStr = `${serializedMessage}\n`;
-      this.socket!.write(messageStr);
+      try {
+        this.socket!.write(messageStr);
+      } catch (writeError) {
+        timeout.cancel();
+        this.pendingRequests.delete(requestId);
+        reject(writeError);
+      }
     });
   }
 }

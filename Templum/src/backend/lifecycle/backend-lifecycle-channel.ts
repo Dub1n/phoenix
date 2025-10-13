@@ -1,8 +1,8 @@
-import { EventEmitter } from 'events';
 import type {
   BackendConnectionLifecycleEvent,
   BackendConnectionLifecycleState
 } from '../../types/templum-types';
+import type { TypedEventEmitter } from '../../utils/event-utils';
 
 interface LifecycleChannelOptions {
   dedupeWindowMs?: number;
@@ -42,7 +42,13 @@ export class BackendLifecycleChannel {
   private readonly lastEvents = new Map<string, { state: BackendConnectionLifecycleState; timestamp: number }>();
   private readonly dedupeWindowMs: number;
 
-  constructor(private readonly emitter: EventEmitter, options: LifecycleChannelOptions = {}) {
+  constructor(
+    private readonly emitter: Pick<
+      TypedEventEmitter<{ 'connection:lifecycle': (event: BackendConnectionLifecycleEvent) => void }>,
+      'emit'
+    >,
+    options: LifecycleChannelOptions = {}
+  ) {
     this.dedupeWindowMs = options.dedupeWindowMs ?? DEFAULT_DEDUPE_WINDOW_MS;
   }
 

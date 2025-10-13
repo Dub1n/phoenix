@@ -6,9 +6,10 @@
  * description: [Universal menu registry supporting generic backend integration with configurable command routing]
  * ---*/
 
-import { EventEmitter } from 'events';
 import { backendIntegrationConfig } from '../backend/backend-integration-config';
 import { DynamicCommandRouter } from '../backend/dynamic-command-router';
+import { EventDrivenComponent } from '../utils/event-bus-adapter';
+import type { TypedEventMap } from '../utils/event-utils';
 
 export interface MenuDefinition {
   id: string;
@@ -101,7 +102,40 @@ export interface MenuRegistryStats {
   };
 }
 
-export class PCLMenuRegistry extends EventEmitter {
+type MenuCommandExecutionEvent = {
+  menuId: string;
+  commandId: string;
+  interfaceType: string;
+  executionTime: number;
+  success: boolean;
+  result?: unknown;
+  error?: string;
+};
+
+interface PCLMenuRegistryEvents extends TypedEventMap {
+  menuRegistered: (payload: {
+    menuId: string;
+    pclReusePercentage: number;
+    compatibleInterfaces: string[];
+    timestamp: number;
+  }) => void;
+  cacheHit: (payload: { menuId: string; interfaceType: string }) => void;
+  menuAdapted: (payload: { menuId: string; interfaceType: string; renderTime: number }) => void;
+  commandExecuted: (payload: MenuCommandExecutionEvent) => void;
+  backendConnected: (payload: {
+    backendName: string;
+    pclCompatible: boolean;
+    supportedPatterns: string[];
+  }) => void;
+  interfaceAdapterRegistered: (payload: {
+    interfaceType: string;
+    compatibleMenus: number;
+    pclCompatible: boolean;
+  }) => void;
+}
+
+export class PCLMenuRegistry extends EventDrivenComponent<PCLMenuRegistryEvents> {
+  private static instanceCounter = 0;
   private menuDefinitions: Map<string, MenuDefinition> = new Map();
   private menuCache: Map<string, any> = new Map();
   private backendConnections: Map<string, any> = new Map();
@@ -110,7 +144,7 @@ export class PCLMenuRegistry extends EventEmitter {
   private commandRouter: DynamicCommandRouter | null = null;
 
   constructor(commandRouter?: DynamicCommandRouter) {
-    super();
+    super(`pcl-menu-registry:${PCLMenuRegistry.instanceCounter++}`, 120);
     this.commandRouter = commandRouter || null;
     this.stats = this.initializeStats();
     this.initializePCLMenuPatterns();
@@ -333,7 +367,16 @@ export class PCLMenuRegistry extends EventEmitter {
       }
     }
 
-    this.emit('interfaceAdapterRegistered', { interfaceType, compatibleMenus: this.getCompatibleMenuCount(interfaceType) });
+    const pclCompatible =
+      typeof (adapter as { supportsPCL?: unknown }).supportsPCL === 'boolean'
+        ? Boolean((adapter as { supportsPCL: boolean }).supportsPCL)
+        : true;
+
+    this.emit('interfaceAdapterRegistered', {
+      interfaceType,
+      compatibleMenus: this.getCompatibleMenuCount(interfaceType),
+      pclCompatible
+    });
   }
 
   private validateMenuDefinition(menuDefinition: MenuDefinition): { valid: boolean; errors: string[] } {

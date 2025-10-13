@@ -12,13 +12,14 @@
  * TASK: TASK-CLI-015 - File System Watching for Dynamic Backend Discovery
  */
 
-import { EventEmitter } from 'events';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as http from 'http';
 // Unused import removed: https
 import { WebSocket } from 'ws';
 import * as net from 'net';
+import { EventDrivenComponent } from '../utils/event-bus-adapter';
+import type { TypedEventMap } from '../utils/event-utils';
 import { BackendConfig } from '../types/universal-skin-engine-types';
 import { backendIntegrationConfig } from './backend-integration-config';
 import { createTemplumError } from '../types/templum-types';
@@ -41,6 +42,8 @@ import {
   resolveWatchDirectories,
   type ServiceFileEvent,
 } from './service-discovery/file-watcher';
+import { createTimeout, TIMEOUTS } from '../utils/async-utils';
+import type { ManagedTimeout } from '../utils/async-utils';
 import type { Logger } from '../utils/logger';
 
 export interface DiscoveredService {
@@ -120,6 +123,15 @@ const registryLogger = serviceDiscoveryLogger.child('registry');
 const configurationLogger = serviceDiscoveryLogger.child('configuration');
 const fileWatcherLogger = serviceDiscoveryLogger.child('file-watcher');
 const scanningLogger = serviceDiscoveryLogger.child('scanning');
+
+interface ServiceDiscoveryEvents extends TypedEventMap {
+  discoveryStarted: (payload: { strategies: number }) => void;
+  strategyError: (payload: { strategy: string; error: unknown }) => void;
+  discoveryCompleted: (payload: { discovered: number; strategies: number }) => void;
+  watcherError: (error: unknown) => void;
+  serviceDiscovered: (payload: { service: DiscoveredService; eventType: ServiceFileEvent; filePath: string }) => void;
+  serviceRemoved: (payload: { serviceId: string; filePath: string }) => void;
+}
 
 function unwrapSerializationOutcome<T>(context: string, outcome: SerializationOutcome<T>): T | null {
   emitSerializationWarnings(context, outcome as SerializationOutcome<unknown>);
@@ -294,14 +306,15 @@ async function parseServiceDescriptor(
  * Multi-strategy service discovery system
  * Replaces hardcoded backend discovery with intelligent discovery strategies
  */
-export class ServiceDiscovery extends EventEmitter {
+export class ServiceDiscovery extends EventDrivenComponent<ServiceDiscoveryEvents> {
+  private static instanceCounter = 0;
   private strategies: DiscoveryStrategy[] = [];
   private discoveredServices: Map<string, DiscoveredService> = new Map();
   private options: Required<ServiceDiscoveryOptions>;
   private fileWatcher?: ServiceDiscoveryFileWatcher; // NEW: File system watcher instance
 
   constructor(options: ServiceDiscoveryOptions = {}) {
-    super();
+    super(`service-discovery:${ServiceDiscovery.instanceCounter++}`, 80);
     
     this.options = {
       strategies: options.strategies || [],
@@ -317,7 +330,7 @@ export class ServiceDiscovery extends EventEmitter {
       configurationPath: options.configurationPath || path.join(process.cwd(), '.templum', 'backend-config.json'),
       timeout: options.timeout || 5000,
       maxRetries: options.maxRetries || 2,
-      watchDirectories: options.watchDirectories,
+      watchDirectories: options.watchDirectories ?? [],
     };
 
     this.initializeDefaultStrategies();
@@ -1085,155 +1098,228 @@ export class EndpointScanningDiscoveryStrategy implements DiscoveryStrategy {
 
   private async scanHttpEndpoint(host: string, port: number): Promise<DiscoveredService | null> {
     return new Promise((resolve) => {
-      const timeout = setTimeout(() => resolve(null), this.options.timeout);
-      
+      const timeoutMs = this.options.timeout ?? TIMEOUTS.NORMAL;
+      let settled = false;
+      let timeoutGuard: ManagedTimeout;
+      let request: http.ClientRequest | undefined;
+
+      const finish = (service: DiscoveredService | null) => {
+        if (settled) {
+          return;
+        }
+        settled = true;
+        timeoutGuard.cancel();
+        if (request) {
+          const candidate = request as unknown as {
+            destroy?: () => void;
+            abort?: () => void;
+          };
+          if (typeof candidate.destroy === 'function') {
+            candidate.destroy();
+          } else if (typeof candidate.abort === 'function') {
+            candidate.abort();
+          }
+          request = undefined;
+        }
+        resolve(service);
+      };
+
+      timeoutGuard = createTimeout(() => {
+        finish(null);
+      }, timeoutMs);
+
       const skinEndpoint = `http://${host}:${port}/api/skin`;
-      const request = http.get(skinEndpoint, (res) => {
-        clearTimeout(timeout);
-        
-        if (res.statusCode === 200) {
-          let data = '';
-          res.on('data', chunk => { data += chunk; });
-          res.on('end', () => {
-            const skinDefinition = parseJsonString<Record<string, unknown>>(
-              'backend:service-discovery:scan:http',
-              data,
-            );
+      request = http.get(skinEndpoint, (res) => {
+        if (res.statusCode !== 200) {
+          res.resume();
+          finish(null);
+          return;
+        }
 
-            if (!skinDefinition || !TypeGuards.isNonEmptyString(skinDefinition.service)) {
-              resolve(null);
-              return;
-            }
+        let data = '';
+        res.on('data', chunk => {
+          data += chunk;
+        });
+        res.on('end', () => {
+          const skinDefinition = parseJsonString<Record<string, unknown>>(
+            'backend:service-discovery:scan:http',
+            data,
+          );
 
-            const version = TypeGuards.isNonEmptyString(skinDefinition.version)
-              ? (skinDefinition.version as string)
-              : '1.0.0';
-
-            const config: BackendConfig = {
-              service: skinDefinition.service,
-              version,
-              protocol: 'http',
-              endpoint: `http://${host}:${port}`,
-              timeout: this.options.timeout,
-              retries: this.options.maxRetries,
-              keepAlive: true,
-              authentication: { type: 'none' },
-              healthEndpoint: `http://${host}:${port}/api/health`,
-              capabilitiesEndpoint: `http://${host}:${port}/api/capabilities`,
-            };
-
-           resolve({
-             id: skinDefinition.service,
-             config,
-             discoveryMethod: 'scanning',
-             confidence: 0.7,
-             timestamp: Date.now(),
-           });
+          if (!skinDefinition || !TypeGuards.isNonEmptyString(skinDefinition.service)) {
+            finish(null);
             return;
-         });
-       }
-       resolve(null);
-     });
+          }
+
+          const version = TypeGuards.isNonEmptyString(skinDefinition.version)
+            ? (skinDefinition.version as string)
+            : '1.0.0';
+
+          const config: BackendConfig = {
+            service: skinDefinition.service,
+            version,
+            protocol: 'http',
+            endpoint: `http://${host}:${port}`,
+            timeout: timeoutMs,
+            retries: this.options.maxRetries,
+            keepAlive: true,
+            authentication: { type: 'none' },
+            healthEndpoint: `http://${host}:${port}/api/health`,
+            capabilitiesEndpoint: `http://${host}:${port}/api/capabilities`,
+          };
+
+          finish({
+            id: skinDefinition.service,
+            config,
+            discoveryMethod: 'scanning',
+            confidence: 0.7,
+            timestamp: Date.now(),
+          });
+        });
+        res.on('error', () => {
+          finish(null);
+        });
+      });
 
       request.on('error', () => {
-        clearTimeout(timeout);
-        resolve(null);
+        finish(null);
       });
     });
   }
 
   private async scanWebSocketEndpoint(host: string, port: number): Promise<DiscoveredService | null> {
     return new Promise((resolve) => {
-      const timeout = setTimeout(() => resolve(null), this.options.timeout);
-      
-      try {
-        const ws = new WebSocket(`ws://${host}:${port}`);
-        
-        ws.on('open', () => {
-          const payload = stringifyJsonValue('backend:service-discovery:scan:websocket:request', {
-            id: `scan-${Date.now()}`,
-            type: 'getSkinDefinition',
-            timestamp: Date.now(),
-          });
+      const timeoutMs = this.options.timeout ?? TIMEOUTS.NORMAL;
+      let settled = false;
+      let timeoutGuard: ManagedTimeout;
+      let ws: WebSocket | undefined;
 
-          if (payload) {
-            ws.send(payload);
-          } else {
+      const finish = (service: DiscoveredService | null) => {
+        if (settled) {
+          return;
+        }
+        settled = true;
+        timeoutGuard.cancel();
+        if (ws) {
+          if (typeof ws.close === 'function') {
             ws.close();
-            resolve(null);
+          } else if (typeof (ws as unknown as { terminate?: () => void }).terminate === 'function') {
+            (ws as unknown as { terminate?: () => void }).terminate?.();
           }
-        });
+          ws = undefined;
+        }
+        resolve(service);
+      };
 
-        ws.on('message', (data: Buffer) => {
-          clearTimeout(timeout);
-          try {
-            const response = parseJsonString<Record<string, unknown>>(
-              'backend:service-discovery:scan:websocket:response',
-              data.toString(),
-            );
-
-            const skinDefinition = response?.data as Record<string, unknown> | undefined;
-
-            if (
-              response &&
-              response.type === 'skin_definition_response' &&
-              skinDefinition &&
-              (TypeGuards.isNonEmptyString(skinDefinition.service) || skinDefinition.service === undefined)
-            ) {
-              const serviceId = TypeGuards.isNonEmptyString(skinDefinition.service)
-                ? (skinDefinition.service as string)
-                : 'unknown-websocket';
-              
-              const config: BackendConfig = {
-                service: serviceId,
-                version: TypeGuards.isNonEmptyString(skinDefinition.version)
-                  ? (skinDefinition.version as string)
-                  : '1.0.0',
-                protocol: 'websocket',
-                endpoint: `ws://${host}:${port}`,
-                timeout: this.options.timeout,
-                retries: this.options.maxRetries,
-                keepAlive: true,
-                authentication: { type: 'none' }
-              };
-
-              resolve({
-                id: serviceId,
-                config,
-                discoveryMethod: 'scanning',
-                confidence: 0.6, // Lower confidence for WebSocket scanning
-                timestamp: Date.now()
-              });
-              
-              ws.close();
-              return;
-            }
-          } catch (_error) {
-            // Invalid response
-          }
-          
-          ws.close();
-          resolve(null);
-        });
-
-        ws.on('error', () => {
-          clearTimeout(timeout);
-          resolve(null);
-        });
-
+      try {
+        ws = new WebSocket(`ws://${host}:${port}`);
       } catch (_error) {
-        clearTimeout(timeout);
         resolve(null);
+        return;
       }
+
+      timeoutGuard = createTimeout(() => {
+        finish(null);
+      }, timeoutMs);
+
+      ws.on('open', () => {
+        const payload = stringifyJsonValue('backend:service-discovery:scan:websocket:request', {
+          id: `scan-${Date.now()}`,
+          type: 'getSkinDefinition',
+          timestamp: Date.now(),
+        });
+
+        if (!payload) {
+          finish(null);
+          return;
+        }
+
+        ws?.send(payload);
+      });
+
+      ws.on('message', (data: Buffer) => {
+        try {
+          const response = parseJsonString<Record<string, unknown>>(
+            'backend:service-discovery:scan:websocket:response',
+            data.toString(),
+          );
+
+          const skinDefinition = response?.data as Record<string, unknown> | undefined;
+
+          if (
+            response &&
+            response.type === 'skin_definition_response' &&
+            skinDefinition &&
+            (TypeGuards.isNonEmptyString(skinDefinition.service) || skinDefinition.service === undefined)
+          ) {
+            const serviceId = TypeGuards.isNonEmptyString(skinDefinition.service)
+              ? (skinDefinition.service as string)
+              : 'unknown-websocket';
+
+            const config: BackendConfig = {
+              service: serviceId,
+              version: TypeGuards.isNonEmptyString(skinDefinition.version)
+                ? (skinDefinition.version as string)
+                : '1.0.0',
+              protocol: 'websocket',
+              endpoint: `ws://${host}:${port}`,
+              timeout: timeoutMs,
+              retries: this.options.maxRetries,
+              keepAlive: true,
+              authentication: { type: 'none' }
+            };
+
+            finish({
+              id: serviceId,
+              config,
+              discoveryMethod: 'scanning',
+              confidence: 0.6,
+              timestamp: Date.now()
+            });
+            return;
+          }
+        } catch (_error) {
+          // Ignore malformed responses and fall through to finish(null)
+        }
+
+        finish(null);
+      });
+
+      ws.on('error', () => {
+        finish(null);
+      });
+
+      ws.on('close', () => {
+        finish(null);
+      });
     });
   }
 
   private async scanIpcEndpoint(host: string, port: number): Promise<DiscoveredService | null> {
     return new Promise((resolve) => {
-      const timeout = setTimeout(() => resolve(null), this.options.timeout);
-      
+      const timeoutMs = this.options.timeout ?? TIMEOUTS.NORMAL;
       const socket = new net.Socket();
-      
+      let settled = false;
+      let timeoutGuard: ManagedTimeout;
+
+      const finish = (service: DiscoveredService | null) => {
+        if (settled) {
+          return;
+        }
+        settled = true;
+        timeoutGuard.cancel();
+        if (typeof socket.destroy === 'function') {
+          socket.destroy();
+        } else {
+          socket.end?.();
+        }
+        resolve(service);
+      };
+
+      timeoutGuard = createTimeout(() => {
+        finish(null);
+      }, timeoutMs);
+
       socket.connect(port, host, () => {
         const payload = stringifyJsonValue('backend:service-discovery:scan:ipc:request', {
           id: `scan-${Date.now()}`,
@@ -1242,8 +1328,7 @@ export class EndpointScanningDiscoveryStrategy implements DiscoveryStrategy {
         });
 
         if (!payload) {
-          socket.destroy();
-          resolve(null);
+          finish(null);
           return;
         }
 
@@ -1254,67 +1339,63 @@ export class EndpointScanningDiscoveryStrategy implements DiscoveryStrategy {
       socket.on('data', (data) => {
         buffer += data.toString();
         const lines = buffer.split('\n');
-        buffer = lines.pop() || ''; // Keep incomplete line
-        
+        buffer = lines.pop() || '';
+
         for (const line of lines) {
-          if (line.trim()) {
-            try {
-              const response = parseJsonString<Record<string, unknown>>(
-                'backend:service-discovery:scan:ipc:response',
-                line,
-              );
-              const skinDefinition = response?.data as Record<string, unknown> | undefined;
+          if (!line.trim()) {
+            continue;
+          }
 
-              if (
-                response &&
-                response.type === 'skin_definition_response' &&
-                skinDefinition &&
-                (TypeGuards.isNonEmptyString(skinDefinition.service) || skinDefinition.service === undefined)
-              ) {
-                clearTimeout(timeout);
-                
-                const serviceId = TypeGuards.isNonEmptyString(skinDefinition.service)
-                  ? (skinDefinition.service as string)
-                  : 'unknown-ipc';
-                const config: BackendConfig = {
-                  service: serviceId,
-                  version: TypeGuards.isNonEmptyString(skinDefinition.version)
-                    ? (skinDefinition.version as string)
-                    : '1.0.0',
-                  protocol: 'ipc',
-                  endpoint: `ipc://${host}:${port}`,
-                  timeout: this.options.timeout,
-                  retries: this.options.maxRetries,
-                  keepAlive: true,
-                  authentication: { type: 'none' }
-                };
+          try {
+            const response = parseJsonString<Record<string, unknown>>(
+              'backend:service-discovery:scan:ipc:response',
+              line,
+            );
+            const skinDefinition = response?.data as Record<string, unknown> | undefined;
 
-                resolve({
-                  id: serviceId,
-                  config,
-                  discoveryMethod: 'scanning',
-                  confidence: 0.6,
-                  timestamp: Date.now()
-                });
-                
-                socket.destroy();
-                return;
-              }
-            } catch (_error) {
-              // Invalid response, continue listening
+            if (
+              response &&
+              response.type === 'skin_definition_response' &&
+              skinDefinition &&
+              (TypeGuards.isNonEmptyString(skinDefinition.service) || skinDefinition.service === undefined)
+            ) {
+              const serviceId = TypeGuards.isNonEmptyString(skinDefinition.service)
+                ? (skinDefinition.service as string)
+                : 'unknown-ipc';
+              const config: BackendConfig = {
+                service: serviceId,
+                version: TypeGuards.isNonEmptyString(skinDefinition.version)
+                  ? (skinDefinition.version as string)
+                  : '1.0.0',
+                protocol: 'ipc',
+                endpoint: `ipc://${host}:${port}`,
+                timeout: timeoutMs,
+                retries: this.options.maxRetries,
+                keepAlive: true,
+                authentication: { type: 'none' }
+              };
+
+              finish({
+                id: serviceId,
+                config,
+                discoveryMethod: 'scanning',
+                confidence: 0.6,
+                timestamp: Date.now()
+              });
+              return;
             }
+          } catch (_error) {
+            // Continue processing remaining lines
           }
         }
       });
 
       socket.on('error', () => {
-        clearTimeout(timeout);
-        resolve(null);
+        finish(null);
       });
 
       socket.on('close', () => {
-        clearTimeout(timeout);
-        resolve(null);
+        finish(null);
       });
     });
   }

@@ -12,11 +12,14 @@
  * Pattern-Info: { approach: "multi-strategy-hybrid", alternatives: "single-strategy-basic", trade-offs: "complexity-vs-reliability" }
  */
 
-import { EventEmitter } from 'events';
+import type { TypedEventMap } from '../utils/event-utils';
+import { EventDrivenComponent } from '../utils/event-bus-adapter';
 import { ServiceDiscovery, DiscoveredService, ServiceDiscoveryOptions } from './service-discovery';
 import { BackendConfig } from '../types/universal-skin-engine-types';
 import { backendIntegrationConfig } from './backend-integration-config';
 import { createTemplumError } from '../types/templum-types';
+import { createTimeout } from '../utils/async-utils';
+import type { ManagedTimeout } from '../utils/async-utils';
 
 export interface DependencyResolutionResult {
   serviceId: string;
@@ -68,7 +71,20 @@ export interface AlternativeDiscoveryConfig {
  * Implements v1.2 pattern-based dependency analysis enhanced with v1.1 algorithmic optimization
  * and v1.4 heuristic decision-making for intelligent service resolution
  */
-export class BackendDependencyResolver extends EventEmitter {
+interface DependencyResolverEvents extends TypedEventMap {
+  resolutionStarted: (payload: { required: number; optional: number }) => void;
+  serviceResolved: (payload: { serviceId: string; result: DependencyResolutionResult }) => void;
+  resolutionError: (payload: { serviceId: string; error: unknown }) => void;
+  resolutionCompleted: (payload: {
+    successRate: number;
+    resolved: number;
+    total: number;
+    criticalFailures: number;
+  }) => void;
+}
+
+export class BackendDependencyResolver extends EventDrivenComponent<DependencyResolverEvents> {
+  private static instanceCounter = 0;
   private serviceDiscovery: ServiceDiscovery;
   private resolutionStrategies: ResolutionStrategy[] = [];
   private dependencyCache = new Map<string, DependencyResolutionResult>();
@@ -82,7 +98,7 @@ export class BackendDependencyResolver extends EventEmitter {
     enableHealthValidation?: boolean;
     enableCaching?: boolean;
   } = {}) {
-    super();
+    super(`backend-dependency-resolver:${BackendDependencyResolver.instanceCounter++}`, 40);
 
     this.serviceDiscovery = new ServiceDiscovery(options.serviceDiscoveryOptions);
     this.healthValidationEnabled = options.enableHealthValidation ?? true;
@@ -443,21 +459,28 @@ export class BackendDependencyResolver extends EventEmitter {
    * Check individual health endpoint
    */
   private async checkHealthEndpoint(endpoint: string, timeout: number): Promise<boolean> {
+    const controller = new AbortController();
+    let timeoutGuard: ManagedTimeout | null = null;
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), timeout);
-      
+      timeoutGuard = createTimeout(() => controller.abort(), timeout, {
+        unref: true
+      });
+
       const response = await fetch(endpoint, {
         signal: controller.signal,
         method: 'GET',
         headers: { 'Accept': 'application/json' }
       });
       
-      clearTimeout(timeoutId);
+      timeoutGuard.cancel();
+      timeoutGuard = null;
       return response.ok;
       
     } catch {
       return false;
+    } finally {
+      timeoutGuard?.cancel();
+      timeoutGuard = null;
     }
   }
 
@@ -494,7 +517,7 @@ export class BackendDependencyResolver extends EventEmitter {
   async close(): Promise<void> {
     await this.serviceDiscovery.close();
     this.clearCache();
-    this.removeAllListeners();
+    this.cleanupEvents();
   }
 }
 

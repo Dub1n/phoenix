@@ -16,23 +16,26 @@ import { spawn, ChildProcess } from 'child_process';
 import * as os from 'os';
 import * as path from 'path';
 import * as fs from 'fs';
-import { EventEmitter } from 'events';
+import { EventUtils, type GenericEventMap } from '../../utils/event-utils';
+import * as http from 'http';
+import * as https from 'https';
+import { createTimeout, sleep } from '../../utils/async-utils';
 
 const httpClient = {
   async get(url: string, options?: { timeout?: number }) {
     const controller = new AbortController();
     const timeout = options?.timeout;
-    const timeoutId = typeof timeout === 'number' && timeout > 0
-      ? setTimeout(() => controller.abort(), timeout)
-      : undefined;
+    const timeoutGuard = typeof timeout === 'number' && timeout > 0
+      ? createTimeout(() => controller.abort(), timeout, { unref: true })
+      : null;
 
     try {
       const response = await fetch(url, { signal: controller.signal });
       const data = await response.json();
       return { status: response.status, data };
     } finally {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
+      if (timeoutGuard) {
+        timeoutGuard.cancel();
       }
     }
   }
@@ -129,16 +132,27 @@ class TestBackendManager {
     const promises = Array.from(this.instances.values()).map(instance => {
       return new Promise<void>((resolve) => {
         if (instance.process && !instance.process.killed) {
-          instance.process.on('exit', () => resolve());
-          instance.process.kill('SIGTERM');
-          
-          // Force kill after 2 seconds if not gracefully shut down
-          setTimeout(() => {
+          let resolved = false;
+          let killGuard: ReturnType<typeof createTimeout> | null = null;
+
+          const finish = () => {
+            if (resolved) {
+              return;
+            }
+            resolved = true;
+            killGuard?.cancel();
+            resolve();
+          };
+
+          killGuard = createTimeout(() => {
             if (!instance.process.killed) {
               instance.process.kill('SIGKILL');
-              resolve();
             }
-          }, 2000);
+            finish();
+          }, 2000, { unref: true });
+
+          instance.process.on('exit', finish);
+          instance.process.kill('SIGTERM');
         } else {
           resolve();
         }
@@ -172,7 +186,7 @@ class TestBackendManager {
         if (attempt === maxAttempts) {
           throw new Error(`Backend on port ${port} failed to start after ${maxAttempts} attempts`);
         }
-        await new Promise(resolve => setTimeout(resolve, delay));
+        await sleep(delay);
       }
     }
   }
@@ -300,7 +314,7 @@ describe('Pattern 11 Phase 0c serialization defaults', () => {
       }
     };
 
-    const emitter = new EventEmitter();
+    const emitter = EventUtils.createTypedEmitter<GenericEventMap>();
     const logger = new ObservabilityLogger(config, emitter);
     const circular: Record<string, unknown> = {};
     circular.self = circular;
@@ -476,6 +490,8 @@ describe('TASK-SKIN-007: Comprehensive Backend Integration Validation', () => {
   let commandRouter: DynamicCommandRouter;
 
   beforeAll(async () => {
+    http.globalAgent.keepAlive = false;
+    https.globalAgent.keepAlive = false;
     backendManager = new TestBackendManager();
     registerProcessCleanup(backendManager);
     console.log('🚀 Setting up comprehensive backend integration tests...');
@@ -522,6 +538,11 @@ beforeEach(async () => {
       strategies: []
     });
     
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+    jest.useRealTimers();
   });
 
 afterEach(async () => {

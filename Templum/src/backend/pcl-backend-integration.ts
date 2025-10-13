@@ -6,8 +6,8 @@
  * description: PCL-specific backend integration with component transfer validation framework and Enhanced State Synchronization coordination, addressing Phase 2 realignment architectural gaps
  * ---*/
 
-import { EventEmitter } from 'events';
 import { performance } from 'perf_hooks';
+import { createInterval, ManagedInterval, sleep } from '../utils/async-utils';
 import { 
   Signals, 
   // Unused imports removed: TemplumError, IntegrationError
@@ -15,6 +15,8 @@ import {
   createTemplumError,
   MetricsSignalPayload 
 } from '../types/templum-types';
+import { EventDrivenComponent } from '../utils/event-bus-adapter';
+import type { TypedEventMap } from '../utils/event-utils';
 
 // Core interfaces for PCL backend communication with component transfer coordination
 export interface PCLBackendCommand {
@@ -93,18 +95,123 @@ export interface BackendIntegrationStats {
   };
 }
 
+interface ComponentTransferCoordinatorEvents extends TypedEventMap {
+  transferQueued: (payload: { transferId: string; request: ComponentTransferRequest }) => void;
+  'component-transfer-start': (payload: {
+    componentId: string;
+    transferId: string;
+    sourceInterface: string;
+    targetInterface: string;
+  }) => void;
+  'component-transfer-complete': (payload: {
+    componentId: string;
+    transferId: string;
+    duration: number;
+    success: boolean;
+  }) => void;
+  'component-transfer-failed': (payload: {
+    componentId: string;
+    transferId: string;
+    error: string;
+  }) => void;
+  performanceThresholdExceeded: (payload: unknown) => void;
+  stateChangeConfirmed: (payload: unknown) => void;
+}
+
+interface PCLCommandRouterEvents extends TypedEventMap {
+  routingError: (payload: { command: PCLBackendCommand; error: string; duration: number }) => void;
+}
+
+interface ValidationFrameworkEvents extends TypedEventMap {
+  rollbackRequired: (payload: { componentId: string; result: ValidationResult }) => void;
+  fallbackRecommended: (payload: { componentId: string; result: ValidationResult }) => void;
+  baselineSet: (payload: { componentId: string; baseline: number }) => void;
+  performanceWarning: (payload: { operation: string; duration: number; threshold: number }) => void;
+}
+
+interface BackendFallbackManagerEvents extends TypedEventMap {
+  fallbackExecuted: (payload: {
+    componentId: string;
+    fallbackId: string;
+    fallbackType: 'performance' | 'error' | 'timeout';
+    success: boolean;
+    duration: number;
+    reason: string;
+  }) => void;
+  fallbackFailed: (payload: { componentId: string; fallbackId: string; error: string; duration: number }) => void;
+  fallbackStrategyRegistered: (payload: {
+    componentId: string;
+    strategy: {
+      type: 'direct' | 'graceful' | 'rollback';
+      timeout: number;
+      retries: number;
+      fallbackComponent?: string;
+    };
+  }) => void;
+  componentSwitched: (payload: { originalComponent: string; fallbackComponent: string }) => void;
+  gracefulFallbackSuccess: (payload: { componentId: string; attempt: number }) => void;
+  rollbackInitiated: (payload: { componentId: string; strategy: unknown }) => void;
+  rollbackCompleted: (payload: { componentId: string }) => void;
+}
+
+interface PCLBackendIntegratorEvents extends TypedEventMap {
+  initialized: (payload: { timestamp: number }) => void;
+  error: (payload: { error: string; operation: string }) => void;
+  backendConnected: (payload: { backendId: string; pclCompatibility: BackendServiceConnection['pclCompatibility']; duration: number }) => void;
+  commandExecuted: (payload: {
+    commandId: string;
+    componentId: string;
+    backend: string;
+    duration: number;
+    reusePercentage: number;
+  }) => void;
+  commandFailed: (payload: { commandId: string; error: string; duration: number }) => void;
+  componentTransferred: (payload: {
+    componentId: string;
+    sourceInterface: string;
+    targetInterface: string;
+    duration: number;
+  }) => void;
+  componentTransferComplete: (payload: {
+    componentId: string;
+    transferId: string;
+    duration: number;
+    success: boolean;
+  }) => void;
+  performanceThresholdExceeded: (payload: unknown) => void;
+  rollbackRequired: (payload: { componentId: string; result: ValidationResult }) => void;
+  fallbackExecuted: (payload: {
+    componentId: string;
+    fallbackId: string;
+    fallbackType: 'performance' | 'error' | 'timeout';
+    success: boolean;
+    duration: number;
+    reason: string;
+  }) => void;
+  setupComponentIntegration: (payload: {
+    componentTransferCoordinator: ComponentTransferCoordinator;
+    pclCommandRouter: PCLCommandRouter;
+    validationFramework: ValidationFramework;
+    backendFallbackManager: BackendFallbackManager;
+  }) => void;
+  performanceWarning: (payload: { operation: string; duration: number; threshold: number }) => void;
+  shuttingDown: (payload: { timestamp: number }) => void;
+  shutdownComplete: (payload: { timestamp: number }) => void;
+}
+
 /**
  * ComponentTransferCoordinator - Enhanced State Synchronization integration
  * Coordinates component transfers with IPC-based state synchronization
  */
-export class ComponentTransferCoordinator extends EventEmitter {
+export class ComponentTransferCoordinator extends EventDrivenComponent<ComponentTransferCoordinatorEvents> {
+  private static instanceCounter = 0;
   private transferQueue: Map<string, ComponentTransferRequest> = new Map();
   private activeTransfers: Map<string, any> = new Map();
   private stateManager: any; // Enhanced State Synchronization integration
   private readonly maxConcurrentTransfers: number = 3;
 
   constructor(stateManager: any) {
-    super();
+    super(`component-transfer-coordinator:${ComponentTransferCoordinator.instanceCounter++}`, 80);
     this.stateManager = stateManager;
     this.setupStateManagerIntegration();
   }
@@ -267,7 +374,7 @@ export class ComponentTransferCoordinator extends EventEmitter {
     const startMemory = process.memoryUsage().heapUsed;
 
     // Simulate component performance measurement
-    await new Promise(resolve => setTimeout(resolve, 5));
+    await sleep(5);
 
     const endTime = performance.now();
     const endMemory = process.memoryUsage().heapUsed;
@@ -343,13 +450,14 @@ export class ComponentTransferCoordinator extends EventEmitter {
  * PCLCommandRouter - PCL Registry pattern integration
  * Routes commands using proven PCL patterns with 75% reuse optimization
  */
-export class PCLCommandRouter extends EventEmitter {
+export class PCLCommandRouter extends EventDrivenComponent<PCLCommandRouterEvents> {
+  private static instanceCounter = 0;
   private commandRegistry: any; // PCL Command Registry integration
   private routingCache: Map<string, any> = new Map();
   private routingStats: Map<string, any> = new Map();
 
   constructor(commandRegistry: any) {
-    super();
+    super(`pcl-command-router:${PCLCommandRouter.instanceCounter++}`, 40);
     this.commandRegistry = commandRegistry;
   }
 
@@ -510,14 +618,15 @@ export class PCLCommandRouter extends EventEmitter {
  * ValidationFramework - Performance monitoring integration
  * Integrates with Performance Monitor for continuous validation
  */
-export class ValidationFramework extends EventEmitter {
+export class ValidationFramework extends EventDrivenComponent<ValidationFrameworkEvents> {
+  private static instanceCounter = 0;
   private performanceThreshold: number = 30; // 30% degradation threshold from Phase 1
   private performanceBaselines: Map<string, number> = new Map();
   private validationResults: Map<string, ValidationResult[]> = new Map();
   private cleanupTasks: Array<() => void> = [];
 
   constructor() {
-    super();
+    super(`validation-framework:${ValidationFramework.instanceCounter++}`, 60);
     this.setupPerformanceMonitoring();
   }
 
@@ -601,7 +710,7 @@ export class ValidationFramework extends EventEmitter {
     const startMemory = process.memoryUsage().heapUsed;
 
     // Simulate performance measurement
-    await new Promise(resolve => setTimeout(resolve, Math.random() * 10));
+    await sleep(Math.random() * 10);
 
     const endTime = performance.now();
     const endMemory = process.memoryUsage().heapUsed;
@@ -622,11 +731,12 @@ export class ValidationFramework extends EventEmitter {
     this.registerCleanup(() => process.off('backend-integration:metrics', metricsHandler));
 
     // Periodic performance validation
-    const handle = setInterval(() => {
-      this.performPeriodicValidation();
-    }, 10000); // Every 10 seconds
-    handle.unref?.();
-    this.registerCleanup(() => clearInterval(handle));
+    const validationInterval: ManagedInterval = createInterval(
+      () => void this.performPeriodicValidation(),
+      10000,
+      { unref: true }
+    );
+    this.registerCleanup(() => validationInterval.stop());
   }
 
   private processPerformanceMetrics(metrics: any): void {
@@ -725,7 +835,7 @@ export class ValidationFramework extends EventEmitter {
         console.error('ValidationFramework: cleanup task failed', error);
       }
     }
-    this.removeAllListeners();
+    this.cleanupEvents();
   }
 
   private registerCleanup(task: () => void): void {
@@ -737,13 +847,14 @@ export class ValidationFramework extends EventEmitter {
  * BackendFallbackManager - Risk Mitigation Framework integration
  * Manages fallback scenarios and coordinates with Risk Mitigation Framework
  */
-export class BackendFallbackManager extends EventEmitter {
+export class BackendFallbackManager extends EventDrivenComponent<BackendFallbackManagerEvents> {
+  private static instanceCounter = 0;
   private fallbackStrategies: Map<string, any> = new Map();
   private riskMitigationFramework: any;
   private cleanupTasks: Array<() => void> = [];
 
   constructor(riskMitigationFramework: any) {
-    super();
+    super(`backend-fallback-manager:${BackendFallbackManager.instanceCounter++}`, 50);
     this.riskMitigationFramework = riskMitigationFramework;
     this.setupRiskMitigationIntegration();
   }
@@ -840,7 +951,7 @@ export class BackendFallbackManager extends EventEmitter {
   private async executeGracefulFallback(componentId: string, strategy: any): Promise<boolean> {
     // Graceful fallback - gradual degradation with retries
     for (let attempt = 1; attempt <= strategy.retries; attempt++) {
-      await new Promise(resolve => setTimeout(resolve, strategy.timeout));
+      await sleep(strategy.timeout);
       
       // Simulate retry success based on attempt number
       const successProbability = 0.3 + (0.2 * attempt); // Increasing success probability
@@ -858,7 +969,7 @@ export class BackendFallbackManager extends EventEmitter {
     this.emit('rollbackInitiated', { componentId, strategy });
     
     // Simulate rollback operation
-    await new Promise(resolve => setTimeout(resolve, strategy.timeout));
+    await sleep(strategy.timeout);
     
     this.emit('rollbackCompleted', { componentId });
     return true;
@@ -922,7 +1033,7 @@ export class BackendFallbackManager extends EventEmitter {
         console.error('BackendFallbackManager: cleanup task failed', error);
       }
     }
-    this.removeAllListeners();
+    this.cleanupEvents();
   }
 
   private registerCleanup(task: () => void): void {
@@ -934,7 +1045,8 @@ export class BackendFallbackManager extends EventEmitter {
  * PCLBackendIntegrator - Main orchestrator for PCL backend integration
  * Coordinates all backend operations with component transfer validation and Enhanced State Synchronization
  */
-export class PCLBackendIntegrator extends EventEmitter {
+export class PCLBackendIntegrator extends EventDrivenComponent<PCLBackendIntegratorEvents> {
+  private static instanceCounter = 0;
   private backendConnections: Map<string, BackendServiceConnection> = new Map();
   private componentTransferCoordinator: ComponentTransferCoordinator;
   private pclCommandRouter: PCLCommandRouter;
@@ -966,7 +1078,7 @@ export class PCLBackendIntegrator extends EventEmitter {
     commandRegistry: any;
     riskMitigationFramework: any;
   }) {
-    super();
+    super(`pcl-backend-integrator:${PCLBackendIntegrator.instanceCounter++}`, 120);
     
     // Initialize components with proper integration
     this.componentTransferCoordinator = new ComponentTransferCoordinator(dependencies.stateManager);
@@ -1292,11 +1404,12 @@ export class PCLBackendIntegrator extends EventEmitter {
     this.registerCleanup(() => process.off('backend-integration:metrics', metricsHandler));
 
     // Periodic health checks
-    const healthHandle = setInterval(() => {
-      this.performHealthChecks();
-    }, 30000); // Every 30 seconds
-    healthHandle.unref?.();
-    this.registerCleanup(() => clearInterval(healthHandle));
+    const healthInterval: ManagedInterval = createInterval(
+      () => void this.performHealthChecks(),
+      30000,
+      { unref: true }
+    );
+    this.registerCleanup(() => healthInterval.stop());
   }
 
   private processPerformanceMetrics(metrics: any): void {
@@ -1394,10 +1507,10 @@ export class PCLBackendIntegrator extends EventEmitter {
     this.componentTransferCoordinator.removeAllListeners();
     this.pclCommandRouter.removeAllListeners();
     this.validationFramework.dispose();
-    this.backendFallbackManager.removeAllListeners();
+    this.backendFallbackManager.dispose();
     this.cleanupResources();
 
-    this.removeAllListeners();
+    this.cleanupEvents();
 
     this.emit('shutdownComplete', { timestamp: Date.now() });
   }

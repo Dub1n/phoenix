@@ -1,4 +1,4 @@
-import { EventEmitter } from 'events';
+import { EventUtils, type GenericEventMap } from '../../utils/event-utils';
 import { jest } from '@jest/globals';
 import { TemplumBackendServiceRouter } from '../../backend/backend-service-router';
 import { ConnectionFactory } from '../../backend/connection-factory';
@@ -17,7 +17,7 @@ type ServiceDiscoveryController = ReturnType<typeof createServiceDiscoveryMock>;
 
 const createServiceDiscoveryMock = () => {
   let currentServices: DiscoveredService[] = [];
-  const emitter = new EventEmitter();
+  const emitter = EventUtils.createTypedEmitter<GenericEventMap>();
 
   const discoverServices = jest.fn(async () => currentServices);
   const getDiscoveredServices = jest.fn(() => currentServices);

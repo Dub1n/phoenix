@@ -118,7 +118,7 @@ describe('ConnectionFactory', () => {
 
       await expect(
         ConnectionFactory.create('test', config)
-      ).rejects.toThrow('GRPC connections not yet implemented');
+      ).rejects.toThrow(/Unsupported protocol: grpc/);
     });
   });
 

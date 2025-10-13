@@ -6,6 +6,19 @@ import { ConnectionFactory } from './connection-factory';
 import type { BackendConfig } from '../types/universal-skin-engine-types';
 import type { Logger } from '../utils/logger';
 import { resolveHealthEndpoint, type NormalizedServiceManifest } from './schemas/service-manifest';
+import { createTimeout } from '../utils/async-utils';
+
+type TimeoutHandle = {
+  cancel: () => void;
+  ref: () => void;
+  unref: () => void;
+};
+
+const cancelTimeoutHandle = (handle: TimeoutHandle | null): void => {
+  if (handle) {
+    handle.cancel();
+  }
+};
 
 export interface ServiceHealthCheckRequest {
   manifest: NormalizedServiceManifest;
@@ -65,19 +78,29 @@ function checkHttpHealth(url: string, request: ServiceHealthCheckRequest): Promi
   return new Promise((resolve) => {
     const client = url.startsWith('https://') ? https : http;
 
-    const timeout = setTimeout(() => {
+    let settled = false;
+    let timeoutGuard: TimeoutHandle | null = null;
+    const settle = (result: boolean) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      cancelTimeoutHandle(timeoutGuard);
+      resolve(result);
+    };
+
+    timeoutGuard = createTimeout(() => {
       logger.warn('HTTP health check timed out', {
         serviceId: manifest.id,
         url,
         timeoutMs,
         context,
       });
-      resolve(false);
-    }, timeoutMs);
+      settle(false);
+    }, timeoutMs, { unref: true });
 
     const req = client.get(url, (res) => {
       res.resume();
-      clearTimeout(timeout);
       const statusCode = res.statusCode ?? 0;
       const healthy = statusCode >= 200 && statusCode < 300;
 
@@ -90,11 +113,10 @@ function checkHttpHealth(url: string, request: ServiceHealthCheckRequest): Promi
         });
       }
 
-      resolve(healthy);
+      settle(healthy);
     });
 
     req.on('error', (error: unknown) => {
-      clearTimeout(timeout);
       const normalizedError = error instanceof Error ? error.message : String(error);
       logger.warn('HTTP health check failed', {
         serviceId: manifest.id,
@@ -102,11 +124,10 @@ function checkHttpHealth(url: string, request: ServiceHealthCheckRequest): Promi
         error: normalizedError,
         context,
       });
-      resolve(false);
+      settle(false);
     });
 
     req.on('timeout', () => {
-      clearTimeout(timeout);
       logger.warn('HTTP health check socket timeout', {
         serviceId: manifest.id,
         url,
@@ -114,7 +135,7 @@ function checkHttpHealth(url: string, request: ServiceHealthCheckRequest): Promi
         context,
       });
       req.destroy();
-      resolve(false);
+      settle(false);
     });
   });
 }
@@ -128,11 +149,20 @@ function checkWebSocketHealth(url: string, request: ServiceHealthCheckRequest): 
       handshakeTimeout: timeoutMs,
     });
 
-    const timeout = setTimeout(() => {
+    let timeoutGuard: TimeoutHandle | null = null;
+    const settle = (result: boolean) => {
       if (completed) {
         return;
       }
       completed = true;
+      cancelTimeoutHandle(timeoutGuard);
+      resolve(result);
+    };
+
+    timeoutGuard = createTimeout(() => {
+      if (completed) {
+        return;
+      }
       logger.warn('WebSocket health check timed out', {
         serviceId: manifest.id,
         url,
@@ -148,34 +178,28 @@ function checkWebSocketHealth(url: string, request: ServiceHealthCheckRequest): 
           context,
         });
       }
-      resolve(false);
-    }, timeoutMs);
+      settle(false);
+    }, timeoutMs, { unref: true });
 
     socket.once('open', () => {
       if (completed) {
         return;
       }
-
-      completed = true;
-      clearTimeout(timeout);
       socket.terminate();
-      resolve(true);
+      settle(true);
     });
 
     socket.once('error', (error: unknown) => {
       if (completed) {
         return;
       }
-
-      completed = true;
-      clearTimeout(timeout);
       logger.warn('WebSocket health check failed', {
         serviceId: manifest.id,
         url,
         error: error instanceof Error ? error.message : String(error),
         context,
       });
-      resolve(false);
+      settle(false);
     });
   });
 }
@@ -189,11 +213,11 @@ async function checkIpcHealth(request: ServiceHealthCheckRequest): Promise<boole
     keepAlive: false,
   };
 
-  let timeoutHandle: NodeJS.Timeout | undefined;
+  let timeoutGuard: TimeoutHandle | null = null;
   let connectionTimedOut = false;
 
   const timeoutPromise = new Promise<boolean>((resolve) => {
-    timeoutHandle = setTimeout(() => {
+    timeoutGuard = createTimeout(() => {
       connectionTimedOut = true;
       logger.warn('IPC health check timed out', {
         serviceId: manifest.id,
@@ -202,7 +226,7 @@ async function checkIpcHealth(request: ServiceHealthCheckRequest): Promise<boole
         context,
       });
       resolve(false);
-    }, timeoutMs);
+    }, timeoutMs, { unref: true });
   });
 
   const attemptPromise = (async () => {
@@ -236,9 +260,8 @@ async function checkIpcHealth(request: ServiceHealthCheckRequest): Promise<boole
 
   const result = await Promise.race([timeoutPromise, attemptPromise]);
 
-  if (timeoutHandle) {
-    clearTimeout(timeoutHandle);
-  }
+  cancelTimeoutHandle(timeoutGuard);
+  timeoutGuard = null;
 
   if (connectionTimedOut) {
     return false;
