@@ -25,6 +25,7 @@ Tags: `#infra`
 
 ## Notes
 
+- 2025-10-12: Async Utils Stage 7 reran `npm run phase6-validation` / `npm run phase6-health`; artefacts stored at `validation-reports/phase6-validation-2025-10-12T18-05-03-893Z.*` while the mock-only skip remains in effect pending the live backend window.
 - Mock runs now record real workflow timings, memory deltas, and interface consistency via the consolidated harness; live backend baselines are still pending before the score becomes a release gate.
 - Capture at least one golden run (mocks + real backends) and store raw metrics in `validation-reports/phase6-baselines/` so the regression monitor can diff against lived data.
 - Zero-knowledge registry live verification now depends on this task; coordinate with backend owners before scheduling the post-MVP run.

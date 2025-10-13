@@ -5,6 +5,8 @@
 **Context**: Evaluating approaches for Claude Code agents to interact with interactive CLIs
 
 ## Executive Summary
+> **Update — 2025-10-09**: The team adopted the minimal FastMCP ↔ PTY bridge (see `docs/current/PTY.md`). The analysis below remains as historical research for expanded MCP scopes but is no longer the active implementation plan.
+
 
 This analysis evaluates solutions for enabling AI agents to interact with command-line interfaces beyond simple command execution. The core challenge is bridging asynchronous agent execution patterns with synchronous, stateful CLI interaction requirements.
 

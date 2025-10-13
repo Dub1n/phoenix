@@ -3,7 +3,7 @@ doc-type: architecture-spec
 title: Templum Architecture Specification
 tags: [templum, universal_interface, architecture]
 status: current
-last_updated: 2025-10-06
+last_updated: 2025-10-12
 ---
 
 # Templum — Architecture Specification (Current State)
@@ -21,7 +21,7 @@ last_updated: 2025-10-06
 >
 > 🧭 **In Progress:** Backend router refactor, shared session/context verification, and Haruspex integration.
 
-- Backend discovery (`ServiceDiscovery`, `ConnectionFactory`) enumerates locally registered services; watcher overrides keep `.templum/services` scoped to the active workspace/tests and regression suites cover manifest add/change/remove plus router promotion. Lifecycle broadcasting now flows through a dedicated `BackendLifecycleChannel`, allowing the router to emit normalized `connected/disconnected/recovered/failed/health-degraded` events that `TemplumCore` relays to the enhanced state manager/observability layer. Live partner boots remain deferred and are tracked under `dev/tasks/phase6-validation-signal.md`. **Status:** Present (real-service run deferred post-MVP).
+- Backend discovery (`ServiceDiscovery`, `ConnectionFactory`) enumerates locally registered services; watcher overrides keep `.templum/services` scoped to the active workspace/tests and regression suites cover manifest add/change/remove plus router promotion. Lifecycle broadcasting now flows through a dedicated `BackendLifecycleChannel`, allowing the router to emit normalized `connected/disconnected/recovered/failed/health-degraded` events that `TemplumCore` relays to the enhanced state manager/observability layer. All connection/discovery timeouts are now routed through the managed `AsyncUtils.createTimeout`/`createInterval` helpers so timers unref automatically and teardown can assert the active-handle budget. Live partner boots remain deferred and are tracked under `dev/tasks/phase6-validation-signal.md`. **Status:** Present (real-service run deferred post-MVP).
 - Manual override manager sits between the router and discovery caches, enforcing zero-knowledge constraints (redacted service descriptors, hashed observability logs) while surfacing `apply`/`clear` controls through `TemplumCore` and the shared command registry. Automated watcher tests drop manifests into `.templum/services` to prove add/remove flows; these run in CI via the backend bundle, with partner-live runs optional post-MVP. **Status:** Present.
 - Skin payload consumption now flows through `TemplumCore` → `UniversalSkinEngine`; adapters render cached backend skins without bespoke fallbacks while partner exports remain pending. **Status:** Present (awaiting live backend payloads).
 - CLI/daemon process separation is scaffolded; IPC contracts need integration tests. **Status:** Broken.
@@ -31,7 +31,7 @@ last_updated: 2025-10-06
 
 - **Core Components:**
   - `TemplumCore` orchestrates adapters, state, and backend routing. **Status:** Present (initialises but still tied to legacy session managers).
-  - `ServiceDiscovery` + `ConnectionFactory` provide zero-knowledge backend connections (IPC/HTTP/WebSocket/gRPC). **Status:** Partial (local multi-protocol tests pass; partner boot captured as post-MVP follow-up).
+- `ServiceDiscovery` + `ConnectionFactory` provide zero-knowledge backend connections (IPC/HTTP/WebSocket/gRPC). Timeout/abort contracts are centralised via `AsyncUtils`, and the router now guards against recursive fallback loading by tracking visited services during migrations. **Status:** Partial (local multi-protocol tests pass; partner boot captured as post-MVP follow-up).
   - `UniversalSkinEngine` is responsible for consuming `UniversalSkinDefinition` payloads (pending full implementation). **Status:** Broken (schema enforcement and payload rendering incomplete).
   - Interface adapters (`cli`, `vscode`, `command`) render skins and manage interaction state. **Status:** Present (operational yet reliant on fallback rendering). CLI now bridges into the shared session foundation via `CLISessionBridge`, has dropped its legacy caches in favour of bridge helpers, and VSCode receives the injected session manager instance; teardown paths clear listeners to keep Jest harnesses clean.
   - Display stack utilities (`DisplayUtils`, `TerminalFormatter`, `WindowUtils`) expose dependency-injected seams via `configureDisplayStack(...)`, wrapping `DisplayUtils.configure`, `WindowUtils.configure`, and `TerminalFormatter.configure` so CLI/session surfaces share formatter, logger, and column providers without importing `chalk` directly. **Status:** Present.

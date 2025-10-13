@@ -28,16 +28,16 @@ Refer to [`utility-consolidation-onboarding.md`](utility-consolidation-onboardin
 
 ## Consolidation Impact Summary
 
-| Category | Utilities | Files Impacted | Lines Reduced | Priority |
-|----------|-----------|----------------|---------------|----------|
-| **Core Infrastructure** | 4 utilities | 150+ files | ~3,500 lines | **CRITICAL** |
-| **Display & UI** | 4 utilities | 40+ files | ~1,200 lines | **HIGH** |
-| **Data Management** | 4 utilities | 60+ files | ~800 lines | **HIGH** |
-| **System Utilities** | 4 utilities | 50+ files | ~700 lines | **MEDIUM** |
-| **Pattern Base** | 3 utilities | 30+ files | ~500 lines | **MEDIUM** |
-| **Business Logic** | 3 utilities | 35+ files | ~600 lines | **MEDIUM** |
-| **Development Tools** | 2 utilities | 23+ files | ~400 lines | **LOW** |
-| **TOTAL** | **24 utilities** | **~388 files** | **~7,700 lines** | - |
+| Category                | Utilities        | Files Impacted | Lines Reduced    | Priority     |
+| ----------------------- | ---------------- | -------------- | ---------------- | ------------ |
+| **Core Infrastructure** | 4 utilities      | 150+ files     | ~3,500 lines     | **CRITICAL** |
+| **Display & UI**        | 4 utilities      | 40+ files      | ~1,200 lines     | **HIGH**     |
+| **Data Management**     | 4 utilities      | 60+ files      | ~800 lines       | **HIGH**     |
+| **System Utilities**    | 4 utilities      | 50+ files      | ~700 lines       | **MEDIUM**   |
+| **Pattern Base**        | 3 utilities      | 30+ files      | ~500 lines       | **MEDIUM**   |
+| **Business Logic**      | 3 utilities      | 35+ files      | ~600 lines       | **MEDIUM**   |
+| **Development Tools**   | 2 utilities      | 23+ files      | ~400 lines       | **LOW**      |
+| **TOTAL**               | **24 utilities** | **~388 files** | **~7,700 lines** | -            |
 
 **Total Codebase Reduction**: **35-40%** (Higher than original 30% estimate)
 

@@ -23,13 +23,13 @@ Stage 4 prerequisites across Patterns 5–7 are complete; this document captures
 
 ## Shared Constants & Defaults (Stage 4 baseline)
 
-| Domain | Baseline Value | Notes |
-| ------ | -------------- | ----- |
-| Terminal width fallback | `80` columns | Terminal Formatter capability provider (`pattern-6.5` Stage 4a) |
-| Test width baseline | `96` columns | `display-columns-provider` mock shared across cohorts |
-| Separator length clamp | `Math.min(width - 4, 60)` | Display/Window utils rely on formatter spacing constants |
-| Default padding | `2` | Applies to separator + window spacing helpers |
-| Window border glyph map | `WINDOW_BORDER_GLYPHS` | Exported from Window Utils Stage 4b |
+| Domain                  | Baseline Value            | Notes                                                           |
+| ----------------------- | ------------------------- | --------------------------------------------------------------- |
+| Terminal width fallback | `80` columns              | Terminal Formatter capability provider (`pattern-6.5` Stage 4a) |
+| Test width baseline     | `96` columns              | `display-columns-provider` mock shared across cohorts           |
+| Separator length clamp  | `Math.min(width - 4, 60)` | Display/Window utils rely on formatter spacing constants        |
+| Default padding         | `2`                       | Applies to separator + window spacing helpers                   |
+| Window border glyph map | `WINDOW_BORDER_GLYPHS`    | Exported from Window Utils Stage 4b                             |
 
 ## Dependency Injection Seams
 

@@ -14,6 +14,8 @@ tags: [documentation, validation, mcp-integration, adaptive-resilience, troubles
 
 ## Overview
 
+> **Status: Needs Verification (2025-10-10):** MCP integration content remains for historical context. The current validation system no longer instantiates an MCP integration manager or CLI MCP validation; developer tooling lives in `docs/current/PTY.md`.
+
 The ValidationSystem V3C (HybridValidationSystemV3C) is an enhanced validation orchestrator that provides comprehensive validation capabilities with MCP (Model Context Protocol) integration, adaptive resilience mechanisms, and real-time quality monitoring. This system was implemented as part of TASK-MCP-009 (HYBRID-EXECUTION-006) to address MCP timeout issues and enhance testing capabilities with adaptive fallback mechanisms.
 
 ## Key Features

@@ -3,7 +3,7 @@ doc-type: operations-guide
 title: Templum Testing Guide
 tags: [templum, testing, qa]
 status: current
-last_updated: 2025-10-06
+last_updated: 2025-10-12
 ---
 
 # Templum — Testing Guide
@@ -41,12 +41,23 @@ last_updated: 2025-10-06
 | `npm run check:tests`                                                                                                                                     | Lightweight health check used in pre-commit                                     | Runs Jest in CI mode to ensure suites are registered                                                                                                                                  |
 | `node scripts/run-with-timeout.mjs --timeout <ms> -- <command…>`                                                                                          | Guard long-running suites / capture diagnostics                                 | Add `--log-file <path>` and `--heartbeat <ms>` to stream heartbeats and persisted output; signals propagate to the entire process group                                               |
 
+### Timeout Wrapper Expectations
+
+- Default to a 30 s timeout when wrapping commands with `scripts/run-with-timeout.mjs`.
+- For the backend discovery/router bundle, start with  
+  ``node scripts/run-with-timeout.mjs --timeout 30000 --log-file tmp/backend-suite.log -- npm test -- --runTestsByPath src/tests/backend/service-discovery.test.ts src/tests/backend/generic-backend-integration.test.ts src/tests/backend/backend-dependency-integration.test.ts --runInBand --detectOpenHandles --forceExit --no-cache``.
+- Reset global mocks (notably `ConnectionFactory.create` and `global.fetch`) in `beforeEach`/`afterEach` to avoid leaving mocked sockets alive between runs; the backend suites show the pattern to follow.
+- If the wrapped command is still running when the timeout expires, rerun with another 30 s added (30 s → 60 s → 90 s → 120 s) until either the command exits on its own (pass or fail) before the wrapper fires or you reach the 120 s ceiling.
+- Treat reaching the 120 s cap without a natural exit as a likely leak that needs investigation.
+- Record the final timeout alongside the command (evidence logs, PR notes) so future runs keep the same baseline.
+
 ### 2.1 CI leak guard & forced exit
 
 - Prefer `npm run test:ci` (or `node scripts/run-jest-ci.mjs <pattern>`) for automation. The script pins `CI=1`, `JEST_FORCE_EXIT=1`, and adds `--runInBand --detectOpenHandles --forceExit` so the process terminates even if code forgets to `clearInterval` or `close()` resources.
 - `tests/globalTeardown.ts` runs after every Jest invocation. It captures active handles/requests, prints a `why-is-node-running` dump, and fails the suite whenever anything besides stdio remains. When this fires, clean up timers or sockets in the relevant component (e.g., call `dispose()` in `afterEach`, stop health monitors, clear `AbortController` timeouts).
 - The teardown now polls for up to ~750 ms (50 ms intervals) before declaring a leak, giving Jest workers and short-lived sockets time to settle. Any handles that survive that window are treated as real leaks and will still fail the run.
-- Core infrastructure now tracks its own timers: `EnhancedStateManager`, `StatePersistence`, `CrossInterfaceSync`, `PCLBackendIntegrator`, and `TemplumBackendServiceRouter` register every `setInterval`/`setTimeout` and release them during `shutdown()/dispose()`. New code must follow the same pattern—use the existing `scheduleTimeout`/`delay` helpers or mirror their behaviour—and wire clean-up paths before merging.
+- Core infrastructure now tracks its own timers: `EnhancedStateManager`, `StatePersistence`, `CrossInterfaceSync`, `PCLBackendIntegrator`, and `TemplumBackendServiceRouter` register every `setInterval`/`setTimeout` and release them during `shutdown()/dispose()`. New code must follow the same pattern—use `AsyncUtils.createTimeout` / `createInterval` (or the router’s `scheduleTimeout`) so timers are unref’d and discoverable via `AsyncUtils.cleanup`.
+- Backend integration suites reset `ConnectionFactory.create` and `global.fetch` in `beforeEach`/`afterEach`. When adding specs, copy that pattern to avoid leaving mocked sockets alive between tests; doing so keeps the timeout wrapper from surfacing false positives.
 - When diagnosing leaks locally, run `node scripts/run-with-timeout.mjs --timeout 30000 -- node scripts/run-jest-ci.mjs adapter-registry`. The wrapper guarantees the command exits; the teardown output lists the constructor names (and socket endpoints) of anything left behind so you can target the culprit quickly.
 - Tests should invoke `registry.dispose()` (or equivalent) in `afterEach` blocks. The core adapter-registry suite has been updated to dispose unconditionally; copy that pattern in new specs to avoid orphaned sockets from connection factories.
 
