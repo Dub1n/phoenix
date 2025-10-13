@@ -2,6 +2,22 @@
 import { spawn } from 'node:child_process';
 import { createWriteStream, mkdirSync } from 'node:fs';
 import path from 'node:path';
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
+
+let createTimeout;
+let createInterval;
+
+try {
+  ({ createTimeout, createInterval } = require('../dist/src/utils/async-utils.js'));
+} catch (error) {
+  const message =
+    'Managed timer utilities not available. Run `npm run build` to generate dist/src/utils/async-utils.js before executing scripts/run-with-timeout.mjs.';
+  console.error(message);
+  console.error('Underlying error:', error instanceof Error ? error.message : error);
+  process.exit(1);
+}
 
 const args = process.argv.slice(2);
 
@@ -157,13 +173,20 @@ if (logStream && child.stderr) {
 }
 
 let heartbeatHandle;
+let killAfterGuard = null;
 if (heartbeatMs > 0) {
-  heartbeatHandle = setInterval(() => {
-    if (!completed) {
-      logLine(`Heartbeat: child ${child.pid} still running.`, 'info');
-    }
-  }, heartbeatMs);
-  heartbeatHandle.unref();
+  heartbeatHandle = createInterval(
+    () => {
+      if (!completed) {
+        logLine(`Heartbeat: child ${child.pid} still running.`, 'info');
+      } else {
+        heartbeatHandle?.stop();
+        heartbeatHandle = undefined;
+      }
+    },
+    heartbeatMs,
+    { unref: true }
+  );
 }
 
 const sendSignal = (signal) => {
@@ -192,23 +215,29 @@ const terminate = () => {
   logLine(`Timeout reached (${timeoutMs}ms). Sending ${timeoutSignal} to PID ${child.pid}.`);
   sendSignal(timeoutSignal);
   if (killAfterMs > 0) {
-    setTimeout(() => {
-      if (!completed) {
-        logLine(`Process ${child.pid} still running. Sending SIGKILL.`, 'error');
-        sendSignal('SIGKILL');
-      }
-    }, killAfterMs).unref();
+    killAfterGuard?.cancel?.();
+    killAfterGuard = createTimeout(
+      () => {
+        if (!completed) {
+          logLine(`Process ${child.pid} still running. Sending SIGKILL.`, 'error');
+          sendSignal('SIGKILL');
+        }
+      },
+      killAfterMs,
+      { unref: true }
+    );
   }
 };
 
-const timeoutHandle = setTimeout(terminate, timeoutMs);
+const timeoutHandle = createTimeout(terminate, timeoutMs, { unref: true });
 
 child.on('exit', (code, signal) => {
   completed = true;
-  clearTimeout(timeoutHandle);
-  if (heartbeatHandle) {
-    clearInterval(heartbeatHandle);
-  }
+  timeoutHandle.cancel?.();
+  heartbeatHandle?.stop?.();
+  heartbeatHandle = undefined;
+  killAfterGuard?.cancel?.();
+  killAfterGuard = null;
   if (signal) {
     logLine(`Process exited due to signal ${signal}.`, 'error');
     finish(1);
@@ -220,10 +249,11 @@ child.on('exit', (code, signal) => {
 
 child.on('error', (error) => {
   completed = true;
-  clearTimeout(timeoutHandle);
-  if (heartbeatHandle) {
-    clearInterval(heartbeatHandle);
-  }
+  timeoutHandle.cancel?.();
+  heartbeatHandle?.stop?.();
+  heartbeatHandle = undefined;
+  killAfterGuard?.cancel?.();
+  killAfterGuard = null;
   logLine(`Failed to start command: ${error.message}`, 'error');
   finish(1);
 });
