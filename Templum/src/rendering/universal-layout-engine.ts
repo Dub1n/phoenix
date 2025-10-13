@@ -225,8 +225,7 @@ export class UniversalLayoutEngine {
       }
       
       // Determine if this is PCL compatibility mode
-      const isUniversalDef = 'interfaces' in adaptedSkinDefinition;
-      const compatibilityMode = isUniversalDef ? 'universal' : 'pcl';
+      const compatibilityMode = this.determineCompatibilityMode(adaptedSkinDefinition, interfaceType);
 
       // Create content-driven constraints for algorithmic consistency
       const universalConstraints = this.createContentDrivenConstraints(
@@ -290,7 +289,7 @@ export class UniversalLayoutEngine {
       ...baseLayout,
       interfaceType: constraints.interfaceType,
       interfaceSpecific,
-      compatibilityMode: 'interfaces' in skinDefinition ? 'universal' : 'pcl'
+      compatibilityMode: this.determineCompatibilityMode(skinDefinition, constraints.interfaceType)
     };
   }
 
@@ -898,8 +897,10 @@ export class UniversalLayoutEngine {
       maxContentWidth = Math.max(maxContentWidth, this.getDisplayWidth(skinDefinition.subtitle));
     }
     
+    const items = this.normalizeSkinItems(skinDefinition);
+
     // Measure menu items
-    for (const item of skinDefinition.items) {
+    for (const item of items) {
       itemCount++;
       
       // Build item text as it would be displayed with procedural numbering
@@ -1456,13 +1457,15 @@ export class UniversalLayoutEngine {
     const recommendations: string[] = [];
     const adaptations: any = {};
     
+    const normalizedItems = this.normalizeSkinItems(skinDefinition);
+
     // Check basic structure requirements
     if (!skinDefinition.title) {
       issues.push('Missing title - CLI Design Spec requires window title');
-      adaptations.title = 'Untitled Menu';
+      adaptations.title = (skinDefinition as any).name ?? 'Untitled Menu';
     }
     
-    if (!skinDefinition.items || skinDefinition.items.length === 0) {
+    if (normalizedItems.length === 0) {
       issues.push('No menu items - CLI requires at least one actionable item');
       adaptations.items = [{
         id: 'placeholder',
@@ -1470,6 +1473,8 @@ export class UniversalLayoutEngine {
         type: 'command' as const,
         command: 'help'
       }];
+    } else if (!skinDefinition.items || skinDefinition.items.length === 0) {
+      adaptations.items = normalizedItems;
     }
     
     // Check content width compatibility
@@ -1483,7 +1488,7 @@ export class UniversalLayoutEngine {
     }
     
     // Check for CLI Design Spec compliance issues
-    const hasLongItems = skinDefinition.items?.some(item => 
+    const hasLongItems = normalizedItems.some(item => 
       (item.label.length + (item.description?.length || 0)) > 80
     );
     
@@ -1493,7 +1498,10 @@ export class UniversalLayoutEngine {
     }
     
     // Check navigation compatibility
-    const skinRouting = this.buildDynamicMenuRouting(skinDefinition);
+    const skinRouting = this.buildDynamicMenuRouting({
+      ...(skinDefinition as unknown as Record<string, unknown>),
+      items: normalizedItems
+    } as UniversalSkinMenuDefinition | PCLSkinMenuDefinition);
     const hasValidRoutes = skinRouting.availableRoutes.size > 0;
     
     if (!hasValidRoutes) {
@@ -1521,7 +1529,7 @@ export class UniversalLayoutEngine {
         
       case 'command':
         // Command-specific compatibility checks
-        if (!skinDefinition.items?.every(item => item.command)) {
+        if (!normalizedItems.every(item => item.command)) {
           issues.push('Not all items have executable commands');
           adaptations.filterNonExecutable = true;
         }
@@ -1546,6 +1554,11 @@ export class UniversalLayoutEngine {
     adaptations: any
   ): UniversalSkinMenuDefinition | PCLSkinMenuDefinition {
     let adaptedSkin = { ...skinDefinition };
+    const layoutDefinition = (skinDefinition as { layout?: { items?: Array<Record<string, unknown>> } }).layout;
+
+    if ((!adaptedSkin.items || adaptedSkin.items.length === 0) && layoutDefinition?.items?.length) {
+      adaptedSkin.items = this.normalizeSkinItems(skinDefinition);
+    }
     
     // Apply title adaptation
     if (adaptations.title && !adaptedSkin.title) {
@@ -1578,5 +1591,64 @@ export class UniversalLayoutEngine {
     }
     
     return adaptedSkin;
+  }
+
+  private determineCompatibilityMode(
+    skinDefinition: UniversalSkinMenuDefinition | PCLSkinMenuDefinition,
+    interfaceType: InterfaceType
+  ): 'pcl' | 'universal' {
+    const metadata = (skinDefinition as { metadata?: { compatibilityMode?: string } }).metadata;
+    if ((skinDefinition as { pclVersion?: string }).pclVersion) {
+      return 'pcl';
+    }
+
+    if (metadata?.compatibilityMode && metadata.compatibilityMode.toLowerCase() === 'pcl') {
+      return 'pcl';
+    }
+
+    const interfacesList = Array.isArray((skinDefinition as { interfaces?: InterfaceType[] | string[] }).interfaces)
+      ? ((skinDefinition as { interfaces?: InterfaceType[] | string[] }).interfaces ?? [])
+      : [];
+    const normalized = interfacesList.map((iface) =>
+      typeof iface === 'string' ? iface.toLowerCase() : String(iface)
+    );
+
+    if (normalized.length === 0) {
+      return 'pcl';
+    }
+
+    const cliAliases = new Set(['cli', 'command-line', 'terminal']);
+    if (normalized.every((iface) => cliAliases.has(iface))) {
+      return 'pcl';
+    }
+
+    if (interfaceType === 'cli' && normalized.every((iface) => cliAliases.has(iface) || iface === 'universal')) {
+      return 'pcl';
+    }
+
+    return 'universal';
+  }
+
+  private normalizeSkinItems(
+    skinDefinition: UniversalSkinMenuDefinition | PCLSkinMenuDefinition
+  ): SkinMenuItem[] {
+    if (Array.isArray(skinDefinition.items) && skinDefinition.items.length > 0) {
+      return skinDefinition.items;
+    }
+
+    const layoutItems = (skinDefinition as { layout?: { items?: Array<Record<string, unknown>> } }).layout?.items;
+    if (!Array.isArray(layoutItems)) {
+      return [];
+    }
+
+    return layoutItems.map((item, index) => ({
+      id: (item.id as string) ?? `item-${index + 1}`,
+      label: (item.label as string) ?? `Item ${index + 1}`,
+      description: item.description as string | undefined,
+      type: (item.type as SkinMenuItem['type']) ?? 'command',
+      command:
+        (item.command as string | undefined) ??
+        ((item.type as SkinMenuItem['type']) === 'command' ? (item.id as string) ?? `command-${index + 1}` : undefined)
+    }));
   }
 }

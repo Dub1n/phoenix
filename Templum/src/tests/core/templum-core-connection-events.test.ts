@@ -48,46 +48,64 @@ class StubBackendServiceRouter
 const createStateManagerStub = () => {
   const handleBackendLifecycleEvent = jest.fn(async () => undefined);
   const syncState = jest.fn(async () => undefined);
+  const getCurrentState = jest.fn(() => ({ sessions: [], globalState: {} }));
 
   const stub: IStateManager = {
     initialize: jest.fn(async () => undefined),
     syncState: syncState as unknown as IStateManager['syncState'],
     sendMessage: jest.fn(async () => undefined),
-    handleBackendLifecycleEvent
+    handleBackendLifecycleEvent,
+    getCurrentState: getCurrentState as unknown as IStateManager['getCurrentState']
   } as unknown as IStateManager;
 
-  return { stub, handleBackendLifecycleEvent, syncState };
+  return { stub, handleBackendLifecycleEvent, syncState, getCurrentState };
 };
 
 const createDependencyConfig = (overrides: Partial<IDependencyInjectionConfig> = {}) => {
-  const backendRouter: IBackendRouter = {
-    initialize: jest.fn()
-  } as unknown as IBackendRouter;
+  const backendRouter = {
+    stateManager: undefined as IStateManager | undefined,
+    dependencies: {} as { stateManager?: IStateManager },
+    initialize: jest.fn(async ({ stateManager }: { stateManager?: IStateManager } = {}) => {
+      backendRouter.stateManager = stateManager;
+      backendRouter.dependencies = { stateManager };
+    }),
+    executeCommand: jest.fn(async () => ({ success: true })),
+    getStatus: jest.fn(() => ({ connected: false, lastUpdated: Date.now() }))
+  } as unknown as IBackendRouter & { stateManager?: IStateManager };
 
   const backendServiceRouter = new StubBackendServiceRouter();
 
   const { stub: stateManager, handleBackendLifecycleEvent, syncState } = createStateManagerStub();
 
-  const resourceManager: IResourceManager = {
+  const registeredServices: Array<{ id: string; namespace: string; metadata: Record<string, any> }> = [];
+  const resourceManager = {
     initialize: jest.fn(async () => undefined),
     registerCoreServices: jest.fn(),
-    registerService: jest.fn(async () => undefined),
+    registerService: jest.fn(async (id: string, namespace: string, metadata: Record<string, any>) => {
+      registeredServices.push({ id, namespace, metadata });
+    }),
     updateResourcePolicy: jest.fn(),
     updateResourceAccess: jest.fn(),
     allocateResource: jest.fn(async () => 'resource-1'),
     deallocateResource: jest.fn(async () => undefined),
-    getStatus: jest.fn(() => ({ resources: [] })),
+    getStatus: jest.fn(() => ({ resources: registeredServices })),
+    getResourceUsage: jest.fn(() => ({ total: registeredServices.length, available: registeredServices.length })),
+    getServiceHealth: jest.fn(() => registeredServices.map((service) => ({ id: service.id, status: 'registered' }))),
     shutdown: jest.fn(async () => undefined)
   } as unknown as IResourceManager;
 
   const skinEngine = {
-    initialize: jest.fn(async () => undefined)
+    initialize: jest.fn(async () => undefined),
+    renderForInterface: jest.fn(async () => ({ success: true })),
+    validateSkin: jest.fn(() => ({ valid: true, issues: [] })),
+    generateSkinHTML: jest.fn(() => '<div>skin</div>')
   };
 
   const observabilityService = {
     logInfo: jest.fn(),
     logWarn: jest.fn(),
-    logError: jest.fn()
+    logError: jest.fn(),
+    logDebug: jest.fn()
   };
 
   const config: IDependencyInjectionConfig = {
@@ -97,6 +115,8 @@ const createDependencyConfig = (overrides: Partial<IDependencyInjectionConfig> =
     enableBackendServiceRouter: true,
     enableResourceManager: true,
     enableObservabilityService: true,
+    validateDependencyWiring: false,
+    enableValidationReporting: false,
     customFactories: {
       skinEngine: () => skinEngine as any,
       stateManager: () => stateManager,
@@ -140,6 +160,7 @@ describe('TemplumCore backend lifecycle bridge', () => {
   it('re-emits lifecycle events and forwards them to the state manager', async () => {
     const { config, backendServiceRouter, handleBackendLifecycleEvent, syncState, observabilityService } = createDependencyConfig();
     const core = new TemplumCore({}, config);
+    jest.spyOn(core as any, 'initializeInterfaceAdapters').mockResolvedValue(undefined);
     cores.push(core);
     routers.push(backendServiceRouter);
 
@@ -147,6 +168,8 @@ describe('TemplumCore backend lifecycle bridge', () => {
     core.on('backend:lifecycle', (event) => lifecycleEvents.push(event));
 
     await core.initialize();
+    expect((core as any).dependencies.backendRouter.stateManager).toBeDefined();
+    (core as any).sessionManager.stopSession = jest.fn(async () => undefined);
 
     const adapter: InterfaceAdapter = {
       getInterfaceType: () => 'cli',
@@ -186,9 +209,11 @@ describe('TemplumCore backend lifecycle bridge', () => {
   it('logs degraded or failed events with warnings', async () => {
     const { config, backendServiceRouter, observabilityService } = createDependencyConfig();
     const core = new TemplumCore({}, config);
+    jest.spyOn(core as any, 'initializeInterfaceAdapters').mockResolvedValue(undefined);
     cores.push(core);
     routers.push(backendServiceRouter);
     await core.initialize();
+    (core as any).sessionManager.stopSession = jest.fn(async () => undefined);
 
     backendServiceRouter.emitLifecycle({
       backendId: 'stub-backend',

@@ -420,6 +420,9 @@ export function createTemplumError(
   error.category = category;
   error.timestamp = Date.now();
   error.context = context;
+  error.toString = function templumErrorToString(): string {
+    return this.message;
+  };
   return error;
 }
 

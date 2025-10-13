@@ -41,7 +41,7 @@ import {
 import { createInterval, type ManagedInterval } from '../utils/async-utils';
 
 // Import dependency injection interfaces and registry
-import { 
+import {
   ISkinEngine,
   IBackendServiceRouter,
   IResourceManager,
@@ -49,6 +49,7 @@ import {
   IDependencyInjectionConfig
 } from '../interfaces/core-component-interfaces';
 import { ITemplumOrchestrator } from '../interfaces/templum-orchestrator-interface';
+import { FallbackInterfaceAdapter } from '../interfaces/fallback-interface-adapter';
 import { TemplumAdapterRegistry } from './adapter-registry';
 import { UniversalInterfaceManager } from './universal-interface-manager';
 import type { TemplumSessionManagerContract } from '../session/universal-session-manager.types';
@@ -201,6 +202,7 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
       
       // Initialize Universal Interface Manager - TASK-NEW-048
       this.universalInterfaceManager = new UniversalInterfaceManager(this.dependencies);
+      this.bootstrapUniversalInterfaceManager();
       console.log('Universal Interface Manager initialized successfully');
       
       // Initialize backend service router with enhanced error handling (Haruspex pattern)
@@ -1204,9 +1206,28 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
   private async initializeInterfaceAdapters(): Promise<void> {
     const adapters = this.adapterRegistry.buildInterfaceAdapters();
 
-    for (const [interfaceType, adapter] of Object.entries(adapters)) {
+    for (const [adapterKey, adapter] of Object.entries(adapters)) {
       if (!adapter) {
         continue;
+      }
+
+      const interfaceType = adapterKey as InterfaceType;
+      this.interfaceAdapters.set(interfaceType, adapter);
+
+      try {
+        if (this.sessionManager?.ensureSessionForInterface) {
+          await this.sessionManager.ensureSessionForInterface(interfaceType);
+        }
+
+        if (this.sessionManager?.registerInterfaceAdapter) {
+          await this.sessionManager.registerInterfaceAdapter(interfaceType, adapter);
+        }
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        console.warn(
+          `Failed to register ${interfaceType} adapter with session manager during bootstrap:`,
+          errorMessage
+        );
       }
 
       try {
@@ -1219,7 +1240,52 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
       }
     }
 
+    this.bootstrapUniversalInterfaceManager();
+
+    const supportedInterfaces = this.getSupportedInterfaces();
+    for (const interfaceType of supportedInterfaces) {
+      if (this.interfaceAdapters.has(interfaceType)) {
+        continue;
+      }
+
+      const fallbackAdapter = new FallbackInterfaceAdapter(interfaceType);
+      this.interfaceAdapters.set(interfaceType, fallbackAdapter);
+
+      try {
+        if (this.sessionManager?.ensureSessionForInterface) {
+          await this.sessionManager.ensureSessionForInterface(interfaceType);
+        }
+
+        if (this.sessionManager?.registerInterfaceAdapter) {
+          await this.sessionManager.registerInterfaceAdapter(interfaceType, fallbackAdapter);
+        }
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        console.warn(
+          `Failed to register fallback adapter for ${interfaceType} during bootstrap:`,
+          errorMessage
+        );
+      }
+
+      console.log(`Templum Core: Registered fallback interface adapter for ${interfaceType}`);
+    }
+
     console.log('Interface adapters initialization complete');
+  }
+
+  private bootstrapUniversalInterfaceManager(): void {
+    if (!this.universalInterfaceManager) {
+      return;
+    }
+
+    for (const [interfaceType, adapter] of Array.from(this.interfaceAdapters.entries())) {
+      try {
+        this.universalInterfaceManager.registerInterfaceAdapter(interfaceType, adapter);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        console.warn(`Failed to register ${interfaceType} adapter with Universal Interface Manager:`, errorMessage);
+      }
+    }
   }
 
   private registerBackendLifecycleListeners(): void {
@@ -1349,7 +1415,7 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
         this.logWarn(`Backend ${event.backendId} disconnected`, payload);
         break;
       case 'health-degraded':
-        this.logWarn(`Backend ${event.backendId} health degraded`, payload);
+        this.logWarn(`Backend ${event.backendId} health-degraded`, payload);
         break;
       case 'failed':
         this.logWarn(`Backend ${event.backendId} connection failed`, payload);
@@ -1369,7 +1435,7 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
       case 'recovered':
         return 'recovered';
       case 'health-degraded':
-        return 'health degraded';
+        return 'health-degraded';
       case 'failed':
       default:
         return 'failed';

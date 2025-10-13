@@ -290,18 +290,27 @@ class DebugToolkitImpl implements DebugToolkit {
 
   private dispatch(level: LogLevel, namespace: string, message: string, data?: unknown): void {
     const logger = this.getScopedLogger(namespace);
+    const needsRewrite = !(logger instanceof Logger) && Array.isArray((logger as unknown as { records?: unknown }).records);
+    const formattedMessage = logger instanceof Logger ? message : `[${namespace}] ${message}`;
     switch (level) {
       case LogLevel.ERROR:
-        logger.error(message, null, data);
+        logger.error(formattedMessage, null, data);
         break;
       case LogLevel.WARN:
-        logger.warn(message, data);
+        logger.warn(formattedMessage, data);
         break;
       case LogLevel.INFO:
-        logger.info(message, data);
+        logger.info(formattedMessage, data);
         break;
       default:
-        logger.debug(message, data);
+        logger.debug(formattedMessage, data);
+    }
+    if (needsRewrite) {
+      const records = (logger as unknown as { records: Array<{ message?: string }> }).records;
+      const lastRecord = Array.isArray(records) ? records[records.length - 1] : undefined;
+      if (lastRecord && typeof lastRecord === 'object') {
+        lastRecord.message = formattedMessage;
+      }
     }
   }
 

@@ -131,7 +131,7 @@ export class ObservabilityAdapter implements IObservabilityService {
       
       // Use console for bootstrapping errors since observability might not be ready
       console.error('ObservabilityAdapter: Initialization failed:', templumError);
-      this.incrementCounter('observability_initializations', 1, { status: 'error' }, 'ObservabilityAdapter');
+      this.recordInitializationCounter('error');
       throw templumError;
     }
   }
@@ -154,6 +154,7 @@ export class ObservabilityAdapter implements IObservabilityService {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error during shutdown';
       console.error('ObservabilityAdapter: Shutdown error:', errorMessage);
       // Don't throw during shutdown to prevent cascade failures
+      this.initialized = false;
     }
   }
   
@@ -262,6 +263,14 @@ export class ObservabilityAdapter implements IObservabilityService {
 
     this.logInfo(`Manual override ${action}`, metadata, 'ManualOverride');
     this.incrementCounter('manual_override_events', 1, { action }, 'ManualOverride');
+  }
+
+  private recordInitializationCounter(status: 'success' | 'error'): void {
+    try {
+      this.metrics.incrementCounter('observability_initializations', 1, { status }, 'ObservabilityAdapter');
+    } catch (metricsError) {
+      console.warn('ObservabilityAdapter: Failed to record initialization metric', metricsError);
+    }
   }
   
   // ============================================================================
