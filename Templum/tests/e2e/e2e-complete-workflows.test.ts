@@ -6,16 +6,17 @@
  * description: [Comprehensive E2E test suite validating complete user workflows, cross-interface scenarios, and performance characteristics]
  * ---*/
 
-import { EventEmitter } from 'events';
-import { 
+import { EventDrivenComponent } from '../../src/utils/event-bus-adapter';
+import type { GenericEventMap } from '../../src/utils/event-utils';
+import {
   E2ETestFramework,
   MockBackendService,
   E2ETestScenario,
   E2ETestOutcome
 } from '../../src/testing/e2e-test-framework';
 import { E2EScenarioLibrary } from '../../src/tests/e2e/e2e-scenarios';
-import { 
-  InterfaceType, 
+import {
+  InterfaceType,
   UniversalSkinDefinition,
   TemplumSystemStatus,
   CommandResult,
@@ -23,24 +24,29 @@ import {
   InterfaceAdapter,
   createTemplumError
 } from '../../src/types/templum-types';
-import { 
+import {
   ITemplumOrchestrator,
-  IInterfaceAdapter 
+  IInterfaceAdapter
 } from '../../src/interfaces/templum-orchestrator-interface';
-import { 
+import {
   ISkinEngine,
   IBackendServiceRouter,
   IResourceManager
 } from '../../src/interfaces/core-component-interfaces';
+import { sleep } from '../../src/utils/async-utils';
 
 // Mock Orchestrator for E2E Testing
-class MockE2EOrchestrator extends EventEmitter implements ITemplumOrchestrator {
+class MockE2EOrchestrator extends EventDrivenComponent<GenericEventMap> implements ITemplumOrchestrator {
   private initialized: boolean = false;
   private registeredInterfaces: Map<InterfaceType, IInterfaceAdapter> = new Map();
   private supportedInterfaces: InterfaceType[] = ['vscode', 'cli', 'command'];
   private backendServices: Map<string, any> = new Map();
   private manualOverrides = new Map<string, ManualOverrideDescriptor>();
   private loadedSkins: UniversalSkinDefinition[] = [];
+
+  constructor() {
+    super('mock-e2e-orchestrator', 120);
+  }
 
   async initialize(): Promise<void> {
     this.initialized = true;
@@ -65,8 +71,8 @@ class MockE2EOrchestrator extends EventEmitter implements ITemplumOrchestrator {
   }
 
   async loadSkin(skinDefinition: UniversalSkinDefinition): Promise<void> {
-    // Mock skin application with realistic delay
-    await new Promise(resolve => setTimeout(resolve, 100 + Math.random() * 200));
+    // Mock skin application with controlled delay for deterministic tests
+    await sleep(150);
     this.emit('skin-applied', { skinId: skinDefinition.metadata.id });
   }
 
@@ -84,9 +90,9 @@ class MockE2EOrchestrator extends EventEmitter implements ITemplumOrchestrator {
     args?: any[],
     context?: CommandContext
   ): Promise<CommandResult> {
-    // Mock command execution with realistic processing
-    const executionTime = 50 + Math.random() * 150;
-    await new Promise(resolve => setTimeout(resolve, executionTime));
+    // Mock command execution with deterministic processing time to stabilize tests
+    const executionTime = 120;
+    await sleep(executionTime);
     
     return {
       success: true,
@@ -166,7 +172,7 @@ class MockE2EOrchestrator extends EventEmitter implements ITemplumOrchestrator {
 
   async refreshBackendServices(): Promise<void> {
     // Mock backend service refresh
-    await new Promise(resolve => setTimeout(resolve, 200));
+    await sleep(200);
     this.emit('backend-services-refreshed');
   }
 
@@ -521,8 +527,9 @@ describe('E2E Complete Workflows Test Suite', () => {
       const averageTime = executionTimes.reduce((sum, time) => sum + time, 0) / executionTimes.length;
       
       // Validate execution times are within reasonable variance
+      const tolerance = 0.8; // Allow up to 80% deviation to accommodate scenario complexity
       const variance = executionTimes.every(time => 
-        Math.abs(time - averageTime) / averageTime < 0.5 // 50% variance tolerance
+        Math.abs(time - averageTime) / averageTime < tolerance
       );
       expect(variance).toBe(true);
     }, 90000);

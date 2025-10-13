@@ -27,8 +27,8 @@ describe('MCP visual feedback serialization integration', () => {
       priority: 'low'
     });
 
-    expect(typeof output).toBe('string');
-    expect(output).toContain('[Circular]');
+    expect(Array.isArray(output)).toBe(true);
+    expect(output.join('\n')).toContain('[Circular]');
 
     const contexts = emitSpy.mock.calls.map(call => call[0]);
     expect(contexts).toContain('mcp:visual-feedback:section:custom');

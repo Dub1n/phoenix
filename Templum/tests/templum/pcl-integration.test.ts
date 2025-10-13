@@ -12,6 +12,7 @@ import { UniversalCommandRegistry } from '../../src/commands/universal-command-r
 import { UniversalMenuRegistry } from '../../src/menus/universal-menu-registry';
 import { SessionContextFoundation } from '../../src/session/session-context-foundation';
 import { StateSyncFoundation } from '../../src/state/state-sync-foundation';
+import { sleep } from '../../src/utils/async-utils';
 
 describe('Phase 3: PCL Component Migration', () => {
   let sessionContext: SessionContextFoundation;
@@ -111,7 +112,7 @@ describe('Phase 3: PCL Component Migration', () => {
       await Promise.all(promises);
       
       // Wait for coalescing window (100ms from Phase 2)
-      await new Promise(resolve => setTimeout(resolve, 150));
+      await sleep(150);
       
       const finalState = await stateSync.getState();
       expect(finalState.counter).toBeDefined();

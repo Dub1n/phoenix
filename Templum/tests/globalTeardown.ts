@@ -1,4 +1,5 @@
 import whyIsNodeRunning from 'why-is-node-running';
+import { sleep } from '../src/utils/async-utils';
 
 const IGNORE_HANDLE = new Set(['WriteStream', 'ReadStream']);
 const SETTLE_TIMEOUT_MS = 750;
@@ -54,7 +55,7 @@ export default async function globalTeardown(): Promise<void> {
     let requests = pollRequests();
 
     while ((handles.length > 0 || requests.length > 0) && Date.now() < deadline) {
-      await new Promise(resolve => setTimeout(resolve, SETTLE_POLL_INTERVAL_MS));
+      await sleep(SETTLE_POLL_INTERVAL_MS);
       handles = pollHandles();
       requests = pollRequests();
     }

@@ -12,6 +12,7 @@ import { program } from 'commander';
 import * as fs from 'fs';
 import * as path from 'path';
 import { performance } from 'perf_hooks';
+import { sleep } from '../utils/async-utils';
 type ColumnAlignment = 'left' | 'right' | 'center';
 
 const formatColumn = (
@@ -482,7 +483,7 @@ ${report.recommendations.medium.map(rec => `- ${rec}`).join('\n')}
   }
 
   private sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return sleep(ms);
   }
 }
 

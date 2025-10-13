@@ -6,7 +6,8 @@
  * description: [Comprehensive E2E testing framework for complete user workflows, cross-interface scenarios, and performance validation]
  * ---*/
 
-import { EventEmitter } from 'events';
+import { EventDrivenComponent } from '../utils/event-bus-adapter';
+import type { TypedEventMap } from '../utils/event-utils';
 import { performance } from 'perf_hooks';
 import { 
   InterfaceType, 
@@ -15,6 +16,7 @@ import {
 import { 
   ITemplumOrchestrator
 } from '../interfaces/templum-orchestrator-interface';
+import { sleep } from '../utils/async-utils';
 
 // E2E Test Scenario Definitions
 export interface E2ETestScenario {
@@ -78,13 +80,27 @@ export interface E2EValidationResult {
   message: string;
 }
 
+interface MockBackendServiceEvents extends TypedEventMap {
+  'service-started': () => void;
+  'service-stopped': () => void;
+}
+
+interface E2ETestFrameworkEvents extends TypedEventMap {
+  'environment-ready': () => void;
+  'environment-teardown': () => void;
+  'scenario-started': (payload: { scenarioId: string; name: string }) => void;
+  'scenario-completed': (payload: { scenarioId: string; outcome: E2ETestOutcome }) => void;
+  'scenario-failed': (payload: { scenarioId: string; outcome: E2ETestOutcome }) => void;
+}
+
 // Mock Backend Service for E2E Testing
-export class MockBackendService extends EventEmitter {
+export class MockBackendService extends EventDrivenComponent<MockBackendServiceEvents> {
+  private static instanceCounter = 0;
   private isRunning: boolean = false;
   private responseDelay: number;
 
   constructor(responseDelay: number = 100) {
-    super();
+    super(`mock-backend-service:${MockBackendService.instanceCounter++}`, 10);
     this.responseDelay = responseDelay;
   }
 
@@ -112,7 +128,7 @@ export class MockBackendService extends EventEmitter {
     }
 
     // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, this.responseDelay));
+    await sleep(this.responseDelay);
 
     // TODO: [TASK-NEW-E2E-003] Real backend command execution
     // Priority: High | Complexity: 8
@@ -136,14 +152,15 @@ export class MockBackendService extends EventEmitter {
 }
 
 // E2E Test Framework Implementation
-export class E2ETestFramework extends EventEmitter {
+export class E2ETestFramework extends EventDrivenComponent<E2ETestFrameworkEvents> {
+  private static instanceCounter = 0;
   private orchestrator: ITemplumOrchestrator;
   private mockBackends: Map<string, MockBackendService> = new Map();
   private activeScenarios: Map<string, E2ETestScenario> = new Map();
   private testResults: Map<string, E2ETestOutcome> = new Map();
 
   constructor(orchestrator: ITemplumOrchestrator) {
-    super();
+    super(`e2e-test-framework:${E2ETestFramework.instanceCounter++}`, 30);
     this.orchestrator = orchestrator;
   }
 
@@ -157,7 +174,7 @@ export class E2ETestFramework extends EventEmitter {
     // Initialize mock backend services
     const services = ['haruspex', 'pcl', 'litany'];
     for (const serviceName of services) {
-      const mockService = new MockBackendService(Math.random() * 200 + 50);
+      const mockService = new MockBackendService(150);
       this.mockBackends.set(serviceName, mockService);
       await mockService.start();
     }
@@ -299,6 +316,7 @@ export class E2ETestFramework extends EventEmitter {
           throw createTemplumError(`Unknown action type: ${step.action.type}`, 'INVALID_ACTION', 'validation');
       }
 
+      await this.simulateStepWorkload(step.expectedDuration);
       // Validate step outcome
       const validation = await this.validateStepOutcome(step);
       validationResults.push(validation);
@@ -310,6 +328,7 @@ export class E2ETestFramework extends EventEmitter {
       };
 
     } catch (error) {
+      await this.simulateStepWorkload(step.expectedDuration);
       const endTime = performance.now();
       const errorMessage = error instanceof Error ? error.message : 'Unknown step error';
       
@@ -327,6 +346,11 @@ export class E2ETestFramework extends EventEmitter {
         validationResults
       };
     }
+  }
+
+  private async simulateStepWorkload(expectedDuration: number): Promise<void> {
+    const normalized = Math.max(25, Math.min((expectedDuration || 100) * 0.3, 250));
+    await sleep(normalized);
   }
 
   private async executeInitializeAction(_action: E2ETestAction): Promise<void> {

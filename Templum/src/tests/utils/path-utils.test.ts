@@ -28,9 +28,9 @@ describe('PathUtils', () => {
     const sandbox = tempDir;
     const handle = PathUtils.from(sandbox, { sandbox });
 
-    expect(() => handle.join('..', '..', 'etc', 'passwd')).toThrowErrorMatchingInlineSnapshot(
-      `"Path resolution blocked: Attempted to escape sandbox root"
-    );
+    expect(() => handle.join('..', '..', 'etc', 'passwd')).toThrowErrorMatchingInlineSnapshot(`
+      "Path resolution blocked: Attempted to escape sandbox root"
+    `);
   });
 
   test('ensureDir creates nested directories with confidence metadata', async () => {

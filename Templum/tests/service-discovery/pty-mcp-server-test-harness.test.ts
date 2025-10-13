@@ -15,6 +15,7 @@ import { MCPServiceRegistration } from '../../src/mcp-channel/src/service-regist
 import { CLIMCPServer } from '../../src/mcp-channel/src/cli-mcp-server';
 import { PTYManager } from '../../src/mcp-channel/src/pty-manager';
 import { MCPLifecycleCoordinator } from '../../src/mcp-channel/src/lifecycle-coordinator';
+import { sleep } from '../../src/utils/async-utils';
 
 describe('Pty-MCP-Server Test Harness', () => {
   let mcpServerProcess: ChildProcess | null = null;
@@ -200,7 +201,7 @@ describe('Pty-MCP-Server Test Harness', () => {
       await serviceRegistration.register();
 
       // Wait for at least one health check
-      await new Promise(resolve => setTimeout(resolve, 600));
+      await sleep(600);
 
       const serviceConfig = JSON.parse(readFileSync(serviceRegistration.getServiceFilePath(), 'utf-8'));
       expect(serviceConfig.lastSeen).toBeGreaterThan(Date.now() - 1000);

@@ -6,8 +6,10 @@
  * description: [Minimal E2E test suite focusing on core workflows without complex type dependencies]
  * ---*/
 
-import { EventEmitter } from 'events';
+import { EventDrivenComponent } from '../../src/utils/event-bus-adapter';
+import type { GenericEventMap } from '../../src/utils/event-utils';
 import { performance } from 'perf_hooks';
+import { sleep, withTimeout } from '../../src/utils/async-utils';
 
 // Minimal E2E Test Types
 interface MinimalTestScenario {
@@ -39,11 +41,15 @@ interface MinimalTestResult {
 }
 
 // Simple Mock Backend Service
-class SimpleBackendMock extends EventEmitter {
+class SimpleBackendMock extends EventDrivenComponent<GenericEventMap> {
   private isRunning = false;
 
+  constructor() {
+    super('simple-backend-mock', 10);
+  }
+
   async start(): Promise<void> {
-    await new Promise(resolve => setTimeout(resolve, 100)); // Simulate startup
+    await sleep(100); // Simulate startup
     this.isRunning = true;
     this.emit('started');
   }
@@ -58,7 +64,7 @@ class SimpleBackendMock extends EventEmitter {
       throw new Error('Service not running');
     }
     
-    await new Promise(resolve => setTimeout(resolve, 50 + Math.random() * 100));
+    await sleep(80);
     return {
       success: true,
       command,
@@ -76,12 +82,12 @@ class SimpleBackendMock extends EventEmitter {
 }
 
 // Simple E2E Test Runner
-class MinimalE2ERunner extends EventEmitter {
+class MinimalE2ERunner extends EventDrivenComponent<GenericEventMap> {
   private backendService: SimpleBackendMock;
   private results: Map<string, MinimalTestResult> = new Map();
 
   constructor() {
-    super();
+    super('minimal-e2e-runner', 30);
     this.backendService = new SimpleBackendMock();
   }
 
@@ -106,12 +112,11 @@ class MinimalE2ERunner extends EventEmitter {
         const stepStartTime = performance.now();
         
         try {
-          const result = await Promise.race([
+          const result = await withTimeout(
             step.action(),
-            new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Step timeout')), step.expectedDurationMs * 2)
-            )
-          ]);
+            step.expectedDurationMs * 2,
+            new Error('Step timeout')
+          );
 
           const stepDuration = performance.now() - stepStartTime;
           const passed = step.validation(result);

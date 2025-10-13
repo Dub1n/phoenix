@@ -1,5 +1,6 @@
 import http, { IncomingMessage, ServerResponse } from 'http';
 import os from 'os';
+import { createTimeout } from '../../../src/utils/async-utils';
 
 const SERVICE_NAME = 'phoenix-code-lite';
 const VERSION = process.env.npm_package_version ?? 'dev';
@@ -21,10 +22,10 @@ const readinessDelayMs = normaliseInteger(process.env.PCL_READINESS_DELAY_MS, 0)
 const startTimestamp = Date.now();
 let ready = readinessDelayMs === 0;
 
-setTimeout(() => {
+createTimeout(() => {
   ready = true;
   log('Service ready (readiness delay elapsed)');
-}, readinessDelayMs).unref();
+}, readinessDelayMs, { unref: true });
 
 const server = http.createServer((req: IncomingMessage, res: ServerResponse) => {
   if (!req.url) {
@@ -126,10 +127,10 @@ function shutdown(): void {
     process.exit();
   });
   // Force exit if close hangs
-  setTimeout(() => {
+  createTimeout(() => {
     log('Forced shutdown');
     process.exit();
-  }, 1000).unref();
+  }, 1000, { unref: true });
 }
 
 export {};

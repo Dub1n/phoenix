@@ -4,6 +4,7 @@ import {
   createFormatterFixture,
 } from '../src/tests/helpers/terminal-formatter-fixtures';
 import { resetDisplayStack } from '../src/utils/display-stack';
+import { cleanup as cleanupAsyncUtils, createTimeout, sleep } from '../src/utils/async-utils';
 
 /**---
  * title: [Test Setup - Global Test Configuration]
@@ -12,9 +13,6 @@ import { resetDisplayStack } from '../src/utils/display-stack';
  * requires: [Jest, Node.js]
  * description: [Global test setup and configuration for Templum test suite]
  * ---*/
-
-// Global test timeout
-jest.setTimeout(10000);
 
 // Mock console methods to reduce test output noise
 global.console = {
@@ -102,16 +100,16 @@ jest.mock('vscode', () => mockVSCode, { virtual: true });
     }
   }),
 
-  waitForAsync: (ms: number = 0) => new Promise(resolve => setTimeout(resolve, ms)),
+  waitForAsync: (ms: number = 0) => sleep(ms),
   
   expectEventEmitted: (eventEmitter: any, eventName: string, timeout: number = 1000) => {
     return new Promise<any>((resolve, reject) => {
-      const timeoutHandle = setTimeout(() => {
+      const timeoutGuard = createTimeout(() => {
         reject(new Error(`Event '${eventName}' was not emitted within ${timeout}ms`));
       }, timeout);
       
       eventEmitter.once(eventName, (data: any) => {
-        clearTimeout(timeoutHandle);
+        timeoutGuard.cancel();
         resolve(data);
       });
     });
@@ -133,4 +131,5 @@ afterAll(() => {
 
 afterEach(() => {
   resetDisplayStack();
+  cleanupAsyncUtils();
 });
