@@ -833,10 +833,14 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
    * Execute command from menu selection
    */
   private async executeMenuCommand(command: string, data?: any): Promise<void> {
+    let commandNamespace: string | undefined;
+    let commandAction: string | undefined;
     try {
       this.printLine(this.formatInfo(`\n⚡ Executing: ${command}`));
       
       const [namespace, action, ...args] = command.split(':');
+      commandNamespace = namespace;
+      commandAction = action;
       
       switch (namespace) {
         case 'system':
@@ -881,11 +885,21 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
       }
       
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      this.logger.error('Command execution failed during menu handling', this.normalizeError(error), {
-        namespace,
-        action
-      });
+      const normalizedError = this.normalizeError(error);
+      const errorMessage =
+        normalizedError?.message ?? (typeof error === 'string' ? error : 'Unknown error');
+      const metadata: Record<string, unknown> = {};
+      if (commandNamespace !== undefined) {
+        metadata.namespace = commandNamespace;
+      }
+      if (commandAction !== undefined) {
+        metadata.action = commandAction;
+      }
+      this.logger.error(
+        'Command execution failed during menu handling',
+        normalizedError ?? null,
+        Object.keys(metadata).length > 0 ? metadata : undefined
+      );
       this.printLine(this.formatError(`Command execution failed: ${errorMessage}`));
     }
   }
@@ -1620,7 +1634,11 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
             break;
           }
         } catch (error) {
-          this.logger.warn('Failed to load skin from backend', this.normalizeError(error), { backendId });
+          const normalizedError = this.normalizeError(error);
+          this.logger.warn('Failed to load skin from backend', {
+            backendId,
+            errorMessage: normalizedError?.message ?? (error instanceof Error ? error.message : 'Unknown error')
+          });
         }
       }
 
@@ -1630,8 +1648,10 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
       }
       
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      this.logger.error('Failed to load initial content', this.normalizeError(error), { errorMessage });
+      const normalizedError = this.normalizeError(error);
+      const errorMessage =
+        normalizedError?.message ?? (typeof error === 'string' ? error : 'Unknown error');
+      this.logger.error('Failed to load initial content', normalizedError ?? null, { errorMessage });
       this.printLine(this.getErrorCLIOutput(errorMessage));
     }
   }
