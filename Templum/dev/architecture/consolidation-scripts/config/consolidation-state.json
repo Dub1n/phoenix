@@ -1,12 +1,12 @@
 {
   "schemaVersion": "1.0.0",
-  "updatedAt": "2025-10-14T12:04:00Z",
+  "updatedAt": "2025-10-14T13:20:27Z",
   "patterns": [
     {
       "patternId": 1,
       "name": "Logger Consolidation",
       "description": "2,810 console.log/warn/error calls with inconsistent formatting",
-      "stage": 1,
+      "stage": 4,
       "owner": {
         "agent": "unassigned",
         "claimedAt": "2025-09-14T18:00:00Z"
@@ -14,16 +14,28 @@
       "dependencies": [],
       "stageGates": {
         "1": {
-          "status": "pending"
+          "status": "complete",
+          "startedAt": "2025-10-14T12:18:41Z",
+          "notes": "Exit summary: Inventory captured via rg counts; top cohort = backend-service-router (193) + dynamic-command-router (19) for connection lifecycle logging, second cohort = interface adapters (cli-adapter-abstracted 140, cli-adapter 121, terminal-ui-components 29) to unblock CLI skin generator, third cohort = session/core orchestrators (templum-universal-session-manager 148, adapter-registry 59, templum-core 57) to satisfy unified session layer tasks. Design review for logger factory bootstrap scheduled as Stage 2 entry checkpoint; documentation updates queued for Templum/docs/current/progress.md and dev/tasks/unified-session-layer.md once migration plan finalized. Stage 1 discovery complete.",
+          "elapsedMs": 136000
         },
         "2": {
-          "status": "blocked"
+          "status": "complete",
+          "startedAt": "2025-10-14T12:23:07Z",
+          "notes": "Results: logger utility regression suite created (src/utils/__tests__/logger.test.ts) with coverage for level filtering, structured logging, timers, and child contexts; executed via run-with-timeout jest-suite preset (artifact: artifacts/consolidation/pattern-1-stage2-logger-suite.log). Full npm run test:ci executed through jest-ci preset (artifact: artifacts/consolidation/pattern-1-stage2-test-ci.log) reporting ✅ coverage thresholds; process ended by preset SIGTERM after detecting success—no failures. Ready for Stage 3 migration planning.",
+          "elapsedMs": 487000
         },
         "3": {
-          "status": "blocked"
+          "status": "complete",
+          "startedAt": "2025-10-14T12:41:00Z",
+          "elapsedMs": 192000,
+          "notes": "Stage 4 lane split finalized for single-session flow (4a-4h). Stage 6 bundles 6a/6b/6c cover backend, interface, and session/core cohorts respectively with console.* search enforcement and run-with-timeout commands. Updated dependencies and risks captured in stage-3-note-20251014T124405; Stage 7 sweep remains Templum/ + console.*."
         },
         "4": {
-          "status": "blocked"
+          "status": "complete",
+          "startedAt": "2025-10-14T12:49:43Z",
+          "elapsedMs": 1027000,
+          "completedAt": "2025-10-14T13:06:50Z"
         },
         "5": {
           "status": "blocked"
@@ -32,10 +44,242 @@
           "status": "blocked"
         },
         "7": {
-          "status": "blocked"
+          "status": "blocked",
+          "searchTerms": [
+            "console.error",
+            "console.log",
+            "console.warn"
+          ],
+          "plannedFiles": [
+            "Templum/"
+          ]
         }
       },
-      "lanes": {},
+      "lanes": {
+        "4a": {
+          "status": "complete",
+          "scope": "Stage 4: Migrate backend-service-router logging",
+          "commands": [
+            {
+              "command": "node scripts/run-with-timeout.mjs --preset jest-suite -- npx jest src/tests/backend/service-discovery.test.ts"
+            }
+          ],
+          "updatedAt": "2025-10-14T12:56:52Z",
+          "plannedFiles": [
+            "src/backend/backend-service-router.ts"
+          ],
+          "searchTerms": [
+            "console.error",
+            "console.log",
+            "console.warn"
+          ],
+          "startedAt": "2025-10-14T12:49:43Z",
+          "elapsedMs": 429000
+        },
+        "4b": {
+          "status": "complete",
+          "scope": "Stage 4: Migrate dynamic-command-router logging",
+          "commands": [
+            {
+              "command": "node scripts/run-with-timeout.mjs --preset jest-suite -- npx jest src/tests/backend/service-discovery.test.ts"
+            }
+          ],
+          "updatedAt": "2025-10-14T12:54:27Z",
+          "plannedFiles": [
+            "src/backend/dynamic-command-router.ts"
+          ],
+          "searchTerms": [
+            "console.error",
+            "console.log",
+            "console.warn"
+          ],
+          "startedAt": "2025-10-14T12:49:57Z",
+          "elapsedMs": 270000
+        },
+        "4c": {
+          "status": "complete",
+          "scope": "Stage 4: Migrate cli-adapter logging",
+          "commands": [
+            {
+              "command": "node scripts/run-with-timeout.mjs --preset jest-suite -- npx jest src/tests/rendering/menu-definition-adapter.test.ts"
+            }
+          ],
+          "updatedAt": "2025-10-14T13:06:50Z",
+          "plannedFiles": [
+            "src/interfaces/cli-adapter.ts"
+          ],
+          "searchTerms": [
+            "console.error",
+            "console.log",
+            "console.warn"
+          ],
+          "startedAt": "2025-10-14T12:52:00Z",
+          "elapsedMs": 890000
+        },
+        "4d": {
+          "status": "complete",
+          "scope": "Stage 4: Migrate cli-adapter-abstracted logging",
+          "commands": [
+            {
+              "command": "node scripts/run-with-timeout.mjs --preset jest-suite -- npx jest src/tests/rendering/menu-definition-adapter.test.ts"
+            }
+          ],
+          "updatedAt": "2025-10-14T13:02:25Z",
+          "plannedFiles": [
+            "src/interfaces/cli-adapter-abstracted.ts"
+          ],
+          "searchTerms": [
+            "console.error",
+            "console.log",
+            "console.warn"
+          ],
+          "startedAt": "2025-10-14T12:52:39Z",
+          "elapsedMs": 586000
+        },
+        "4e": {
+          "status": "complete",
+          "scope": "Stage 4: Migrate terminal-ui-components logging",
+          "commands": [
+            {
+              "command": "node scripts/run-with-timeout.mjs --preset jest-suite -- npx jest src/tests/rendering/terminal-ui-components.formatter.test.ts"
+            }
+          ],
+          "updatedAt": "2025-10-14T13:03:06Z",
+          "plannedFiles": [
+            "src/interfaces/terminal-ui-components.ts"
+          ],
+          "searchTerms": [
+            "console.error",
+            "console.log",
+            "console.warn"
+          ],
+          "startedAt": "2025-10-14T12:52:54Z",
+          "elapsedMs": 612000
+        },
+        "4f": {
+          "status": "complete",
+          "scope": "Stage 4: Migrate templum-universal-session-manager logging",
+          "commands": [
+            {
+              "command": "node scripts/run-with-timeout.mjs --preset jest-suite -- npx jest src/tests/session/templum-universal-session-manager.test.ts"
+            }
+          ],
+          "updatedAt": "2025-10-14T13:06:14Z",
+          "plannedFiles": [
+            "src/session/templum-universal-session-manager.ts"
+          ],
+          "searchTerms": [
+            "console.error",
+            "console.log",
+            "console.warn"
+          ],
+          "startedAt": "2025-10-14T12:55:27Z",
+          "elapsedMs": 647000
+        },
+        "4g": {
+          "status": "complete",
+          "scope": "Stage 4: Migrate adapter-registry logging",
+          "commands": [
+            {
+              "command": "node scripts/run-with-timeout.mjs --preset jest-suite -- npx jest src/tests/core/templum-core-connection-events.test.ts"
+            }
+          ],
+          "updatedAt": "2025-10-14T13:06:10Z",
+          "plannedFiles": [
+            "src/core/adapter-registry.ts"
+          ],
+          "searchTerms": [
+            "console.error",
+            "console.log",
+            "console.warn"
+          ],
+          "startedAt": "2025-10-14T12:56:10Z",
+          "elapsedMs": 600000
+        },
+        "4h": {
+          "status": "complete",
+          "scope": "Stage 4: Migrate templum-core logging",
+          "commands": [
+            {
+              "command": "node scripts/run-with-timeout.mjs --preset jest-suite -- npx jest src/tests/core/templum-core-connection-events.test.ts"
+            }
+          ],
+          "updatedAt": "2025-10-14T13:03:16Z",
+          "plannedFiles": [
+            "src/core/templum-core.ts"
+          ],
+          "searchTerms": [
+            "console.error",
+            "console.log",
+            "console.warn"
+          ],
+          "startedAt": "2025-10-14T12:56:21Z",
+          "elapsedMs": 415000
+        },
+        "6a": {
+          "status": "blocked",
+          "scope": "Stage 6: Backend connectivity regression (covers lanes 4a,4b)",
+          "commands": [
+            {
+              "command": "node scripts/run-with-timeout.mjs --preset jest-ci -- npm run test:ci"
+            }
+          ],
+          "updatedAt": "2025-10-14T12:43:46Z",
+          "plannedFiles": [
+            "src/tests/backend/manual-override-flow.test.ts",
+            "src/tests/backend/manual-override-watcher.integration.test.ts",
+            "src/tests/backend/service-discovery.test.ts"
+          ],
+          "notes": "Validates backend-service-router and dynamic-command-router migrations",
+          "searchTerms": [
+            "console.error",
+            "console.log",
+            "console.warn"
+          ]
+        },
+        "6b": {
+          "status": "blocked",
+          "scope": "Stage 6: Interface delivery regression (covers lanes 4c-4e)",
+          "commands": [
+            {
+              "command": "node scripts/run-with-timeout.mjs --preset jest-ci -- npm run test:ci"
+            }
+          ],
+          "updatedAt": "2025-10-14T12:43:51Z",
+          "plannedFiles": [
+            "src/tests/rendering/menu-definition-adapter.test.ts",
+            "src/tests/rendering/terminal-ui-components.formatter.test.ts",
+            "tests/e2e/e2e-minimal.test.ts"
+          ],
+          "notes": "Validates CLI adapter and terminal UI migrations",
+          "searchTerms": [
+            "console.error",
+            "console.log",
+            "console.warn"
+          ]
+        },
+        "6c": {
+          "status": "blocked",
+          "scope": "Stage 6: Session/core regression (covers lanes 4f-4h)",
+          "commands": [
+            {
+              "command": "node scripts/run-with-timeout.mjs --preset jest-ci -- npm run test:ci"
+            }
+          ],
+          "updatedAt": "2025-10-14T12:43:56Z",
+          "plannedFiles": [
+            "src/tests/core/templum-core-connection-events.test.ts",
+            "src/tests/session/templum-universal-session-manager.test.ts",
+            "tests/e2e/e2e-complete-workflows.test.ts"
+          ],
+          "notes": "Validates session manager, adapter registry, and templum-core migrations",
+          "searchTerms": [
+            "console.error",
+            "console.log",
+            "console.warn"
+          ]
+        }
+      },
       "handoff": {
         "guardrails": [],
         "sharedFiles": [],
@@ -58,6 +302,118 @@
           "scope": [
             "stage-5"
           ]
+        },
+        {
+          "id": "stage-1-note-20251014T122025",
+          "timestamp": "2025-10-14T12:20:25Z",
+          "body": "Consumers: backend-service-router.ts (193), templum-universal-session-manager.ts (148), cli-adapter-abstracted.ts (140), cli-adapter.ts (121), adapter-registry.ts (59), templum-core.ts (57), terminal-ui-components.ts (29), dynamic-command-router.ts (19); Guardrails: preserve zero-knowledge seams (ServiceDiscovery/ConnectionFactory untouched until logger DI ready), respect CLI skin-only rendering (no bespoke prompts), keep logging utility injectable via configureDisplayStack and avoid global singletons; Discovery commands: rg --stats 'console\\.(log|warn|error)' src, plus per-directory -c counts for backend/interfaces/core/session to map clusters; Cohorts/Priorities: (1) Backend connectivity router family to unblock connection-lifecycle telemetry, (2) Interface delivery adapters + terminal UI to stabilize CLI skin generator, (3) Universal session + core registry to support unified-session-layer task; Docs/Dependencies: prep updates for Templum/docs/current/progress.md, dev/tasks/unified-session-layer.md, utility-consolidation-plans/pattern-1.md Stage 2 once migrations scoped; follow-up dependency on consolidated logger factory design review in Stage 2.",
+          "scope": [
+            "stage-1"
+          ]
+        },
+        {
+          "id": "stage-2-note-20251014T122337",
+          "timestamp": "2025-10-14T12:23:37Z",
+          "body": "Suites: add new src/utils/__tests__/logger.test.ts covering context detection, level filtering, structured logging serializer handoff, performance timers, and child logger propagation; run via node scripts/run-with-timeout.mjs --preset jest-suite -- npx jest src/utils/__tests__/logger.test.ts, plus regression npm run test:ci under --preset jest-ci once logger coverage lands. Guardrails: tests must mock transports to avoid global console side effects, maintain DI seams (LoggerConfig) without global singleton leakage, and keep zero-knowledge backend registry unaffected. Evidence logging: capture jest output paths for consolidation registry and prep doc updates in utility-consolidation-plans/pattern-1.md Stage 3.",
+          "scope": [
+            "stage-2"
+          ]
+        },
+        {
+          "id": "stage-2-note-20251014T123059",
+          "timestamp": "2025-10-14T12:30:59Z",
+          "body": "Executed suites: node scripts/run-with-timeout.mjs --preset jest-suite -- npx jest src/utils/__tests__/logger.test.ts (artifact: artifacts/consolidation/pattern-1-stage2-logger-suite.log); node scripts/run-with-timeout.mjs --preset jest-ci -- npm run test:ci (artifact: artifacts/consolidation/pattern-1-stage2-test-ci.log). Results: both suites reported PASS with coverage governance ✅ (SIGTERM from preset exit-on-pattern captured post-pass). Follow-ups: none blocking; move to Stage 3 planning.",
+          "scope": [
+            "stage-2"
+          ]
+        },
+        {
+          "id": "stage-3-note-20251014T123609",
+          "timestamp": "2025-10-14T12:36:09Z",
+          "body": "Order: Execute Stage 4 lanes sequentially 4a (backend routing) → 4b (interface delivery) → 4c (session/core); for each, promote paired Stage 6 lane (6a/6b/6c) immediately after code merges to confirm regressions via jest-ci preset. Dependencies: 4a completion gates 4b (shared connection lifecycle helpers) and unlocks 6a; 4b completion required before 6b and before CLI skin generator docs update; 4c dependent on 4a outputs to avoid diverging adapter registry contracts. Risks: high-volume edits in backend-service-router (193 replacements) could destabilize manual override flow—coordinate with manual-override lane if reopened; CLI adapter migration must preserve skin-driven rendering (no bespoke prompts); session/core changes risk unified-session-layer sequencing, so keep dev/tasks/unified-session-layer.md update in sync. Search coverage: rg --files-with-matches 'console.(log|warn|error)' across planned files logged above; Stage 7 sweep anchored to project root with same terms. Evidence: lanes 4a/4b/4c, 6a/6b/6c created with plan files + search terms; Stage 7 plan files/search terms registered.",
+          "scope": [
+            "stage-3"
+          ]
+        },
+        {
+          "id": "stage-3-note-20251014T124405",
+          "timestamp": "2025-10-14T12:44:05Z",
+          "body": "Rescoped lanes for single-session execution: Stage 4 lanes now map one-to-one with high-impact files — 4a backend-service-router, 4b dynamic-command-router, 4c cli-adapter, 4d cli-adapter-abstracted, 4e terminal-ui-components, 4f templum-universal-session-manager, 4g adapter-registry, 4h templum-core. Stage 6 consolidation lanes cover them in three bundles: 6a (4a-4b backend connectivity), 6b (4c-4e interface delivery), 6c (4f-4h session/core). Each lane retains console.* search terms and targeted jest suite commands with run-with-timeout presets. Dependencies: 4a precedes 4b; 4c/4d run after 4a to leverage refreshed logger DI seams; 4f-4h start once 4a completes to avoid registry drift. Risks: backend-service-router volume still high—budget double review pass; CLI adapter migrations must coordinate with cli-skin-generator doc updates; session/core lanes require unified-session-layer doc sync. Stage 7 contract unchanged (Templum/ + console.* sweep).",
+          "scope": [
+            "stage-3"
+          ]
+        },
+        {
+          "id": "stage-7-note-20251014T124840",
+          "timestamp": "2025-10-14T12:48:40Z",
+          "body": "Current Stage 4 coverage focuses on 8 priority files (backend-service-router, dynamic-command-router, cli-adapter, cli-adapter-abstracted, terminal-ui-components, templum-universal-session-manager, adapter-registry, templum-core). Stage 7 sweeps enforce removal of console.log|warn|error across Templum/ for these lanes and will trigger reopening Stage 3 to schedule additional cohorts once new console usage targets are identified.",
+          "scope": [
+            "stage-7"
+          ]
+        },
+        {
+          "id": "stage-4-note-20251014T125434",
+          "timestamp": "2025-10-14T12:54:34Z",
+          "body": "Lane 4b: Migrated dynamic-command-router to consolidated logger (registration/lifecycle/diagnostics channels) and captured jest suite via run-with-timeout (logs/consolidation/pattern-1/lane-4b-20251014T125351Z.log); coverage warnings remain expected for legacy modules.",
+          "scope": [
+            "stage-4"
+          ]
+        },
+        {
+          "id": "stage-4-note-20251014T125700",
+          "timestamp": "2025-10-14T12:57:00Z",
+          "body": "Lane 4a: migrated backend-service-router onto logger-backed console shim so all console.* usage resolves to scoped logger contexts; captured retries for error payloads and colon trimming to preserve structured data. Ran node scripts/run-with-timeout.mjs --preset jest-suite -- npx jest src/tests/backend/service-discovery.test.ts (log: tmp/consolidation-pattern1-stage4-lane4a-20251014T125623Z.log). No blockers encountered.",
+          "scope": [
+            "stage-4"
+          ]
+        },
+        {
+          "id": "stage-4-note-20251014T130237",
+          "timestamp": "2025-10-14T13:02:37Z",
+          "body": "Lane 4d: Replaced direct console usage in cli-adapter abstraction with central logger helper + stdout printer to preserve UI output. Added helper methods for error normalization, routed instrumentation to logger, and kept user messaging via formatter. Verified menu-definition adapter suite via run-with-timeout (logs/pattern-1-lane-4d-jest.log). Coverage thresholds still red as expected for targeted run.",
+          "scope": [
+            "stage-4"
+          ]
+        },
+        {
+          "id": "stage-4-note-20251014T130314",
+          "timestamp": "2025-10-14T13:03:14Z",
+          "body": "Lane 4e: replaced console.* calls with terminal writer helpers, introduced injectable terminal UI logger, reran formatter jest suite (log: artifacts/consolidation/pattern-1/lane-4e-20251014T130215Z.log); coverage threshold warnings remain expected pending global cleanup.",
+          "scope": [
+            "stage-4"
+          ]
+        },
+        {
+          "id": "stage-4-note-20251014T130325",
+          "timestamp": "2025-10-14T13:03:25Z",
+          "body": "Lane 4h: migrated templum-core console logging to consolidated logInfo/logWarn/logError helpers (interface lifecycle, cache, IPC, shutdown) and captured jest-suite via run-with-timeout (log: logs/consolidation/pattern-1/lane-4h-20251014T130237Z.log). Coverage threshold warnings remain expected globally.",
+          "scope": [
+            "stage-4"
+          ]
+        },
+        {
+          "id": "stage-4-note-20251014T130619",
+          "timestamp": "2025-10-14T13:06:19Z",
+          "body": "Lane 4g: migrated adapter registry and factory logging to consolidated logger scopes (skin/state/backend/service/resource/session/disposal) while keeping DI flows intact; required jest suite via run-with-timeout green with legacy coverage warnings captured in logs/consolidation/pattern-1/lane-4g-20251014T130541Z.log.",
+          "scope": [
+            "stage-4"
+          ]
+        },
+        {
+          "id": "stage-4-note-20251014T130624",
+          "timestamp": "2025-10-14T13:06:24Z",
+          "body": "Lane 4f: replaced templum-universal-session-manager console usage with consolidated logger helpers and scoped channels; captured run-with-timeout jest suite (logs/consolidation/pattern-1/lane-4f-20251014T130558Z.log) with expected global coverage threshold warnings only.",
+          "scope": [
+            "stage-4"
+          ]
+        },
+        {
+          "id": "stage-4-note-20251014T130658",
+          "timestamp": "2025-10-14T13:06:58Z",
+          "body": "Lane 4c: replaced direct console usage in src/interfaces/cli-adapter.ts with logger-backed emit helpers to preserve CLI output formatting while capturing warnings/errors centrally. Added stdout helpers for user-visible strings and reran menu-definition adapter suite via node scripts/run-with-timeout.mjs --preset jest-suite -- npx jest src/tests/rendering/menu-definition-adapter.test.ts (coverage threshold warnings expected when running targeted test only). No blockers discovered.",
+          "scope": [
+            "stage-4"
+          ]
         }
       ],
       "evidence": [],
@@ -76,9 +432,389 @@
           "stage": "stage-5",
           "timestamp": "2025-10-14T12:04:00Z",
           "summary": "Cohorts updated (added: 1-2, removed: none)"
+        },
+        {
+          "stage": "stage-1",
+          "timestamp": "2025-10-14T12:18:41Z",
+          "summary": "Stage 1 claimed",
+          "agent": "1-stage1"
+        },
+        {
+          "stage": "stage-1",
+          "timestamp": "2025-10-14T12:20:57Z",
+          "summary": "Stage 1 status set to complete",
+          "durationMs": 136000
+        },
+        {
+          "stage": "stage-2",
+          "timestamp": "2025-10-14T12:23:07Z",
+          "summary": "Stage 2 claimed",
+          "agent": "1-stage2"
+        },
+        {
+          "stage": "stage-2",
+          "timestamp": "2025-10-14T12:26:08Z",
+          "summary": "Captured logger unit suite via jest-suite preset",
+          "files": [
+            "artifacts/consolidation/pattern-1-stage2-logger-suite.log"
+          ]
+        },
+        {
+          "stage": "stage-2",
+          "timestamp": "2025-10-14T12:31:14Z",
+          "summary": "Stage 2 status set to complete",
+          "durationMs": 487000
+        },
+        {
+          "stage": "stage-3",
+          "timestamp": "2025-10-14T12:32:44Z",
+          "summary": "Stage 3 claimed",
+          "agent": "1-stage3"
+        },
+        {
+          "stage": "stage-4",
+          "timestamp": "2025-10-14T12:33:53Z",
+          "summary": "Created lane 4a (Stage 4: Replace console usage in backend routing cluster)"
+        },
+        {
+          "stage": "stage-6",
+          "timestamp": "2025-10-14T12:34:00Z",
+          "summary": "Created lane 6a (Stage 6: Backend routing regression validation)"
+        },
+        {
+          "stage": "stage-4",
+          "timestamp": "2025-10-14T12:34:33Z",
+          "summary": "Created lane 4b (Stage 4: Replace console usage in interface delivery adapters)"
+        },
+        {
+          "stage": "stage-6",
+          "timestamp": "2025-10-14T12:34:45Z",
+          "summary": "Created lane 6b (Stage 6: Interface delivery validation)"
+        },
+        {
+          "stage": "stage-4",
+          "timestamp": "2025-10-14T12:34:52Z",
+          "summary": "Created lane 4c (Stage 4: Replace console usage in session/core orchestrators)"
+        },
+        {
+          "stage": "stage-6",
+          "timestamp": "2025-10-14T12:34:58Z",
+          "summary": "Created lane 6c (Stage 6: Session/core regression validation)"
+        },
+        {
+          "stage": "lane-4a",
+          "timestamp": "2025-10-14T12:35:12Z",
+          "summary": "Lane 4a metadata updated (status blocked)"
+        },
+        {
+          "stage": "lane-6a",
+          "timestamp": "2025-10-14T12:35:18Z",
+          "summary": "Lane 6a metadata updated (status blocked)"
+        },
+        {
+          "stage": "lane-4b",
+          "timestamp": "2025-10-14T12:35:22Z",
+          "summary": "Lane 4b metadata updated (status blocked)"
+        },
+        {
+          "stage": "lane-6b",
+          "timestamp": "2025-10-14T12:35:26Z",
+          "summary": "Lane 6b metadata updated (status blocked)"
+        },
+        {
+          "stage": "lane-4c",
+          "timestamp": "2025-10-14T12:35:31Z",
+          "summary": "Lane 4c metadata updated (status blocked)"
+        },
+        {
+          "stage": "lane-6c",
+          "timestamp": "2025-10-14T12:35:37Z",
+          "summary": "Lane 6c metadata updated (status blocked)"
+        },
+        {
+          "stage": "stage-7",
+          "timestamp": "2025-10-14T12:35:57Z",
+          "summary": "Stage 7 metadata updated (status blocked)"
+        },
+        {
+          "stage": "stage-3",
+          "timestamp": "2025-10-14T12:36:17Z",
+          "summary": "Stage 3 status set to complete",
+          "durationMs": 213000
+        },
+        {
+          "stage": "stage-3",
+          "timestamp": "2025-10-14T12:41:00Z",
+          "summary": "Reopening Stage 3 to restructure lanes"
+        },
+        {
+          "stage": "stage-4",
+          "timestamp": "2025-10-14T12:41:14Z",
+          "summary": "Splitting backend routing scope into smaller lanes"
+        },
+        {
+          "stage": "stage-4",
+          "timestamp": "2025-10-14T12:41:18Z",
+          "summary": "Splitting interface delivery scope into smaller lanes"
+        },
+        {
+          "stage": "stage-4",
+          "timestamp": "2025-10-14T12:41:23Z",
+          "summary": "Splitting session/core scope into smaller lanes"
+        },
+        {
+          "stage": "stage-6",
+          "timestamp": "2025-10-14T12:41:27Z",
+          "summary": "Rebalancing Stage 6 coverage after Stage 4 split"
+        },
+        {
+          "stage": "stage-6",
+          "timestamp": "2025-10-14T12:41:31Z",
+          "summary": "Rebalancing Stage 6 coverage after Stage 4 split"
+        },
+        {
+          "stage": "stage-6",
+          "timestamp": "2025-10-14T12:41:35Z",
+          "summary": "Rebalancing Stage 6 coverage after Stage 4 split"
+        },
+        {
+          "stage": "stage-4",
+          "timestamp": "2025-10-14T12:41:42Z",
+          "summary": "Created lane 4a (Stage 4: Migrate backend-service-router logging)"
+        },
+        {
+          "stage": "stage-4",
+          "timestamp": "2025-10-14T12:41:47Z",
+          "summary": "Created lane 4b (Stage 4: Migrate dynamic-command-router logging)"
+        },
+        {
+          "stage": "stage-4",
+          "timestamp": "2025-10-14T12:41:54Z",
+          "summary": "Created lane 4c (Stage 4: Migrate cli-adapter logging)"
+        },
+        {
+          "stage": "stage-4",
+          "timestamp": "2025-10-14T12:42:00Z",
+          "summary": "Created lane 4d (Stage 4: Migrate cli-adapter-abstracted logging)"
+        },
+        {
+          "stage": "stage-4",
+          "timestamp": "2025-10-14T12:42:05Z",
+          "summary": "Created lane 4e (Stage 4: Migrate terminal-ui-components logging)"
+        },
+        {
+          "stage": "stage-4",
+          "timestamp": "2025-10-14T12:42:11Z",
+          "summary": "Created lane 4f (Stage 4: Migrate templum-universal-session-manager logging)"
+        },
+        {
+          "stage": "stage-4",
+          "timestamp": "2025-10-14T12:42:20Z",
+          "summary": "Created lane 4g (Stage 4: Migrate adapter-registry logging)"
+        },
+        {
+          "stage": "stage-4",
+          "timestamp": "2025-10-14T12:42:26Z",
+          "summary": "Created lane 4h (Stage 4: Migrate templum-core logging)"
+        },
+        {
+          "stage": "stage-6",
+          "timestamp": "2025-10-14T12:42:34Z",
+          "summary": "Created lane 6a (Stage 6: Backend connectivity regression (covers lanes 4a,4b))"
+        },
+        {
+          "stage": "stage-6",
+          "timestamp": "2025-10-14T12:42:41Z",
+          "summary": "Created lane 6b (Stage 6: Interface delivery regression (covers lanes 4c-4e))"
+        },
+        {
+          "stage": "stage-6",
+          "timestamp": "2025-10-14T12:42:50Z",
+          "summary": "Created lane 6c (Stage 6: Session/core regression (covers lanes 4f-4h))"
+        },
+        {
+          "stage": "lane-4a",
+          "timestamp": "2025-10-14T12:42:59Z",
+          "summary": "Lane 4a metadata updated (status blocked)"
+        },
+        {
+          "stage": "lane-4b",
+          "timestamp": "2025-10-14T12:43:04Z",
+          "summary": "Lane 4b metadata updated (status blocked)"
+        },
+        {
+          "stage": "lane-4c",
+          "timestamp": "2025-10-14T12:43:11Z",
+          "summary": "Lane 4c metadata updated (status blocked)"
+        },
+        {
+          "stage": "lane-4d",
+          "timestamp": "2025-10-14T12:43:16Z",
+          "summary": "Lane 4d metadata updated (status blocked)"
+        },
+        {
+          "stage": "lane-4e",
+          "timestamp": "2025-10-14T12:43:23Z",
+          "summary": "Lane 4e metadata updated (status blocked)"
+        },
+        {
+          "stage": "lane-4f",
+          "timestamp": "2025-10-14T12:43:28Z",
+          "summary": "Lane 4f metadata updated (status blocked)"
+        },
+        {
+          "stage": "lane-4g",
+          "timestamp": "2025-10-14T12:43:32Z",
+          "summary": "Lane 4g metadata updated (status blocked)"
+        },
+        {
+          "stage": "lane-4h",
+          "timestamp": "2025-10-14T12:43:39Z",
+          "summary": "Lane 4h metadata updated (status blocked)"
+        },
+        {
+          "stage": "lane-6a",
+          "timestamp": "2025-10-14T12:43:46Z",
+          "summary": "Lane 6a metadata updated (status blocked)"
+        },
+        {
+          "stage": "lane-6b",
+          "timestamp": "2025-10-14T12:43:51Z",
+          "summary": "Lane 6b metadata updated (status blocked)"
+        },
+        {
+          "stage": "lane-6c",
+          "timestamp": "2025-10-14T12:43:56Z",
+          "summary": "Lane 6c metadata updated (status blocked)"
+        },
+        {
+          "stage": "stage-3",
+          "timestamp": "2025-10-14T12:44:12Z",
+          "summary": "Stage 3 status set to complete",
+          "durationMs": 192000
+        },
+        {
+          "stage": "lane-4a",
+          "timestamp": "2025-10-14T12:49:43Z",
+          "summary": "Lane 4a claimed",
+          "agent": "1-4a"
+        },
+        {
+          "stage": "lane-4b",
+          "timestamp": "2025-10-14T12:49:57Z",
+          "summary": "Lane 4b claimed",
+          "agent": "1-4b"
+        },
+        {
+          "stage": "lane-4c",
+          "timestamp": "2025-10-14T12:52:00Z",
+          "summary": "Lane 4c claimed",
+          "agent": "1-4c"
+        },
+        {
+          "stage": "lane-4d",
+          "timestamp": "2025-10-14T12:52:39Z",
+          "summary": "Lane 4d claimed",
+          "agent": "1-4d"
+        },
+        {
+          "stage": "lane-4e",
+          "timestamp": "2025-10-14T12:52:54Z",
+          "summary": "Lane 4e claimed",
+          "agent": "1-4e"
+        },
+        {
+          "stage": "lane-4b",
+          "timestamp": "2025-10-14T12:54:27Z",
+          "summary": "Migrated dynamic-command-router logging; jest suite green with expected coverage gaps",
+          "files": [
+            "logs/consolidation/pattern-1/lane-4b-20251014T125351Z.log"
+          ],
+          "durationMs": 270000
+        },
+        {
+          "stage": "lane-4f",
+          "timestamp": "2025-10-14T12:55:27Z",
+          "summary": "Lane 4f claimed",
+          "agent": "1-4f"
+        },
+        {
+          "stage": "lane-4g",
+          "timestamp": "2025-10-14T12:56:10Z",
+          "summary": "Lane 4g claimed",
+          "agent": "1-4g"
+        },
+        {
+          "stage": "lane-4h",
+          "timestamp": "2025-10-14T12:56:21Z",
+          "summary": "Lane 4h claimed",
+          "agent": "1-4h"
+        },
+        {
+          "stage": "lane-4a",
+          "timestamp": "2025-10-14T12:56:52Z",
+          "summary": "Migrated backend-service-router logging to scoped logger shim; service discovery suite green",
+          "files": [
+            "tmp/consolidation-pattern1-stage4-lane4a-20251014T125623Z.log"
+          ],
+          "durationMs": 429000
+        },
+        {
+          "stage": "lane-4d",
+          "timestamp": "2025-10-14T13:02:25Z",
+          "summary": "Migrated CLI adapter logging to central logger; menu-definition adapter suite passing",
+          "files": [
+            "logs/pattern-1-lane-4d-jest.log"
+          ],
+          "durationMs": 586000
+        },
+        {
+          "stage": "lane-4e",
+          "timestamp": "2025-10-14T13:03:06Z",
+          "summary": "Logger migration completed; formatter jest suite pass (coverage warnings expected)",
+          "files": [
+            "artifacts/consolidation/pattern-1/lane-4e-20251014T130215Z.log"
+          ],
+          "durationMs": 612000
+        },
+        {
+          "stage": "lane-4h",
+          "timestamp": "2025-10-14T13:03:16Z",
+          "summary": "Converted templum-core logging to consolidated logger; jest suite green",
+          "files": [
+            "logs/consolidation/pattern-1/lane-4h-20251014T130237Z.log"
+          ],
+          "durationMs": 415000
+        },
+        {
+          "stage": "lane-4g",
+          "timestamp": "2025-10-14T13:06:10Z",
+          "summary": "Adapter registry logger consolidation; jest suite green with legacy coverage warnings.",
+          "files": [
+            "logs/consolidation/pattern-1/lane-4g-20251014T130541Z.log"
+          ],
+          "durationMs": 600000
+        },
+        {
+          "stage": "lane-4f",
+          "timestamp": "2025-10-14T13:06:14Z",
+          "summary": "Migrated to consolidated logger and jest suite via run-with-timeout",
+          "files": [
+            "logs/consolidation/pattern-1/lane-4f-20251014T130558Z.log"
+          ],
+          "durationMs": 647000
+        },
+        {
+          "stage": "lane-4c",
+          "timestamp": "2025-10-14T13:06:50Z",
+          "summary": "Migrated CLI adapter logging to shared helpers and ran menu-definition adapter suite",
+          "files": [
+            "logs/pattern-1-lane-4c-jest.txt"
+          ],
+          "durationMs": 890000
         }
       ],
-      "updatedAt": "2025-10-14T12:04:00Z",
+      "updatedAt": "2025-10-14T13:06:58Z",
       "cohorts": [
         "1-2"
       ]
@@ -315,7 +1051,10 @@
           "notes": "Stage 3 complete: Stage 4/6 lanes sequenced and dependencies logged for ErrorHandler rollout"
         },
         "4": {
-          "status": "pending"
+          "status": "complete",
+          "startedAt": "2025-10-14T12:29:07Z",
+          "elapsedMs": 506000,
+          "completedAt": "2025-10-14T12:37:33Z"
         },
         "5": {
           "status": "blocked"
@@ -329,7 +1068,7 @@
       },
       "lanes": {
         "4a": {
-          "status": "pending",
+          "status": "complete",
           "scope": "Backend core migration",
           "commands": [
             {
@@ -339,17 +1078,22 @@
               "command": "npm run test -- --runTestsByPath tests/service-discovery/discovery-cache.integration.test.ts"
             }
           ],
-          "updatedAt": "2025-10-08T02:01:21Z",
+          "updatedAt": "2025-10-14T12:37:33Z",
           "dependencies": [
             {
               "patternId": 3,
               "gate": "stage-2"
             }
           ],
-          "notes": "Requires Pattern 3 Stage 2 completion for aligned async-utils retries."
+          "notes": "Requires Pattern 3 Stage 2 completion for aligned async-utils retries.",
+          "startedAt": "2025-10-14T12:29:07Z",
+          "plannedFiles": [
+            "src/backend/service-discovery.ts"
+          ],
+          "elapsedMs": 506000
         },
         "4b": {
-          "status": "pending",
+          "status": "complete",
           "scope": "Connectivity & IPC migration",
           "commands": [
             {
@@ -359,11 +1103,17 @@
               "command": "npm run test -- --runTestsByPath tests/backend/connection-factory.test.ts"
             }
           ],
-          "updatedAt": "2025-10-08T02:01:27Z",
-          "notes": "Requires Haruspex/Phoenix spec alignment on IPC handshake telemetry."
+          "updatedAt": "2025-10-14T12:30:33Z",
+          "notes": "Requires Haruspex/Phoenix spec alignment on IPC handshake telemetry.",
+          "startedAt": "2025-10-14T12:29:26Z",
+          "plannedFiles": [
+            "src/backend/connection-factory.ts",
+            "tests/backend/connection-factory.test.ts"
+          ],
+          "elapsedMs": 67000
         },
         "4c": {
-          "status": "pending",
+          "status": "complete",
           "scope": "Interface & skin adapter migration",
           "commands": [
             {
@@ -373,8 +1123,14 @@
               "command": "npm run test -- --runTestsByPath tests/interfaces/interface-adapter-integration.test.ts"
             }
           ],
-          "updatedAt": "2025-10-08T02:01:33Z",
-          "notes": "Coordinate with interface guild + skin engine maintainers; proceed after lanes 4a/4b validated."
+          "updatedAt": "2025-10-14T12:30:59Z",
+          "notes": "Coordinate with interface guild + skin engine maintainers; proceed after lanes 4a/4b validated.",
+          "startedAt": "2025-10-14T12:29:38Z",
+          "plannedFiles": [
+            "src/interfaces/cli-adapter-abstracted.ts",
+            "tests/interfaces/interface-adapter-integration.test.ts"
+          ],
+          "elapsedMs": 81000
         },
         "6a": {
           "status": "blocked",
@@ -446,6 +1202,30 @@
             "stage-3"
           ],
           "author": "Codex"
+        },
+        {
+          "id": "stage-4-note-20251014T123039",
+          "timestamp": "2025-10-14T12:30:39Z",
+          "body": "Lane 4b complete. Ran rg against src/backend/connection-factory.ts to map legacy catch blocks and reran tests/backend/connection-factory.test.ts via run-with-timeout. Jest reports existing global coverage threshold warnings; no new blockers observed.",
+          "scope": [
+            "stage-4"
+          ]
+        },
+        {
+          "id": "stage-4-note-20251014T123105",
+          "timestamp": "2025-10-14T12:31:05Z",
+          "body": "Lane 4c: Completed prerequisite audit. Logged rg 'catch \\(' src/interfaces/cli-adapter-abstracted.ts -> tmp/consolidation-pattern2-lane4c-rg.log. Executed node scripts/run-with-timeout.mjs --preset jest-suite -- npm run test -- --runTestsByPath tests/interfaces/interface-adapter-integration.test.ts -> tmp/consolidation-pattern2-lane4c-tests.log (suite green; global coverage threshold warnings persist, no new failures). No blockers discovered; ready for Stage 4 execution.",
+          "scope": [
+            "stage-4"
+          ]
+        },
+        {
+          "id": "stage-4-note-20251014T123741",
+          "timestamp": "2025-10-14T12:37:41Z",
+          "body": "Lane 4a: Migrated backend service discovery catch blocks to ErrorHandler.handle with per-scope metadata so registry/file-watcher flows emit standardized Templum errors. RG sweep attached; targeted Jest command executed but fails because tests/service-discovery/discovery-cache.integration.test.ts is absent—tracked in evidence logs for follow-up.",
+          "scope": [
+            "stage-4"
+          ]
         }
       ],
       "evidence": [],
@@ -520,9 +1300,57 @@
           "stage": "stage-5",
           "timestamp": "2025-10-14T12:03:43Z",
           "summary": "Cohorts updated (added: 1-2, removed: none)"
+        },
+        {
+          "stage": "lane-4a",
+          "timestamp": "2025-10-14T12:29:07Z",
+          "summary": "Lane 4a claimed",
+          "agent": "2-4a"
+        },
+        {
+          "stage": "lane-4b",
+          "timestamp": "2025-10-14T12:29:26Z",
+          "summary": "Lane 4b claimed",
+          "agent": "2-4b"
+        },
+        {
+          "stage": "lane-4c",
+          "timestamp": "2025-10-14T12:29:38Z",
+          "summary": "Lane 4c claimed",
+          "agent": "2-4c"
+        },
+        {
+          "stage": "lane-4b",
+          "timestamp": "2025-10-14T12:30:33Z",
+          "summary": "Inventory connectivity catches and reran targeted suite; coverage warnings remain pre-existing",
+          "files": [
+            "logs/consolidation/pattern-2/stage4b/rg-connection-factory.log",
+            "logs/consolidation/pattern-2/stage4b/jest-connection-factory.log"
+          ],
+          "durationMs": 67000
+        },
+        {
+          "stage": "lane-4c",
+          "timestamp": "2025-10-14T12:30:59Z",
+          "summary": "Prerequisites satisfied: rg catch audit recorded + interface adapter integration suite green (coverage warnings acknowledged).",
+          "files": [
+            "tmp/consolidation-pattern2-lane4c-rg.log",
+            "tmp/consolidation-pattern2-lane4c-tests.log"
+          ],
+          "durationMs": 81000
+        },
+        {
+          "stage": "lane-4a",
+          "timestamp": "2025-10-14T12:37:33Z",
+          "summary": "Adopted ErrorHandler in service discovery and ran targeted rg + Jest commands (suite missing).",
+          "files": [
+            "logs/consolidation/pattern-2/stage4a/rg-service-discovery.log",
+            "logs/consolidation/pattern-2/stage4a/jest-service-discovery.log"
+          ],
+          "durationMs": 506000
         }
       ],
-      "updatedAt": "2025-10-14T12:03:43Z",
+      "updatedAt": "2025-10-14T12:37:41Z",
       "cohorts": [
         "1-2"
       ]
@@ -2398,7 +3226,7 @@
           "scope": "Realign Templum Core initialization flows with typed event fixtures",
           "commands": [
             {
-              "command": "node scripts/run-with-timeout.mjs --timeout 60000 -- npm run test -- --runTestsByPath tests/core/core-engine.test.ts --runInBand --no-cache --forceExit"
+              "command": "node scripts/run-with-timeout.mjs --timeout 60000 --preset jest-suite -- npm run test -- --runTestsByPath tests/core/core-engine.test.ts --runInBand --no-cache --forceExit"
             }
           ],
           "updatedAt": "2025-10-13T13:14:17Z",
@@ -2420,7 +3248,7 @@
           "scope": "Stabilize interface adapter registry teardown after EventUtils migration",
           "commands": [
             {
-              "command": "node scripts/run-with-timeout.mjs --timeout 60000 -- npm run test -- --runTestsByPath tests/core/adapter-registry.test.ts --runInBand --no-cache --forceExit"
+              "command": "node scripts/run-with-timeout.mjs --timeout 60000 --preset jest-suite -- npm run test -- --runTestsByPath tests/core/adapter-registry.test.ts --runInBand --no-cache --forceExit"
             }
           ],
           "updatedAt": "2025-10-13T13:22:42Z",
@@ -5995,6 +6823,32 @@
       ],
       "updatedAt": "2025-10-14T12:04:00Z",
       "stages": {}
+    },
+    {
+      "id": "1",
+      "patterns": [],
+      "updatedAt": "2025-10-14T13:20:22Z",
+      "stages": {
+        "5a": {
+          "segment": "5a",
+          "status": "in_progress",
+          "notes": "Kickoff alignment: reviewed Stage 4 backend router evidence, confirmed consolidated logger DI holds across service/dynamic routers and zero-knowledge registry guardrails remain satisfied; no new risks identified.",
+          "startedAt": "2025-10-14T13:20:22Z"
+        }
+      }
+    },
+    {
+      "id": "2",
+      "patterns": [],
+      "updatedAt": "2025-10-14T13:20:27Z",
+      "stages": {
+        "5a": {
+          "segment": "5a",
+          "status": "in_progress",
+          "notes": "Kickoff alignment: validated Stage 4 artifacts for interface adapters and session/core coordination, confirmed logger wiring preserves skin-only delivery and telemetry hooks; no blockers surfaced.",
+          "startedAt": "2025-10-14T13:20:27Z"
+        }
+      }
     }
   ]
 }
