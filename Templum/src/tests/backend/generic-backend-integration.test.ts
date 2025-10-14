@@ -19,6 +19,7 @@ import { UniversalSkinDefinition, BackendConfig, BackendType, InterfaceType } fr
 import { ServiceDiscovery } from '../../backend/service-discovery';
 import type { DiscoveredService } from '../../backend/service-discovery';
 import { MockBackendConnection } from './__utils__/mock-backend-connection';
+import { withErrorHandlerGuardrail } from './__utils__/error-handler-guardrail';
 
 // Mock dependencies
 jest.mock('../../backend/connection-factory');
@@ -882,6 +883,37 @@ describe('Generic Backend Integration System', () => {
       expect(configs.pcl).toBeDefined();
       expect(configs.haruspex).toBeDefined();
       expect(commandRouter.getCommandRoute('pcl.analyze')).toBeDefined();
+    });
+  });
+
+  describe('Lane 4d Error Handler Guardrails', () => {
+    test('lane 4d guardrail: auto-connection failures surface centralized error handling', async () => {
+      const haruspexSkin = createMockHaruspexSkinDefinition();
+      const failingConnection = new MockBackendConnection(haruspexSkin);
+      const connectSpy = jest
+        .spyOn(failingConnection, 'connect')
+        .mockImplementation(async () => {
+          throw new Error('auto-connect failure');
+        });
+
+      mockConnectionFactory.create.mockResolvedValue(failingConnection);
+      const restorePostConnection = stubPostConnectionOperations();
+
+      try {
+        await withErrorHandlerGuardrail(
+          async () => {
+            await backendRouter.registerBackendFromSkin(haruspexSkin);
+          },
+          {
+            expectedContext: /backend-service-router/i,
+            lane: '4d',
+            scenario: 'auto-connection failure guardrail'
+          }
+        );
+      } finally {
+        restorePostConnection();
+        connectSpy.mockRestore();
+      }
     });
   });
 

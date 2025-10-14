@@ -4,6 +4,7 @@ import { TemplumBackendServiceRouter } from '../../backend/backend-service-route
 import { ConnectionFactory, type BackendConnection } from '../../backend/connection-factory';
 import { ServiceDiscovery, type DiscoveredService } from '../../backend/service-discovery';
 import type { BackendConfig } from '../../types/universal-skin-engine-types';
+import { withErrorHandlerGuardrail } from './__utils__/error-handler-guardrail';
 
 jest.mock('../../backend/connection-factory');
 jest.mock('../../backend/service-discovery');
@@ -197,5 +198,42 @@ describe('TemplumBackendServiceRouter lifecycle events', () => {
 
     (router as any).updateServiceHealth('haruspex-backend', true, 'healthy');
     expect(events.some((event) => event.state === 'recovered')).toBe(true);
+  });
+
+  it('lane 4d guardrail: routes connection failures through centralized error handler', async () => {
+    const discoveryMock = createServiceDiscoveryMock();
+    ServiceDiscoveryMock.mockImplementation(() => discoveryMock.instance);
+
+    const backendConfig = buildBackendConfig();
+    const discoveredService: DiscoveredService = {
+      id: 'faulty-backend',
+      config: backendConfig,
+      discoveryMethod: 'registry',
+      confidence: 0.55,
+      timestamp: Date.now()
+    };
+    discoveryMock.setServices([discoveredService]);
+
+    const connectionStub = createConnectionStub('faulty-backend');
+    connectionStub.connect = jest.fn(async () => {
+      throw new Error('connection refused');
+    });
+    mockConnectionFactory.create.mockResolvedValue(connectionStub);
+
+    const router = new TemplumBackendServiceRouter(undefined, {
+      useGenericDiscovery: true,
+      healthMonitoringEnabled: false
+    });
+
+    await withErrorHandlerGuardrail(
+      async () => {
+        await router.discoverAndConnect();
+      },
+      {
+        expectedContext: /backend-service-router/i,
+        lane: '4d',
+        scenario: 'connection lifecycle failure'
+      }
+    );
   });
 });
