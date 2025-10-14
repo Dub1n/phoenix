@@ -48,9 +48,6 @@ import { TemplumUniversalSessionManager } from '../session/templum-universal-ses
 import type { TemplumSessionManagerContract } from '../session/universal-session-manager.types';
 import { type TypedEventMap } from '../utils/event-utils';
 import { EventDrivenComponent } from '../utils/event-bus-adapter';
-import { createLogger } from '../utils/logger';
-
-const adapterRegistryLogger = createLogger('templum-adapter-registry');
 
 interface AdapterRegistryEvents extends TypedEventMap {
   initialized: (payload: {
@@ -66,7 +63,6 @@ interface AdapterRegistryEvents extends TypedEventMap {
  * Component adapter implementations wrapping real components
  */
 export class SkinEngineAdapter implements ISkinEngine {
-  private static readonly logger = adapterRegistryLogger.child('skin-engine-adapter');
   private skinEngine: UniversalSkinEngine;
 
   constructor(skinEngine: UniversalSkinEngine) {
@@ -88,7 +84,7 @@ export class SkinEngineAdapter implements ISkinEngine {
         (this.skinEngine as unknown as { enablePerformanceMonitoring?(enabled: boolean): void }).enablePerformanceMonitoring?.(true);
       }
       
-      SkinEngineAdapter.logger.info('Initialized with config', {
+      console.log('SkinEngineAdapter: Initialized with config', {
         performanceMetrics: config?.performanceMetrics || false,
         cacheEnabled: config?.cacheEnabled !== false
       });
@@ -136,7 +132,7 @@ export class SkinEngineAdapter implements ISkinEngine {
       // Fallback for empty or invalid render results
       return '<div class="templum-skin-container theme-default"><div class="templum-component">No rendered components available</div></div>';
     } catch (error) {
-      SkinEngineAdapter.logger.warn('Error generating HTML from render result', { error });
+      console.warn('Error generating HTML from render result:', error);
       return '<div class="templum-skin-container theme-default"><div class="templum-component templum-error">Error rendering skin components</div></div>';
     }
   }
@@ -153,18 +149,16 @@ export class SkinEngineAdapter implements ISkinEngine {
         await (this.skinEngine as unknown as { dispose(): Promise<void> }).dispose();
       }
       
-      SkinEngineAdapter.logger.info('Disposed with resource cleanup');
+      console.log('SkinEngineAdapter: Disposed with resource cleanup');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      const errorInstance = error instanceof Error ? error : new Error(errorMessage);
-      SkinEngineAdapter.logger.error('SkinEngineAdapter disposal error', errorInstance, { errorMessage });
+      console.error('SkinEngineAdapter disposal error:', errorMessage);
       // Don't throw during disposal to prevent cascade failures
     }
   }
 }
 
 export class StateManagerAdapter implements IStateManager {
-  private static readonly logger = adapterRegistryLogger.child('state-manager-adapter');
   private stateManager: EnhancedStateManager;
 
   constructor(stateManager: EnhancedStateManager) {
@@ -203,9 +197,7 @@ export class StateManagerAdapter implements IStateManager {
         });
       }
       
-      StateManagerAdapter.logger.info('Synced state', {
-        interfaceType,
-        source,
+      console.log(`StateManagerAdapter: Synced state to ${interfaceType} from ${source}`, {
         updateKeys: Object.keys(stateUpdate || {}),
         timestamp: Date.now()
       });
@@ -234,10 +226,10 @@ export class StateManagerAdapter implements IStateManager {
       if (SemanticValidators.hasFunction(this.stateManager, 'sendMessage', { required: false })) {
         await (this.stateManager as unknown as { sendMessage(payload: unknown): Promise<void> }).sendMessage(enrichedMessage);
       } else {
-        StateManagerAdapter.logger.warn('sendMessage not available on state manager, message queued');
+        console.warn('StateManagerAdapter: sendMessage not available on state manager, message queued');
       }
       
-      StateManagerAdapter.logger.info('Message sent', {
+      console.log('StateManagerAdapter: Message sent', {
         type: message.type,
         messageId: enrichedMessage.messageId,
         timestamp: enrichedMessage.timestamp
@@ -283,8 +275,7 @@ export class StateManagerAdapter implements IStateManager {
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      const errorInstance = error instanceof Error ? error : new Error(errorMessage);
-      StateManagerAdapter.logger.error('getCurrentState retrieval failed', errorInstance, { errorMessage });
+      console.error('StateManagerAdapter: getCurrentState error:', errorMessage);
       return {
         error: true,
         errorMessage,
@@ -300,7 +291,6 @@ export class StateManagerAdapter implements IStateManager {
 }
 
 export class BackendRouterAdapter implements IBackendRouter {
-  private static readonly logger = adapterRegistryLogger.child('backend-router-adapter');
   private backendRouter: PCLBackendIntegrator;
   private wiringContext: { stateManager?: IStateManager } = {};
   private dependenciesSnapshot: Record<string, unknown> = {};
@@ -340,7 +330,7 @@ export class BackendRouterAdapter implements IBackendRouter {
     }
 
     // PCL Backend Integrator initialized with dependencies in constructor
-    BackendRouterAdapter.logger.info('Initialized with dependencies');
+    console.log('BackendRouterAdapter: Initialized with dependencies');
   }
 
   async executeCommand(command: string, args?: any[], context?: any): Promise<any> {
@@ -368,7 +358,7 @@ export class BackendRouterAdapter implements IBackendRouter {
         }).executeCommand(command, args, enhancedContext);
       } else {
         // Fallback for when PCL Backend Integrator doesn't have executeCommand
-        BackendRouterAdapter.logger.warn('executeCommand not available on backend integrator, using fallback');
+        console.warn('BackendRouterAdapter: PCL Backend Integrator executeCommand not available, using fallback');
         result = {
           command,
           success: true,
@@ -445,7 +435,6 @@ export class BackendRouterAdapter implements IBackendRouter {
 }
 
 export class BackendServiceRouterAdapter implements IBackendServiceRouter {
-  private static readonly logger = adapterRegistryLogger.child('backend-service-router-adapter');
   private backendServiceRouter: TemplumBackendServiceRouter;
 
   constructor(backendServiceRouter: TemplumBackendServiceRouter) {
@@ -529,14 +518,13 @@ export class BackendServiceRouterAdapter implements IBackendServiceRouter {
       // Execute all cleanup tasks
       await Promise.allSettled(cleanupTasks);
       
-      BackendServiceRouterAdapter.logger.info('Cleanup completed', {
+      console.log('BackendServiceRouterAdapter: Cleanup completed', {
         tasksExecuted: cleanupTasks.length,
         timestamp: Date.now()
       });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      const errorInstance = error instanceof Error ? error : new Error(errorMessage);
-      BackendServiceRouterAdapter.logger.error('Cleanup error', errorInstance, { errorMessage });
+      console.error('BackendServiceRouterAdapter cleanup error:', errorMessage);
       // Don't throw during cleanup to prevent cascade failures
     }
   }
@@ -635,7 +623,6 @@ export class ResourceManagerAdapter implements IResourceManager {
 export class TemplumComponentFactory implements IComponentFactory {
   private config: any;
   private registry?: TemplumAdapterRegistry;
-  private static readonly logger = adapterRegistryLogger.child('component-factory');
 
   constructor(config: any = {}) {
     this.config = config;
@@ -672,7 +659,7 @@ export class TemplumComponentFactory implements IComponentFactory {
       const stateManager = new EnhancedStateManager(stateManagerConfig);
       const adapter = new StateManagerAdapter(stateManager);
       
-      TemplumComponentFactory.logger.info('StateManager created with validated configuration', {
+      console.log('StateManager created with validated configuration:', {
         coalescingEnabled: stateManagerConfig.coalescingConfig.enabled,
         windowMs: stateManagerConfig.coalescingConfig.windowMs,
         maxHistorySize: stateManagerConfig.maxHistorySize
@@ -706,7 +693,7 @@ export class TemplumComponentFactory implements IComponentFactory {
       const backendRouter = new PCLBackendIntegrator(backendRouterConfig);
       const adapter = new BackendRouterAdapter(backendRouter);
       
-      TemplumComponentFactory.logger.info('BackendRouter created with validated configuration', {
+      console.log('BackendRouter created with validated configuration:', {
         circuitBreakerEnabled: backendRouterConfig.enableCircuitBreaker,
         timeout: backendRouterConfig.timeoutMs,
         retryAttempts: backendRouterConfig.retryAttempts
@@ -749,7 +736,7 @@ export class TemplumComponentFactory implements IComponentFactory {
       const resourceManager = new TemplumResourceManager(resourceManagerConfig);
       const adapter = new ResourceManagerAdapter(resourceManager);
       
-      TemplumComponentFactory.logger.info('ResourceManager created with validated configuration', {
+      console.log('ResourceManager created with validated configuration:', {
         memoryLimit: resourceManagerConfig.memoryLimitMB,
         cpuLimit: resourceManagerConfig.cpuLimitPercent,
         healthMonitoring: resourceManagerConfig.enableHealthMonitoring,
@@ -780,14 +767,6 @@ export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistry
   private initialized: boolean = false;
   private validationReport: ValidationReport | null = null;
   private sessionManager?: TemplumSessionManagerContract;
-  private readonly logger = adapterRegistryLogger.child('registry');
-  private readonly componentLogger = adapterRegistryLogger.child('components');
-  private readonly validationLogger = adapterRegistryLogger.child('validation');
-  private readonly wiringLogger = adapterRegistryLogger.child('wiring');
-  private readonly initializationLogger = adapterRegistryLogger.child('initialization');
-  private readonly sessionLogger = adapterRegistryLogger.child('session-manager');
-  private readonly disposalLogger = adapterRegistryLogger.child('disposal');
-  private readonly configurationLogger = adapterRegistryLogger.child('configuration');
 
   constructor(config: IDependencyInjectionConfig = {}) {
     super('templum-adapter-registry', 50);
@@ -891,8 +870,7 @@ export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistry
         status.issues.push(`Using adapter pattern for ${name}`);
       }
 
-      this.validationLogger.info('Component validation', {
-        component: name,
+      console.log(`Component validation for ${name}:`, {
         valid: status.valid,
         availableMethods: availableMethods.length,
         missingMethods: missingMethods.length,
@@ -986,8 +964,7 @@ export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistry
       }
 
     } catch (error) {
-      const errorInstance = error instanceof Error ? error : new Error(String(error));
-      this.wiringLogger.error('Dependency wiring validation error', errorInstance);
+      console.error('Dependency wiring validation error:', error);
     }
 
     return wiringStatuses;
@@ -1096,14 +1073,13 @@ export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistry
       }
 
       if (issues.length > 0 && this.config.validationLevel === 'strict') {
-        this.initializationLogger.warn('Initialization order validation issues', { issues });
+        console.warn('Initialization order validation issues:', issues);
         return false;
       }
 
       return true;
     } catch (error) {
-      const errorInstance = error instanceof Error ? error : new Error(String(error));
-      this.initializationLogger.error('Initialization order validation error', errorInstance);
+      console.error('Initialization order validation error:', error);
       return false;
     }
   }
@@ -1197,7 +1173,7 @@ export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistry
 
       // Log validation results
       if (this.config.enableValidationReporting) {
-        this.validationLogger.info('Dependency injection validation complete', {
+        console.log('Dependency injection validation complete:', {
           overallValid: this.validationReport.overallValid,
           componentsValidated: componentValidations.length,
           wiringChecks: dependencyWiring.length,
@@ -1206,7 +1182,7 @@ export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistry
         });
 
         if (!this.validationReport.overallValid) {
-          this.validationLogger.warn('Dependency injection validation issues detected', {
+          console.warn('Dependency injection validation issues detected:', {
             missingComponents: missing,
             circularDependencies: circularDepPaths,
             validationIssues: issues.length
@@ -1228,7 +1204,7 @@ export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistry
             'configuration'
           );
         } else {
-          this.validationLogger.warn('Dependency injection validation warnings (non-strict mode)', {
+          console.warn('Dependency injection validation warnings (non-strict mode):', {
             issues: issues.slice(0, 5), // Limit console output
             totalIssues: issues.length
           });
@@ -1292,11 +1268,7 @@ export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistry
       }
     } catch (error) {
       if (value !== undefined) {
-        this.configurationLogger.warn('Invalid configuration value removed', {
-          field: options.fieldName,
-          value,
-          bounds: options
-        });
+        console.warn(`Invalid ${options.fieldName}, removing from configuration`, { value, bounds: options });
       }
       delete target[key];
     }
@@ -1342,13 +1314,7 @@ export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistry
       return numericValue;
     } catch (_error) {
       if (value !== undefined) {
-        this.configurationLogger.warn('Invalid numeric configuration value', {
-          fieldName,
-          value,
-          min,
-          max,
-          defaultValue
-        });
+        console.warn(`Invalid ${fieldName} (${value}), must be between ${min} and ${max}. Using default: ${defaultValue}`);
       }
       return defaultValue;
     }
@@ -1357,12 +1323,7 @@ export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistry
   public validateEnumValue<T>(value: any, allowedValues: T[], defaultValue: T, fieldName: string): T {
     if (!allowedValues.includes(value)) {
       if (value !== undefined) {
-        this.configurationLogger.warn('Invalid enum configuration value', {
-          fieldName,
-          value,
-          allowedValues,
-          defaultValue
-        });
+        console.warn(`Invalid ${fieldName} (${value}), must be one of: ${allowedValues.join(', ')}. Using default: ${defaultValue}`);
       }
       return defaultValue;
     }
@@ -1405,7 +1366,7 @@ export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistry
    */
   async initialize(): Promise<void> {
     if (this.initialized) {
-      this.logger.warn('Adapter registry already initialized');
+      console.warn('TemplumAdapterRegistry: Already initialized');
       return;
     }
 
@@ -1445,14 +1406,14 @@ export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistry
         initializationPhases: 4
       });
 
-      // Use observability service if available, fallback to logger  
+      // Use observability service if available, fallback to console  
       if (this.dependencies.observabilityService) {
         this.dependencies.observabilityService.logInfo('Registry initialization complete with enhanced dependency injection', {
           components: Object.keys(this.dependencies),
           customFactories: Object.keys(this.config.customFactories || {})
         }, 'TemplumAdapterRegistry');
       } else {
-        this.logger.info('Registry initialization complete with enhanced dependency injection', {
+        console.log('TemplumAdapterRegistry: Registry initialization complete with enhanced dependency injection', {
           components: Object.keys(this.dependencies),
           customFactories: Object.keys(this.config.customFactories || {})
         });
@@ -1468,7 +1429,8 @@ export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistry
         ),
         severity: 'critical'
       };
-      this.logger.error('Registry initialization failed', errorPayload.error);
+
+      console.error('TemplumAdapterRegistry: Initialization failed:', errorPayload.error);
       throw createTemplumError(`Registry initialization failed: ${errorPayload.error.message}`, 'INITIALIZATION_ERROR', 'configuration');
     }
   }
@@ -1505,15 +1467,12 @@ export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistry
                 'configuration'
               );
             } else if (!validation.valid) {
-              this.componentLogger.warn('Component validation warnings', {
-                component: name,
-                issues: validation.issues
-              });
+              console.warn(`Component ${name} validation warnings:`, validation.issues);
             }
           }
           
           this.dependencies[name] = component;
-          this.componentLogger.info('Created and validated component', { component: name });
+          console.log(`TemplumAdapterRegistry: Created and validated ${name} component`);
           
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -1522,7 +1481,7 @@ export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistry
       }
     }
     
-    this.componentLogger.info('Component creation phase complete', {
+    console.log(`TemplumAdapterRegistry: Component creation phase complete`, {
       totalComponents: Object.keys(this.dependencies).length,
       validationEnabled: this.config.validateComponentInterfaces
     });
@@ -1572,7 +1531,7 @@ export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistry
         name: 'observabilityService integration',
         operation: () => {
           // Components can access observability service through the registry
-          this.wiringLogger.info('Observability service available for component logging');
+          console.log('TemplumAdapterRegistry: Observability service available for component logging');
         }
       });
     }
@@ -1581,7 +1540,7 @@ export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistry
     for (const { name, operation } of wiringOperations) {
       try {
         await operation();
-        this.wiringLogger.info('Successfully wired dependency', { name });
+        console.log(`TemplumAdapterRegistry: Successfully wired ${name}`);
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         
@@ -1592,7 +1551,7 @@ export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistry
             'configuration'
           );
         } else {
-          this.wiringLogger.warn('Dependency wiring warning', { name, error: errorMessage });
+          console.warn(`Dependency wiring warning for ${name}:`, errorMessage);
         }
       }
     }
@@ -1610,13 +1569,11 @@ export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistry
           'configuration'
         );
       } else if (failedWiring.length > 0) {
-        this.wiringLogger.warn('Dependency wiring validation warnings', {
-          issues: failedWiring.map(w => w.issues).flat()
-        });
+        console.warn('Dependency wiring validation warnings:', failedWiring.map(w => w.issues).flat());
       }
     }
 
-    this.wiringLogger.info('Dependency wiring phase complete', {
+    console.log('TemplumAdapterRegistry: Dependency wiring phase complete', {
       totalWiringOperations: wiringOperations.length,
       validationEnabled: this.config.validateDependencyWiring
     });
@@ -1664,7 +1621,7 @@ export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistry
           if (SemanticValidators.hasFunction(component, 'initialize', { required: false })) {
             await (component as { initialize: () => Promise<void> }).initialize();
             success = true;
-            this.initializationLogger.info('Component initialized', { component: componentName });
+            console.log(`TemplumAdapterRegistry: Initialized ${componentName}`);
             
             // Update component validation status
             if (this.validationReport) {
@@ -1675,7 +1632,7 @@ export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistry
             }
           } else {
             success = true; // Component doesn't require initialization
-            this.initializationLogger.info('Component does not require initialization', { component: componentName });
+            console.log(`TemplumAdapterRegistry: ${componentName} does not require initialization`);
           }
         } catch (initError) {
           error = initError instanceof Error ? initError.message : 'Unknown initialization error';
@@ -1687,11 +1644,7 @@ export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistry
               'configuration'
             );
           } else {
-            const errorInstance = initError instanceof Error ? initError : new Error(error);
-            this.initializationLogger.error('Initialization warning', errorInstance, {
-              component: componentName,
-              message: error
-            });
+            console.error(`Initialization warning for ${componentName}:`, error);
           }
 
           // Update component validation status
@@ -1725,11 +1678,11 @@ export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistry
           'configuration'
         );
       } else {
-        this.initializationLogger.warn('Component initialization warnings', { failureDetails });
+        console.warn('Component initialization warnings:', failureDetails);
       }
     }
 
-    this.initializationLogger.info('Component initialization phase complete', {
+    console.log('TemplumAdapterRegistry: Component initialization phase complete', {
       totalComponents: initializationResults.length,
       successfulInitializations: initializationResults.filter(r => r.success).length,
       failedInitializations: failedInitializations.length,
@@ -1773,16 +1726,17 @@ export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistry
           await resourceManager.registerService('templum-sessionManager', 'core', {
             component: 'sessionManager'
           });
-          this.sessionLogger.info('Registered session manager with resource manager');
+          console.log('TemplumAdapterRegistry: Registered sessionManager with resource manager');
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-          this.sessionLogger.warn('Failed to register session manager with resource manager', {
-            error: errorMessage
-          });
+          console.warn(
+            'TemplumAdapterRegistry: Failed to register sessionManager with resource manager',
+            errorMessage
+          );
         }
       }
 
-      this.sessionLogger.info('Session manager initialized and registered');
+      console.log('TemplumAdapterRegistry: Session manager initialized and registered');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw createTemplumError(
@@ -1834,7 +1788,7 @@ export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistry
   ): void {
     this.dependencies[name] = component;
     this.emit('componentRegistered', { name, timestamp: Date.now() });
-    this.componentLogger.info('Registered custom component', { component: name });
+    console.log(`TemplumAdapterRegistry: Registered custom ${name} component`);
   }
 
   /**
@@ -1902,21 +1856,18 @@ export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistry
         try {
           if (typeof manager.shutdown === 'function') {
             await manager.shutdown();
-            this.sessionLogger.info('Session manager shutdown complete');
+            console.log('TemplumAdapterRegistry: Session manager shutdown complete');
           } else if (typeof manager.stopSession === 'function') {
             const hasActiveSession =
               typeof manager.getCurrentSession === 'function' ? Boolean(manager.getCurrentSession()) : true;
 
             if (hasActiveSession) {
               await manager.stopSession();
-              this.sessionLogger.info('Session manager session stopped');
+              console.log('TemplumAdapterRegistry: Session manager session stopped');
             }
           }
         } catch (error) {
-          const errorInstance = error instanceof Error ? error : new Error(String(error));
-          this.sessionLogger.warn('Failed to shutdown session manager during disposal', {
-            error: errorInstance.message
-          });
+          console.warn('TemplumAdapterRegistry: Failed to shutdown session manager during disposal', error);
         }
       }
 
@@ -1924,7 +1875,7 @@ export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistry
       try {
         if (this.dependencies.backendServiceRouter?.cleanup) {
           await this.dependencies.backendServiceRouter.cleanup();
-          this.disposalLogger.info('Disposed backendServiceRouter');
+          console.log('TemplumAdapterRegistry: Disposed backendServiceRouter');
         }
         
         const serviceRouter = this.dependencies.backendServiceRouter as
@@ -1933,40 +1884,39 @@ export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistry
 
         if (serviceRouter?.dispose) {
           await serviceRouter.dispose();
-          this.disposalLogger.info('Disposed backendServiceRouter');
+          console.log('TemplumAdapterRegistry: Disposed backendServiceRouter');
         } else if (serviceRouter?.cleanup) {
           await serviceRouter.cleanup();
-          this.disposalLogger.info('Disposed backendServiceRouter');
+          console.log('TemplumAdapterRegistry: Disposed backendServiceRouter');
         }
 
         if (this.dependencies.backendRouter?.shutdown) {
           await this.dependencies.backendRouter.shutdown();
-          this.disposalLogger.info('Disposed backendRouter');
+          console.log('TemplumAdapterRegistry: Disposed backendRouter');
         }
         
         if (this.dependencies.stateManager?.shutdown) {
           await this.dependencies.stateManager.shutdown();
-          this.disposalLogger.info('Disposed stateManager');
+          console.log('TemplumAdapterRegistry: Disposed stateManager');
         }
         
         if (this.dependencies.resourceManager?.shutdown) {
           await this.dependencies.resourceManager.shutdown();
-          this.disposalLogger.info('Disposed resourceManager');
+          console.log('TemplumAdapterRegistry: Disposed resourceManager');
         }
         
         if (this.dependencies.skinEngine?.dispose) {
           await this.dependencies.skinEngine.dispose();
-          this.disposalLogger.info('Disposed skinEngine');
+          console.log('TemplumAdapterRegistry: Disposed skinEngine');
         }
 
         if (this.dependencies.observabilityService?.shutdown) {
           await this.dependencies.observabilityService.shutdown();
-          this.disposalLogger.info('Disposed observabilityService');
+          console.log('TemplumAdapterRegistry: Disposed observabilityService');
         }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        const errorInstance = error instanceof Error ? error : new Error(errorMessage);
-        this.disposalLogger.error('Failed to dispose component', errorInstance, { errorMessage });
+        console.error('Failed to dispose component:', errorMessage);
       }
 
       this.dependencies = {};
@@ -1976,11 +1926,10 @@ export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistry
       this.removeAllListeners();
       this.cleanupEvents();
 
-      this.disposalLogger.info('Disposal complete');
+      console.log('TemplumAdapterRegistry: Disposal complete');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      const errorInstance = error instanceof Error ? error : new Error(errorMessage);
-      this.disposalLogger.error('Disposal failed', errorInstance, { errorMessage });
+      console.error('TemplumAdapterRegistry: Disposal failed:', errorMessage);
       throw createTemplumError(`Registry disposal failed: ${errorMessage}`, 'DISPOSAL_ERROR', 'runtime');
     }
   }

@@ -16,7 +16,6 @@ import * as WebSocket from 'ws';
 import { EventDrivenComponent } from '../utils/event-bus-adapter';
 import type { TypedEventMap } from '../utils/event-utils';
 import { UniversalSkinEngine } from '../skin/universal-skin-engine';
-import { createLogger, Logger } from '../utils/logger';
 import {
     BackendType,
     BackendConnectionLifecycleEvent,
@@ -417,138 +416,6 @@ export interface BackendCapabilityProfile {
   detectionTimestamp: number;
 }
 
-const backendServiceRouterLogger = createLogger('backend-service-router');
-const backendServiceRouterScopeLoggers = new Map<string, Logger>();
-const BACKEND_ROUTER_SCOPE_PATTERN = /^\[([^[\]]+)\]\s*(.*)$/;
-const BACKEND_ROUTER_FALLBACK_SCOPE = 'root';
-
-interface ScopedLogContext {
-  logger: Logger;
-  message: string;
-  prefixData?: unknown;
-}
-
-function normalizeBackendRouterScope(scope: string): string {
-  return scope
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    || BACKEND_ROUTER_FALLBACK_SCOPE;
-}
-
-function getBackendRouterScopeLogger(scope: string): Logger {
-  const key = normalizeBackendRouterScope(scope);
-  if (!backendServiceRouterScopeLoggers.has(key)) {
-    backendServiceRouterScopeLoggers.set(key, backendServiceRouterLogger.child(key));
-  }
-  return backendServiceRouterScopeLoggers.get(key)!;
-}
-
-function extractBackendRouterLogContext(raw: unknown): ScopedLogContext {
-  if (typeof raw !== 'string') {
-    return {
-      logger: backendServiceRouterLogger,
-      message: 'runtime log entry',
-      prefixData: raw
-    };
-  }
-
-  const match = BACKEND_ROUTER_SCOPE_PATTERN.exec(raw);
-  if (!match) {
-    const message = raw.trim().replace(/:\s*$/, '') || 'runtime log entry';
-    return {
-      logger: backendServiceRouterLogger,
-      message
-    };
-  }
-
-  const [, scope, remainder] = match;
-  const trimmed = remainder.trim();
-  const message = trimmed.replace(/:\s*$/, '') || scope.trim();
-
-  return {
-    logger: getBackendRouterScopeLogger(scope),
-    message
-  };
-}
-
-function buildBackendRouterLogData(parts: unknown[]): unknown {
-  if (parts.length === 0) {
-    return undefined;
-  }
-  if (parts.length === 1) {
-    return parts[0];
-  }
-  return parts;
-}
-
-function logBackendRouterStructured(
-  level: 'info' | 'warn' | 'debug',
-  raw: unknown,
-  ...args: unknown[]
-): void {
-  const { logger, message, prefixData } = extractBackendRouterLogContext(raw);
-  const dataParts = prefixData !== undefined ? [prefixData, ...args] : args;
-  const data = buildBackendRouterLogData(dataParts);
-
-  if (level === 'warn') {
-    logger.warn(message, data);
-    return;
-  }
-
-  if (level === 'debug') {
-    logger.debug(message, data);
-    return;
-  }
-
-  logger.info(message, data);
-}
-
-function logBackendRouterError(raw: unknown, ...args: unknown[]): void {
-  const { logger, message, prefixData } = extractBackendRouterLogContext(raw);
-  const dataParts = prefixData !== undefined ? [prefixData, ...args] : args;
-
-  if (dataParts.length === 0) {
-    logger.error(message);
-    return;
-  }
-
-  const [first, ...rest] = dataParts;
-  if (first instanceof Error) {
-    logger.error(message, first, buildBackendRouterLogData(rest));
-    return;
-  }
-
-  if (rest.length > 0) {
-    const maybeError = rest[rest.length - 1];
-    if (maybeError instanceof Error) {
-      const remaining = rest.slice(0, -1);
-      logger.error(message, maybeError, buildBackendRouterLogData([first, ...remaining]));
-      return;
-    }
-  }
-
-  logger.error(message, undefined, buildBackendRouterLogData(dataParts));
-}
-
-const backendRouterConsole = {
-  log(raw: unknown, ...args: unknown[]): void {
-    logBackendRouterStructured('info', raw, ...args);
-  },
-  info(raw: unknown, ...args: unknown[]): void {
-    logBackendRouterStructured('info', raw, ...args);
-  },
-  warn(raw: unknown, ...args: unknown[]): void {
-    logBackendRouterStructured('warn', raw, ...args);
-  },
-  debug(raw: unknown, ...args: unknown[]): void {
-    logBackendRouterStructured('debug', raw, ...args);
-  },
-  error(raw: unknown, ...args: unknown[]): void {
-    logBackendRouterError(raw, ...args);
-  }
-};
-
 
 /**
  * Backend Service Router Implementation
@@ -602,7 +469,7 @@ export class TemplumBackendServiceRouter
     this.commandRouter = new DynamicCommandRouter();
     this.serviceDiscovery = new ServiceDiscovery(discoveryOptions);
     this.useGenericDiscovery = discoveryOptions?.useGenericDiscovery ?? true;
-    this.lifecycleChannel = new BackendLifecycleChannel(this.eventEmitter);
+    this.lifecycleChannel = new BackendLifecycleChannel(this);
     this.manualOverrideManager = new ManualOverrideManager();
 
     // ENHANCED: Configure health monitoring parameters
@@ -611,7 +478,7 @@ export class TemplumBackendServiceRouter
     this.healthMonitoringEnabled = discoveryOptions?.healthMonitoringEnabled ?? true;
     
     // GENERIC SYSTEM: Always use skin-driven approach
-    backendRouterConsole.log('[BACKEND_SERVICE_ROUTER] Using fully generic skin-driven backend integration');
+    console.log('[BACKEND_SERVICE_ROUTER] Using fully generic skin-driven backend integration');
     this.setupManualOverrideIntegration();
     this.setupServiceDiscoveryIntegration();
     this.initializeGenericBackendSystem();
@@ -673,7 +540,7 @@ export class TemplumBackendServiceRouter
    */
   setOrchestrator(orchestrator: ITemplumOrchestrator): void {
     this.orchestrator = orchestrator;
-    backendRouterConsole.log('[BACKEND_SERVICE_ROUTER] TemplumCore orchestrator reference set for skin loading');
+    console.log('[BACKEND_SERVICE_ROUTER] TemplumCore orchestrator reference set for skin loading');
   }
 
   private setupManualOverrideIntegration(): void {
@@ -702,17 +569,17 @@ export class TemplumBackendServiceRouter
   private setupServiceDiscoveryIntegration(): void {
     // Listen for discovery events
     this.serviceDiscovery.on('discoveryStarted', (event) => {
-      backendRouterConsole.log(`[SERVICE_DISCOVERY] Discovery started with ${event.strategies} strategies`);
+      console.log(`[SERVICE_DISCOVERY] Discovery started with ${event.strategies} strategies`);
       this.emit('discoveryStarted', event);
     });
 
     this.serviceDiscovery.on('discoveryCompleted', (event) => {
-      backendRouterConsole.log(`[SERVICE_DISCOVERY] Discovery completed: ${event.discovered} services found`);
+      console.log(`[SERVICE_DISCOVERY] Discovery completed: ${event.discovered} services found`);
       this.emit('discoveryCompleted', event);
     });
 
     this.serviceDiscovery.on('strategyError', (event) => {
-      backendRouterConsole.warn(`[SERVICE_DISCOVERY] Strategy ${event.strategy} failed:`, event.error);
+      console.warn(`[SERVICE_DISCOVERY] Strategy ${event.strategy} failed:`, event.error);
       this.emit('discoveryError', event);
     });
 
@@ -742,7 +609,7 @@ export class TemplumBackendServiceRouter
    */
   private initializeGenericBackendSystem(): void {
     // Configuration available via backendIntegrationConfig.getConfig() if needed
-    backendRouterConsole.log('[GENERIC_INTEGRATION] Initializing skin-driven backend system');
+    console.log('[GENERIC_INTEGRATION] Initializing skin-driven backend system');
     
     // GENERIC ARCHITECTURE: No pre-configured backends
     // Backends discovered and configured via:
@@ -753,8 +620,8 @@ export class TemplumBackendServiceRouter
     // Clear any existing configs - start fresh with generic discovery
     this.backendConfigs.clear();
     
-    backendRouterConsole.log('[GENERIC_INTEGRATION] Ready for skin-driven backend discovery');
-    backendRouterConsole.log('[GENERIC_INTEGRATION] Backends will be configured dynamically based on skin definitions');
+    console.log('[GENERIC_INTEGRATION] Ready for skin-driven backend discovery');
+    console.log('[GENERIC_INTEGRATION] Backends will be configured dynamically based on skin definitions');
     
     // Initialize service health monitoring
     this.initializeServiceHealth();
@@ -794,7 +661,7 @@ export class TemplumBackendServiceRouter
       this.healthMonitorInterval.stop();
     }
     
-    backendRouterConsole.log(`[HEALTH_MONITOR] Starting background health monitoring (interval: ${this.healthCheckInterval}ms)`);
+    console.log(`[HEALTH_MONITOR] Starting background health monitoring (interval: ${this.healthCheckInterval}ms)`);
     
     this.healthMonitorInterval = createInterval(
       () => this.performHealthCheck(),
@@ -820,7 +687,7 @@ export class TemplumBackendServiceRouter
       return; // No connections to check yet
     }
     
-    backendRouterConsole.log(`[HEALTH_MONITOR] Performing conditional health check on ${connections.length} connections`);
+    console.log(`[HEALTH_MONITOR] Performing conditional health check on ${connections.length} connections`);
     
     for (const [backendId, connection] of connections) {
       try {
@@ -841,7 +708,7 @@ export class TemplumBackendServiceRouter
             responseTime
           );
           
-          backendRouterConsole.log(`[HEALTH_MONITOR] Tier 1 (Health-enabled) ${backendId}: ${isHealthy ? 'healthy' : 'unhealthy'} (${responseTime}ms)`);
+          console.log(`[HEALTH_MONITOR] Tier 1 (Health-enabled) ${backendId}: ${isHealthy ? 'healthy' : 'unhealthy'} (${responseTime}ms)`);
         } else {
           // Tier 2: Minimal backends - use connection stability instead of health checks
           const isConnected = connection.isConnected();
@@ -858,11 +725,11 @@ export class TemplumBackendServiceRouter
             responseTime
           );
           
-          backendRouterConsole.log(`[HEALTH_MONITOR] Tier 2 (Minimal) ${backendId}: ${isConnected ? 'connected' : 'disconnected'} (stability: ${this.getConnectionStability(backendId).toFixed(1)}%)`);
+          console.log(`[HEALTH_MONITOR] Tier 2 (Minimal) ${backendId}: ${isConnected ? 'connected' : 'disconnected'} (stability: ${this.getConnectionStability(backendId).toFixed(1)}%)`);
         }
       } catch (error) {
         this.updateServiceHealth(backendId, false, 'error', `Health check error: ${error}`);
-        backendRouterConsole.error(`[HEALTH_MONITOR] Error checking ${backendId}:`, error);
+        console.error(`[HEALTH_MONITOR] Error checking ${backendId}:`, error);
       }
     }
   }
@@ -894,7 +761,7 @@ export class TemplumBackendServiceRouter
       // For other protocols or if no specific health endpoint, check if connection is alive
       return connection.isConnected();
     } catch (error) {
-      backendRouterConsole.warn(`[HEALTH_CHECK] Health endpoint check failed for ${backendId}:`, error);
+      console.warn(`[HEALTH_CHECK] Health endpoint check failed for ${backendId}:`, error);
       return false;
     }
   }
@@ -914,7 +781,7 @@ export class TemplumBackendServiceRouter
     const currentAttempts = this.recoveryAttempts.get(backendId) || 0;
     
     if (currentAttempts >= this.maxRecoveryAttempts) {
-      backendRouterConsole.warn(`[RECOVERY] Max recovery attempts (${this.maxRecoveryAttempts}) reached for ${backendId}, skipping recovery`);
+      console.warn(`[RECOVERY] Max recovery attempts (${this.maxRecoveryAttempts}) reached for ${backendId}, skipping recovery`);
       return;
     }
     
@@ -924,12 +791,12 @@ export class TemplumBackendServiceRouter
     // Exponential backoff: 1s, 2s, 4s, 8s...
     const backoffDelay = Math.pow(2, currentAttempts) * 1000;
     
-    backendRouterConsole.log(`[RECOVERY] Attempting recovery for ${backendId} (attempt ${nextAttempt}/${this.maxRecoveryAttempts}, delay: ${backoffDelay}ms)`);
+    console.log(`[RECOVERY] Attempting recovery for ${backendId} (attempt ${nextAttempt}/${this.maxRecoveryAttempts}, delay: ${backoffDelay}ms)`);
     
     this.scheduleTimeout(async () => {
       try {
         await connection.connect();
-        backendRouterConsole.log(`[RECOVERY] Successfully recovered connection to ${backendId}`);
+        console.log(`[RECOVERY] Successfully recovered connection to ${backendId}`);
         this.recoveryAttempts.delete(backendId);
         this.emit('connectionRecovered', { backendId, attempts: nextAttempt });
         this.lifecycleChannel.emitRecovered(backendId, {
@@ -938,7 +805,7 @@ export class TemplumBackendServiceRouter
           origin: 'recovery'
         });
       } catch (error) {
-        backendRouterConsole.warn(`[RECOVERY] Recovery attempt ${nextAttempt} failed for ${backendId}:`, error);
+        console.warn(`[RECOVERY] Recovery attempt ${nextAttempt} failed for ${backendId}:`, error);
         this.emit('recoveryFailed', { backendId, attempts: nextAttempt, error });
         this.lifecycleChannel.emitFailed(backendId, error, {
           attempts: nextAttempt,
@@ -956,7 +823,7 @@ export class TemplumBackendServiceRouter
     if (this.healthMonitorInterval) {
       this.healthMonitorInterval.stop();
       this.healthMonitorInterval = null;
-      backendRouterConsole.log('[HEALTH_MONITOR] Background health monitoring stopped');
+      console.log('[HEALTH_MONITOR] Background health monitoring stopped');
     }
 
     if (this.healthCheckKickoffTimeout) {
@@ -975,27 +842,27 @@ export class TemplumBackendServiceRouter
    * Handles automatic registration/unregistration of commands when backends connect/disconnect
    */
   private setupCommandRouterIntegration(): void {
-    backendRouterConsole.log('[DYNAMIC_COMMAND_ROUTER] Setting up command router integration');
+    console.log('[DYNAMIC_COMMAND_ROUTER] Setting up command router integration');
     
     // Listen for backend connection events to register commands
     this.on('backendConnected', (backendId: string) => {
       // Commands will be registered when skin is loaded via loadBackendSkin
-      backendRouterConsole.log(`[DYNAMIC_COMMAND_ROUTER] Backend ${backendId} connected - awaiting skin registration`);
+      console.log(`[DYNAMIC_COMMAND_ROUTER] Backend ${backendId} connected - awaiting skin registration`);
     });
 
     // Listen for backend disconnection events to unregister commands
     this.on('backendDisconnected', (backendId: string) => {
-      backendRouterConsole.log(`[DYNAMIC_COMMAND_ROUTER] Backend ${backendId} disconnected - unregistering commands`);
+      console.log(`[DYNAMIC_COMMAND_ROUTER] Backend ${backendId} disconnected - unregistering commands`);
       this.commandRouter.unregisterBackend(backendId);
     });
 
     // Forward command router events for debugging/monitoring
     this.commandRouter.on('backendRegistered', (event: BackendEventPayload) => {
-      backendRouterConsole.log(`[DYNAMIC_COMMAND_ROUTER] Commands registered for ${event.backendId}: ${event.commandCount} commands, ${event.aliasCount} aliases`);
+      console.log(`[DYNAMIC_COMMAND_ROUTER] Commands registered for ${event.backendId}: ${event.commandCount} commands, ${event.aliasCount} aliases`);
     });
 
     this.commandRouter.on('backendUnregistered', (event: BackendEventPayload) => {
-      backendRouterConsole.log(`[DYNAMIC_COMMAND_ROUTER] Commands unregistered for ${event.backendId}: ${event.commandsRemoved} commands, ${event.aliasesRemoved} aliases`);
+      console.log(`[DYNAMIC_COMMAND_ROUTER] Commands unregistered for ${event.backendId}: ${event.commandsRemoved} commands, ${event.aliasesRemoved} aliases`);
     });
   }
 
@@ -1029,7 +896,7 @@ export class TemplumBackendServiceRouter
    */
   async registerBackendFromSkin(skinDefinition: UniversalSkinDefinition): Promise<void> {
     if (!skinDefinition.backendConfig) {
-      backendRouterConsole.warn('Skin definition does not contain backendConfig - skipping backend registration');
+      console.warn('Skin definition does not contain backendConfig - skipping backend registration');
       return;
     }
 
@@ -1042,8 +909,8 @@ export class TemplumBackendServiceRouter
       'unknown-backend';
     const backendConfig = skinDefinition.backendConfig;
 
-    backendRouterConsole.log(`[GENERIC] Registering backend ${backendId} from skin definition`);
-    backendRouterConsole.log(`[GENERIC] Protocol: ${backendConfig.protocol}, Endpoint: ${backendConfig.endpoint}`);
+    console.log(`[GENERIC] Registering backend ${backendId} from skin definition`);
+    console.log(`[GENERIC] Protocol: ${backendConfig.protocol}, Endpoint: ${backendConfig.endpoint}`);
 
     // Store the backend configuration
     this.backendConfigs.set(backendId, backendConfig);
@@ -1051,7 +918,7 @@ export class TemplumBackendServiceRouter
     // TASK-SKIN-004B: Detect and store backend capability profile during registration
     const capabilityProfile = this.detectBackendCapabilityProfile(backendId, skinDefinition);
     this.backendCapabilityProfiles.set(backendId, capabilityProfile);
-    backendRouterConsole.log(`[CAPABILITY_PROFILE] Detected profile for ${backendId}: ${capabilityProfile.skinDefinitionQuality} (health:${capabilityProfile.hasHealthEndpoint}, caps:${capabilityProfile.hasCapabilitiesEndpoint}, ver:${capabilityProfile.hasVersionEndpoint})`);
+    console.log(`[CAPABILITY_PROFILE] Detected profile for ${backendId}: ${capabilityProfile.skinDefinitionQuality} (health:${capabilityProfile.hasHealthEndpoint}, caps:${capabilityProfile.hasCapabilitiesEndpoint}, ver:${capabilityProfile.hasVersionEndpoint})`);
 
     // Initialize service health for new backend
     this.serviceHealth.set(backendId, {
@@ -1070,19 +937,19 @@ export class TemplumBackendServiceRouter
     try {
       const connectionResult = await this.connectToService(backendId);
       if (connectionResult.success) {
-        backendRouterConsole.log(
+        console.log(
           `[GENERIC] Backend ${backendId} auto-connected during skin registration (${connectionResult.responseTime}ms)`
         );
       } else {
-        backendRouterConsole.warn(
+        console.warn(
           `[GENERIC] Backend ${backendId} auto-connection deferred: ${connectionResult.message}`
         );
       }
     } catch (error) {
-      backendRouterConsole.warn(`[GENERIC] Backend ${backendId} auto-connection failed:`, error);
+      console.warn(`[GENERIC] Backend ${backendId} auto-connection failed:`, error);
     }
 
-    backendRouterConsole.log(`[GENERIC] Backend ${backendId} registered successfully with generic system`);
+    console.log(`[GENERIC] Backend ${backendId} registered successfully with generic system`);
   }
 
   /**
@@ -1141,7 +1008,7 @@ export class TemplumBackendServiceRouter
     const _startTime = Date.now();
 
     // GENERIC SYSTEM: Always use skin-driven discovery
-    backendRouterConsole.log('[GENERIC_INTEGRATION] Starting skin-driven backend discovery');
+    console.log('[GENERIC_INTEGRATION] Starting skin-driven backend discovery');
     await this.discoverAndConnectGeneric();
   }
 
@@ -1150,7 +1017,7 @@ export class TemplumBackendServiceRouter
    * NEW APPROACH: Replaces hardcoded discovery with intelligent multi-strategy discovery
    */
   private async discoverAndConnectGeneric(): Promise<void> {
-    backendRouterConsole.log('[SERVICE_DISCOVERY] Starting generic multi-strategy service discovery...');
+    console.log('[SERVICE_DISCOVERY] Starting generic multi-strategy service discovery...');
     
     const discoveredServices: string[] = [];
     const failedServices: string[] = [];
@@ -1164,7 +1031,7 @@ export class TemplumBackendServiceRouter
     try {
       // Use ServiceDiscovery system to find available backends
       const discoveredBackends = await this.resolveDiscoveredBackends();
-      backendRouterConsole.log(`[SERVICE_DISCOVERY] Discovery found ${discoveredBackends.length} potential backends`);
+      console.log(`[SERVICE_DISCOVERY] Discovery found ${discoveredBackends.length} potential backends`);
 
       // Clear existing backend configs and replace with discovered ones
       this.backendConfigs.clear();
@@ -1172,7 +1039,7 @@ export class TemplumBackendServiceRouter
       
       // Process discovered services
       for (const discoveredService of discoveredBackends) {
-        backendRouterConsole.log(`[SERVICE_DISCOVERY] Processing discovered service: ${discoveredService.id} (${discoveredService.discoveryMethod}, confidence: ${discoveredService.confidence})`);
+        console.log(`[SERVICE_DISCOVERY] Processing discovered service: ${discoveredService.id} (${discoveredService.discoveryMethod}, confidence: ${discoveredService.confidence})`);
         
         // Cache the discovered service metadata for downstream consumers
         this.discoveredServiceCache.set(discoveredService.id, discoveredService);
@@ -1192,7 +1059,7 @@ export class TemplumBackendServiceRouter
       // Connect to discovered services using the same connection logic
       const connectionPromises = Array.from(this.backendConfigs.entries()).map(async ([serviceId, config]) => {
         discoveryMetrics.totalAttempts++;
-        backendRouterConsole.log(`[SERVICE_DISCOVERY] Connecting to discovered service ${serviceId} at ${config.endpoint}`);
+        console.log(`[SERVICE_DISCOVERY] Connecting to discovered service ${serviceId} at ${config.endpoint}`);
         
         try {
           const connected = await this.connectToServiceGeneric(serviceId, config, discoveryMetrics, 'discovery');
@@ -1202,17 +1069,17 @@ export class TemplumBackendServiceRouter
             // Enhanced health monitoring with capability detection
             await this.detectServiceCapabilities(serviceId);
             this.updateServiceHealth(serviceId, true, 'healthy', undefined, await this.getServiceVersion(serviceId));
-            backendRouterConsole.log(`[SERVICE_DISCOVERY] Successfully connected to ${serviceId}`);
+            console.log(`[SERVICE_DISCOVERY] Successfully connected to ${serviceId}`);
           } else {
             failedServices.push(serviceId);
             this.updateServiceHealth(serviceId, false, 'unhealthy', `Connection failed for ${config.endpoint}`);
-            backendRouterConsole.warn(`[SERVICE_DISCOVERY] Connection failed for ${serviceId}`);
+            console.warn(`[SERVICE_DISCOVERY] Connection failed for ${serviceId}`);
           }
         } catch (error) {
           failedServices.push(serviceId);
           const errorMessage = error instanceof Error ? error.message : 'Unknown error';
           this.updateServiceHealth(serviceId, false, 'error', errorMessage);
-          backendRouterConsole.warn(`[SERVICE_DISCOVERY] Connection error for ${serviceId}: ${errorMessage}`);
+          console.warn(`[SERVICE_DISCOVERY] Connection error for ${serviceId}: ${errorMessage}`);
         }
       });
 
@@ -1222,17 +1089,17 @@ export class TemplumBackendServiceRouter
       this.manualOverrideManager.syncWithServices(new Set(this.backendConfigs.keys()));
       
     } catch (error) {
-      backendRouterConsole.error('[SERVICE_DISCOVERY] Generic discovery failed:', error);
+      console.error('[SERVICE_DISCOVERY] Generic discovery failed:', error);
       // Generic system failure - no fallback to hardcoded legacy system
-      backendRouterConsole.warn('[SERVICE_DISCOVERY] Generic discovery failure - system running in standalone mode');
+      console.warn('[SERVICE_DISCOVERY] Generic discovery failure - system running in standalone mode');
     }
 
     const discoveryDuration = Date.now() - discoveryMetrics.discoveryStartTime;
     const totalServices = this.backendConfigs.size;
     const successRate = totalServices > 0 ? (discoveredServices.length / totalServices * 100) : 0;
 
-    backendRouterConsole.log(`[SERVICE_DISCOVERY] Generic discovery complete - ${discoveredServices.length}/${totalServices} services connected`);
-    backendRouterConsole.log(`[SERVICE_DISCOVERY] Metrics - Success rate: ${successRate.toFixed(1)}%, Duration: ${discoveryDuration}ms`);
+    console.log(`[SERVICE_DISCOVERY] Generic discovery complete - ${discoveredServices.length}/${totalServices} services connected`);
+    console.log(`[SERVICE_DISCOVERY] Metrics - Success rate: ${successRate.toFixed(1)}%, Duration: ${discoveryDuration}ms`);
 
     // Emit discovery completion event
     this.emit('discovery:complete', {
@@ -1246,9 +1113,9 @@ export class TemplumBackendServiceRouter
     });
 
     if (discoveredServices.length === 0) {
-      backendRouterConsole.warn('[SERVICE_DISCOVERY] No services connected - system running in standalone mode');
+      console.warn('[SERVICE_DISCOVERY] No services connected - system running in standalone mode');
     } else {
-      backendRouterConsole.log(`[SERVICE_DISCOVERY] Successfully connected to ${discoveredServices.length} backend services`);
+      console.log(`[SERVICE_DISCOVERY] Successfully connected to ${discoveredServices.length} backend services`);
       if (this.healthMonitoringEnabled) {
         this.startContinuousHealthMonitoring();
       }
@@ -1268,24 +1135,24 @@ export class TemplumBackendServiceRouter
       }
 
       if (discoveryResult !== undefined) {
-        backendRouterConsole.warn(
+        console.warn(
           `[SERVICE_DISCOVERY] Expected discoverServices() to return an array, received ${typeof discoveryResult}; using cached services instead.`
         );
       }
     } catch (error) {
-      backendRouterConsole.warn('[SERVICE_DISCOVERY] discoverServices() failed; falling back to cached services.', error);
+      console.warn('[SERVICE_DISCOVERY] discoverServices() failed; falling back to cached services.', error);
     }
 
     try {
       const cachedServices = this.serviceDiscovery.getDiscoveredServices();
 
       if (cachedServices.length > 0) {
-        backendRouterConsole.log(`[SERVICE_DISCOVERY] Using ${cachedServices.length} cached service entries for connection attempts.`);
+        console.log(`[SERVICE_DISCOVERY] Using ${cachedServices.length} cached service entries for connection attempts.`);
       }
 
       return cachedServices;
     } catch (cacheError) {
-      backendRouterConsole.warn('[SERVICE_DISCOVERY] Unable to access cached discovered services; proceeding with empty list.', cacheError);
+      console.warn('[SERVICE_DISCOVERY] Unable to access cached discovered services; proceeding with empty list.', cacheError);
       return [];
     }
   }
@@ -1307,7 +1174,7 @@ export class TemplumBackendServiceRouter
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       const attemptStart = Date.now();
       try {
-        backendRouterConsole.log(`Backend Service Router: [GENERIC] Connection attempt ${attempt + 1}/${maxRetries} for ${serviceId}`);
+        console.log(`Backend Service Router: [GENERIC] Connection attempt ${attempt + 1}/${maxRetries} for ${serviceId}`);
         
         // USE CONNECTION FACTORY: Create connection based on backend configuration
         const connection = await ConnectionFactory.create(serviceId, config);
@@ -1318,7 +1185,7 @@ export class TemplumBackendServiceRouter
           await connection.connect();
           
           if (connection.isConnected()) {
-            backendRouterConsole.log(`Backend Service Router: [GENERIC] Successfully connected to ${serviceId} on attempt ${attempt + 1}`);
+            console.log(`Backend Service Router: [GENERIC] Successfully connected to ${serviceId} on attempt ${attempt + 1}`);
             const responseTimeMs = Date.now() - attemptStart;
             this.lifecycleChannel.emitConnected(serviceId, {
               attempts: attempt + 1,
@@ -1337,13 +1204,13 @@ export class TemplumBackendServiceRouter
         // Exponential backoff for retries
         if (attempt < maxRetries - 1) {
           const delayMs = baseDelayMs * Math.pow(2, attempt);
-          backendRouterConsole.log(`Backend Service Router: [GENERIC] Retrying ${serviceId} in ${delayMs}ms...`);
+          console.log(`Backend Service Router: [GENERIC] Retrying ${serviceId} in ${delayMs}ms...`);
           metrics.retryAttempts++;
           await sleep(delayMs);
         }
         
       } catch (error) {
-        backendRouterConsole.warn(`Backend Service Router: [GENERIC] Connection attempt ${attempt + 1} failed for ${serviceId}:`, error);
+        console.warn(`Backend Service Router: [GENERIC] Connection attempt ${attempt + 1} failed for ${serviceId}:`, error);
         metrics.retryAttempts++;
         
         if (attempt === maxRetries - 1) {
@@ -1386,26 +1253,26 @@ export class TemplumBackendServiceRouter
     
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       try {
-        backendRouterConsole.log(`Backend Service Router: Discovery attempt ${attempt + 1}/${maxRetries} for ${serviceId}`);
+        console.log(`Backend Service Router: Discovery attempt ${attempt + 1}/${maxRetries} for ${serviceId}`);
         
         // Protocol-specific discovery optimizations
         const connected = await this.connectToServiceWithDiscovery(serviceId, endpoint);
         
         if (connected) {
-          backendRouterConsole.log(`Backend Service Router: Successfully discovered ${serviceId} on attempt ${attempt + 1}`);
+          console.log(`Backend Service Router: Successfully discovered ${serviceId} on attempt ${attempt + 1}`);
           return true;
         }
         
         // Exponential backoff for retries
         if (attempt < maxRetries - 1) {
           const delayMs = baseDelayMs * Math.pow(2, attempt);
-          backendRouterConsole.log(`Backend Service Router: Retrying ${serviceId} in ${delayMs}ms...`);
+          console.log(`Backend Service Router: Retrying ${serviceId} in ${delayMs}ms...`);
           metrics.retryAttempts++;
           await sleep(delayMs);
         }
         
       } catch (error) {
-        backendRouterConsole.warn(`Backend Service Router: Discovery attempt ${attempt + 1} failed for ${serviceId}:`, error);
+        console.warn(`Backend Service Router: Discovery attempt ${attempt + 1} failed for ${serviceId}:`, error);
         metrics.retryAttempts++;
         
         // Continue retrying unless it's the last attempt
@@ -1440,7 +1307,7 @@ export class TemplumBackendServiceRouter
       
       return false;
     } catch (error) {
-      backendRouterConsole.error(`Failed to connect to ${serviceId} at ${endpoint}:`, error);
+      console.error(`Failed to connect to ${serviceId} at ${endpoint}:`, error);
       return false;
     }
   }
@@ -1450,7 +1317,7 @@ export class TemplumBackendServiceRouter
    */
   private async verifyServiceConnection(serviceId: string, connection: BackendConnection): Promise<boolean> {
     try {
-      backendRouterConsole.log(`Backend Service Router: Verifying ${serviceId} connection via ${connection.protocol}...`);
+      console.log(`Backend Service Router: Verifying ${serviceId} connection via ${connection.protocol}...`);
       
       // Protocol-specific verification
       switch (connection.protocol) {
@@ -1464,7 +1331,7 @@ export class TemplumBackendServiceRouter
           return true; // Basic connection established
       }
     } catch (error) {
-      backendRouterConsole.warn(`Service verification failed for ${serviceId}:`, error);
+      console.warn(`Service verification failed for ${serviceId}:`, error);
       return false;
     }
   }
@@ -1586,7 +1453,7 @@ export class TemplumBackendServiceRouter
           if (pingOutcome.ok && pingOutcome.value) {
             ws.send(pingOutcome.value);
           } else {
-            backendRouterConsole.warn('[WebSocket] Verification ping serialization failed', {
+            console.warn('[WebSocket] Verification ping serialization failed', {
               context: pingOutcome.meta.context,
               status: pingOutcome.status
             });
@@ -1609,7 +1476,7 @@ export class TemplumBackendServiceRouter
         return;
       }
 
-      backendRouterConsole.log(`Backend Service Router: Detecting capabilities for ${serviceId}...`);
+      console.log(`Backend Service Router: Detecting capabilities for ${serviceId}...`);
       
       // Attempt to query service capabilities
       const capabilities = await this.queryServiceCapabilities(serviceId, connection);
@@ -1618,10 +1485,10 @@ export class TemplumBackendServiceRouter
       const currentStatus = this.serviceHealth.get(serviceId);
       if (currentStatus && capabilities.length > 0) {
         currentStatus.capabilities = capabilities;
-        backendRouterConsole.log(`Backend Service Router: Detected ${capabilities.length} capabilities for ${serviceId}:`, capabilities);
+        console.log(`Backend Service Router: Detected ${capabilities.length} capabilities for ${serviceId}:`, capabilities);
       }
     } catch (error) {
-      backendRouterConsole.warn(`Capability detection failed for ${serviceId}:`, error);
+      console.warn(`Capability detection failed for ${serviceId}:`, error);
       // Keep default capabilities from initialization
     }
   }
@@ -1638,7 +1505,7 @@ export class TemplumBackendServiceRouter
       TypeValidators.isArrayOf(backendConfig.capabilities, TypeGuards.isNonEmptyString) &&
       backendConfig.capabilities.length > 0
     ) {
-      backendRouterConsole.log(
+      console.log(
         `[SKIN-CAPABILITIES] Using capabilities from skin definition for ${serviceId}:`,
         backendConfig.capabilities,
       );
@@ -1648,7 +1515,7 @@ export class TemplumBackendServiceRouter
     // STEP 2: Only call API if explicitly specified in skin definition
     if (backendConfig?.capabilitiesEndpoint) {
       try {
-        backendRouterConsole.log(`[API-CAPABILITIES] Calling explicit capabilitiesEndpoint for ${serviceId}: ${backendConfig.capabilitiesEndpoint}`);
+        console.log(`[API-CAPABILITIES] Calling explicit capabilitiesEndpoint for ${serviceId}: ${backendConfig.capabilitiesEndpoint}`);
         const response = await this.callBackendServiceAPI(connection, 'getCapabilities', {});
         
         if (
@@ -1659,17 +1526,17 @@ export class TemplumBackendServiceRouter
           })
         ) {
           const capabilityList = (response as { capabilities: string[] }).capabilities;
-          backendRouterConsole.log(`[API-CAPABILITIES] Retrieved capabilities from endpoint for ${serviceId}:`, capabilityList);
+          console.log(`[API-CAPABILITIES] Retrieved capabilities from endpoint for ${serviceId}:`, capabilityList);
           return capabilityList;
         }
       } catch (error) {
-        backendRouterConsole.warn(`[API-CAPABILITIES] Failed to query capabilities endpoint for ${serviceId}:`, error);
+        console.warn(`[API-CAPABILITIES] Failed to query capabilities endpoint for ${serviceId}:`, error);
       }
     }
     
     // STEP 3: Return default capabilities as final fallback
     const defaultCapabilities = this.serviceHealth.get(serviceId)?.capabilities || [];
-    backendRouterConsole.log(`[FALLBACK-CAPABILITIES] Using default capabilities for ${serviceId}:`, defaultCapabilities);
+    console.log(`[FALLBACK-CAPABILITIES] Using default capabilities for ${serviceId}:`, defaultCapabilities);
     return defaultCapabilities;
   }
 
@@ -1691,32 +1558,32 @@ export class TemplumBackendServiceRouter
       try {
         const skinDefinition = await this.loadBackendSkin(serviceId);
         if (skinDefinition?.metadata?.version) {
-          backendRouterConsole.log(`[SKIN-VERSION] ${serviceId} version from skin metadata: ${skinDefinition.metadata.version}`);
+          console.log(`[SKIN-VERSION] ${serviceId} version from skin metadata: ${skinDefinition.metadata.version}`);
           return skinDefinition.metadata.version;
         }
       } catch (skinError) {
-        backendRouterConsole.debug(`[SKIN-VERSION] Could not load skin for ${serviceId}:`, skinError);
+        console.debug(`[SKIN-VERSION] Could not load skin for ${serviceId}:`, skinError);
         // Continue to secondary method
       }
 
       // TASK-SKIN-006: Secondary - Use version endpoint if specified in backend config endpoints
       const backendConfig = this.backendConfigs.get(serviceId);
       if (backendConfig?.endpoints?.version) {
-        backendRouterConsole.log(`[SKIN-VERSION] ${serviceId} has version endpoint, querying: ${backendConfig.endpoints.version}`);
+        console.log(`[SKIN-VERSION] ${serviceId} has version endpoint, querying: ${backendConfig.endpoints.version}`);
         const response = await this.callBackendServiceAPI(connection, 'getVersion', {});
         
         if (response && (response as { version?: string }).version) {
-          backendRouterConsole.log(`[SKIN-VERSION] ${serviceId} version from endpoint: ${(response as { version?: string }).version}`);
+          console.log(`[SKIN-VERSION] ${serviceId} version from endpoint: ${(response as { version?: string }).version}`);
           return (response as { version?: string }).version!
         }
       }
     } catch (error) {
-      backendRouterConsole.debug(`[SKIN-VERSION] Version query failed for ${serviceId}:`, error);
+      console.debug(`[SKIN-VERSION] Version query failed for ${serviceId}:`, error);
       // Continue to fallback
     }
     
     // TASK-SKIN-006: Fallback - Return undefined for no version display
-    backendRouterConsole.debug(`[SKIN-VERSION] No version information available for ${serviceId}`);
+    console.debug(`[SKIN-VERSION] No version information available for ${serviceId}`);
     return undefined;
   }
 
@@ -1728,7 +1595,7 @@ export class TemplumBackendServiceRouter
       return;
     }
 
-    backendRouterConsole.log('Backend Service Router: Starting continuous health monitoring...');
+    console.log('Backend Service Router: Starting continuous health monitoring...');
     
     // GENERIC INTEGRATION: Continuous health monitoring for skin-driven backends
     // Integrated with Universal Skin Engine coordination for enhanced monitoring
@@ -1869,7 +1736,7 @@ export class TemplumBackendServiceRouter
     // Calculate stability percentage
     stability.stabilityPercentage = (stability.successfulConnections / stability.totalConnectionAttempts) * 100;
 
-    backendRouterConsole.log(`[CONNECTION_STABILITY] ${serviceId} stability: ${stability.stabilityPercentage.toFixed(1)}% (${stability.successfulConnections}/${stability.totalConnectionAttempts})`);
+    console.log(`[CONNECTION_STABILITY] ${serviceId} stability: ${stability.stabilityPercentage.toFixed(1)}% (${stability.successfulConnections}/${stability.totalConnectionAttempts})`);
   }
 
   /**
@@ -2002,20 +1869,20 @@ export class TemplumBackendServiceRouter
       },
       connect: async () => {
         try {
-          backendRouterConsole.log(`[IPC] Establishing real connection to ${serviceId} Haruspex service`);
+          console.log(`[IPC] Establishing real connection to ${serviceId} Haruspex service`);
           
           // Connect to real running Haruspex service using IPC protocol
           await ipcClient.connect();
           connected = true;
           
-          backendRouterConsole.log(`[IPC] Successfully connected to real ${serviceId} service`);
+          console.log(`[IPC] Successfully connected to real ${serviceId} service`);
           
           // Verify connection with ping
           try {
             await ipcClient.sendRequest('ping');
-            backendRouterConsole.log(`[IPC] Connection verified with ${serviceId} service`);
+            console.log(`[IPC] Connection verified with ${serviceId} service`);
           } catch (error) {
-            backendRouterConsole.warn(`[IPC] Ping verification failed, but connection established: ${error}`);
+            console.warn(`[IPC] Ping verification failed, but connection established: ${error}`);
           }
           
         } catch (error) {
@@ -2025,12 +1892,12 @@ export class TemplumBackendServiceRouter
       },
       disconnect: async () => {
         try {
-          backendRouterConsole.log(`[IPC] Disconnecting from real ${serviceId} service`);
+          console.log(`[IPC] Disconnecting from real ${serviceId} service`);
           await ipcClient.disconnect();
           connected = false;
-          backendRouterConsole.log(`[IPC] Successfully disconnected from ${serviceId} service`);
+          console.log(`[IPC] Successfully disconnected from ${serviceId} service`);
         } catch (error) {
-          backendRouterConsole.warn(`[IPC] Warning during disconnection from ${serviceId}: ${error}`);
+          console.warn(`[IPC] Warning during disconnection from ${serviceId}: ${error}`);
           connected = false;
         }
       }
@@ -2051,7 +1918,7 @@ export class TemplumBackendServiceRouter
       isConnected: () => httpConnected,
       connect: async () => {
         try {
-          backendRouterConsole.log(`[HTTP] Testing real connection to ${serviceId} PCL service at ${endpoint}`);
+          console.log(`[HTTP] Testing real connection to ${serviceId} PCL service at ${endpoint}`);
           
           // Real HTTP Communication Implementation - COMPLETE
           // Uses fetch() API for health checks and service verification
@@ -2080,7 +1947,7 @@ export class TemplumBackendServiceRouter
 
                 if (response.ok) {
                   const data = await response.text();
-                  backendRouterConsole.log(
+                  console.log(
                     `[HTTP] Real ${serviceId} service health check successful at ${healthEndpoint}:`,
                     data?.substring(0, 100) || 'OK'
                   );
@@ -2088,13 +1955,13 @@ export class TemplumBackendServiceRouter
                   break;
                 }
               } catch (endpointError) {
-                backendRouterConsole.log(`[HTTP] Health check failed for ${healthEndpoint}: ${endpointError}`);
+                console.log(`[HTTP] Health check failed for ${healthEndpoint}: ${endpointError}`);
               }
             }
 
             if (connected) {
               httpConnected = true;
-              backendRouterConsole.log(`[HTTP] Successfully connected to real ${serviceId} PCL service`);
+              console.log(`[HTTP] Successfully connected to real ${serviceId} PCL service`);
               await this.testPCLServiceCapabilities(endpoint, serviceId);
             } else {
               throw new Error(`All health endpoints failed for ${serviceId} service`);
@@ -2108,7 +1975,7 @@ export class TemplumBackendServiceRouter
         }
       },
       disconnect: async () => {
-        backendRouterConsole.log(`[HTTP] Disconnecting from real ${serviceId} PCL service`);
+        console.log(`[HTTP] Disconnecting from real ${serviceId} PCL service`);
         httpConnected = false;
       }
     };
@@ -2126,7 +1993,7 @@ export class TemplumBackendServiceRouter
         `${endpoint}/api/version`
       ];
 
-      backendRouterConsole.log(`[HTTP] Testing real ${serviceId} PCL service capabilities...`);
+      console.log(`[HTTP] Testing real ${serviceId} PCL service capabilities...`);
       
       for (const testEndpoint of testEndpoints) {
         try {
@@ -2138,14 +2005,14 @@ export class TemplumBackendServiceRouter
           
           if (response.ok) {
             const data = await response.json();
-            backendRouterConsole.log(`[HTTP] Real ${serviceId} service endpoint ${testEndpoint} available:`, data);
+            console.log(`[HTTP] Real ${serviceId} service endpoint ${testEndpoint} available:`, data);
           }
         } catch (error) {
-          backendRouterConsole.log(`[HTTP] Real ${serviceId} service endpoint ${testEndpoint} not available: ${error}`);
+          console.log(`[HTTP] Real ${serviceId} service endpoint ${testEndpoint} not available: ${error}`);
         }
       }
     } catch (error) {
-      backendRouterConsole.warn(`[HTTP] PCL service capability testing failed: ${error}`);
+      console.warn(`[HTTP] PCL service capability testing failed: ${error}`);
     }
   }
 
@@ -2165,7 +2032,7 @@ export class TemplumBackendServiceRouter
       isConnected: () => wsConnected && ws !== null && ws.readyState === ws.OPEN,
       connect: async () => {
         try {
-          backendRouterConsole.log(`[WebSocket] Establishing real connection to ${serviceId} Litany service at ${endpoint}`);
+          console.log(`[WebSocket] Establishing real connection to ${serviceId} Litany service at ${endpoint}`);
           
           // Real WebSocket Communication Implementation - COMPLETED
           // Implements real Litany WebSocket service integration with enhanced handshake protocol
@@ -2195,33 +2062,33 @@ export class TemplumBackendServiceRouter
             }, 15000); // Longer timeout for real service connection
 
             ws!.onopen = async () => {
-              backendRouterConsole.log(`[WebSocket] Real connection established to ${serviceId} service`);
+              console.log(`[WebSocket] Real connection established to ${serviceId} service`);
               
               try {
                 await this.performLitanyHandshake(ws!, serviceId);
                 wsConnected = true;
-                backendRouterConsole.log(`[WebSocket] Successfully connected to real ${serviceId} service`);
+                console.log(`[WebSocket] Successfully connected to real ${serviceId} service`);
                 settle(() => resolve());
               } catch (handshakeError) {
                 wsConnected = false;
-                backendRouterConsole.error(`[WebSocket] Handshake failed with real ${serviceId} service:`, handshakeError);
+                console.error(`[WebSocket] Handshake failed with real ${serviceId} service:`, handshakeError);
                 settle(() => reject(handshakeError));
               }
             };
 
             ws!.onerror = (error) => {
               wsConnected = false;
-              backendRouterConsole.error(`[WebSocket] Real connection error for ${serviceId}:`, error);
+              console.error(`[WebSocket] Real connection error for ${serviceId}:`, error);
               settle(() => reject(error instanceof Error ? error : new Error(String(error))));
             };
 
             ws!.onclose = () => {
               wsConnected = false;
-              backendRouterConsole.log(`[WebSocket] Real ${serviceId} service connection closed`);
+              console.log(`[WebSocket] Real ${serviceId} service connection closed`);
             };
 
             ws!.onmessage = (event) => {
-              backendRouterConsole.log(`[WebSocket] Real message from ${serviceId}:`, event.data);
+              console.log(`[WebSocket] Real message from ${serviceId}:`, event.data);
               
               const outcome = this.parseRouterMessage<LitanyWebSocketMessage | IPCMessage>(
                 event.data.toString(),
@@ -2235,7 +2102,7 @@ export class TemplumBackendServiceRouter
               if (outcome.value) {
                 this.processLitanyWebSocketMessage(serviceId, outcome.value);
               } else if (!outcome.ok) {
-                backendRouterConsole.warn(`[WebSocket] Failed to parse unsolicited Litany message from ${serviceId}`, {
+                console.warn(`[WebSocket] Failed to parse unsolicited Litany message from ${serviceId}`, {
                   context: outcome.meta.context,
                   status: outcome.status
                 });
@@ -2249,7 +2116,7 @@ export class TemplumBackendServiceRouter
       },
       disconnect: async () => {
         if (ws && ws.readyState === ws.OPEN) {
-          backendRouterConsole.log(`[WebSocket] Disconnecting from real ${serviceId} service`);
+          console.log(`[WebSocket] Disconnecting from real ${serviceId} service`);
           ws.close();
           wsConnected = false;
           ws = null;
@@ -2263,7 +2130,7 @@ export class TemplumBackendServiceRouter
    */
   private async performLitanyHandshake(ws: WebSocket.WebSocket, serviceId: string): Promise<void> {
     return new Promise<void>((resolve, reject) => {
-      backendRouterConsole.log(`[WebSocket] Performing real handshake with ${serviceId} Litany service`);
+      console.log(`[WebSocket] Performing real handshake with ${serviceId} Litany service`);
       
       let settled = false;
       let handshakeTimeout: ManagedTimeout;
@@ -2306,7 +2173,7 @@ export class TemplumBackendServiceRouter
         const response = outcome.value as IPCResponse & { success?: boolean; error?: string };
 
         if (response.type === 'handshake_ack' && response.success) {
-          backendRouterConsole.log(`[WebSocket] Litany service handshake successful for ${serviceId}`);
+          console.log(`[WebSocket] Litany service handshake successful for ${serviceId}`);
           finish(() => resolve());
         } else if (response.type === 'handshake_error') {
           finish(() => reject(new Error(`Litany service handshake failed: ${response.error || 'Unknown error'}`)));
@@ -2324,7 +2191,7 @@ export class TemplumBackendServiceRouter
 
         if (outbound.ok && outbound.value) {
           ws.send(outbound.value);
-          backendRouterConsole.log(`[WebSocket] Handshake message sent to ${serviceId} Litany service`);
+          console.log(`[WebSocket] Handshake message sent to ${serviceId} Litany service`);
         } else {
           throw new Error(
             `Handshake serialization failed (${outbound.status})`
@@ -2342,7 +2209,7 @@ export class TemplumBackendServiceRouter
    * Real implementation for context management and skin definition notifications
    */
   private processLitanyWebSocketMessage(serviceId: string, message: LitanyWebSocketMessage | IPCMessage): void {
-    backendRouterConsole.log(`[WebSocket] Processing Litany message from ${serviceId}:`, { 
+    console.log(`[WebSocket] Processing Litany message from ${serviceId}:`, { 
       type: message.type, 
       method: message.method,
       hasData: !!(message as IPCNotificationMessage).data 
@@ -2354,52 +2221,52 @@ export class TemplumBackendServiceRouter
         case 'skin_definition_updated':
           // Handle real-time skin definition updates
           const skinUpdateMsg = message as SkinDefinitionUpdateMessage;
-          backendRouterConsole.log(`[WebSocket] Litany ${serviceId} skin definition updated:`, skinUpdateMsg.skinId);
+          console.log(`[WebSocket] Litany ${serviceId} skin definition updated:`, skinUpdateMsg.skinId);
           if (skinUpdateMsg.skinDefinition) {
             // Emit signal for UI updates - other components can listen for skin changes
-            backendRouterConsole.log(`[WebSocket] Broadcasting skin definition update for ${skinUpdateMsg.skinId}`);
+            console.log(`[WebSocket] Broadcasting skin definition update for ${skinUpdateMsg.skinId}`);
           }
           break;
 
         case 'context_sync_notification':
           // Handle context synchronization notifications from Litany
           const contextSyncMsg = message as ContextSyncNotificationMessage;
-          backendRouterConsole.log(`[WebSocket] Litany ${serviceId} context sync notification:`, contextSyncMsg.contextId);
+          console.log(`[WebSocket] Litany ${serviceId} context sync notification:`, contextSyncMsg.contextId);
           if (contextSyncMsg.data?.syncStatus) {
-            backendRouterConsole.log(`[WebSocket] Context sync ${contextSyncMsg.data.syncStatus} for ${contextSyncMsg.contextId}`);
+            console.log(`[WebSocket] Context sync ${contextSyncMsg.data.syncStatus} for ${contextSyncMsg.contextId}`);
           }
           break;
 
         case 'analysis_complete':
           // Handle completed analysis notifications
           const analysisCompleteMsg = message as AnalysisCompleteMessage;
-          backendRouterConsole.log(`[WebSocket] Litany ${serviceId} analysis completed:`, analysisCompleteMsg.analysisId);
+          console.log(`[WebSocket] Litany ${serviceId} analysis completed:`, analysisCompleteMsg.analysisId);
           if (analysisCompleteMsg.results) {
-            backendRouterConsole.log(`[WebSocket] Analysis results available for ${analysisCompleteMsg.analysisId}`);
+            console.log(`[WebSocket] Analysis results available for ${analysisCompleteMsg.analysisId}`);
           }
           break;
 
         case 'service_status':
           // Handle service status updates
           const serviceStatusMsg = message as ServiceStatusMessage;
-          backendRouterConsole.log(`[WebSocket] Litany ${serviceId} status update:`, serviceStatusMsg.status);
+          console.log(`[WebSocket] Litany ${serviceId} status update:`, serviceStatusMsg.status);
           break;
 
         case 'error_notification':
           // Handle error notifications from Litany service
           const errorNotificationMsg = message as ErrorNotificationMessage;
-          backendRouterConsole.warn(`[WebSocket] Litany ${serviceId} error notification:`, errorNotificationMsg.error);
+          console.warn(`[WebSocket] Litany ${serviceId} error notification:`, errorNotificationMsg.error);
           break;
 
         default:
           // Handle unknown message types with graceful logging
-          backendRouterConsole.log(`[WebSocket] Unknown Litany message type from ${serviceId}:`, message.type);
-          backendRouterConsole.log(`[WebSocket] Full message:`, message);
+          console.log(`[WebSocket] Unknown Litany message type from ${serviceId}:`, message.type);
+          console.log(`[WebSocket] Full message:`, message);
           break;
       }
     } catch (error) {
-      backendRouterConsole.error(`[WebSocket] Error processing Litany message from ${serviceId}:`, error);
-      backendRouterConsole.error(`[WebSocket] Problematic message:`, message);
+      console.error(`[WebSocket] Error processing Litany message from ${serviceId}:`, error);
+      console.error(`[WebSocket] Problematic message:`, message);
     }
   }
 
@@ -2409,7 +2276,7 @@ export class TemplumBackendServiceRouter
    */
   private async callBackendServiceAPI(connection: BackendConnection, apiMethod: string, payload: BackendServicePayload): Promise<BackendServicePayload> {
     try {
-      backendRouterConsole.log(`Calling ${apiMethod} on ${connection.id} via ${connection.protocol}...`);
+      console.log(`Calling ${apiMethod} on ${connection.id} via ${connection.protocol}...`);
       
       // Protocol-specific API call implementation
       switch (connection.protocol) {
@@ -2424,7 +2291,7 @@ export class TemplumBackendServiceRouter
       }
     } catch (error) {
       const errorMsg = isTemplumError(error) ? error.message : `API call failed: ${error}`;
-      backendRouterConsole.error(`Backend service API call failed for ${connection.id}.${apiMethod}:`, errorMsg);
+      console.error(`Backend service API call failed for ${connection.id}.${apiMethod}:`, errorMsg);
       throw createTemplumError(
         `Backend service API call failed: ${errorMsg}`,
         'API_CALL_FAILED',
@@ -2439,7 +2306,7 @@ export class TemplumBackendServiceRouter
    * Real IPC implementation using HaruspexIPCClient
    */
   private async callIPCService(connection: BackendConnection, apiMethod: string, payload: BackendServicePayload): Promise<BackendServicePayload> {
-    backendRouterConsole.log(`[IPC] Calling ${apiMethod} on ${connection.id}`);
+    console.log(`[IPC] Calling ${apiMethod} on ${connection.id}`);
     
     try {
       if (!connection.connection || !connection.isConnected()) {
@@ -2448,7 +2315,7 @@ export class TemplumBackendServiceRouter
 
       const ipcClient = connection.connection as HaruspexIPCClient;
       
-      backendRouterConsole.log(`[IPC] Sending real IPC request to ${connection.id}:`, { method: apiMethod });
+      console.log(`[IPC] Sending real IPC request to ${connection.id}:`, { method: apiMethod });
       
       // Map API methods to proper IPC message types
       let messageType: IPCMessageType;
@@ -2476,11 +2343,11 @@ export class TemplumBackendServiceRouter
       try {
         const response = await ipcClient.sendRequest(messageType, payload, apiMethod);
         
-        backendRouterConsole.log(`[IPC] Received real response from ${connection.id}:`, { method: apiMethod, hasData: !!response });
+        console.log(`[IPC] Received real response from ${connection.id}:`, { method: apiMethod, hasData: !!response });
         
         // Handle skin definition responses with graceful fallback
         if (apiMethod === 'getSkinDefinition' && !response) {
-          backendRouterConsole.log(`[ARCHITECTURAL SEPARATION] ${connection.id} skin definition not available, using graceful fallback`);
+          console.log(`[ARCHITECTURAL SEPARATION] ${connection.id} skin definition not available, using graceful fallback`);
           return { 
             fallback: true, 
             message: 'Skin definition not available from IPC backend',
@@ -2512,7 +2379,7 @@ export class TemplumBackendServiceRouter
       
     } catch (error) {
       const errorMsg = isTemplumError(error) ? error.message : `IPC call failed: ${error}`;
-      backendRouterConsole.error(`[IPC] Service call failed for ${connection.id}.${apiMethod}:`, errorMsg);
+      console.error(`[IPC] Service call failed for ${connection.id}.${apiMethod}:`, errorMsg);
       
       if (isTemplumError(error)) {
         throw error;
@@ -2532,7 +2399,7 @@ export class TemplumBackendServiceRouter
    * Enhanced implementation for real PCL service communication with fallback endpoints
    */
   private async callHTTPService(connection: BackendConnection, apiMethod: string, payload: BackendServicePayload): Promise<BackendServicePayload> {
-    backendRouterConsole.log(`[HTTP] Calling ${apiMethod} on real ${connection.id} PCL service`);
+    console.log(`[HTTP] Calling ${apiMethod} on real ${connection.id} PCL service`);
     
     try {
       if (!connection.isConnected()) {
@@ -2548,7 +2415,7 @@ export class TemplumBackendServiceRouter
       
     } catch (error) {
       const errorMsg = isTemplumError(error) ? error.message : `HTTP call failed: ${error}`;
-      backendRouterConsole.error(`[HTTP] Service call failed for ${connection.id}.${apiMethod}:`, errorMsg);
+      console.error(`[HTTP] Service call failed for ${connection.id}.${apiMethod}:`, errorMsg);
       
       if (isTemplumError(error)) {
         throw error;
@@ -2574,7 +2441,7 @@ export class TemplumBackendServiceRouter
     
     for (const attempt of endpointAttempts) {
       try {
-        backendRouterConsole.log(`[HTTP] Trying ${connection.id} endpoint: ${attempt.method} ${attempt.endpoint}`);
+        console.log(`[HTTP] Trying ${connection.id} endpoint: ${attempt.method} ${attempt.endpoint}`);
         
         const controller = new AbortController();
         const timeout = this.scheduleTimeout(() => controller.abort(), 30000);
@@ -2607,7 +2474,7 @@ export class TemplumBackendServiceRouter
 
           if (response.ok) {
             const responseData = await response.json();
-            backendRouterConsole.log(`[HTTP] SUCCESS ${connection.id} endpoint: ${attempt.method} ${attempt.endpoint}`);
+            console.log(`[HTTP] SUCCESS ${connection.id} endpoint: ${attempt.method} ${attempt.endpoint}`);
             
             // Handle response transformation if needed
             const result = attempt.transformResponse 
@@ -2625,7 +2492,7 @@ export class TemplumBackendServiceRouter
         }
         
       } catch (error) {
-        backendRouterConsole.warn(`[HTTP] Failed ${connection.id} endpoint: ${attempt.endpoint} - ${error}`);
+        console.warn(`[HTTP] Failed ${connection.id} endpoint: ${attempt.endpoint} - ${error}`);
         lastError = error as Error;
         continue;
       }
@@ -2730,7 +2597,7 @@ export class TemplumBackendServiceRouter
   private getGracefulFallbackResponse(connection: BackendConnection, apiMethod: string, _payload: BackendServicePayload): BackendServicePayload {
     switch (apiMethod) {
       case 'getCapabilities':
-        backendRouterConsole.log(`[FALLBACK] Providing default capabilities for ${connection.id}`);
+        console.log(`[FALLBACK] Providing default capabilities for ${connection.id}`);
         return {
           capabilities: ['getSkinDefinition', 'executeCommand', 'health'],
           source: 'templum-fallback',
@@ -2738,7 +2605,7 @@ export class TemplumBackendServiceRouter
         };
         
       case 'getVersion':
-        backendRouterConsole.log(`[FALLBACK] Providing default version for ${connection.id}`);
+        console.log(`[FALLBACK] Providing default version for ${connection.id}`);
         return {
           version: 'unknown',
           source: 'templum-fallback',
@@ -2759,7 +2626,7 @@ export class TemplumBackendServiceRouter
    * Enhanced implementation for real Litany service communication
    */
   private async callWebSocketService(connection: BackendConnection, apiMethod: string, payload: BackendServicePayload): Promise<BackendServicePayload> {
-    backendRouterConsole.log(`[WebSocket] Calling ${apiMethod} on real ${connection.id} Litany service`);
+    console.log(`[WebSocket] Calling ${apiMethod} on real ${connection.id} Litany service`);
     
     try {
       if (!connection.connection || !connection.isConnected()) {
@@ -2789,7 +2656,7 @@ export class TemplumBackendServiceRouter
         context: 'backend-service-integration'
       };
       
-      backendRouterConsole.log(`[WebSocket] Sending real Litany message:`, { method: apiMethod, messageId, service: connection.id });
+      console.log(`[WebSocket] Sending real Litany message:`, { method: apiMethod, messageId, service: connection.id });
       
       // Enhanced WebSocket message handling with longer timeout for real services
       return new Promise((resolve, reject) => {
@@ -2816,7 +2683,7 @@ export class TemplumBackendServiceRouter
 
           if (!outcome.value) {
             if (!outcome.ok) {
-              backendRouterConsole.warn('[WebSocket] Failed to parse Litany response', {
+              console.warn('[WebSocket] Failed to parse Litany response', {
                 context: outcome.meta.context,
                 status: outcome.status
               });
@@ -2841,20 +2708,20 @@ export class TemplumBackendServiceRouter
             (response.type === 'api_response' && response.method === apiMethod) ||
             (response.requestId === messageId)
           ) {
-            backendRouterConsole.log(`[WebSocket] Received response from ${connection.id}:`, {
+            console.log(`[WebSocket] Received response from ${connection.id}:`, {
               method: apiMethod,
               success: response.success !== false,
               hasData: !!response.data
             });
 
             if (apiMethod === 'getSkinDefinition' && response.skinDefinition) {
-              backendRouterConsole.log(`[WebSocket] Successfully received Litany skin definition`);
+              console.log(`[WebSocket] Successfully received Litany skin definition`);
               finish(() => resolve({ skinDefinition: response.skinDefinition }));
               return;
             }
 
             if (apiMethod === 'executeCommand') {
-              backendRouterConsole.log(
+              console.log(
                 `[WebSocket] Litany command execution result:`,
                 response.success ? 'success' : 'failed'
               );
@@ -2869,7 +2736,7 @@ export class TemplumBackendServiceRouter
             }
 
             if (apiMethod === 'updateContext' || apiMethod === 'syncMemory') {
-              backendRouterConsole.log(`[WebSocket] Litany context operation completed:`, apiMethod);
+              console.log(`[WebSocket] Litany context operation completed:`, apiMethod);
               finish(() => resolve(response.data || { success: response.success }));
               return;
             }
@@ -2908,7 +2775,7 @@ export class TemplumBackendServiceRouter
 
           if (outbound.ok && outbound.value) {
             ws.send(outbound.value);
-            backendRouterConsole.log(`[WebSocket] Message sent to real Litany service`);
+            console.log(`[WebSocket] Message sent to real Litany service`);
           } else {
             throw new Error(`WebSocket serialization failed (${outbound.status})`);
           }
@@ -2923,7 +2790,7 @@ export class TemplumBackendServiceRouter
       
     } catch (error) {
       const errorMsg = isTemplumError(error) ? error.message : `Litany WebSocket call failed: ${error}`;
-      backendRouterConsole.error(`[WebSocket] Real Litany service call failed for ${apiMethod}:`, errorMsg);
+      console.error(`[WebSocket] Real Litany service call failed for ${apiMethod}:`, errorMsg);
       
       if (isTemplumError(error)) {
         throw error;
@@ -2964,7 +2831,7 @@ export class TemplumBackendServiceRouter
     const visited = options.visited ?? new Set<string>();
 
     if (visited.has(backendId)) {
-      backendRouterConsole.warn(`[FALLBACK_GUARD] Detected recursive skin load attempt for ${backendId}; aborting to prevent infinite loop`);
+      console.warn(`[FALLBACK_GUARD] Detected recursive skin load attempt for ${backendId}; aborting to prevent infinite loop`);
       return null;
     }
 
@@ -2973,11 +2840,11 @@ export class TemplumBackendServiceRouter
     try {
       const connection = this.connections.get(backendId);
       if (!connection || !connection.isConnected()) {
-        backendRouterConsole.warn(`Backend ${backendId} is not available for skin loading - using Universal Skin Engine fallback`);
+        console.warn(`Backend ${backendId} is not available for skin loading - using Universal Skin Engine fallback`);
         return allowFallback ? await this.getUniversalSkinEngineFallback(backendId, { visited }) : null;
       }
 
-      backendRouterConsole.log(`Loading skin definition from backend: ${backendId}`);
+      console.log(`Loading skin definition from backend: ${backendId}`);
 
       const skinDefinitionRequest = {
         backendId,
@@ -2993,7 +2860,7 @@ export class TemplumBackendServiceRouter
           : (response as unknown as UniversalSkinDefinition | null);
 
       if (skinPayload) {
-        backendRouterConsole.log(`Successfully loaded skin definition from ${backendId}`);
+        console.log(`Successfully loaded skin definition from ${backendId}`);
 
         const skinResponse = { skinDefinition: skinPayload };
 
@@ -3004,7 +2871,7 @@ export class TemplumBackendServiceRouter
             // Merge capabilities from skin definition into stored config
             if (skinResponse.skinDefinition.backendConfig.capabilities) {
               currentConfig.capabilities = skinResponse.skinDefinition.backendConfig.capabilities;
-              backendRouterConsole.log(`[SKIN-CAPABILITIES] Updated stored capabilities for ${backendId}:`, currentConfig.capabilities);
+              console.log(`[SKIN-CAPABILITIES] Updated stored capabilities for ${backendId}:`, currentConfig.capabilities);
             }
             // Update other backendConfig fields if needed
             Object.assign(currentConfig, skinResponse.skinDefinition.backendConfig);
@@ -3012,16 +2879,16 @@ export class TemplumBackendServiceRouter
           } else {
             // Store the entire backend config if none exists
             this.backendConfigs.set(backendId, skinResponse.skinDefinition.backendConfig);
-            backendRouterConsole.log(`[SKIN-CAPABILITIES] Stored new backend config for ${backendId}:`, skinResponse.skinDefinition.backendConfig.capabilities);
+            console.log(`[SKIN-CAPABILITIES] Stored new backend config for ${backendId}:`, skinResponse.skinDefinition.backendConfig.capabilities);
           }
         }
 
         // DYNAMIC COMMAND ROUTING: Register backend commands with command router
         try {
           this.commandRouter.registerBackend(connection, skinResponse.skinDefinition);
-          backendRouterConsole.log(`[DYNAMIC_COMMAND_ROUTER] Registered commands for backend: ${backendId}`);
+          console.log(`[DYNAMIC_COMMAND_ROUTER] Registered commands for backend: ${backendId}`);
         } catch (routerError) {
-          backendRouterConsole.warn(`[DYNAMIC_COMMAND_ROUTER] Failed to register commands for ${backendId}:`, routerError);
+          console.warn(`[DYNAMIC_COMMAND_ROUTER] Failed to register commands for ${backendId}:`, routerError);
           // Don't fail the skin loading due to command router issues
         }
 
@@ -3029,19 +2896,19 @@ export class TemplumBackendServiceRouter
         try {
           if (this.orchestrator) {
             await this.orchestrator.loadSkin(skinResponse.skinDefinition);
-            backendRouterConsole.log(`[TEMPLUM_CORE] Successfully loaded skin from ${backendId} into Templum Core`);
+            console.log(`[TEMPLUM_CORE] Successfully loaded skin from ${backendId} into Templum Core`);
           } else {
-            backendRouterConsole.warn(`[TEMPLUM_CORE] No orchestrator available - skin loaded into command router only`);
+            console.warn(`[TEMPLUM_CORE] No orchestrator available - skin loaded into command router only`);
           }
         } catch (coreError) {
-          backendRouterConsole.warn(`[TEMPLUM_CORE] Failed to load skin into Templum Core for ${backendId}:`, coreError);
+          console.warn(`[TEMPLUM_CORE] Failed to load skin into Templum Core for ${backendId}:`, coreError);
           // Don't fail the entire skin loading process due to core loading issues
         }
 
         return skinResponse.skinDefinition;
       }
 
-      backendRouterConsole.log(`No skin definition available from ${backendId} - using Universal Skin Engine fallback`);
+      console.log(`No skin definition available from ${backendId} - using Universal Skin Engine fallback`);
       const fallbackSkin = allowFallback
         ? await this.getUniversalSkinEngineFallback(backendId, { visited })
         : null;
@@ -3050,26 +2917,26 @@ export class TemplumBackendServiceRouter
       if (fallbackSkin) {
         try {
           this.commandRouter.registerBackend(connection, fallbackSkin as UniversalSkinDefinition);
-          backendRouterConsole.log(`[DYNAMIC_COMMAND_ROUTER] Registered fallback commands for backend: ${backendId}`);
+          console.log(`[DYNAMIC_COMMAND_ROUTER] Registered fallback commands for backend: ${backendId}`);
         } catch (routerError) {
-          backendRouterConsole.warn(`[DYNAMIC_COMMAND_ROUTER] Failed to register fallback commands for ${backendId}:`, routerError);
+          console.warn(`[DYNAMIC_COMMAND_ROUTER] Failed to register fallback commands for ${backendId}:`, routerError);
         }
 
         // TEMPLUM CORE INTEGRATION: Load fallback skin into Templum Core
         try {
           if (this.orchestrator) {
             await this.orchestrator.loadSkin(fallbackSkin);
-            backendRouterConsole.log(`[TEMPLUM_CORE] Successfully loaded fallback skin from ${backendId} into Templum Core`);
+            console.log(`[TEMPLUM_CORE] Successfully loaded fallback skin from ${backendId} into Templum Core`);
           }
         } catch (coreError) {
-          backendRouterConsole.warn(`[TEMPLUM_CORE] Failed to load fallback skin into Templum Core for ${backendId}:`, coreError);
+          console.warn(`[TEMPLUM_CORE] Failed to load fallback skin into Templum Core for ${backendId}:`, coreError);
         }
       }
 
       return fallbackSkin;
     } catch (error) {
-      backendRouterConsole.error(`Failed to load skin from backend ${backendId}:`, error);
-      backendRouterConsole.log(`Using Universal Skin Engine fallback for ${backendId}`);
+      console.error(`Failed to load skin from backend ${backendId}:`, error);
+      console.log(`Using Universal Skin Engine fallback for ${backendId}`);
       const fallbackSkin = allowFallback
         ? await this.getUniversalSkinEngineFallback(backendId, { visited })
         : null;
@@ -3079,9 +2946,9 @@ export class TemplumBackendServiceRouter
       if (fallbackSkin && connection) {
         try {
           this.commandRouter.registerBackend(connection, fallbackSkin as UniversalSkinDefinition);
-          backendRouterConsole.log(`[DYNAMIC_COMMAND_ROUTER] Registered fallback commands for backend: ${backendId} (error recovery)`);
+          console.log(`[DYNAMIC_COMMAND_ROUTER] Registered fallback commands for backend: ${backendId} (error recovery)`);
         } catch (routerError) {
-          backendRouterConsole.warn(`[DYNAMIC_COMMAND_ROUTER] Failed to register fallback commands for ${backendId}:`, routerError);
+          console.warn(`[DYNAMIC_COMMAND_ROUTER] Failed to register fallback commands for ${backendId}:`, routerError);
         }
       }
 
@@ -3101,27 +2968,27 @@ export class TemplumBackendServiceRouter
   ): Promise<UniversalSkinDefinition | null> {
     const visited = options.visited ?? new Set<string>();
     try {
-      backendRouterConsole.log(`[ENHANCED_FALLBACK_COORDINATION] Coordinating fallback skin generation with Universal Skin Engine for: ${backendId}`);
+      console.log(`[ENHANCED_FALLBACK_COORDINATION] Coordinating fallback skin generation with Universal Skin Engine for: ${backendId}`);
       
       // Enhanced coordination: delegate to Universal Skin Engine for sophisticated fallback
       const fallbackSkin = await this.generateFallbackThroughEngine(backendId, { visited });
       
       if (fallbackSkin) {
-        backendRouterConsole.log(`[ENHANCED_FALLBACK_COORDINATION] Universal Skin Engine successfully generated fallback skin for ${backendId}`);
+        console.log(`[ENHANCED_FALLBACK_COORDINATION] Universal Skin Engine successfully generated fallback skin for ${backendId}`);
         return fallbackSkin;
       } else {
-        backendRouterConsole.warn(`[ENHANCED_FALLBACK_COORDINATION] Universal Skin Engine coordination failed, falling back to simple theme for ${backendId}`);
+        console.warn(`[ENHANCED_FALLBACK_COORDINATION] Universal Skin Engine coordination failed, falling back to simple theme for ${backendId}`);
         return await this.createSimpleFallbackSkin(backendId);
       }
       
     } catch (error) {
-      backendRouterConsole.error(`[ENHANCED_FALLBACK_COORDINATION] Error in enhanced fallback coordination for ${backendId}:`, error);
+      console.error(`[ENHANCED_FALLBACK_COORDINATION] Error in enhanced fallback coordination for ${backendId}:`, error);
       
       // Graceful degradation: use simple fallback if Universal Skin Engine coordination fails
       try {
         return await this.createSimpleFallbackSkin(backendId);
       } catch (fallbackError) {
-        backendRouterConsole.error(`[ENHANCED_FALLBACK_COORDINATION] Simple fallback also failed for ${backendId}:`, fallbackError);
+        console.error(`[ENHANCED_FALLBACK_COORDINATION] Simple fallback also failed for ${backendId}:`, fallbackError);
         return null;
       }
     }
@@ -3143,7 +3010,7 @@ export class TemplumBackendServiceRouter
     try {
       const fallbackSkinId = `enhanced-fallback-${backendId}-${Date.now()}`;
       
-      backendRouterConsole.log(`[ENHANCED_COORDINATION] Universal Skin Engine generating intelligent fallback for ${backendId}`);
+      console.log(`[ENHANCED_COORDINATION] Universal Skin Engine generating intelligent fallback for ${backendId}`);
       
       // ENHANCED: Attempt to derive fallback from any available backend skin definitions
       const availableBackends = Array.from(this.connections.keys());
@@ -3153,18 +3020,18 @@ export class TemplumBackendServiceRouter
       for (const availableBackend of availableBackends) {
         if (availableBackend !== backendId) {
           try {
-            backendRouterConsole.log(`[ENHANCED_COORDINATION] Attempting to derive fallback from ${availableBackend} skin definition`);
+            console.log(`[ENHANCED_COORDINATION] Attempting to derive fallback from ${availableBackend} skin definition`);
             templateSkin = await this.loadBackendSkin(availableBackend, {
               allowFallback: false,
               visited
             });
             if (templateSkin) {
-              backendRouterConsole.log(`[ENHANCED_COORDINATION] Using ${availableBackend} as template for enhanced fallback`);
+              console.log(`[ENHANCED_COORDINATION] Using ${availableBackend} as template for enhanced fallback`);
               break;
             }
           } catch (error) {
             // Continue to next backend
-            backendRouterConsole.debug(`[ENHANCED_COORDINATION] Could not use ${availableBackend} as template:`, error);
+            console.debug(`[ENHANCED_COORDINATION] Could not use ${availableBackend} as template:`, error);
           }
         }
       }
@@ -3190,16 +3057,16 @@ export class TemplumBackendServiceRouter
           }
         };
         
-        backendRouterConsole.log(`[ENHANCED_COORDINATION] Generated intelligent fallback skin for ${backendId} using ${templateSkin.metadata.backend} patterns`);
+        console.log(`[ENHANCED_COORDINATION] Generated intelligent fallback skin for ${backendId} using ${templateSkin.metadata.backend} patterns`);
         return enhancedFallback;
       } else {
         // Create minimal fallback when no templates available
-        backendRouterConsole.log(`[ENHANCED_COORDINATION] No template available, creating minimal fallback for ${backendId}`);
+        console.log(`[ENHANCED_COORDINATION] No template available, creating minimal fallback for ${backendId}`);
         return await this.createSimpleFallbackSkin(backendId);
       }
       
     } catch (error) {
-      backendRouterConsole.error(`[ENHANCED_COORDINATION] Enhanced fallback generation failed for ${backendId}:`, error);
+      console.error(`[ENHANCED_COORDINATION] Enhanced fallback generation failed for ${backendId}:`, error);
       // Graceful degradation to simple fallback
       return await this.createSimpleFallbackSkin(backendId);
     }
@@ -3258,7 +3125,7 @@ export class TemplumBackendServiceRouter
       return simpleFallbackSkin;
       
     } catch (error) {
-      backendRouterConsole.error(`[GRACEFUL_DEGRADATION] Failed to create simple fallback skin for ${backendId}:`, error);
+      console.error(`[GRACEFUL_DEGRADATION] Failed to create simple fallback skin for ${backendId}:`, error);
       return null;
     }
   }
@@ -3587,7 +3454,7 @@ export class TemplumBackendServiceRouter
         throw createTemplumError(`Backend ${backendId} is not available`, 'BACKEND_UNAVAILABLE', 'integration');
       }
 
-      backendRouterConsole.log(`Executing command "${command}" on backend: ${backendId}`);
+      console.log(`Executing command "${command}" on backend: ${backendId}`);
       
       const commandRequest = {
         command,
@@ -3599,10 +3466,10 @@ export class TemplumBackendServiceRouter
 
       const response = await this.callBackendServiceAPI(connection, 'executeCommand', commandRequest);
       
-      backendRouterConsole.log(`Command "${command}" executed successfully on ${backendId}`);
+      console.log(`Command "${command}" executed successfully on ${backendId}`);
       return response;
     } catch (error) {
-      backendRouterConsole.error(`Failed to execute command "${command}" on backend ${backendId}:`, error);
+      console.error(`Failed to execute command "${command}" on backend ${backendId}:`, error);
       throw error;
     }
   }
@@ -3626,7 +3493,7 @@ export class TemplumBackendServiceRouter
     const startTime = Date.now();
     
     try {
-      backendRouterConsole.log(`[SERVICE_CONNECTION] Attempting to connect to service: ${serviceId}`);
+      console.log(`[SERVICE_CONNECTION] Attempting to connect to service: ${serviceId}`);
       
       // Check if service is already connected
       const currentStatus = this.serviceHealth.get(serviceId);
@@ -3663,13 +3530,13 @@ export class TemplumBackendServiceRouter
               await this.orchestrator.loadSkin(skinDefinition);
             }
           } catch (skinError) {
-            backendRouterConsole.warn(`[SERVICE_CONNECTION] Skin loading failed for ${serviceId}:`, skinError);
+            console.warn(`[SERVICE_CONNECTION] Skin loading failed for ${serviceId}:`, skinError);
             // Continue - connection successful even if skin loading failed
           }
         }
         
         const responseTime = Date.now() - startTime;
-        backendRouterConsole.log(`[SERVICE_CONNECTION] Successfully connected to ${serviceId} in ${responseTime}ms`);
+        console.log(`[SERVICE_CONNECTION] Successfully connected to ${serviceId} in ${responseTime}ms`);
         
         return {
           success: true,
@@ -3687,7 +3554,7 @@ export class TemplumBackendServiceRouter
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown connection error';
       this.updateServiceHealth(serviceId, false, 'error', errorMessage);
-      backendRouterConsole.error(`[SERVICE_CONNECTION] Connection error for ${serviceId}:`, error);
+      console.error(`[SERVICE_CONNECTION] Connection error for ${serviceId}:`, error);
       
       return {
         success: false,
@@ -3703,7 +3570,7 @@ export class TemplumBackendServiceRouter
    */
   async disconnectFromService(serviceId: string): Promise<{ success: boolean; message: string }> {
     try {
-      backendRouterConsole.log(`[SERVICE_DISCONNECTION] Attempting to disconnect from service: ${serviceId}`);
+      console.log(`[SERVICE_DISCONNECTION] Attempting to disconnect from service: ${serviceId}`);
       
       // Check if service is connected
       const connection = this.connections.get(serviceId);
@@ -3717,9 +3584,9 @@ export class TemplumBackendServiceRouter
       // Perform disconnection
       try {
         await connection.disconnect();
-        backendRouterConsole.log(`[SERVICE_DISCONNECTION] Successfully disconnected from ${serviceId}`);
+        console.log(`[SERVICE_DISCONNECTION] Successfully disconnected from ${serviceId}`);
       } catch (disconnectionError) {
-        backendRouterConsole.warn(`[SERVICE_DISCONNECTION] Warning during disconnection from ${serviceId}:`, disconnectionError);
+        console.warn(`[SERVICE_DISCONNECTION] Warning during disconnection from ${serviceId}:`, disconnectionError);
         // Continue with cleanup even if disconnect had issues
       }
       
@@ -3728,7 +3595,7 @@ export class TemplumBackendServiceRouter
       this.updateServiceHealth(serviceId, false, 'unhealthy', `Disconnected from ${serviceId}`);
       this.recoveryAttempts.delete(serviceId);
       
-      backendRouterConsole.log(`[SERVICE_DISCONNECTION] Successfully disconnected and cleaned up ${serviceId}`);
+      console.log(`[SERVICE_DISCONNECTION] Successfully disconnected and cleaned up ${serviceId}`);
       this.lifecycleChannel.emitDisconnected(serviceId, {
         origin: 'manual',
         metadata: {
@@ -3743,7 +3610,7 @@ export class TemplumBackendServiceRouter
       
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown disconnection error';
-      backendRouterConsole.error(`[SERVICE_DISCONNECTION] Disconnection error for ${serviceId}:`, error);
+      console.error(`[SERVICE_DISCONNECTION] Disconnection error for ${serviceId}:`, error);
       this.lifecycleChannel.emitFailed(serviceId, error, {
         origin: 'manual',
         metadata: {
@@ -3834,11 +3701,11 @@ export class TemplumBackendServiceRouter
     const result = this.manualOverrideManager.clearOverride(normalizedId);
 
     if (normalizedId && !this.manualOverrideManager.hasOverride(normalizedId)) {
-      backendRouterConsole.log(`[MANUAL_OVERRIDE] Cleared manual override for ${normalizedId}`);
+      console.log(`[MANUAL_OVERRIDE] Cleared manual override for ${normalizedId}`);
     }
 
     if (!normalizedId) {
-      backendRouterConsole.log('[MANUAL_OVERRIDE] Cleared all manual overrides');
+      console.log('[MANUAL_OVERRIDE] Cleared all manual overrides');
     }
 
     return result;
@@ -3853,7 +3720,7 @@ export class TemplumBackendServiceRouter
    * Call this when the router is no longer needed to properly cleanup resources
    */
   async dispose(): Promise<void> {
-    backendRouterConsole.log('[BACKEND_SERVICE_ROUTER] Disposing backend service router');
+    console.log('[BACKEND_SERVICE_ROUTER] Disposing backend service router');
     
     // Stop background health monitoring
     this.stopHealthMonitoring();
@@ -3862,10 +3729,10 @@ export class TemplumBackendServiceRouter
     const disconnectionPromises: Promise<void>[] = [];
     for (const [backendId, connection] of Array.from(this.connections.entries())) {
       try {
-        backendRouterConsole.log(`[CLEANUP] Disconnecting from backend: ${backendId}`);
+        console.log(`[CLEANUP] Disconnecting from backend: ${backendId}`);
         disconnectionPromises.push(connection.disconnect());
       } catch (error) {
-        backendRouterConsole.warn(`[CLEANUP] Error disconnecting from ${backendId}:`, error);
+        console.warn(`[CLEANUP] Error disconnecting from ${backendId}:`, error);
       }
     }
     
@@ -3879,13 +3746,13 @@ export class TemplumBackendServiceRouter
     try {
       await this.serviceDiscovery.close();
     } catch (error) {
-      backendRouterConsole.warn('[BACKEND_SERVICE_ROUTER] Error closing service discovery during dispose:', error);
+      console.warn('[BACKEND_SERVICE_ROUTER] Error closing service discovery during dispose:', error);
     }
 
     // Remove all event listeners
     this.cleanupEvents();
     
-    backendRouterConsole.log('[BACKEND_SERVICE_ROUTER] Cleanup completed');
+    console.log('[BACKEND_SERVICE_ROUTER] Cleanup completed');
   }
 
   /**
@@ -4007,7 +3874,7 @@ class HaruspexIPCClient {
 
         this.socket.connect(this.connectionInfo!.port, this.connectionInfo!.host, () => {
           this.isConnected = true;
-          backendRouterConsole.log(
+          console.log(
             `[IPC] Connected to Haruspex service at ${this.connectionInfo!.host}:${this.connectionInfo!.port}`
           );
           finish(() => resolve());
@@ -4024,7 +3891,7 @@ class HaruspexIPCClient {
 
         this.socket.on('close', () => {
           this.isConnected = false;
-          backendRouterConsole.log('[IPC] Connection to Haruspex service closed');
+          console.log('[IPC] Connection to Haruspex service closed');
         });
       });
     }
@@ -4103,7 +3970,7 @@ class HaruspexIPCClient {
         if (outcome.value) {
           this.handleMessage(outcome.value);
         } else {
-          backendRouterConsole.error('[IPC] Failed to parse message', {
+          console.error('[IPC] Failed to parse message', {
             context: outcome.meta.context,
             status: outcome.status,
             error: outcome.error instanceof Error ? outcome.error.message : outcome.error
