@@ -1222,7 +1222,7 @@ const stageGuidance = {
       'Author or refresh regression suites before implementation per Testing Guide expectations.',
       'Keep DI seams and shared utility guardrails aligned with Stage 1 notes.',
       'Record executed commands, logs, and outcomes in the registry so generated plans stay accurate.',
-      'When later stages surface new coverage gaps, reopen Stage 2 and add fresh tests—do not reopen completed lanes or repurpose executed suites.',
+      'When later stages surface new coverage gaps, reopen Stage 2 by setting it back to pending (use `update-stage <patternId> 2 --status pending`) and add fresh tests—do not reopen completed lanes or repurpose executed suites.',
       'Track blockers with dependencies (and companion lanes if needed) so downstream agents see exactly what must finish before Stage 2 can close.',
       'Unsure about CLI syntax? Run `npm run consolidate -- help` before diving into docs or source references.'
     ]
@@ -1246,7 +1246,7 @@ const stageGuidance = {
       'Use Stage 4 to author/refine guardrail suites, fixtures, and helpers that fail until the migration lands; record the failing signature in the lane notes.',
       'Attach the timeout-wrapper log from the failing guardrail run so downstream owners can replay the baseline without guesswork.',
       'Keep guardrail assets isolated from runtime migration surfaces—update paired Stage 6 lanes whenever new coverage emerges.',
-      'If a guardrail unexpectedly passes, reopen the coverage work (Stage 2/3) or block the lane before closing so false greens do not leak downstream.',
+      'If a guardrail unexpectedly passes, reopen the coverage work (Stage 2/3) by setting those stages back to pending (not in_progress) or block the lane before closing so false greens do not leak downstream.',
       'Need a deeper walkthrough? See “Stage 3 Orchestration Checklist” in consolidation-cli-spec.md for the full pairing process.',
       'Unsure about CLI syntax? Run `npm run consolidate -- help` before diving into docs or source references.'
     ]
@@ -1278,7 +1278,8 @@ const stageGuidance = {
       'Work one lane at a time; start every session by replaying the Stage 4 guardrail to confirm the expected failure and log the evidence before editing.',
       'Apply the migration, rerun the guardrail until it passes, and attach both failing and passing logs so Stage 7 can audit the full arc.',
       'Run the cleanup sweep (`npm run consolidate -- sweep <patternId> --lane <laneId>`) before marking a lane complete; the CLI enforces this guard.',
-      'Flip Stage 3 glyph back to `[~]` when new migration scope appears, but keep completed lanes closed—add a new lane instead of reopening the finished one.',
+      'Flip Stage 3 back to `[ ]` (pending) when new migration scope appears (use `update-stage <patternId> 3 --status pending`), but keep completed lanes closed—add a new lane instead of reopening the finished one.',
+      'When reopening a lane, move it to pending with `npm run consolidate -- update-lane <patternId> <laneId> --status pending`, then reclaim it with `claim`; never set a reopened lane straight to in_progress.',
       'If a guardrail still fails after migration, block the lane, attach dependencies to the remediation scope, and capture the follow-up via `append-activity`.',
       'Use `claim` with `--lane` to avoid collisions, and keep dependencies updated so scheduling stays authoritative.',
       'Unsure about CLI syntax? Run `npm run consolidate -- help` before diving into docs or source references.'
@@ -1310,7 +1311,7 @@ const stageActionGuidance = {
     `1. Claim this stage with \`npm run consolidate -- claim ${pattern.patternId} --stage 2\`.`,
     `2. Author or refresh the regression suites up front; log the plan with \`npm run consolidate -- stage-note ${pattern.patternId} 2 --body "Suites: ...; Guardrails: ..."\` and note which timeout wrapper preset (\`--preset jest-suite\` for targeted files, \`--preset jest-ci\` for bundled commands) you’ll apply.`,
     `3. Execute the suites via \`node scripts/run-with-timeout.mjs --preset <preset> -- npm …\` (e.g., \`--preset jest-ci\` for \`npm run test:ci\`) and update evidence using \`npm run consolidate -- update-stage ${pattern.patternId} 2 --status in_progress --files <log>\` as you collect artefacts.`,
-    `4. Mark Stage 2 complete via \`npm run consolidate -- update-stage ${pattern.patternId} 2 --status complete --notes "Results: ..."\` once coverage is green. If gaps arise later, reopen the stage and attach dependencies to the blocking lane.`,
+    `4. Mark Stage 2 complete via \`npm run consolidate -- update-stage ${pattern.patternId} 2 --status complete --notes "Results: ..."\` once coverage is green. If gaps arise later, reopen the stage by setting it back to pending with \`npm run consolidate -- update-stage ${pattern.patternId} 2 --status pending\` and attach dependencies to the blocking lane.`,
     `Need recent history? Run \`npm run consolidate -- guide ${pattern.patternId} --recent\` for the latest activity summaries.`
   ],
   '3': (pattern) => [
@@ -1320,7 +1321,7 @@ const stageActionGuidance = {
     `4. Mirror the combined search-term list onto Stage 7 and add the project root (e.g., \`Templum/\`) with \`npm run consolidate -- update-stage ${pattern.patternId} 7 --plan-files "Templum/" --search-terms "<term1,term2,...>"\` so sweeps cover the entire migration contract.`,
     `5. Capture sequencing, guardrail failure signatures, and dependencies with \`npm run consolidate -- stage-note ${pattern.patternId} 3 --body "Order: ...; Guardrails: ...; Dependencies: ..."\`.`,
     `6. When orchestration is solid, close Stage 3 via \`npm run consolidate -- update-stage ${pattern.patternId} 3 --status complete --notes "Stage 4/6 defined; blockers recorded"\`.`,
-    `If additional cohorts appear, reopen Stage 3 and add the new lanes plus dependencies before handing off.`
+    `If additional cohorts appear, reopen Stage 3 by moving it to pending (\`npm run consolidate -- update-stage ${pattern.patternId} 3 --status pending\`) and add the new lanes plus dependencies before handing off.`
   ],
   '4': (pattern, context = {}) => {
     const laneId = context.laneId || context.suggestedLaneId || '<laneId>';
@@ -1328,7 +1329,7 @@ const stageActionGuidance = {
       `1. Claim this lane with \`npm run consolidate -- claim ${pattern.patternId} --lane ${laneId}\`.`,
       `2. Outline the guardrail you are authoring—including the expected failure text and paired Stage 6 lane—in a Stage 4 note via \`npm run consolidate -- stage-note ${pattern.patternId} 4 --body "Lane ${laneId}: Guardrail=<...>; Expected failure=<...>; Paired Stage 6=<...>"\`.`,
       `3. Implement or refresh the guardrail and run it via \`node scripts/run-with-timeout.mjs --preset <preset> -- …\` (pick \`jest-suite\`, \`jest-ci\`, or \`phase6-validation\` as needed); log the failing artefact with \`npm run consolidate -- update-lane ${pattern.patternId} ${laneId} --status in_progress --files <log> --summary "Expected failure: <signature>"\`.`,
-      `4. If the guardrail passes unexpectedly, flip the lane to blocked, reopen the required coverage stage, and log the blocker with \`npm run consolidate -- append-activity ${pattern.patternId} --lane ${laneId} --summary "Guardrail passed unexpectedly — follow-up: <action>"\` before proceeding.`,
+      `4. If the guardrail passes unexpectedly, flip the lane to blocked, reopen the required coverage stage by setting it back to pending (not in_progress), and log the blocker with \`npm run consolidate -- append-activity ${pattern.patternId} --lane ${laneId} --summary "Guardrail passed unexpectedly — follow-up: <action>"\` before proceeding.`,
       `5. Once the guardrail fails deterministically, close the lane with \`npm run consolidate -- update-lane ${pattern.patternId} ${laneId} --status complete --summary "Guardrail failing as expected; Stage 6 <pairedLaneId> primed" --files <log>\`, and mirror any new guardrail links onto the paired Stage 6 lane via \`update-lane\` so execution owners inherit the instructions.`
     ];
   },
@@ -1366,7 +1367,7 @@ const stageActionGuidance = {
     `2. Execute the Stage 7 validation battery through \`node scripts/run-with-timeout.mjs --preset <preset> -- …\` (match the preset to each command) and store artefacts using \`npm run consolidate -- update-stage ${pattern.patternId} 7 --status in_progress --files <log>\`.`,
     `3. Add a Stage 7 note capturing the reason for the scope change, the validations to rerun, and confirmation that required documentation/progress trackers were updated (automation pending) via \`npm run consolidate -- stage-note ${pattern.patternId} 7 --body "Reason: ...; Required check: ...; Docs verified: <paths>"\`.`,
     `4. Run the cleanup sweep via \`npm run consolidate -- sweep ${pattern.patternId} --stage 7\`; once it passes and documentation is updated, mark Stage 7 complete with \`npm run consolidate -- update-stage ${pattern.patternId} 7 --status complete --notes "Release-ready"\`.`,
-    `If regressions appear later, reopen Stage 7, attach dependencies to the remediation scope, and coordinate via the activity log.`
+    `If regressions appear later, reopen Stage 7 by setting it to pending (\`npm run consolidate -- update-stage ${pattern.patternId} 7 --status pending\`), attach dependencies to the remediation scope, and coordinate via the activity log.`
   ]
 };
 
@@ -2418,6 +2419,25 @@ function setStageGate(pattern, stageId, status, options = {}) {
 
   registerScopeChange(pattern.patternId, `stage-${stageId}`);
   return { gate, previousStatus, durationMs, statusChanged: statusProvided && nextStatus !== previousStatus };
+}
+
+function reopenDownstreamStageGates(pattern, stageId) {
+  const reopened = [];
+  const startIndex = stageOrder.indexOf(stageId);
+  if (startIndex === -1) {
+    return reopened;
+  }
+  for (let index = startIndex + 1; index < stageOrder.length; index += 1) {
+    const downstreamStageId = stageOrder[index];
+    const downstreamGate = ensureStageGate(pattern, downstreamStageId);
+    const currentStatus = downstreamGate.status || defaultStageStatus(downstreamStageId);
+    if (currentStatus === 'pending' || currentStatus === 'blocked') {
+      continue;
+    }
+    setStageGate(pattern, downstreamStageId, 'pending');
+    reopened.push(downstreamStageId);
+  }
+  return reopened;
 }
 
 function recomputePatternStagePointer(pattern) {
@@ -4499,6 +4519,7 @@ async function main() {
           removeDependencies,
           clearDependencies: Boolean(stageOptions.clearDependencies)
         });
+        let reopenedStageIds = [];
         const { durationMs, previousStatus, statusChanged } = setStageGate(pattern, stageId, requestedStatus, {
           statusProvided,
           notes: stageOptions.notesProvided ? stageOptions.notes : undefined,
@@ -4506,11 +4527,22 @@ async function main() {
           planFiles: normalizedPlanFiles,
           clearPlanFiles: stageOptions.clearPlanFiles
         });
+        const normalizedPreviousStatus = String(previousStatus || '').toLowerCase();
+        const wasPreviouslyComplete =
+          stageCompletionStatuses.has(normalizedPreviousStatus) || normalizedPreviousStatus === 'ready';
+        const isNowIncomplete = !stageCompletionStatuses.has(requestedStatus) && requestedStatus !== 'ready';
+        if (statusProvided && statusChanged && wasPreviouslyComplete && isNowIncomplete) {
+          reopenedStageIds = reopenDownstreamStageGates(pattern, stageId);
+        }
         if (stageOptions.planFiles.length === 0 && stageOptions.clearPlanFiles) {
           console.log('Planned files cleared from stage gate.');
         }
-        recomputePatternStagePointer(pattern);
         autoUpdatePatternStatuses(registry, pattern);
+        recomputePatternStagePointer(pattern);
+        if (reopenedStageIds.length) {
+          const reopenedLabels = reopenedStageIds.map((id) => displayStageLabel(id));
+          console.log(`Downstream stages reopened (auto-blocked until prerequisites complete): ${reopenedLabels.join(', ')}.`);
+        }
 
         if (stageDependencyChanges.changed) {
           const parts = [];
