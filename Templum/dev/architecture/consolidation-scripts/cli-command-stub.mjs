@@ -16,10 +16,8 @@ import { deriveNoteScopeLabel } from './schedule-format-helpers.mjs';
 import {
   consolidationDirectoryLabel,
   consolidationScriptsRelativePath,
-  registryPath,
   repoRoot,
   scheduleToolsModulePath,
-  schemaPath,
   scriptsDir
 } from './modules/environment.mjs';
 import { computeDurationMs, formatDuration, nowIso } from './modules/time-utils.mjs';
@@ -45,11 +43,8 @@ import {
 } from './modules/cleanup-guard.mjs';
 import { formatMarkdownIfNeeded } from './modules/markdown.mjs';
 import {
-  attachPatternToCohort,
-  buildRegenRequest,
   canonicalizeCohortIds,
   clearPendingRegen,
-  collectDependentPatterns,
   cohortLabelFromIndex,
   ensureCohort,
   ensureCohortStage,
@@ -58,15 +53,11 @@ import {
   getCohortStageEntry,
   getPatternCohortIds,
   loadRegistry,
-  markCohortForRegen,
-  markPatternForRegen,
   normaliseCohortId,
   persistRegistry,
   registerScopeChange,
-  removePatternFromCohort,
   resolveCanonicalCohortId,
   setCohortStageStatus,
-  setPatternCohortList,
   syncCohortAssignments,
   touchCohort,
   touchPattern
@@ -512,83 +503,6 @@ function requirePatternById(registry, patternId) {
   return pattern;
 }
 
-function getCohortStageEntry(cohort, segment) {
-  if (!cohort) {
-    return null;
-  }
-  const normalizedSegment = segment.toLowerCase();
-  const stages = cohort.stages || (cohort.stages = {});
-  return stages[normalizedSegment] || null;
-}
-
-function ensureCohortStage(cohort, segment) {
-  const normalizedSegment = segment.toLowerCase();
-  const stages = cohort.stages || (cohort.stages = {});
-  let entry = stages[normalizedSegment];
-  if (!entry) {
-    entry = {
-      segment: normalizedSegment,
-      status: 'blocked'
-    };
-    stages[normalizedSegment] = entry;
-  }
-  return entry;
-}
-
-function setCohortStageStatus(cohort, segment, status, options = {}) {
-  const entry = ensureCohortStage(cohort, segment);
-  const previousStatus = entry.status || 'blocked';
-  entry.status = status;
-  if (options.notes !== undefined) {
-    if (!options.notes) {
-      delete entry.notes;
-    } else {
-      entry.notes = options.notes;
-    }
-  }
-  if (options.planFiles || options.clearPlanFiles) {
-    applyPlanFiles(entry, options.planFiles, options.clearPlanFiles);
-  }
-  const nowTimestamp = nowIso();
-  if (status === 'in_progress') {
-    if (options.startedAt) {
-      entry.startedAt = options.startedAt;
-    } else if (!entry.startedAt || previousStatus !== 'in_progress') {
-      entry.startedAt = nowTimestamp;
-    }
-    if (options.completedAt) {
-      entry.completedAt = options.completedAt;
-    } else {
-      delete entry.completedAt;
-    }
-  } else {
-    if (previousStatus === 'in_progress' && entry.startedAt) {
-      const durationMs = computeDurationMs(entry.startedAt, options.completedAt || nowTimestamp);
-      if (durationMs) {
-        entry.elapsedMs = durationMs;
-      } else {
-        delete entry.elapsedMs;
-      }
-    }
-    if (options.completedAt) {
-      entry.completedAt = options.completedAt;
-    } else if (status === 'complete') {
-      entry.completedAt = nowTimestamp;
-    } else {
-      delete entry.completedAt;
-    }
-    if (status === 'pending' || status === 'blocked') {
-      delete entry.startedAt;
-      delete entry.elapsedMs;
-      delete entry.completedAt;
-    } else if (options.startedAt && !entry.startedAt) {
-      entry.startedAt = options.startedAt;
-    }
-  }
-  touchCohort(cohort);
-  return { entry, previousStatus };
-}
-
 function getPatternStageStatus(pattern, stageId) {
   const status = pattern.stageGates?.[stageId]?.status;
   if (status) {
@@ -819,45 +733,6 @@ function printStage5aDetail(registry, pattern, context) {
     });
 }
 
-
-function setPatternCohortList(pattern, cohortIds) {
-  if (!cohortIds.length) {
-    delete pattern.cohorts;
-    return;
-  }
-  pattern.cohorts = [...new Set(cohortIds.map(normaliseCohortId))].sort((a, b) => a.localeCompare(b));
-}
-
-function removePatternFromCohort(registry, cohort, patternId) {
-  if (!cohort || !Array.isArray(cohort.patterns)) {
-    return;
-  }
-  cohort.patterns = cohort.patterns.filter((entry) => entry !== patternId);
-  touchCohort(cohort);
-}
-
-function syncCohortAssignments(registry, pattern, desiredCohorts, options = {}) {
-  const normalizedDesired = [...new Set(desiredCohorts.map(normaliseCohortId))];
-  if (normalizedDesired.length > 1) {
-    throw new Error(`Pattern ${pattern.patternId} may only belong to one cohort (requested: ${normalizedDesired.join(', ')}).`);
-  }
-  const existing = getPatternCohortIds(pattern).map(normaliseCohortId);
-  const toRemove = existing.filter((id) => !normalizedDesired.includes(id));
-  const toAdd = normalizedDesired.filter((id) => !existing.includes(id));
-  toRemove.forEach((cohortId) => {
-    const cohort = findCohortById(registry, cohortId);
-    if (cohort) {
-      removePatternFromCohort(registry, cohort, pattern.patternId);
-    }
-  });
-  toAdd.forEach((cohortId) => {
-    const cohort = ensureCohort(registry, cohortId, options.cohortMetadata || {});
-    attachPatternToCohort(cohort, pattern.patternId);
-  });
-  setPatternCohortList(pattern, normalizedDesired);
-  touchPattern(pattern);
-  return { added: toAdd, removed: toRemove };
-}
 
 function assertStage5Access(registry, pattern) {
   const evaluation = evaluateStage5Gate(registry, pattern);

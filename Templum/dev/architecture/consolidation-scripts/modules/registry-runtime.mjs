@@ -1,7 +1,8 @@
 import { readFile, writeFile } from 'fs/promises';
 import Ajv from 'ajv/dist/2020.js';
 import { registryPath, schemaPath } from './environment.mjs';
-import { nowIso } from './time-utils.mjs';
+import { computeDurationMs, nowIso } from './time-utils.mjs';
+import { applyPlanFiles } from './plan-file-utils.mjs';
 
 const ajv = new Ajv({ allErrors: true, strict: false });
 ajv.addFormat('date-time', (value) => !Number.isNaN(Date.parse(value)));
@@ -425,42 +426,77 @@ function getCohortStageEntry(cohort, segment) {
   if (!cohort) {
     return null;
   }
-  if (!cohort.segments) {
-    cohort.segments = {};
-  }
-  if (!cohort.segments[segment]) {
-    cohort.segments[segment] = {};
-  }
-  return cohort.segments[segment];
+  const normalizedSegment = segment.toLowerCase();
+  const stages = cohort.stages || (cohort.stages = {});
+  return stages[normalizedSegment] || null;
 }
 
 function ensureCohortStage(cohort, segment) {
-  const entry = getCohortStageEntry(cohort, segment);
-  if (!entry.status) {
-    entry.status = 'pending';
+  const normalizedSegment = segment.toLowerCase();
+  const stages = cohort.stages || (cohort.stages = {});
+  let entry = stages[normalizedSegment];
+  if (!entry) {
+    entry = {
+      segment: normalizedSegment,
+      status: 'blocked'
+    };
+    stages[normalizedSegment] = entry;
   }
   return entry;
 }
 
 function setCohortStageStatus(cohort, segment, status, options = {}) {
   const entry = ensureCohortStage(cohort, segment);
+  const previousStatus = entry.status || 'blocked';
   entry.status = status;
-  if (status === 'pending') {
-    delete entry.startedAt;
-    delete entry.completedAt;
-    delete entry.durationMs;
+  if (options.notes !== undefined) {
+    if (!options.notes) {
+      delete entry.notes;
+    } else {
+      entry.notes = options.notes;
+    }
   }
-  if (options.startedAt) {
-    entry.startedAt = options.startedAt;
+  if (options.planFiles || options.clearPlanFiles) {
+    applyPlanFiles(entry, options.planFiles, options.clearPlanFiles);
   }
-  if (options.completedAt) {
-    entry.completedAt = options.completedAt;
-  }
-  if (options.durationMs !== undefined) {
-    entry.durationMs = options.durationMs;
+  const nowTimestamp = nowIso();
+  if (status === 'in_progress') {
+    if (options.startedAt) {
+      entry.startedAt = options.startedAt;
+    } else if (!entry.startedAt || previousStatus !== 'in_progress') {
+      entry.startedAt = nowTimestamp;
+    }
+    if (options.completedAt) {
+      entry.completedAt = options.completedAt;
+    } else {
+      delete entry.completedAt;
+    }
+  } else {
+    if (previousStatus === 'in_progress' && entry.startedAt) {
+      const durationMs = computeDurationMs(entry.startedAt, options.completedAt || nowTimestamp);
+      if (durationMs) {
+        entry.elapsedMs = durationMs;
+      } else {
+        delete entry.elapsedMs;
+      }
+    }
+    if (options.completedAt) {
+      entry.completedAt = options.completedAt;
+    } else if (status === 'complete') {
+      entry.completedAt = nowTimestamp;
+    } else {
+      delete entry.completedAt;
+    }
+    if (status === 'pending' || status === 'blocked') {
+      delete entry.startedAt;
+      delete entry.elapsedMs;
+      delete entry.completedAt;
+    } else if (options.startedAt && !entry.startedAt) {
+      entry.startedAt = options.startedAt;
+    }
   }
   touchCohort(cohort);
-  return entry;
+  return { entry, previousStatus };
 }
 
 export {

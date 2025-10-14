@@ -12,7 +12,8 @@ The consolidate CLI is a thin wrapper around three core modules:
 
 1. **Command registry (`cli-command-registry.mjs`)** — declarative descriptors that describe usage, flags, and examples.
 2. **Shared parser (`cli-shared-parser.mjs`)** — normalises argv, applies coercions/aliases, and enforces required arguments.
-3. **Command driver (`consolidation-scripts/cli-command-stub.mjs`)** — executes the command, mutates `consolidation-state.json`, emits guidance, and triggers targeted regenerations.
+3. **Command driver (`consolidation-scripts/cli-command-stub.mjs`)** — executes the command, mutates `consolidation-state.json`, emits guidance, and triggers targeted regenerations. The driver now focuses on parse → dispatch → persist flows and pulls in shared helpers from the `modules/` directory instead of embedding utility logic inline.
+4. **Support modules (`consolidation-scripts/modules/…`)** — house environment resolution, time utilities, plan-file + search-term normalisers, cleanup guard orchestration, markdown formatting, and registry runtime helpers (load/save, Ajv validation, pending regen tracking). These modules keep behaviour centralised while shrinking the driver surface.
 
 ### Command Dispatch Flow
 
@@ -343,9 +344,10 @@ Stage gates mirror these signals with `[ ] pending`, `[?] blocked`, `[~] in-prog
 
 ## Implementation Outline
 
-- CLI implemented in plain Node.js (ESM) with the descriptor registry + shared parser handling all argument coercion; no external CLI framework is required.
-- Registry persistence goes through `fs/promises` with Ajv-backed validation and Prettier formatting for generated Markdown.
-- After each successful write the driver invokes the existing generator modules (`runRegen`) so plans, schedules, and activity logs stay current.
+- CLI remains plain Node.js (ESM) with the descriptor registry + shared parser handling all argument coercion; no external CLI framework is required.
+- `modules/registry-runtime.mjs` encapsulates Ajv setup, registry loading/saving, cohort canonicalisation, pending regen tracking, and scope-change bookkeeping. `cli-command-stub.mjs` delegates to these helpers for `loadRegistry`/`saveRegistry` and no longer owns inline validator state.
+- Cross-cutting helpers (environment resolution, time formatting, plan-file/search-term normalisation, cleanup guard execution, markdown formatting) live under `modules/` and are imported wherever needed, keeping the driver lean and the helper logic reusable.
+- After each successful write the driver still calls `runRegen`, now using the regen request assembled by the runtime module so pending scope updates are handled in one place.
 - Regression tests for the parser live in `tests/scripts/cli-shared-parser.test.ts` (run via `npm run test -- --runTestsByPath tests/scripts/cli-shared-parser.test.ts`) and should be updated whenever descriptors or shared rules change.
 - Environment flags:
   - `CONSOLIDATION_STATE_PATH` can override the default registry location during tests or experiments.
