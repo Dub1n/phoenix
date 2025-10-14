@@ -58,6 +58,7 @@ import { ServiceInfo } from './service-ordering-manager';
 import { CLISessionBridge, CLISessionSnapshot } from './cli-session-bridge';
 import { renderCliSkin } from './cli/cli-skin-presenter';
 import { sleep } from '../utils/async-utils';
+import { createLogger, LogLevel } from '../utils/logger';
 
 /**
  * CLI Input Types (Interface-specific)
@@ -147,6 +148,7 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
   private sessionManager!: CLISessionBridge;
   private consistencyEngine: CLIDisplayConsistencyEngine;
   private readonly formatter: TerminalFormatter;
+  private readonly logger = createLogger('cli-interface-adapter', { level: LogLevel.INFO });
 
   constructor(config?: CLIAdapterInitializationOptions) {
     const { formatter, formatterCapabilities, ...adapterConfig } = config ?? {};
@@ -345,6 +347,20 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
     return this.formatter.system.command(prompt);
   }
 
+  private printLine(message: string = ''): void {
+    process.stdout.write(`${message}\n`);
+  }
+
+  private normalizeError(error: unknown): Error | undefined {
+    if (error instanceof Error) {
+      return error;
+    }
+    if (typeof error === 'string' && error.length > 0) {
+      return new Error(error);
+    }
+    return undefined;
+  }
+
   private getSessionSnapshot(): CLISessionSnapshot {
     return this.sessionManager.getCurrentSession();
   }
@@ -384,8 +400,8 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
     
     // Initialize CLI components
     await this.initializeCLIComponents();
-    
-    console.log(`CLIInterfaceAdapter: Initialized with session ${session.sessionId}`);
+
+    this.logger.info('Initialized with session', { sessionId: session.sessionId });
   }
 
   getInterfaceType(): InterfaceType {
@@ -403,31 +419,33 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
   async syncState(stateUpdate: StateUpdate): Promise<void> {
     try {
       // Handle state synchronization for CLI interface
-      console.log(`CLIInterfaceAdapter: Received state update at ${new Date(stateUpdate.timestamp).toISOString()}`);
+      this.logger.info('Received state update', {
+        timestamp: new Date(stateUpdate.timestamp).toISOString()
+      });
       
       // Update local state based on menu updates
       if (stateUpdate.menuUpdates) {
         for (const [menuId, menuUpdate] of Object.entries(stateUpdate.menuUpdates)) {
           if (menuUpdate.refreshRequired && menuId !== this.getCurrentMenu()) {
-            console.log(`CLIInterfaceAdapter: Menu refresh required for ${menuId}`);
+            this.logger.info('Menu refresh required', { menuId });
           }
           // Handle navigation state changes if available
           if (menuUpdate.navigationState) {
-            console.log(`CLIInterfaceAdapter: Navigation state updated for ${menuId}`);
+            this.logger.debug('Navigation state updated', { menuId, navigationState: menuUpdate.navigationState });
           }
         }
       }
       
       // Handle session state updates
       if (stateUpdate.sessionState) {
-        console.log('CLIInterfaceAdapter: Session state synchronized');
+        this.logger.info('Session state synchronized');
       }
 
       this.emit('stateUpdated', stateUpdate);
       
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error('CLIInterfaceAdapter: State sync failed:', errorMessage);
+      this.logger.error('State sync failed', this.normalizeError(error), { errorMessage });
     }
   }
 
@@ -462,7 +480,7 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
    */
   async applySkin(skinDefinition: UniversalSkinDefinition): Promise<void> {
     if (!this.orchestrator.isInitialized()) {
-      console.warn('CLIInterfaceAdapter: Cannot apply skin - orchestrator not ready');
+      this.logger.warn('Cannot apply skin - orchestrator not ready');
       return;
     }
 
@@ -472,7 +490,7 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
       // Use orchestrator's skin engine through abstraction
       const skinEngine = this.orchestrator.getUniversalSkinEngine();
       if (!skinEngine?.renderForInterface) {
-        console.warn('CLIInterfaceAdapter: Skin engine does not implement renderForInterface');
+        this.logger.warn('Skin engine does not implement renderForInterface');
         return;
       }
       
@@ -488,10 +506,9 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
       );
 
       if (renderResult?.success === false) {
-        console.warn(
-          'CLIInterfaceAdapter: Skin engine reported an unsuccessful render',
-          renderResult.metadata?.fallbackReason ?? 'unknown reason'
-        );
+        this.logger.warn('Skin engine reported an unsuccessful render', {
+          fallbackReason: renderResult.metadata?.fallbackReason ?? 'unknown reason'
+        });
       }
 
       const capabilities = this.formatter.getCapabilities();
@@ -500,7 +517,7 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
       });
 
       if (presentation.output.trim().length > 0) {
-        console.log(presentation.output);
+        this.printLine(presentation.output);
       }
 
       if (presentation.menuId) {
@@ -519,11 +536,14 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
         items: presentation.items.length,
       });
 
-      console.log(`CLIInterfaceAdapter: Applied skin ${skinDefinition.metadata.name} via orchestrator abstraction`);
+      this.logger.info('Applied skin via orchestrator abstraction', {
+        skinName: skinDefinition.metadata.name,
+        skinId: skinDefinition.metadata.id
+      });
       
     } catch (error) {
       const errorMessage = isTemplumError(error) ? error.message : (error instanceof Error ? error.message : 'Unknown error');
-      console.error(`CLIInterfaceAdapter: Failed to apply skin: ${errorMessage}`);
+      this.logger.error('Failed to apply skin', this.normalizeError(error), { errorMessage });
     }
   }
 
@@ -563,7 +583,7 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
       // TASK-CLI-014: Check if orchestrator indicates command should be handled locally
       if (result && result.handleLocally === true) {
         // Process command locally instead of forwarding to service
-        console.log(`[CLI] Processing command '${command}' locally`);
+        this.logger.info('Processing command locally', { command });
         
         if (spinner) {
           spinner.info(`Processing '${command}' locally`);
@@ -666,19 +686,22 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
         
       } else if (cmd === 'quit' || cmd === 'exit') {
         // Handle exit commands
-        console.log('👋 Goodbye!');
+        this.printLine('👋 Goodbye!');
         process.exit(0);
         
       } else {
         // Unknown local command
-        console.log(`❌ Unknown local command: ${command}`);
-        console.log('💡 Type "help" to see available commands');
+        this.printLine(`❌ Unknown local command: ${command}`);
+        this.printLine('💡 Type "help" to see available commands');
         return { success: false, message: `Unknown local command: ${command}`, command };
       }
       
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error(`❌ Local command processing failed: ${errorMessage}`);
+      this.logger.error('Local command processing failed', this.normalizeError(error), {
+        command
+      });
+      this.printLine(this.formatError(`❌ Local command processing failed: ${errorMessage}`));
       return { success: false, error: errorMessage, command };
     }
   }
@@ -705,15 +728,15 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
       });
 
       // Show welcome message
-      console.log(this.formatSuccess('✅ Connected to Templum service successfully'));
-      console.log(this.formatInfo('🚀 Starting Templum interactive session...'));
-      console.log(this.formatMuted('Use arrow keys to navigate, Enter to select, Ctrl+C to exit'));
-      console.log(this.formatSeparator(60));
+      this.printLine(this.formatSuccess('✅ Connected to Templum service successfully'));
+      this.printLine(this.formatInfo('🚀 Starting Templum interactive session...'));
+      this.printLine(this.formatMuted('Use arrow keys to navigate, Enter to select, Ctrl+C to exit'));
+      this.printLine(this.formatSeparator(60));
 
       // TASK-CLI-014: Add automatic skin discovery and loading during initialization
-      console.log(this.formatInfo('🔍 Discovering and loading backend skins...'));
+      this.printLine(this.formatInfo('🔍 Discovering and loading backend skins...'));
       await this.loadInitialContent();
-      console.log(this.formatSeparator(60));
+      this.printLine(this.formatSeparator(60));
 
       this.emit('interactiveSessionStarted', { menu: this.getCurrentMenu(), timestamp: Date.now() });
 
@@ -780,7 +803,14 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
           // User pressed Ctrl+C
           sessionRunning = false;
         } else {
-          console.error(this.formatError('Menu interaction error:'), error);
+          this.logger.error('Menu interaction error', this.normalizeError(error));
+          const description =
+            error instanceof Error
+              ? error.message
+              : typeof error === 'string'
+                ? error
+                : 'Unknown error';
+          this.printLine(this.formatError(`Menu interaction error: ${description}`));
           // TODO: [TASK-MCP-010-003] Pattern: cli-design-compliance | Complexity: 3 | Dependencies: error-handling,navigation-flow
           // Context: Replaced Press Enter message with timeout-based error handling per CLI-design specification
           // Validation-Required: error-display-timing, user-experience-flow, cli-design-compliance
@@ -794,8 +824,8 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
     
   } finally {
       // Store session history for potential debugging
-      console.log(this.formatWarning('\n🛑 Interactive session ended'));
-      console.log(this.formatMuted(`Session history: ${sessionHistory.length} interactions recorded`));
+      this.printLine(this.formatWarning('\n🛑 Interactive session ended'));
+      this.printLine(this.formatMuted(`Session history: ${sessionHistory.length} interactions recorded`));
     }
   }
 
@@ -804,7 +834,7 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
    */
   private async executeMenuCommand(command: string, data?: any): Promise<void> {
     try {
-      console.log(this.formatInfo(`\n⚡ Executing: ${command}`));
+      this.printLine(this.formatInfo(`\n⚡ Executing: ${command}`));
       
       const [namespace, action, ...args] = command.split(':');
       
@@ -847,12 +877,16 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
           break;
           
         default:
-          console.log(this.formatWarning(`Unknown command namespace: ${namespace}`));
+          this.printLine(this.formatWarning(`Unknown command namespace: ${namespace}`));
       }
       
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error(this.formatError(`Command execution failed: ${errorMessage}`));
+      this.logger.error('Command execution failed during menu handling', this.normalizeError(error), {
+        namespace,
+        action
+      });
+      this.printLine(this.formatError(`Command execution failed: ${errorMessage}`));
     }
   }
 
@@ -863,13 +897,13 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
     switch (action) {
       case 'status':
         const systemStatus = this.orchestrator.getSystemStatus();
-        console.log(this.formatSuccess('\n📊 System Status:'));
-        console.log(`  Initialized: ${systemStatus.coreEngine.initialized ? '✅' : '❌'}`);
-        console.log(`  Active Interfaces: ${systemStatus.activeInterfaces?.join(', ') || 'None'}`);
+        this.printLine(this.formatSuccess('\n📊 System Status:'));
+        this.printLine(`  Initialized: ${systemStatus.coreEngine.initialized ? '✅' : '❌'}`);
+        this.printLine(`  Active Interfaces: ${systemStatus.activeInterfaces?.join(', ') || 'None'}`);
         
         if (systemStatus.coreEngine?.backendConnections?.backends) {
           const backends = Object.entries(systemStatus.coreEngine.backendConnections.backends);
-          console.log(`  Connected Backends: ${backends.length}`);
+          this.printLine(`  Connected Backends: ${backends.length}`);
           
           if (backends.length > 0) {
             this.displayBackendStatus({ backends: systemStatus.coreEngine.backendConnections.backends });
@@ -878,7 +912,7 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
         break;
         
       default:
-        console.log(this.formatWarning(`Unknown system command: ${action}`));
+        this.printLine(this.formatWarning(`Unknown system command: ${action}`));
     }
   }
 
@@ -892,18 +926,18 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
         if (systemStatus.coreEngine?.backendConnections?.backends) {
           this.displayBackendStatus({ backends: systemStatus.coreEngine.backendConnections.backends });
         } else {
-          console.log(this.formatWarning('No backend services found'));
+          this.printLine(this.formatWarning('No backend services found'));
         }
         break;
         
       case 'refresh':
-        console.log(this.formatInfo('🔄 Refreshing backend services...'));
+        this.printLine(this.formatInfo('🔄 Refreshing backend services...'));
         await this.orchestrator.refreshBackendServices();
-        console.log(this.formatSuccess('✅ Backend services refreshed'));
+        this.printLine(this.formatSuccess('✅ Backend services refreshed'));
         break;
         
       default:
-        console.log(this.formatWarning(`Unknown services command: ${action}`));
+        this.printLine(this.formatWarning(`Unknown services command: ${action}`));
     }
   }
 
@@ -921,30 +955,30 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
         const backendEntry = Object.entries(backends).find(([key]) => key === backendId);
         if (backendEntry) {
           const [_key, backend] = backendEntry;
-          console.log(this.formatSuccess(`\n📋 Backend Info: ${backendId}`));
-          console.log(`  Connected: ${backend.connected ? '✅' : '❌'}`);
-          console.log(`  Health: ${backend.health || 'Unknown'}`);
-          console.log(`  Last Check: ${new Date(backend.lastCheck).toISOString()}`);
+          this.printLine(this.formatSuccess(`\n📋 Backend Info: ${backendId}`));
+          this.printLine(`  Connected: ${backend.connected ? '✅' : '❌'}`);
+          this.printLine(`  Health: ${backend.health || 'Unknown'}`);
+          this.printLine(`  Last Check: ${new Date(backend.lastCheck).toISOString()}`);
           
           if (backend.capabilities) {
-            console.log(`  Capabilities: ${backend.capabilities.join(', ')}`);
+            this.printLine(`  Capabilities: ${backend.capabilities.join(', ')}`);
           }
           
           if (backend.version) {
-            console.log(`  Version: ${backend.version}`);
+            this.printLine(`  Version: ${backend.version}`);
           }
           
           if (backend.responseTime) {
-            console.log(`  Response Time: ${backend.responseTime}ms`);
+            this.printLine(`  Response Time: ${backend.responseTime}ms`);
           }
         } else {
-          console.log(this.formatWarning(`Backend not found: ${backendId}`));
+          this.printLine(this.formatWarning(`Backend not found: ${backendId}`));
         }
       } else {
-        console.log(this.formatWarning(`Backend not found: ${backendId}`));
+        this.printLine(this.formatWarning(`Backend not found: ${backendId}`));
       }
     } else {
-      console.log(this.formatWarning(`Unknown backend command: ${action}`));
+      this.printLine(this.formatWarning(`Unknown backend command: ${action}`));
     }
   }
 
@@ -972,13 +1006,13 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
   private async handleSettingsCommand(action: string, _args: string[], _data?: any): Promise<void> {
     switch (action) {
       case 'toggle-mode':
-        console.log(this.formatInfo('🔀 Switching to command mode...'));
+        this.printLine(this.formatInfo('🔀 Switching to command mode...'));
         // Switch to command mode (would need additional implementation)
-        console.log(this.formatWarning('Command mode not yet implemented - staying in menu mode'));
+        this.printLine(this.formatWarning('Command mode not yet implemented - staying in menu mode'));
         break;
         
       default:
-        console.log(this.formatWarning(`Unknown settings command: ${action}`));
+        this.printLine(this.formatWarning(`Unknown settings command: ${action}`));
     }
   }
 
@@ -1036,7 +1070,7 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
     }
 
     this.emit('interactiveSessionStopped', { timestamp: Date.now() });
-    console.log('CLIInterfaceAdapter: Interactive session stopped');
+    this.logger.info('Interactive session stopped');
   }
 
   async dispose(): Promise<void> {
@@ -1059,10 +1093,10 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
       this.sessionManager?.resetNavigationHistory();
       this.removeAllListeners();
       
-      console.log('CLIInterfaceAdapter: Disposed successfully with session saved');
+      this.logger.info('Disposed successfully with session saved');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error('CLIInterfaceAdapter disposal error:', errorMessage);
+      this.logger.error('Disposal error', this.normalizeError(error), { errorMessage });
     }
   }
 
@@ -1074,10 +1108,10 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
    * Pattern-Info: { approach: "readline-based-command-mode", alternatives: "prompt-library", trade-offs: "control-vs-simplicity" }
    */
   private async switchToCommandMode(): Promise<any> {
-    console.log(this.formatInfo('\n🔧 Switching to Command Mode'));
-    console.log(this.formatMuted('Type commands directly. Use "m" to return to menu mode.'));
-    console.log(this.formatMuted('Commands: help, status, load <backend>, quit, etc.'));
-    console.log(this.formatSeparator(50));
+    this.printLine(this.formatInfo('\n🔧 Switching to Command Mode'));
+    this.printLine(this.formatMuted('Type commands directly. Use "m" to return to menu mode.'));
+    this.printLine(this.formatMuted('Commands: help, status, load <backend>, quit, etc.'));
+    this.printLine(this.formatSeparator(50));
     
     this.sessionManager.switchInteractionMode('command');
     
@@ -1091,9 +1125,9 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
    * Switch to menu mode with session persistence
    */
   private async switchToMenuMode(): Promise<any> {
-    console.log(this.formatInfo('\n📋 Switching to Menu Mode'));
-    console.log(this.formatMuted('Use arrow keys to navigate, Enter to select.'));
-    console.log(this.formatSeparator(50));
+    this.printLine(this.formatInfo('\n📋 Switching to Menu Mode'));
+    this.printLine(this.formatMuted('Use arrow keys to navigate, Enter to select.'));
+    this.printLine(this.formatSeparator(50));
     
     this.sessionManager.switchInteractionMode('menu');
     
@@ -1119,7 +1153,7 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
     const session = this.sessionManager.getCurrentSession();
     if (session.commandHistory.length > 0) {
       // Note: readline history setup would require more complex implementation
-      console.log(this.formatMuted(`Command history available (${session.commandHistory.length} commands)`));
+      this.printLine(this.formatMuted(`Command history available (${session.commandHistory.length} commands)`));
     }
 
     rl.prompt();
@@ -1146,7 +1180,7 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
 
         // Check for exit
         if (command === 'quit' || command === 'exit') {
-          console.log('👋 Goodbye!');
+          this.printLine('👋 Goodbye!');
           rl.close();
           process.exit(0);
         }
@@ -1156,9 +1190,9 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
           const result = await this.processLocalCommand(command);
           
           if (result.success) {
-            console.log(this.formatSuccess(`✅ ${result.message}`));
+            this.printLine(this.formatSuccess(`✅ ${result.message}`));
           } else {
-            console.log(this.formatError(`❌ ${result.message}`));
+            this.printLine(this.formatError(`❌ ${result.message}`));
           }
           
         } catch (error) {
@@ -1177,7 +1211,7 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
       });
 
       rl.on('SIGINT', () => {
-        console.log(this.formatWarning('\n🔄 Use "m" to switch to menu mode or "quit" to exit'));
+        this.printLine(this.formatWarning('\n🔄 Use "m" to switch to menu mode or "quit" to exit'));
         rl.prompt();
       });
     });
@@ -1195,16 +1229,16 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
     const errorType = this.categorizeError(error, context);
     
     // Display error with context
-    console.log(this.formatError(`\n❌ ${errorType.category}: ${errorMessage}`));
+    this.printLine(this.formatError(`\n❌ ${errorType.category}: ${errorMessage}`));
     
     // Provide recovery suggestions
     const suggestions = this.generateRecoverySuggestions(errorType, context, source);
     if (suggestions.length > 0) {
-      console.log(this.formatWarning('\n💡 Recovery Suggestions:'));
+      this.printLine(this.formatWarning('\n💡 Recovery Suggestions:'));
       suggestions.forEach((suggestion, index) => {
-        console.log(this.formatWarning(`   ${index + 1}. ${suggestion.action}`));
+        this.printLine(this.formatWarning(`   ${index + 1}. ${suggestion.action}`));
         if (suggestion.command) {
-          console.log(this.formatMuted(`      Try: ${suggestion.command}`));
+          this.printLine(this.formatMuted(`      Try: ${suggestion.command}`));
         }
       });
     }
@@ -1212,8 +1246,8 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
     // Offer automated recovery if available
     const autoRecovery = this.getAutomatedRecovery(errorType, context);
     if (autoRecovery) {
-      console.log(this.formatInfo(`\n🔧 Auto-recovery available: ${autoRecovery.description}`));
-      console.log(this.formatMuted('Type "y" to attempt auto-recovery, or any other key to continue...'));
+      this.printLine(this.formatInfo(`\n🔧 Auto-recovery available: ${autoRecovery.description}`));
+      this.printLine(this.formatMuted('Type "y" to attempt auto-recovery, or any other key to continue...'));
       
       // Note: In a full implementation, this would wait for user input
       // For now, just log the availability
@@ -1461,7 +1495,7 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
    */
   displayTable(data: any[], headers: string[]): void {
     const table = this.terminalUI.getLayout().createTable(data, headers);
-    console.log(table);
+    this.printLine(table);
   }
 
   /**
@@ -1483,7 +1517,7 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error('CLIInterfaceAdapter: Input handling error:', errorMessage);
+      this.logger.error('Input handling error', this.normalizeError(error), { errorMessage });
       return { 
         handled: false, 
         errors: [errorMessage] 
@@ -1515,7 +1549,7 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
     }
 
     try {
-      console.log('CLIInterfaceAdapter: Loading initial content with real backend integration...');
+      this.logger.info('Loading initial content with real backend integration');
       
       // Get system status with real backend connection information
       const systemStatus = this.orchestrator.getSystemStatus();
@@ -1532,13 +1566,19 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
 
       for (const skin of preloadedSkins) {
         try {
-          console.log(`CLIInterfaceAdapter: Rendering preloaded skin ${skin.metadata?.name ?? skin.id}`);
+          this.logger.info('Rendering preloaded skin', {
+            skinId: skin.metadata?.id ?? skin.id,
+            skinName: skin.metadata?.name ?? skin.id
+          });
           await this.applySkin(skin);
           skinLoaded = true;
           break;
         } catch (preloadedError) {
           const message = preloadedError instanceof Error ? preloadedError.message : String(preloadedError);
-          console.warn(`CLIInterfaceAdapter: Failed to render preloaded skin ${skin.metadata?.id ?? skin.id}: ${message}`);
+          this.logger.warn('Failed to render preloaded skin', {
+            skinId: skin.metadata?.id ?? skin.id,
+            errorMessage: message
+          });
         }
       }
 
@@ -1554,7 +1594,10 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
           return aTime - bTime; // Prefer faster response times
         });
 
-      console.log(`CLIInterfaceAdapter: Found ${healthyBackends.length} healthy backend(s) for integration`);
+      this.logger.info('Healthy backend count discovered', {
+        healthyBackendCount: healthyBackends.length,
+        totalBackends: Object.keys(backendConnections.backends || {}).length
+      });
 
       // If no preloaded skin rendered successfully, attempt to load from healthy backends
       for (const [backendId] of healthyBackends) {
@@ -1562,30 +1605,34 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
           break;
         }
         try {
-          console.log(`CLIInterfaceAdapter: Attempting to load skin from ${backendId} backend...`);
+          this.logger.info('Attempting to load backend skin', { backendId });
           
           const skinDefinition = await this.orchestrator.loadBackendSkin(backendId);
           
           if (skinDefinition) {
-            console.log(`CLIInterfaceAdapter: Successfully loaded skin from ${backendId}`);
+            this.logger.info('Loaded backend skin', {
+              backendId,
+              skinId: skinDefinition.id,
+              skinName: skinDefinition.name ?? skinDefinition.id
+            });
             await this.applySkin(skinDefinition);
             skinLoaded = true;
             break;
           }
         } catch (error) {
-          console.warn(`CLIInterfaceAdapter: Failed to load skin from ${backendId}:`, error);
+          this.logger.warn('Failed to load skin from backend', this.normalizeError(error), { backendId });
         }
       }
 
       // Display fallback content if no skins loaded
       if (!skinLoaded) {
-        console.log(this.getFallbackCLIOutput(backendConnections));
+        this.printLine(this.getFallbackCLIOutput(backendConnections));
       }
       
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error('CLIInterfaceAdapter: Failed to load initial content:', errorMessage);
-      console.log(this.getErrorCLIOutput(errorMessage));
+      this.logger.error('Failed to load initial content', this.normalizeError(error), { errorMessage });
+      this.printLine(this.getErrorCLIOutput(errorMessage));
     }
   }
 
@@ -1706,7 +1753,7 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
    * @private
    */
   private async handleMenuSelection(input: CLIInput): Promise<CLIInputResult> {
-    console.log(`Menu selection ${input.value} (integration with orchestrator menu system pending)`);
+    this.printLine(`Menu selection ${input.value} (integration with orchestrator menu system pending)`);
     return { handled: true, result: { menuSelection: input.value } };
   }
 
@@ -1742,12 +1789,12 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
         if (!previousMenu) {
           return { handled: false, errors: ['No previous menu in history'] };
         }
-        console.log(`Navigated back to: ${previousMenu}`);
+        this.printLine(`Navigated back to: ${previousMenu}`);
         return { handled: true, navigationChange: { action: 'back', target: previousMenu } };
       
       case 'home':
         this.setCurrentMenu('main', { addToHistory: false, resetHistory: true });
-        console.log('Navigated to main menu');
+        this.printLine('Navigated to main menu');
         return { handled: true, navigationChange: { action: 'menu', target: 'main' } };
       
       default:
@@ -1761,17 +1808,17 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
    */
   private displayCommandResult(result: CommandResult): void {
     if (result.success) {
-      console.log(`✅ ${result.message || 'Command executed successfully'}`);
+      this.printLine(`✅ ${result.message || 'Command executed successfully'}`);
       
       if (result.metadata?.backendId) {
-        console.log(`   Backend: ${result.metadata.backendId}`);
+        this.printLine(`   Backend: ${result.metadata.backendId}`);
       }
       
       if (result.executionTime) {
-        console.log(`   Time: ${result.executionTime}ms`);
+        this.printLine(`   Time: ${result.executionTime}ms`);
       }
     } else {
-      console.log(`❌ ${result.error || 'Command execution failed'}`);
+      this.printLine(`❌ ${result.error || 'Command execution failed'}`);
     }
   }
 
@@ -1837,7 +1884,7 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
       }
       
       // Display the consistently formatted content
-      console.log(consistencyResult.formattedContent);
+      this.printLine(consistencyResult.formattedContent);
       
       // Display additional statistics with consistent formatting
       if (consistencyResult.serviceMetadata) {
@@ -1847,25 +1894,24 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
         // Use theme functions if available
         if (theme && typeof theme.info === 'function' && typeof theme.success === 'function' && typeof theme.warning === 'function') {
           const statusDisplay = healthyCount > 0 ? theme.success(statusText) : theme.warning(statusText);
-          console.log(theme.info(`Connected: ${connectedCount}/${totalCount} | Healthy: ${healthyCount}/${connectedCount} | Status: ${statusDisplay}`));
+          this.printLine(theme.info(`Connected: ${connectedCount}/${totalCount} | Healthy: ${healthyCount}/${connectedCount} | Status: ${statusDisplay}`));
         } else {
-          console.log(`Connected: ${connectedCount}/${totalCount} | Healthy: ${healthyCount}/${connectedCount} | Status: ${statusText}`);
+          this.printLine(`Connected: ${connectedCount}/${totalCount} | Healthy: ${healthyCount}/${connectedCount} | Status: ${statusText}`);
         }
       }
       
       // Display recommendations if any
       if (consistencyResult.recommendations.length > 0) {
-        console.log('\n💡 Recommendations:');
+        this.printLine('\n💡 Recommendations:');
         consistencyResult.recommendations.forEach(rec => {
-          console.log(`   ${rec}`);
+          this.printLine(`   ${rec}`);
         });
       }
       
-      console.log();
+      this.printLine();
       
     } catch (error) {
-      console.warn('CLIInterfaceAdapter: Consistency engine failed, using fallback display');
-      console.error('Error details:', error);
+      this.logger.error('Consistency engine failed, using fallback display', this.normalizeError(error));
       
       // Fallback to basic display
       this.displayBackendStatusFallback(backendConnections);
@@ -1877,8 +1923,8 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
    * @private
    */
   private displayBackendStatusFallback(backendConnections: any): void {
-    console.log('\n🌐 Backend Service Status (Fallback Display):');
-    console.log('━'.repeat(60));
+    this.printLine('\n🌐 Backend Service Status (Fallback Display):');
+    this.printLine('━'.repeat(60));
     
     Object.entries(backendConnections.backends).forEach(([serviceId, status]) => {
       const statusTyped = status as any;
@@ -1886,11 +1932,11 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
       const serviceColumn = this.formatColumn(serviceId, 20);
       const connectionState = this.formatColumn(statusTyped.connected ? 'Connected' : 'Disconnected', 12);
       const health = statusTyped.health || 'Unknown';
-      console.log(`${icon} ${serviceColumn} ${connectionState} | ${health}`);
+      this.printLine(`${icon} ${serviceColumn} ${connectionState} | ${health}`);
     });
     
-    console.log('━'.repeat(60));
-    console.log();
+    this.printLine('━'.repeat(60));
+    this.printLine();
   }
 
   /**
@@ -1900,11 +1946,11 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
   private displayKeyboardShortcuts(): void {
     if (this.keyboardShortcuts.size === 0) return;
 
-    console.log('\n⌨️  Keyboard Shortcuts:');
+    this.printLine('\n⌨️  Keyboard Shortcuts:');
     this.keyboardShortcuts.forEach((command, key) => {
-      console.log(`  ${key} - ${command}`);
+      this.printLine(`  ${key} - ${command}`);
     });
-    console.log();
+    this.printLine();
   }
 
   /**
@@ -1912,33 +1958,33 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
    * @private
    */
   private displayHelp(): void {
-    console.log('\n📚 Templum CLI Help (Abstraction Layer):');
-    console.log('Commands:');
-    console.log('  help     - Show this help message');
-    console.log('  back     - Go to previous menu');
-    console.log('  home     - Go to main menu');
-    console.log('  refresh  - Refresh current view');
-    console.log('  status   - Show backend service status');
-    console.log('  load <id>- Load backend skin (e.g., load pcl, load minimal-example)');
-    console.log('  quit     - Exit application');
-    console.log('\nNavigation:');
-    console.log('  1-9      - Select menu item by number');
-    console.log('  command  - Execute any backend command');
+    this.printLine('\n📚 Templum CLI Help (Abstraction Layer):');
+    this.printLine('Commands:');
+    this.printLine('  help     - Show this help message');
+    this.printLine('  back     - Go to previous menu');
+    this.printLine('  home     - Go to main menu');
+    this.printLine('  refresh  - Refresh current view');
+    this.printLine('  status   - Show backend service status');
+    this.printLine('  load <id>- Load backend skin (e.g., load pcl, load minimal-example)');
+    this.printLine('  quit     - Exit application');
+    this.printLine('\nNavigation:');
+    this.printLine('  1-9      - Select menu item by number');
+    this.printLine('  command  - Execute any backend command');
     
     if (this.keyboardShortcuts.size > 0) {
-      console.log('\nShortcuts:');
+      this.printLine('\nShortcuts:');
       this.keyboardShortcuts.forEach((command, key) => {
-        console.log(`  ${key}       - ${command}`);
+        this.printLine(`  ${key}       - ${command}`);
       });
     }
     
-    console.log('\nBackend Integration:');
+    this.printLine('\nBackend Integration:');
     if (this.orchestrator?.isInitialized()) {
-      console.log('  ✅ Real backend integration active via orchestrator abstraction');
+      this.printLine('  ✅ Real backend integration active via orchestrator abstraction');
     } else {
-      console.log('  ⚠️  Orchestrator not initialized');
+      this.printLine('  ⚠️  Orchestrator not initialized');
     }
-    console.log();
+    this.printLine();
   }
 
   /**
@@ -1996,36 +2042,41 @@ Using abstraction layer with real backend integration.
    */
   private async loadSpecificBackendSkin(backendId: string): Promise<void> {
     if (!backendId) {
-      console.log('❌ Please specify a backend ID (e.g., load pcl, load minimal-example)');
+      this.printLine('❌ Please specify a backend ID (e.g., load pcl, load minimal-example)');
       return;
     }
 
     try {
-      console.log(`🔄 Loading skin from backend: ${backendId}`);
+      this.printLine(`🔄 Loading skin from backend: ${backendId}`);
       
       // Attempt to load the backend skin via orchestrator
       const skinDefinition = await this.orchestrator.loadBackendSkin(backendId);
       
       if (skinDefinition) {
-        console.log(`✅ Successfully loaded skin: ${skinDefinition.name || backendId}`);
-        console.log(`   Version: ${skinDefinition.version}`);
-        console.log(`   ID: ${skinDefinition.id}`);
+        this.printLine(`✅ Successfully loaded skin: ${skinDefinition.name || backendId}`);
+        this.printLine(`   Version: ${skinDefinition.version}`);
+        this.printLine(`   ID: ${skinDefinition.id}`);
         
         // Refresh the CLI content to show the new skin
         await this.loadInitialContent();
-        console.log(`📋 Interface updated with ${skinDefinition.name || backendId} skin definition`);
+        this.printLine(`📋 Interface updated with ${skinDefinition.name || backendId} skin definition`);
         
       } else {
-        console.log(`❌ Could not load skin from backend: ${backendId}`);
-        console.log('💡 Check if backend is running and accessible');
+        this.printLine(`❌ Could not load skin from backend: ${backendId}`);
+        this.printLine('💡 Check if backend is running and accessible');
         
         // Show available backends
         await this.displayAvailableBackends();
       }
       
     } catch (error) {
-      console.error(`❌ Failed to load skin from ${backendId}:`, error instanceof Error ? error.message : 'Unknown error');
-      console.log('💡 Use "status" command to check backend connectivity');
+      const normalizedError = this.normalizeError(error);
+      this.logger.error('Failed to load skin from backend during manual load', normalizedError, {
+        backendId
+      });
+      const errorMessage = normalizedError?.message ?? (error instanceof Error ? error.message : 'Unknown error');
+      this.printLine(this.formatError(`❌ Failed to load skin from ${backendId}: ${errorMessage}`));
+      this.printLine('💡 Use "status" command to check backend connectivity');
     }
   }
 
@@ -2039,21 +2090,21 @@ Using abstraction layer with real backend integration.
       const backends = systemStatus.coreEngine?.backendConnections?.backends || {};
       
       if (Object.keys(backends).length === 0) {
-        console.log('📡 No backends currently connected');
+        this.printLine('📡 No backends currently connected');
         return;
       }
       
-      console.log('\n📡 Available backends:');
+      this.printLine('\n📡 Available backends:');
       for (const [serviceId, status] of Object.entries(backends)) {
         const statusIcon = status.connected 
           ? (status.health === 'healthy' ? '🟢' : '🟡') 
           : '🔴';
-        console.log(`  ${statusIcon} ${serviceId} - ${status.connected ? 'connected' : 'disconnected'}`);
+        this.printLine(`  ${statusIcon} ${serviceId} - ${status.connected ? 'connected' : 'disconnected'}`);
       }
-      console.log('\n💡 Try: load <backend-id>');
+      this.printLine('\n💡 Try: load <backend-id>');
       
     } catch (_error) {
-      console.log('⚠️ Failed to get backend status');
+      this.printLine('⚠️ Failed to get backend status');
     }
   }
 }
