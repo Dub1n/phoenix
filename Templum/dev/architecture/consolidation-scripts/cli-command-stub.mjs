@@ -2441,7 +2441,7 @@ function reopenCohortSegmentsForPattern(registry, pattern, segments) {
         return;
       }
       const entry = ensureCohortStage(cohort, segment);
-      const currentStatus = normalizeStatus(entry?.status || 'blocked');
+      const currentStatus = normaliseStageStatusValue(entry?.status || 'blocked');
       if (currentStatus === 'pending' || currentStatus === 'blocked') {
         return;
       }
@@ -2450,6 +2450,56 @@ function reopenCohortSegmentsForPattern(registry, pattern, segments) {
     });
   });
   return reopened;
+}
+
+function reopenCohortPeerStages(registry, pattern, stageIds) {
+  const reopenedPeers = [];
+  if (!registry || !pattern || !stageIds || !stageIds.length) {
+    return reopenedPeers;
+  }
+  const stageSet = new Set(stageIds.filter(Boolean));
+  if (!stageSet.size) {
+    return reopenedPeers;
+  }
+  const sourceCohortIds = new Set(getPatternCohortIds(pattern).map((id) => normaliseCohortId(id)));
+  if (!sourceCohortIds.size) {
+    return reopenedPeers;
+  }
+  const targetStageIds = [...stageSet].filter((stageId) => stageId === '5' || stageOrder.indexOf(stageId) >= stageOrder.indexOf('5'));
+  if (!targetStageIds.length) {
+    return reopenedPeers;
+  }
+  const patternId = pattern.patternId;
+  (registry.patterns || []).forEach((candidate) => {
+    if (!candidate || candidate.patternId === patternId) {
+      return;
+    }
+    const candidateCohorts = getPatternCohortIds(candidate).map((id) => normaliseCohortId(id));
+    const sharesCohort = candidateCohorts.some((cohortId) => sourceCohortIds.has(cohortId));
+    if (!sharesCohort) {
+      return;
+    }
+    const reopenedStageIds = new Set();
+    if (stageSet.has('5')) {
+      const gate = ensureStageGate(candidate, '5');
+      const status = normaliseStageStatusValue(gate.status || defaultStageStatus('5'));
+      if (status !== 'pending' && status !== 'blocked') {
+        setStageGate(candidate, '5', 'pending');
+        reopenedStageIds.add('5');
+        const cascade = reopenDownstreamStageGates(registry, candidate, '5');
+        cascade.stageIds.forEach((id) => reopenedStageIds.add(id));
+      }
+    }
+    if (reopenedStageIds.size) {
+      autoUpdatePatternStatuses(registry, candidate);
+      recomputePatternStagePointer(candidate);
+      reopenedPeers.push({
+        patternId: candidate.patternId,
+        stageIds: [...reopenedStageIds].sort((a, b) => stageOrder.indexOf(a) - stageOrder.indexOf(b))
+      });
+    }
+  });
+  return reopenedPeers;
 }
 
 function reopenDownstreamStageGates(registry, pattern, stageId) {
@@ -4566,9 +4616,15 @@ async function main() {
           planFiles: normalizedPlanFiles,
           clearPlanFiles: stageOptions.clearPlanFiles
         });
-        const updatedStageStatus = normalizeStatus(gate.status || defaultStageStatus(stageId));
+        const updatedStageStatus = normaliseStageStatusValue(gate.status || defaultStageStatus(stageId));
+        let peerReopens = [];
         if (!stageCompletionStatuses.has(updatedStageStatus) && updatedStageStatus !== 'ready') {
           cascadeResult = reopenDownstreamStageGates(registry, pattern, stageId);
+          const stageIndex = stageOrder.indexOf(stageId);
+          const stage5Index = stageOrder.indexOf('5');
+          if (stageIndex !== -1 && stage5Index !== -1 && stageIndex <= stage5Index) {
+            peerReopens = reopenCohortPeerStages(registry, pattern, ['5']);
+          }
         }
         if (stageOptions.planFiles.length === 0 && stageOptions.clearPlanFiles) {
           console.log('Planned files cleared from stage gate.');
@@ -4584,6 +4640,13 @@ async function main() {
             (entry) => `Cohort ${entry.cohortId} segment ${entry.segment.toUpperCase()}`
           );
           console.log(`Cohort segments reset to pending: ${reopenedCohorts.join(', ')}.`);
+        }
+        if (peerReopens.length) {
+          const peerMessages = peerReopens.map((entry) => {
+            const stages = entry.stageIds.map((id) => displayStageLabel(id)).join(', ');
+            return `Pattern ${entry.patternId} (${stages})`;
+          });
+          console.log(`Cohort peer stages reopened: ${peerMessages.join('; ')}.`);
         }
 
         if (stageDependencyChanges.changed) {
