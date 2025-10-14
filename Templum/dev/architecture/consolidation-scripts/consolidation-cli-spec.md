@@ -177,20 +177,21 @@ When Stage 5 is blocked, the CLI expects the alignment squad to run the follow
 
 ### Stage 3 Orchestration Checklist (2025-11-07 Refresh)
 
-- Run the migration search (`rg --files-with-matches` or equivalent) for every documented term and map every hit inside the active project root (e.g., `Templum/`) to a Stage 4 lane; use directories in `--plan-files` when it keeps the roster readable.
-- Mirror each Stage 4 lane’s plan-files onto its paired Stage 6 lane and keep those lane scopes disjoint—no two Stage 4 or Stage 6 lanes may share the same plan-file entry.
-- Apply the full search-term set to every Stage 4 lane, Stage 6 lane, and the Stage 7 gate so sweeps cover the entire contract; propagate updates via `update-lane --search-terms` and `update-stage 7 --search-terms`.
+- Run the migration search (`rg --files-with-matches` or equivalent) for every documented term. Bucket the results into **guardrail surfaces** (tests, fixtures, harness utilities) and **runtime surfaces** (production code, adapters, configs). Stage 4 lanes own the guardrail assets; Stage 6 lanes own the runtime migrations.
+- For each guardrail lane, create the paired Stage 6 lane in the registry and capture the one-to-one mapping (lane id, scope, dependencies) in the Stage 3 note so owners immediately see which runtime slice each guardrail protects.
+- Stage 4 lane plan-files should reference the guardrail assets (e.g., `src/tests/**`, harness helpers), while the paired Stage 6 lane records only the runtime files those guards will exercise. Keep plan-files/search terms disjoint across the two stages.
+- Apply the full search-term set to both lane types and the Stage 7 gate so sweeps cover the entire contract; propagate updates via `update-lane --search-terms` and `update-stage 7 --search-terms`.
 - Add the project root itself (`Templum/` for this migration) to the Stage 7 gate’s plan-files so the final sweep enforces repo-wide cleanliness before release.
-- Capture sequencing, dependencies, and reminder text in the Stage 3 note so downstream owners inherit the migration choreography and can spot plan-file overlaps early.
+- Capture sequencing, dependencies, expected failure signatures, and reminder text in the Stage 3 note so downstream owners inherit the migration choreography and can spot plan-file overlaps early.
 
 *Reminder: each pattern belongs to exactly one cohort—remove it with `cohort --id <currentId> --remove-pattern <patternId>` before assigning it elsewhere.*
 
 ### Stage 5B execution guidance
 
-- Stage 6 lanes are designed for *parallel* migrations: once Stage 5 is complete, every lane starts in `pending`. Agents claim whichever lane they can unblock, apply their surgical edits, and run the mandated command battery.
-- When a lane finishes cleanly, mark it `complete`. If a genuine upstream dependency prevents completion, flip the lane to `blocked`, add the specific `patternId:gate` reference with `--add-dependency`, and document the blocker so scheduling stays accurate. Remove the block when the dependency clears.
-- This “migrate first, block when proven” flow keeps velocity high (no speculative blockers) while preserving the audit trail the moment a real dependency surfaces. Use `append-activity` to call out shared files or hotspots so parallel lane owners stay in sync.
-- Before marking a lane complete, ensure its `plannedFiles` and `searchTerms` match the work you performed; the guard output will block mismatches unless you intentionally force the update and document the residue.
+- Stage 6 lanes remain `pending` until Stage 5B proves the Stage 4 guardrails behave as expected: run the new guardrail assets against the unmigrated baseline, capture the failing signature, and attach the timeout log to the Stage 5 note or activity entry.
+- Document the migration recipe for each Stage 6 lane (expected edits, DI seams to respect, guardrail commands to re-run, plan-file owners) inside the Stage 5 note and in the hand-off so execution agents inherit a deterministic checklist.
+- Record cross-pattern or cross-lane dependencies uncovered while rehearsing the guardrails using `update-lane --add-dependency` or Stage 5 gate dependencies; keep blockers visible until Stage 6 owners confirm the guardrail now passes.
+- Close Stage 5B only after every Stage 6 lane has: a paired guardrail reference, failing evidence logged, migration instructions captured, and any approvals/coordination items acknowledged by the cohort.
 
 ### Cleanup guard enforcement
 
@@ -227,31 +228,47 @@ sequenceDiagram
 
 ### Stage 1 expectations
 
-- Run `guide`/`claim` first, then build the consumer inventory with repeatable `rg` (or equivalent) commands that can be shared in the activity log.
-- Bucket the results into priority clusters (interfaces/adapters, orchestrators/session utilities, observability/telemetry, tests, and long tail) and record ownership or risk callouts inline with the counts.
-- Capture the discovery note with `stage-note … 1` containing the commands, cluster summary, and guardrails so downstream stages inherit repeatable evidence rather than loose scratch notes.
-- Only mark Stage 1 complete after writing an exit summary (via `update-stage … --status complete`) that distils the cluster priorities, immediate risks/blockers, and any documentation/progress trackers to touch before Stage 2 opens.
+- Start with `guide`/`claim`, then build the consumer inventory using repeatable `rg` (or equivalent) commands that can be pasted into activity logs.
+- Bucket findings into priority cohorts (interfaces/adapters, orchestrators/session utilities, observability/telemetry, tests, long tail) and call out ownership/risks inline with counts.
+- Capture a Stage 1 note (`stage-note … 1`) summarising commands, clusters, and guardrails so Stage 2 inherits repeatable evidence.
+- Close Stage 1 only after recording an exit summary (`update-stage … --status complete`) that highlights priorities, blockers, and required docs/progress updates before Stage 2 opens.
 
-### Stage 2 regression expectations
+### Stage 2 expectations
 
-- Record the regression plan together with the intended timeout wrapper preset (`--preset jest-suite` for targeted files, `--preset jest-ci` for `npm run test:ci` bundles) so downstream notes explain which completion marker the CLI should expect.
-- Execute every suite via `node scripts/run-with-timeout.mjs --preset <preset> -- …`; attach the resulting logs to `update-stage … --files` to keep evidence auditable.
+- Document the regression plan plus timeout wrapper preset (`--preset jest-suite` for targeted files, `--preset jest-ci` for `npm run test:ci`) so completion markers stay deterministic.
+- Execute every suite via `node scripts/run-with-timeout.mjs --preset <preset> -- …`; attach logs with `update-stage … --files` to keep artefacts auditable.
+- Reopen Stage 2 if later stages expose coverage gaps—extend the suite, re-run with the wrapper, and record the new evidence before progressing.
 
-### Stage 4 lane execution expectations
+### Stage 3 expectations
 
-- When a lane’s commands include tests or validation harnesses, always invoke them through `node scripts/run-with-timeout.mjs --preset <preset> -- …` (typically `jest-suite`, `jest-ci`, or `phase6-validation`) before recording completion; note the preset in the lane summary for traceability.
+- Map the migration search results into paired Stage 4 (guardrail) and Stage 6 (runtime) lanes; Stage 4 plan-files reference the guard assets, Stage 6 plan-files cover runtime surfaces.
+- Record the guardrail/runtime pairing, sequencing, and expected failure signatures in the Stage 3 note so downstream owners inherit the choreography.
+- Apply the combined search-term set to both lane types and the Stage 7 gate (add the project root, e.g., `Templum/`) so sweeps enforce the full contract.
+- When new scope appears, reopen Stage 3, add the guardrail/runtime lane pair, and update dependencies before handing off.
 
-### Stage 5 gating expectations
+### Stage 4 expectations
 
-- Stage 5B owners must drive the Stage 6 gating battery with the wrapper: use `--preset phase6-validation` for `npm run phase6-validation` and `--preset phase6-health` for health probes, then link the timeout logs in the Stage 5 note or activity entry.
+- Author or refresh guardrail suites, fixtures, and helpers that fail until the migration lands; outline the paired Stage 6 lane and expected failure in a Stage 4 note.
+- Run the guardrail through `node scripts/run-with-timeout.mjs --preset <preset> -- …`, capture the failing log via `update-lane … --status in_progress --files`, and block/reopen coverage work if the guard passes unexpectedly.
+- Close the lane only after the failing signature is stable and the paired Stage 6 lane has been updated with the guardrail reference.
 
-### Stage 6 lane execution expectations
+### Stage 5 expectations
 
-- Each mandated command runs under the timeout wrapper with the matching preset (`jest-ci`/`jest-suite` for Jest, `phase6-validation`/`phase6-health` for harness scripts); checkpoint progress with `update-lane … --status in_progress --files` so partial artefacts stay discoverable.
+- Stage 5A keeps cohorts aligned: log the shared spec via `cohort-stage … --plan-files`, ensure every Stage 4 guardrail is in place, and attach blockers/dependencies in-band.
+- Stage 5B rehearses the guardrails: replay the timeout-wrapped suites against the unmigrated baseline, capture failing evidence in Stage 5 notes, and document the migration checklist plus approvals in the hand-off.
+- Update each Stage 6 lane with its guardrail link, dependencies, and migration steps before marking Stage 5 complete.
 
-### Stage 7 validation expectations
+### Stage 6 expectations
 
-- Stage 7 validation batteries are executed via `node scripts/run-with-timeout.mjs --preset <preset> -- …`; capture both the preset choice and artefact path in the Stage 7 note before marking the stage complete.
+- Claim a lane, reproduce the Stage 4 guardrail failure with the wrapper, and log the baseline via `update-lane … --status in_progress --files`.
+- Apply the migration, rerun the guardrail (and any additional batteries) until it passes, log the passing artefact, and run the sweep to ensure no forbidden `console.*` usage remains.
+- If the guardrail still fails or scope expands, block the lane, attach dependencies to the remediation stage, and capture details with `append-activity` before resuming.
+
+### Stage 7 expectations
+
+- Execute the Stage 7 validation battery with `node scripts/run-with-timeout.mjs --preset <preset> -- …`, recording artefacts via `update-stage … --files`.
+- Document the reason for the validation, required reruns, and confirmation that promised documentation/progress trackers were updated (automation pending) in a Stage 7 note.
+- Run the Stage 7 sweep, confirm the repo is clean, and only then mark the stage complete. Reopen Stage 7 if regressions surface later.
 
 ### Guide rendering flow
 

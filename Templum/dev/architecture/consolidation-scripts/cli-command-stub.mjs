@@ -1230,9 +1230,9 @@ const stageGuidance = {
   '3': {
     title: 'Stage 3 — Migration Orchestration',
     reminders: [
-      'Capture Stage 4/6 ownership, sequencing, and lane definitions inside the Stage 3 note; when you add plan-files you may list directories and must keep Stage 4 and Stage 6 lane scopes free of overlap.',
-      'Run the migration search (e.g., `rg`) for the required search terms and map every matching file in the project folder (e.g., `Templum/`) into the Stage 4 lanes and their paired Stage 6 lanes.',
-      'Mirror the full search-term set onto each Stage 4 lane, Stage 6 lane, and the Stage 7 gate, and add the project root (e.g., `Templum/`) to Stage 7 plan-files so sweeps enforce the migration contract.',
+      'Capture Stage 4 guardrail lanes and their paired Stage 6 runtime lanes inside the Stage 3 note so downstream owners see the one-to-one mapping immediately.',
+      'Run the migration search (e.g., `rg`) for the required terms, classify each hit as guardrail (tests/helpers) or runtime (production surfaces), and assign them to the correct lane.',
+      'Keep Stage 4 and Stage 6 plan-files/search terms disjoint while mirroring the full term set onto Stage 7 (add the project root, e.g., `Templum/`, to Stage 7 plan-files) so sweeps enforce the contract.',
       'Keep cross-pattern coordination in the registry (Stage 3 note + activity) so downstream owners have a single source and can correct plan-file collisions early.',
       'If dependencies shift, add a Stage 3 note and notify the affected pattern owners instead of editing manual trackers.',
       'Completed lanes stay sealed; when new migration cohorts emerge, create additional Stage 6 lanes and capture the change in a fresh Stage 3 note rather than reopening prior work.',
@@ -1243,10 +1243,11 @@ const stageGuidance = {
   '4': {
     title: 'Stage 4 — Prerequisites',
     reminders: [
-      'Attach gating evidence via lane command summaries/log paths so generated plans capture the run history.',
-      'Re-run foundational suites after each lane and update the associated command entries.',
-      'Add parallel prerequisites with `create-lane` when new scope emerges; stage gates stay accurate once the lane is defined.',
-      'Represent blockers with lane dependencies (creating a follow-up lane if needed) so the CLI remains the single workflow surface.',
+      'Use Stage 4 to author/refine guardrail suites, fixtures, and helpers that fail until the migration lands; record the failing signature in the lane notes.',
+      'Attach the timeout-wrapper log from the failing guardrail run so downstream owners can replay the baseline without guesswork.',
+      'Keep guardrail assets isolated from runtime migration surfaces—update paired Stage 6 lanes whenever new coverage emerges.',
+      'If a guardrail unexpectedly passes, reopen the coverage work (Stage 2/3) or block the lane before closing so false greens do not leak downstream.',
+      'Need a deeper walkthrough? See “Stage 3 Orchestration Checklist” in consolidation-cli-spec.md for the full pairing process.',
       'Unsure about CLI syntax? Run `npm run consolidate -- help` before diving into docs or source references.'
     ]
   },
@@ -1256,16 +1257,17 @@ const stageGuidance = {
       'Capture the alignment session using `cohort-stage --segment 5a` with notes, plan files, and timing so downstream Stage 5B owners inherit the record.',
       'Ensure Stage 4 guardrails (adapter cleanup, session lifecycle hooks, telemetry wiring, skin engine readiness) remain satisfied across all cohort patterns before closing the segment.',
       'When new risks emerge, log them in the cohort notes and attach dependencies to the blocking pattern so the registry schedule stays authoritative.',
+      'For the full playbook, review “Stage 5A Cohort Alignment Workflow” in consolidation-cli-spec.md if the CLI summary is not enough.',
       'Unsure about CLI syntax? Run `npm run consolidate -- help` before diving into docs or source references.'
     ]
   },
   '5': {
     title: 'Stage 5B — Cohort Alignment & Prep',
     reminders: [
-      'Capture guardrails/approvals in the registry (handoff block + Stage 5B notes) before unlocking lanes.',
-      'Execute the Stage 6 gating battery and record command evidence before flipping Stage 6 lanes to assignable.',
-      'Create or refine Stage 6 lanes with `create-lane` so cohorts inherit a complete migration slate.',
-      'Use Stage 5B notes/activity entries to broadcast readiness; no manual schedule updates required.',
+      'Aggregate Stage 4 guardrail artefacts (expected failure logs, helper locations, owners) inside Stage 5 notes and the hand-off record so execution lanes inherit the baseline.',
+      'Replay the guardrail battery to confirm it still fails pre-migration; document the command preset, failure signature, and the migration checklist each Stage 6 lane must follow.',
+      'Refine Stage 6 lanes so each one references its guardrail counterpart, dependencies, and runtime plan-files before unlocking them for execution.',
+      'Use Stage 5B notes/activity entries to broadcast approvals and readiness; keep the stage open until every lane has clear instructions and evidence attached.',
       'When alignment waits on another scope, add explicit dependencies (or new lanes) so the schedule reflects the outstanding work.',
       'Unsure about CLI syntax? Run `npm run consolidate -- help` before diving into docs or source references.'
     ]
@@ -1273,13 +1275,12 @@ const stageGuidance = {
   '6': {
     title: 'Stage 6 — Migration',
     reminders: [
-      'Work one lane at a time; when you claim a lane you own the dependency chain—log blockers, attach follow-up work, and wire new lanes yourself so the schedule stays authoritative.',
-      'Run mandated commands from the registry entry and attach logs before marking complete.',
+      'Work one lane at a time; start every session by replaying the Stage 4 guardrail to confirm the expected failure and log the evidence before editing.',
+      'Apply the migration, rerun the guardrail until it passes, and attach both failing and passing logs so Stage 7 can audit the full arc.',
       'Run the cleanup sweep (`npm run consolidate -- sweep <patternId> --lane <laneId>`) before marking a lane complete; the CLI enforces this guard.',
       'Flip Stage 3 glyph back to `[~]` when new migration scope appears, but keep completed lanes closed—add a new lane instead of reopening the finished one.',
-      'Use `claim` with `--lane` to avoid lane collisions as dependencies unlock.',
-      'Introduce additional Stage 6 execution slices with `create-lane` when dependencies demand parallel tracks and immediately wire dependent lanes to the blocker.',
-      'If a lane exposes missing coverage, reopen Stage 2/3/5 as pending prerequisites, attach dependencies to the new work items, and document the follow-up so scheduling stays honest.',
+      'If a guardrail still fails after migration, block the lane, attach dependencies to the remediation scope, and capture the follow-up via `append-activity`.',
+      'Use `claim` with `--lane` to avoid collisions, and keep dependencies updated so scheduling stays authoritative.',
       'Unsure about CLI syntax? Run `npm run consolidate -- help` before diving into docs or source references.'
     ]
   },
@@ -1314,10 +1315,10 @@ const stageActionGuidance = {
   ],
   '3': (pattern) => [
     `1. Claim this stage with \`npm run consolidate -- claim ${pattern.patternId} --stage 3\`.`,
-    `2. Define or refine Stage 4/6 lanes using \`npm run consolidate -- create-lane ${pattern.patternId} <laneId> --scope "..." --command "..." \`, capturing \`--plan-files\` that can be directories but must keep Stage 4 and Stage 6 lane coverage disjoint; mirror the same plan-files onto each lane’s Stage 6 counterpart.`,
-    `3. Run the migration search (e.g., \`rg\`) for every required term, then use \`update-lane\` to add those files/directories to the owning Stage 4 and Stage 6 lanes and apply the full \`--search-terms\` set so sweeps understand what must be removed.`,
-    `4. Apply the same search-term list to Stage 7 and add the project root (e.g., \`Templum/\`) to its plan-files via \`npm run consolidate -- update-stage ${pattern.patternId} 7 --plan-files "Templum/" --search-terms "<term1,term2,...>"\` (swap in the canonical terms from the docs).`,
-    `5. Capture sequencing, dependencies, and risks with \`npm run consolidate -- stage-note ${pattern.patternId} 3 --body "Order: ...; Dependencies: ...; Risks: ..."\`.`,
+    `2. Use \`npm run consolidate -- create-lane ${pattern.patternId} <laneId>\` to declare Stage 4 guardrail lanes alongside their paired Stage 6 runtime lanes; keep guardrail plan-files limited to tests/helpers and record the mapping in the Stage 3 note.`,
+      `3. Run the migration search (e.g., \`rg\`) for every required term, then apply guardrail hits to the Stage 4 lanes and runtime hits to the Stage 6 companions via \`update-lane … --plan-files … --search-terms …\`. (Need more context? See “Stage 3 Orchestration Checklist” in consolidation-cli-spec.md.)`,
+    `4. Mirror the combined search-term list onto Stage 7 and add the project root (e.g., \`Templum/\`) with \`npm run consolidate -- update-stage ${pattern.patternId} 7 --plan-files "Templum/" --search-terms "<term1,term2,...>"\` so sweeps cover the entire migration contract.`,
+    `5. Capture sequencing, guardrail failure signatures, and dependencies with \`npm run consolidate -- stage-note ${pattern.patternId} 3 --body "Order: ...; Guardrails: ...; Dependencies: ..."\`.`,
     `6. When orchestration is solid, close Stage 3 via \`npm run consolidate -- update-stage ${pattern.patternId} 3 --status complete --notes "Stage 4/6 defined; blockers recorded"\`.`,
     `If additional cohorts appear, reopen Stage 3 and add the new lanes plus dependencies before handing off.`
   ],
@@ -1325,10 +1326,10 @@ const stageActionGuidance = {
     const laneId = context.laneId || context.suggestedLaneId || '<laneId>';
     return [
       `1. Claim this lane with \`npm run consolidate -- claim ${pattern.patternId} --lane ${laneId}\`.`,
-      `2. Execute the recorded commands through \`node scripts/run-with-timeout.mjs --preset <preset> -- …\` (pick \`jest-suite\`, \`jest-ci\`, or \`phase6-validation\` to match the command) and log the artefact path with \`npm run consolidate -- update-lane ${pattern.patternId} ${laneId} --status in_progress --files <log>\` so the Stage 5A owner sees the exact wrapper + evidence.`,
-      `3. If work uncovers a blocker, set the lane to blocked, attach the dependency to the follow-up lane or stage (create one if missing), and log context via \`npm run consolidate -- append-activity ${pattern.patternId} --lane ${laneId} --summary "Blocker: ..."\`.`,
-      `4. Capture an end-of-lane note via \`npm run consolidate -- stage-note ${pattern.patternId} 4 --body "Lane ${laneId}: Commands=<...>; DI/Guardrails=<...>; Evidence=<...>; Follow-ups=<...>"\`, calling out anything the Stage 5A alignment owner will need (wrapper presets, DI seams, doc/tasks to update, missing tests, telemetry hooks, etc.).`,
-      `5. Update Stage 6 lane plan-files/search-terms if new consumers surfaced, then close the lane with \`npm run consolidate -- update-lane ${pattern.patternId} ${laneId} --status complete --summary "Gating battery green" --files <final-log>\` only after the note reflects the lane’s outcomes and next steps.`
+      `2. Outline the guardrail you are authoring—including the expected failure text and paired Stage 6 lane—in a Stage 4 note via \`npm run consolidate -- stage-note ${pattern.patternId} 4 --body "Lane ${laneId}: Guardrail=<...>; Expected failure=<...>; Paired Stage 6=<...>"\`.`,
+      `3. Implement or refresh the guardrail and run it via \`node scripts/run-with-timeout.mjs --preset <preset> -- …\` (pick \`jest-suite\`, \`jest-ci\`, or \`phase6-validation\` as needed); log the failing artefact with \`npm run consolidate -- update-lane ${pattern.patternId} ${laneId} --status in_progress --files <log> --summary "Expected failure: <signature>"\`.`,
+      `4. If the guardrail passes unexpectedly, flip the lane to blocked, reopen the required coverage stage, and log the blocker with \`npm run consolidate -- append-activity ${pattern.patternId} --lane ${laneId} --summary "Guardrail passed unexpectedly — follow-up: <action>"\` before proceeding.`,
+      `5. Once the guardrail fails deterministically, close the lane with \`npm run consolidate -- update-lane ${pattern.patternId} ${laneId} --status complete --summary "Guardrail failing as expected; Stage 6 <pairedLaneId> primed" --files <log>\`, and mirror any new guardrail links onto the paired Stage 6 lane via \`update-lane\` so execution owners inherit the instructions.`
     ];
   },
   '5a': (pattern, context = {}) => {
@@ -1344,25 +1345,26 @@ const stageActionGuidance = {
   },
   '5': (pattern) => [
     `1. Claim this stage with \`npm run consolidate -- claim ${pattern.patternId} --stage 5\`.`,
-    `2. Populate Stage 5B guardrails, approvals, and artefacts using \`npm run consolidate -- stage-note ${pattern.patternId} 5 --body "Guardrails: ..."\` and the hand-off helpers.`,
-    `3. Run the Stage 6 gating battery via \`node scripts/run-with-timeout.mjs --preset phase6-validation -- npm run phase6-validation\` (swap to \`--preset phase6-health\` for health probes) and record evidence through lane updates or stage files so downstream owners can verify readiness.`,
-    `4. Close Stage 5B with \`npm run consolidate -- update-stage ${pattern.patternId} 5 --status complete --notes "Cohort aligned; lanes unlocked"\` once dependencies are satisfied.`,
+    `2. Use \`npm run consolidate -- stage-note ${pattern.patternId} 5 --body "Guardrails: ...; Approvals: ...; Stage6 lanes: ..."\` and \`update-handoff\` to capture the baseline failure logs, ownership, and migration checklist that Stage 6 will execute.`,
+    `3. Replay the guardrail battery via \`node scripts/run-with-timeout.mjs --preset <preset> -- …\` (e.g., \`--preset phase6-validation -- npm run phase6-validation\`) to confirm the unmigrated failure still reproduces; record the log with \`npm run consolidate -- update-stage ${pattern.patternId} 5 --status in_progress --files <log>\`.`,
+    `4. Update each Stage 6 lane with the guardrail reference, dependencies, and expected migration steps via \`npm run consolidate -- update-lane ${pattern.patternId} <stage6LaneId> --summary "Guardrail: <suite>; Steps: <...>" --add-dependency ${pattern.patternId}:<stage4LaneId>\` (swap placeholders) so execution owners inherit clear instructions.`,
+    `5. Close Stage 5B with \`npm run consolidate -- update-stage ${pattern.patternId} 5 --status complete --notes "Guardrails rehearsed; Stage 6 lanes unlocked"\` only after every lane has evidence and instructions attached.`,
     `If alignment stalls, keep Stage 5B in progress, attach dependencies to the waiting work, and surface the delay in the activity log.`
   ],
   '6': (pattern, context = {}) => {
     const laneId = context.laneId || context.suggestedLaneId || '<laneId>';
     return [
       `1. Start by claiming this lane (\`npm run consolidate -- claim ${pattern.patternId} --lane ${laneId}\`); do not run migration commands until the claim is recorded.`,
-      `2. Execute the mandated command battery via \`node scripts/run-with-timeout.mjs --preset <preset> -- …\` (use \`jest-ci\`/\`jest-suite\` for Jest runs and \`phase6-validation\`/\`phase6-health\` for harness commands), capturing artefact paths as you go, and log progress with \`npm run consolidate -- update-lane ${pattern.patternId} ${laneId} --status in_progress --files <log>\` if you need to checkpoint evidence.`,
-      `3. Run the cleanup sweep with \`npm run consolidate -- sweep ${pattern.patternId} --lane ${laneId}\`; clear any matches before closing the lane via \`npm run consolidate -- update-lane ${pattern.patternId} ${laneId} --status complete --summary "..." --files <final-log>\`.`,
-      `4. If a blocker appears, immediately set the lane to blocked, attach the dependency to the owning scope (add a follow-up lane if missing), and record the details with \`npm run consolidate -- append-activity ${pattern.patternId} --lane ${laneId} --summary "Blocker: ..."\`.`,
-      `5. Keep Stage 6 notes/activity entries current and leave the stage pending until every lane is [x].`
+      `2. Reproduce the Stage 4 guardrail failure via \`node scripts/run-with-timeout.mjs --preset <preset> -- …\` and attach the failing log with \`npm run consolidate -- update-lane ${pattern.patternId} ${laneId} --status in_progress --files <fail-log> --summary "Baseline failure: <signature>"\`.`,
+      `3. Apply the migration, rerun the guardrail (plus any Stage 6 battery such as \`npm run test:ci\` or \`npm run phase6-validation\`) until it passes, and capture the passing artefact with \`npm run consolidate -- update-lane ${pattern.patternId} ${laneId} --files <pass-log> --summary "Guardrail passing; commands=<...>"\`.`,
+      `4. Run the cleanup sweep with \`npm run consolidate -- sweep ${pattern.patternId} --lane ${laneId}\`; clear any matches before closing the lane via \`npm run consolidate -- update-lane ${pattern.patternId} ${laneId} --status complete --summary "Migration complete; sweep clean" --files <pass-log>\`.`,
+      `5. If a blocker appears (e.g., guardrail still failing or new scope discovered), immediately set the lane to blocked, attach the dependency to the owning scope, and record details with \`npm run consolidate -- append-activity ${pattern.patternId} --lane ${laneId} --summary "Blocker: <details>"\`; otherwise keep Stage 6 notes/activity entries current and leave the stage pending until every lane is [x].`
     ];
   },
   '7': (pattern) => [
     `1. Claim this stage with \`npm run consolidate -- claim ${pattern.patternId} --stage 7\`.`,
     `2. Execute the Stage 7 validation battery through \`node scripts/run-with-timeout.mjs --preset <preset> -- …\` (match the preset to each command) and store artefacts using \`npm run consolidate -- update-stage ${pattern.patternId} 7 --status in_progress --files <log>\`.`,
-    `3. Add a Stage 7 note capturing the reason for the scope change and the Stage 7 validation you must re-run (e.g., \`Reason: ...; Required check: ...\`) via \`npm run consolidate -- stage-note ${pattern.patternId} 7 --body "Reason: ...; Required check: ..."\`.`,
+    `3. Add a Stage 7 note capturing the reason for the scope change, the validations to rerun, and confirmation that required documentation/progress trackers were updated (automation pending) via \`npm run consolidate -- stage-note ${pattern.patternId} 7 --body "Reason: ...; Required check: ...; Docs verified: <paths>"\`.`,
     `4. Run the cleanup sweep via \`npm run consolidate -- sweep ${pattern.patternId} --stage 7\`; once it passes and documentation is updated, mark Stage 7 complete with \`npm run consolidate -- update-stage ${pattern.patternId} 7 --status complete --notes "Release-ready"\`.`,
     `If regressions appear later, reopen Stage 7, attach dependencies to the remediation scope, and coordinate via the activity log.`
   ]
@@ -4783,6 +4785,7 @@ async function main() {
           descriptor,
           'pattern-cohort has been replaced by `cohort`. Run `npm run consolidate -- cohort --help` for the updated workflow.'
         );
+        break;
       }
       case 'cohort-stage': {
         canonicalizeCohortIds(registry, { touch: false });
