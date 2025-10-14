@@ -17,6 +17,7 @@ import {
   ITemplumOrchestrator
 } from '../interfaces/templum-orchestrator-interface';
 import { sleep } from '../utils/async-utils';
+import { createLogger } from '../utils/logger';
 
 // E2E Test Scenario Definitions
 export interface E2ETestScenario {
@@ -158,6 +159,7 @@ export class E2ETestFramework extends EventDrivenComponent<E2ETestFrameworkEvent
   private mockBackends: Map<string, MockBackendService> = new Map();
   private activeScenarios: Map<string, E2ETestScenario> = new Map();
   private testResults: Map<string, E2ETestOutcome> = new Map();
+  private readonly logger = createLogger('e2e-test-framework');
 
   constructor(orchestrator: ITemplumOrchestrator) {
     super(`e2e-test-framework:${E2ETestFramework.instanceCounter++}`, 30);
@@ -360,41 +362,47 @@ export class E2ETestFramework extends EventDrivenComponent<E2ETestFrameworkEvent
     // Implementation: Update to use real orchestrator initialization pattern
     
     // Mock orchestrator initialization check
-    console.log('Mock: Initializing orchestrator and interfaces');
+    this.logger.info('Mock orchestrator initialization');
   }
 
   private async executeCommandAction(action: E2ETestAction): Promise<void> {
     // Mock implementation - execute command through orchestrator
     const { command, args } = action.payload;
     // TODO: Real command execution through orchestrator
-    console.log(`Mock: Executing command ${command} with args:`, args);
+    this.logger.info('Mock command execution', { command, args });
   }
 
   private async executeSkinApplyAction(action: E2ETestAction): Promise<void> {
     // Mock implementation - apply skin through orchestrator
     const { skinDefinition } = action.payload;
     // TODO: Real skin application through orchestrator
-    console.log('Mock: Applying skin:', skinDefinition?.metadata?.name || 'default');
+    this.logger.info('Mock skin application', {
+      skinName: skinDefinition?.metadata?.name ?? 'default'
+    });
   }
 
   private async executeStateSyncAction(action: E2ETestAction): Promise<void> {
     // Mock implementation - trigger state synchronization
     const { stateUpdate } = action.payload;
     // TODO: Real state synchronization through orchestrator
-    console.log('Mock: Synchronizing state:', Object.keys(stateUpdate || {}));
+    this.logger.info('Mock state synchronization', {
+      updatedKeys: Object.keys(stateUpdate ?? {})
+    });
   }
 
   private async executeInterfaceSwitchAction(action: E2ETestAction): Promise<void> {
     // Mock implementation - switch active interface
     const { targetInterface } = action.payload;
     // TODO: Real interface switching through orchestrator
-    console.log(`Mock: Switching to interface: ${targetInterface}`);
+    this.logger.info('Mock interface switch', { targetInterface });
   }
 
   private async executePerformanceCheckAction(_action: E2ETestAction): Promise<void> {
     // Mock implementation - check system performance metrics
     const memoryUsage = process.memoryUsage();
-    console.log('Mock: Performance check - Memory:', memoryUsage.heapUsed);
+    this.logger.info('Mock performance check', {
+      heapUsed: memoryUsage.heapUsed
+    });
   }
 
   private async validateStepOutcome(step: E2ETestStep): Promise<E2EValidationResult> {

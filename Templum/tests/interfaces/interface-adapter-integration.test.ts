@@ -34,8 +34,39 @@ import type {
   ManualOverrideSnapshot,
   ManualOverrideClearResult,
 } from "../../src/backend/manual-override-manager";
+import {
+  LoggerConfig,
+  LoggerTransport,
+  LogLevel,
+  LogRecord,
+} from "../../src/utils/logger";
 
 const ansiPattern = /\u001b\[[0-9;]*m/g;
+
+class RecordingTransport implements LoggerTransport {
+  public readonly records: LogRecord[] = [];
+
+  log(record: LogRecord): void {
+    this.records.push(record);
+  }
+}
+
+const baselineLoggerConfig = LoggerConfig.getConfiguration();
+
+const restoreLoggerConfiguration = (): void => {
+  LoggerConfig.configure({
+    level: baselineLoggerConfig.level,
+    structured: baselineLoggerConfig.structured,
+    serializer: baselineLoggerConfig.serializer,
+    transport: baselineLoggerConfig.transport,
+  });
+
+  if (baselineLoggerConfig.structured) {
+    LoggerConfig.useStructuredLogging(baselineLoggerConfig.serializer);
+  } else {
+    LoggerConfig.disableStructuredLogging();
+  }
+};
 
 const overrideStdoutColumns = (width: number): (() => void) => {
   const original = process.stdout.columns;
@@ -1026,16 +1057,33 @@ describe("Interface Adapter Integration Tests", () => {
         generateSkinHTML: jest.fn()
       } as any);
 
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      const transport = new RecordingTransport();
+      LoggerConfig.configure({
+        transport,
+        level: LogLevel.DEBUG,
+        structured: false,
+        serializer: undefined,
+      });
+      LoggerConfig.disableStructuredLogging();
 
       try {
         await adapter.applySkin(JSON.parse(JSON.stringify(createTestPCLSkinDefinition())));
 
-        expect(consoleSpy).toHaveBeenCalledWith(
-          expect.stringContaining('CLIInterfaceAdapter: Failed to apply skin: Skin validation failed')
+        const errorRecord = transport.records.find(
+          (record) =>
+            record.level === LogLevel.ERROR &&
+            record.context === 'cli-interface-adapter' &&
+            record.message === 'Failed to apply skin'
         );
+
+        expect(errorRecord).toBeDefined();
+        expect(errorRecord?.data).toEqual({
+          errorMessage: 'Skin validation failed: metadata.backendService is required',
+        });
+        expect(errorRecord?.error).toBeDefined();
+        expect(errorRecord?.error?.message).toBe('Skin validation failed: metadata.backendService is required');
       } finally {
-        consoleSpy.mockRestore();
+        restoreLoggerConfiguration();
         engineSpy.mockRestore();
         await adapter.dispose();
       }

@@ -20,12 +20,53 @@ import {
   TemplumError,
   createTemplumError
 } from '../../src/types/templum-types';
+import {
+  LoggerConfig,
+  LoggerTransport,
+  LogLevel,
+  LogRecord,
+} from '../../src/utils/logger';
+
+class RecordingTransport implements LoggerTransport {
+  public readonly records: LogRecord[] = [];
+
+  log(record: LogRecord): void {
+    this.records.push(record);
+  }
+}
+
+const baselineLoggerConfig = LoggerConfig.getConfiguration();
+
+const restoreLoggerConfiguration = (): void => {
+  LoggerConfig.configure({
+    level: baselineLoggerConfig.level,
+    structured: baselineLoggerConfig.structured,
+    serializer: baselineLoggerConfig.serializer,
+    transport: baselineLoggerConfig.transport,
+  });
+
+  if (baselineLoggerConfig.structured) {
+    LoggerConfig.useStructuredLogging(baselineLoggerConfig.serializer);
+  } else {
+    LoggerConfig.disableStructuredLogging();
+  }
+};
 
 describe('TemplumAdapterRegistry', () => {
   let registry: TemplumAdapterRegistry;
   let mockConfig: IDependencyInjectionConfig;
+  let transport: RecordingTransport;
 
   beforeEach(() => {
+    transport = new RecordingTransport();
+    LoggerConfig.configure({
+      transport,
+      level: LogLevel.DEBUG,
+      structured: false,
+      serializer: undefined,
+    });
+    LoggerConfig.disableStructuredLogging();
+
     mockConfig = {
       enableSkinEngine: true,
       enableStateManager: true,
@@ -36,6 +77,10 @@ describe('TemplumAdapterRegistry', () => {
       validationLevel: 'standard'
     };
     registry = new TemplumAdapterRegistry(mockConfig);
+  });
+
+  afterEach(() => {
+    restoreLoggerConfiguration();
   });
 
   afterEach(async () => {
@@ -82,15 +127,20 @@ describe('TemplumAdapterRegistry', () => {
     test('prevents double initialization', async () => {
       // Arrange
       await registry.initialize();
-      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+      transport.records.length = 0;
 
       // Act
       await registry.initialize();
 
       // Assert
-      expect(consoleSpy).toHaveBeenCalledWith('TemplumAdapterRegistry: Already initialized');
-      
-      consoleSpy.mockRestore();
+      const warningRecord = transport.records.find(
+        (record) =>
+          record.level === LogLevel.WARN &&
+          record.context === 'templum-adapter-registry:registry' &&
+          record.message === 'Adapter registry already initialized'
+      );
+
+      expect(warningRecord).toBeDefined();
     });
 
     test('emits initialized event on successful initialization', async () => {
@@ -443,16 +493,25 @@ describe('TemplumAdapterRegistry', () => {
       const originalDispose = dependencies.skinEngine.dispose;
       dependencies.skinEngine.dispose = jest.fn().mockRejectedValue(new Error('Disposal failed'));
 
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      transport.records.length = 0;
 
       // Act
       await registry.dispose();
 
       // Assert
       expect(registry.isInitialized()).toBe(false);
-      expect(consoleSpy).toHaveBeenCalledWith('Failed to dispose component:', 'Disposal failed');
-      
-      consoleSpy.mockRestore();
+      const errorRecord = transport.records.find(
+        (record) =>
+          record.level === LogLevel.ERROR &&
+          record.context === 'templum-adapter-registry:disposal' &&
+          record.message === 'Failed to dispose component'
+      );
+
+      expect(errorRecord).toBeDefined();
+      expect(errorRecord?.data).toEqual({ errorMessage: 'Disposal failed' });
+
+      // Restore original dispose method
+      dependencies.skinEngine.dispose = originalDispose;
     });
 
     test('shuts down session manager and observability service during disposal', async () => {

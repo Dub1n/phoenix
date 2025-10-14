@@ -258,6 +258,7 @@ describe('Skin payload consumption integration', () => {
     const skinEngine = createSkinEngine();
     const orchestrator = new StubOrchestrator(skinEngine, sessionManager);
     const adapter = new CLIInterfaceAdapter();
+    const stdoutSpy = jest.spyOn(process.stdout, 'write').mockImplementation(() => true);
 
     await adapter.initialize(orchestrator);
     try {
@@ -269,15 +270,18 @@ describe('Skin payload consumption integration', () => {
         expect.objectContaining({ interfaceType: 'cli' }),
       );
 
-      const loggedLines = (console.log as jest.Mock).mock.calls.flat();
+      const loggedLines = stdoutSpy.mock.calls
+        .flat()
+        .filter((value): value is string => typeof value === 'string');
       expect(
         loggedLines.some(
           (line) =>
             typeof line === 'string' &&
             line.includes('CLI_RENDER:Start Analysis | Configure Project'),
-        ),
+      ),
       ).toBe(true);
     } finally {
+      stdoutSpy.mockRestore();
       await adapter.dispose();
     }
   });
@@ -352,7 +356,7 @@ describe('Skin payload consumption integration', () => {
       clearScreenOnRender: false,
     });
 
-    const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+    const stdoutSpy = jest.spyOn(process.stdout, 'write').mockImplementation(() => true);
 
     await adapter.initialize(orchestrator);
     try {
@@ -364,22 +368,22 @@ describe('Skin payload consumption integration', () => {
         expect.objectContaining({ interfaceType: 'cli' }),
       );
 
-      const loggedLines = logSpy.mock.calls
+      const loggedLines = stdoutSpy.mock.calls
         .flat()
-        .filter((value) => typeof value === 'string');
+        .filter((value): value is string => typeof value === 'string');
       expect(
         loggedLines.some((line) =>
           line.includes('CLI_RENDER:Start Analysis | Configure Project'),
-        ),
+      ),
       ).toBe(true);
       expect(
         loggedLines.some((line) =>
           line.includes('Templum Universal Interface - CLI Mode'),
-        ),
+      ),
       ).toBe(false);
     } finally {
       await adapter.dispose();
-      logSpy.mockRestore();
+      stdoutSpy.mockRestore();
     }
   });
 
