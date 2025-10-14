@@ -250,36 +250,71 @@ register({
 });
 
 register({
-  name: 'pattern-cohort',
-  summary: 'Manage the cohorts associated with a pattern.',
-  usage: 'pattern-cohort <patternId> [--add id] [--remove id] [--clear] [--list] [--name text] [--description text] [--note text]',
-  positionals: [
-    { name: 'patternId', type: 'number', required: true }
-  ],
+  name: 'cohort',
+  summary: 'Manage cohort rosters, metadata, and discovery.',
+  usage:
+    'cohort [--all] [--create patternIds] [--id <cohortId> --list] [--id <cohortId> --name text|--description text|--add-pattern ids|--remove-pattern ids|--note text]',
   createOptions: () => ({
-    add: [],
-    remove: []
+    addPattern: [],
+    removePattern: []
   }),
   flags: [
-    { name: 'add', type: 'string', multiple: true, description: 'Add cohort id to the pattern.' },
-    { name: 'remove', type: 'string', multiple: true, description: 'Remove cohort id from the pattern.' },
-    { name: 'clear', type: 'boolean', description: 'Clear all cohorts from the pattern.' },
-    { name: 'list', type: 'boolean', description: 'List cohorts without mutating the registry.' },
+    { name: 'all', type: 'boolean', description: 'List every cohort with members and metadata.' },
+    {
+      name: 'create',
+      type: 'csv',
+      description: 'Create a new cohort with the provided pattern ids (comma-separated or repeated flag).'
+    },
+    { name: 'id', type: 'string', description: 'Target cohort identifier (letters: A, B, … AA).' },
+    { name: 'list', type: 'boolean', description: 'Show cohort roster, planned files, and Stage 5A state.' },
+    {
+      name: 'add-pattern',
+      type: 'csv',
+      multiple: true,
+      description: 'Add pattern ids (comma separated) to the cohort.'
+    },
+    {
+      name: 'remove-pattern',
+      type: 'csv',
+      multiple: true,
+      description: 'Remove pattern ids (comma separated) from the cohort.'
+    },
     { name: 'name', type: 'string', description: 'Set or update the cohort display name.' },
-    { name: 'description', type: 'string', description: 'Set the cohort description.' },
-    { name: 'note', type: 'string', description: 'Add a note for cohort changes.' }
+    { name: 'description', type: 'string', description: 'Set or update the cohort description.' },
+    { name: 'note', type: 'string', description: 'Append an operational note to the cohort.' }
   ],
   examples: [
-    'pattern-cohort 208 --add stage-6-alpha',
-    'pattern-cohort 119 --remove stage-5-beta',
-    'pattern-cohort 345 --list'
+    'cohort --all',
+    'cohort --create 104,105 --name "Registry sync alignment"',
+    'cohort --id B --list',
+    'cohort --id C --add-pattern 208 --name "Display Stack Refresh"',
+    'cohort --id A --remove-pattern 101,102'
+  ]
+});
+
+register({
+  name: 'pattern-cohort',
+  summary: 'Deprecated cohort helper (use `cohort`).',
+  usage: 'pattern-cohort [arguments]',
+  description:
+    'This command has been replaced by `cohort`. Run `npm run consolidate -- cohort --help` for current options.',
+  positionals: [{ name: 'patternId', type: 'number' }],
+  flags: [
+    { name: 'add', type: 'string', multiple: true },
+    { name: 'remove', type: 'string', multiple: true },
+    { name: 'clear', type: 'boolean' },
+    { name: 'list', type: 'boolean' },
+    { name: 'name', type: 'string' },
+    { name: 'description', type: 'string' },
+    { name: 'note', type: 'string' }
   ]
 });
 
 register({
   name: 'cohort-stage',
-  summary: 'Update cohort stage readiness, notes, and plan files.',
-  usage: 'cohort-stage <cohortId> --segment <segmentId> --status <value> [--notes text] [--plan-files paths] [--clear-plan-files] [--started-at iso] [--completed-at iso]',
+  summary: 'Update or inspect cohort stage readiness, notes, and plan files.',
+  usage:
+    'cohort-stage <cohortId> --segment <segmentId> [--status <value>] [--show] [--notes text] [--plan-files paths] [--clear-plan-files] [--started-at iso] [--completed-at iso]',
   positionals: [
     { name: 'cohortId', type: 'string', required: true, description: 'Cohort identifier.' }
   ],
@@ -287,8 +322,9 @@ register({
     planFiles: []
   }),
   flags: [
-    { name: 'segment', type: 'string', required: true, description: 'Segment/stage identifier (e.g., 5a).' },
-    { name: 'status', type: 'string', required: true, description: 'New status for the cohort segment.' },
+    { name: 'segment', type: 'string', description: 'Segment/stage identifier (e.g., 5a).' },
+    { name: 'status', type: 'string', description: 'New status for the cohort segment.' },
+    { name: 'show', type: 'boolean', description: 'Display the cohort segment state without mutating the registry.' },
     { name: 'notes', type: 'string', description: 'Notes to attach to the segment.' },
     { name: 'plan-files', type: 'csv', description: 'Comma separated planned files (may repeat).' },
     { name: 'clear-plan-files', type: 'boolean', description: 'Remove recorded plan files.' },
@@ -296,6 +332,7 @@ register({
     { name: 'completed-at', type: 'string', description: 'ISO timestamp for work completion.' }
   ],
   examples: [
+    'cohort-stage B --segment 5a --show',
     'cohort-stage stage-6-alpha --segment 6b --status in_progress --plan-files docs/alpha.md',
     'cohort-stage stage-5-beta --segment 5a --status blocked --notes "Awaiting dependency alignment"'
   ]

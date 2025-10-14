@@ -55,7 +55,7 @@ sequenceDiagram
 ### Data Sources & Outputs
 
 - **Primary datastore:** `dev/architecture/consolidation-scripts/config/consolidation-state.json` (schema: `consolidation-state.schema.json`).
-- **Derived artefacts:** utility plans, activity log, cohort and global schedules, hand-off manifests.
+- **Derived artefacts:** utility plans (`dev/architecture/plans/<patternId>.generated.md`), activity log (`dev/architecture/utility-consolidation-activity-log.generated.md`), cohort/global schedules (`dev/architecture/schedules/{cohortId|schedule-all}.{md,json}`), and hand-off manifests.
 - **Console guidance:** assembled on demand (no cached Markdown), incorporating live registry, lane dependencies, and cohort signals.
 
 ## Command Surface
@@ -65,8 +65,8 @@ sequenceDiagram
 | `npm run consolidate -- guide <patternId> [--stage N] [--lane 6b] [--lanes] [--recent] [--next\|-n]` | Surface focused guidance for a pattern, optionally narrowed to a stage or lane, surface planned-file conflicts, and highlight the next actionable work item. |
 | `npm run consolidate -- status <patternId>`               | Show registry snapshot (stage pointer, cohort membership, pending lanes, blockers, and latest evidence). |
 | `npm run consolidate -- claim <patternId> --stage <id>\|--lane 6b [--summary text] [--note text] [--plan-files a,b]` | Claim a stage or lane, stamp the start timestamp, register planned files, and log the deterministic agent id for collision prevention. |
-| `npm run consolidate -- pattern-cohort <patternId> [--add cohort] [--remove cohort] [--clear] [--list] [--name text] [--description text]` | Assign or inspect cohort alignment for a pattern; each pattern may belong to at most one cohort, and attempts to add a second cohort now fail with `Pattern already assigned to a cohort`. |
-| `npm run consolidate -- cohort-stage <cohortId> --segment 5a --status <value> [--plan-files …] [--notes text]` | Manage cohort-level segments (e.g., Stage 5A alignment), capture planned files, and emit elapsed timings for shared readiness. |
+| `npm run consolidate -- cohort [--all] [--create patternIds] [--id <cohortId> --list] [--id <cohortId> --add-pattern ids --remove-pattern ids] [--name text] [--description text] [--note text]` | Manage cohort rosters and metadata; ids auto-increment A, B, … AA, and roster edits keep each pattern in exactly one cohort while `--all`/`--list` provide read-only previews. |
+| `npm run consolidate -- cohort-stage <cohortId> --segment <segmentId> [--status <value>] [--show] [--plan-files …] [--notes text]` | Manage or inspect cohort segments (Stage 5A and beyond); `--show` previews without mutation, and marking 5A `complete` enforces the shared plan-file requirement and propagates it to Stage 5 gates. |
 | `npm run consolidate -- stage-note <patternId> <stageId> --body "<text>"` | Append a stage-scoped note (auto-tagged in the guide output) to capture discoveries and guardrails. |
 | `npm run consolidate -- update-stage <patternId> <stageId> [--status <value>] [--plan-files …] [--search-terms …] [--clear-search-terms] [--clear-plan-files] [--add-dependency patternId:gate] [--remove-dependency patternId:gate] [--clear-dependencies] [--force]` | Update stage gate status, manage dependencies, keep search terms/planned files aligned, and enforce the planned-file cleanup guard (use \`--force\` only after documenting intentional leftovers). |
 | `npm run consolidate -- update-handoff <patternId> [options]` | Maintain shared guardrails, files, and acknowledgements recorded during Stage 5 hand-off. |
@@ -113,12 +113,13 @@ Command parsing is now metadata-driven: descriptor files capture positionals, fl
 
 ### Cohort Coordination
 
-- `pattern-cohort` keeps registry rosters authoritative; each update refreshes Stage 5 gating hints surfaced by `guide`, `status`, regenerated plans, and the schedule outputs. Use `--list` before changing assignments so you see the active cohorts and Stage 5A timestamps.
-- Cohort Stage 5A readiness is tracked via `cohort-stage --segment 5a`. Alongside status, you can capture planned files, timing (`startedAt`, `completedAt`, `elapsedMs`), and notes so the shared alignment session is preserved in the registry.
-- Stage 5 claims enforce that every cohort member has Stage 4 complete and the shared Stage 5A segment marked `complete`. If the guard fails, the CLI surfaces a precise blocker list and keeps the Stage 5 gate in `blocked`/`pending`.
-- When a cohort is still aligning, `guide --stage 5` hides the Stage 5B checklist and replaces it with the blockers and remediation commands (`pattern-cohort --list`, `cohort-stage <id> --segment 5a --status …`). Once the cohort segment advances, Stage 5B guidance reappears automatically.
-- After Stage 5A completes, the CLI leaves every Stage 6 lane `pending` so auto-assignment can spread the work; agents only add `blocked` statuses and `--add-dependency` links when they hit a concrete blocker during execution.
-- Each cohort edit appends a Stage 5 activity entry and triggers markdown regeneration so downstream teammates inherit the latest roster and evidence without re-running commands manually.
+- `cohort --all` exposes the live lettered ids, while `cohort --id <id> --list` mirrors the Stage 5A bundle (patterns, timestamps, notes, planned files) before you change anything. `cohort --create` spins up the next alphabetical cohort automatically, and `--add-pattern`/`--remove-pattern` edits keep every pattern assigned to at most one cohort.
+- `cohort-stage` owns alignment status. Add `--show` for read-only previews; when mutating, the CLI now refuses Stage 5A completion unless an alignment spec is recorded via `--plan-files`, preventing empty or fragmentary cohorts from closing the gate.
+- When Stage 5A flips to `complete`, the CLI automatically seeds each cohort member’s Stage 5 gate with the recorded spec so Stage 5B guidance references the shared plan. If every pattern already tracks the file, the CLI confirms instead of duplicating entries.
+- After Stage 5A completes, Stage 6 lanes remain `pending` so auto-assignment can spread the work; only add `blocked` statuses and `--add-dependency` links when a concrete blocker appears during execution.
+- Stage 5 claims still enforce Stage 4 readiness plus the shared Stage 5A completion. If the guard fails, the precise blockers are surfaced and the stage remains `blocked`/`pending`.
+- While a cohort is aligning, `guide --stage 5` hides the Stage 5B checklist and instead points you to `cohort --id <cohortId> --list` and `cohort-stage <cohortId> --segment 5a --show` so you can inspect readiness without mutating state; the full Stage 5B flow reappears automatically once alignment closes.
+- Each cohort edit appends a Stage 5 activity entry and triggers markdown regeneration so downstream teammates inherit the latest roster and evidence without re-running commands manually.
 
 ### Schedule Automation
 
@@ -136,7 +137,7 @@ Command parsing is now metadata-driven: descriptor files capture positionals, fl
 
 ### Schedule Generator
 
-- `npm run consolidate -- schedule` (or `node dev/architecture/consolidation-scripts/generate-schedule.mjs`) defaults to markdown output and saves it under `Templum/dev/architecture/schedules/schedule-<patterns>.md`; pass `--no-save` to emit to stdout only.
+- `npm run consolidate -- schedule` (or `node dev/architecture/consolidation-scripts/generate-schedule.mjs`) defaults to markdown output and saves it under `dev/architecture/schedules/schedule-<patterns>.md`; pass `--no-save` to emit to stdout only. Cohort-specific runs now emit `<cohortId>.{md,json}` (no `schedule-` prefix) to match the consolidated artefact roster.
 - Override the default target with `--output path` (relative paths resolve from the repo root), switch to JSON rendering via `--format json`, or keep everything ephemeral with `--no-save`.
 - Markdown output is formatted with Prettier using the same config as generated pattern plans before writing to disk.
 - Schedule waves honor declared dependencies, isolate Stage 5A as its own wave, and otherwise pack any ready tasks (lanes, pattern stages, or cohort segments) so long as their planned files do not collide; higher stage numbers may share a wave when safe.
@@ -147,7 +148,7 @@ Command parsing is now metadata-driven: descriptor files capture positionals, fl
 - `guide --stage <id>` renders the requested gate alongside the live pointer. Locked stages print the upstream summary (latest Stage N – 1 note plus exit metadata) before showing reminders and actions.
 - Stage 5 is now split into two explicit guidance paths:
 - `guide --stage 5` (and `--next` once Stage 5A is complete) shows the cohort prerequisite banner, Stage 5B reminders, and, when unlocked, the Stage 6 gating battery checklist plus hand-off summary.
-- `guide --stage 5a` (as well as `--next` while Stage 5A remains pending) renders the full cohort alignment bundle inline—cohort roster, status glyphs, Stage 4 evidence per pattern (lanes, commands, notes, planned files), and the exact `cohort-stage` / `pattern-cohort` commands to execute.
+- `guide --stage 5a` (as well as `--next` while Stage 5A remains pending) renders the full cohort alignment bundle inline—cohort roster, status glyphs, Stage 4 evidence per pattern (lanes, commands, notes, planned files), and the exact `cohort --id <cohortId> --list` / `cohort-stage <cohortId> --segment 5a …` commands to execute.
 - Agents can append colon-delimited shorthands to the pattern argument—e.g., `npm run consolidate -- guide 4:lane-6p:recent` or `guide 210:stage-5a:lanes`—to focus a lane, stage, or toggle `--recent`/`--lanes`/`--next`; the parser normalises these segments, merges them with explicit flags, and rejects conflicts so targeted views never fall back to the auto `--next` flow.
 - Cohort rows collapse supporting artefacts so alignment agents no longer need to open generated plans; everything necessary to run Stage 5A is streamed directly into the guide output.
 - `guide --lane <id>` prints the same expanded lane card that `--next` would auto-select, keeping the shorthand and explicit forms in sync.
@@ -165,11 +166,11 @@ After a stage is set to `complete` or a lane is marked `complete`, the CLI sugge
 
 When Stage 5 is blocked, the CLI expects the alignment squad to run the following loop:
 
-1. `npm run consolidate -- pattern-cohort <patternId> --list` to confirm cohort membership, Stage 5A status, and note which patterns still need alignment.
+1. `npm run consolidate -- cohort --all` (if you need the id), then `cohort --id <cohortId> --list` to confirm membership, Stage 5A status, and the existing alignment artefacts before changing anything.
 2. Review the Stage 5A bundle in `guide --stage 5a` to ingest Stage 4 evidence (lanes, commands, notes) for every cohort pattern before touching code.
 3. Start the shared session with `cohort-stage <cohortId> --segment 5a --status in_progress --notes "<alignment summary>" [--plan-files …]`. The CLI immediately records `startedAt`, planned files, and any conflicts.
 4. Capture per-pattern mitigations (e.g., reopening Stage 4 lanes) using `update-lane` / `update-stage` and log coordination context with `append-activity`.
-5. Once evidence and documentation are archived, flip the cohort segment via `cohort-stage <cohortId> --segment 5a --status complete --notes "<outcome>"`. The associated patterns are re-evaluated, flipping Stage 5 to `[>] ready` when every cohort clears the gate.
+5. Once evidence and documentation are archived, flip the cohort segment via `cohort-stage <cohortId> --segment 5a --status complete --plan-files alignment/spec.md --notes "<outcome>"`. The CLI enforces the plan-file requirement and seeds every cohort member’s Stage 5 gate with the shared spec before re-evaluating readiness.
 6. Re-run `guide --stage 5` to unlock Stage 5B actions and surface the Stage 6 gating battery.
 
 *Stage 5A owners should also sanity-check each cohort lane's `plannedFiles` and newly recorded `searchTerms` so Stage 6 guards reflect the agreed migration surface.*
@@ -182,7 +183,7 @@ When Stage 5 is blocked, the CLI expects the alignment squad to run the follow
 - Add the project root itself (`Templum/` for this migration) to the Stage 7 gate’s plan-files so the final sweep enforces repo-wide cleanliness before release.
 - Capture sequencing, dependencies, and reminder text in the Stage 3 note so downstream owners inherit the migration choreography and can spot plan-file overlaps early.
 
-*Reminder: patterns can belong to only one cohort at a time—use `--remove` or `--clear` on `pattern-cohort` before reassigning.*
+*Reminder: each pattern belongs to exactly one cohort—remove it with `cohort --id <currentId> --remove-pattern <patternId>` before assigning it elsewhere.*
 
 ### Stage 5B execution guidance
 

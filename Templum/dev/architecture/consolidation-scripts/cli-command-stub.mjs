@@ -86,6 +86,119 @@ function markCohortForRegen(cohortId) {
   }
 }
 
+function setRegistryMeta(registry, key, value) {
+  Object.defineProperty(registry, key, {
+    configurable: true,
+    enumerable: false,
+    writable: true,
+    value
+  });
+}
+
+function cohortLabelFromIndex(index) {
+  if (!Number.isInteger(index) || index < 0) {
+    throw new Error(`Cannot generate cohort label for index ${index}`);
+  }
+  let remaining = index + 1;
+  let label = '';
+  while (remaining > 0) {
+    remaining -= 1;
+    const remainder = remaining % 26;
+    label = String.fromCharCode(65 + remainder) + label;
+    remaining = Math.floor(remaining / 26);
+  }
+  return label;
+}
+
+function getCohortAliasMap(registry) {
+  const value = registry.__cohortAliasMap;
+  return value instanceof Map ? value : null;
+}
+
+function canonicalizeCohortIds(registry, options = {}) {
+  const { touch = false } = options;
+  const cohorts = getCohortCollection(registry);
+  const aliasMap = new Map();
+  const mapping = new Map();
+  cohorts.forEach((cohort, index) => {
+    const canonicalId = cohortLabelFromIndex(index);
+    const original = String(cohort.id || '').trim();
+    if (original) {
+      aliasMap.set(original.toLowerCase(), canonicalId);
+    }
+    aliasMap.set(canonicalId.toLowerCase(), canonicalId);
+    if (!original || original.toUpperCase() !== canonicalId) {
+      mapping.set(original || canonicalId, canonicalId);
+      cohort.id = canonicalId;
+      if (touch) {
+        cohort.updatedAt = nowIso();
+      }
+    } else {
+      cohort.id = canonicalId;
+    }
+    if (Array.isArray(cohort.patterns)) {
+      cohort.patterns = [...new Set(cohort.patterns)].sort((a, b) => a - b);
+    } else {
+      cohort.patterns = [];
+    }
+  });
+
+  if (Array.isArray(registry.patterns)) {
+    registry.patterns.forEach((pattern) => {
+      const existing = getPatternCohortIds(pattern);
+      if (!existing.length) {
+        return;
+      }
+      const next = existing
+        .map((id) => {
+          const token = String(id).trim();
+          const mapped = aliasMap.get(token.toLowerCase());
+          return mapped || token.toUpperCase();
+        })
+        .filter(Boolean);
+      const before = JSON.stringify(existing);
+      setPatternCohortList(pattern, next);
+      const after = JSON.stringify(getPatternCohortIds(pattern));
+      if (touch && before !== after) {
+        touchPattern(pattern);
+      }
+    });
+  }
+
+  if (mapping.size) {
+    const remappedPending = new Set();
+    pendingRegen.cohorts.forEach((entry) => {
+      const key = String(entry).trim().toLowerCase();
+      const mapped = aliasMap.get(key);
+      if (mapped) {
+        remappedPending.add(mapped);
+      } else {
+        remappedPending.add(entry);
+      }
+    });
+    pendingRegen.cohorts.clear();
+    remappedPending.forEach((entry) => pendingRegen.cohorts.add(entry));
+  }
+
+  setRegistryMeta(registry, '__cohortAliasMap', aliasMap);
+  setRegistryMeta(registry, '__nextCohortId', cohortLabelFromIndex(cohorts.length));
+  setRegistryMeta(registry, '__legacyCohortMapping', mapping);
+  return { aliasMap, mapping, nextId: cohortLabelFromIndex(cohorts.length) };
+}
+
+function resolveCanonicalCohortId(registry, value) {
+  if (value === undefined || value === null) {
+    throw new Error('Cohort id cannot be empty.');
+  }
+  const trimmed = String(value).trim();
+  if (!trimmed) {
+    throw new Error('Cohort id cannot be empty.');
+  }
+  const aliasMap = getCohortAliasMap(registry);
+  const mapped = aliasMap ? aliasMap.get(trimmed.toLowerCase()) : null;
+  return mapped || normaliseCohortId(trimmed);
+}
+
 function registerScopeChange(patternId, scope) {
   if (!scope && scope !== 0) {
     return;
@@ -145,10 +258,23 @@ async function loadRegistry() {
     const errorText = validate.errors?.map((err) => `- ${err.instancePath || '<root>'} ${err.message || ''}`).join('\n') || 'unknown validation error';
     throw new Error(`Registry failed schema validation:\n${errorText}`);
   }
+  const originalIds = (registry.cohorts || []).map((cohort) => cohort.id);
+  canonicalizeCohortIds(registry, { touch: false });
+  const renamed = [];
+  (registry.cohorts || []).forEach((cohort, index) => {
+    const before = originalIds[index];
+    if (before && before !== cohort.id) {
+      renamed.push(`${before}→${cohort.id}`);
+    }
+  });
+  if (renamed.length) {
+    console.log(`Cohort ids normalized to alphabetical sequence: ${renamed.join(', ')}`);
+  }
   return registry;
 }
 
 async function saveRegistry(registry, options = {}) {
+  canonicalizeCohortIds(registry, { touch: true });
   autoUpdateAllPatternStatuses(registry);
   registry.updatedAt = nowIso();
   const validate = await getValidator();
@@ -1199,19 +1325,21 @@ const stageActionGuidance = {
     const laneId = context.laneId || context.suggestedLaneId || '<laneId>';
     return [
       `1. Claim this lane with \`npm run consolidate -- claim ${pattern.patternId} --lane ${laneId}\`.`,
-      `2. Execute the recorded commands through \`node scripts/run-with-timeout.mjs --preset <preset> -- …\` (pick \`jest-suite\`, \`jest-ci\`, or \`phase6-validation\` to match the command) and capture outputs using \`npm run consolidate -- update-lane ${pattern.patternId} ${laneId} --status complete --summary "Gating battery green" --files <log>\`.`,
+      `2. Execute the recorded commands through \`node scripts/run-with-timeout.mjs --preset <preset> -- …\` (pick \`jest-suite\`, \`jest-ci\`, or \`phase6-validation\` to match the command) and log the artefact path with \`npm run consolidate -- update-lane ${pattern.patternId} ${laneId} --status in_progress --files <log>\` so the Stage 5A owner sees the exact wrapper + evidence.`,
       `3. If work uncovers a blocker, set the lane to blocked, attach the dependency to the follow-up lane or stage (create one if missing), and log context via \`npm run consolidate -- append-activity ${pattern.patternId} --lane ${laneId} --summary "Blocker: ..."\`.`,
-      `4. Summarise findings with \`npm run consolidate -- stage-note ${pattern.patternId} 4 --body "Lane ${laneId}: ..."\`, updating Stage 6 lane plan files when new migratable consumers appear, and only advance Stage 4 once every lane is [x].`
+      `4. Capture an end-of-lane note via \`npm run consolidate -- stage-note ${pattern.patternId} 4 --body "Lane ${laneId}: Commands=<...>; DI/Guardrails=<...>; Evidence=<...>; Follow-ups=<...>"\`, calling out anything the Stage 5A alignment owner will need (wrapper presets, DI seams, doc/tasks to update, missing tests, telemetry hooks, etc.).`,
+      `5. Update Stage 6 lane plan-files/search-terms if new consumers surfaced, then close the lane with \`npm run consolidate -- update-lane ${pattern.patternId} ${laneId} --status complete --summary "Gating battery green" --files <final-log>\` only after the note reflects the lane’s outcomes and next steps.`
     ];
   },
   '5a': (pattern, context = {}) => {
     const cohorts = context.stage5a?.cohortIds?.length ? context.stage5a.cohortIds : getPatternCohortIds(pattern);
     const cohortList = cohorts.length ? cohorts.join(', ') : '<cohortId>';
     return [
-      `1. For each cohort (${cohortList}), begin the alignment session with \`npm run consolidate -- cohort-stage <cohortId> --segment 5a --status in_progress --notes "<alignment summary>"\`, adding \`--plan-files\` / \`--files\` as you capture artefacts.`,
-      `2. Coordinate any follow-up work uncovered during alignment by attaching dependencies to the owning pattern or lane with \`npm run consolidate -- update-lane\` / \`--update-stage\`  \`--add-dependency <csv>\` as needed.`,
-      `3. Close the segment for each cohort via \`npm run consolidate -- cohort-stage <cohortId> --segment 5a --status complete --notes "<outcome>"\` once evidence is archived and blockers cleared.`,
-      `4. Update Stage 5B notes or docs/progress entries.`
+      `1. Kick off each cohort (${cohortList}) with \`npm run consolidate -- cohort-stage <cohortId> --segment 5a --status in_progress --notes "<alignment summary>" --plan-files <alignment-spec.md>\` so the registry records the shared spec path, start time, and any artefacts you gather.`,
+      `2. Author or refresh the cohort alignment spec under \`dev/architecture/…\`, capturing Stage 4 guardrails, a shared-dependencies matrix, DI seams, required cleanup/doc updates, gating command wrappers, approvals, and outstanding risks; keep the file listed in \`--plan-files\`/ \`--files\` as you attach evidence.`,
+      `3. Log Stage 5 notes or activity entries for each pattern referencing the spec location and highlighting the decisions/alignment outputs so Stage 5B owners inherit the contract without rereading every lane note.`,
+      `4. Attach dependencies for any follow-up work uncovered during alignment via \`npm run consolidate -- update-lane … --add-dependency <csv>\` or \`--update-stage …\` and capture the open items (missing tests, doc syncs, telemetry gaps, etc.) directly in the spec.`,
+      `5. Close the cohort segment with \`npm run consolidate -- cohort-stage <cohortId> --segment 5a --status complete --notes "<outcome>" --plan-files <alignment-spec.md>\` once the spec is published, activity entries are filed, and evidence is archived; nudge Stage 5B docs/progress trackers immediately afterward.`
     ];
   },
   '5': (pattern) => [
@@ -1370,10 +1498,14 @@ function findCohortPlanFileBlockingEntries(registry, pattern, laneId) {
 }
 
 function normaliseCohortId(value) {
-  if (!value) {
+  if (value === undefined || value === null) {
     throw new Error('Cohort id cannot be empty.');
   }
-  return String(value).trim();
+  const trimmed = String(value).trim();
+  if (!trimmed) {
+    throw new Error('Cohort id cannot be empty.');
+  }
+  return trimmed.toUpperCase();
 }
 
 function touchCohort(cohort) {
@@ -1391,8 +1523,8 @@ function getCohortCollection(registry) {
 }
 
 function findCohortById(registry, cohortId) {
-  const targetId = normaliseCohortId(cohortId).toLowerCase();
-  return (registry.cohorts || []).find((cohort) => normaliseCohortId(cohort.id).toLowerCase() === targetId) || null;
+  const canonicalId = resolveCanonicalCohortId(registry, cohortId);
+  return (registry.cohorts || []).find((cohort) => normaliseCohortId(cohort.id) === canonicalId) || null;
 }
 
 function ensureCohort(registry, cohortId, options = {}) {
@@ -1431,6 +1563,14 @@ function attachPatternToCohort(cohort, patternId) {
 function detachPatternFromCohort(cohort, patternId) {
   const next = cohort.patterns.filter((id) => id !== patternId);
   cohort.patterns = next;
+}
+
+function requirePatternById(registry, patternId) {
+  const pattern = (registry.patterns || []).find((p) => p.patternId === patternId);
+  if (!pattern) {
+    throw new Error(`Pattern ${patternId} not found in registry.`);
+  }
+  return pattern;
 }
 
 function getCohortStageEntry(cohort, segment) {
@@ -2651,7 +2791,9 @@ function printGuide(registry, pattern, options = {}) {
     console.log('');
     console.log('Stage actions:');
     if (targetStage === '5' && stage5Locked) {
-      console.log(' - Stage 5B guidance unlocks once cohort Stage 4 readiness and Stage 5A alignment are marked `complete`. Use `pattern-cohort --list` plus `cohort-stage <cohortId> --segment 5a` to coordinate readiness.');
+      console.log(
+        ' - Stage 5B guidance unlocks once cohort Stage 4 readiness and Stage 5A alignment are marked `complete`. Use `cohort --all` to confirm the active id, then `cohort --id <cohortId> --list` and `cohort-stage <cohortId> --segment 5a --show` to coordinate readiness.'
+      );
     } else {
       stageActions.forEach((item) => console.log(` ${item}`));
     }
@@ -2928,6 +3070,34 @@ function parsePatternIdList(value) {
     .split(',')
     .map((entry) => Number.parseInt(entry.trim(), 10))
     .filter((num) => !Number.isNaN(num));
+}
+
+function parsePatternIdInputs(values, contextLabel = 'cohort') {
+  if (!values || !values.length) {
+    return [];
+  }
+  const collected = new Set();
+  values.forEach((value) => {
+    if (typeof value !== 'string') {
+      return;
+    }
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return;
+    }
+    trimmed
+      .split(',')
+      .map((entry) => entry.trim())
+      .filter(Boolean)
+      .forEach((entry) => {
+        const parsed = Number.parseInt(entry, 10);
+        if (Number.isNaN(parsed) || parsed < 1) {
+          throw new Error(`${contextLabel}: invalid pattern id "${entry}"`);
+        }
+        collected.add(parsed);
+      });
+  });
+  return [...collected].sort((a, b) => a - b);
 }
 
 function parseDependencyDescriptor(value, context = 'create-lane') {
@@ -3342,6 +3512,154 @@ function printPatternCohorts(registry, pattern) {
   console.log(`Cohorts: ${entries.join('; ')}`);
 }
 
+function appendCohortNote(cohort, note) {
+  if (!note) {
+    return;
+  }
+  const timestamp = nowIso();
+  const entry = `${timestamp} — ${note}`;
+  if (cohort.notes) {
+    cohort.notes = `${cohort.notes}\n${entry}`;
+  } else {
+    cohort.notes = entry;
+  }
+}
+
+function segmentSortKey(segment) {
+  const match = /^(\d+)([a-z]?)$/i.exec(segment);
+  if (!match) {
+    return segment;
+  }
+  const numeric = Number.parseInt(match[1], 10);
+  const suffix = match[2] || '';
+  return `${numeric.toString().padStart(2, '0')}-${suffix}`;
+}
+
+function printCohortDetails(registry, cohort, options = {}) {
+  const indent = options.indent || '';
+  const header = cohort.name ? `${cohort.id} — ${cohort.name}` : cohort.id;
+  console.log(`${indent}Cohort ${header}`);
+  if (cohort.description) {
+    console.log(`${indent}  Description: ${cohort.description}`);
+  }
+  if (cohort.patterns.length) {
+    const patternSummaries = cohort.patterns.map((patternId) => {
+      const pattern = registry.patterns.find((p) => p.patternId === patternId);
+      return pattern ? `${patternId} (${pattern.name})` : `${patternId} (missing)`;
+    });
+    console.log(`${indent}  Patterns: ${patternSummaries.join(', ')}`);
+  } else {
+    console.log(`${indent}  Patterns: (none assigned)`);
+    console.log(`${indent}  Warning: assign patterns to this cohort before recording Stage 5A progress.`);
+  }
+  if (cohort.plannedFiles?.length) {
+    console.log(`${indent}  Planned files: ${cohort.plannedFiles.join(', ')}`);
+  }
+  if (cohort.notes) {
+    console.log(`${indent}  Notes:`);
+    cohort.notes.split('\n').forEach((line) => {
+      console.log(`${indent}    • ${line}`);
+    });
+  }
+  if (cohort.updatedAt) {
+    console.log(`${indent}  Updated: ${cohort.updatedAt}`);
+  }
+  const stages = cohort.stages || {};
+  const segmentFilter = options.segment ? options.segment.toLowerCase() : null;
+  const keys = Object.keys(stages).filter((segment) => {
+    if (!segmentFilter) {
+      return true;
+    }
+    return segment.toLowerCase() === segmentFilter;
+  });
+  if (!keys.length) {
+    if (segmentFilter) {
+      console.log(`${indent}  Segment ${segmentFilter} not yet recorded.`);
+    } else {
+      console.log(`${indent}  Segments: (none recorded)`);
+    }
+    return;
+  }
+  console.log(`${indent}  Segments:`);
+  keys
+    .sort((a, b) => segmentSortKey(a).localeCompare(segmentSortKey(b)))
+    .forEach((segment) => {
+      const entry = stages[segment];
+      const status = entry?.status || 'unknown';
+      const completed = entry?.completedAt ? ` @ ${entry.completedAt}` : '';
+      console.log(`${indent}    • ${segment}: ${status}${completed}`);
+      if (entry?.startedAt && entry?.completedAt) {
+        console.log(`${indent}      Window: ${entry.startedAt} → ${entry.completedAt}`);
+      } else if (entry?.startedAt) {
+        console.log(`${indent}      Started: ${entry.startedAt}`);
+      }
+      if (entry?.plannedFiles?.length) {
+        console.log(`${indent}      Planned files: ${entry.plannedFiles.join(', ')}`);
+      }
+      if (entry?.notes) {
+        console.log(`${indent}      Notes: ${entry.notes}`);
+      }
+    });
+}
+
+function printCohortDirectory(registry) {
+  const cohorts = getCohortCollection(registry);
+  if (!cohorts.length) {
+    console.log('No cohorts recorded.');
+    return;
+  }
+  cohorts.forEach((cohort, index) => {
+    const header = cohort.name ? `${cohort.id} — ${cohort.name}` : cohort.id;
+    const patterns = cohort.patterns.length ? cohort.patterns.join(', ') : '(no patterns)';
+    const stage5a = getCohortStageEntry(cohort, '5a');
+    const stageLabel = stage5a
+      ? `${stage5a.status}${stage5a.completedAt ? ` @ ${stage5a.completedAt}` : ''}`
+      : 'not started';
+    console.log(`${header}`);
+    console.log(`  Patterns: ${patterns}`);
+    console.log(`  Stage 5A: ${stageLabel}`);
+    if (cohort.description) {
+      console.log(`  Description: ${cohort.description}`);
+    }
+    if (index < cohorts.length - 1) {
+      console.log('');
+    }
+  });
+}
+
+function propagateCohortStagePlanFiles(registry, cohort, segment, planFiles) {
+  if (!segment || segment.toLowerCase() !== '5a') {
+    return [];
+  }
+  const normalized = normalisePlanFiles(planFiles);
+  if (!normalized.length) {
+    return [];
+  }
+  const updates = [];
+  (cohort.patterns || []).forEach((patternId) => {
+    const pattern = registry.patterns.find((p) => p.patternId === patternId);
+    if (!pattern) {
+      return;
+    }
+    const gate = ensureStageGate(pattern, '5');
+    const existing = Array.isArray(gate.plannedFiles) ? normalisePlanFiles(gate.plannedFiles) : [];
+    const merged = normalisePlanFiles([...existing, ...normalized]);
+    const changed =
+      merged.length !== existing.length || merged.some((value, index) => value !== existing[index]);
+    if (changed) {
+      gate.plannedFiles = merged;
+      registerScopeChange(patternId, 'stage-5');
+      touchPattern(pattern);
+      updates.push({
+        patternId,
+        name: pattern.name,
+        planFiles: merged
+      });
+    }
+  });
+  return updates;
+}
+
 function printStatus(registry, pattern, updatedAt) {
   console.log(`Pattern ${pattern.patternId} — ${pattern.name}`);
   console.log(`Stage pointer: ${pattern.stage}`);
@@ -3739,12 +4057,12 @@ function normalizeRegenOptions(registry, options = {}) {
 async function runRegen(registry, options = {}) {
   const { checkOnly, forceAll, includeGlobalSchedule, patternSet, cohortSet, silent } = normalizeRegenOptions(registry, options);
   const generatedFiles = [];
-  const planDir = path.join(repoRoot, 'Templum/dev/architecture/utility-consolidation-plans');
+  const planDir = path.join(repoRoot, 'dev/architecture/plans');
   const targetPatterns = forceAll
     ? [...registry.patterns]
     : registry.patterns.filter((pattern) => patternSet.has(pattern.patternId));
   for (const pattern of targetPatterns) {
-    const generatedPath = path.join(planDir, `pattern-${pattern.patternId}.generated.md`);
+    const generatedPath = path.join(planDir, `${pattern.patternId}.generated.md`);
     const content = renderPatternMarkdown(pattern, registry.updatedAt);
     const changed = await writeFileIfChanged(generatedPath, content, checkOnly);
     generatedFiles.push({ file: generatedPath, changed });
@@ -3755,7 +4073,7 @@ async function runRegen(registry, options = {}) {
 
   try {
     const { generateScheduleArtifacts } = await import(scheduleToolsModulePath);
-    const schedulesDir = path.join(__dirname, 'schedules');
+    const schedulesDir = path.join(repoRoot, 'dev/architecture/schedules');
     const scheduleArtifacts = [];
     if (includeGlobalSchedule) {
       scheduleArtifacts.push(
@@ -3785,7 +4103,7 @@ async function runRegen(registry, options = {}) {
       }
       processedCohorts.add(cohortId);
       const safeId = normaliseCohortId(cohort.id);
-      const baseName = `schedule-cohort-${safeId}`;
+      const baseName = safeId;
       const cohortPatterns = Array.isArray(cohort.patterns) ? cohort.patterns : [];
       scheduleArtifacts.push(
         await generateScheduleArtifacts(registry, {
@@ -3819,7 +4137,7 @@ async function runRegen(registry, options = {}) {
     }
   }
 
-  const activityPath = path.join(repoRoot, 'Templum/dev/architecture/utility-consolidation-activity-log.generated.md');
+  const activityPath = path.join(repoRoot, 'dev/architecture/utility-consolidation-activity-log.generated.md');
   const activityChanged = await writeFileIfChanged(activityPath, renderActivityMarkdown(registry), checkOnly);
   generatedFiles.push({ file: activityPath, changed: activityChanged });
 
@@ -4290,93 +4608,233 @@ async function main() {
         break;
       }
 
-      case 'pattern-cohort': {
-        const patternId = positionals.patternId;
-        const pattern = registry.patterns.find((p) => p.patternId === patternId);
-        if (!pattern) {
-          throw new Error(`Pattern ${patternId} not found in registry.`);
-        }
+      case 'cohort': {
+        canonicalizeCohortIds(registry, { touch: false });
         const cohortOptions = {
           ...options,
-          add: Array.isArray(options.add) ? options.add : [],
-          remove: Array.isArray(options.remove) ? options.remove : []
+          addPattern: Array.isArray(options.addPattern) ? options.addPattern : [],
+          removePattern: Array.isArray(options.removePattern) ? options.removePattern : [],
+          create: Array.isArray(options.create) ? options.create : []
         };
-        if (cohortOptions.list) {
-          printPatternCohorts(registry, pattern);
+        const createIds = parsePatternIdInputs(cohortOptions.create, 'cohort --create');
+        const addIds = parsePatternIdInputs(cohortOptions.addPattern, 'cohort --add-pattern');
+        const removeIds = parsePatternIdInputs(cohortOptions.removePattern, 'cohort --remove-pattern');
+        const hasCreate = createIds.length > 0;
+        const hasAdd = addIds.length > 0;
+        const hasRemove = removeIds.length > 0;
+        const hasMetadataChange = Boolean(cohortOptions.name || cohortOptions.description);
+        const hasNote = Boolean(cohortOptions.note);
+        const hasId = typeof cohortOptions.id === 'string' && cohortOptions.id.trim().length > 0;
+
+        if (cohortOptions.all) {
+          if (hasCreate || hasId || hasAdd || hasRemove || hasMetadataChange || hasNote || cohortOptions.list) {
+            throwUsageError(descriptor, 'cohort --all cannot be combined with other options.');
+          }
+          printCohortDirectory(registry);
           break;
         }
-        if (!cohortOptions.clear && cohortOptions.add.length === 0 && cohortOptions.remove.length === 0) {
-          throwUsageError(descriptor, 'pattern-cohort requires --add/--remove/--clear or --list');
-        }
-        if ((cohortOptions.name || cohortOptions.description) && cohortOptions.add.length !== 1) {
-          throwUsageError(descriptor, 'pattern-cohort: --name/--description require exactly one --add cohort');
-        }
 
-        const desiredSet = new Set(getPatternCohortIds(pattern).map(normaliseCohortId));
-        const normalizedRemovals = [...new Set(cohortOptions.remove.map((cohortId) => normaliseCohortId(cohortId)))];
-        const normalizedAdds = [...new Set(cohortOptions.add.map((cohortId) => normaliseCohortId(cohortId)))];
-        if (normalizedAdds.length > 1) {
-          throw new Error('Pattern already assigned to a cohort; remove existing cohorts before adding another.');
-        }
-        if (cohortOptions.clear) {
-          desiredSet.clear();
-        }
-        normalizedRemovals.forEach((cohortId) => desiredSet.delete(cohortId));
-        normalizedAdds.forEach((cohortId) => {
-          if (desiredSet.size > 0 && !desiredSet.has(cohortId)) {
-            throw new Error('Pattern already assigned to a cohort; use --remove or --clear before adding another cohort.');
+        if (hasCreate) {
+          if (hasId || hasAdd || hasRemove || cohortOptions.list) {
+            throwUsageError(
+              descriptor,
+              'cohort --create cannot be combined with --id/--add-pattern/--remove-pattern/--list.'
+            );
           }
-          desiredSet.add(cohortId);
-        });
-        if (desiredSet.size > 1) {
-          throw new Error('Pattern may only belong to one cohort at a time.');
+          if (!createIds.length) {
+            throwUsageError(descriptor, 'cohort --create requires at least one pattern id.');
+          }
+          const meta = canonicalizeCohortIds(registry, { touch: false });
+          const newCohortId =
+            meta.nextId || cohortLabelFromIndex(getCohortCollection(registry).length);
+          const cohort = ensureCohort(registry, newCohortId, {
+            name: cohortOptions.name,
+            description: cohortOptions.description
+          });
+          const assignedPatterns = [];
+          createIds.forEach((patternId) => {
+            const pattern = requirePatternById(registry, patternId);
+            const existing = getPatternCohortIds(pattern);
+            if (existing.length) {
+              throw new Error(
+                `Pattern ${patternId} already assigned to cohort ${existing[0]}; remove it before creating a new cohort.`
+              );
+            }
+            const result = syncCohortAssignments(registry, pattern, [cohort.id]);
+            if (result.added.includes(cohort.id)) {
+              assignedPatterns.push(patternId);
+              const activityEntries = pattern.activity || (pattern.activity = []);
+              activityEntries.push({
+                stage: 'stage-5',
+                timestamp: nowIso(),
+                summary: `Assigned to cohort ${cohort.id}`
+              });
+            }
+          });
+          if (hasNote) {
+            appendCohortNote(cohort, cohortOptions.note);
+          }
+          touchCohort(cohort);
+          canonicalizeCohortIds(registry, { touch: false });
+          await saveRegistry(registry);
+          console.log(
+            `Created cohort ${cohort.id} (${assignedPatterns.length} pattern${assignedPatterns.length === 1 ? '' : 's'} assigned).`
+          );
+          printCohortDetails(registry, cohort);
+          break;
         }
-        const desired = [...desiredSet];
 
-        const metadata = {};
-        if (cohortOptions.name) {
-          metadata.name = cohortOptions.name;
-        }
-        if (cohortOptions.description) {
-          metadata.description = cohortOptions.description;
+        if (!hasId) {
+          throwUsageError(descriptor, 'cohort requires --all, --create, or --id <cohortId>.');
         }
 
-        const result = syncCohortAssignments(registry, pattern, desired, { cohortMetadata: metadata });
-        if (cohortOptions.note) {
-          const notes = pattern.notes || (pattern.notes = []);
-          notes.push({
-            id: `cohort-update-${nowIso().replace(/[^0-9T]/g, '')}`,
-            timestamp: nowIso(),
-            body: cohortOptions.note,
-            scope: ['stage-5']
+        const cohort = findCohortById(registry, cohortOptions.id);
+        if (!cohort) {
+          throw new Error(
+            `Cohort ${cohortOptions.id} not found. Run 'npm run consolidate -- cohort --all' to inspect available cohorts.`
+          );
+        }
+
+        const actuallyAdded = [];
+        const actuallyRemoved = [];
+
+        if (hasRemove) {
+          removeIds.forEach((patternId) => {
+            const pattern = requirePatternById(registry, patternId);
+            const existing = getPatternCohortIds(pattern);
+            if (!existing.includes(cohort.id)) {
+              console.log(`Pattern ${patternId} is not assigned to cohort ${cohort.id}; skipping removal.`);
+              return;
+            }
+            const result = syncCohortAssignments(registry, pattern, []);
+            if (result.removed.includes(cohort.id)) {
+              actuallyRemoved.push(patternId);
+              const activityEntries = pattern.activity || (pattern.activity = []);
+              activityEntries.push({
+                stage: 'stage-5',
+                timestamp: nowIso(),
+                summary: `Removed from cohort ${cohort.id}`
+              });
+            }
           });
         }
-        const activityEntries = pattern.activity || (pattern.activity = []);
-        activityEntries.push({
-          stage: 'stage-5',
-          timestamp: nowIso(),
-          summary: `Cohorts updated (added: ${result.added.join(', ') || 'none'}, removed: ${result.removed.join(', ') || 'none'})`
-        });
-        touchPattern(pattern);
-        await saveRegistry(registry);
-        console.log(`Pattern ${patternId} cohorts updated.`);
-        printPatternCohorts(registry, pattern);
+
+        if (hasAdd) {
+          addIds.forEach((patternId) => {
+            const pattern = requirePatternById(registry, patternId);
+            const existing = getPatternCohortIds(pattern);
+            if (existing.length && !existing.includes(cohort.id)) {
+              throw new Error(
+                `Pattern ${patternId} already assigned to cohort ${existing[0]}; remove it before adding to ${cohort.id}.`
+              );
+            }
+            const result = syncCohortAssignments(registry, pattern, [cohort.id]);
+            if (result.added.includes(cohort.id)) {
+              actuallyAdded.push(patternId);
+              const activityEntries = pattern.activity || (pattern.activity = []);
+              activityEntries.push({
+                stage: 'stage-5',
+                timestamp: nowIso(),
+                summary: `Assigned to cohort ${cohort.id}`
+              });
+            }
+          });
+        }
+
+        if (hasMetadataChange) {
+          if (cohortOptions.name) {
+            cohort.name = cohortOptions.name;
+          }
+          if (cohortOptions.description) {
+            cohort.description = cohortOptions.description;
+          }
+        }
+
+        if (hasNote) {
+          appendCohortNote(cohort, cohortOptions.note);
+        }
+
+        const mutated =
+          actuallyAdded.length > 0 || actuallyRemoved.length > 0 || hasMetadataChange || hasNote;
+        const shouldList =
+          cohortOptions.list ||
+          (!mutated && !hasAdd && !hasRemove && !hasMetadataChange && !hasNote);
+
+        if (mutated) {
+          touchCohort(cohort);
+          canonicalizeCohortIds(registry, { touch: false });
+          await saveRegistry(registry);
+          const addedLabel = actuallyAdded.length ? actuallyAdded.join(', ') : 'none';
+          const removedLabel = actuallyRemoved.length ? actuallyRemoved.join(', ') : 'none';
+          console.log(`Cohort ${cohort.id} updated (added: ${addedLabel}; removed: ${removedLabel}).`);
+        }
+
+        if (shouldList || mutated) {
+          printCohortDetails(registry, cohort);
+        }
+        if (!mutated && !shouldList) {
+          console.log('No cohort changes recorded.');
+        }
+
         break;
       }
+      case 'pattern-cohort': {
+        throwUsageError(
+          descriptor,
+          'pattern-cohort has been replaced by `cohort`. Run `npm run consolidate -- cohort --help` for the updated workflow.'
+        );
+      }
       case 'cohort-stage': {
-        const cohortId = normaliseCohortId(positionals.cohortId);
+        canonicalizeCohortIds(registry, { touch: false });
         const cohortOptions = {
           ...options,
           planFiles: Array.isArray(options.planFiles) ? options.planFiles : []
         };
-        if (!cohortOptions.segment) {
+        const cohort = findCohortById(registry, positionals.cohortId);
+        if (!cohort) {
+          throw new Error(
+            `Cohort ${positionals.cohortId} not found. Use 'npm run consolidate -- cohort --all' to inspect available ids.`
+          );
+        }
+        const segmentToken = cohortOptions.segment ? String(cohortOptions.segment).toLowerCase() : null;
+        const statusToken = cohortOptions.status ? String(cohortOptions.status).toLowerCase() : null;
+        const showOnly = Boolean(cohortOptions.show);
+        if (showOnly) {
+          const hasMutation =
+            statusToken ||
+            cohortOptions.planFiles.length > 0 ||
+            cohortOptions.clearPlanFiles ||
+            cohortOptions.notes ||
+            cohortOptions.startedAt ||
+            cohortOptions.completedAt;
+          if (hasMutation) {
+            throwUsageError(descriptor, 'cohort-stage --show cannot be combined with mutation flags.');
+          }
+          if (segmentToken) {
+            printCohortDetails(registry, cohort, { segment: segmentToken });
+          } else {
+            printCohortDetails(registry, cohort);
+          }
+          if (!cohort.patterns.length) {
+            console.log(
+              `Warning: cohort ${cohort.id} has no patterns assigned. Align work on the aggregated cohort instead.`
+            );
+          }
+          break;
+        }
+        if (!segmentToken) {
           throwUsageError(descriptor, 'cohort-stage requires --segment <value>');
         }
-        if (!cohortOptions.status) {
+        if (!statusToken) {
           throwUsageError(descriptor, 'cohort-stage requires --status <value>');
         }
-        if (!stageStatusMetadata[cohortOptions.status]) {
+        if (!stageStatusMetadata[statusToken]) {
           throwUsageError(descriptor, `cohort-stage: unsupported status ${cohortOptions.status}`);
+        }
+        if (!cohort.patterns.length) {
+          throw new Error(
+            `Cohort ${cohort.id} has no patterns assigned. Use the aggregated cohort id when recording Stage 5A.`
+          );
         }
         if (cohortOptions.startedAt && Number.isNaN(Date.parse(cohortOptions.startedAt))) {
           throwUsageError(descriptor, 'cohort-stage: --started-at must be a valid ISO8601 timestamp');
@@ -4384,19 +4842,36 @@ async function main() {
         if (cohortOptions.completedAt && Number.isNaN(Date.parse(cohortOptions.completedAt))) {
           throwUsageError(descriptor, 'cohort-stage: --completed-at must be a valid ISO8601 timestamp');
         }
-        const cohort = ensureCohort(registry, cohortId, {});
-        const planFiles = cohortOptions.planFiles.length
-          ? normalisePlanFileInputs(cohortOptions.planFiles, descriptor, 'cohort-stage')
-          : undefined;
+        const planFiles =
+          cohortOptions.planFiles.length
+            ? normalisePlanFileInputs(cohortOptions.planFiles, descriptor, 'cohort-stage')
+            : undefined;
         if (planFiles?.length) {
-          const registryConflicts = hasRegistryPlanConflict(registry, planFiles, null, `cohort-${cohort.id}-${cohortOptions.segment}`);
+          const registryConflicts = hasRegistryPlanConflict(
+            registry,
+            planFiles,
+            null,
+            `cohort-${cohort.id}-${segmentToken}`
+          );
           if (registryConflicts.conflict) {
             console.log(
               `Warning: cohort planned files overlap with in-progress scopes (${registryConflicts.conflicts.join(', ')}). Coordinate before proceeding.`
             );
           }
         }
-        const { entry, previousStatus } = setCohortStageStatus(cohort, cohortOptions.segment, cohortOptions.status, {
+        const existingEntry = getCohortStageEntry(cohort, segmentToken) || undefined;
+        const existingPlanFiles = existingEntry?.plannedFiles || [];
+        const nextPlanFiles = cohortOptions.clearPlanFiles
+          ? []
+          : planFiles !== undefined
+          ? planFiles
+          : existingPlanFiles;
+        if (segmentToken === '5a' && statusToken === 'complete' && nextPlanFiles.length === 0) {
+          throw new Error(
+            'Stage 5A completion requires at least one alignment spec plan file. Pass --plan-files <path> before marking the segment complete.'
+          );
+        }
+        const { entry, previousStatus } = setCohortStageStatus(cohort, segmentToken, statusToken, {
           notes: cohortOptions.notes,
           planFiles,
           clearPlanFiles: cohortOptions.clearPlanFiles,
@@ -4405,11 +4880,29 @@ async function main() {
         });
         const durationMessage =
           previousStatus === 'in_progress' && entry.elapsedMs ? formatDuration(entry.elapsedMs) : null;
+        const planFilePropagation =
+          entry.status === 'complete'
+            ? propagateCohortStagePlanFiles(registry, cohort, segmentToken, entry.plannedFiles || [])
+            : [];
         touchCohort(cohort);
         await saveRegistry(registry);
         console.log(`Cohort ${cohort.id} segment ${entry.segment} updated to ${entry.status}.`);
         if (durationMessage) {
           console.log(`  Elapsed while in_progress: ${durationMessage}`);
+        }
+        if (segmentToken === '5a' && entry.status === 'complete') {
+          if (planFilePropagation.length) {
+            const list = planFilePropagation
+              .map((detail) => `${detail.patternId}${detail.name ? ` (${detail.name})` : ''}`)
+              .join(', ');
+            console.log(
+              `  Stage 5 planned files updated for patterns: ${list}. Stage 5B guidance now references the shared alignment spec.`
+            );
+          } else {
+            console.log(
+              '  Stage 5 planned files already included the alignment spec. Stage 5B agents will see the shared plan automatically.'
+            );
+          }
         }
         break;
       }
