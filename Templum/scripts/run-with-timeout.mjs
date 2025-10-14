@@ -21,7 +21,14 @@ try {
 
 const args = process.argv.slice(2);
 
-const usage = `Usage:\n  node scripts/run-with-timeout.mjs [options] -- <command> [args...]\n\nOptions:\n  --timeout <ms>      Maximum runtime before sending SIGTERM (default 30000).\n  --kill-after <ms>   Grace period after SIGTERM before SIGKILL (default 5000).\n  --signal <name>     Signal to send at timeout (default SIGTERM).\n  --cwd <path>        Working directory for the spawned process.\n  --log-file <path>   Append diagnostic output to the given file.\n  --heartbeat <ms>    Log a heartbeat every N ms (requires --log-file for file output).\n`;
+const presetPatternMap = new Map([
+  ['jest-ci', ['✅ Overall: PASSED']],
+  ['jest-suite', ['Ran all test suites.']],
+  ['phase6-validation', ['Phase6IntegrationValidationSuite: Validation complete.']],
+  ['phase6-health', ['Overall System Health: ✅ HEALTHY']]
+]);
+
+const usage = `Usage:\n  node scripts/run-with-timeout.mjs [options] -- <command> [args...]\n\nOptions:\n  --timeout <ms>        Maximum runtime before sending SIGTERM (default 30000).\n  --kill-after <ms>     Grace period after SIGTERM before SIGKILL (default 5000).\n  --signal <name>       Signal to send at timeout (default SIGTERM).\n  --cwd <path>          Working directory for the spawned process.\n  --log-file <path>     Append diagnostic output to the given file.\n  --heartbeat <ms>      Log a heartbeat every N ms (requires --log-file for file output).\n  --exit-on-pattern <p> Terminate early once stdout/stderr contains the pattern.\n  --preset <name>       Shorthand for predefined exit pattern sets (e.g. jest-ci).\n`;
 
 if (args.length === 0) {
   console.error(usage);
@@ -44,6 +51,7 @@ let timeoutSignal = 'SIGTERM';
 let spawnCwd = process.cwd();
 let logFilePath;
 let heartbeatMs = 0;
+const exitPatterns = [];
 
 for (let i = 0; i < optionArgs.length; i += 1) {
   const option = optionArgs[i];
@@ -90,6 +98,29 @@ for (let i = 0; i < optionArgs.length; i += 1) {
       if (!Number.isFinite(heartbeatMs) || heartbeatMs <= 0) {
         console.error('Error: --heartbeat must be a positive number of milliseconds.');
         process.exit(1);
+      }
+      break;
+    case '--exit-on-pattern':
+      i += 1;
+      if (typeof optionArgs[i] !== 'string' || optionArgs[i].length === 0) {
+        console.error('Error: --exit-on-pattern requires a non-empty pattern string.');
+        process.exit(1);
+      }
+      exitPatterns.push(optionArgs[i]);
+      break;
+    case '--preset':
+      i += 1;
+      if (typeof optionArgs[i] !== 'string' || optionArgs[i].length === 0) {
+        console.error('Error: --preset requires a preset name.');
+        process.exit(1);
+      }
+      {
+        const preset = presetPatternMap.get(optionArgs[i]);
+        if (!preset) {
+          console.error(`Error: unknown preset "${optionArgs[i]}". Available presets: ${Array.from(presetPatternMap.keys()).join(', ') || '(none)'}.`);
+          process.exit(1);
+        }
+        exitPatterns.push(...preset);
       }
       break;
     default:
@@ -144,7 +175,8 @@ const finish = (code = 0) => {
   }
 };
 
-const stdioOption = logStream ? ['inherit', 'pipe', 'pipe'] : 'inherit';
+const captureOutput = Boolean(logStream || exitPatterns.length > 0);
+const stdioOption = captureOutput ? ['inherit', 'pipe', 'pipe'] : 'inherit';
 
 const child = spawn(command, commandRest, {
   cwd: spawnCwd,
@@ -158,22 +190,55 @@ let terminationRequested = false;
 
 logLine(`Spawned PID ${child.pid} with timeout ${timeoutMs}ms (kill-after ${killAfterMs}ms).`);
 
-if (logStream && child.stdout) {
+let stdoutBuffer = '';
+let stderrBuffer = '';
+const maxPatternBuffer = 4096;
+let patternTerminationIssued = false;
+
+const maybeTruncateBuffer = (buffer) => {
+  if (buffer.length <= maxPatternBuffer) {
+    return buffer;
+  }
+  return buffer.slice(buffer.length - maxPatternBuffer);
+};
+
+const handlePatternDetection = (source, buffer) => {
+  if (patternTerminationIssued || exitPatterns.length === 0) {
+    return;
+  }
+  const matchedPattern = exitPatterns.find((pattern) => buffer.includes(pattern));
+  if (!matchedPattern) {
+    return;
+  }
+  patternTerminationIssued = true;
+  initiateTermination(`Pattern "${matchedPattern}" detected on ${source}.`, timeoutSignal);
+};
+
+if (captureOutput && child.stdout) {
   child.stdout.on('data', (chunk) => {
     process.stdout.write(chunk);
-    logStream?.write(chunk);
+    if (logStream) {
+      logStream.write(chunk);
+    }
+    stdoutBuffer = maybeTruncateBuffer(stdoutBuffer + chunk.toString());
+    handlePatternDetection('stdout', stdoutBuffer);
   });
 }
 
-if (logStream && child.stderr) {
+if (captureOutput && child.stderr) {
   child.stderr.on('data', (chunk) => {
     process.stderr.write(chunk);
-    logStream?.write(chunk);
+    if (logStream) {
+      logStream.write(chunk);
+    }
+    stderrBuffer = maybeTruncateBuffer(stderrBuffer + chunk.toString());
+    handlePatternDetection('stderr', stderrBuffer);
   });
 }
 
 let heartbeatHandle;
 let killAfterGuard = null;
+let timeoutHandle;
 if (heartbeatMs > 0) {
   heartbeatHandle = createInterval(
     () => {
@@ -207,15 +272,20 @@ const sendSignal = (signal) => {
   }
 };
 
-const terminate = () => {
+const initiateTermination = (reason, signal = timeoutSignal) => {
   if (completed) {
     return;
   }
+  const terminationAlreadyRequested = terminationRequested;
   terminationRequested = true;
-  logLine(`Timeout reached (${timeoutMs}ms). Sending ${timeoutSignal} to PID ${child.pid}.`);
-  sendSignal(timeoutSignal);
-  if (killAfterMs > 0) {
-    killAfterGuard?.cancel?.();
+  timeoutHandle?.cancel?.();
+  if (!terminationAlreadyRequested) {
+    logLine(`${reason} Sending ${signal} to PID ${child.pid}.`);
+  } else {
+    logLine(`${reason} Ensuring signal ${signal} reaches PID ${child.pid}.`);
+  }
+  sendSignal(signal);
+  if (killAfterMs > 0 && !killAfterGuard) {
     killAfterGuard = createTimeout(
       () => {
         if (!completed) {
@@ -229,7 +299,11 @@ const terminate = () => {
   }
 };
 
-const timeoutHandle = createTimeout(terminate, timeoutMs, { unref: true });
+timeoutHandle = createTimeout(
+  () => initiateTermination(`Timeout reached (${timeoutMs}ms).`, timeoutSignal),
+  timeoutMs,
+  { unref: true }
+);
 
 child.on('exit', (code, signal) => {
   completed = true;

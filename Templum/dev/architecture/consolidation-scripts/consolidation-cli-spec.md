@@ -231,6 +231,27 @@ sequenceDiagram
 - Capture the discovery note with `stage-note … 1` containing the commands, cluster summary, and guardrails so downstream stages inherit repeatable evidence rather than loose scratch notes.
 - Only mark Stage 1 complete after writing an exit summary (via `update-stage … --status complete`) that distils the cluster priorities, immediate risks/blockers, and any documentation/progress trackers to touch before Stage 2 opens.
 
+### Stage 2 regression expectations
+
+- Record the regression plan together with the intended timeout wrapper preset (`--preset jest-suite` for targeted files, `--preset jest-ci` for `npm run test:ci` bundles) so downstream notes explain which completion marker the CLI should expect.
+- Execute every suite via `node scripts/run-with-timeout.mjs --preset <preset> -- …`; attach the resulting logs to `update-stage … --files` to keep evidence auditable.
+
+### Stage 4 lane execution expectations
+
+- When a lane’s commands include tests or validation harnesses, always invoke them through `node scripts/run-with-timeout.mjs --preset <preset> -- …` (typically `jest-suite`, `jest-ci`, or `phase6-validation`) before recording completion; note the preset in the lane summary for traceability.
+
+### Stage 5 gating expectations
+
+- Stage 5B owners must drive the Stage 6 gating battery with the wrapper: use `--preset phase6-validation` for `npm run phase6-validation` and `--preset phase6-health` for health probes, then link the timeout logs in the Stage 5 note or activity entry.
+
+### Stage 6 lane execution expectations
+
+- Each mandated command runs under the timeout wrapper with the matching preset (`jest-ci`/`jest-suite` for Jest, `phase6-validation`/`phase6-health` for harness scripts); checkpoint progress with `update-lane … --status in_progress --files` so partial artefacts stay discoverable.
+
+### Stage 7 validation expectations
+
+- Stage 7 validation batteries are executed via `node scripts/run-with-timeout.mjs --preset <preset> -- …`; capture both the preset choice and artefact path in the Stage 7 note before marking the stage complete.
+
 ### Guide rendering flow
 
 - `printGuide` sources stage status, timestamps, elapsed timings, and `plannedFiles` directly from `pattern.stageGates[stageId]`.

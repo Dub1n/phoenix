@@ -1181,8 +1181,8 @@ const stageActionGuidance = {
   ],
   '2': (pattern) => [
     `1. Claim this stage with \`npm run consolidate -- claim ${pattern.patternId} --stage 2\`.`,
-    `2. Author or refresh the regression suites up front; log the plan with \`npm run consolidate -- stage-note ${pattern.patternId} 2 --body "Suites: ...; Guardrails: ..."\`.`,
-    `3. Execute the suites and update evidence using \`npm run consolidate -- update-stage ${pattern.patternId} 2 --status in_progress --files <log>\` as you collect artefacts.`,
+    `2. Author or refresh the regression suites up front; log the plan with \`npm run consolidate -- stage-note ${pattern.patternId} 2 --body "Suites: ...; Guardrails: ..."\` and note which timeout wrapper preset (\`--preset jest-suite\` for targeted files, \`--preset jest-ci\` for bundled commands) you’ll apply.`,
+    `3. Execute the suites via \`node scripts/run-with-timeout.mjs --preset <preset> -- npm …\` (e.g., \`--preset jest-ci\` for \`npm run test:ci\`) and update evidence using \`npm run consolidate -- update-stage ${pattern.patternId} 2 --status in_progress --files <log>\` as you collect artefacts.`,
     `4. Mark Stage 2 complete via \`npm run consolidate -- update-stage ${pattern.patternId} 2 --status complete --notes "Results: ..."\` once coverage is green. If gaps arise later, reopen the stage and attach dependencies to the blocking lane.`,
     `Need recent history? Run \`npm run consolidate -- guide ${pattern.patternId} --recent\` for the latest activity summaries.`
   ],
@@ -1199,7 +1199,7 @@ const stageActionGuidance = {
     const laneId = context.laneId || context.suggestedLaneId || '<laneId>';
     return [
       `1. Claim this lane with \`npm run consolidate -- claim ${pattern.patternId} --lane ${laneId}\`.`,
-      `2. Execute the recorded commands and capture outputs using \`npm run consolidate -- update-lane ${pattern.patternId} ${laneId} --status complete --summary "Gating battery green" --files <log>\`.`,
+      `2. Execute the recorded commands through \`node scripts/run-with-timeout.mjs --preset <preset> -- …\` (pick \`jest-suite\`, \`jest-ci\`, or \`phase6-validation\` to match the command) and capture outputs using \`npm run consolidate -- update-lane ${pattern.patternId} ${laneId} --status complete --summary "Gating battery green" --files <log>\`.`,
       `3. If work uncovers a blocker, set the lane to blocked, attach the dependency to the follow-up lane or stage (create one if missing), and log context via \`npm run consolidate -- append-activity ${pattern.patternId} --lane ${laneId} --summary "Blocker: ..."\`.`,
       `4. Summarise findings with \`npm run consolidate -- stage-note ${pattern.patternId} 4 --body "Lane ${laneId}: ..."\`, updating Stage 6 lane plan files when new migratable consumers appear, and only advance Stage 4 once every lane is [x].`
     ];
@@ -1217,7 +1217,7 @@ const stageActionGuidance = {
   '5': (pattern) => [
     `1. Claim this stage with \`npm run consolidate -- claim ${pattern.patternId} --stage 5\`.`,
     `2. Populate Stage 5B guardrails, approvals, and artefacts using \`npm run consolidate -- stage-note ${pattern.patternId} 5 --body "Guardrails: ..."\` and the hand-off helpers.`,
-    `3. Run the Stage 6 gating battery; record evidence through lane updates or stage files so downstream owners can verify readiness.`,
+    `3. Run the Stage 6 gating battery via \`node scripts/run-with-timeout.mjs --preset phase6-validation -- npm run phase6-validation\` (swap to \`--preset phase6-health\` for health probes) and record evidence through lane updates or stage files so downstream owners can verify readiness.`,
     `4. Close Stage 5B with \`npm run consolidate -- update-stage ${pattern.patternId} 5 --status complete --notes "Cohort aligned; lanes unlocked"\` once dependencies are satisfied.`,
     `If alignment stalls, keep Stage 5B in progress, attach dependencies to the waiting work, and surface the delay in the activity log.`
   ],
@@ -1225,7 +1225,7 @@ const stageActionGuidance = {
     const laneId = context.laneId || context.suggestedLaneId || '<laneId>';
     return [
       `1. Start by claiming this lane (\`npm run consolidate -- claim ${pattern.patternId} --lane ${laneId}\`); do not run migration commands until the claim is recorded.`,
-      `2. Execute the mandated command battery, capturing artefact paths as you go, and log progress with \`npm run consolidate -- update-lane ${pattern.patternId} ${laneId} --status in_progress --files <log>\` if you need to checkpoint evidence.`,
+      `2. Execute the mandated command battery via \`node scripts/run-with-timeout.mjs --preset <preset> -- …\` (use \`jest-ci\`/\`jest-suite\` for Jest runs and \`phase6-validation\`/\`phase6-health\` for harness commands), capturing artefact paths as you go, and log progress with \`npm run consolidate -- update-lane ${pattern.patternId} ${laneId} --status in_progress --files <log>\` if you need to checkpoint evidence.`,
       `3. Run the cleanup sweep with \`npm run consolidate -- sweep ${pattern.patternId} --lane ${laneId}\`; clear any matches before closing the lane via \`npm run consolidate -- update-lane ${pattern.patternId} ${laneId} --status complete --summary "..." --files <final-log>\`.`,
       `4. If a blocker appears, immediately set the lane to blocked, attach the dependency to the owning scope (add a follow-up lane if missing), and record the details with \`npm run consolidate -- append-activity ${pattern.patternId} --lane ${laneId} --summary "Blocker: ..."\`.`,
       `5. Keep Stage 6 notes/activity entries current and leave the stage pending until every lane is [x].`
@@ -1233,7 +1233,7 @@ const stageActionGuidance = {
   },
   '7': (pattern) => [
     `1. Claim this stage with \`npm run consolidate -- claim ${pattern.patternId} --stage 7\`.`,
-    `2. Execute the Stage 7 validation battery and store artefacts using \`npm run consolidate -- update-stage ${pattern.patternId} 7 --status in_progress --files <log>\`.`,
+    `2. Execute the Stage 7 validation battery through \`node scripts/run-with-timeout.mjs --preset <preset> -- …\` (match the preset to each command) and store artefacts using \`npm run consolidate -- update-stage ${pattern.patternId} 7 --status in_progress --files <log>\`.`,
     `3. Add a Stage 7 note capturing the reason for the scope change and the Stage 7 validation you must re-run (e.g., \`Reason: ...; Required check: ...\`) via \`npm run consolidate -- stage-note ${pattern.patternId} 7 --body "Reason: ...; Required check: ..."\`.`,
     `4. Run the cleanup sweep via \`npm run consolidate -- sweep ${pattern.patternId} --stage 7\`; once it passes and documentation is updated, mark Stage 7 complete with \`npm run consolidate -- update-stage ${pattern.patternId} 7 --status complete --notes "Release-ready"\`.`,
     `If regressions appear later, reopen Stage 7, attach dependencies to the remediation scope, and coordinate via the activity log.`

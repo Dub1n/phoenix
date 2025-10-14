@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "updatedAt": "2025-10-13T13:41:57Z",
+  "updatedAt": "2025-10-14T12:04:00Z",
   "patterns": [
     {
       "patternId": 1,
@@ -71,9 +71,17 @@
           "stage": "stage-5",
           "timestamp": "2025-10-09T16:10:30Z",
           "summary": "Cohorts updated (added: none, removed: reporting)"
+        },
+        {
+          "stage": "stage-5",
+          "timestamp": "2025-10-14T12:04:00Z",
+          "summary": "Cohorts updated (added: 1-2, removed: none)"
         }
       ],
-      "updatedAt": "2025-10-09T16:10:30Z"
+      "updatedAt": "2025-10-14T12:04:00Z",
+      "cohorts": [
+        "1-2"
+      ]
     },
     {
       "patternId": 999,
@@ -310,7 +318,7 @@
           "status": "pending"
         },
         "5": {
-          "status": "pending"
+          "status": "blocked"
         },
         "6": {
           "status": "blocked"
@@ -507,9 +515,17 @@
           "timestamp": "2025-10-08T02:01:45Z",
           "summary": "Run phase6 validation after ErrorHandler rollout",
           "agent": "Codex"
+        },
+        {
+          "stage": "stage-5",
+          "timestamp": "2025-10-14T12:03:43Z",
+          "summary": "Cohorts updated (added: 1-2, removed: none)"
         }
       ],
-      "updatedAt": "2025-10-08T02:01:45Z"
+      "updatedAt": "2025-10-14T12:03:43Z",
+      "cohorts": [
+        "1-2"
+      ]
     },
     {
       "patternId": 3,
@@ -737,7 +753,7 @@
             }
           ],
           "updatedAt": "2025-10-10T13:57:33Z",
-          "notes": "Resolve hybrid validation failures before lane 4b runs again. Reproduce with node scripts/run-with-timeout.mjs --timeout 360000 -- npm test -- --runTestsByPath src/tests/validation/hybrid-validation-system-v3c.test.ts --runInBand --no-cache --forceExit --verbose; address fallbackUsed assertions, timeout handling, and circuit half-open events.",
+          "notes": "Resolve hybrid validation failures before lane 4b runs again. Reproduce with node scripts/run-with-timeout.mjs --timeout 360000 --preset jest-suite -- npm test -- --runTestsByPath src/tests/validation/hybrid-validation-system-v3c.test.ts --runInBand --no-cache --forceExit --verbose; address fallbackUsed assertions, timeout handling, and circuit half-open events.",
           "startedAt": "2025-10-10T09:30:06Z",
           "elapsedMs": 16047000
         },
@@ -904,7 +920,7 @@
       },
       "handoff": {
         "guardrails": [
-          "Run Stage 6 gating batteries via node scripts/run-with-timeout.mjs to enforce leak-safe shutdown; attach the resulting tmp/consolidation logs when promoting lanes.",
+          "Run Stage 6 gating batteries via node scripts/run-with-timeout.mjs (apply --preset phase6-validation / --preset phase6-health as appropriate) to enforce leak-safe shutdown; attach the resulting tmp/consolidation logs when promoting lanes.",
           "Maintain backend auto-connection through registerBackendFromSkin without introducing backend-specific assumptions; reuse Universal Skin metadata and keep ServiceDiscovery zero-knowledge."
         ],
         "sharedFiles": [
@@ -992,7 +1008,7 @@
         {
           "id": "stage-5-note-20251012T105808",
           "timestamp": "2025-10-12T10:58:08Z",
-          "body": "2025-10-12: Executed Stage 6 gating battery for lane 6a via node scripts/run-with-timeout.mjs; backend lifecycle, manual override, and comprehensive validation suites passed (tmp/consolidation-pattern3-stage5-lane6a-20251012T105628Z.log). Hardened HTTP connection normalization and skin loading to accept direct skin payloads, and updated comprehensive backend validation spec to restore leak-proof teardown with run-with-timeout instructions.",
+          "body": "2025-10-12: Executed Stage 6 gating battery for lane 6a via node scripts/run-with-timeout.mjs --preset phase6-validation; backend lifecycle, manual override, and comprehensive validation suites passed (tmp/consolidation-pattern3-stage5-lane6a-20251012T105628Z.log). Hardened HTTP connection normalization and skin loading to accept direct skin payloads, and updated comprehensive backend validation spec to restore leak-proof teardown with run-with-timeout instructions.",
           "scope": [
             "stage-5"
           ]
@@ -1277,7 +1293,7 @@
         {
           "stage": "lane-4d",
           "timestamp": "2025-10-10T01:51:11Z",
-          "summary": "External MCP fallback fix: clean up hybrid validation suite (25 failures) before retrying lane 4b. Reproduce via node scripts/run-with-timeout.mjs --timeout 360000 -- npm test -- --runTestsByPath src/tests/validation/hybrid-validation-system-v3c.test.ts --runInBand --no-cache --forceExit --verbose. Focus on fallbackUsed assertions, timeouts, and circuit half-open events before clearing the dependency.",
+          "summary": "External MCP fallback fix: clean up hybrid validation suite (25 failures) before retrying lane 4b. Reproduce via node scripts/run-with-timeout.mjs --timeout 360000 --preset jest-suite -- npm test -- --runTestsByPath src/tests/validation/hybrid-validation-system-v3c.test.ts --runInBand --no-cache --forceExit --verbose. Focus on fallbackUsed assertions, timeouts, and circuit half-open events before clearing the dependency.",
           "agent": "codex",
           "files": [
             "tmp/consolidation-pattern3-lane4b-20251010T011558.log"
@@ -2282,7 +2298,7 @@
           "scope": "Align core/state test suites with EventDrivenComponent and update typed event mocks",
           "commands": [
             {
-              "command": "node scripts/run-with-timeout.mjs --timeout 45000 -- npm run test -- --runTestsByPath tests/core/core-engine.test.ts tests/core/adapter-registry.test.ts tests/core/enhanced-state-manager.test.ts src/tests/utils/protocol-utils.test.ts"
+              "command": "node scripts/run-with-timeout.mjs --timeout 45000 --preset jest-suite -- npm run test -- --runTestsByPath tests/core/core-engine.test.ts tests/core/adapter-registry.test.ts tests/core/enhanced-state-manager.test.ts src/tests/utils/protocol-utils.test.ts"
             }
           ],
           "updatedAt": "2025-10-13T11:45:46Z",
@@ -2299,7 +2315,7 @@
           "scope": "Migrate residual adapters/observability/risk emitters to EventDrivenComponent",
           "commands": [
             {
-              "command": "node scripts/run-with-timeout.mjs --timeout 45000 -- npm run test -- --runTestsByPath tests/interfaces/interface-adapter-integration.test.ts tests/core/observability-adapter.test.ts tests/risk/rollback-criteria.test.ts"
+              "command": "node scripts/run-with-timeout.mjs --timeout 45000 --preset jest-suite -- npm run test -- --runTestsByPath tests/interfaces/interface-adapter-integration.test.ts tests/core/observability-adapter.test.ts tests/risk/rollback-criteria.test.ts"
             }
           ],
           "updatedAt": "2025-10-12T23:10:40Z",
@@ -2316,10 +2332,10 @@
           "scope": "Stabilize telemetry/phase6 gating after EventUtils migration",
           "commands": [
             {
-              "command": "node scripts/run-with-timeout.mjs --timeout 60000 -- npm run test:ci -- --runTestsByPath tests/core/observability-adapter.test.ts src/tests/backend/service-discovery.test.ts"
+              "command": "node scripts/run-with-timeout.mjs --timeout 60000 --preset jest-ci -- npm run test:ci -- --runTestsByPath tests/core/observability-adapter.test.ts src/tests/backend/service-discovery.test.ts"
             },
             {
-              "command": "node scripts/run-with-timeout.mjs --timeout 60000 -- npm run phase6-validation"
+              "command": "node scripts/run-with-timeout.mjs --timeout 60000 --preset phase6-validation -- npm run phase6-validation"
             }
           ],
           "updatedAt": "2025-10-13T00:22:42Z",
@@ -3885,13 +3901,13 @@
           "scope": "MCP channel & observability",
           "commands": [
             {
-              "command": "node scripts/run-with-timeout.mjs --timeout 45000 -- npm test -- --runTestsByPath src/tests/mcp/visual-feedback-system.formatter.test.ts --runInBand --forceExit"
+              "command": "node scripts/run-with-timeout.mjs --timeout 45000 --preset jest-suite -- npm test -- --runTestsByPath src/tests/mcp/visual-feedback-system.formatter.test.ts --runInBand --forceExit"
             },
             {
-              "command": "node scripts/run-with-timeout.mjs --timeout 60000 -- npm run phase6-health"
+              "command": "node scripts/run-with-timeout.mjs --timeout 60000 --preset phase6-health -- npm run phase6-health"
             },
             {
-              "command": "node scripts/run-with-timeout.mjs --timeout 60000 -- npm run phase6-validation"
+              "command": "node scripts/run-with-timeout.mjs --timeout 60000 --preset phase6-validation -- npm run phase6-validation"
             }
           ],
           "updatedAt": "2025-10-12T16:37:49Z",
@@ -4211,10 +4227,10 @@
           "scope": "CLI regression harness",
           "commands": [
             {
-              "command": "node scripts/run-with-timeout.mjs --timeout 45000 --heartbeat 5000 --log-file tmp/stage4c-adaptive.log -- node scripts/run-jest-ci.mjs --runTestsByPath src/interfaces/__tests__/adaptive-cli-integration.test.ts"
+              "command": "node scripts/run-with-timeout.mjs --timeout 45000 --preset jest-suite --heartbeat 5000 --log-file tmp/stage4c-adaptive.log -- node scripts/run-jest-ci.mjs --runTestsByPath src/interfaces/__tests__/adaptive-cli-integration.test.ts"
             },
             {
-              "command": "node scripts/run-with-timeout.mjs --timeout 45000 --heartbeat 5000 --log-file tmp/stage4c-interface-adapter.log -- node scripts/run-jest-ci.mjs --runTestsByPath tests/interfaces/interface-adapter-integration.test.ts"
+              "command": "node scripts/run-with-timeout.mjs --timeout 45000 --preset jest-suite --heartbeat 5000 --log-file tmp/stage4c-interface-adapter.log -- node scripts/run-jest-ci.mjs --runTestsByPath tests/interfaces/interface-adapter-integration.test.ts"
             }
           ],
           "updatedAt": "2025-10-12T12:48:59Z",
@@ -4260,10 +4276,10 @@
           "scope": "CLI & menu components",
           "commands": [
             {
-              "command": "node scripts/run-with-timeout.mjs --timeout 900000 --heartbeat 30000 --log-file tmp/stage6/pattern-7/20251002T233503Z-adaptive-cli-integration.test.log -- npx jest --runTestsByPath src/interfaces/__tests__/adaptive-cli-integration.test.ts --runInBand --detectOpenHandles --forceExit"
+              "command": "node scripts/run-with-timeout.mjs --timeout 900000 --preset jest-suite --heartbeat 30000 --log-file tmp/stage6/pattern-7/20251002T233503Z-adaptive-cli-integration.test.log -- npx jest --runTestsByPath src/interfaces/__tests__/adaptive-cli-integration.test.ts --runInBand --detectOpenHandles --forceExit"
             },
             {
-              "command": "node scripts/run-with-timeout.mjs --timeout 600000 --heartbeat 30000 --log-file tmp/stage6/pattern-7/20251002T233137Z-interface-adapter-integration.test.log -- npx jest --runTestsByPath tests/interfaces/interface-adapter-integration.test.ts --runInBand --detectOpenHandles --forceExit"
+              "command": "node scripts/run-with-timeout.mjs --timeout 600000 --preset jest-suite --heartbeat 30000 --log-file tmp/stage6/pattern-7/20251002T233137Z-interface-adapter-integration.test.log -- npx jest --runTestsByPath tests/interfaces/interface-adapter-integration.test.ts --runInBand --detectOpenHandles --forceExit"
             }
           ],
           "updatedAt": "2025-10-12T12:50:11Z",
@@ -4279,10 +4295,10 @@
           "scope": "MCP/observability windows",
           "commands": [
             {
-              "command": "node scripts/run-with-timeout.mjs --timeout 120000 -- node scripts/run-jest-ci.mjs --runTestsByPath src/tests/mcp/visual-feedback-system.formatter.test.ts"
+              "command": "node scripts/run-with-timeout.mjs --timeout 120000 --preset jest-suite -- node scripts/run-jest-ci.mjs --runTestsByPath src/tests/mcp/visual-feedback-system.formatter.test.ts"
             },
             {
-              "command": "node scripts/run-with-timeout.mjs --timeout 180000 -- npm run phase6-health"
+              "command": "node scripts/run-with-timeout.mjs --timeout 180000 --preset phase6-health -- npm run phase6-health"
             }
           ],
           "updatedAt": "2025-10-12T12:50:29Z",
@@ -5970,6 +5986,15 @@
           ]
         }
       }
+    },
+    {
+      "id": "1-2",
+      "patterns": [
+        1,
+        2
+      ],
+      "updatedAt": "2025-10-14T12:04:00Z",
+      "stages": {}
     }
   ]
 }

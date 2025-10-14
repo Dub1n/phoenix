@@ -98,6 +98,13 @@ last_updated: 2025-10-13
 - **Scripts:** `npm run phase6-health`, `npm run phase6-validation`, `npm run phase6-services`, and related commands execute the compiled Phase 6 harness to probe discovery, health monitoring, and service summaries.
 - **Usage:** Gate longer refactors or verify backend availability before demos. Commands rebuild first; with the default mock backends they succeed but mark validation runs as `status=skipped`. Pass `-- --use-real-backends` (or invoke the `:full`/`:real` variants) when you need an actual PASS and real service telemetry.
 
+### Timeout wrapper presets
+
+- `node scripts/run-with-timeout.mjs --preset jest-ci --timeout 180000 -- npm run test:ci -- --runTestsByPath …` stops the wrapper once coverage governance prints `✅ Overall: PASSED`, while keeping the 180 s fallback if the summary never appears.
+- `node scripts/run-with-timeout.mjs --preset phase6-validation --timeout 180000 -- npm run phase6-validation` exits as soon as `Phase6IntegrationValidationSuite: Validation complete.` hits stdout—handy for Stage 6 gating so the harness doesn’t linger on mock runs.
+- Layer additional markers with `--exit-on-pattern "<string>"`; presets and manual patterns accumulate, so you can tailor composite pipelines without editing the script.
+- Avoid presets for interactive commands (`npm run test:watch`, watch-mode Jest) because they repeatedly print `Ran all test suites.` and would be terminated immediately—stick with the pure timeout in those scenarios. (optional) Which preset pairs with the Stage 6 targeted CI sweep, and what line is it watching for?
+
 ## 4. Running Phase 6 Validations
 
 1. Ensure `npm run build` succeeds (implicit for most commands, explicit prerequisite for `phase6-validation:full`).
