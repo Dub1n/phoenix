@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "updatedAt": "2025-10-14T14:16:32Z",
+  "updatedAt": "2025-10-14T14:32:00Z",
   "patterns": [
     {
       "patternId": 1,
@@ -41,7 +41,10 @@
           "status": "complete",
           "startedAt": "2025-10-14T14:05:16Z",
           "notes": "Guardrails documented; phase6-validation evidence logged; Stage 6 lanes may proceed.",
-          "elapsedMs": 676000
+          "elapsedMs": 676000,
+          "plannedFiles": [
+            "dev/architecture/logger-error-handler-alignment.md"
+          ]
         },
         "6": {
           "status": "pending"
@@ -885,7 +888,7 @@
           "durationMs": 676000
         }
       ],
-      "updatedAt": "2025-10-14T14:16:32Z",
+      "updatedAt": "2025-10-14T14:32:00Z",
       "cohorts": [
         "D"
       ]
@@ -1131,7 +1134,10 @@
           "status": "complete",
           "startedAt": "2025-10-14T14:05:17Z",
           "notes": "Cohort aligned; Stage 6 gating ready",
-          "elapsedMs": 432000
+          "elapsedMs": 432000,
+          "plannedFiles": [
+            "dev/architecture/logger-error-handler-alignment.md"
+          ]
         },
         "6": {
           "status": "pending"
@@ -1484,7 +1490,7 @@
           "durationMs": 432000
         }
       ],
-      "updatedAt": "2025-10-14T14:12:29Z",
+      "updatedAt": "2025-10-14T14:32:00Z",
       "cohorts": [
         "D"
       ]
@@ -6955,7 +6961,7 @@
         1,
         2
       ],
-      "updatedAt": "2025-10-14T13:52:27Z",
+      "updatedAt": "2025-10-14T14:32:00Z",
       "stages": {
         "5a": {
           "segment": "5a",
@@ -6963,7 +6969,10 @@
           "notes": "Stage 5A alignment complete for cohort 1-2; spec dev/architecture/logger-error-handler-alignment.md published with shared dependencies matrix and Stage 6 checklist.",
           "startedAt": "2025-10-14T13:20:00Z",
           "elapsedMs": 900000,
-          "completedAt": "2025-10-14T13:35:00Z"
+          "completedAt": "2025-10-14T14:32:00Z",
+          "plannedFiles": [
+            "dev/architecture/logger-error-handler-alignment.md"
+          ]
         }
       }
     },

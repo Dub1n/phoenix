@@ -1542,9 +1542,9 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
       });
     });
 
-    this.on('commandError', ({ command, sourceInterface, error }) => {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      this.logError('Command error event received', error instanceof Error ? error : undefined, {
+    this.on('commandError', ({ command, sourceInterface, error: errorPayload }) => {
+      const errorMessage = typeof errorPayload === 'string' ? errorPayload : String(errorPayload);
+      this.logError('Command error event received', undefined, {
         command,
         sourceInterface,
         errorMessage
