@@ -915,24 +915,22 @@ export function createAdaptiveCLIIntegration(
  * Quick setup for enhanced CLI with automatic detection
  */
 export async function setupEnhancedCLI(
-  commandRegistry: UniversalCommandRegistry,
-  menuRegistry: UniversalMenuRegistry,
-  sessionContext: SessionContextFoundation,
-  orchestrator?: ITemplumOrchestrator
+  _commandRegistry: UniversalCommandRegistry,
+  _menuRegistry: UniversalMenuRegistry,
+  _sessionContext: SessionContextFoundation,
+  orchestrator: ITemplumOrchestrator
 ): Promise<AdaptiveCLIIntegration> {
-  const originalAdapter = new CLIInterfaceAdapter(
-    commandRegistry,
-    menuRegistry,
-    sessionContext,
-    {
-      enableInteractiveMode: true,
-      enableInteractiveSearch: true,
-      enableKeyboardShortcuts: true
-    },
-    orchestrator
-  );
+  if (!orchestrator || typeof orchestrator.getSessionManager !== 'function') {
+    throw new Error('setupEnhancedCLI requires an orchestrator that supplies getSessionManager()');
+  }
 
-  await originalAdapter.initialize();
+  const originalAdapter = new CLIInterfaceAdapter({
+    enableInteractiveMode: true,
+    enableInteractiveSearch: true,
+    enableKeyboardShortcuts: true
+  });
+
+  await originalAdapter.initialize(orchestrator);
 
   const integration = createAdaptiveCLIIntegration(originalAdapter, {
     compatibility: { 
@@ -961,24 +959,24 @@ export async function setupEnhancedCLI(
  * Quick setup for accessibility-focused CLI
  */
 export async function setupAccessibleCLI(
-  commandRegistry: UniversalCommandRegistry,
-  menuRegistry: UniversalMenuRegistry,
-  sessionContext: SessionContextFoundation,
-  orchestrator?: ITemplumOrchestrator
+  _commandRegistry: UniversalCommandRegistry,
+  _menuRegistry: UniversalMenuRegistry,
+  _sessionContext: SessionContextFoundation,
+  orchestrator: ITemplumOrchestrator
 ): Promise<AdaptiveCLIIntegration> {
-  const originalAdapter = new CLIInterfaceAdapter(
-    commandRegistry,
-    menuRegistry,
-    sessionContext,
-    {
-      enableInteractiveMode: true,
-      enableColorOutput: false,
-      terminalTheme: 'light'
-    },
-    orchestrator
-  );
+  if (!orchestrator || typeof orchestrator.getSessionManager !== 'function') {
+    throw new Error('setupAccessibleCLI requires an orchestrator that supplies getSessionManager()');
+  }
 
-  await originalAdapter.initialize();
+  const originalAdapter = new CLIInterfaceAdapter({
+    enableInteractiveMode: true,
+    enableColorOutput: false,
+    enableKeyboardShortcuts: true,
+    enableInteractiveSearch: true,
+    terminalTheme: 'light'
+  });
+
+  await originalAdapter.initialize(orchestrator);
 
   const integration = createAdaptiveCLIIntegration(originalAdapter, {
     accessibility: {

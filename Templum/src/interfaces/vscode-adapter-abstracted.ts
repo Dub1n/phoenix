@@ -442,9 +442,13 @@ export class VSCodeInterfaceAdapter implements IInterfaceAdapter {
       return;
     }
 
-    await new Promise<void>((resolve, reject) => {
-      this.pendingMessages.push({ message, resolve, reject });
-    });
+    try {
+      await this.view.webview.postMessage(message);
+    } catch (error) {
+      await new Promise<void>((resolve, reject) => {
+        this.pendingMessages.push({ message, resolve, reject });
+      });
+    }
   }
 
   private async flushPendingMessages(): Promise<void> {

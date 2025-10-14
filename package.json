@@ -6,6 +6,7 @@
     "custommove": "./scripts/custommove/index.mjs"
   },
   "scripts": {
+    "consolidate": "npm --prefix Templum run consolidate",
     "noderr:audit": "node scripts/noderr-audit/index.cjs",
     "noderr:audit:apply": "node scripts/noderr-audit/index.cjs --apply",
     "noderr:audit:scan": "node scripts/noderr-audit/index.cjs --scan",

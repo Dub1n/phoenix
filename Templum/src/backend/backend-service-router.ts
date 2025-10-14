@@ -14,6 +14,7 @@ import * as net from 'net';
 import * as path from 'path';
 import * as WebSocket from 'ws';
 import { EventDrivenComponent } from '../utils/event-bus-adapter';
+import { ErrorHandler } from '../utils/error-handler';
 import type { TypedEventMap } from '../utils/event-utils';
 import { UniversalSkinEngine } from '../skin/universal-skin-engine';
 import {
@@ -941,12 +942,25 @@ export class TemplumBackendServiceRouter
           `[GENERIC] Backend ${backendId} auto-connected during skin registration (${connectionResult.responseTime}ms)`
         );
       } else {
+        ErrorHandler.handle(
+          new Error(connectionResult.message ?? 'Auto-connection deferred'),
+          'backend-service-router.auto-connect.deferred',
+          { backendId }
+        );
         console.warn(
           `[GENERIC] Backend ${backendId} auto-connection deferred: ${connectionResult.message}`
         );
       }
     } catch (error) {
-      console.warn(`[GENERIC] Backend ${backendId} auto-connection failed:`, error);
+      const templumError = ErrorHandler.handle(error, 'backend-service-router.auto-connect', {
+        backendId,
+        origin: 'skin-registration',
+      });
+      console.warn(`[GENERIC] Backend ${backendId} auto-connection failed:`, templumError);
+      this.lifecycleChannel.emitFailed(backendId, templumError, {
+        origin: 'auto-connect',
+        scope: 'registration',
+      });
     }
 
     console.log(`[GENERIC] Backend ${backendId} registered successfully with generic system`);
@@ -1214,7 +1228,14 @@ export class TemplumBackendServiceRouter
         metrics.retryAttempts++;
         
         if (attempt === maxRetries - 1) {
-          this.lifecycleChannel.emitFailed(serviceId, error, {
+          const templumError = ErrorHandler.handle(error, 'backend-service-router.connect-service.generic', {
+            serviceId,
+            attempt: attempt + 1,
+            origin,
+            endpoint: config.endpoint,
+            protocol: config.protocol,
+          });
+          this.lifecycleChannel.emitFailed(serviceId, templumError, {
             attempts: attempt + 1,
             retryAttempts: metrics.retryAttempts,
             origin,
@@ -1223,7 +1244,7 @@ export class TemplumBackendServiceRouter
               protocol: config.protocol
             }
           });
-          throw error;
+          throw templumError;
         }
       }
     }
@@ -3545,6 +3566,11 @@ export class TemplumBackendServiceRouter
         };
       } else {
         this.updateServiceHealth(serviceId, false, 'unhealthy', `Connection attempt failed for ${serviceId}`);
+        ErrorHandler.handle(
+          new Error(`Connection attempt failed for ${serviceId}`),
+          'backend-service-router.connect-service.failed',
+          { serviceId, origin: 'manual' }
+        );
         return {
           success: false,
           message: `Failed to establish connection to ${serviceId}`
@@ -3552,9 +3578,13 @@ export class TemplumBackendServiceRouter
       }
       
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown connection error';
+      const templumError = ErrorHandler.handle(error, 'backend-service-router.connect-service.error', {
+        serviceId,
+        origin: 'manual',
+      });
+      const errorMessage = templumError.message;
       this.updateServiceHealth(serviceId, false, 'error', errorMessage);
-      console.error(`[SERVICE_CONNECTION] Connection error for ${serviceId}:`, error);
+      console.error(`[SERVICE_CONNECTION] Connection error for ${serviceId}:`, templumError);
       
       return {
         success: false,

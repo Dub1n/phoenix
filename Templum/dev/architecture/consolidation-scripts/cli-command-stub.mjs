@@ -275,6 +275,7 @@ const stageGuidance = {
     reminders: [
       'Aggregate Stage 4 guardrail artefacts (expected failure logs, helper locations, owners) inside Stage 5 notes and the hand-off record so execution lanes inherit the baseline.',
       'Replay the guardrail battery to confirm it still fails pre-migration; document the command preset, failure signature, and the migration checklist each Stage 6 lane must follow.',
+      'Keep Stage 5 planned files limited to the assets Stage 5B will change; if the handoff record needs edits, resolve them by reopening Stage 5A before proceeding.',
       'Refine Stage 6 lanes so each one references its guardrail counterpart, dependencies, and runtime plan-files before unlocking them for execution.',
       'Use Stage 5B notes/activity entries to broadcast approvals and readiness; keep the stage open until every lane has clear instructions and evidence attached.',
       'When alignment waits on another scope, add explicit dependencies (or new lanes) so the schedule reflects the outstanding work.',
@@ -356,9 +357,10 @@ const stageActionGuidance = {
   '5': (pattern) => [
     `1. Claim this stage with \`npm run consolidate -- claim ${pattern.patternId} --stage 5\`.`,
     `2. Use \`npm run consolidate -- stage-note ${pattern.patternId} 5 --body "Guardrails: ...; Approvals: ...; Stage6 lanes: ..."\` and \`update-handoff\` to capture the baseline failure logs, ownership, and migration checklist that Stage 6 will execute.`,
-    `3. Replay the guardrail battery via \`node scripts/run-with-timeout.mjs --preset <preset> -- …\` (e.g., \`--preset phase6-validation -- npm run phase6-validation\`) to confirm the unmigrated failure still reproduces; record the log with \`npm run consolidate -- update-stage ${pattern.patternId} 5 --status in_progress --files <log>\`.`,
-    `4. Update each Stage 6 lane with the guardrail reference, dependencies, and expected migration steps via \`npm run consolidate -- update-lane ${pattern.patternId} <stage6LaneId> --summary "Guardrail: <suite>; Steps: <...>" --add-dependency ${pattern.patternId}:<stage4LaneId>\` (swap placeholders) so execution owners inherit clear instructions.`,
-    `5. Close Stage 5B with \`npm run consolidate -- update-stage ${pattern.patternId} 5 --status complete --notes "Guardrails rehearsed; Stage 6 lanes unlocked"\` only after every lane has evidence and instructions attached.`,
+    `3. Record Stage 5 plan-files with \`npm run consolidate -- update-stage ${pattern.patternId} 5 --plan-files "<fileA,fileB>"\`, listing only the assets you expect to change; leave the handoff record out because Stage 5A finalised it (reopen alignment first if it needs edits).`,
+    `4. Replay the guardrail battery via \`node scripts/run-with-timeout.mjs --preset <preset> -- …\` (e.g., \`--preset phase6-validation -- npm run phase6-validation\`) to confirm the unmigrated failure still reproduces; record the log with \`npm run consolidate -- update-stage ${pattern.patternId} 5 --status in_progress --files <log>\`.`,
+    `5. Update each Stage 6 lane with the guardrail reference, dependencies, and expected migration steps via \`npm run consolidate -- update-lane ${pattern.patternId} <stage6LaneId> --summary "Guardrail: <suite>; Steps: <...>" --add-dependency ${pattern.patternId}:<stage4LaneId>\` (swap placeholders) so execution owners inherit clear instructions.`,
+    `6. Close Stage 5B with \`npm run consolidate -- update-stage ${pattern.patternId} 5 --status complete --notes "Guardrails rehearsed; Stage 6 lanes unlocked"\` only after every lane has evidence and instructions attached.`,
     `If alignment stalls, keep Stage 5B in progress, attach dependencies to the waiting work, and surface the delay in the activity log.`
   ],
   '6': (pattern, context = {}) => {

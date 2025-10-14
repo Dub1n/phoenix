@@ -39,12 +39,17 @@ import {
   createDefaultTerminalUI
 } from './terminal-ui-components';
 import { StringUtils } from '../utils/chainable-string-utils';
+import { UniversalLayoutEngine } from '../rendering/universal-layout-engine';
 import {
   createFormatter,
   TerminalCapabilities,
   TerminalFormatter,
   getFormatterSeparatorLength,
 } from '../utils/terminal-formatter';
+import {
+  buildSkinMenuFromUniversalDefinition,
+  coerceUniversalMenuDefinition,
+} from '../rendering/menu-definition-adapter';
 import { 
   InteractiveMenuRenderer, 
   MenuInteractionResult 
@@ -59,7 +64,9 @@ import { CLISessionBridge, CLISessionSnapshot } from './cli-session-bridge';
 import { EnhancedWindowSystem, WindowSetRenderResult } from './enhanced-window-system';
 import { sleep } from '../utils/async-utils';
 import { createLogger, LogLevel } from '../utils/logger';
-import type { UniversalMenuRegistry } from '../menus/universal-menu-registry';
+import { ErrorHandler } from '../utils/error-handler';
+import { TypeGuards, TypeValidators } from '../utils/type-guards';
+import type { UniversalMenuRegistry, UniversalMenuDefinition } from '../menus/universal-menu-registry';
 
 /**
  * CLI Input Types (Interface-specific)
@@ -152,6 +159,7 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
   private readonly logger = createLogger('cli-interface-adapter', { level: LogLevel.INFO });
   private windowSystem: EnhancedWindowSystem;
   private activeSkin: UniversalSkinDefinition | null = null;
+  private readonly compatibilityLayoutEngine = new UniversalLayoutEngine();
 
   constructor(config?: CLIAdapterInitializationOptions) {
     const { formatter, formatterCapabilities, ...adapterConfig } = config ?? {};
@@ -415,6 +423,61 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
     }
   }
 
+  private validateMenuPayload(menuData: unknown): {
+    isValid: boolean;
+    reason?: string;
+    payload?: UniversalMenuDefinition;
+  } {
+    if (!TypeGuards.isPlainObject(menuData)) {
+      return {
+        isValid: false,
+        reason: 'CLIInterfaceAdapter: menu payload must be a plain object',
+      };
+    }
+
+    const payload = menuData as Record<string, unknown>;
+    const sections = payload.sections;
+
+    if (
+      sections !== undefined &&
+      !TypeValidators.isArrayOf(
+        sections,
+        (entry): entry is Record<string, unknown> => TypeGuards.isPlainObject(entry)
+      )
+    ) {
+      return {
+        isValid: false,
+        reason: 'CLIInterfaceAdapter: menu payload sections must be an array of plain objects',
+      };
+    }
+
+    if (Array.isArray(sections)) {
+      for (const section of sections as Record<string, unknown>[]) {
+        const items = section.items;
+        if (
+          items !== undefined &&
+          !TypeValidators.isArrayOf(
+            items,
+            (item): item is Record<string, unknown> => TypeGuards.isPlainObject(item)
+          )
+        ) {
+          return {
+            isValid: false,
+            reason: 'CLIInterfaceAdapter: menu items must be provided as plain object entries',
+          };
+        }
+      }
+    }
+
+    return {
+      isValid: true,
+      payload: coerceUniversalMenuDefinition(payload, {
+        fallbackId: 'cli-menu',
+        fallbackTitle: 'Templum CLI Menu',
+      }),
+    };
+  }
+
   private async resolveMenuRegistry(): Promise<UniversalMenuRegistry | null> {
     const candidate = this.orchestrator as unknown as {
       getMenuRegistry?: () => UniversalMenuRegistry | Promise<UniversalMenuRegistry>;
@@ -463,6 +526,76 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
     this.logger.info('Initialized with session', { sessionId: session.sessionId });
   }
 
+  async render(menuData: unknown): Promise<CLIRenderResult> {
+    if (!this.orchestrator || !this.orchestrator.isInitialized()) {
+      return {
+        success: false,
+        rendered: false,
+        errors: ['Adapter not initialized'],
+      };
+    }
+
+    const validation = this.validateMenuPayload(menuData);
+    if (!validation.isValid || !validation.payload) {
+      return {
+        success: false,
+        rendered: false,
+        errors: [validation.reason ?? 'CLIInterfaceAdapter: invalid menu payload'],
+      };
+    }
+
+    try {
+      const skinDefinition = buildSkinMenuFromUniversalDefinition(validation.payload, 'cli');
+      const renderResult = await this.compatibilityLayoutEngine.renderForInterface(
+        skinDefinition,
+        'cli',
+        {
+          interfaceType: 'cli',
+          minHeight: 15,
+          minWidth: 40,
+          maxWidth: 100,
+          textboxLines: 3,
+          paddingLines: 2,
+          enforceConsistentHeight: true,
+          interfaceSpecific: {
+            cli: {
+              interactive: this.config.enableInteractiveMode,
+              colorDepth: this.config.enableColorOutput ? 8 : 0,
+              unicodeSupport: true,
+            },
+          },
+        }
+      );
+
+      if (renderResult.success && renderResult.output) {
+        this.printLine(renderResult.output);
+
+        if (this.config.enableKeyboardShortcuts && this.keyboardShortcuts.size > 0) {
+          this.displayKeyboardShortcuts();
+        }
+
+        return {
+          success: true,
+          rendered: true,
+          output: renderResult.output,
+        };
+      }
+
+      return {
+        success: false,
+        rendered: false,
+        errors: renderResult.errors ?? ['Unknown rendering error'],
+      };
+    } catch (error) {
+      const templumError = ErrorHandler.handle(error, 'interfaces.cli-adapter.render');
+      return {
+        success: false,
+        rendered: false,
+        errors: [templumError.message],
+      };
+    }
+  }
+
   getInterfaceType(): InterfaceType {
     return 'cli';
   }
@@ -470,6 +603,10 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
   supportsSkin(skinDefinition: UniversalSkinDefinition): boolean {
     // Check if this skin is compatible with CLI interface
     return skinDefinition.metadata.compatibleInterfaces.includes('cli');
+  }
+
+  isInInteractiveMode(): boolean {
+    return this.isInteractiveMode;
   }
 
   getActiveMenuId(): string {
@@ -587,11 +724,18 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
         navigationHistory: this.getNavigationHistory(),
       });
 
+      const cliRenderOutput =
+        typeof skinEngineResult?.renderedContent?.cli === 'string'
+          ? skinEngineResult.renderedContent.cli
+          : null;
+
+      if (cliRenderOutput) {
+        this.printLine(cliRenderOutput);
+      }
+
       if (windowSetResult.windowSet.windows.length > 0) {
         this.outputProceduralWindows(windowSetResult.windowSet);
-      } else if (skinEngineResult?.renderedContent?.cli) {
-        this.printLine(skinEngineResult.renderedContent.cli);
-      } else {
+      } else if (!cliRenderOutput) {
         this.printLine(this.formatWarning('Procedural renderer did not return any CLI windows.'));
       }
 
@@ -618,8 +762,11 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
       this.activeSkin = skinDefinition;
       
     } catch (error) {
-      const errorMessage = isTemplumError(error) ? error.message : (error instanceof Error ? error.message : 'Unknown error');
-      this.logger.error('Failed to apply skin', this.normalizeError(error), { errorMessage });
+      const templumError = ErrorHandler.handle(error, 'interfaces.cli-adapter.apply-skin', {
+        skinId: skinDefinition?.metadata?.id ?? skinDefinition?.id ?? this.activeSkin?.id,
+      });
+      this.logger.error('Failed to apply skin', templumError);
+      this.printLine(this.formatError('Failed to apply skin. See logs for details.'));
     }
   }
 
@@ -1220,6 +1367,11 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
     }
   }
 
+  async cleanup(): Promise<boolean> {
+    await this.dispose();
+    return true;
+  }
+
   /**
    * Switch to command mode with session persistence
    * TODO: [TASK-ID-006] Pattern: command-mode-implementation | Complexity: 6 | Dependencies: dual-interaction-modes,session-persistence
@@ -1752,13 +1904,11 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
       if (!skinLoaded) {
         this.printLine(this.getFallbackCLIOutput(backendConnections));
       }
-      
+
     } catch (error) {
-      const normalizedError = this.normalizeError(error);
-      const errorMessage =
-        normalizedError?.message ?? (typeof error === 'string' ? error : 'Unknown error');
-      this.logger.error('Failed to load initial content', normalizedError ?? null, { errorMessage });
-      this.printLine(this.getErrorCLIOutput(errorMessage));
+      const templumError = ErrorHandler.handle(error, 'interfaces.cli-adapter.load-initial-content');
+      this.logger.error('Failed to load initial content', templumError);
+      this.printLine(this.getErrorCLIOutput(templumError.message));
     }
   }
 

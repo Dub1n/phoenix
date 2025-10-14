@@ -43,10 +43,21 @@ import {
 } from "../adaptive-cli-integration";
 
 import { CLIInterfaceAdapter } from "../cli-adapter";
+import type {
+  CommandResult,
+  InterfaceType,
+  TemplumSystemStatus,
+  UniversalSkinDefinition,
+} from "../../types/templum-types";
 import { UniversalMenuDefinition } from "../../menus/universal-menu-registry";
 import { UniversalCommandRegistry } from "../../commands/universal-command-registry";
 import { UniversalMenuRegistry } from "../../menus/universal-menu-registry";
 import { SessionContextFoundation } from "../../session/session-context-foundation";
+import type {
+  TemplumSessionManagerContract,
+  TemplumSessionState,
+  SessionStateUpdate,
+} from "../../session/universal-session-manager.types";
 import { ITemplumOrchestrator } from "../templum-orchestrator-interface";
 
 import {
@@ -144,18 +155,180 @@ const mockSessionContext = {
   on: jest.fn(),
 } as unknown as SessionContextFoundation;
 
-const mockOrchestrator = {
-  isInitialized: jest.fn().mockReturnValue(true),
-  executeCommand: jest.fn(),
-  loadBackendSkin: jest.fn(),
-  getSystemStatus: jest.fn().mockReturnValue({
+const createDefaultSessionSnapshot = (): TemplumSessionState => ({
+  sessionId: 'session-cli-1',
+  userId: 'test-user',
+  startTime: new Date(),
+  activeInterface: 'cli',
+  preferences: {},
+  capabilities: [],
+  activeBackends: [] as InterfaceType[],
+  loadedSkins: [],
+  interfaceHistory: ['cli'],
+  sessionMetrics: {
+    interfaceSwitches: 0,
+    backendInteractions: 0,
+    commandsExecuted: 0,
+    sessionsCreated: 1,
+    totalSkinLoads: 0,
+    averageSwitchTime: 0,
+    completion: { completed: false },
+  },
+  lastActivity: new Date(),
+  navigationHistory: ['main'],
+  currentMenu: 'main',
+  interactionMode: 'menu',
+  commandHistory: [],
+});
+
+class StubSessionManager implements TemplumSessionManagerContract {
+  private snapshot: TemplumSessionState = createDefaultSessionSnapshot();
+
+  async initialize(): Promise<void> {}
+
+  attachOrchestrator(): void {}
+
+  async ensureSessionForInterface(interfaceType: InterfaceType): Promise<string> {
+    this.snapshot = {
+      ...this.snapshot,
+      activeInterface: interfaceType,
+    };
+    return this.snapshot.sessionId;
+  }
+
+  getActiveSessionId(): string | null {
+    return this.snapshot.sessionId;
+  }
+
+  getSessionSnapshot(): TemplumSessionState | null {
+    return this.snapshot;
+  }
+
+  async updateSessionState(update: SessionStateUpdate): Promise<void> {
+    this.snapshot = {
+      ...this.snapshot,
+      navigationHistory: update.state.navigationStack ?? this.snapshot.navigationHistory,
+      currentMenu: update.state.currentMenu ?? this.snapshot.currentMenu,
+      interactionMode: update.state.interactionMode ?? this.snapshot.interactionMode,
+      commandHistory: update.state.commandHistory ?? this.snapshot.commandHistory,
+      lastActivity: new Date(),
+    };
+  }
+
+  async registerInterfaceAdapter(): Promise<void> {}
+
+  async syncInterfaces(): Promise<void> {}
+
+  notifyInterfaceDisconnect(): void {}
+
+  on(): void {}
+
+  off(): void {}
+}
+
+const createMockOrchestrator = () => {
+  const sessionManager = new StubSessionManager();
+
+  const skinEngine = {
+    renderForInterface: jest.fn(
+      async (
+        skinDefinition: UniversalSkinDefinition,
+        interfaceType: InterfaceType,
+      ) => {
+        const items = skinDefinition?.menus?.main?.items ?? [];
+        const labels = items.map((item) => item.label).join(' | ');
+
+        return {
+          success: true,
+          interface: interfaceType,
+          metadata: {
+            skinId: skinDefinition?.id ?? 'stub-skin',
+            backendService: skinDefinition?.metadata?.backendService ?? 'stub-backend',
+          },
+          components: [],
+          performance: {
+            renderTime: 1,
+            outputSize: labels.length,
+            cacheHit: false,
+          },
+          customization: {},
+          inheritance: { parentSkin: undefined, applied: false },
+          renderedContent: {
+            cli: `CLI_RENDER:${labels}`,
+            html: `<div data-skin="${skinDefinition?.id ?? 'stub-skin'}">${labels}</div>`,
+          },
+        };
+      },
+    ),
+    generateSkinHTML: jest.fn((renderResult) => renderResult.renderedContent?.html ?? ''),
+  };
+
+  const systemStatus: TemplumSystemStatus = {
     coreEngine: {
+      initialized: true,
+      activeInterfaces: ['cli'],
+      loadedSkins: [],
       backendConnections: {
+        totalConnections: 0,
+        healthyConnections: 0,
         backends: {},
       },
     },
-  }),
-} as unknown as ITemplumOrchestrator;
+    stateManager: {
+      synchronized: true,
+      globalState: { lastModified: Date.now(), backendStates: [] },
+      sessionState: { startTime: Date.now(), totalCommands: 0, lastCommand: '' },
+      subscribers: 0,
+      historySize: 0,
+      persistence: {},
+    },
+    skinEngine: {
+      cachedSkins: 0,
+      renderers: { vscode: {}, cli: {}, command: {} },
+      performance: { cacheHitRate: 0, averageRenderTime: 0 },
+    },
+    performance: {
+      memory: { heapUsed: 0, rss: 0 },
+      cpu: { user: 0, system: 0 },
+      interfaces: {},
+    },
+  };
+
+  const orchestrator = {
+    isInitialized: jest.fn().mockReturnValue(true),
+    registerInterface: jest.fn().mockResolvedValue(undefined),
+    executeCommand: jest.fn(async (): Promise<CommandResult> => ({
+      success: true,
+      timestamp: Date.now(),
+    })),
+    loadBackendSkin: jest.fn(async () => null),
+    loadSkin: jest.fn(async () => {}),
+    getSystemStatus: jest.fn().mockReturnValue(systemStatus),
+    getUniversalSkinEngine: jest.fn().mockReturnValue(skinEngine),
+    getLoadedSkins: jest.fn().mockReturnValue([] as UniversalSkinDefinition[]),
+    getSessionManager: jest.fn().mockReturnValue(sessionManager),
+    refreshBackendServices: jest.fn().mockResolvedValue(undefined),
+    applyManualOverride: jest.fn().mockResolvedValue({ serviceId: 'stub', active: true, overrides: {} }),
+    clearManualOverride: jest.fn().mockResolvedValue({ cleared: [], remaining: [] }),
+    getManualOverrideSnapshot: jest.fn().mockReturnValue({ overrides: [] }),
+    getBackendRouter: jest.fn().mockReturnValue({
+      discoverAndConnect: jest.fn().mockResolvedValue(undefined),
+    }),
+    getResourceManager: jest.fn().mockReturnValue({
+      getAsset: jest.fn(),
+    }),
+    notifyInterfaceDisconnect: jest.fn(),
+    getSupportedInterfaces: jest.fn().mockReturnValue(['cli', 'vscode', 'command'] as InterfaceType[]),
+  } as unknown as jest.Mocked<ITemplumOrchestrator>;
+
+  return {
+    orchestrator,
+    sessionManager,
+    skinEngine,
+  };
+};
+
+let mockOrchestrator: jest.Mocked<ITemplumOrchestrator>;
 
 /**
  * Test fixtures
@@ -209,19 +382,17 @@ describe("AdaptiveCLIIntegration", () => {
     DisplayUtils.reset();
     resetFormatterConfiguration();
 
-    // Create original adapter
-    originalAdapter = new CLIInterfaceAdapter(
-      mockCommandRegistry,
-      mockMenuRegistry,
-      mockSessionContext,
-      {
-        enableInteractiveMode: true,
-        enableInteractiveSearch: true,
-      },
-      mockOrchestrator,
-    );
+    // Build orchestrator and supporting stubs
+    const build = createMockOrchestrator();
+    mockOrchestrator = build.orchestrator;
 
-    await originalAdapter.initialize();
+    // Create original adapter
+    originalAdapter = new CLIInterfaceAdapter({
+      enableInteractiveMode: true,
+      enableInteractiveSearch: true,
+    });
+
+    await originalAdapter.initialize(mockOrchestrator);
   });
 
   afterEach(async () => {
@@ -242,18 +413,12 @@ describe("AdaptiveCLIIntegration", () => {
       const displayConfigureSpy = jest.spyOn(DisplayUtils, "configure");
       const windowConfigureSpy = jest.spyOn(WindowUtils, "configure");
 
-      const adapter = new CLIInterfaceAdapter(
-        mockCommandRegistry,
-        mockMenuRegistry,
-        mockSessionContext,
-        {
-          enableInteractiveMode: true,
-          enableInteractiveSearch: true,
-        },
-        mockOrchestrator,
-      );
+      const adapter = new CLIInterfaceAdapter({
+        enableInteractiveMode: true,
+        enableInteractiveSearch: true,
+      });
 
-      await adapter.initialize();
+      await adapter.initialize(mockOrchestrator);
 
       expect(displayConfigureSpy).toHaveBeenCalled();
       expect(windowConfigureSpy).toHaveBeenCalled();
@@ -996,14 +1161,11 @@ describe("MCP Channel Integration Tests", () => {
   let originalAdapter: CLIInterfaceAdapter;
 
   beforeEach(async () => {
-    originalAdapter = new CLIInterfaceAdapter(
-      mockCommandRegistry,
-      mockMenuRegistry,
-      mockSessionContext,
-      { enableInteractiveMode: true },
-      mockOrchestrator,
-    );
-    await originalAdapter.initialize();
+    const build = createMockOrchestrator();
+    mockOrchestrator = build.orchestrator;
+
+    originalAdapter = new CLIInterfaceAdapter({ enableInteractiveMode: true });
+    await originalAdapter.initialize(mockOrchestrator);
 
     integration = createAdaptiveCLIIntegration(originalAdapter, {
       mcpPreservation: { enableValidation: true },
@@ -1054,13 +1216,13 @@ describe("MCP Channel Integration Tests", () => {
 
 describe("Accessibility Integration Tests", () => {
   test("should configure for screen reader compatibility", async () => {
-    const originalAdapter = new CLIInterfaceAdapter(
-      mockCommandRegistry,
-      mockMenuRegistry,
-      mockSessionContext,
-      { enableColorOutput: false },
-    );
-    await originalAdapter.initialize();
+    const build = createMockOrchestrator();
+    mockOrchestrator = build.orchestrator;
+
+    const originalAdapter = new CLIInterfaceAdapter({
+      enableColorOutput: false,
+    });
+    await originalAdapter.initialize(mockOrchestrator);
 
     const integration = createAdaptiveCLIIntegration(originalAdapter, {
       accessibility: {
@@ -1075,6 +1237,9 @@ describe("Accessibility Integration Tests", () => {
     expect(result.success).toBe(true);
     expect(integration.getCurrentMode()).toBe("accessibility");
 
+    await integration.cleanup();
+    await originalAdapter.cleanup();
+
     const navigationSystem = integration.getNavigationSystem();
     const config = navigationSystem?.getConfig();
 
@@ -1085,12 +1250,11 @@ describe("Accessibility Integration Tests", () => {
   });
 
   test("should enable high contrast mode for visibility", async () => {
-    const originalAdapter = new CLIInterfaceAdapter(
-      mockCommandRegistry,
-      mockMenuRegistry,
-      mockSessionContext,
-    );
-    await originalAdapter.initialize();
+    const build = createMockOrchestrator();
+    mockOrchestrator = build.orchestrator;
+
+    const originalAdapter = new CLIInterfaceAdapter();
+    await originalAdapter.initialize(mockOrchestrator);
 
     const integration = createAdaptiveCLIIntegration(originalAdapter, {
       accessibility: { forceAccessibleMode: true },
@@ -1104,5 +1268,6 @@ describe("Accessibility Integration Tests", () => {
     expect(config?.accessibility?.highContrastMode).toBe(true);
 
     await integration.cleanup();
+    await originalAdapter.cleanup();
   });
 });

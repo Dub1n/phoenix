@@ -228,8 +228,12 @@ export class CLIIntegrationDemo extends EventDrivenComponent<CLIIntegrationDemoE
     commandRegistry: UniversalCommandRegistry,
     menuRegistry: UniversalMenuRegistry,
     sessionContext: SessionContextFoundation,
-    orchestrator?: ITemplumOrchestrator
+    orchestrator: ITemplumOrchestrator
   ): Promise<Map<string, DemonstrationResult>> {
+    if (!orchestrator || typeof orchestrator.getSessionManager !== 'function') {
+      throw new Error('runComprehensiveDemonstration requires an orchestrator that provides getSessionManager()');
+    }
+
     this.emit('demonstrationStarted', SIMULATED_ENVIRONMENTS.length);
 
     for (const environment of SIMULATED_ENVIRONMENTS) {
@@ -264,21 +268,21 @@ export class CLIIntegrationDemo extends EventDrivenComponent<CLIIntegrationDemoE
     commandRegistry: UniversalCommandRegistry,
     menuRegistry: UniversalMenuRegistry,
     sessionContext: SessionContextFoundation,
-    orchestrator?: ITemplumOrchestrator
+    orchestrator: ITemplumOrchestrator
   ): Promise<DemonstrationResult> {
     const startTime = Date.now();
     const startMemory = process.memoryUsage();
 
+    if (!orchestrator || typeof orchestrator.getSessionManager !== 'function') {
+      throw new Error('CLIIntegrationDemo requires an orchestrator that provides getSessionManager()');
+    }
+
     // Create original adapter
     const originalAdapter = new CLIInterfaceAdapter(
-      commandRegistry,
-      menuRegistry,
-      sessionContext,
-      this.getAdapterConfigForEnvironment(environment),
-      orchestrator
+      this.getAdapterConfigForEnvironment(environment)
     );
 
-    await originalAdapter.initialize();
+    await originalAdapter.initialize(orchestrator);
 
     // Create adaptive integration with environment-specific configuration
     const config = this.getIntegrationConfigForEnvironment(environment);
