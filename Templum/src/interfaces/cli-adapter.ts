@@ -11,6 +11,7 @@
  * Generated: 2025-08-21
  */
 
+import { inspect } from 'util';
 import * as readline from 'readline';
 import { UniversalCommandRegistry } from '../commands/universal-command-registry';
 import { UniversalMenuRegistry, LoadedSkin, UniversalMenuDefinition } from '../menus/universal-menu-registry';
@@ -31,6 +32,7 @@ import { StringUtils } from '../utils/chainable-string-utils';
 import { TypeGuards, TypeValidators } from '../utils/type-guards';
 import { EventDrivenComponent } from '../utils/event-bus-adapter';
 import { TypedEventMap } from '../utils/event-utils';
+import { createLogger } from '../utils/logger';
 
 type ManualOverrideController = {
   applyManualOverride: (...args: Parameters<ITemplumOrchestrator['applyManualOverride']>) => ReturnType<ITemplumOrchestrator['applyManualOverride']>;
@@ -141,6 +143,7 @@ export class CLIInterfaceAdapter extends EventDrivenComponent<CLIInterfaceAdapte
   private isInteractiveMode = false;
   private terminalUI: any; // TerminalUI instance
   private searchableItems: SearchableItem[] = [];
+  private readonly logger = createLogger('cli-interface-adapter');
 
   private formatColumn(
     value: unknown,
@@ -149,6 +152,80 @@ export class CLIInterfaceAdapter extends EventDrivenComponent<CLIInterfaceAdapte
   ): string {
     const text = value === null || value === undefined ? '' : String(value);
     return StringUtils.chain(text, { mode: 'terminal' }).pad(width, alignment).value();
+  }
+
+  private emitToUser(message: unknown = ''): void {
+    const normalized = this.normalizeMessage(message);
+    const output = normalized.endsWith('\n') ? normalized : `${normalized}\n`;
+    process.stdout.write(output);
+  }
+
+  private emitWarning(message: string, detail?: unknown): void {
+    if (detail instanceof Error) {
+      this.logger.warn(message, { error: detail.message, stack: detail.stack });
+      this.emitToUser(`${message}: ${detail.message}`);
+      return;
+    }
+
+    if (detail !== undefined) {
+      const described = this.describeDetail(detail);
+      this.logger.warn(message, { detail: described });
+      this.emitToUser(`${message}: ${described}`);
+      return;
+    }
+
+    this.logger.warn(message);
+    this.emitToUser(message);
+  }
+
+  private emitError(message: string, detail?: unknown): void {
+    if (detail instanceof Error) {
+      this.logger.error(message, detail);
+      this.emitToUser(`${message}: ${detail.message}`);
+      if (detail.stack) {
+        this.emitToUser(detail.stack);
+      }
+      return;
+    }
+
+    if (detail !== undefined) {
+      const described = this.describeDetail(detail);
+      this.logger.error(message, undefined, { detail: described });
+      this.emitToUser(`${message}: ${described}`);
+      return;
+    }
+
+    this.logger.error(message);
+    this.emitToUser(message);
+  }
+
+  private describeDetail(detail: unknown): string {
+    if (typeof detail === 'string') {
+      return detail;
+    }
+    if (detail === undefined || detail === null) {
+      return '';
+    }
+    if (detail instanceof Error && detail.stack) {
+      return detail.stack;
+    }
+    if (typeof detail === 'object') {
+      return inspect(detail, { depth: 2, colors: false });
+    }
+    return String(detail);
+  }
+
+  private normalizeMessage(message: unknown): string {
+    if (typeof message === 'string') {
+      return message;
+    }
+    if (message === undefined || message === null) {
+      return '';
+    }
+    if (typeof message === 'object') {
+      return inspect(message, { depth: 3, colors: false });
+    }
+    return String(message);
   }
 
   constructor(
@@ -237,7 +314,7 @@ export class CLIInterfaceAdapter extends EventDrivenComponent<CLIInterfaceAdapte
       
       return true;
     } catch (error) {
-      console.error('Failed to initialize CLI adapter:', error);
+      this.emitError('Failed to initialize CLI adapter', error);
       return false;
     }
   }
@@ -286,7 +363,7 @@ export class CLIInterfaceAdapter extends EventDrivenComponent<CLIInterfaceAdapte
 
       if (renderResult.success && renderResult.output) {
         // Output the rendered menu
-        console.log(renderResult.output);
+        this.emitToUser(renderResult.output);
         
         // Show keyboard shortcuts if enabled
         if (this.config.enableKeyboardShortcuts && this.keyboardShortcuts.size > 0) {
@@ -309,7 +386,7 @@ export class CLIInterfaceAdapter extends EventDrivenComponent<CLIInterfaceAdapte
       }
 
     } catch (error) {
-      console.error('Failed to render CLI interface:', error);
+      this.emitError('Failed to render CLI interface', error);
       return { 
         success: false, 
         rendered: false,
@@ -385,7 +462,7 @@ export class CLIInterfaceAdapter extends EventDrivenComponent<CLIInterfaceAdapte
           return { handled: false, errors: [`Unknown input type: ${input.type}`] };
       }
     } catch (error) {
-      console.error('Failed to handle CLI input:', error);
+      this.emitError('Failed to handle CLI input', error);
       return { 
         handled: false, 
         errors: [error instanceof Error ? error.message : 'Unknown input error'] 
@@ -439,10 +516,7 @@ export class CLIInterfaceAdapter extends EventDrivenComponent<CLIInterfaceAdapte
    */
   async cleanup(): Promise<boolean> {
     try {
-      if (this.readlineInterface) {
-        this.readlineInterface.close();
-        this.readlineInterface = null;
-      }
+      this.teardownReadlineInterface();
 
       this.keyboardShortcuts.clear();
       this.navigationHistory = [];
@@ -453,12 +527,41 @@ export class CLIInterfaceAdapter extends EventDrivenComponent<CLIInterfaceAdapte
 
       return true;
     } catch (error) {
-      console.error('Failed to cleanup CLI adapter:', error);
+      this.emitError('Failed to cleanup CLI adapter', error);
       return false;
     }
   }
 
   // Private implementation methods
+  private teardownReadlineInterface(): void {
+    if (!this.readlineInterface) {
+      return;
+    }
+
+    const { input, output } = this.readlineInterface as readline.Interface & {
+      input?: (NodeJS.ReadableStream & { unref?: () => void }) | null;
+      output?: (NodeJS.WritableStream & { unref?: () => void }) | null;
+    };
+
+    this.readlineInterface.removeAllListeners();
+    this.readlineInterface.close();
+
+    if (input) {
+      if (typeof input.pause === 'function') {
+        input.pause();
+      }
+      if (typeof input.unref === 'function') {
+        input.unref();
+      }
+    }
+
+    if (output && typeof output.unref === 'function') {
+      output.unref();
+    }
+
+    this.readlineInterface = null;
+  }
+
   private async setupReadlineInterface(): Promise<void> {
     this.readlineInterface = readline.createInterface({
       input: process.stdin,
@@ -518,7 +621,7 @@ export class CLIInterfaceAdapter extends EventDrivenComponent<CLIInterfaceAdapte
       const menu = await this.menuRegistry.getMenu(this.currentMenu, 'cli');
       await this.render(menu);
     } catch (error) {
-      console.error(`Failed to render menu '${this.currentMenu}':`, error);
+      this.emitError(`Failed to render menu '${this.currentMenu}'`, error);
     }
   }
 
@@ -550,7 +653,7 @@ export class CLIInterfaceAdapter extends EventDrivenComponent<CLIInterfaceAdapte
       if (this.config.enableInteractiveSearch) {
         await this.launchInteractiveSearch();
       } else {
-        console.log('Interactive search is disabled');
+        this.emitToUser('Interactive search is disabled');
       }
     } else if (input === 'backends') {
       // List available backends with status
@@ -586,13 +689,13 @@ export class CLIInterfaceAdapter extends EventDrivenComponent<CLIInterfaceAdapte
 
   private async handleCommandInput(input: CLIInput): Promise<CLIInputResult> {
     try {
-      console.log(`CLI Adapter: Processing command '${input.value}' with real backend integration...`);
+      this.logger.debug(`Processing command '${input.value}' with real backend integration context`);
       
       // Enhanced real backend command execution
       if (this.orchestrator?.isInitialized()) {
         try {
           // First attempt: Execute through orchestrator (real backend integration)
-          console.log('CLI Adapter: Attempting real backend command execution...');
+          this.logger.debug('Attempting real backend command execution via orchestrator');
           const orchResult = await this.orchestrator.executeCommand(
             input.value,
             'cli',
@@ -606,34 +709,37 @@ export class CLIInterfaceAdapter extends EventDrivenComponent<CLIInterfaceAdapte
           );
           
           if (orchResult) {
-            console.log('CLI Adapter: Command executed successfully via real backend integration');
-            console.log(orchResult.message || 'Command executed successfully');
+            this.logger.info('Command executed successfully via real backend integration', {
+              command: input.value,
+              backendId: orchResult.metadata?.backendId
+            });
+            this.emitToUser(orchResult.message || 'Command executed successfully');
             
             // Display backend execution information
             if (orchResult.metadata?.backendId) {
-              console.log(`[Backend: ${orchResult.metadata.backendId}] ${orchResult.message || 'Success'}`);
+              this.emitToUser(`[Backend: ${orchResult.metadata.backendId}] ${orchResult.message || 'Success'}`);
             }
             
             return { handled: true, result: orchResult };
           }
         } catch (orchestratorError) {
-          console.warn('CLI Adapter: Real backend command execution failed, falling back to local registry:', orchestratorError);
+          this.emitWarning('CLI Adapter: Real backend command execution failed, falling back to local registry', orchestratorError);
         }
       }
       
       // Fallback: Execute through local command registry
-      console.log('CLI Adapter: Executing command through local registry fallback...');
+      this.logger.info('Executing command through local registry fallback', { command: input.value });
       const result = await this.commandRegistry.executeCommand(
         input.value,
         {},
         { interfaceType: 'cli' }
       );
 
-      console.log(result.message || 'Command executed successfully (local registry)');
+      this.emitToUser(result.message || 'Command executed successfully (local registry)');
       return { handled: true, result };
       
     } catch (error) {
-      console.error(`Command failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      this.emitError('Command failed', error);
       return { 
         handled: false, 
         errors: [error instanceof Error ? error.message : 'Command execution failed'] 
@@ -736,7 +842,7 @@ export class CLIInterfaceAdapter extends EventDrivenComponent<CLIInterfaceAdapte
         break;
 
       case 'external':
-        console.log(`External action: ${item.action.target}`);
+        this.emitToUser(`External action: ${item.action.target}`);
         return { handled: true };
     }
 
@@ -851,7 +957,7 @@ export class CLIInterfaceAdapter extends EventDrivenComponent<CLIInterfaceAdapte
    */
   private async launchInteractiveSearch(): Promise<void> {
     if (!this.config.enableInteractiveSearch) {
-      console.log('Interactive search is disabled');
+      this.emitToUser('Interactive search is disabled');
       return;
     }
 
@@ -860,7 +966,7 @@ export class CLIInterfaceAdapter extends EventDrivenComponent<CLIInterfaceAdapte
       await this.buildSearchableItems();
 
       if (this.searchableItems.length === 0) {
-        console.log('No searchable items available');
+        this.emitToUser('No searchable items available');
         return;
       }
 
@@ -891,7 +997,7 @@ export class CLIInterfaceAdapter extends EventDrivenComponent<CLIInterfaceAdapte
       }
 
     } catch (error) {
-      console.error('Failed to launch interactive search:', error);
+      this.emitError('Failed to launch interactive search', error);
       
       if (this.isInteractiveMode) {
         this.readlineInterface?.prompt();
@@ -974,7 +1080,7 @@ export class CLIInterfaceAdapter extends EventDrivenComponent<CLIInterfaceAdapte
             }
           }
         } catch (error) {
-          console.warn(`Failed to load menu '${menuId}' for search:`, error);
+          this.emitWarning(`Failed to load menu '${menuId}' for search`, error);
         }
       }
 
@@ -1015,12 +1121,12 @@ export class CLIInterfaceAdapter extends EventDrivenComponent<CLIInterfaceAdapte
             });
           }
         } catch (error) {
-          console.warn('Failed to load backend services for search:', error);
+          this.emitWarning('Failed to load backend services for search', error);
         }
       }
 
     } catch (error) {
-      console.error('Failed to build searchable items:', error);
+      this.emitError('Failed to build searchable items', error);
       this.searchableItems = [];
     }
   }
@@ -1030,7 +1136,7 @@ export class CLIInterfaceAdapter extends EventDrivenComponent<CLIInterfaceAdapte
    */
   private async handleSearchResult(result: SearchResult): Promise<void> {
     try {
-      console.log(`\nSelected: ${result.title}`);
+      this.emitToUser(`\nSelected: ${result.title}`);
       
       switch (result.data.type) {
         case 'command':
@@ -1064,21 +1170,21 @@ export class CLIInterfaceAdapter extends EventDrivenComponent<CLIInterfaceAdapte
           break;
 
         case 'backend':
-          console.log(`Backend service: ${result.data.serviceId}`);
-          console.log(`Status: ${result.data.status.connected ? 'Connected' : 'Disconnected'}`);
-          console.log(`Health: ${result.data.status.health || 'Unknown'}`);
+          this.emitToUser(`Backend service: ${result.data.serviceId}`);
+          this.emitToUser(`Status: ${result.data.status.connected ? 'Connected' : 'Disconnected'}`);
+          this.emitToUser(`Health: ${result.data.status.health || 'Unknown'}`);
           if (result.data.status.capabilities) {
-            console.log(`Capabilities: ${result.data.status.capabilities.join(', ')}`);
+            this.emitToUser(`Capabilities: ${result.data.status.capabilities.join(', ')}`);
           }
           break;
 
         default:
-          console.log(`Unknown search result type: ${result.data.type}`);
+          this.emitToUser(`Unknown search result type: ${result.data.type}`);
           break;
       }
 
     } catch (error) {
-      console.error(`Failed to handle search result:`, error);
+      this.emitError('Failed to handle search result', error);
     }
   }
 
@@ -1088,16 +1194,16 @@ export class CLIInterfaceAdapter extends EventDrivenComponent<CLIInterfaceAdapte
    */
   private async loadSpecificBackendSkin(backendId: string): Promise<void> {
     if (!backendId) {
-      console.log('[ERROR] Please specify a backend ID (e.g., load pcl, load minimal-example)');
+      this.emitToUser('[ERROR] Please specify a backend ID (e.g., load pcl, load minimal-example)');
       return;
     }
 
     try {
-      console.log(`[LOADING] Loading skin from backend: ${backendId}`);
+      this.emitToUser(`[LOADING] Loading skin from backend: ${backendId}`);
       
       // Check if orchestrator is available
       if (!this.orchestrator?.isInitialized()) {
-        console.log('[ERROR] Orchestrator not available - cannot load backend skins');
+        this.emitToUser('[ERROR] Orchestrator not available - cannot load backend skins');
         return;
       }
 
@@ -1115,29 +1221,29 @@ export class CLIInterfaceAdapter extends EventDrivenComponent<CLIInterfaceAdapte
         if (availableMenus.includes(backendMainMenu)) {
           this.currentMenu = backendMainMenu;
           await this.renderCurrentMenu();
-          console.log(`[OK] Switched to ${skinDefinition.name || backendId} interface`);
+          this.emitToUser(`[OK] Switched to ${skinDefinition.name || backendId} interface`);
         } else if (availableMenus.includes('main')) {
           // Fallback to generic main menu with backend loaded
           await this.renderCurrentMenu();
-          console.log(`[OK] Loaded ${skinDefinition.name || backendId} skin (using generic menu)`);
+          this.emitToUser(`[OK] Loaded ${skinDefinition.name || backendId} skin (using generic menu)`);
         } else {
-          console.log(`[OK] Loaded ${skinDefinition.name || backendId} skin definition`);
+          this.emitToUser(`[OK] Loaded ${skinDefinition.name || backendId} skin definition`);
         }
         
         // Update searchable items to include new backend
         await this.buildSearchableItems();
         
       } else {
-        console.log(`[ERROR] Could not load skin from backend: ${backendId}`);
-        console.log('[TIP] Check if backend is running and accessible');
+        this.emitToUser(`[ERROR] Could not load skin from backend: ${backendId}`);
+        this.emitToUser('[TIP] Check if backend is running and accessible');
         
         // Show available backends for reference
         await this.displayAvailableBackends();
       }
       
     } catch (error) {
-      console.error(`[ERROR] Failed to load skin from ${backendId}:`, error);
-      console.log('[TIP] Use "status" command to check backend connectivity');
+      this.emitError(`[ERROR] Failed to load skin from ${backendId}`, error);
+      this.emitToUser('[TIP] Use "status" command to check backend connectivity');
     }
   }
 
@@ -1147,7 +1253,7 @@ export class CLIInterfaceAdapter extends EventDrivenComponent<CLIInterfaceAdapte
    */
   private async loadSkinIntoMenuRegistry(serviceId: string, skin: UniversalSkinDefinition): Promise<void> {
     if (!skin.menus) {
-      console.log(`[WARN] Backend ${serviceId} has no menu definitions`);
+      this.emitWarning(`Backend ${serviceId} has no menu definitions`);
       return;
     }
     
@@ -1212,7 +1318,7 @@ export class CLIInterfaceAdapter extends EventDrivenComponent<CLIInterfaceAdapte
     // Load skin into menu registry
     await this.menuRegistry.loadSkin(loadedSkin);
     const menuCount = Object.keys(convertedMenus).length;
-    console.log(`[LIST] Loaded ${menuCount} menu(s) from ${skin.name || serviceId}`);
+    this.emitToUser(`[LIST] Loaded ${menuCount} menu(s) from ${skin.name || serviceId}`);
   }
 
   /**
@@ -1222,8 +1328,8 @@ export class CLIInterfaceAdapter extends EventDrivenComponent<CLIInterfaceAdapte
    */
   private async displayAvailableBackendsDetailed(): Promise<void> {
     if (!this.orchestrator?.isInitialized()) {
-      console.log('[ERROR] Backend management unavailable - orchestrator not initialized');
-      console.log('[TIP] Try restarting Templum to initialize backend connections');
+      this.emitToUser('[ERROR] Backend management unavailable - orchestrator not initialized');
+      this.emitToUser('[TIP] Try restarting Templum to initialize backend connections');
       return;
     }
 
@@ -1232,15 +1338,15 @@ export class CLIInterfaceAdapter extends EventDrivenComponent<CLIInterfaceAdapte
       const backends = systemStatus.coreEngine?.backendConnections?.backends || {};
       
       if (Object.keys(backends).length === 0) {
-        console.log('[EMPTY] No backends currently discovered');
-        console.log('[TIP] Backend services will appear here when they start');
+        this.emitToUser('[EMPTY] No backends currently discovered');
+        this.emitToUser('[TIP] Backend services will appear here when they start');
         return;
       }
       
-      console.log('\n[TOOLS] Backend Management Dashboard');
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.log('Backend ID     Status        Health     Skin   Commands Available');
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      this.emitToUser('\n[TOOLS] Backend Management Dashboard');
+      this.emitToUser('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      this.emitToUser('Backend ID     Status        Health     Skin   Commands Available');
+      this.emitToUser('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       
       for (const [serviceId, status] of Object.entries(backends)) {
         const statusIcon = status.connected
@@ -1252,7 +1358,7 @@ export class CLIInterfaceAdapter extends EventDrivenComponent<CLIInterfaceAdapte
         const capabilityCount = status.capabilities?.length || 0;
         const commandInfo = capabilityCount > 0 ? `${capabilityCount} available` : 'None loaded';
         
-        console.log(`${serviceColumn} ${statusIcon} ${health} ${skinStatus} ${commandInfo}`);
+        this.emitToUser(`${serviceColumn} ${statusIcon} ${health} ${skinStatus} ${commandInfo}`);
       }
       
       const connectedCount = Object.values(backends).filter((b: any) => b.connected).length;
@@ -1260,17 +1366,17 @@ export class CLIInterfaceAdapter extends EventDrivenComponent<CLIInterfaceAdapte
       const healthyCount = Object.values(backends).filter((b: any) => b.health === 'healthy').length;
       const skinsLoaded = Object.values(backends).filter((b: any) => (b as any).skinLoaded).length;
       
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.log(`Total: ${totalCount} | Connected: ${connectedCount} | Healthy: ${healthyCount} | Skins Loaded: ${skinsLoaded}`);
-      console.log('\n[GAME] Management Commands:');
-      console.log('  load <backend-id>    - Load backend skin interface');
-      console.log('  unload <backend-id>  - Disconnect from backend service');
-      console.log('  refresh              - Trigger service discovery');
-      console.log('  status               - Show detailed connection status');
+      this.emitToUser('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      this.emitToUser(`Total: ${totalCount} | Connected: ${connectedCount} | Healthy: ${healthyCount} | Skins Loaded: ${skinsLoaded}`);
+      this.emitToUser('\n[GAME] Management Commands:');
+      this.emitToUser('  load <backend-id>    - Load backend skin interface');
+      this.emitToUser('  unload <backend-id>  - Disconnect from backend service');
+      this.emitToUser('  refresh              - Trigger service discovery');
+      this.emitToUser('  status               - Show detailed connection status');
       
     } catch (error) {
-      console.log('[ERROR] Failed to retrieve backend information:', error);
-      console.log('[TIP] Try "refresh" command to re-scan for services');
+      this.emitError('[ERROR] Failed to retrieve backend information', error);
+      this.emitToUser('[TIP] Try "refresh" command to re-scan for services');
     }
   }
 
@@ -1281,17 +1387,17 @@ export class CLIInterfaceAdapter extends EventDrivenComponent<CLIInterfaceAdapte
    */
   private async unloadSpecificBackend(backendId: string): Promise<void> {
     if (!backendId) {
-      console.log('[ERROR] Please specify a backend ID (e.g., unload pcl, unload minimal-example)');
-      console.log('[TIP] Use "backends" command to see available backend IDs');
+      this.emitToUser('[ERROR] Please specify a backend ID (e.g., unload pcl, unload minimal-example)');
+      this.emitToUser('[TIP] Use "backends" command to see available backend IDs');
       return;
     }
 
     try {
-      console.log(`[REFRESH] Disconnecting from backend: ${backendId}`);
+      this.emitToUser(`[REFRESH] Disconnecting from backend: ${backendId}`);
       
       // Check if orchestrator is available
       if (!this.orchestrator?.isInitialized()) {
-        console.log('[ERROR] Backend management unavailable - orchestrator not initialized');
+        this.emitToUser('[ERROR] Backend management unavailable - orchestrator not initialized');
         return;
       }
 
@@ -1301,13 +1407,13 @@ export class CLIInterfaceAdapter extends EventDrivenComponent<CLIInterfaceAdapte
       const backendStatus = (backends as any)[backendId];
       
       if (!backendStatus) {
-        console.log(`[ERROR] Backend '${backendId}' not found`);
-        console.log('[TIP] Use "backends" command to see available backend IDs');
+        this.emitToUser(`[ERROR] Backend '${backendId}' not found`);
+        this.emitToUser('[TIP] Use "backends" command to see available backend IDs');
         return;
       }
       
       if (!backendStatus.connected) {
-        console.log(`[WARN] Backend '${backendId}' is already disconnected`);
+        this.emitWarning(`Backend '${backendId}' is already disconnected`);
         return;
       }
 
@@ -1329,12 +1435,12 @@ export class CLIInterfaceAdapter extends EventDrivenComponent<CLIInterfaceAdapte
       // Update searchable items to remove this backend's items
       await this.buildSearchableItems();
       
-      console.log(`[OK] Disconnected from ${backendId}`);
-      console.log('[TIP] Backend service may still be running - this only unloads the interface');
+      this.emitToUser(`[OK] Disconnected from ${backendId}`);
+      this.emitToUser('[TIP] Backend service may still be running - this only unloads the interface');
       
     } catch (error) {
-      console.error(`[ERROR] Failed to disconnect from ${backendId}:`, error);
-      console.log('[TIP] Use "status" command to check current backend connections');
+      this.emitError(`[ERROR] Failed to disconnect from ${backendId}`, error);
+      this.emitToUser('[TIP] Use "status" command to check current backend connections');
     }
   }
 
@@ -1344,7 +1450,7 @@ export class CLIInterfaceAdapter extends EventDrivenComponent<CLIInterfaceAdapte
    */
   private async displayAvailableBackends(): Promise<void> {
     if (!this.orchestrator?.isInitialized()) {
-      console.log('Cannot check available backends - orchestrator not initialized');
+      this.emitToUser('Cannot check available backends - orchestrator not initialized');
       return;
     }
 
@@ -1353,84 +1459,84 @@ export class CLIInterfaceAdapter extends EventDrivenComponent<CLIInterfaceAdapte
       const backends = systemStatus.coreEngine?.backendConnections?.backends || {};
       
       if (Object.keys(backends).length === 0) {
-        console.log('No backends currently connected');
+        this.emitToUser('No backends currently connected');
         return;
       }
       
-      console.log('\n[LINK] Available backends:');
+      this.emitToUser('\n[LINK] Available backends:');
       for (const [serviceId, status] of Object.entries(backends)) {
         const statusIcon = status.connected 
           ? (status.health === 'healthy' ? '[OK]' : '[WARN]') 
           : '[OFFLINE]';
-        console.log(`  ${statusIcon} ${serviceId} - ${status.connected ? 'connected' : 'disconnected'}`);
+        this.emitToUser(`  ${statusIcon} ${serviceId} - ${status.connected ? 'connected' : 'disconnected'}`);
       }
-      console.log('\n[TIP] Try: load <backend-id>');
+      this.emitToUser('\n[TIP] Try: load <backend-id>');
       
     } catch (_error) {
-      console.log('Failed to get backend status');
+      this.emitToUser('Failed to get backend status');
     }
   }
 
   private displayKeyboardShortcuts(): void {
     if (this.keyboardShortcuts.size === 0) return;
 
-    console.log('\nKeyboard Shortcuts:');
+    this.emitToUser('\nKeyboard Shortcuts:');
     for (const [key, command] of Array.from(this.keyboardShortcuts.entries())) {
-      console.log(`  ${key} - ${command}`);
+      this.emitToUser(`  ${key} - ${command}`);
     }
-    console.log();
+    this.emitToUser();
   }
 
   private displayHelp(): void {
-    console.log('\nTemplum CLI Help:');
-    console.log('Commands:');
-    console.log('  help          - Show this help message');
-    console.log('  back          - Go to previous menu');
-    console.log('  home          - Go to main menu');
-    console.log('  refresh       - Refresh current menu and trigger service discovery');
-    console.log('  status        - Show detailed backend service status');
-    console.log('  quit          - Exit application');
-    console.log('');
-    console.log('Backend Management:');
-    console.log('  backends      - List all available backends with status details');
-    console.log('  load <id>     - Load backend skin interface (e.g., load pcl)');
-    console.log('  unload <id>   - Disconnect from backend service (e.g., unload pcl)');
+    this.emitToUser('\nTemplum CLI Help:');
+    this.emitToUser('Commands:');
+    this.emitToUser('  help          - Show this help message');
+    this.emitToUser('  back          - Go to previous menu');
+    this.emitToUser('  home          - Go to main menu');
+    this.emitToUser('  refresh       - Refresh current menu and trigger service discovery');
+    this.emitToUser('  status        - Show detailed backend service status');
+    this.emitToUser('  quit          - Exit application');
+    this.emitToUser('');
+    this.emitToUser('Backend Management:');
+    this.emitToUser('  backends      - List all available backends with status details');
+    this.emitToUser('  load <id>     - Load backend skin interface (e.g., load pcl)');
+    this.emitToUser('  unload <id>   - Disconnect from backend service (e.g., unload pcl)');
     
     if (this.config.enableInteractiveSearch) {
-      console.log('  search   - Launch interactive search (also: f, /)');
+      this.emitToUser('  search   - Launch interactive search (also: f, /)');
     }
     
-    console.log('\nNavigation:');
-    console.log('  1-9      - Select menu item by number');
-    console.log('  command  - Execute any backend command');
+    this.emitToUser('\nNavigation:');
+    this.emitToUser('  1-9      - Select menu item by number');
+    this.emitToUser('  command  - Execute any backend command');
     
     if (this.config.enableInteractiveSearch) {
-      console.log('\nInteractive Search:');
-      console.log('  f or /   - Launch search interface');
-      console.log('  ESC      - Cancel search');
-      console.log('  ↑↓       - Navigate results');
-      console.log('  TAB      - Cycle category filters');
-      console.log('  ENTER    - Select item');
-      console.log('  Type     - Filter results in real-time');
+      this.emitToUser('\nInteractive Search:');
+      this.emitToUser('  f or /   - Launch search interface');
+      this.emitToUser('  ESC      - Cancel search');
+      this.emitToUser('  ↑↓       - Navigate results');
+      this.emitToUser('  TAB      - Cycle category filters');
+      this.emitToUser('  ENTER    - Select item');
+      this.emitToUser('  Type     - Filter results in real-time');
     }
     
     if (this.keyboardShortcuts.size > 0) {
-      console.log('\nShortcuts:');
+      this.emitToUser('\nShortcuts:');
       for (const [key, command] of Array.from(this.keyboardShortcuts.entries())) {
-        console.log(`  ${key}       - ${command}`);
+        this.emitToUser(`  ${key}       - ${command}`);
       }
     }
     
     // Display real backend integration status
     if (this.orchestrator?.isInitialized()) {
-      console.log('\nBackend Integration:');
-      console.log('  [OK] Real backend integration active');
+      this.emitToUser('\nBackend Integration:');
+      this.emitToUser('  [OK] Real backend integration active');
       this.displayBackendStatus();
     } else {
-      console.log('\nBackend Integration:');
-      console.log('  [WARN] Local registry fallback mode');
+      this.emitToUser('\nBackend Integration:');
+      this.emitToUser('  [WARN] Local registry fallback mode');
     }
-    console.log();
+    this.emitToUser();
   }
 
   /**
@@ -1439,7 +1545,7 @@ export class CLIInterfaceAdapter extends EventDrivenComponent<CLIInterfaceAdapte
    */
   private displayBackendStatus(): void {
     if (!this.orchestrator?.isInitialized()) {
-      console.log('Backend status unavailable - orchestrator not initialized');
+      this.emitToUser('Backend status unavailable - orchestrator not initialized');
       return;
     }
 
@@ -1447,10 +1553,10 @@ export class CLIInterfaceAdapter extends EventDrivenComponent<CLIInterfaceAdapte
       const systemStatus = this.orchestrator.getSystemStatus();
       const backends = systemStatus.coreEngine?.backendConnections?.backends || {};
       
-      console.log('\nBackend Service Status:');
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.log('Service      Status      Health    Response   Capabilities');
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      this.emitToUser('\nBackend Service Status:');
+      this.emitToUser('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      this.emitToUser('Service      Status      Health    Response   Capabilities');
+      this.emitToUser('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       
       for (const [serviceId, status] of Object.entries(backends)) {
         const conn = this.formatColumn(status.connected ? '[CONNECTED]' : '[DISCONNECTED]', 12);
@@ -1459,18 +1565,18 @@ export class CLIInterfaceAdapter extends EventDrivenComponent<CLIInterfaceAdapte
         const capabilities = status.capabilities?.slice(0, 2).join(', ') || 'None';
         const serviceColumn = this.formatColumn(serviceId, 12);
         
-        console.log(`${serviceColumn} ${conn} ${health} ${responseTime} ${capabilities}`);
+        this.emitToUser(`${serviceColumn} ${conn} ${health} ${responseTime} ${capabilities}`);
       }
       
       const connectedCount = Object.values(backends).filter((b: any) => b.connected).length;
       const totalCount = Object.keys(backends).length;
       const healthyCount = Object.values(backends).filter((b: any) => b.health === 'healthy').length;
       
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.log(`Connected: ${connectedCount}/${totalCount} | Healthy: ${healthyCount}/${connectedCount} | Status: ${healthyCount > 0 ? 'Operational' : 'Discovery Mode'}`);
+      this.emitToUser('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      this.emitToUser(`Connected: ${connectedCount}/${totalCount} | Healthy: ${healthyCount}/${connectedCount} | Status: ${healthyCount > 0 ? 'Operational' : 'Discovery Mode'}`);
       
     } catch (error) {
-      console.log('Failed to retrieve backend status:', error);
+      this.emitError('Failed to retrieve backend status', error);
     }
   }
 
@@ -1521,7 +1627,7 @@ export class CLIInterfaceAdapter extends EventDrivenComponent<CLIInterfaceAdapte
 
       return true;
     } catch (error) {
-      console.error(`Failed to set current menu to '${menuId}':`, error);
+      this.emitError(`Failed to set current menu to '${menuId}'`, error);
       return false;
     }
   }
