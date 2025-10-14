@@ -19,14 +19,12 @@ import { serialization, type SerializationOutcome } from '../utils/serialization
 import { emitSerializationWarnings } from '../backend/backend-serialization-log';
 import {
   batchSubscribe,
-  createScopedBus,
   emit as emitEvent,
   forward,
   globalBus
 } from '../utils/event-utils';
 import type {
   BatchSubscription,
-  ScopedEventBus,
   TypedEventEmitter,
   TypedEventMap,
   UnsubscribeFn
@@ -55,8 +53,6 @@ interface ObservabilityEvents extends TypedEventMap {
   'templum:error': (payload: ErrorSignalPayload) => void;
   'templum:metrics': (payload: MetricsSignalPayload) => void;
 }
-
-type ObservabilityBus = ScopedEventBus<ObservabilityEvents>;
 
 // ============================================================================
 // Core Observability Types
@@ -770,7 +766,6 @@ export class TemplumObservabilitySystem extends EventDrivenComponent<Observabili
   }
 
   private readonly eventScope: string;
-  private readonly eventBus: ObservabilityBus;
   private logger: ObservabilityLogger;
   private metrics: MetricsCollector;
   private alerts: AlertManager;
@@ -782,10 +777,8 @@ export class TemplumObservabilitySystem extends EventDrivenComponent<Observabili
     super(TemplumObservabilitySystem.createScope(), 100);
 
     this.eventScope = this.eventContext;
-    this.eventBus = createScopedBus<ObservabilityEvents>(this.eventScope, 100);
-
-    this.logger = new ObservabilityLogger(config, this.eventBus.emitter);
-    this.metrics = new MetricsCollector(config, this.eventBus.emitter);
+    this.logger = new ObservabilityLogger(config, this.eventEmitter);
+    this.metrics = new MetricsCollector(config, this.eventEmitter);
     this.alerts = new AlertManager(config, this.metrics, this.logger);
   }
   
@@ -850,26 +843,20 @@ export class TemplumObservabilitySystem extends EventDrivenComponent<Observabili
       {
         event: 'templum:error',
         handler: payload => {
-          this.eventBus.emit('templum:error', payload);
+          this.emit('templum:error', payload);
         }
       },
       {
         event: 'templum:metrics',
         handler: payload => {
-          this.eventBus.emit('templum:metrics', payload);
+          this.emit('templum:metrics', payload);
         }
       }
     ];
 
     this.processSubscriptions = batchSubscribe(processEmitter, subscriptions, this.eventScope);
     this.forwarders = [
-      ...forward(this.eventBus.emitter, globalBus, ['templum:error', 'templum:metrics'], this.eventScope),
-      ...forward(
-        this.eventBus.emitter,
-        this.eventEmitter,
-        ['templum:error', 'templum:metrics'],
-        this.eventScope
-      )
+      ...forward(this.eventEmitter, globalBus, ['templum:error', 'templum:metrics'], this.eventScope)
     ];
   }
 
@@ -878,7 +865,7 @@ export class TemplumObservabilitySystem extends EventDrivenComponent<Observabili
     this.processSubscriptions = [];
     this.forwarders.forEach(unsubscribe => unsubscribe());
     this.forwarders = [];
-    this.eventBus.cleanup();
+    this.cleanupEvents();
   }
   
   private startSystemMonitoring(): void {

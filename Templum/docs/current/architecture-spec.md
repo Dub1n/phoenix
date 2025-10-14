@@ -1,9 +1,9 @@
 ---
 doc-type: architecture-spec
-title: Templum Architecture Specification
+name: Templum Architecture Specification
 tags: [templum, universal_interface, architecture]
 status: current
-last_updated: 2025-10-13
+last_updated: 2025-10-14
 ---
 
 # Templum — Architecture Specification (Current State)
@@ -25,7 +25,7 @@ last_updated: 2025-10-13
 - Manual override manager sits between the router and discovery caches, enforcing zero-knowledge constraints (redacted service descriptors, hashed observability logs) while surfacing `apply`/`clear` controls through `TemplumCore` and the shared command registry. Automated watcher tests drop manifests into `.templum/services` to prove add/remove flows; these run in CI via the backend bundle, with partner-live runs optional post-MVP. **Status:** Present.
 - Skin payload consumption now flows through `TemplumCore` → `UniversalSkinEngine`; adapters render cached backend skins without bespoke fallbacks while partner exports remain pending. The universal layout engine now normalises PCL-style `layout.items` definitions into canonical menu items so CLI/VSCode rendering stays consistent and compatibility mode reporting reflects the incoming schema. **Status:** Present (awaiting live backend payloads).
 - CLI/daemon process separation is scaffolded; IPC contracts need integration tests. **Status:** Broken.
-- Observability/health monitoring blueprints exist; instrumentation must be validated before relying on metrics dashboards. Stage 6 lane 6j (2025-10-13) migrated `TemplumObservabilitySystem`, `CLIPerformanceMonitor`, risk managers, and the hybrid validation stack onto the shared `EventDrivenComponent`/`EventUtils` seams so emitters stay typed and scoped without backend-specific knowledge, but the dashboards still require end-to-end verification. **Status:** Partial (evidence captured under `tmp/consolidation/pattern-4-lane-6j/`).
+- Observability/health monitoring blueprints exist; instrumentation must be validated before relying on metrics dashboards. Stage 6 lane 6j (2025-10-13) migrated `TemplumObservabilitySystem`, `CLIPerformanceMonitor`, risk managers, and the hybrid validation stack onto the shared `EventDrivenComponent`/`EventUtils` seams so emitters stay typed and scoped without backend-specific knowledge, but the dashboards still require end-to-end verification. Stage 6 lane 6l (2025-10-14) removed the interim scoped bus in observability, driving all metrics/risk signals through the inherited component adapter and adding regression coverage to guard the consolidated bus (`tmp/consolidation/pattern-4-stage6/lane-6l/event-driven-migration-tests.log`). **Status:** Partial (evidence captured under `tmp/consolidation/pattern-4-lane-6j/` and `tmp/consolidation/pattern-4-stage6/lane-6l/`).
 - Stage 6 lane 6k (2025-10-13) extended the core engine, enhanced state manager, and protocol session harnesses with typed event assertions via a shared recorder utility. This locks in the `EventDrivenComponent` contract for initialization, command routing, IPC broadcasts, and protocol telemetry without leaking backend specifics, keeping the zero-knowledge seams defensible ahead of the remaining Stage 6 migrations. **Status:** Present (evidence logged at `dev/architecture/evidence/pattern-4-lane-6k-core-state-tests.log`).
 
 ## 2. Architecture Overview
@@ -116,5 +116,5 @@ Mock orchestration now validates request/response contracts via `Templum/src/tes
 
 ## Appendix
 
-- **Reference Docs:** `docs/target/ValidationSystem-V3C-Documentation.md`, `docs/archive/observability-infrastructure.md`, `docs/archive/TEST-HEALTH-MONITORING.md` for historical context.
+- **Reference Docs:** `docs/current/testing-guide.md`, `docs/target/ValidationSystem-V3C-Documentation.md`, `docs/archive/observability-infrastructure.md`, `docs/archive/TEST-HEALTH-MONITORING.md` for historical context.
 - **Task Logs:** See `dev/tasks/` for active requirement breakdowns.
