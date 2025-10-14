@@ -24,6 +24,7 @@ describe('Guardrail: CLIMCPServer error handler integration', () => {
     } as any);
 
     expect(response.error).toBeDefined();
+    expect(handleSpy).toHaveBeenCalledTimes(1);
     expect(handleSpy).toHaveBeenCalledWith(
       expect.any(Error),
       expect.stringContaining('mcp-channel'),
