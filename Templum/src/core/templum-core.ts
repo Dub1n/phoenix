@@ -168,7 +168,7 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
 
   async initialize(): Promise<void> {
     if (this.initialized) {
-      console.warn('Templum Core Engine already initialized');
+      this.logWarn('Templum Core Engine already initialized');
       return;
     }
 
@@ -178,8 +178,7 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
       this.dependencies = this.adapterRegistry.getDependencies();
       this.sessionManager = this.dependencies.sessionManager;
       this.sessionManager.attachOrchestrator(this);
-      
-      console.log('Templum Core Engine: Dependency injection complete');
+      this.logInfo('Templum Core Engine dependency injection complete');
       
       // Initialize all interface adapters (in real implementation)
       await this.initializeInterfaceAdapters();
@@ -203,7 +202,7 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
       // Initialize Universal Interface Manager - TASK-NEW-048
       this.universalInterfaceManager = new UniversalInterfaceManager(this.dependencies);
       this.bootstrapUniversalInterfaceManager();
-      console.log('Universal Interface Manager initialized successfully');
+      this.logInfo('Universal Interface Manager initialized successfully');
       
       // Initialize backend service router with enhanced error handling (Haruspex pattern)
       try {
@@ -293,7 +292,7 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
         });
       }
       
-      console.log('Templum Core Engine: Initialization complete with dependency injection');
+      this.logInfo('Templum Core Engine initialization complete with dependency injection');
     } catch (error) {
       const errorMessage = isTemplumError(error) ? error.message : (error instanceof Error ? error.message : 'Unknown error');
       
@@ -305,7 +304,9 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
       };
       
       this.emit('initializationError', { error: errorMessage, timestamp: Date.now() });
-      console.error('Templum Core: Initialization failed:', errorMessage);
+      this.logError('Templum Core initialization failed', error instanceof Error ? error : undefined, {
+        errorMessage
+      });
       
       throw createTemplumError(`Failed to initialize Templum Core Engine: ${errorMessage}`, 'INITIALIZATION_ERROR', 'configuration');
     }
@@ -372,7 +373,10 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
       totalInterfaces: this.activeInterfaces.size
     });
 
-    console.log(`Templum Core: Registered ${interfaceType} interface`);
+    this.logInfo('Templum Core interface registered', {
+      interfaceType,
+      activeInterfaces: this.activeInterfaces.size
+    });
   }
 
   async loadSkin(skinDefinition: UniversalSkinDefinition): Promise<void> {
@@ -402,7 +406,10 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
       timestamp: Date.now()
     });
 
-    console.log(`Templum Core: Loaded skin ${skinDefinition.metadata.name}`);
+    this.logInfo('Templum Core skin loaded', {
+      skinId: skinDefinition.metadata.id,
+      skinName: skinDefinition.metadata.name
+    });
   }
 
   async executeCommand(
@@ -595,7 +602,11 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
         timestamp: Date.now()
       });
 
-      console.error(`Templum Core: Command execution failed: ${errorMessage}`);
+      this.logError('Templum Core command execution failed', error instanceof Error ? error : undefined, {
+        command,
+        sourceInterface,
+        errorMessage
+      });
       return errorResult;
     }
   }
@@ -884,7 +895,7 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
     }
 
     try {
-      console.log('🔄 Refreshing backend services via backend service router...');
+      this.logInfo('Refreshing backend services via backend service router');
       
       if (!this.dependencies.backendServiceRouter) {
         throw createTemplumError(
@@ -897,7 +908,7 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
       // Use existing backend service router to rediscover and reconnect to services
       await this.dependencies.backendServiceRouter.discoverAndConnect();
       
-      console.log('✅ Backend service refresh completed successfully');
+      this.logInfo('Backend service refresh completed successfully');
       
       // Emit event to notify interested components
       this.emit('backend-services-refreshed', {
@@ -907,7 +918,9 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
       
     } catch (error) {
       const errorMessage = isTemplumError(error) ? error.message : (error instanceof Error ? error.message : 'Unknown error');
-      console.error('❌ Backend service refresh failed:', errorMessage);
+      this.logError('Backend service refresh failed', error instanceof Error ? error : undefined, {
+        errorMessage
+      });
       
       // Emit error event
       this.emit('backend-refresh-error', {
@@ -937,7 +950,7 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
     }
 
     try {
-      console.log('🔧 Registering Templum service for CLI discovery...');
+      this.logInfo('Registering Templum service for CLI discovery');
       
       // Create service registry entry for CLI discovery
       const serviceRegistryPath = process.env.HOME || process.env.USERPROFILE;
@@ -981,17 +994,21 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
 
       require('fs').writeFileSync(serviceFilePath, manifestPayload, 'utf8');
       
-      console.log(`✅ Service registered for CLI discovery at: ${serviceFilePath}`);
+      this.logInfo('Service registered for CLI discovery', { serviceFilePath });
       
       // Setup cleanup on process exit
       const cleanupServiceEntry = () => {
         try {
           if (require('fs').existsSync(serviceFilePath)) {
             require('fs').unlinkSync(serviceFilePath);
-            console.log('🧹 Service registry entry cleaned up');
+            this.logInfo('Service registry entry cleaned up', { serviceFilePath });
           }
         } catch (error) {
-          console.warn('⚠️  Failed to clean up service registry entry:', error);
+          const cleanupErrorMessage = error instanceof Error ? error.message : String(error);
+          this.logWarn('Failed to clean up service registry entry', {
+            serviceFilePath,
+            error: cleanupErrorMessage
+          });
         }
       };
       
@@ -1001,7 +1018,9 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
       
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error('❌ Failed to register for CLI discovery:', errorMessage);
+      this.logError('Failed to register for CLI discovery', error instanceof Error ? error : undefined, {
+        errorMessage
+      });
       
       throw createTemplumError(
         `Service registration for CLI discovery failed: ${errorMessage}`,
@@ -1052,14 +1071,21 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
           orchestrated: true
         });
 
-        console.log(`✅ Interface switched via Universal Interface Manager: [${currentInterfaces.join(', ')}] → ${targetInterface} (${result.switchTime}ms)`);
+        this.logInfo('Interface switched via Universal Interface Manager', {
+          fromInterfaces: currentInterfaces,
+          targetInterface,
+          switchTime: result.switchTime
+        });
       }
 
       return result;
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error(`❌ Interface switch failed: ${errorMessage}`);
+      this.logError('Interface switch failed', error instanceof Error ? error : undefined, {
+        targetInterface,
+        errorMessage
+      });
       
       return { 
         success: false, 
@@ -1091,7 +1117,11 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
       try {
         preservedState = await (this.dependencies.stateManager as any).getState?.();
       } catch (error) {
-        console.warn('Failed to preserve state during interface switch:', error);
+        const preserveError = error instanceof Error ? error.message : String(error);
+        this.logWarn('Failed to preserve state during interface switch', {
+          targetInterface,
+          error: preserveError
+        });
       }
     }
 
@@ -1105,9 +1135,15 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
     if (preservedState && this.dependencies?.stateManager) {
       try {
         await (this.dependencies.stateManager as any).setState?.(preservedState);
-        console.log(`State preserved and restored during switch to ${targetInterface}`);
+        this.logInfo('State preserved and restored during interface switch', {
+          targetInterface
+        });
       } catch (error) {
-        console.warn('Failed to restore state after interface switch:', error);
+        const restoreError = error instanceof Error ? error.message : String(error);
+        this.logWarn('Failed to restore state after interface switch', {
+          targetInterface,
+          error: restoreError
+        });
       }
     }
 
@@ -1120,7 +1156,10 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
       orchestrated: false
     });
 
-    console.log(`✅ Interface switched (basic): [${currentInterfaces.join(', ')}] → ${targetInterface}`);
+    this.logInfo('Interface switched in basic mode', {
+      fromInterfaces: currentInterfaces,
+      targetInterface
+    });
 
     return { 
       success: true, 
@@ -1142,7 +1181,10 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
           await adapter.dispose();
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-          console.error(`Failed to dispose ${interfaceType} adapter: ${errorMessage}`);
+          this.logError('Failed to dispose interface adapter during shutdown', error instanceof Error ? error : undefined, {
+            interfaceType,
+            errorMessage
+          });
         }
       }
 
@@ -1151,7 +1193,9 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
           await (this.sessionManager as any).stopSession?.();
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-          console.warn('Failed to stop session manager during shutdown:', errorMessage);
+          this.logWarn('Failed to stop session manager during shutdown', {
+            errorMessage
+          });
         }
       }
 
@@ -1180,10 +1224,12 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
       this.removeAllListeners();
       this.cleanupEvents();
 
-      console.log('Templum Core Engine: Shutdown complete with dependency injection cleanup');
+      this.logInfo('Templum Core Engine shutdown complete with dependency injection cleanup');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error(`Error during shutdown: ${errorMessage}`);
+      this.logError('Templum Core shutdown failed', error instanceof Error ? error : undefined, {
+        errorMessage
+      });
       throw error;
     }
   }
@@ -1197,7 +1243,10 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
           await adapter.applySkin(skinDef);
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-          console.error(`Failed to apply skin to ${interfaceType}: ${errorMessage}`);
+          this.logError('Failed to apply skin to interface during initialization', error instanceof Error ? error : undefined, {
+            interfaceType,
+            errorMessage
+          });
         }
       }
     }
@@ -1224,10 +1273,10 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
         }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        console.warn(
-          `Failed to register ${interfaceType} adapter with session manager during bootstrap:`,
+        this.logWarn('Failed to register interface adapter with session manager during bootstrap', {
+          interfaceType,
           errorMessage
-        );
+        });
       }
 
       try {
@@ -1236,7 +1285,10 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
         }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        console.warn(`Failed to initialize ${interfaceType} adapter during bootstrap:`, errorMessage);
+        this.logWarn('Failed to initialize interface adapter during bootstrap', {
+          interfaceType,
+          errorMessage
+        });
       }
     }
 
@@ -1261,16 +1313,18 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
         }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        console.warn(
-          `Failed to register fallback adapter for ${interfaceType} during bootstrap:`,
+        this.logWarn('Failed to register fallback adapter during bootstrap', {
+          interfaceType,
           errorMessage
-        );
+        });
       }
 
-      console.log(`Templum Core: Registered fallback interface adapter for ${interfaceType}`);
+      this.logInfo('Templum Core registered fallback interface adapter', {
+        interfaceType
+      });
     }
 
-    console.log('Interface adapters initialization complete');
+    this.logInfo('Interface adapters initialization complete');
   }
 
   private bootstrapUniversalInterfaceManager(): void {
@@ -1283,7 +1337,10 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
         this.universalInterfaceManager.registerInterfaceAdapter(interfaceType, adapter);
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        console.warn(`Failed to register ${interfaceType} adapter with Universal Interface Manager:`, errorMessage);
+        this.logWarn('Failed to register adapter with Universal Interface Manager', {
+          interfaceType,
+          errorMessage
+        });
       }
     }
   }
@@ -1459,23 +1516,39 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
 
   private setupEventListeners(): void {
     this.on('initialized', ({ timestamp }) => {
-      console.log(`Templum Core Engine initialized at ${new Date(timestamp).toISOString()}`);
+      this.logInfo('Templum Core Engine initialized', {
+        timestamp: new Date(timestamp).toISOString()
+      });
     });
 
     this.on('interfaceRegistered', ({ interfaceType, totalInterfaces }) => {
-      console.log(`Interface ${interfaceType} registered. Total interfaces: ${totalInterfaces}`);
+      this.logInfo('Interface registered event received', {
+        interfaceType,
+        totalInterfaces
+      });
     });
 
     this.on('skinLoaded', ({ skinId, skinName }) => {
-      console.log(`Skin loaded: ${skinName} (${skinId})`);
+      this.logInfo('Skin loaded event received', {
+        skinId,
+        skinName
+      });
     });
 
     this.on('commandExecuted', ({ command, sourceInterface }) => {
-      console.log(`Command '${command}' executed from ${sourceInterface} interface`);
+      this.logInfo('Command executed event received', {
+        command,
+        sourceInterface
+      });
     });
 
     this.on('commandError', ({ command, sourceInterface, error }) => {
-      console.error(`Command '${command}' failed from ${sourceInterface}: ${error}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.logError('Command error event received', error instanceof Error ? error : undefined, {
+        command,
+        sourceInterface,
+        errorMessage
+      });
     });
   }
 
@@ -1651,7 +1724,10 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
         // Update resource access time for cached entry
         this.dependencies.resourceManager.updateResourceAccess(`skin-cache-${cacheKey}`);
         
-        console.log(`Templum Core: Loaded backend skin from cache for ${backendId} (hit rate: ${this.getCacheHitRate()}%)`);
+        this.logInfo('Loaded backend skin from cache', {
+          backendId,
+          cacheHitRate: this.getCacheHitRate()
+        });
         return cachedEntry.definition;
       }
 
@@ -1671,7 +1747,9 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
           timestamp: Date.now()
         },
         cleanup: async () => {
-          console.log(`Cleaned up enhanced skin cache resource for ${backendId}`);
+          this.logInfo('Cleaned up enhanced skin cache resource', {
+            backendId
+          });
           this.skinCache.delete(cacheKey);
         }
       });
@@ -1748,7 +1826,12 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
           validationStatus: 'passed'
         });
 
-        console.log(`Templum Core: Loaded and cached backend skin ${rawSkinDefinition.metadata.name} from ${backendId} (${loadTime}ms, ${this.formatBytes(skinSize)})`);
+        this.logInfo('Loaded and cached backend skin', {
+          backendId,
+          skinId: rawSkinDefinition.metadata.id,
+          loadTime,
+          skinSize: this.formatBytes(skinSize)
+        });
         
         // Log cache performance metrics periodically
         if ((this.skinCacheMetrics.hits + this.skinCacheMetrics.misses) % 10 === 0) {
@@ -1767,7 +1850,11 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
       this.skinCacheMetrics.totalLoadTime += loadTime;
       
       const errorMessage = isTemplumError(error) ? error.message : (error instanceof Error ? error.message : 'Unknown error');
-      console.error(`Failed to load skin from backend '${backendId}' (${loadTime}ms):`, errorMessage);
+      this.logError('Failed to load backend skin', error instanceof Error ? error : undefined, {
+        backendId,
+        loadTime,
+        errorMessage
+      });
       
       // Emit error event with performance data
       this.emit('skinLoadError', {
@@ -2019,7 +2106,9 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
     }
     
     if (entriesToEvict.length > 0) {
-      console.log(`Templum Core: Evicted ${entriesToEvict.length} expired skin cache entries`);
+      this.logInfo('Evicted expired skin cache entries', {
+        evictedEntries: entriesToEvict.length
+      });
     }
   }
 
@@ -2051,7 +2140,10 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
     }
     
     if (evicted.length > 0) {
-      console.log(`Templum Core: LRU evicted ${evicted.length} skin cache entries (freed ${this.formatBytes(freedSpace)})`);
+      this.logInfo('LRU evicted skin cache entries', {
+        evictedEntries: evicted.length,
+        freedSpace: this.formatBytes(freedSpace)
+      });
     }
   }
 
@@ -2076,12 +2168,16 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
   private logCachePerformanceMetrics(): void {
     const totalSize = Array.from(this.skinCache.values()).reduce((sum, entry) => sum + entry.size, 0);
     
-    console.log(`Templum Core Cache Metrics - Entries: ${this.skinCache.size}/${this.SKIN_CACHE_MAX_SIZE}, ` +
-                `Size: ${this.formatBytes(totalSize)}/${this.formatBytes(this.SKIN_CACHE_MAX_MEMORY)}, ` +
-                `Hit Rate: ${this.getCacheHitRate()}%, ` +
-                `Avg Load Time: ${this.getAverageLoadTime()}ms, ` +
-                `Evictions: ${this.skinCacheMetrics.evictions}, ` +
-                `Validation Failures: ${this.skinCacheMetrics.validationFailures}`);
+    this.logInfo('Templum Core cache metrics', {
+      entries: this.skinCache.size,
+      maxEntries: this.SKIN_CACHE_MAX_SIZE,
+      totalSize: this.formatBytes(totalSize),
+      maxSize: this.formatBytes(this.SKIN_CACHE_MAX_MEMORY),
+      hitRate: this.getCacheHitRate(),
+      averageLoadTimeMs: this.getAverageLoadTime(),
+      evictions: this.skinCacheMetrics.evictions,
+      validationFailures: this.skinCacheMetrics.validationFailures
+    });
   }
 
   /**
@@ -2258,7 +2354,7 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
       return;
     }
 
-    console.log('TemplumCore: Starting IPC command monitoring for CLI communication');
+    this.logInfo('Starting IPC command monitoring for CLI communication');
 
     this.stopIPCCommandMonitoring();
 
@@ -2306,7 +2402,11 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
 
             void this.processIPCCommandRequest(normalizedRequest, requestPath, parsedRequest.meta);
           } catch (error) {
-            console.warn(`TemplumCore: Failed to process IPC request ${requestFile}:`, error);
+            const ipcError = error instanceof Error ? error.message : String(error);
+            this.logWarn('Failed to process IPC request file', {
+              requestFile,
+              error: ipcError
+            });
             // Clean up malformed request file
             try {
               fs.unlinkSync(requestPath);
@@ -2400,7 +2500,11 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
           const args = Array.isArray(payload.args) ? payload.args : [];
           const context = (payload.context && typeof payload.context === 'object') ? payload.context : {};
 
-          console.log(`TemplumCore: Processing IPC command '${command}' from CLI (PID: ${request.clientPid})`);
+          this.logInfo('Processing IPC command request from CLI', {
+            command,
+            clientPid: request.clientPid,
+            requestId: request.requestId
+          });
 
           result = await this.executeCommand(
             command,
@@ -2412,7 +2516,10 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
         }
 
         case 'getSystemStatus': {
-          console.log(`TemplumCore: Processing IPC getSystemStatus from CLI (PID: ${request.clientPid})`);
+          this.logInfo('Processing IPC getSystemStatus request from CLI', {
+            clientPid: request.clientPid,
+            requestId: request.requestId
+          });
           result = this.getSystemStatus();
           break;
         }
@@ -2423,7 +2530,11 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
             throw new Error('Invalid loadBackendSkin payload: backendId missing');
           }
 
-          console.log(`TemplumCore: Processing IPC loadBackendSkin for '${backendId}' from CLI (PID: ${request.clientPid})`);
+          this.logInfo('Processing IPC loadBackendSkin request from CLI', {
+            backendId,
+            clientPid: request.clientPid,
+            requestId: request.requestId
+          });
           
           // Use the real loadBackendSkin method through backend service router
           if (this.dependencies?.backendServiceRouter) {
@@ -2464,10 +2575,16 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
         }
       }
 
-      console.log(`TemplumCore: IPC request '${request.type}' processed successfully`);
+      this.logInfo('IPC request processed successfully', {
+        requestType: request.type,
+        requestId: request.requestId
+      });
       
     } catch (error) {
-      console.error(`TemplumCore: IPC command execution failed:`, error);
+      this.logError('IPC command execution failed', error instanceof Error ? error : undefined, {
+        requestType: request.type,
+        requestId: request.requestId
+      });
       
       // Write error response
       const errorResponse = {
@@ -2496,14 +2613,22 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
           }
         }
       } catch (writeError) {
-        console.error('TemplumCore: Failed to write error response:', writeError);
+        this.logError('Failed to write IPC error response', writeError instanceof Error ? writeError : undefined, {
+          requestType: request.type,
+          requestId: request.requestId
+        });
       }
     } finally {
       // Clean up request file
       try {
         fs.unlinkSync(requestPath);
       } catch (cleanupError) {
-        console.warn('TemplumCore: Failed to cleanup request file:', cleanupError);
+        const cleanupErrorMessage = cleanupError instanceof Error ? cleanupError.message : String(cleanupError);
+        this.logWarn('Failed to cleanup IPC request file', {
+          requestType: request.type,
+          requestId: request.requestId,
+          error: cleanupErrorMessage
+        });
       }
     }
   }
