@@ -65,8 +65,8 @@ last_updated: 2025-10-14
 
 - [x] [CLI metadata parser & UX polish](../../dev/architecture/cli-ux-work.md)
   Progress 100% — All consolidation CLI commands now route through a shared descriptor-driven parser (`dev/architecture/consolidation-scripts/cli-command-registry.mjs` + `dev/architecture/consolidation-scripts/cli-shared-parser.mjs`), repeated `--plan-files` flags are normalised automatically, and per-command `--help` output is generated from the metadata (see updated `dev/architecture/consolidation-cli-design.md`). Targeted regression coverage lives in `tests/scripts/cli-shared-parser.test.ts` (`npm run test -- --runTestsByPath tests/scripts/cli-shared-parser.test.ts`).
-- [!] [VSCode extension initialisation stable](../../dev/tasks/vscode-initialisation-stability.md)
-  Progress 30% — Activation in no-workspace scenarios still aborts; WebView readiness logs warnings and tests hang without forced teardown.
+- [x] [VSCode extension initialisation stable](../../dev/tasks/vscode-initialisation-stability.md)
+  Progress 100% — Activation now funnels limited and full modes through a typed WebView provider registry that subscribes to `TemplumCore` lifecycle signals and logs failures through the observability adapter; the VSCode adapter defers postMessage traffic until a `templum:webview_ready` handshake, and the universal provider aggregates backend telemetry via `resolveBackendAvailability`. Targeted suites (`npm test -- --testPathPatterns="vscode-extension-initialization"`, `npm test -- --testPathPatterns="vscode-templum-webview"`) pass; full `npm test` remains red on pre-existing guardrail checks (`interface-session-error-handler.guardrail`, `phase6-validation-cli`, `skin-payload-consumption`). Architecture and pattern docs now reflect the registry/handshake flow.
 
 ## Developer Workflow Alignment
 

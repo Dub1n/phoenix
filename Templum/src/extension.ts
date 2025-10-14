@@ -10,27 +10,125 @@ import * as vscode from 'vscode';
 import { TemplumCore } from './core/templum-core';
 import { TemplumConfigManager } from './core/templum-config-manager';
 import { TemplumUniversalWebViewProvider } from './interfaces/vscode-templum-webview';
-import { 
-  createTemplumError, 
+import type { BackendServiceInfo } from './interfaces/vscode/backend-service-model';
+import {
+  createTemplumError,
   isTemplumError,
   ErrorSignalPayload,
   MetricsSignalPayload,
-  TemplumConfiguration,
-
-
-
+  TemplumConfiguration
 } from './types/templum-types';
 import { BackendCapabilityProfile } from './backend/backend-service-router';
 import { withTimeout, createInterval, type ManagedInterval } from './utils/async-utils';
+import {
+  WebviewProviderRegistry,
+  type TemplumWebviewId,
+  type RefreshableWebviewProvider
+} from './interfaces/vscode/webview-registry';
+import { createPlaceholderWebViewProvider } from './interfaces/vscode/webview-placeholders';
+import { ObservabilityAdapter, createObservabilityAdapter } from './observability/observability-adapter';
 
 // Global extension state
 let templumCore: TemplumCore | undefined;
-let universalWebViewProvider: TemplumUniversalWebViewProvider | undefined;
-let serviceStatusWebViewProvider: TemplumUniversalWebViewProvider | undefined;
-let sessionManagerWebViewProvider: TemplumUniversalWebViewProvider | undefined;
+let webviewRegistry: WebviewProviderRegistry | undefined;
 let serviceTreeProvider: BackendServiceTreeProvider | undefined;
 let activeTreeViews: Map<string, vscode.TreeView<any>> = new Map();
 let registeredCommands: Map<string, vscode.Disposable> = new Map();
+let observabilityAdapter: ObservabilityAdapter | undefined;
+
+const CORE_WEBVIEW_IDS: TemplumWebviewId[] = [
+  'templum.universalInterface',
+  'templum.serviceStatus',
+  'templum.sessionManager'
+];
+
+async function refreshExtensionWebviews(ids?: TemplumWebviewId[]): Promise<void> {
+  await webviewRegistry?.refresh(ids);
+}
+
+function ensureWebviewRegistry(context: vscode.ExtensionContext): WebviewProviderRegistry {
+  if (!webviewRegistry) {
+    webviewRegistry = new WebviewProviderRegistry(context);
+    context.subscriptions.push(webviewRegistry);
+  }
+
+  return webviewRegistry;
+}
+
+async function ensureObservability(): Promise<void> {
+  if (observabilityAdapter) {
+    return;
+  }
+
+  observabilityAdapter = createObservabilityAdapter();
+  try {
+    await observabilityAdapter.initialize();
+  } catch (error) {
+    console.warn('Observability adapter initialization failed; continuing with console logging', error);
+  }
+}
+
+function attachCoreEventListeners(context: vscode.ExtensionContext, core: TemplumCore): void {
+  const refreshAll = () => {
+    void refreshExtensionWebviews();
+  };
+
+  const backendRefreshedHandler = () => {
+    refreshAll();
+  };
+
+  core.on('backend-services-refreshed', backendRefreshedHandler);
+  context.subscriptions.push({
+    dispose: () => {
+      core.off('backend-services-refreshed', backendRefreshedHandler);
+    }
+  });
+
+  const backendRefreshErrorHandler = (payload: { timestamp: number; error: string }) => {
+    const error = new Error(payload.error);
+    observabilityAdapter?.logError(
+      'Backend refresh error emitted by TemplumCore',
+      error,
+      { timestamp: payload.timestamp },
+      'VSCodeExtension'
+    );
+    refreshAll();
+  };
+
+  core.on('backend-refresh-error', backendRefreshErrorHandler);
+  context.subscriptions.push({
+    dispose: () => {
+      core.off('backend-refresh-error', backendRefreshErrorHandler);
+    }
+  });
+
+  const commandErrorHandler = (payload: {
+    command: string;
+    sourceInterface: string;
+    error: string;
+    timestamp: number;
+  }) => {
+    const error = new Error(payload.error);
+    observabilityAdapter?.logError(
+      'Command error detected during VSCode activation lifecycle',
+      error,
+      {
+        command: payload.command,
+        sourceInterface: payload.sourceInterface,
+        timestamp: payload.timestamp
+      },
+      'VSCodeExtension'
+    );
+    refreshAll();
+  };
+
+  core.on('commandError', commandErrorHandler);
+  context.subscriptions.push({
+    dispose: () => {
+      core.off('commandError', commandErrorHandler);
+    }
+  });
+}
 
 /**
  * Enhanced Tree Data Provider for Backend Service Discovery
@@ -337,19 +435,6 @@ class ServiceTreeItem extends vscode.TreeItem {
 /**
  * Backend Service Info Interface
  */
-interface BackendServiceInfo {
-  id: string;
-  name: string;
-  status: 'connected' | 'disconnected' | 'error' | 'degraded';
-  description?: string;
-  capabilities?: string[];
-  lastActivity?: number;
-  health?: 'healthy' | 'degraded' | 'unhealthy' | 'error' | 'unknown';
-  responseTime?: number;
-  version?: string;
-  errorMessage?: string;
-}
-
 /**
  * Maps comprehensive TemplumConfig to simplified TemplumConfiguration for TemplumCore
  * Implementation Pattern: Config schema bridging with environment detection
@@ -370,11 +455,19 @@ function mapConfigToTemplumConfiguration(config: any): TemplumConfiguration {
 export async function activate(context: vscode.ExtensionContext) {
   try {
     console.log('🔮 Starting Templum Universal Interface Extension activation...');
+
+    await ensureObservability();
+    ensureWebviewRegistry(context);
     
     // Check for workspace folder
     const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
     if (!workspaceRoot) {
       console.warn('No workspace folder detected');
+      observabilityAdapter?.logWarn(
+        'Templum VSCode extension activated without workspace',
+        { mode: 'limited' },
+        'VSCodeExtension'
+      );
       
       // Show friendly message with options
       const choice = await vscode.window.showWarningMessage(
@@ -399,7 +492,8 @@ export async function activate(context: vscode.ExtensionContext) {
       vscode.window.showInformationMessage(
         'Templum activated in limited mode. Open a workspace folder for full functionality.'
       );
-      
+
+      await registerWebViewProviders(context, false);
       return; // Exit early, don't try to initialize core engine
     }
 
@@ -489,8 +583,14 @@ export async function activate(context: vscode.ExtensionContext) {
         );
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error(`Templum Core engine error: ${errorMessage}`);
+      const templumError = error instanceof Error ? error : new Error(String(error));
+      observabilityAdapter?.logError(
+        'Templum Core engine initialization failed',
+        templumError,
+        { stage: 'initialize' },
+        'VSCodeExtension'
+      );
+      console.error(`Templum Core engine error: ${templumError.message}`);
       engineInitialized = false;
     }
 
@@ -507,6 +607,13 @@ export async function activate(context: vscode.ExtensionContext) {
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown activation error';
+    const activationError = error instanceof Error ? error : new Error(errorMessage);
+    observabilityAdapter?.logError(
+      'Templum VSCode activation failed',
+      activationError,
+      { stage: 'activate' },
+      'VSCodeExtension'
+    );
     console.error('❌ Templum activation failed:', error);
     vscode.window.showErrorMessage(`Templum activation failed: ${errorMessage}`);
   }
@@ -519,50 +626,55 @@ async function registerWebViewProviders(context: vscode.ExtensionContext, engine
   try {
     console.log('📋 Registering Templum WebView providers...');
 
+    const registry = ensureWebviewRegistry(context);
+
+    const providerKind: 'real' | 'placeholder' = engineReady && templumCore ? 'real' : 'placeholder';
+    const providers: Array<{ id: TemplumWebviewId; provider: RefreshableWebviewProvider }> = engineReady && templumCore
+      ? [
+          {
+            id: 'templum.universalInterface',
+            provider: new TemplumUniversalWebViewProvider(context, templumCore)
+          },
+          {
+            id: 'templum.serviceStatus',
+            provider: new TemplumUniversalWebViewProvider(context, templumCore)
+          },
+          {
+            id: 'templum.sessionManager',
+            provider: new TemplumUniversalWebViewProvider(context, templumCore)
+          }
+        ]
+      : [
+          {
+            id: 'templum.universalInterface',
+            provider: createPlaceholderWebViewProvider(context, 'universalInterface', engineReady)
+          },
+          {
+            id: 'templum.serviceStatus',
+            provider: createPlaceholderWebViewProvider(context, 'serviceStatus', engineReady)
+          },
+          {
+            id: 'templum.sessionManager',
+            provider: createPlaceholderWebViewProvider(context, 'sessionManager', engineReady)
+          }
+        ];
+
+    providers.forEach(({ id, provider }) => {
+      registry.register(id, provider, providerKind);
+    });
+
     if (engineReady && templumCore) {
-      // Register real WebView providers
-      universalWebViewProvider = new TemplumUniversalWebViewProvider(context, templumCore);
-      serviceStatusWebViewProvider = new TemplumUniversalWebViewProvider(context, templumCore);
-      sessionManagerWebViewProvider = new TemplumUniversalWebViewProvider(context, templumCore);
-      
-      console.log('✅ Real WebView providers created');
-    } else {
-      // Create placeholder providers that show setup prompts
-      universalWebViewProvider = createPlaceholderWebViewProvider(context, 'universalInterface', engineReady);
-      serviceStatusWebViewProvider = createPlaceholderWebViewProvider(context, 'serviceStatus', engineReady);
-      sessionManagerWebViewProvider = createPlaceholderWebViewProvider(context, 'sessionManager', engineReady);
-      
-      console.log('⚠️ Placeholder WebView providers created (engine not ready)');
-    }
-
-    // Register webview providers with VSCode
-    if (universalWebViewProvider) {
-      const universalWebViewDisposable = vscode.window.registerWebviewViewProvider(
-        'templum.universalInterface',
-        universalWebViewProvider
-      );
-      context.subscriptions.push(universalWebViewDisposable);
-    }
-
-    if (serviceStatusWebViewProvider) {
-      const serviceStatusWebViewDisposable = vscode.window.registerWebviewViewProvider(
-        'templum.serviceStatus', 
-        serviceStatusWebViewProvider
-      );
-      context.subscriptions.push(serviceStatusWebViewDisposable);
-    }
-
-    if (sessionManagerWebViewProvider) {
-      const sessionManagerWebViewDisposable = vscode.window.registerWebviewViewProvider(
-        'templum.sessionManager',
-        sessionManagerWebViewProvider
-      );
-      context.subscriptions.push(sessionManagerWebViewDisposable);
+      attachCoreEventListeners(context, templumCore);
     }
 
     console.log('✅ All Templum WebView providers registered successfully');
-
   } catch (error) {
+    observabilityAdapter?.logError(
+      'WebView provider registration failed',
+      error instanceof Error ? error : new Error(String(error)),
+      { engineReady },
+      'VSCodeExtension'
+    );
     console.error('❌ WebView provider registration failed:', error);
     throw error;
   }
@@ -593,15 +705,7 @@ async function registerCommands(context: vscode.ExtensionContext, _engineReady: 
           const status = await templumCore.getSystemStatus();
           
           // Refresh WebView providers
-          if (universalWebViewProvider) {
-            await universalWebViewProvider.refresh();
-          }
-          if (serviceStatusWebViewProvider) {
-            await serviceStatusWebViewProvider.refresh();
-          }
-          if (sessionManagerWebViewProvider) {
-            await sessionManagerWebViewProvider.refresh();
-          }
+          await refreshExtensionWebviews();
 
           vscode.window.showInformationMessage(
             `🔮 Templum refreshed: ${status.coreEngine.backendConnections.healthyConnections}/${status.coreEngine.backendConnections.totalConnections} backends active, ${status.coreEngine.activeInterfaces.length} interfaces`
@@ -785,15 +889,7 @@ async function registerCommands(context: vscode.ExtensionContext, _engineReady: 
                   progress.report({ increment: 80, message: 'Synchronizing interface state...' });
                   
                   // Refresh all webview providers to reflect new interface state
-                  if (universalWebViewProvider) {
-                    await universalWebViewProvider.refresh();
-                  }
-                  if (serviceStatusWebViewProvider) {
-                    await serviceStatusWebViewProvider.refresh();
-                  }
-                  if (sessionManagerWebViewProvider) {
-                    await sessionManagerWebViewProvider.refresh();
-                  }
+          await refreshExtensionWebviews();
                   
                   // Refresh service tree to show interface-specific views
                   if (serviceTreeProvider) {
@@ -1134,9 +1230,7 @@ async function registerCommands(context: vscode.ExtensionContext, _engineReady: 
                 if (serviceTreeProvider) {
                   serviceTreeProvider.refresh();
                 }
-                if (universalWebViewProvider) {
-                  await universalWebViewProvider.refresh();
-                }
+                await refreshExtensionWebviews(['templum.universalInterface']);
 
                 const healthInfo = serviceStatus.health ? ` (${serviceStatus.health})` : '';
                 vscode.window.showInformationMessage(
@@ -1377,9 +1471,7 @@ async function registerCommands(context: vscode.ExtensionContext, _engineReady: 
                 if (serviceTreeProvider) {
                   serviceTreeProvider.refresh();
                 }
-                if (universalWebViewProvider) {
-                  await universalWebViewProvider.refresh();
-                }
+                await refreshExtensionWebviews(['templum.universalInterface']);
 
                 vscode.window.showInformationMessage(
                   `✅ Disconnected from ${serviceName} (${disconnectionDuration}ms)`
@@ -1575,161 +1667,6 @@ async function registerServiceTreeProvider(context: vscode.ExtensionContext, eng
   }
 }
 
-/**
- * Create placeholder WebView provider for graceful degradation
- */
-function createPlaceholderWebViewProvider(
-  context: vscode.ExtensionContext, 
-  type: 'universalInterface' | 'serviceStatus' | 'sessionManager',
-  engineReady: boolean
-): any {
-  const titles = {
-    universalInterface: 'Universal Interface',
-    serviceStatus: 'Service Status',
-    sessionManager: 'Session Manager'
-  };
-  
-  const descriptions = {
-    universalInterface: 'Unified interface to all backend services',
-    serviceStatus: 'Real-time backend service health monitoring',
-    sessionManager: 'Manage sessions across interface modes'
-  };
-
-  return {
-    resolveWebviewView: (webviewView: vscode.WebviewView) => {
-      webviewView.webview.options = {
-        enableScripts: true,
-        localResourceRoots: [context.extensionUri]
-      };
-      
-      webviewView.webview.html = generatePlaceholderHtml(type, titles[type], descriptions[type], engineReady);
-      
-      webviewView.webview.onDidReceiveMessage((message) => {
-        switch (message.type) {
-          case 'reload':
-            vscode.commands.executeCommand('workbench.action.reloadWindow');
-            break;
-          case 'openFolder':
-            vscode.commands.executeCommand('vscode.openFolder');
-            break;
-        }
-      });
-    },
-    
-    refresh: async () => {
-      // Placeholder providers don't need refresh until engine is ready
-    }
-  };
-}
-
-/**
- * Generate HTML for placeholder WebViews
- */
-function generatePlaceholderHtml(type: string, title: string, description: string, engineReady: boolean): string {
-  if (!engineReady) {
-    return `<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        body {
-            font-family: var(--vscode-font-family);
-            background: var(--vscode-editor-background);
-            color: var(--vscode-editor-foreground);
-            margin: 0;
-            padding: 20px;
-            text-align: center;
-        }
-        .placeholder {
-            max-width: 300px;
-            margin: 0 auto;
-        }
-        .icon {
-            font-size: 3em;
-            margin-bottom: 20px;
-            opacity: 0.6;
-        }
-        .title {
-            font-size: 1.2em;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-        .description {
-            color: var(--vscode-descriptionForeground);
-            margin-bottom: 20px;
-            line-height: 1.4;
-        }
-        .button {
-            background: var(--vscode-button-background);
-            color: var(--vscode-button-foreground);
-            border: none;
-            padding: 10px 20px;
-            border-radius: 4px;
-            cursor: pointer;
-            margin: 5px;
-            font-size: 0.9em;
-        }
-        .button:hover {
-            background: var(--vscode-button-hoverBackground);
-        }
-        .button.secondary {
-            background: var(--vscode-button-secondaryBackground);
-            color: var(--vscode-button-secondaryForeground);
-        }
-        .button.secondary:hover {
-            background: var(--vscode-button-secondaryHoverBackground);
-        }
-    </style>
-</head>
-<body>
-    <div class="placeholder">
-        <div class="icon">🔮</div>
-        <div class="title">${title}</div>
-        <div class="description">${description}</div>
-        <div class="description">Templum needs a workspace folder to initialize.</div>
-        <button class="button" onclick="openFolder()">Open Folder</button>
-        <button class="button secondary" onclick="reload()">Reload Window</button>
-    </div>
-    
-    <script>
-        const vscode = acquireVsCodeApi();
-        
-        function openFolder() {
-            vscode.postMessage({ type: 'openFolder' });
-        }
-        
-        function reload() {
-            vscode.postMessage({ type: 'reload' });
-        }
-    </script>
-</body>
-</html>`;
-  }
-
-  return `<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <style>
-        body {
-            font-family: var(--vscode-font-family);
-            background: var(--vscode-editor-background);
-            color: var(--vscode-editor-foreground);
-            margin: 0;
-            padding: 20px;
-            text-align: center;
-        }
-        .loading {
-            color: var(--vscode-descriptionForeground);
-        }
-    </style>
-</head>
-<body>
-    <div class="loading">Loading ${title.toLowerCase()}...</div>
-</body>
-</html>`;
-}
 
 export async function deactivate() {
   const deactivationStartTime = Date.now();
@@ -1825,31 +1762,13 @@ export async function deactivate() {
     // Phase 4: Clean up WebView providers with state preservation
     console.log('Phase 4: WebView provider cleanup...');
     
-    if (universalWebViewProvider) {
+    if (webviewRegistry) {
       try {
-        // WebView providers are disposed automatically by VSCode context subscriptions
-        universalWebViewProvider = undefined;
-        console.log('Universal WebView provider cleaned up');
+        webviewRegistry.dispose();
+        webviewRegistry = undefined;
+        console.log('WebView provider registry cleaned up');
       } catch (error) {
-        console.error('Universal WebView provider cleanup failed:', error);
-      }
-    }
-
-    if (serviceStatusWebViewProvider) {
-      try {
-        serviceStatusWebViewProvider = undefined;
-        console.log('Service Status WebView provider cleaned up');
-      } catch (error) {
-        console.error('Service Status WebView provider cleanup failed:', error);
-      }
-    }
-
-    if (sessionManagerWebViewProvider) {
-      try {
-        sessionManagerWebViewProvider = undefined;
-        console.log('Session Manager WebView provider cleaned up');
-      } catch (error) {
-        console.error('Session Manager WebView provider cleanup failed:', error);
+        console.error('WebView provider registry cleanup failed:', error);
       }
     }
 
@@ -1923,6 +1842,16 @@ export async function deactivate() {
 
       console.log(`Final cleanup completed in ${deactivationDuration}ms`);
       console.log('Templum extension deactivation complete - all resources cleaned up');
+      
+      if (observabilityAdapter) {
+        try {
+          await observabilityAdapter.shutdown();
+        } catch (obsError) {
+          console.error('Observability adapter shutdown failed:', obsError);
+        } finally {
+          observabilityAdapter = undefined;
+        }
+      }
       
     } catch (finalError) {
       console.error('Error during final cleanup phase:', finalError);

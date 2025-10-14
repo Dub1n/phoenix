@@ -36,6 +36,12 @@ export class VSCodeInterfaceAdapter implements IInterfaceAdapter {
   private orchestrator!: ITemplumOrchestrator;
   private readonly logger = createLogger('vscode-interface-adapter', { level: LogLevel.ERROR });
   private sessionManager?: TemplumSessionManagerContract;
+  private webviewReady = false;
+  private pendingMessages: Array<{
+    message: unknown;
+    resolve: () => void;
+    reject: (error: unknown) => void;
+  }> = [];
 
   constructor(
     private readonly context: vscode.ExtensionContext
@@ -78,6 +84,8 @@ export class VSCodeInterfaceAdapter implements IInterfaceAdapter {
     const startTime = Date.now();
     
     try {
+      this.rejectPendingMessages(new Error('Webview reinitialized'));
+      this.webviewReady = false;
       this.view = webviewView;
       
       // Configure webview options
@@ -92,7 +100,7 @@ export class VSCodeInterfaceAdapter implements IInterfaceAdapter {
       this.setupMessageHandling();
       
       // Load initial content using orchestrator abstraction
-      this.loadInitialContent();
+      void this.loadInitialContent();
       
       const initTime = Date.now() - startTime;
       console.log(`VSCodeInterfaceAdapter: WebView resolved in ${initTime}ms using abstraction layer`);
@@ -144,7 +152,7 @@ export class VSCodeInterfaceAdapter implements IInterfaceAdapter {
       }
 
       // Update webview content
-      await this.view.webview.postMessage({
+      await this.postToWebview({
         type: 'render_skin',
         payload: {
           renderResult,
@@ -196,6 +204,8 @@ export class VSCodeInterfaceAdapter implements IInterfaceAdapter {
         this.view.webview.html = '';
         this.view = undefined;
       }
+      this.rejectPendingMessages(new Error('VSCode WebView disposed'));
+      this.webviewReady = false;
       
       console.log('VSCodeInterfaceAdapter: Disposed successfully');
     } catch (error) {
@@ -284,7 +294,7 @@ export class VSCodeInterfaceAdapter implements IInterfaceAdapter {
             skinLoaded = true;
             
             // Update webview with backend status information
-            await this.view.webview.postMessage({
+            await this.postToWebview({
               type: 'backend_status',
               payload: {
                 connectedBackend: backendId,
@@ -362,6 +372,10 @@ export class VSCodeInterfaceAdapter implements IInterfaceAdapter {
     this.view.webview.onDidReceiveMessage(async (message) => {
       try {
         switch (message.type) {
+          case 'templum:webview_ready':
+            this.webviewReady = true;
+            await this.flushPendingMessages();
+            break;
           case 'execute_command':
             await this.executeCommand(message.command, message.args);
             break;
@@ -373,7 +387,7 @@ export class VSCodeInterfaceAdapter implements IInterfaceAdapter {
             break;
           case 'get_system_status':
             const status = this.orchestrator.getSystemStatus();
-            await this.view!.webview.postMessage({
+            await this.postToWebview({
               type: 'system_status',
               payload: status
             });
@@ -386,14 +400,14 @@ export class VSCodeInterfaceAdapter implements IInterfaceAdapter {
                 await backendRouter.discoverAndConnect();
                 // Reload content after connection retry
                 await this.loadInitialContent();
-                await this.view!.webview.postMessage({
+                await this.postToWebview({
                   type: 'retry_complete',
                   payload: { success: true, timestamp: Date.now() }
                 });
               }
             } catch (error) {
               this.logger.error('VSCodeInterfaceAdapter: Backend connection retry failed', error instanceof Error ? error : undefined, error);
-              await this.view!.webview.postMessage({
+              await this.postToWebview({
                 type: 'retry_complete',
                 payload: { 
                   success: false, 
@@ -410,12 +424,55 @@ export class VSCodeInterfaceAdapter implements IInterfaceAdapter {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         this.logger.error('VSCodeInterfaceAdapter: Message handling error', undefined, { errorMessage });
         
-        await this.view!.webview.postMessage({
+        await this.postToWebview({
           type: 'error',
           payload: { error: errorMessage, timestamp: Date.now() }
         });
       }
     });
+  }
+
+  private async postToWebview(message: unknown): Promise<void> {
+    if (!this.view) {
+      return;
+    }
+
+    if (this.webviewReady) {
+      await this.view.webview.postMessage(message);
+      return;
+    }
+
+    await new Promise<void>((resolve, reject) => {
+      this.pendingMessages.push({ message, resolve, reject });
+    });
+  }
+
+  private async flushPendingMessages(): Promise<void> {
+    if (!this.view || this.pendingMessages.length === 0) {
+      return;
+    }
+
+    const queue = [...this.pendingMessages];
+    this.pendingMessages.length = 0;
+
+    for (const entry of queue) {
+      try {
+        await this.view.webview.postMessage(entry.message);
+        entry.resolve();
+      } catch (error) {
+        entry.reject(error);
+      }
+    }
+  }
+
+  private rejectPendingMessages(error: unknown): void {
+    if (this.pendingMessages.length === 0) {
+      return;
+    }
+
+    const queue = [...this.pendingMessages];
+    this.pendingMessages.length = 0;
+    queue.forEach((entry) => entry.reject(error));
   }
 
   /**
@@ -601,8 +658,8 @@ export class VSCodeInterfaceAdapter implements IInterfaceAdapter {
   async syncState(stateUpdate: StateUpdate): Promise<void> {
     try {
       // Update webview state if view is available
-      if (this.view?.webview) {
-        await this.view.webview.postMessage({
+      if (this.view) {
+        await this.postToWebview({
           type: 'state-update',
           payload: stateUpdate
         });

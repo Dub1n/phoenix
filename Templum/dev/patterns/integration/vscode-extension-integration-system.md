@@ -1,6 +1,6 @@
 ---
 date-created: 2025-08-29-0000
-last-updated: 2025-09-11-0000
+last-updated: 2025-10-14-0000
 name: vscode-extension-integration-system
 description: Comprehensive VSCode extension integration with service discovery, connection management, interface switching, and resource cleanup
 status: established
@@ -35,6 +35,57 @@ related-patterns:
 **Solution**: Complete VSCode extension integration featuring service tree provider, enhanced interface switching, connection lifecycle management, and comprehensive resource cleanup
 
 #### VSCode Extension Integration System Pattern: Implementation Steps
+
+**Step 0**: Typed Provider Registry & Observability-backed Activation
+
+```typescript
+const registry = new WebviewProviderRegistry(context);
+const providerDescriptors = engineReady && templumCore
+  ? [
+      {
+        id: 'templum.universalInterface' as const,
+        provider: new TemplumUniversalWebViewProvider(context, templumCore),
+        kind: 'real'
+      },
+      {
+        id: 'templum.serviceStatus' as const,
+        provider: new TemplumUniversalWebViewProvider(context, templumCore),
+        kind: 'real'
+      },
+      {
+        id: 'templum.sessionManager' as const,
+        provider: new TemplumUniversalWebViewProvider(context, templumCore),
+        kind: 'real'
+      }
+    ]
+  : [
+      {
+        id: 'templum.universalInterface' as const,
+        provider: createPlaceholderWebViewProvider(context, 'universalInterface', engineReady),
+        kind: 'placeholder'
+      },
+      {
+        id: 'templum.serviceStatus' as const,
+        provider: createPlaceholderWebViewProvider(context, 'serviceStatus', engineReady),
+        kind: 'placeholder'
+      },
+      {
+        id: 'templum.sessionManager' as const,
+        provider: createPlaceholderWebViewProvider(context, 'sessionManager', engineReady),
+        kind: 'placeholder'
+      }
+    ];
+
+providerDescriptors.forEach(({ id, provider, kind }) => registry.register(id, provider, kind));
+
+templumCore.on('backend-services-refreshed', () => void registry.refresh());
+templumCore.on('backend-refresh-error', (payload) =>
+  observabilityAdapter.logError('Backend refresh error', new Error(payload.error), payload, 'VSCodeExtension')
+);
+templumCore.on('commandError', (payload) =>
+  observabilityAdapter.logError('Command error surfaced during VSCode activation', new Error(payload.error), payload, 'VSCodeExtension')
+);
+```
 
 **Step 1**: Enhanced Service Tree Provider Architecture
 
@@ -125,6 +176,31 @@ const switchInterfaceCommand = vscode.commands.registerCommand(
     });
   }
 );
+
+```typescript
+// WebView handshake queue inside VSCode interface adapter
+this.view.webview.onDidReceiveMessage(async (message) => {
+  if (message.type === 'templum:webview_ready') {
+    this.webviewReady = true;
+    await this.flushPendingMessages();
+    return;
+  }
+
+  // existing message handling continues here…
+});
+
+private async postToWebview(message: unknown): Promise<void> {
+  if (!this.view) return;
+  if (this.webviewReady) {
+    await this.view.webview.postMessage(message);
+    return;
+  }
+
+  await new Promise<void>((resolve, reject) => {
+    this.pendingMessages.push({ message, resolve, reject });
+  });
+}
+```
 ```
 
 **Step 3**: Comprehensive Connection Management

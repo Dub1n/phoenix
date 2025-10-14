@@ -18,6 +18,7 @@ import {
   UniversalSkinDefinition
 } from '../types/templum-types';
 import { withTimeout } from '../utils/async-utils';
+import type { BackendServiceInfo, BackendStatusSnapshot } from './vscode/backend-service-model';
 
 /**
  * Universal WebView Provider for Backend Service Integration
@@ -490,40 +491,56 @@ export class TemplumUniversalWebViewProvider implements vscode.WebviewViewProvid
   /**
    * Load backend service data and skin definitions with comprehensive status integration
    */
-  private async loadBackendData(): Promise<{backends: BackendServiceInfo[]}> {
+  private async loadBackendData(): Promise<{ backends: BackendServiceInfo[] }> {
+    const statusStartTime = Date.now();
+
     try {
-      // ✅ APPLY: Real backend status integration from TemplumCore (TASK-NEW-002)
-      // Enhanced status collection with health monitoring and performance metrics
-      // Pattern: backend-service-router-pattern with Haruspex debug manager integration
-      
       const backendRouter = this.templumCore.getBackendRouter();
       const connectionStatus = backendRouter.getConnectionStatus?.();
-      
-      const backends: BackendServiceInfo[] = [];
-      const statusStartTime = Date.now();
-      
-      // Enhanced backend service status collection with comprehensive metrics
-      for (const [backendId, status] of Object.entries(connectionStatus.backends)) {
+
+      if (!connectionStatus || !connectionStatus.backends) {
+        this.emitErrorSignal(
+          'backend_status_missing',
+          new Error('Connection status unavailable'),
+          { reason: 'missing-status' }
+        );
+
+        this.emitMetricsSignal({
+          event_type: 'backend_data_loaded',
+          total_backends: 0,
+          connected_backends: 0,
+          refresh_ms: Date.now() - statusStartTime,
+          metrics: { backend_discovery: false, status_integration: false }
+        });
+        return { backends: [] };
+      }
+
+      const backendEntries = Object.entries(connectionStatus.backends);
+      if (backendEntries.length === 0) {
+        this.emitMetricsSignal({
+          event_type: 'backend_data_loaded',
+          total_backends: 0,
+          connected_backends: 0,
+          refresh_ms: Date.now() - statusStartTime,
+          metrics: { backend_discovery: true, status_integration: true, empty: true }
+        });
+        return { backends: [] };
+      }
+
+      const availability = await this.resolveBackendAvailability(
+        backendRouter,
+        backendEntries.map(([backendId]) => backendId)
+      );
+
+      const failures: Array<{ id: string; error: string }> = [];
+      const backends = backendEntries.map(([backendId, status]) => {
         try {
-          // Type-safe status extraction with comprehensive health information
-          const backendStatus = status as {
-            connected: boolean;
-            health?: 'healthy' | 'degraded' | 'unhealthy' | 'error';
-            capabilities?: string[];
-            lastCheck?: number;
-            responseTime?: number;
-            version?: string;
-            errorMessage?: string;
-          };
-          
-          // Enhanced service availability check with real-time verification
-          const isServiceAvailable = await this.verifyServiceHealth(backendId, backendRouter);
-          
-          // Comprehensive backend info with enhanced status details
-          const backendInfo: BackendServiceInfo = {
+          const backendStatus = status as BackendStatusSnapshot;
+
+          return {
             id: backendId,
             name: this.getBackendDisplayName(backendId),
-            status: this.determineBackendStatus(backendStatus, isServiceAvailable),
+            status: this.determineBackendStatus(backendStatus, availability[backendId] ?? false),
             description: this.getBackendDescription(backendId),
             capabilities: backendStatus.capabilities || [],
             lastActivity: backendStatus.lastCheck || Date.now(),
@@ -531,26 +548,11 @@ export class TemplumUniversalWebViewProvider implements vscode.WebviewViewProvid
             responseTime: backendStatus.responseTime,
             version: backendStatus.version,
             errorMessage: backendStatus.errorMessage
-          };
-          
-          backends.push(backendInfo);
-          
-          // Enhanced metrics tracking for backend status collection
-          this.emitMetricsSignal({
-            event_type: 'backend_status_collected',
-            backend_id: backendId,
-            status: backendInfo.status,
-            health: backendInfo.health,
-            response_time: backendStatus.responseTime || 0,
-            timestamp: Date.now(),
-            metrics: { backend_discovery: true, status_collection: true }
-          });
-          
+          } satisfies BackendServiceInfo;
         } catch (backendError) {
-          // Individual backend error handling with fallback status
-          const errorMessage = backendError instanceof Error ? backendError.message : 'Unknown backend error';
-          
-          backends.push({
+          const message = backendError instanceof Error ? backendError.message : 'Unknown backend error';
+          failures.push({ id: backendId, error: message });
+          return {
             id: backendId,
             name: this.getBackendDisplayName(backendId),
             status: 'error',
@@ -558,69 +560,85 @@ export class TemplumUniversalWebViewProvider implements vscode.WebviewViewProvid
             capabilities: [],
             lastActivity: Date.now(),
             health: 'error',
-            errorMessage: errorMessage
-          });
-          
-          this.emitErrorSignal('backend_status_collection_failed', backendError, {
-            backend_id: backendId,
-            status_collection_time: Date.now() - statusStartTime
-          });
+            errorMessage: message
+          } satisfies BackendServiceInfo;
         }
-      }
-      
-      // Enhanced status collection completion metrics
-      const statusCollectionTime = Date.now() - statusStartTime;
+      });
+
+      const connected = backends.filter((backend) => backend.status === 'connected').length;
+      const refreshDuration = Date.now() - statusStartTime;
+
       this.emitMetricsSignal({
         event_type: 'backend_data_loaded',
         total_backends: backends.length,
-        connected_backends: backends.filter(b => b.status === 'connected').length,
-        status_collection_time: statusCollectionTime,
-        timestamp: Date.now(),
-        metrics: { 
+        connected_backends: connected,
+        refresh_ms: refreshDuration,
+        error_count: failures.length,
+        metrics: {
           backend_discovery: true,
           status_integration: true,
-          performance: statusCollectionTime < 1000
+          success: failures.length === 0
         }
       });
-      
+
+      if (failures.length > 0) {
+        this.emitErrorSignal(
+          'backend_data_partial_failure',
+          new Error('One or more backend entries failed to normalize'),
+          {
+            failed_backends: failures.map((entry) => entry.id),
+            refresh_ms: refreshDuration
+          }
+        );
+      }
+
       return { backends };
-      
     } catch (error) {
-      // Enhanced error handling with comprehensive fallback status
-      this.emitErrorSignal('backend_data_loading_failed', error, {
+      const failure = error instanceof Error ? error : new Error(String(error));
+      this.emitErrorSignal('backend_data_loading_failed', failure, {
         fallback_mode: true,
         timestamp: Date.now()
       });
-      
-      // Return empty data with error status to prevent UI crash
+
       return { backends: [] };
     }
   }
-  
-  /**
-   * Verify real-time service health with timeout protection
-   */
-  private async verifyServiceHealth(backendId: string, backendRouter: any): Promise<boolean> {
-    try {
-      // Real-time service availability check with timeout protection
-      const healthCheckTimeout = 5000; // 5 second timeout
-      return await withTimeout(
-        Promise.resolve(backendRouter.isServiceAvailable(backendId)),
-        healthCheckTimeout,
-        new Error('Health check timeout')
-      );
-      
-    } catch (_error) {
-      // Health check failed - service is not available
-      return false;
+
+  private async resolveBackendAvailability(
+    backendRouter: any,
+    backendIds: string[]
+  ): Promise<Record<string, boolean>> {
+    if (!backendRouter || typeof backendRouter.isServiceAvailable !== 'function' || backendIds.length === 0) {
+      return backendIds.reduce<Record<string, boolean>>((acc, backendId) => {
+        acc[backendId] = false;
+        return acc;
+      }, {});
     }
+
+    const healthCheckTimeout = 5000;
+    const availabilityEntries = await Promise.all(
+      backendIds.map(async (backendId) => {
+        try {
+          const isAvailable = await withTimeout(
+            Promise.resolve(backendRouter.isServiceAvailable(backendId)),
+            healthCheckTimeout,
+            new Error('Health check timeout')
+          );
+          return [backendId, Boolean(isAvailable)] as const;
+        } catch (_error) {
+          return [backendId, false] as const;
+        }
+      })
+    );
+
+    return Object.fromEntries(availabilityEntries);
   }
   
   /**
    * Determine comprehensive backend status from multiple indicators
    */
   private determineBackendStatus(
-    status: { connected: boolean; health?: string; errorMessage?: string },
+    status: BackendStatusSnapshot,
     isServiceAvailable: boolean
   ): 'connected' | 'disconnected' | 'error' | 'degraded' {
     
@@ -907,6 +925,22 @@ export class TemplumUniversalWebViewProvider implements vscode.WebviewViewProvid
     <div id="root" class="loading">Loading backend services...</div>
     <script>
       const vscode = acquireVsCodeApi();
+      let readySent = false;
+      const announceReady = (stage: string) => {
+        if (readySent) {
+          return;
+        }
+        readySent = true;
+        vscode.postMessage({
+          type: 'templum:webview_ready',
+          payload: { interfaceId: 'templum.universalInterface', stage }
+        });
+      };
+      
+      // Announce immediately in case the DOM is already ready
+      announceReady('bootstrap');
+      window.addEventListener('DOMContentLoaded', () => announceReady('dom'), { once: true });
+      window.addEventListener('load', () => announceReady('load'), { once: true });
       
       window.addEventListener('message', (event) => {
         const { type, payload } = event.data || {};
@@ -1139,15 +1173,3 @@ export class TemplumUniversalWebViewProvider implements vscode.WebviewViewProvid
 }
 
 // Helper interface for backend service data
-interface BackendServiceInfo {
-  id: string;
-  name: string;
-  status: 'connected' | 'disconnected' | 'error' | 'degraded';
-  description?: string;
-  capabilities?: string[];
-  lastActivity?: number;
-  health?: 'healthy' | 'degraded' | 'unhealthy' | 'error' | 'unknown';
-  responseTime?: number;
-  version?: string;
-  errorMessage?: string;
-}
