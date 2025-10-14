@@ -620,13 +620,6 @@ function unresolvedDependencies(task, resolvedKeys, tasksByKey, registry) {
   return unresolved;
 }
 
-function planConflictExists(task, usedPlanKeys) {
-  if (!task.plannedFileKeys || !task.plannedFileKeys.length) {
-    return false;
-  }
-  return task.plannedFileKeys.some((fileKey) => usedPlanKeys.has(fileKey));
-}
-
 function dependencyTaskCompletesRequirement(task) {
   if (!task) {
     return false;
@@ -677,6 +670,20 @@ function statusBlocksLaterTasks(task) {
     return false;
   }
   return activeBlockingStatuses.has(status) || status === 'blocked' || status === 'in_progress';
+}
+
+function participatesInWavePlanConflicts(task) {
+  if (!task || !task.plannedFileKeys || !task.plannedFileKeys.length) {
+    return false;
+  }
+  return statusBlocksLaterTasks(task);
+}
+
+function planConflictExists(task, usedPlanKeys) {
+  if (!participatesInWavePlanConflicts(task)) {
+    return false;
+  }
+  return task.plannedFileKeys.some((fileKey) => usedPlanKeys.has(fileKey));
 }
 
 function shouldAutoBlockDueToMissingPlans(task) {
@@ -784,6 +791,26 @@ function applyPlanCollisionAutoBlocking(waves, registry) {
   });
 }
 
+function dependencyTargetsTask(dependency, task) {
+  if (!dependency || !task || !task.key) {
+    return false;
+  }
+  if (dependency.patternId === undefined || dependency.patternId === null) {
+    return false;
+  }
+  if (!dependency.scope) {
+    return false;
+  }
+  return dependencyKey(dependency.patternId, dependency.scope) === task.key;
+}
+
+function blockedEntryDependsOnTask(blockedEntry, candidate) {
+  if (!blockedEntry || !candidate || !Array.isArray(blockedEntry.dependencies)) {
+    return false;
+  }
+  return blockedEntry.dependencies.some((dependency) => dependencyTargetsTask(dependency, candidate));
+}
+
 function applySymmetricPlanBlocking(waves) {
   const planOwners = new Map();
   waves.forEach((wave) => {
@@ -810,12 +837,24 @@ function applySymmetricPlanBlocking(waves) {
     if (!tasks || tasks.length < 2) {
       return;
     }
-    const anyBlocked = tasks.some((entry) => normalizeStatus(entry.status) === 'blocked');
-    if (!anyBlocked) {
+    const blockedEntries = tasks.filter((entry) => normalizeStatus(entry.status) === 'blocked');
+    if (!blockedEntries.length) {
       return;
     }
     tasks.forEach((entry) => {
       if (!statusEligibleForAutoBlocking(entry)) {
+        return;
+      }
+      const shouldBlock = blockedEntries.some((blockedEntry) => {
+        if (blockedEntry.key === entry.key) {
+          return true;
+        }
+        if (blockedEntryDependsOnTask(blockedEntry, entry)) {
+          return false;
+        }
+        return true;
+      });
+      if (!shouldBlock) {
         return;
       }
       entry.status = 'blocked';
@@ -960,12 +999,16 @@ export function buildSchedule(registry, options = {}) {
         return;
       }
       waveTasks.push(task);
-      (task.plannedFileKeys || []).forEach((key) => usedPlanKeys.add(key));
+      if (participatesInWavePlanConflicts(task)) {
+        (task.plannedFileKeys || []).forEach((key) => usedPlanKeys.add(key));
+      }
     });
     if (!waveTasks.length) {
       const fallback = available[0];
       waveTasks.push(fallback);
-      (fallback.plannedFileKeys || []).forEach((key) => usedPlanKeys.add(key));
+      if (participatesInWavePlanConflicts(fallback)) {
+        (fallback.plannedFileKeys || []).forEach((key) => usedPlanKeys.add(key));
+      }
     }
     const label = createWaveLabel(waveTasks);
     waves.push({
