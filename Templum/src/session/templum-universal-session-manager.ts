@@ -45,6 +45,7 @@ import {
   TypedEventMap,
   UnsubscribeFn
 } from '../utils/event-utils';
+import { createLogger, Logger } from '../utils/logger';
 
 export interface InterfaceAdapterRegistry {
   vscode?: InterfaceAdapter;
@@ -295,6 +296,18 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
   private running: boolean = false;
   private initialized: boolean = false;
 
+  // Consolidated logging
+  private readonly logger: Logger = createLogger('templum-universal-session-manager');
+  private readonly initLogger: Logger = this.logger.child('initialization');
+  private readonly lifecycleLogger: Logger = this.logger.child('lifecycle');
+  private readonly interfaceLogger: Logger = this.logger.child('interface');
+  private readonly skinLogger: Logger = this.logger.child('skin');
+  private readonly commandLogger: Logger = this.logger.child('commands');
+  private readonly backendLogger: Logger = this.logger.child('backend');
+  private readonly stateSyncLogger: Logger = this.logger.child('state-sync');
+  private readonly recoveryLogger: Logger = this.logger.child('recovery');
+  private readonly metricsLogger: Logger = this.logger.child('metrics');
+
   emit<K extends SessionManagerEventKey>(
     event: K,
     ...args: Parameters<TemplumSessionManagerEvents[K]>
@@ -458,6 +471,41 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
     this.backendMonitoringConfigured = false;
   }
 
+  private logInfo(logger: Logger, message: string, ...details: unknown[]): void {
+    logger.info(message, this.mergeLogDetails(details));
+  }
+
+  private logWarn(logger: Logger, message: string, ...details: unknown[]): void {
+    logger.warn(message, this.mergeLogDetails(details));
+  }
+
+  private logError(logger: Logger, message: string, ...details: unknown[]): void {
+    if (details.length === 0) {
+      logger.error(message);
+      return;
+    }
+
+    const [first, ...rest] = details;
+    if (first instanceof Error) {
+      logger.error(message, first, this.mergeLogDetails(rest));
+      return;
+    }
+
+    logger.error(message, undefined, this.mergeLogDetails([first, ...rest]));
+  }
+
+  private mergeLogDetails(details: unknown[]): unknown {
+    if (details.length === 0) {
+      return undefined;
+    }
+
+    if (details.length === 1) {
+      return details[0];
+    }
+
+    return details;
+  }
+
   constructor(
     config: Partial<TemplumConfiguration> = {},
     orchestrator?: ITemplumOrchestrator,
@@ -499,7 +547,7 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
    */
   async initialize(): Promise<void> {
     if (this.initialized) {
-      console.warn('Templum Universal Session Manager already initialized');
+      this.logWarn(this.initLogger, 'Initialization requested after manager already initialized');
       return;
     }
 
@@ -509,11 +557,11 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
       
       // TASK-NEW-010: Backend Router Session Integration - Initialize backend service router with session lifecycle
       try {
-        console.log('Templum Universal Session Manager: Initializing backend service router integration...');
+        this.logInfo(this.backendLogger, 'Initializing backend service router integration');
         
         // Initialize backend service router for session coordination
         // Note: Backend service router initializes automatically in constructor
-        console.log('Backend service router ready for session management');
+        this.logInfo(this.backendLogger, 'Backend service router ready for session management');
         
         // Establish backend service discovery for session coordination
         await this.establishBackendServiceCoordination();
@@ -521,11 +569,11 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
         // Setup backend health monitoring for session resilience
         this.setupBackendHealthMonitoring();
         
-        console.log('Backend service router integration completed');
+        this.logInfo(this.backendLogger, 'Backend service router integration completed');
         
       } catch (error) {
         const errorMessage = isTemplumError(error) ? error.message : (error instanceof Error ? error.message : 'Unknown error');
-        console.warn('Backend service router integration failed, continuing with limited functionality:', errorMessage);
+        this.logWarn(this.backendLogger, 'Backend service router integration failed; continuing with limited functionality', { error: errorMessage });
         
         // Emit warning but don't fail initialization - session manager can work without all backends
         this.emit('backendIntegrationWarning', {
@@ -538,7 +586,7 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
       this.initialized = true;
       this.emit('initialized', { timestamp: Date.now() });
       
-      console.log('Templum Universal Session Manager: Initialization complete');
+      this.logInfo(this.initLogger, 'Initialization complete');
     } catch (error) {
       const errorPayload: ErrorSignalPayload = {
         timestamp: Date.now(),
@@ -552,7 +600,7 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
       };
 
       this.emit('initializationError', errorPayload);
-      console.error('Templum Universal Session Manager: Initialization failed:', errorPayload.error);
+      this.logError(this.initLogger, 'Initialization failed', errorPayload.error);
       
       throw createTemplumError(
         `Failed to initialize Templum Universal Session Manager: ${errorPayload.error}`,
@@ -649,12 +697,16 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
         timestamp: Date.now()
       });
 
-      console.log(`Templum Universal Session Manager: Started session ${foundationContext.sessionId} with ${interfaceType} interface`);
+      this.logInfo(this.lifecycleLogger, 'Session started', {
+        sessionId: foundationContext.sessionId,
+        interfaceType
+      });
       return foundationContext.sessionId;
 
     } catch (error) {
       const errorMessage = isTemplumError(error) ? error.message : (error instanceof Error ? error.message : 'Unknown error');
-      console.error('Failed to start session:', errorMessage);
+      const errorDetail = error instanceof Error ? error : { error: errorMessage };
+      this.logError(this.lifecycleLogger, 'Failed to start session', errorDetail);
       
       throw createTemplumError(
         `Failed to start session: ${errorMessage}`,
@@ -865,10 +917,24 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
     for (const [skinId, skin] of Array.from(this.loadedSkins.entries())) {
       try {
         await adapter.applySkin(skin);
-        console.log(`Applied skin ${skinId} to ${interfaceType} interface`);
+        this.logInfo(this.skinLogger, 'Applied skin to interface adapter', {
+          skinId,
+          interfaceType
+        });
       } catch (error) {
         const errorMessage = isTemplumError(error) ? error.message : (error instanceof Error ? error.message : 'Unknown error');
-        console.error(`Failed to apply skin ${skinId} to ${interfaceType}:`, errorMessage);
+        if (error instanceof Error) {
+          this.logError(this.skinLogger, 'Failed to apply skin to interface adapter', error, {
+            skinId,
+            interfaceType
+          });
+        } else {
+          this.logError(this.skinLogger, 'Failed to apply skin to interface adapter', {
+            skinId,
+            interfaceType,
+            error: errorMessage
+          });
+        }
       }
     }
 
@@ -883,7 +949,10 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
       totalInterfaces: Object.keys(this.interfaceAdapters).length
     });
 
-    console.log(`Templum Universal Session Manager: Registered ${interfaceType} interface adapter`);
+    this.logInfo(this.interfaceLogger, 'Interface adapter registered', {
+      interfaceType,
+      totalInterfaces: Object.keys(this.interfaceAdapters).length
+    });
   }
 
   /**
@@ -900,15 +969,16 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
     }
 
     const startTime = Date.now();
+    const previousInterface = this.activeInterfaceType;
 
     try {
       // Check if target interface is available
       if (!this.interfaceAdapters[targetInterface]) {
-        console.warn(`Interface adapter for ${targetInterface} not registered`);
+        this.logWarn(this.interfaceLogger, 'Interface adapter not registered for switch', {
+          targetInterface
+        });
         return false;
       }
-
-      const previousInterface = this.activeInterfaceType;
 
       // Update session foundation active interface
       this.sessionFoundation.switchInterface(this.currentSessionId, targetInterface);
@@ -939,20 +1009,32 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
       await this.synchronizeInterfaceState(previousInterface, targetInterface, sessionState);
 
       // Emit interface switched event
+      const completionTimestamp = Date.now();
+      const switchDuration = completionTimestamp - startTime;
       this.emit('interfaceSwitched', {
         sessionId: this.currentSessionId,
         previousInterface,
         newInterface: targetInterface,
-        switchTime: Date.now() - startTime,
-        timestamp: Date.now()
+        switchTime: switchDuration,
+        timestamp: completionTimestamp
       });
 
-      console.log(`Templum Universal Session Manager: Switched from ${previousInterface} to ${targetInterface} (${Date.now() - startTime}ms)`);
+      this.logInfo(this.interfaceLogger, 'Interface switch completed', {
+        sessionId: this.currentSessionId,
+        from: previousInterface,
+        to: targetInterface,
+        durationMs: switchDuration
+      });
       return true;
 
     } catch (error) {
       const errorMessage = isTemplumError(error) ? error.message : (error instanceof Error ? error.message : 'Unknown error');
-      console.error('Failed to switch interface:', errorMessage);
+      const failureContext = { from: previousInterface, to: targetInterface };
+      if (error instanceof Error) {
+        this.logError(this.interfaceLogger, 'Failed to switch interface', error, failureContext);
+      } else {
+        this.logError(this.interfaceLogger, 'Failed to switch interface', { ...failureContext, error: errorMessage });
+      }
       
       const errorPayload: ErrorSignalPayload = {
         timestamp: Date.now(),
@@ -1013,10 +1095,24 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
               },
               overrides,
             });
-            console.log(`Applied skin ${skinDefinition.metadata.id} to ${interfaceType}`);
+            this.logInfo(this.skinLogger, 'Skin applied to interface', {
+              skinId: skinDefinition.metadata.id,
+              interfaceType
+            });
           } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            console.error(`Failed to apply skin to ${interfaceType}:`, errorMessage);
+            if (error instanceof Error) {
+              this.logError(this.skinLogger, 'Failed to apply skin to interface', error, {
+                interfaceType,
+                skinId: skinDefinition.metadata.id
+              });
+            } else {
+              this.logError(this.skinLogger, 'Failed to apply skin to interface', {
+                interfaceType,
+                skinId: skinDefinition.metadata.id,
+                error: errorMessage
+              });
+            }
           }
         }
       }
@@ -1041,7 +1137,16 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
 
     } catch (error) {
       const errorMessage = isTemplumError(error) ? error.message : (error instanceof Error ? error.message : 'Unknown error');
-      console.error('Failed to load skin:', errorMessage);
+      if (error instanceof Error) {
+        this.logError(this.skinLogger, 'Failed to load session skin', error, {
+          skinId: skinDefinition?.metadata?.id
+        });
+      } else {
+        this.logError(this.skinLogger, 'Failed to load session skin', {
+          skinId: skinDefinition?.metadata?.id,
+          error: errorMessage
+        });
+      }
       return false;
     }
   }
@@ -1107,7 +1212,7 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
       };
 
       // Route command to appropriate backend service via backend service router
-      console.log(`Routing command '${command}' to backend services`);
+      this.logInfo(this.commandLogger, 'Routing command to backend services', { command });
 
       let result: CommandResult;
 
@@ -1124,9 +1229,16 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
           targetBackend = commandRoute.backend.id;
           routingMethod = commandRoute.isAlias ? 'alias_routing' : 'direct_routing';
           
-          console.log(`[DYNAMIC_ROUTING] Command '${command}' routed to backend '${targetBackend}' via ${routingMethod}`);
+          this.logInfo(this.commandLogger, 'Command routed to backend', {
+            command,
+            backend: targetBackend,
+            routingMethod
+          });
           if (commandRoute.isAlias && commandRoute.originalCommandId) {
-            console.log(`[DYNAMIC_ROUTING] Alias '${command}' resolves to '${commandRoute.originalCommandId}'`);
+            this.logInfo(this.commandLogger, 'Command alias resolved', {
+              alias: command,
+              originalCommandId: commandRoute.originalCommandId
+            });
           }
         } else {
           // Fallback to first available backend for unregistered commands
@@ -1134,11 +1246,19 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
           targetBackend = availableBackends[0] || 'templum';
           routingMethod = 'fallback_routing';
           
-          console.log(`[DYNAMIC_ROUTING] Command '${command}' not registered - fallback routing to '${targetBackend}'`);
-          console.warn(`[DYNAMIC_ROUTING] Consider registering command '${command}' in a backend skin definition`);
+          this.logInfo(this.commandLogger, 'Command not registered; using fallback routing', {
+            command,
+            targetBackend,
+            routingMethod
+          });
+          this.logWarn(this.commandLogger, 'Consider registering command in backend skin definition', { command });
         }
         
-        console.log(`Executing command '${command}' on backend service '${targetBackend}' (${routingMethod})`);
+        this.logInfo(this.commandLogger, 'Executing backend command', {
+          command,
+          backend: targetBackend,
+          routingMethod
+        });
         
         // Execute command via backend service router (real implementation)
         const backendResponse = await this.backendServiceRouter.executeCommand(
@@ -1163,12 +1283,22 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
           executionTime: Date.now() - startTime
         };
         
-        console.log(`Command '${command}' executed successfully via ${targetBackend}`);
+        this.logInfo(this.commandLogger, 'Command executed via backend', {
+          command,
+          backend: targetBackend
+        });
         
       } catch (backendError) {
         // Fallback to local command execution if backend routing fails
-        console.warn(`Backend command routing failed for '${command}':`, backendError);
-        console.log(`Falling back to local command execution`);
+        if (backendError instanceof Error) {
+          this.logWarn(this.commandLogger, 'Backend command routing failed', backendError, { command });
+        } else {
+          this.logWarn(this.commandLogger, 'Backend command routing failed', {
+            command,
+            error: isTemplumError(backendError) ? backendError.message : String(backendError)
+          });
+        }
+        this.logInfo(this.commandLogger, 'Falling back to local command execution', { command });
 
         // Create fallback result
         result = {
@@ -1203,6 +1333,11 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
 
     } catch (error) {
       const errorMessage = isTemplumError(error) ? error.message : (error instanceof Error ? error.message : 'Unknown error');
+      if (error instanceof Error) {
+        this.logError(this.commandLogger, 'Session command execution failed', error, { command });
+      } else {
+        this.logError(this.commandLogger, 'Session command execution failed', { command, error: errorMessage });
+      }
       
       const errorResult: CommandResult = {
         success: false,
@@ -1248,7 +1383,7 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
    */
   async stopSession(): Promise<void> {
     if (!this.currentSessionId) {
-      console.warn('No active session to stop');
+      this.logWarn(this.lifecycleLogger, 'Stop session requested without active session');
       return;
     }
 
@@ -1261,11 +1396,18 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
         try {
           if (adapter && typeof adapter.dispose === 'function') {
             await adapter.dispose();
-            console.log(`Disposed ${interfaceType} interface adapter`);
+            this.logInfo(this.interfaceLogger, 'Disposed interface adapter', { interfaceType });
           }
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-          console.error(`Failed to dispose ${interfaceType} adapter:`, errorMessage);
+          if (error instanceof Error) {
+            this.logError(this.interfaceLogger, 'Failed to dispose interface adapter', error, { interfaceType });
+          } else {
+            this.logError(this.interfaceLogger, 'Failed to dispose interface adapter', {
+              interfaceType,
+              error: errorMessage
+            });
+          }
         }
       }
 
@@ -1290,7 +1432,12 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
           }
         };
         
-        console.log(`Session ${sessionId} completed - Duration: ${sessionDuration}ms, Commands: ${sessionState.sessionMetrics.commandsExecuted}, Interface Switches: ${sessionState.sessionMetrics.interfaceSwitches}`);
+        this.logInfo(this.lifecycleLogger, 'Session completed', {
+          sessionId,
+          durationMs: sessionDuration,
+          commandsExecuted: sessionState.sessionMetrics.commandsExecuted,
+          interfaceSwitches: sessionState.sessionMetrics.interfaceSwitches
+        });
       }
 
       // Clear session data
@@ -1306,11 +1453,15 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
         timestamp: Date.now()
       });
 
-      console.log(`Templum Universal Session Manager: Session ${sessionId} stopped`);
+      this.logInfo(this.lifecycleLogger, 'Session stopped', { sessionId });
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error('Failed to stop session:', errorMessage);
+      if (error instanceof Error) {
+        this.logError(this.lifecycleLogger, 'Failed to stop session', error);
+      } else {
+        this.logError(this.lifecycleLogger, 'Failed to stop session', { error: errorMessage });
+      }
       
       // Mark session as completed with error status - PCL Pattern: Error completion tracking
       const errorSessionId = this.currentSessionId; // Capture before potential clearing
@@ -1333,7 +1484,11 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
             }
           };
           
-          console.log(`Session ${errorSessionId} completed with error - Duration: ${sessionDuration}ms, Error: ${errorMessage}`);
+          this.logWarn(this.lifecycleLogger, 'Session completed with error', {
+            sessionId: errorSessionId,
+            durationMs: sessionDuration,
+            error: errorMessage
+          });
         }
       }
       
@@ -1508,11 +1663,11 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
       this.emit('shutdown', { timestamp: Date.now() });
       this.removeAllListeners();
 
-      console.log('Templum Universal Session Manager: Shutdown complete');
+      this.logInfo(this.logger, 'Templum Universal Session Manager: Shutdown complete');
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error('Error during shutdown:', errorMessage);
+      this.logError(this.logger, 'Error during shutdown:', errorMessage);
       throw createTemplumError(
         `Failed to shutdown session manager: ${errorMessage}`,
         'SHUTDOWN_FAILED',
@@ -1537,7 +1692,7 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
       const toAdapter = this.interfaceAdapters[toInterface];
       
       if (!toAdapter) {
-        console.warn(`Target interface adapter ${toInterface} not available for state synchronization`);
+        this.logWarn(this.logger, `Target interface adapter ${toInterface} not available for state synchronization`);
         return;
       }
       
@@ -1568,13 +1723,13 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
             preservedState = null;
           }
 
-          console.log(`Preserved state from ${fromInterface} interface`);
+          this.logInfo(this.logger, `Preserved state from ${fromInterface} interface`);
         } catch (error) {
           if (isTemplumError(error) && error.code === 'SESSION_STATE_INVALID') {
             throw error;
           }
           const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-          console.warn(`Failed to preserve state from ${fromInterface}:`, errorMessage);
+          this.logWarn(this.logger, `Failed to preserve state from ${fromInterface}:`, errorMessage);
         }
       }
       
@@ -1618,16 +1773,16 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
       if ('restoreState' in toAdapter && typeof (toAdapter as any).restoreState === 'function') {
         try {
           await (toAdapter as any).restoreState(transferData);
-          console.log(`Restored state to ${toInterface} interface`);
+          this.logInfo(this.logger, `Restored state to ${toInterface} interface`);
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-          console.warn(`Failed to restore state to ${toInterface}:`, errorMessage);
+          this.logWarn(this.logger, `Failed to restore state to ${toInterface}:`, errorMessage);
           
           // TASK-NEW-038: Implement fallback state synchronization for interface adapter failures
           try {
             await this.implementFallbackStateSynchronization(toInterface, transferData, errorMessage);
           } catch (fallbackError) {
-            console.error('Fallback state synchronization also failed:', fallbackError);
+            this.logError(this.logger, 'Fallback state synchronization also failed:', fallbackError);
             // Continue anyway - interface switching shouldn't fail completely
           }
         }
@@ -1644,7 +1799,7 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
           sessionState.sessionMetrics.interfaceSwitches;
       }
       
-      console.log(`Interface state synchronization completed: ${fromInterface} → ${toInterface} (${Date.now() - startTime}ms)`);
+      this.logInfo(this.logger, `Interface state synchronization completed: ${fromInterface} → ${toInterface} (${Date.now() - startTime}ms)`);
       
     } catch (error) {
       const templumError = isTemplumError(error)
@@ -1654,7 +1809,7 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
             'INTERFACE_STATE_SYNC_ERROR',
             'runtime',
           );
-      console.error('Interface state synchronization failed:', templumError.message);
+      this.logError(this.logger, 'Interface state synchronization failed:', templumError.message);
 
       const errorPayload: ErrorSignalPayload = {
         timestamp: Date.now(),
@@ -1679,7 +1834,7 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
         };
         await this.implementComprehensiveStateSyncRecovery(fromInterface, toInterface, currentTransferData, templumError.message);
       } catch (recoveryError) {
-        console.error('Comprehensive state synchronization recovery failed:', recoveryError);
+        this.logError(this.logger, 'Comprehensive state synchronization recovery failed:', recoveryError);
         // Don't re-throw - interface switching should continue even if recovery fails
       }
 
@@ -1702,10 +1857,10 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
             [transferData.fromInterface, transferData.toInterface, transferData.sessionId]
           );
           
-          console.log(`Notified ${backendId} backend of interface switch`);
+          this.logInfo(this.logger, `Notified ${backendId} backend of interface switch`);
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-          console.warn(`Failed to notify ${backendId} backend of interface switch:`, errorMessage);
+          this.logWarn(this.logger, `Failed to notify ${backendId} backend of interface switch:`, errorMessage);
           // Continue with other backends - non-critical error
         }
         }
@@ -1716,7 +1871,7 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
       
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.warn('Backend state coordination warning:', errorMessage);
+      this.logWarn(this.logger, 'Backend state coordination warning:', errorMessage);
       // Non-critical error - interface switching can continue without backend coordination
     }
   }
@@ -1736,11 +1891,11 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
         // Check if skin is compatible with target interface
         if (skinDefinition.metadata.compatibleInterfaces.includes(targetInterface)) {
           await adapter.applySkin(skinDefinition);
-          console.log(`Synchronized skin ${skinId} to ${targetInterface} interface`);
+          this.logInfo(this.logger, `Synchronized skin ${skinId} to ${targetInterface} interface`);
         }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        console.warn(`Failed to synchronize skin ${skinId} to ${targetInterface}:`, errorMessage);
+        this.logWarn(this.logger, `Failed to synchronize skin ${skinId} to ${targetInterface}:`, errorMessage);
         // Continue with other skins
       }
     }
@@ -1779,24 +1934,24 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
 
   private setupEventListeners(): void {
     this.on('sessionStarted', ({ sessionId, interfaceType }) => {
-      console.log(`Session ${sessionId} started with ${interfaceType} interface`);
+      this.logInfo(this.logger, `Session ${sessionId} started with ${interfaceType} interface`);
     });
 
     this.on('interfaceSwitched', ({ sessionId, previousInterface, newInterface, switchTime }) => {
-      console.log(`Session ${sessionId}: Interface switched from ${previousInterface} to ${newInterface} (${switchTime}ms)`);
+      this.logInfo(this.logger, `Session ${sessionId}: Interface switched from ${previousInterface} to ${newInterface} (${switchTime}ms)`);
     });
 
     this.on('skinLoaded', ({ sessionId, skinId }) => {
-      console.log(`Session ${sessionId}: Skin ${skinId} loaded`);
+      this.logInfo(this.logger, `Session ${sessionId}: Skin ${skinId} loaded`);
     });
 
     this.on('commandExecuted', ({ sessionId, command, executionTime }) => {
-      console.log(`Session ${sessionId}: Command '${command}' executed (${executionTime}ms)`);
+      this.logInfo(this.logger, `Session ${sessionId}: Command '${command}' executed (${executionTime}ms)`);
     });
 
     this.on('sessionStopped', ({ sessionId, metrics }) => {
       if (metrics) {
-        console.log(`Session ${sessionId} stopped - Commands: ${metrics.commandsExecuted}, Switches: ${metrics.interfaceSwitches}`);
+        this.logInfo(this.logger, `Session ${sessionId} stopped - Commands: ${metrics.commandsExecuted}, Switches: ${metrics.interfaceSwitches}`);
       }
     });
   }
@@ -1817,7 +1972,7 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
           if (isAvailable) {
             // Add to active backends for session coordination
             this.activeBackends.add(serviceId as BackendType);
-            console.log(`Established session coordination with backend service: ${serviceId}`);
+            this.logInfo(this.logger, `Established session coordination with backend service: ${serviceId}`);
             
             // Load backend skin definition for interface integration
             try {
@@ -1825,23 +1980,23 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
               if (backendSkin && backendSkin.metadata?.id) {
                 // Store the backend skin directly - type compatibility handled at interface level
                 this.loadedSkins.set(backendSkin.metadata.id, backendSkin as any);
-                console.log(`Loaded skin definition from backend ${serviceId}: ${backendSkin.metadata.name || backendSkin.name}`);
+                this.logInfo(this.logger, `Loaded skin definition from backend ${serviceId}: ${backendSkin.metadata.name || backendSkin.name}`);
               }
             } catch (skinError) {
-              console.warn(`Failed to load skin from backend ${serviceId}:`, skinError);
+              this.logWarn(this.logger, `Failed to load skin from backend ${serviceId}:`, skinError);
             }
           }
         } catch (serviceError) {
-          console.warn(`Failed to establish coordination with backend service ${serviceId}:`, serviceError);
+          this.logWarn(this.logger, `Failed to establish coordination with backend service ${serviceId}:`, serviceError);
           // Continue with other services
         }
       }
       
-      console.log(`Backend service coordination established with ${this.activeBackends.size} services`);
+      this.logInfo(this.logger, `Backend service coordination established with ${this.activeBackends.size} services`);
       
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.warn('Backend service coordination setup failed:', errorMessage);
+      this.logWarn(this.logger, 'Backend service coordination setup failed:', errorMessage);
       throw error;
     }
   }
@@ -1858,7 +2013,7 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
     if (this.backendServiceRouter && typeof this.backendServiceRouter.on === 'function') {
       // Listen for service disconnection events
       const handleDisconnect = (serviceId: string) => {
-        console.log(`Backend service ${serviceId} disconnected - updating session coordination`);
+        this.logInfo(this.logger, `Backend service ${serviceId} disconnected - updating session coordination`);
         
         // Remove from active backends
         this.activeBackends.delete(serviceId as BackendType);
@@ -1886,7 +2041,7 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
       
       // Listen for service reconnection events
       const handleConnect = async (serviceId: string) => {
-        console.log(`Backend service ${serviceId} connected - establishing session coordination`);
+        this.logInfo(this.logger, `Backend service ${serviceId} connected - establishing session coordination`);
         
         try {
           // Verify service is available
@@ -1909,15 +2064,15 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
                   if (compatibleInterfaces.includes(interfaceType as InterfaceType)) {
                     try {
                       await adapter.applySkin(backendSkin as any);
-                      console.log(`Applied reconnected backend ${serviceId} skin to ${interfaceType} interface`);
+                      this.logInfo(this.logger, `Applied reconnected backend ${serviceId} skin to ${interfaceType} interface`);
                     } catch (skinError) {
-                      console.warn(`Failed to apply skin to ${interfaceType}:`, skinError);
+                      this.logWarn(this.logger, `Failed to apply skin to ${interfaceType}:`, skinError);
                     }
                   }
                 }
               }
             } catch (skinError) {
-              console.warn(`Failed to load skin from reconnected backend ${serviceId}:`, skinError);
+              this.logWarn(this.logger, `Failed to load skin from reconnected backend ${serviceId}:`, skinError);
             }
             
             // Emit service change event
@@ -1938,13 +2093,13 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
             }
           }
         } catch (error) {
-          console.warn(`Failed to establish coordination with reconnected service ${serviceId}:`, error);
+          this.logWarn(this.logger, `Failed to establish coordination with reconnected service ${serviceId}:`, error);
         }
       };
       this.backendServiceRouter.on('serviceConnected', handleConnect);
       this.backendRouterDisposers.push(() => this.backendServiceRouter.off('serviceConnected', handleConnect));
       
-      console.log('Backend health monitoring setup complete');
+      this.logInfo(this.logger, 'Backend health monitoring setup complete');
       this.backendMonitoringConfigured = true;
     }
   }
@@ -1957,7 +2112,7 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
     transferData: InterfaceStateTransferData,
     originalError: string
   ): Promise<void> {
-    console.log(`Implementing fallback state synchronization for ${targetInterface} interface`);
+    this.logInfo(this.logger, `Implementing fallback state synchronization for ${targetInterface} interface`);
     
     const adapter = this.interfaceAdapters[targetInterface];
     if (!adapter) {
@@ -1966,7 +2121,7 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
     
     try {
       // Fallback Strategy 1: Basic state restoration without complex state transfer
-      console.log(`Fallback: Attempting basic state restoration for ${targetInterface}`);
+      this.logInfo(this.logger, `Fallback: Attempting basic state restoration for ${targetInterface}`);
       
       // Extract essential state data for minimal restoration
       const essentialState = {
@@ -1986,7 +2141,7 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
       // Try basic restore method if adapter supports it
       if ('basicRestore' in adapter && typeof (adapter as any).basicRestore === 'function') {
         await (adapter as any).basicRestore(essentialState);
-        console.log(`Fallback successful: Basic state restored for ${targetInterface}`);
+        this.logInfo(this.logger, `Fallback successful: Basic state restored for ${targetInterface}`);
         
         // Emit fallback success event
         this.emit('fallbackStateRestoreSuccess', {
@@ -1999,12 +2154,12 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
       }
       
       // Fallback Strategy 2: Manual state reconstruction
-      console.log(`Fallback: Attempting manual state reconstruction for ${targetInterface}`);
+      this.logInfo(this.logger, `Fallback: Attempting manual state reconstruction for ${targetInterface}`);
       
       // Reconstruct minimal working state manually
       await this.reconstructMinimalInterfaceState(targetInterface, transferData);
       
-      console.log(`Fallback successful: Manual state reconstruction completed for ${targetInterface}`);
+      this.logInfo(this.logger, `Fallback successful: Manual state reconstruction completed for ${targetInterface}`);
       
       // Emit fallback success event
       this.emit('fallbackStateRestoreSuccess', {
@@ -2015,10 +2170,10 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
       });
       
     } catch (fallbackError) {
-      console.error('All fallback state synchronization methods failed:', fallbackError);
+      this.logError(this.logger, 'All fallback state synchronization methods failed:', fallbackError);
       
       // Final Fallback Strategy 3: Interface reset with notification
-      console.log(`Final fallback: Resetting ${targetInterface} interface to default state`);
+      this.logInfo(this.logger, `Final fallback: Resetting ${targetInterface} interface to default state`);
       
       try {
         await this.resetInterfaceToDefault(targetInterface, transferData);
@@ -2031,10 +2186,10 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
           timestamp: Date.now()
         });
         
-        console.log(`Final fallback successful: ${targetInterface} interface reset to default state`);
+        this.logInfo(this.logger, `Final fallback successful: ${targetInterface} interface reset to default state`);
         
       } catch (resetError) {
-        console.error('Interface reset also failed:', resetError);
+        this.logError(this.logger, 'Interface reset also failed:', resetError);
         
         // Emit complete failure event but don't throw - allow interface switching to continue
         this.emit('interfaceStateSyncCompleteFailure', {
@@ -2045,7 +2200,7 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
           timestamp: Date.now()
         });
         
-        console.warn(`Interface ${targetInterface} state synchronization completely failed - interface may not function optimally`);
+        this.logWarn(this.logger, `Interface ${targetInterface} state synchronization completely failed - interface may not function optimally`);
       }
     }
   }
@@ -2068,9 +2223,9 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
       if (skinDefinition && skinDefinition.metadata.compatibleInterfaces.includes(targetInterface)) {
         try {
           await adapter.applySkin(skinDefinition);
-          console.log(`Fallback: Re-applied skin ${skinId} to ${targetInterface}`);
+          this.logInfo(this.logger, `Fallback: Re-applied skin ${skinId} to ${targetInterface}`);
         } catch (skinError) {
-          console.warn(`Fallback: Failed to re-apply skin ${skinId}:`, skinError);
+          this.logWarn(this.logger, `Fallback: Failed to re-apply skin ${skinId}:`, skinError);
           // Continue with other skins
         }
       }
@@ -2082,9 +2237,9 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
       if ('navigateTo' in adapter && typeof (adapter as any).navigateTo === 'function') {
         try {
           await (adapter as any).navigateTo(lastLocation);
-          console.log(`Fallback: Restored navigation to ${lastLocation} for ${targetInterface}`);
+          this.logInfo(this.logger, `Fallback: Restored navigation to ${lastLocation} for ${targetInterface}`);
         } catch (navError) {
-          console.warn(`Fallback: Failed to restore navigation:`, navError);
+          this.logWarn(this.logger, `Fallback: Failed to restore navigation:`, navError);
         }
       }
     }
@@ -2095,13 +2250,13 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
         typeof (adapter as any).updatePreferences === 'function') {
       try {
         await (adapter as any).updatePreferences(transferData.preservedState.userPreferences);
-        console.log(`Fallback: Restored user preferences for ${targetInterface}`);
+        this.logInfo(this.logger, `Fallback: Restored user preferences for ${targetInterface}`);
       } catch (prefError) {
-        console.warn(`Fallback: Failed to restore preferences:`, prefError);
+        this.logWarn(this.logger, `Fallback: Failed to restore preferences:`, prefError);
       }
     }
     
-    console.log(`Manual state reconstruction completed for ${targetInterface}`);
+    this.logInfo(this.logger, `Manual state reconstruction completed for ${targetInterface}`);
   }
 
   /**
@@ -2116,17 +2271,17 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
       throw new Error(`Adapter not available for ${targetInterface}`);
     }
     
-    console.log(`Resetting ${targetInterface} interface to default state`);
+    this.logInfo(this.logger, `Resetting ${targetInterface} interface to default state`);
     
     // Step 1: Reset adapter to default state if supported
     if ('resetToDefault' in adapter && typeof (adapter as any).resetToDefault === 'function') {
       await (adapter as any).resetToDefault();
-      console.log(`Interface ${targetInterface} reset to default via adapter method`);
+      this.logInfo(this.logger, `Interface ${targetInterface} reset to default via adapter method`);
     } else {
       // Manual reset - re-initialize the adapter with basic configuration
       if ('initialize' in adapter && typeof (adapter as any).initialize === 'function') {
         await (adapter as any).initialize();
-        console.log(`Interface ${targetInterface} re-initialized to default state`);
+        this.logInfo(this.logger, `Interface ${targetInterface} re-initialized to default state`);
       }
     }
     
@@ -2135,9 +2290,9 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
       if (skinDefinition.metadata.compatibleInterfaces.includes(targetInterface)) {
         try {
           await adapter.applySkin(skinDefinition);
-          console.log(`Applied default skin ${skinId} to reset ${targetInterface} interface`);
+          this.logInfo(this.logger, `Applied default skin ${skinId} to reset ${targetInterface} interface`);
         } catch (skinError) {
-          console.warn(`Failed to apply default skin ${skinId} during reset:`, skinError);
+          this.logWarn(this.logger, `Failed to apply default skin ${skinId} during reset:`, skinError);
         }
       }
     }
@@ -2152,13 +2307,13 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
       
       try {
         await (adapter as any).setSessionContext(sessionContext);
-        console.log(`Set session context for reset ${targetInterface} interface`);
+        this.logInfo(this.logger, `Set session context for reset ${targetInterface} interface`);
       } catch (contextError) {
-        console.warn(`Failed to set session context during reset:`, contextError);
+        this.logWarn(this.logger, `Failed to set session context during reset:`, contextError);
       }
     }
     
-    console.log(`Interface ${targetInterface} successfully reset to default state`);
+    this.logInfo(this.logger, `Interface ${targetInterface} successfully reset to default state`);
   }
 
   /**
@@ -2170,7 +2325,7 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
     transferData: InterfaceStateTransferData,
     syncError: string
   ): Promise<void> {
-    console.log(`Initiating comprehensive state synchronization recovery: ${fromInterface} → ${toInterface}`);
+    this.logInfo(this.logger, `Initiating comprehensive state synchronization recovery: ${fromInterface} → ${toInterface}`);
     
     const recoveryStartTime = Date.now();
     
@@ -2178,7 +2333,7 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
       // Recovery Strategy 1: Retry synchronization with reduced complexity
       await this.retryStateSynchronizationSimplified(fromInterface, toInterface, transferData);
       
-      console.log(`Recovery successful: Simplified synchronization completed`);
+      this.logInfo(this.logger, `Recovery successful: Simplified synchronization completed`);
       
       // Emit successful recovery event
       this.emit('comprehensiveRecoverySuccess', {
@@ -2191,13 +2346,13 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
       });
       
     } catch (retryError) {
-      console.warn('Simplified synchronization retry failed:', retryError);
+      this.logWarn(this.logger, 'Simplified synchronization retry failed:', retryError);
       
       try {
         // Recovery Strategy 2: Progressive state restoration
         await this.progressiveStateRestoration(fromInterface, toInterface, transferData);
         
-        console.log(`Recovery successful: Progressive restoration completed`);
+        this.logInfo(this.logger, `Recovery successful: Progressive restoration completed`);
         
         // Emit successful recovery event
         this.emit('comprehensiveRecoverySuccess', {
@@ -2210,13 +2365,13 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
         });
         
       } catch (progressiveError) {
-        console.warn('Progressive state restoration failed:', progressiveError);
+        this.logWarn(this.logger, 'Progressive state restoration failed:', progressiveError);
         
         try {
           // Recovery Strategy 3: Emergency state preservation
           await this.emergencyStatePreservation(fromInterface, toInterface, transferData);
           
-          console.log(`Recovery successful: Emergency state preservation completed`);
+          this.logInfo(this.logger, `Recovery successful: Emergency state preservation completed`);
           
           // Emit successful recovery event
           this.emit('comprehensiveRecoverySuccess', {
@@ -2229,7 +2384,7 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
           });
           
         } catch (emergencyError) {
-          console.error('All comprehensive recovery strategies failed:', emergencyError);
+          this.logError(this.logger, 'All comprehensive recovery strategies failed:', emergencyError);
           
           // Final Strategy: Session state isolation and continuation
           await this.isolateSessionStateAndContinue(fromInterface, toInterface, transferData, {
@@ -2250,7 +2405,7 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
             timestamp: Date.now()
           });
           
-          console.log(`Recovery completed: Session isolated and continuing with limited state synchronization`);
+          this.logInfo(this.logger, `Recovery completed: Session isolated and continuing with limited state synchronization`);
         }
       }
     }
@@ -2264,7 +2419,7 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
     toInterface: InterfaceType,
     transferData: InterfaceStateTransferData
   ): Promise<void> {
-    console.log(`Attempting simplified state synchronization retry: ${fromInterface} → ${toInterface}`);
+    this.logInfo(this.logger, `Attempting simplified state synchronization retry: ${fromInterface} → ${toInterface}`);
     
     const toAdapter = this.interfaceAdapters[toInterface];
     if (!toAdapter) {
@@ -2289,15 +2444,15 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
     // Try simplified restore if adapter supports it
     if ('simplifiedRestore' in toAdapter && typeof (toAdapter as any).simplifiedRestore === 'function') {
       await (toAdapter as any).simplifiedRestore(simplifiedTransferData);
-      console.log(`Simplified restore successful for ${toInterface}`);
+      this.logInfo(this.logger, `Simplified restore successful for ${toInterface}`);
     } else {
       // Manual simplified restoration
-      console.log(`Performing manual simplified restoration for ${toInterface}`);
+      this.logInfo(this.logger, `Performing manual simplified restoration for ${toInterface}`);
       
       // Only restore skins (most critical for interface functionality)
       await this.synchronizeSkinState(toInterface);
       
-      console.log(`Manual simplified restoration completed for ${toInterface}`);
+      this.logInfo(this.logger, `Manual simplified restoration completed for ${toInterface}`);
     }
   }
 
@@ -2309,7 +2464,7 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
     toInterface: InterfaceType,
     transferData: InterfaceStateTransferData
   ): Promise<void> {
-    console.log(`Initiating progressive state restoration: ${fromInterface} → ${toInterface}`);
+    this.logInfo(this.logger, `Initiating progressive state restoration: ${fromInterface} → ${toInterface}`);
     
     const adapter = this.interfaceAdapters[toInterface];
     if (!adapter) {
@@ -2344,20 +2499,20 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
     
     for (const step of restorationSteps) {
       try {
-        console.log(`Progressive restoration: Executing step ${step.name}`);
+        this.logInfo(this.logger, `Progressive restoration: Executing step ${step.name}`);
         await step.action();
         completedSteps.push(step.name);
-        console.log(`Progressive restoration: Step ${step.name} completed`);
+        this.logInfo(this.logger, `Progressive restoration: Step ${step.name} completed`);
       } catch (stepError) {
         const errorMessage = stepError instanceof Error ? stepError.message : String(stepError);
-        console.warn(`Progressive restoration: Step ${step.name} failed:`, errorMessage);
+        this.logWarn(this.logger, `Progressive restoration: Step ${step.name} failed:`, errorMessage);
         failedSteps.push({ name: step.name, error: errorMessage });
         
         // Continue with next step - progressive restoration allows partial success
       }
     }
     
-    console.log(`Progressive restoration completed: ${completedSteps.length}/${restorationSteps.length} steps successful`);
+    this.logInfo(this.logger, `Progressive restoration completed: ${completedSteps.length}/${restorationSteps.length} steps successful`);
     
     if (completedSteps.length === 0) {
       throw new Error(`All progressive restoration steps failed: ${failedSteps.map(f => f.name).join(', ')}`);
@@ -2382,7 +2537,7 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
     toInterface: InterfaceType,
     transferData: InterfaceStateTransferData
   ): Promise<void> {
-    console.log(`Executing emergency state preservation: ${fromInterface} → ${toInterface}`);
+    this.logInfo(this.logger, `Executing emergency state preservation: ${fromInterface} → ${toInterface}`);
     
     // Emergency strategy: Preserve only critical session data to prevent total loss
     const emergencyData = {
@@ -2406,7 +2561,7 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
         (sessionState as any).emergencyData = emergencyData;
         sessionState.lastActivity = new Date();
         
-        console.log(`Emergency data preserved in session state ${this.currentSessionId}`);
+        this.logInfo(this.logger, `Emergency data preserved in session state ${this.currentSessionId}`);
       }
     }
     
@@ -2417,16 +2572,16 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
         // Emergency interface initialization
         if ('emergencySetup' in adapter && typeof (adapter as any).emergencySetup === 'function') {
           await (adapter as any).emergencySetup(emergencyData);
-          console.log(`Emergency setup completed for ${toInterface} adapter`);
+          this.logInfo(this.logger, `Emergency setup completed for ${toInterface} adapter`);
         } else {
           // Basic emergency setup - just ensure the adapter is responsive
           if ('ping' in adapter && typeof (adapter as any).ping === 'function') {
             await (adapter as any).ping();
-            console.log(`Emergency ping successful for ${toInterface} adapter`);
+            this.logInfo(this.logger, `Emergency ping successful for ${toInterface} adapter`);
           }
         }
       } catch (setupError) {
-        console.warn(`Emergency interface setup failed:`, setupError);
+        this.logWarn(this.logger, `Emergency interface setup failed:`, setupError);
         // Continue anyway - emergency preservation is about data protection, not perfect functionality
       }
     }
@@ -2440,7 +2595,7 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
       timestamp: Date.now()
     });
     
-    console.log(`Emergency state preservation completed`);
+    this.logInfo(this.logger, `Emergency state preservation completed`);
   }
 
   /**
@@ -2452,7 +2607,7 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
     transferData: InterfaceStateTransferData,
     errorHistory: Record<string, string>
   ): Promise<void> {
-    console.log(`Isolating session state and continuing: ${fromInterface} → ${toInterface}`);
+    this.logInfo(this.logger, `Isolating session state and continuing: ${fromInterface} → ${toInterface}`);
     
     // Create isolation boundary - prevent cascade failures
     const isolatedSessionData = {
@@ -2477,7 +2632,7 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
         // Update session metrics to reflect recovery attempt
         sessionState.sessionMetrics.interfaceSwitches += 1; // Count the attempt
         
-        console.log(`Session ${this.currentSessionId} isolated and continuing in limited functionality mode`);
+        this.logInfo(this.logger, `Session ${this.currentSessionId} isolated and continuing in limited functionality mode`);
       }
     }
     
@@ -2488,7 +2643,7 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
         // Set isolated mode on adapter if supported
         if ('setIsolationMode' in adapter && typeof (adapter as any).setIsolationMode === 'function') {
           await (adapter as any).setIsolationMode(isolatedSessionData);
-          console.log(`Isolation mode set on ${toInterface} adapter`);
+          this.logInfo(this.logger, `Isolation mode set on ${toInterface} adapter`);
         }
         
         // Apply at least one skin for basic functionality
@@ -2497,14 +2652,14 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
           if (firstSkin.metadata.compatibleInterfaces.includes(toInterface)) {
             try {
               await adapter.applySkin(firstSkin);
-              console.log(`Applied fallback skin for isolated mode: ${firstSkin.metadata.id}`);
+              this.logInfo(this.logger, `Applied fallback skin for isolated mode: ${firstSkin.metadata.id}`);
             } catch (skinError) {
-              console.warn(`Failed to apply fallback skin in isolation mode:`, skinError);
+              this.logWarn(this.logger, `Failed to apply fallback skin in isolation mode:`, skinError);
             }
           }
         }
       } catch (isolationError) {
-        console.warn(`Failed to configure isolation mode:`, isolationError);
+        this.logWarn(this.logger, `Failed to configure isolation mode:`, isolationError);
         // Continue anyway - isolation is about graceful degradation
       }
     }
@@ -2518,7 +2673,7 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
       timestamp: Date.now()
     });
     
-    console.log(`Session state isolated successfully - operation continuing with limited functionality`);
+    this.logInfo(this.logger, `Session state isolated successfully - operation continuing with limited functionality`);
   }
 
   /**
@@ -2537,7 +2692,7 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
       };
       
       await (adapter as any).setSessionContext(sessionContext);
-      console.log(`Session context restored for ${targetInterface}`);
+      this.logInfo(this.logger, `Session context restored for ${targetInterface}`);
     }
   }
 
@@ -2547,7 +2702,7 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
     
     if ('updatePreferences' in adapter && typeof (adapter as any).updatePreferences === 'function') {
       await (adapter as any).updatePreferences(transferData.preservedState.userPreferences);
-      console.log(`User preferences restored for ${targetInterface}`);
+      this.logInfo(this.logger, `User preferences restored for ${targetInterface}`);
     }
   }
 
@@ -2557,7 +2712,7 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
     
     if ('restoreNavigation' in adapter && typeof (adapter as any).restoreNavigation === 'function') {
       await (adapter as any).restoreNavigation(transferData.navigationHistory);
-      console.log(`Navigation state restored for ${targetInterface}`);
+      this.logInfo(this.logger, `Navigation state restored for ${targetInterface}`);
     }
   }
 
@@ -2565,7 +2720,7 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
    * TASK-NEW-040: Synchronize backend session state during interface switching
    */
   private async synchronizeBackendSessionState(transferData: InterfaceStateTransferData): Promise<void> {
-    console.log(`Synchronizing backend session state: ${transferData.fromInterface} → ${transferData.toInterface}`);
+    this.logInfo(this.logger, `Synchronizing backend session state: ${transferData.fromInterface} → ${transferData.toInterface}`);
     
     const synchronizationStartTime = Date.now();
     const synchronizationResults: Array<{
@@ -2578,17 +2733,17 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
     try {
       if (transferData.activeBackends) {
         for (const backendId of transferData.activeBackends) {
-        console.log(`Synchronizing session state with backend: ${backendId}`);
+        this.logInfo(this.logger, `Synchronizing session state with backend: ${backendId}`);
         
         try {
           const syncResult = await this.synchronizeIndividualBackendState(backendId, transferData);
           synchronizationResults.push(syncResult);
           
-          console.log(`Backend ${backendId} session synchronization: ${syncResult.status} (${syncResult.method})`);
+          this.logInfo(this.logger, `Backend ${backendId} session synchronization: ${syncResult.status} (${syncResult.method})`);
           
         } catch (backendError) {
           const errorMessage = backendError instanceof Error ? backendError.message : String(backendError);
-          console.warn(`Failed to synchronize session state with backend ${backendId}:`, errorMessage);
+          this.logWarn(this.logger, `Failed to synchronize session state with backend ${backendId}:`, errorMessage);
           
           synchronizationResults.push({
             backendId,
@@ -2607,7 +2762,7 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
       const partialSyncs = synchronizationResults.filter(r => r.status === 'partial').length;
       const failedSyncs = synchronizationResults.filter(r => r.status === 'failed').length;
       
-      console.log(`Backend session state synchronization completed: ${successfulSyncs} successful, ${partialSyncs} partial, ${failedSyncs} failed`);
+      this.logInfo(this.logger, `Backend session state synchronization completed: ${successfulSyncs} successful, ${partialSyncs} partial, ${failedSyncs} failed`);
       
       // Update session state with synchronization results
       if (this.currentSessionId) {
@@ -2638,7 +2793,7 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
       
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error('Backend session state synchronization failed:', errorMessage);
+      this.logError(this.logger, 'Backend session state synchronization failed:', errorMessage);
       
       // Emit error event but don't throw - interface switching should continue
       this.emit('backendSessionStateSyncError', {
@@ -2661,7 +2816,7 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
     
     try {
       // Strategy 1: Use dedicated session synchronization command if backend supports it
-      console.log(`Attempting dedicated session sync command for backend ${backendId}`);
+      this.logInfo(this.logger, `Attempting dedicated session sync command for backend ${backendId}`);
       
       try {
         const sessionSyncData = {
@@ -2679,7 +2834,7 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
           [sessionSyncData]
         );
         
-        console.log(`Backend ${backendId} dedicated session sync successful:`, syncResponse);
+        this.logInfo(this.logger, `Backend ${backendId} dedicated session sync successful:`, syncResponse);
         
         return {
           backendId,
@@ -2688,7 +2843,7 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
         };
         
       } catch (_dedicatedError) {
-        console.log(`Backend ${backendId} doesn't support dedicated session sync, trying state persistence`);
+        this.logInfo(this.logger, `Backend ${backendId} doesn't support dedicated session sync, trying state persistence`);
         
         // Strategy 2: Use state persistence commands
         try {
@@ -2701,7 +2856,7 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
           };
           
         } catch (_persistError) {
-          console.log(`Backend ${backendId} state persistence failed, trying basic sync`);
+          this.logInfo(this.logger, `Backend ${backendId} state persistence failed, trying basic sync`);
           
           // Strategy 3: Basic synchronization using standard commands
           try {
@@ -2714,7 +2869,7 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
             };
             
           } catch (basicError) {
-            console.warn(`All synchronization methods failed for backend ${backendId}`);
+            this.logWarn(this.logger, `All synchronization methods failed for backend ${backendId}`);
             
             return {
               backendId,
@@ -2728,7 +2883,7 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
       
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      console.error(`Backend ${backendId} session synchronization failed:`, errorMessage);
+      this.logError(this.logger, `Backend ${backendId} session synchronization failed:`, errorMessage);
       
       return {
         backendId,
@@ -2746,7 +2901,7 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
     backendId: string,
     transferData: InterfaceStateTransferData
   ): Promise<void> {
-    console.log(`Persisting session state with backend ${backendId}`);
+    this.logInfo(this.logger, `Persisting session state with backend ${backendId}`);
     
     // Create persistence payload with essential session data
     const persistenceData = {
@@ -2772,10 +2927,10 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
         [persistenceData]
       );
       
-      console.log(`Session state persisted successfully with backend ${backendId}:`, persistResult);
+      this.logInfo(this.logger, `Session state persisted successfully with backend ${backendId}:`, persistResult);
       
     } catch (persistError) {
-      console.warn(`Session state persistence failed for backend ${backendId}:`, persistError);
+      this.logWarn(this.logger, `Session state persistence failed for backend ${backendId}:`, persistError);
       
       // Fallback: Try to store essential state using generic storage command
       try {
@@ -2793,10 +2948,10 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
           [fallbackData.key, fallbackData.data]
         );
         
-        console.log(`Fallback session data stored with backend ${backendId}`);
+        this.logInfo(this.logger, `Fallback session data stored with backend ${backendId}`);
         
       } catch (fallbackError) {
-        console.error(`Both persistence and fallback storage failed for backend ${backendId}:`, fallbackError);
+        this.logError(this.logger, `Both persistence and fallback storage failed for backend ${backendId}:`, fallbackError);
         throw fallbackError;
       }
     }
@@ -2809,7 +2964,7 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
     backendId: string,
     transferData: InterfaceStateTransferData
   ): Promise<void> {
-    console.log(`Performing basic session sync with backend ${backendId}`);
+    this.logInfo(this.logger, `Performing basic session sync with backend ${backendId}`);
     
     try {
       // Basic sync approach: Just inform backend of interface switch
@@ -2828,7 +2983,7 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
         [transferData.fromInterface, transferData.toInterface, transferData.sessionId]
       );
       
-      console.log(`Basic session sync notification sent to backend ${backendId}`);
+      this.logInfo(this.logger, `Basic session sync notification sent to backend ${backendId}`);
       
       // Additionally try to sync current session ID if backend supports it
       try {
@@ -2838,15 +2993,15 @@ export class TemplumUniversalSessionManager implements TemplumSessionManagerCont
           [transferData.sessionId]
         );
         
-        console.log(`Active session ID synchronized with backend ${backendId}`);
+        this.logInfo(this.logger, `Active session ID synchronized with backend ${backendId}`);
         
       } catch (_sessionIdError) {
-        console.log(`Backend ${backendId} doesn't support active session sync - continuing with basic sync`);
+        this.logInfo(this.logger, `Backend ${backendId} doesn't support active session sync - continuing with basic sync`);
       }
       
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      console.error(`Basic session sync failed for backend ${backendId}:`, errorMessage);
+      this.logError(this.logger, `Basic session sync failed for backend ${backendId}:`, errorMessage);
       throw error;
     }
   }
