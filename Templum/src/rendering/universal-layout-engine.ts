@@ -20,9 +20,12 @@ import {
   WindowContent, 
   ContentSection, 
   ContentItem,
-  WindowLayoutConfig 
+  WindowLayoutConfig,
+  CalculatedLayout as WindowCalculatedLayout,
+  TerminalCapabilities as LayoutTerminalCapabilities
 } from './content-layout-system';
 import { computeDisplayLayout } from '../interfaces/display-utils-layout';
+import type { UniversalSkinDefinition, MenuDefinition as SkinMenuDefinition } from '../types/universal-skin-definition';
 
 // Re-export InterfaceType for other modules
 export type { InterfaceType };
@@ -163,6 +166,33 @@ export interface RenderResult {
   compatibilityMode?: 'pcl' | 'universal';
   output?: string;
   errors?: string[];
+  windowSet?: ProceduralCLIWindowSet;
+}
+
+export interface ProceduralCLIWindow {
+  menuId: string;
+  parentMenuId?: string;
+  title: string;
+  output: string;
+  content: WindowContent;
+  layout: WindowCalculatedLayout;
+  capabilities: LayoutTerminalCapabilities;
+  navigation: {
+    breadcrumb: string[];
+    items: ContentItem[];
+  };
+  isNested: boolean;
+}
+
+export interface ProceduralCLIWindowSet {
+  activeMenuId: string;
+  navigationHistory: string[];
+  windows: ProceduralCLIWindow[];
+}
+
+export interface ProceduralCLIOptions {
+  menuId?: string;
+  navigationHistory?: string[];
 }
 
 /**
@@ -178,6 +208,40 @@ export class UniversalLayoutEngine {
   constructor(formatter: TerminalFormatter = createFormatter()) {
     this.formatter = formatter;
     this.contentLayoutSystem = new ContentLayoutSystem();
+  }
+
+  private isUniversalSkinDefinition(
+    skin: UniversalSkinDefinition | UniversalSkinMenuDefinition | PCLSkinMenuDefinition
+  ): skin is UniversalSkinDefinition {
+    return (
+      typeof (skin as UniversalSkinDefinition)?.id === 'string' &&
+      typeof (skin as UniversalSkinDefinition)?.metadata === 'object' &&
+      !!(skin as UniversalSkinDefinition)?.menus
+    );
+  }
+
+  private getDefaultMenuId(skin: UniversalSkinDefinition): string {
+    const main = skin.menus?.main;
+    if (main?.id) {
+      return main.id;
+    }
+    return 'main';
+  }
+
+  private extractSubmenuTargets(menu: SkinMenuDefinition): string[] {
+    if (!menu.items) {
+      return [];
+    }
+
+    const targets: string[] = [];
+    for (const item of menu.items) {
+      if (item.type === 'submenu') {
+        if (typeof item.submenu === 'string') {
+          targets.push(item.submenu);
+        }
+      }
+    }
+    return targets;
   }
 
   private normalizeWidth(width: number): number {
@@ -201,11 +265,43 @@ export class UniversalLayoutEngine {
    * Main entry point for multi-interface rendering
    */
   async renderForInterface(
-    skinDefinition: UniversalSkinMenuDefinition | PCLSkinMenuDefinition,
+    skinDefinition: UniversalSkinDefinition | UniversalSkinMenuDefinition | PCLSkinMenuDefinition,
     interfaceType: InterfaceType,
     constraints?: Partial<UniversalLayoutConstraints>
   ): Promise<RenderResult> {
     const startTime = Date.now();
+
+    if (interfaceType === 'cli' && this.isUniversalSkinDefinition(skinDefinition)) {
+      try {
+        const cliOptions: ProceduralCLIOptions = {
+          menuId: (constraints?.interfaceSpecific as any)?.cli?.activeMenuId ??
+                  (constraints?.interfaceSpecific as any)?.cli?.currentMenu ??
+                  undefined,
+          navigationHistory: (constraints?.interfaceSpecific as any)?.cli?.navigationHistory,
+        };
+
+        const windowSet = await this.renderForCLI(skinDefinition, cliOptions);
+        const renderTime = Date.now() - startTime;
+        this.updatePerformanceMetrics(interfaceType, renderTime);
+
+        return {
+          success: true,
+          interfaceType,
+          renderTime,
+          compatibilityMode: 'universal',
+          output: windowSet.windows[0]?.output,
+          windowSet,
+        };
+      } catch (error) {
+        const renderTime = Date.now() - startTime;
+        return {
+          success: false,
+          interfaceType,
+          renderTime,
+          errors: [error instanceof Error ? error.message : 'Unknown rendering error'],
+        };
+      }
+    }
 
     try {
       // TASK-MCP-009: Verify and adapt skin compatibility
@@ -267,6 +363,68 @@ export class UniversalLayoutEngine {
         errors: [error instanceof Error ? error.message : 'Unknown rendering error']
       };
     }
+  }
+
+  async renderForCLI(
+    skinDefinition: UniversalSkinDefinition,
+    options: ProceduralCLIOptions = {}
+  ): Promise<ProceduralCLIWindowSet> {
+    const activeMenuId = options.menuId ?? this.getDefaultMenuId(skinDefinition);
+    const navigationHistory = options.navigationHistory ?? [];
+    const windows: ProceduralCLIWindow[] = [];
+    const visited = new Set<string>();
+
+    type QueueItem = { menuId: string; parentMenuId?: string; history: string[] };
+    const queue: QueueItem[] = [{ menuId: activeMenuId, history: navigationHistory }];
+
+    while (queue.length > 0) {
+      const { menuId, parentMenuId, history } = queue.shift()!;
+      if (visited.has(menuId)) {
+        continue;
+      }
+      visited.add(menuId);
+
+      const composition = this.contentLayoutSystem.composeWindow({
+        skin: skinDefinition,
+        menuId,
+        navigationHistory: history,
+        parentMenuId,
+      });
+
+      const rendered = this.contentLayoutSystem.renderContent(composition.content);
+
+      windows.push({
+        menuId,
+        parentMenuId,
+        title: composition.content.title ?? menuId,
+        output: rendered.output,
+        content: composition.content,
+        layout: rendered.layout,
+        capabilities: rendered.capabilities,
+        navigation: {
+          breadcrumb: composition.navigation.breadcrumb,
+          items: composition.navigation.items,
+        },
+        isNested: composition.isNested,
+      });
+
+      const submenuTargets = this.extractSubmenuTargets(composition.sourceMenu);
+      for (const submenuId of submenuTargets) {
+        if (!visited.has(submenuId)) {
+          queue.push({
+            menuId: submenuId,
+            parentMenuId: menuId,
+            history: [...history, menuId],
+          });
+        }
+      }
+    }
+
+    return {
+      activeMenuId,
+      navigationHistory,
+      windows,
+    };
   }
 
   /**

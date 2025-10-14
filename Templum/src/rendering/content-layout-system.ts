@@ -48,6 +48,12 @@ import {
   type TerminalTheme,
 } from '../utils/terminal-formatter';
 import { StringUtils, StringWidthUtils } from '../utils/chainable-string-utils';
+import type {
+  UniversalSkinDefinition,
+  MenuDefinition as SkinMenuDefinition,
+  MenuItemDefinition,
+  SkinViews,
+} from '../types/universal-skin-definition';
 
 // Terminal capability detection
 export interface TerminalCapabilities {
@@ -92,6 +98,28 @@ export interface ContentItem {
   enabled?: boolean;
   prefix?: string;
   isSelector?: boolean; // For the '›' selector character
+}
+
+export interface ComposeWindowParams {
+  skin: UniversalSkinDefinition;
+  menuId: string;
+  navigationHistory: string[];
+  parentMenuId?: string;
+  numberingOffset?: number;
+  breadcrumbOverride?: string[];
+}
+
+export interface ProceduralWindowComposition {
+  menuId: string;
+  content: WindowContent;
+  navigation: {
+    breadcrumb: string[];
+    items: ContentItem[];
+    history: string[];
+  };
+  parentMenuId?: string;
+  isNested: boolean;
+  sourceMenu: SkinMenuDefinition;
 }
 
 // Layout calculation results
@@ -841,6 +869,251 @@ export class ContentLayoutSystem extends EventDrivenComponent<ContentLayoutSyste
       capabilityDetector: this.capabilityDetector,
       layout: this.windowLayout,
     });
+  }
+
+  composeWindow(params: ComposeWindowParams): ProceduralWindowComposition {
+    const {
+      skin,
+      menuId,
+      navigationHistory,
+      parentMenuId,
+      numberingOffset = 0,
+      breadcrumbOverride,
+    } = params;
+
+    const menu = this.resolveMenu(skin, menuId);
+    const parentMenu = parentMenuId ? this.resolveMenu(skin, parentMenuId) : undefined;
+    const breadcrumb = breadcrumbOverride ?? this.buildBreadcrumb(menu, skin, parentMenu);
+    const sections = this.buildSections(menu, skin, numberingOffset);
+    const navigationItems = this.buildNavigationItems(menu, parentMenu);
+    const subtitle = this.buildSubtitle(menu, breadcrumb);
+
+    const content: WindowContent = {
+      title: menu.title,
+      subtitle,
+      sections,
+      navigationItems,
+      footer: this.buildFooter(menu),
+      isNestedWindow: Boolean(parentMenu),
+      parentTitle: parentMenu?.title,
+    };
+
+    return {
+      menuId,
+      content,
+      navigation: {
+        breadcrumb,
+        items: navigationItems,
+        history: [...navigationHistory],
+      },
+      parentMenuId: parentMenu?.id,
+      isNested: Boolean(parentMenu),
+      sourceMenu: menu,
+    };
+  }
+
+  private buildSections(
+    menu: SkinMenuDefinition,
+    skin: UniversalSkinDefinition,
+    numberingOffset: number
+  ): ContentSection[] {
+    const sections: ContentSection[] = [];
+
+    const menuSection = this.buildMenuSection(menu, numberingOffset);
+    if (menuSection) {
+      sections.push(menuSection);
+    }
+
+    const viewSections = this.buildViewSections(skin.views);
+    sections.push(...viewSections);
+
+    return sections;
+  }
+
+  private buildMenuSection(menu: SkinMenuDefinition, numberingOffset: number): ContentSection | null {
+    const items = menu.items ?? [];
+    if (items.length === 0) {
+      return null;
+    }
+
+    const contentItems: ContentItem[] = items
+      .filter((item) => item.type !== 'separator')
+      .map((item, index) => this.mapMenuItemToContent(item, numberingOffset + index + 1));
+
+    return {
+      id: 'menu-items',
+      heading: items.length > 0 ? 'Menu Items' : undefined,
+      items: contentItems,
+    };
+  }
+
+  private buildViewSections(views?: SkinViews): ContentSection[] {
+    if (!views) {
+      return [];
+    }
+
+    const sections: ContentSection[] = [];
+
+    if (views.panels && views.panels.length > 0) {
+      sections.push({
+        id: 'panels',
+        heading: 'Panels',
+        items: views.panels.map((panel) => ({
+          id: `panel:${panel.id}`,
+          label: panel.name,
+          description: panel.type ? panel.type.toUpperCase() : undefined,
+          enabled: panel.showOnStartup ?? true,
+        })),
+      });
+    }
+
+    if (views.treeViews && views.treeViews.length > 0) {
+      sections.push({
+        id: 'tree-views',
+        heading: 'Tree Views',
+        items: views.treeViews.map((tree) => ({
+          id: `tree:${tree.id}`,
+          label: tree.name,
+          description: tree.dataProvider ? `Provider: ${tree.dataProvider}` : undefined,
+          enabled: true,
+        })),
+      });
+    }
+
+    if (views.statusBar && views.statusBar.length > 0) {
+      sections.push({
+        id: 'status-bar',
+        heading: 'Status Items',
+        items: views.statusBar.map((status) => ({
+          id: `status:${status.id}`,
+          label: status.text,
+          description: status.command ? `Command: ${status.command}` : undefined,
+          enabled: true,
+        })),
+      });
+    }
+
+    if (views.decorations && views.decorations.length > 0) {
+      sections.push({
+        id: 'decorations',
+        heading: 'Decorations',
+        items: views.decorations.map((decoration) => ({
+          id: `decoration:${decoration.id}`,
+          label: decoration.id,
+          description: decoration.type ? `Type: ${decoration.type}` : undefined,
+          enabled: true,
+        })),
+      });
+    }
+
+    return sections;
+  }
+
+  private mapMenuItemToContent(item: MenuItemDefinition, position: number): ContentItem {
+    const suffix = item.type === 'submenu' ? ' ›' : '';
+    return {
+      id: item.id,
+      label: `${position}. ${item.label}${suffix}`,
+      description: item.description,
+      enabled: item.enabled !== false,
+    };
+  }
+
+  private buildNavigationItems(
+    menu: SkinMenuDefinition,
+    parentMenu?: SkinMenuDefinition
+  ): ContentItem[] {
+    const items: ContentItem[] = [];
+    const canGoBack = menu.navigation?.canGoBack ?? Boolean(parentMenu);
+
+    if (canGoBack) {
+      items.push({ id: 'back', label: 'Back', enabled: true });
+    }
+
+    items.push({ id: 'home', label: 'Home', enabled: true });
+    items.push({ id: 'help', label: 'Help', enabled: true });
+
+    if (menu.navigation?.canGoForward) {
+      items.push({ id: 'next', label: 'Next', enabled: true });
+    }
+
+    items.push({ id: 'exit', label: 'Exit', enabled: true });
+
+    return items;
+  }
+
+  private resolveMenu(skin: UniversalSkinDefinition, menuId: string): SkinMenuDefinition {
+    const menus = skin.menus;
+    if (!menus) {
+      throw new Error('Skin definition does not provide menus for CLI rendering');
+    }
+
+    const mainMenu = menus.main;
+    if (mainMenu) {
+      const resolvedId = mainMenu.id ?? 'main';
+      if (menuId === resolvedId || menuId === 'main') {
+        return { ...mainMenu, id: resolvedId };
+      }
+    }
+
+    if (menus.submenus) {
+      for (const [key, submenu] of Object.entries(menus.submenus)) {
+        const resolvedId = submenu.id ?? key;
+        if (menuId === resolvedId || menuId === key) {
+          return { ...submenu, id: resolvedId };
+        }
+      }
+    }
+
+    throw new Error(`Menu not found: ${menuId}`);
+  }
+
+  private buildBreadcrumb(
+    menu: SkinMenuDefinition,
+    skin: UniversalSkinDefinition,
+    parentMenu?: SkinMenuDefinition
+  ): string[] {
+    if (menu.navigation?.breadcrumbs && menu.navigation.breadcrumbs.length > 0) {
+      return [...menu.navigation.breadcrumbs];
+    }
+
+    const breadcrumb: string[] = [];
+    breadcrumb.push(skin.name);
+
+    if (parentMenu && parentMenu.title) {
+      breadcrumb.push(parentMenu.title);
+    }
+
+    if (menu.title) {
+      breadcrumb.push(menu.title);
+    }
+
+    return breadcrumb;
+  }
+
+  private buildSubtitle(menu: SkinMenuDefinition, breadcrumb: string[]): string | undefined {
+    const parts: string[] = [];
+    if (menu.subtitle) {
+      parts.push(menu.subtitle);
+    }
+
+    if (breadcrumb.length > 1) {
+      parts.push(breadcrumb.join(' › '));
+    }
+
+    if (parts.length === 0) {
+      return undefined;
+    }
+
+    return parts.join(' │ ');
+  }
+
+  private buildFooter(menu: SkinMenuDefinition): string {
+    if (menu.description && menu.description.trim().length > 0) {
+      return menu.description;
+    }
+
+    return 'Use ↑ ↓ to navigate, Enter to select, Esc to exit';
   }
 
   renderContent(

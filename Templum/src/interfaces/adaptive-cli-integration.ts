@@ -24,11 +24,12 @@ tags: [cli, integration, adaptive, compatibility, mcp-channel]
  * Pattern-Info: { approach: "adaptive-integration", alternatives: "direct-replacement", trade-offs: "compatibility-complexity" }
  */
 
-import { CLIInterfaceAdapter } from './cli-adapter';
+import { CLIInterfaceAdapter } from './cli-adapter-abstracted';
 import { UniversalCommandRegistry } from '../commands/universal-command-registry';
 import { UniversalMenuRegistry } from '../menus/universal-menu-registry';
 import { SessionContextFoundation } from '../session/session-context-foundation';
 import { ITemplumOrchestrator } from './templum-orchestrator-interface';
+import type { WindowSetRenderResult } from './enhanced-window-system';
 
 // Import navigation system components
 import {
@@ -813,6 +814,11 @@ export class AdaptiveCLIIntegration extends EventDrivenComponent<AdaptiveCLIInte
    */
   getActiveFallbacks(): string[] {
     return Array.from(this.state.activeFallbacks);
+  }
+
+  async render(menuId?: string): Promise<WindowSetRenderResult> {
+    const targetMenu = menuId ?? this.state.originalAdapter.getActiveMenuId();
+    return await this.state.originalAdapter.renderMenuWindow(targetMenu);
   }
 
   /**

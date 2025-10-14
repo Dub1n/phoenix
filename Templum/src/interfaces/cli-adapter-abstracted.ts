@@ -56,9 +56,10 @@ import {
 } from './cli-display-consistency-engine';
 import { ServiceInfo } from './service-ordering-manager';
 import { CLISessionBridge, CLISessionSnapshot } from './cli-session-bridge';
-import { renderCliSkin } from './cli/cli-skin-presenter';
+import { EnhancedWindowSystem, WindowSetRenderResult } from './enhanced-window-system';
 import { sleep } from '../utils/async-utils';
 import { createLogger, LogLevel } from '../utils/logger';
+import type { UniversalMenuRegistry } from '../menus/universal-menu-registry';
 
 /**
  * CLI Input Types (Interface-specific)
@@ -149,6 +150,8 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
   private consistencyEngine: CLIDisplayConsistencyEngine;
   private readonly formatter: TerminalFormatter;
   private readonly logger = createLogger('cli-interface-adapter', { level: LogLevel.INFO });
+  private windowSystem: EnhancedWindowSystem;
+  private activeSkin: UniversalSkinDefinition | null = null;
 
   constructor(config?: CLIAdapterInitializationOptions) {
     const { formatter, formatterCapabilities, ...adapterConfig } = config ?? {};
@@ -194,6 +197,8 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
         large: 140
       }
     });
+
+    this.windowSystem = new EnhancedWindowSystem();
   }
 
   emit<K extends CLIEventKey>(event: K, ...args: Parameters<CLIInterfaceAdapterEvents[K]>): boolean {
@@ -373,6 +378,60 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
     return [...this.getSessionSnapshot().navigationHistory];
   }
 
+  private outputProceduralWindows(windowSet: WindowSetRenderResult['windowSet']): void {
+    windowSet.windows.forEach((window, index) => {
+      this.printLine(window.output);
+      if (index < windowSet.windows.length - 1) {
+        this.printLine();
+      }
+    });
+  }
+
+  private calculateWindowItemCount(result: WindowSetRenderResult): number {
+    const activeWindow =
+      result.windowSet.windows.find((window) => window.menuId === result.windowSet.activeMenuId) ??
+      result.windowSet.windows[0];
+
+    if (!activeWindow) {
+      return 0;
+    }
+
+    return activeWindow.content.sections.reduce((total, section) => total + section.items.length, 0);
+  }
+
+  private async updateMenuRegistryState(result: WindowSetRenderResult): Promise<void> {
+    const registry = await this.resolveMenuRegistry();
+    if (!registry) {
+      return;
+    }
+
+    try {
+      await registry.updateMenuState('cli', {
+        activeMenu: result.windowSet.activeMenuId,
+        navigationHistory: result.windowSet.navigationHistory,
+      });
+    } catch (error) {
+      this.logger.warn('Failed to update menu registry state', this.normalizeError(error));
+    }
+  }
+
+  private async resolveMenuRegistry(): Promise<UniversalMenuRegistry | null> {
+    const candidate = this.orchestrator as unknown as {
+      getMenuRegistry?: () => UniversalMenuRegistry | Promise<UniversalMenuRegistry>;
+    };
+
+    if (candidate && typeof candidate.getMenuRegistry === 'function') {
+      try {
+        const registry = await candidate.getMenuRegistry();
+        return registry ?? null;
+      } catch (_error) {
+        return null;
+      }
+    }
+
+    return null;
+  }
+
   private setCurrentMenu(menuId: string, options: { addToHistory?: boolean; resetHistory?: boolean } = {}): void {
     const { addToHistory = true, resetHistory = false } = options;
     if (resetHistory) {
@@ -411,6 +470,10 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
   supportsSkin(skinDefinition: UniversalSkinDefinition): boolean {
     // Check if this skin is compatible with CLI interface
     return skinDefinition.metadata.compatibleInterfaces.includes('cli');
+  }
+
+  getActiveMenuId(): string {
+    return this.getCurrentMenu();
   }
 
   /**
@@ -485,46 +548,56 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
     }
 
     try {
-      // Note: Terminal theme should remain as DefaultColorThemes per established pattern
-      // Skin themes are for content rendering, not terminal UI components
-      // Use orchestrator's skin engine through abstraction
+      let skinEngineResult: any = null;
       const skinEngine = this.orchestrator.getUniversalSkinEngine();
-      if (!skinEngine?.renderForInterface) {
-        this.logger.warn('Skin engine does not implement renderForInterface');
-        return;
-      }
-      
-      // Render skin for CLI interface
-      const renderResult = await skinEngine.renderForInterface(
-        skinDefinition,
-        'cli',
-        {
-          interfaceType: 'cli',
-          interactive: this.config.enableInteractiveMode,
-          colorDepth: this.config.enableColorOutput ? 8 : 0,
+
+      if (skinEngine?.renderForInterface) {
+        try {
+          skinEngineResult = await skinEngine.renderForInterface(
+            skinDefinition,
+            'cli',
+            {
+              interfaceType: 'cli',
+              interactive: this.config.enableInteractiveMode,
+              colorDepth: this.config.enableColorOutput ? 8 : 0,
+            }
+          );
+
+          if (skinEngineResult?.success === false) {
+            this.logger.warn('Skin engine reported an unsuccessful render', {
+              fallbackReason: skinEngineResult.metadata?.fallbackReason ?? 'unknown reason'
+            });
+          }
+        } catch (renderError) {
+          this.logger.warn('Skin engine render failed, continuing with procedural renderer', this.normalizeError(renderError));
         }
-      );
-
-      if (renderResult?.success === false) {
-        this.logger.warn('Skin engine reported an unsuccessful render', {
-          fallbackReason: renderResult.metadata?.fallbackReason ?? 'unknown reason'
-        });
+      } else {
+        this.logger.warn('Skin engine does not implement renderForInterface; relying on procedural renderer');
       }
 
-      const capabilities = this.formatter.getCapabilities();
-      const presentation = renderCliSkin(renderResult, skinDefinition, {
-        width: capabilities.width,
+      const currentMenuId = this.getCurrentMenu();
+      const defaultMenuId = skinDefinition.menus?.main?.id ?? currentMenuId ?? 'main';
+      const targetMenuId =
+        currentMenuId && currentMenuId !== 'main'
+          ? currentMenuId
+          : defaultMenuId;
+
+      const windowSetResult = await this.windowSystem.renderWindowSet(skinDefinition, {
+        menuId: targetMenuId,
+        navigationHistory: this.getNavigationHistory(),
       });
 
-      if (presentation.output.trim().length > 0) {
-        this.printLine(presentation.output);
+      if (windowSetResult.windowSet.windows.length > 0) {
+        this.outputProceduralWindows(windowSetResult.windowSet);
+      } else if (skinEngineResult?.renderedContent?.cli) {
+        this.printLine(skinEngineResult.renderedContent.cli);
+      } else {
+        this.printLine(this.formatWarning('Procedural renderer did not return any CLI windows.'));
       }
 
-      if (presentation.menuId) {
-        this.sessionManager.navigateToMenu(presentation.menuId, false);
-      }
+      this.sessionManager.navigateToMenu(windowSetResult.windowSet.activeMenuId, false);
+      await this.updateMenuRegistryState(windowSetResult);
 
-      // Show keyboard shortcuts if enabled
       if (this.config.enableKeyboardShortcuts && this.keyboardShortcuts.size > 0) {
         this.displayKeyboardShortcuts();
       }
@@ -532,19 +605,52 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
       this.emit('skinRendered', {
         interfaceType: 'cli' as InterfaceType,
         skinId: skinDefinition.metadata.id,
-        renderTime: renderResult?.performance?.renderTime,
-        items: presentation.items.length,
+        renderTime: windowSetResult.renderTime,
+        items: this.calculateWindowItemCount(windowSetResult),
       });
 
       this.logger.info('Applied skin via orchestrator abstraction', {
         skinName: skinDefinition.metadata.name,
-        skinId: skinDefinition.metadata.id
+        skinId: skinDefinition.metadata.id,
+        mode: windowSetResult.mode,
       });
+
+      this.activeSkin = skinDefinition;
       
     } catch (error) {
       const errorMessage = isTemplumError(error) ? error.message : (error instanceof Error ? error.message : 'Unknown error');
       this.logger.error('Failed to apply skin', this.normalizeError(error), { errorMessage });
     }
+  }
+
+  async renderMenuWindow(menuId: string): Promise<WindowSetRenderResult> {
+    const loadedSkins = this.orchestrator.getLoadedSkins();
+    const fallbackSkin = loadedSkins.length > 0 ? loadedSkins[loadedSkins.length - 1] : null;
+    const activeSkin = this.activeSkin ?? fallbackSkin;
+
+    if (!activeSkin) {
+      throw createTemplumError('Cannot render menu window without a loaded skin', 'SERVICE_NOT_READY', 'configuration');
+    }
+
+    const windowSetResult = await this.windowSystem.renderWindowSet(activeSkin, {
+      menuId,
+      navigationHistory: this.getNavigationHistory(),
+    });
+
+    if (windowSetResult.windowSet.windows.length > 0) {
+      const targetWindow =
+        windowSetResult.windowSet.windows.find((window) => window.menuId === menuId) ??
+        windowSetResult.windowSet.windows[0];
+
+      this.printLine(targetWindow.output);
+    } else {
+      this.printLine(this.formatWarning(`No procedural window available for menu '${menuId}'.`));
+    }
+
+    this.sessionManager.navigateToMenu(windowSetResult.windowSet.activeMenuId, true);
+    await this.updateMenuRegistryState(windowSetResult);
+
+    return windowSetResult;
   }
 
   /**

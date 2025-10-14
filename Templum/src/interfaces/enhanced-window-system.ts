@@ -30,7 +30,8 @@ import { summariseThemeUsage, ThemeMetricsSummary, ThemeFallbackMode, ThemeUsage
 import { BorderRenderer, WindowContent, WindowOptions, WindowTheme } from './border-renderer';
 import { WindowLayoutManager, OptimalLayout } from './window-layout-manager';
 import { TerminalCompatibilityDetector, TerminalCapabilities as DetectorCapabilities, getTerminalCapabilities } from './terminal-compatibility-detector';
-import { UniversalLayoutEngine, UniversalSkinMenuDefinition, PCLSkinMenuDefinition, InterfaceType } from '../rendering/universal-layout-engine';
+import { UniversalLayoutEngine, UniversalSkinMenuDefinition, PCLSkinMenuDefinition, InterfaceType, ProceduralCLIWindowSet } from '../rendering/universal-layout-engine';
+import type { UniversalSkinDefinition } from '../types/universal-skin-definition';
 
 export interface EnhancedWindowOptions extends WindowOptions {
   enableProgessiveEnhancement?: boolean;
@@ -58,6 +59,14 @@ export interface EnhancedRenderResult {
   layoutOptimized: boolean;
 }
 
+export interface WindowSetRenderResult {
+  success: boolean;
+  mode: 'enhanced' | 'legacy' | 'fallback';
+  windowSet: ProceduralCLIWindowSet;
+  capabilities: WindowSystemCapabilities;
+  renderTime: number;
+}
+
 export class EnhancedWindowSystem {
   private borderRenderer: BorderRenderer;
   private layoutManager: WindowLayoutManager;
@@ -72,6 +81,46 @@ export class EnhancedWindowSystem {
     this.layoutManager = new WindowLayoutManager();
     this.compatibilityDetector = new TerminalCompatibilityDetector();
     this.universalLayoutEngine = new UniversalLayoutEngine();
+  }
+
+  async renderWindowSet(
+    skinDefinition: UniversalSkinDefinition,
+    context: { menuId?: string; navigationHistory?: string[] } = {}
+  ): Promise<WindowSetRenderResult> {
+    const startTime = Date.now();
+    const capabilities = await this.getSystemCapabilities();
+
+    try {
+      const windowSet = await this.universalLayoutEngine.renderForCLI(skinDefinition, {
+        menuId: context.menuId,
+        navigationHistory: context.navigationHistory,
+      });
+
+      const mode: WindowSetRenderResult['mode'] = capabilities.supportsStructuredWindows
+        ? 'enhanced'
+        : 'legacy';
+
+      return {
+        success: true,
+        mode,
+        windowSet,
+        capabilities,
+        renderTime: Date.now() - startTime,
+      };
+    } catch (error) {
+      const renderTime = Date.now() - startTime;
+      return {
+        success: false,
+        mode: 'fallback',
+        windowSet: {
+          activeMenuId: context.menuId ?? skinDefinition.menus?.main?.id ?? 'main',
+          navigationHistory: context.navigationHistory ?? [],
+          windows: [],
+        },
+        capabilities,
+        renderTime,
+      };
+    }
   }
 
   /**

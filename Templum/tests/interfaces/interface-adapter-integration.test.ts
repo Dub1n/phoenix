@@ -20,6 +20,7 @@ import {
 } from "../../src/interfaces/templum-orchestrator-interface";
 import { VSCodeInterfaceAdapter } from "../../src/interfaces/vscode-adapter-abstracted";
 import { CLIInterfaceAdapter } from "../../src/interfaces/cli-adapter-abstracted";
+import { EnhancedWindowSystem } from "../../src/interfaces/enhanced-window-system";
 import { CommandInterfaceAdapter } from "../../src/interfaces/command-adapter-abstracted";
 import {
   DefaultColorThemes,
@@ -651,8 +652,154 @@ describe("Interface Adapter Integration Tests", () => {
         },
       };
 
-      // Act & Assert - Should not throw
-      await expect(cliAdapter.applySkin(mockSkin)).resolves.not.toThrow();
+    // Act & Assert - Should not throw
+    await expect(cliAdapter.applySkin(mockSkin)).resolves.not.toThrow();
+  });
+
+    test('requests procedural windows through enhanced renderer for nested menus', async () => {
+      await cliAdapter.initialize(mockOrchestrator);
+
+      const renderWindowSetSpy = jest
+        .spyOn(EnhancedWindowSystem.prototype as any, 'renderWindowSet')
+        .mockResolvedValue({
+          success: true,
+          mode: 'enhanced',
+          capabilities: {
+            supportsStructuredWindows: true,
+            supportsUnicodeBorders: true,
+            fallbackMode: 'unicode',
+            terminalCapabilities: {
+              supportsAnsi: true,
+              supportsUnicode: true,
+              supportsBoxDrawing: true,
+              supportsColor: true,
+              supportsEmojis: false,
+              supportsTrueColor: false,
+              supportsMouseInput: false,
+              supportsKeyboardShortcuts: true,
+              screenReaderCompatible: false,
+              renderingSpeed: 'standard',
+              width: 100,
+              height: 40,
+              name: 'jest-terminal',
+            },
+            recommendedTheme: {},
+            themeMetrics: { coverage: 1, overrides: [] },
+          },
+          renderTime: 6,
+          windowSet: {
+            activeMenuId: 'main-menu',
+            navigationHistory: ['root'],
+            windows: [
+              {
+                menuId: 'main-menu',
+                title: 'Root',
+                output: 'MAIN WINDOW',
+                layout: { totalWidth: 60 },
+                content: {
+                  title: 'Root',
+                  sections: [
+                    { id: 'items', items: [{ id: 'start', label: '1. Start' }] },
+                  ],
+                },
+                navigation: {
+                  breadcrumb: ['Root'],
+                  items: [{ id: 'help', label: 'Help' }],
+                },
+                capabilities: {
+                  supportsUnicode: true,
+                  supportsBoxDrawing: true,
+                  supportsColor: true,
+                  width: 100,
+                  height: 40,
+                },
+                isNested: false,
+              },
+              {
+                menuId: 'inspect-menu',
+                title: 'Inspect',
+                output: 'NESTED WINDOW',
+                layout: { totalWidth: 58 },
+                content: {
+                  title: 'Inspect',
+                  sections: [
+                    {
+                      id: 'inspect-items',
+                      items: [{ id: 'open', label: '1. Open Asset' }],
+                    },
+                  ],
+                },
+                navigation: {
+                  breadcrumb: ['Root', 'Inspect'],
+                  items: [{ id: 'back', label: 'Back' }],
+                },
+                capabilities: {
+                  supportsUnicode: true,
+                  supportsBoxDrawing: true,
+                  supportsColor: true,
+                  width: 100,
+                  height: 40,
+                },
+                isNested: true,
+                parentMenuId: 'main-menu',
+              },
+            ],
+          },
+        });
+
+      const stdoutSpy = jest.spyOn(process.stdout, 'write').mockImplementation(() => true as any);
+
+      const skinDefinition: UniversalSkinDefinition = {
+        id: 'cli-fixture',
+        name: 'CLI Fixture',
+        version: '1.0.0',
+        metadata: {
+          id: 'cli-fixture',
+          name: 'CLI Fixture',
+          version: '1.0.0',
+          backend: 'haruspex',
+          backendService: 'haruspex',
+          compatibleInterfaces: ['cli'],
+        },
+        menus: {
+          main: {
+            id: 'main-menu',
+            title: 'Root',
+            items: [
+              { id: 'start', label: 'Start', type: 'command' },
+              { id: 'inspect', label: 'Inspect Assets', type: 'submenu', submenu: 'inspect-menu' },
+            ],
+          },
+          submenus: {
+            'inspect-menu': {
+              id: 'inspect-menu',
+              title: 'Inspect',
+              items: [
+                { id: 'open', label: 'Open Asset', type: 'command' },
+              ],
+              navigation: { canGoBack: true },
+            },
+          },
+        },
+        views: {
+          panels: [{ id: 'overview', name: 'Overview', type: 'webview' }],
+        },
+      };
+
+      await cliAdapter.applySkin(skinDefinition);
+
+      expect(renderWindowSetSpy).toHaveBeenCalledWith(
+        skinDefinition,
+        expect.objectContaining({ menuId: 'main-menu' })
+      );
+      expect(stdoutSpy.mock.calls.some(call => call[0].includes('MAIN WINDOW'))).toBe(true);
+      expect(stdoutSpy.mock.calls.some(call => call[0].includes('NESTED WINDOW'))).toBe(true);
+
+      const snapshot = (cliAdapter as any).sessionManager.getCurrentSession();
+      expect(snapshot.currentMenu).toBe('main-menu');
+
+      renderWindowSetSpy.mockRestore();
+      stdoutSpy.mockRestore();
     });
   });
 
