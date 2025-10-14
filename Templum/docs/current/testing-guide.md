@@ -3,7 +3,7 @@ doc-type: operations-guide
 title: Templum Testing Guide
 tags: [templum, testing, qa]
 status: current
-last_updated: 2025-10-13
+last_updated: 2025-10-14
 ---
 
 # Templum — Testing Guide
@@ -147,3 +147,4 @@ For additional context on architecture and active milestones, see `docs/current/
 - **Generic backend integration verification:** `npm test -- src/tests/backend/service-discovery.test.ts src/tests/backend/backend-dependency-integration.test.ts src/tests/backend/generic-backend-integration.test.ts` now serves as the regression bundle for multi-protocol auto-registration. The generic router specs stub `detectServiceCapabilities`, `getServiceVersion`, and `loadBackendSkin` to avoid real network calls while still exercising cache priming, command routing, and ConnectionFactory wiring.
 - **Manual override watcher flow:** `npm test -- --runTestsByPath src/tests/backend/manual-override-flow.test.ts src/tests/backend/manual-override-watcher.integration.test.ts --runInBand --no-cache --forceExit` validates both the direct apply/clear logic and the `.templum/services` file-watcher pathway. The watcher suite serialises manifests via `serializeServiceManifest`, stubs capability/version probes, and cleans up its temporary registry so it remains safe to run locally or in CI. This pair now runs as part of `npm run test:ci` (see `package.json`) so CI always guards the manual override path.
 - **Phase 6 services (real backends):** Run `npm run phase6-services -- start --use-real-backends` when partner builds are ready. For this build, live services are deferred post-MVP; track re-enablement under `dev/tasks/haruspex-integration.md` and `docs/target/post-mvp-progress.md`. Logs (once enabled) land in `dist/src/tests/integration-validation-framework.js` and surface as `[Service start failed]` in the CLI if a backend misbehaves.
+- **Logger guardrail (Pattern 1 Stage 4 lane 4j):** Run `node scripts/run-with-timeout.mjs --preset jest-suite --log-file logs/consolidation/pattern-1/lane-4j-20251014T212228Z.log -- npx jest tests/service-discovery/pty-mcp-server-test-harness.test.ts` to reproduce the intentional failure (`Expected: 0 Received: 128` console invocations). Keep the log attached to Stage 6e so the CLI/Phase 6 migration owners can rerun the guardrail after replacing raw `console.*`.

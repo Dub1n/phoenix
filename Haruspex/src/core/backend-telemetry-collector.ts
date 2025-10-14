@@ -240,7 +240,7 @@ export class BackendTelemetryCollector {
     const logLevel = this.config.logLevel || 'info';
     
     // Convert log level to number for comparison
-    const levels = { debug: 0, info: 1, warn: 2, error: 3 };
+    const levels = { debug: 0, info: 1, warn: 2, warning: 2, error: 3 };
     const currentLevel = levels[logLevel];
     const eventLevel = levels[event.level || 'info'];
     

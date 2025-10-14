@@ -203,8 +203,7 @@ async function initializeCoreComponents(context: vscode.ExtensionContext, worksp
     telemetryCollector = new TelemetryCollector({
       privacyCompliant: true,
       performanceMetrics: true,
-      errorReporting: true,
-      outputChannel: true
+      errorReporting: true
     });
     debugManager?.log('Telemetry collector initialized');
 
@@ -218,8 +217,7 @@ async function initializeCoreComponents(context: vscode.ExtensionContext, worksp
       telemetry: {
         privacyCompliant: true,
         performanceMetrics: true,
-        errorReporting: true,
-        outputChannel: true
+        errorReporting: true
       },
       fileMonitoring: {
         enabled: true,
@@ -235,7 +233,7 @@ async function initializeCoreComponents(context: vscode.ExtensionContext, worksp
       debugManager?.log('Core engine initialized successfully');
       
       // Setup file monitoring and track watchers
-      coreEngine.setupFileWatching(context);
+      coreEngine.setupFileWatching(workspaceRoot);
       debugManager?.log('File monitoring setup complete');
       
       // Track file monitoring processes if available

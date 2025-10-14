@@ -20,6 +20,7 @@ import {
   cleanupContext,
 } from '../utils/event-utils';
 import type { TypedEventEmitter, TypedEventMap } from '../utils/event-utils';
+import { createLogger, Logger } from '../utils/logger';
 import { computeDisplayLayout } from './display-utils-layout';
 import {
   DefaultColorThemes,
@@ -39,6 +40,31 @@ export type {
   TerminalColorTheme,
   ThemeIntegrityResult,
 } from './terminal-ui-theme';
+
+let terminalUILogger: Logger = createLogger('terminal-ui-components');
+
+export const setTerminalUILogger = (logger: Logger): void => {
+  terminalUILogger = logger;
+};
+
+const CLEAR_SEQUENCE = '\u001b[2J\u001b[0f';
+
+function writeLine(value: string = ''): void {
+  if (typeof process.stdout?.write !== 'function') {
+    return;
+  }
+
+  const content = value.endsWith('\n') ? value : `${value}\n`;
+  process.stdout.write(content);
+}
+
+function clearTerminal(): void {
+  if (typeof process.stdout?.write !== 'function') {
+    return;
+  }
+
+  process.stdout.write(CLEAR_SEQUENCE);
+}
 
 // Import consistency framework for table formatting integration
 // TODO: [TASK-ID-006] Pattern: consistency-framework-integration | Complexity: 4 | Dependencies: cli-display-consistency-engine
@@ -349,7 +375,7 @@ export class InteractivePrompt extends EventDrivenComponent<InteractivePromptEve
           const validation = this.config.validate(value);
           if (validation !== true) {
             const errorMessage = typeof validation === 'string' ? validation : 'Invalid input';
-            console.log(this.config.theme.error(errorMessage));
+            writeLine(this.config.theme.error(errorMessage));
             reject(new Error(errorMessage));
             return;
           }
@@ -373,13 +399,13 @@ export class InteractivePrompt extends EventDrivenComponent<InteractivePromptEve
 
   async select(question: string, choices: string[], defaultIndex: number = 0): Promise<string> {
     return new Promise((resolve, reject) => {
-      console.log(this.config.theme.primary(`${this.config.prefix} ${question}`));
+      writeLine(this.config.theme.primary(`${this.config.prefix} ${question}`));
       
       // Display choices
       choices.forEach((choice, index) => {
         const indicator = index === defaultIndex ? '>' : ' ';
         const style = index === defaultIndex ? this.config.theme.accent : this.config.theme.muted;
-        console.log(`  ${this.config.theme.primary(indicator)} ${style(choice)}`);
+        writeLine(`  ${this.config.theme.primary(indicator)} ${style(choice)}`);
       });
 
       this.setupReadline();
@@ -396,7 +422,7 @@ export class InteractivePrompt extends EventDrivenComponent<InteractivePromptEve
           
           process.stdout.clearLine(0);
           process.stdout.cursorTo(0);
-          console.log(`  ${this.config.theme.primary(indicator)} ${style(choice)}`);
+          writeLine(`  ${this.config.theme.primary(indicator)} ${style(choice)}`);
         });
       };
 
@@ -426,7 +452,7 @@ export class InteractivePrompt extends EventDrivenComponent<InteractivePromptEve
 
   async multiSelect(question: string, choices: string[]): Promise<string[]> {
     return new Promise((resolve, reject) => {
-      console.log(this.config.theme.primary(`${this.config.prefix} ${question} (use space to select, enter to confirm)`));
+      writeLine(this.config.theme.primary(`${this.config.prefix} ${question} (use space to select, enter to confirm)`));
       
       const selected = new Array(choices.length).fill(false);
       let currentIndex = 0;
@@ -442,13 +468,13 @@ export class InteractivePrompt extends EventDrivenComponent<InteractivePromptEve
           
           process.stdout.clearLine(0);
           process.stdout.cursorTo(0);
-          console.log(`  ${this.config.theme.primary(indicator)} ${this.config.theme.primary(checkbox)} ${style(choice)}`);
+          writeLine(`  ${this.config.theme.primary(indicator)} ${this.config.theme.primary(checkbox)} ${style(choice)}`);
         });
         
         // Show instruction
         process.stdout.clearLine(0);
         process.stdout.cursorTo(0);
-        console.log(this.config.theme.muted('  (Use arrow keys, space to select, enter to confirm)'));
+        writeLine(this.config.theme.muted('  (Use arrow keys, space to select, enter to confirm)'));
       };
 
       updateDisplay();
@@ -930,7 +956,7 @@ export class EnhancedInteractiveMenu extends EventDrivenComponent<EnhancedIntera
   }
 
   private render(): void {
-    console.clear();
+    clearTerminal();
     
     // Convert menu sections to window content
     const windowContent = this.buildWindowContent();
@@ -943,7 +969,7 @@ export class EnhancedInteractiveMenu extends EventDrivenComponent<EnhancedIntera
     };
 
     const output = this.renderer.renderWindow(windowConfig);
-    console.log(output);
+    writeLine(output);
   }
 
   private buildWindowContent(): WindowContentSection[] {
@@ -995,7 +1021,7 @@ export class EnhancedInteractiveMenu extends EventDrivenComponent<EnhancedIntera
   }
 
   private showCtrlCConfirmation(): void {
-    console.clear();
+    clearTerminal();
     const windowConfig: WindowLayoutConfig = {
       title: this.config.title,
       subtitle: 'Press Ctrl+C again to shut down Templum CLI',
@@ -1004,7 +1030,7 @@ export class EnhancedInteractiveMenu extends EventDrivenComponent<EnhancedIntera
     };
 
     const output = this.renderer.renderWindow(windowConfig);
-    console.log(output);
+    writeLine(output);
   }
 
   /**
@@ -1400,6 +1426,7 @@ export interface TerminalUIConfig {
   responsive: ResponsiveLayoutConfig;
   formatter?: TerminalFormatter;
   columnsProvider?: () => number | undefined;
+  logger?: Logger;
 }
 
 type TerminalProcessEvents = {
@@ -1418,6 +1445,7 @@ export class TerminalUI extends EventDrivenComponent<TerminalUIEvents> {
   private layout: ResponsiveLayout;
   private activeComponents: Set<ProgressBar | Spinner | InteractivePrompt> = new Set();
   private readonly formatter: TerminalFormatter;
+  private readonly logger: Logger;
   private readonly eventScope: string;
   private cleanupPromise: Promise<void> | null = null;
   private readonly handleCleanupSignal = async () => {
@@ -1430,12 +1458,14 @@ export class TerminalUI extends EventDrivenComponent<TerminalUIEvents> {
     process.setMaxListeners(0);
 
     this.eventScope = scope;
+    const baseLogger = config.logger ?? terminalUILogger;
+    this.logger = baseLogger.child(scope);
     
     this.formatter = config.formatter ?? createFormatter();
     setTerminalUIFormatter(this.formatter);
     const themeIntegrity = ensureThemeIntegrity(config.theme ?? DefaultColorThemes.default, DefaultColorThemes.default);
     if (themeIntegrity.resetRequired) {
-      console.warn('[TerminalUI] Theme failed integrity check during initialization; default theme applied');
+      this.logger.warn('Theme failed integrity check during initialization; default theme applied');
     }
     this.theme = themeIntegrity.theme;
     this.layout = new ResponsiveLayout(config.responsive);
@@ -1506,7 +1536,7 @@ export class TerminalUI extends EventDrivenComponent<TerminalUIEvents> {
     const integrity = ensureThemeIntegrity(theme, DefaultColorThemes.default);
     this.theme = integrity.theme;
     if (integrity.resetRequired) {
-      console.warn('[TerminalUI] Provided theme failed integrity checks; default theme applied');
+      this.logger.warn('Provided theme failed integrity checks; default theme applied');
     }
     this.emit('themeChanged', this.theme);
   }
@@ -1514,7 +1544,7 @@ export class TerminalUI extends EventDrivenComponent<TerminalUIEvents> {
   getTheme(): TerminalColorTheme {
     const integrity = ensureThemeIntegrity(this.theme, DefaultColorThemes.default);
     if (integrity.resetRequired) {
-      console.warn('[TerminalUI] Theme corrupted, restoring default theme');
+      this.logger.warn('Theme corrupted, restoring default theme');
       this.theme = integrity.theme;
       this.activeComponents.clear();
       setTerminalUIFormatter(this.formatter);
@@ -1523,7 +1553,7 @@ export class TerminalUI extends EventDrivenComponent<TerminalUIEvents> {
   }
 
   clearScreen(): void {
-    console.clear();
+    clearTerminal();
   }
 
   async cleanup(): Promise<void> {
@@ -1998,7 +2028,7 @@ export class InteractiveSearch extends EventDrivenComponent<InteractiveSearchEve
     if (!this.isActive) return;
 
     // Clear screen and move to top
-    console.clear();
+    clearTerminal();
 
     const dimensions = this.layout.getDimensions();
     const breakpoint = this.layout.getCurrentBreakpoint();
@@ -2026,11 +2056,11 @@ export class InteractiveSearch extends EventDrivenComponent<InteractiveSearchEve
     const subtitle = this.config.theme.muted(`${this.filteredItems.length} results`);
     
     if (breakpoint === 'small') {
-      console.log(`${title}\n${subtitle}`);
+      writeLine(`${title}\n${subtitle}`);
     } else {
-      console.log(`${title} - ${subtitle}`);
+      writeLine(`${title} - ${subtitle}`);
     }
-    console.log(this.config.theme.muted('-'.repeat(Math.min(60, process.stdout.columns || 80))));
+    writeLine(this.config.theme.muted('-'.repeat(Math.min(60, process.stdout.columns || 80))));
   }
 
   private renderSearchInput(_breakpoint: 'small' | 'medium' | 'large'): void {
@@ -2038,8 +2068,8 @@ export class InteractiveSearch extends EventDrivenComponent<InteractiveSearchEve
     const query = this.currentQuery || this.config.theme.muted('(type to search)');
     const cursor = this.isActive ? this.config.theme.primary('|') : '';
     
-    console.log(`${prompt}${query}${cursor}`);
-    console.log('');
+    writeLine(`${prompt}${query}${cursor}`);
+    writeLine('');
   }
 
   private renderCategoryFilter(breakpoint: 'small' | 'medium' | 'large'): void {
@@ -2050,21 +2080,21 @@ export class InteractiveSearch extends EventDrivenComponent<InteractiveSearchEve
     const categories = ['All', ...this.config.categories];
     
     if (breakpoint === 'small') {
-      console.log(`${prefix}${this.config.theme.info(activeCategory)} (tab to change)`);
+      writeLine(`${prefix}${this.config.theme.info(activeCategory)} (tab to change)`);
     } else {
       const categoryList = categories.map(cat => 
         cat === activeCategory 
           ? this.config.theme.accent(`[${cat}]`)
           : this.config.theme.muted(cat)
       ).join(' ');
-      console.log(`${prefix}${categoryList}`);
+      writeLine(`${prefix}${categoryList}`);
     }
-    console.log('');
+    writeLine('');
   }
 
   private renderResults(breakpoint: 'small' | 'medium' | 'large', dimensions: TerminalDimensions): void {
     if (this.filteredItems.length === 0) {
-      console.log(this.config.theme.warning('No results found'));
+      writeLine(this.config.theme.warning('No results found'));
       return;
     }
 
@@ -2082,7 +2112,7 @@ export class InteractiveSearch extends EventDrivenComponent<InteractiveSearchEve
 
     if (this.filteredItems.length > maxDisplayResults) {
       const remaining = this.filteredItems.length - maxDisplayResults;
-      console.log(this.config.theme.muted(`... and ${remaining} more results`));
+      writeLine(this.config.theme.muted(`... and ${remaining} more results`));
     }
   }
 
@@ -2092,10 +2122,10 @@ export class InteractiveSearch extends EventDrivenComponent<InteractiveSearchEve
     
     if (breakpoint === 'small') {
       // Compact format for small screens
-      console.log(`${this.config.theme.primary(indicator)} ${theme(result.highlightedTitle)}`);
+      writeLine(`${this.config.theme.primary(indicator)} ${theme(result.highlightedTitle)}`);
       if (result.description) {
         const truncated = this.truncateResultText(result.description, 50, '...');
-        console.log(`  ${this.config.theme.muted(truncated)}`);
+        writeLine(`  ${this.config.theme.muted(truncated)}`);
       }
     } else {
       // Full format for larger screens
@@ -2103,17 +2133,17 @@ export class InteractiveSearch extends EventDrivenComponent<InteractiveSearchEve
       const score = this.config.enableFuzzySearch ? 
         this.config.theme.muted(` (${result.score.toFixed(1)})`) : '';
       
-      console.log(`${this.config.theme.primary(indicator)} ${theme(result.highlightedTitle)} ${category}${score}`);
+      writeLine(`${this.config.theme.primary(indicator)} ${theme(result.highlightedTitle)} ${category}${score}`);
       
       if (result.description) {
         const desc = breakpoint === 'medium'
           ? this.truncateResultText(result.description, 80, '...')
           : result.description;
-        console.log(`  ${this.config.theme.muted(desc)}`);
+        writeLine(`  ${this.config.theme.muted(desc)}`);
       }
     }
     
-    console.log('');
+    writeLine('');
   }
 
   private truncateResultText(value: string, width: number, ellipsis = '...'): string {
@@ -2127,8 +2157,8 @@ export class InteractiveSearch extends EventDrivenComponent<InteractiveSearchEve
       ? 'ESC: cancel | ENTER: select | UP/DOWN: navigate'
       : 'ESC: cancel | ENTER: select | UP/DOWN: navigate | TAB: filter | Type: search';
     
-    console.log(this.config.theme.muted('-'.repeat(Math.min(60, process.stdout.columns || 80))));
-    console.log(this.config.theme.muted(help));
+    writeLine(this.config.theme.muted('-'.repeat(Math.min(60, process.stdout.columns || 80))));
+    writeLine(this.config.theme.muted(help));
   }
 
   private cleanup(): void {
@@ -2169,7 +2199,11 @@ export const DEFAULT_TERMINAL_UI_CONFIG = {
  */
 export function createDefaultTerminalUI(
   themeName: keyof typeof DefaultColorThemes = 'default',
-  dependencies: { formatter?: TerminalFormatter; columnsProvider?: () => number | undefined } = {},
+  dependencies: {
+    formatter?: TerminalFormatter;
+    columnsProvider?: () => number | undefined;
+    logger?: Logger;
+  } = {},
 ): TerminalUI {
   const theme = DefaultColorThemes[themeName] || DefaultColorThemes.default;
   const formatter = dependencies.formatter ?? createFormatter();
@@ -2178,7 +2212,8 @@ export function createDefaultTerminalUI(
     theme,
     formatter,
     columnsProvider,
-    responsive: DEFAULT_TERMINAL_UI_CONFIG.responsive
+    responsive: DEFAULT_TERMINAL_UI_CONFIG.responsive,
+    logger: dependencies.logger
   });
 }
 

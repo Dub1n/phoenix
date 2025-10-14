@@ -1,12 +1,12 @@
 {
   "schemaVersion": "1.0.0",
-  "updatedAt": "2025-10-14T15:27:21Z",
+  "updatedAt": "2025-10-14T22:07:49Z",
   "patterns": [
     {
       "patternId": 1,
       "name": "Logger Consolidation",
       "description": "2,810 console.log/warn/error calls with inconsistent formatting",
-      "stage": 6,
+      "stage": 4,
       "owner": {
         "agent": "unassigned",
         "claimedAt": "2025-09-14T18:00:00Z"
@@ -27,33 +27,36 @@
         },
         "3": {
           "status": "complete",
-          "startedAt": "2025-10-14T12:41:00Z",
-          "elapsedMs": 192000,
-          "notes": "Stage 4 lane split finalized for single-session flow (4a-4h). Stage 6 bundles 6a/6b/6c cover backend, interface, and session/core cohorts respectively with console.* search enforcement and run-with-timeout commands. Updated dependencies and risks captured in stage-3-note-20251014T124405; Stage 7 sweep remains Templum/ + console.*."
+          "searchTerms": [
+            "console.error",
+            "console.log",
+            "console.warn"
+          ],
+          "plannedFiles": [
+            "src/tests/backend",
+            "tests/backend",
+            "tests/integration",
+            "tests/interfaces",
+            "tests/service-discovery"
+          ]
         },
         "4": {
           "status": "complete",
-          "startedAt": "2025-10-14T12:49:43Z",
-          "elapsedMs": 1027000,
-          "completedAt": "2025-10-14T13:06:50Z"
+          "startedAt": "2025-10-14T21:17:37Z",
+          "elapsedMs": 739000,
+          "completedAt": "2025-10-14T21:29:56Z"
         },
         "5": {
-          "status": "complete",
-          "startedAt": "2025-10-14T14:05:16Z",
-          "notes": "Guardrails documented; phase6-validation evidence logged; Stage 6 lanes may proceed.",
-          "elapsedMs": 676000,
+          "status": "blocked",
           "plannedFiles": [
             "dev/architecture/logger-error-handler-alignment.md"
           ]
         },
         "6": {
-          "status": "complete",
-          "startedAt": "2025-10-14T14:33:23Z",
-          "elapsedMs": 1520000,
-          "completedAt": "2025-10-14T15:10:09Z"
+          "status": "blocked"
         },
         "7": {
-          "status": "pending",
+          "status": "blocked",
           "searchTerms": [
             "console.error",
             "console.log",
@@ -293,6 +296,128 @@
           ],
           "startedAt": "2025-10-14T14:33:57Z",
           "elapsedMs": 1486000
+        },
+        "4i": {
+          "status": "complete",
+          "scope": "Guardrail: manual override backend suites enforce logger",
+          "commands": [
+            {
+              "command": "node scripts/run-with-timeout.mjs --preset jest-suite -- npx jest src/tests/backend/manual-override-flow.test.ts src/tests/backend/manual-override-watcher.integration.test.ts src/tests/backend/comprehensive-backend-validation.test.ts"
+            }
+          ],
+          "updatedAt": "2025-10-14T21:29:56Z",
+          "plannedFiles": [
+            "src/tests/backend/comprehensive-backend-validation.test.ts",
+            "src/tests/backend/manual-override-flow.test.ts",
+            "src/tests/backend/manual-override-watcher.integration.test.ts"
+          ],
+          "searchTerms": [
+            "console.error",
+            "console.log",
+            "console.warn"
+          ],
+          "startedAt": "2025-10-14T21:17:37Z",
+          "elapsedMs": 739000
+        },
+        "4j": {
+          "status": "complete",
+          "scope": "Guardrail: service discovery MPC harness rejects raw console",
+          "commands": [
+            {
+              "command": "node scripts/run-with-timeout.mjs --preset jest-suite -- npx jest tests/service-discovery/pty-mcp-server-test-harness.test.ts"
+            }
+          ],
+          "updatedAt": "2025-10-14T21:23:17Z",
+          "plannedFiles": [
+            "tests/service-discovery/pty-mcp-server-test-harness.test.ts"
+          ],
+          "searchTerms": [
+            "console.error",
+            "console.log",
+            "console.warn"
+          ],
+          "startedAt": "2025-10-14T21:18:16Z",
+          "elapsedMs": 301000
+        },
+        "4k": {
+          "status": "complete",
+          "scope": "Guardrail: VSCode adapter suites enforce logger wiring",
+          "commands": [
+            {
+              "command": "node scripts/run-with-timeout.mjs --preset jest-suite -- npx jest tests/interfaces/interface-adapter-integration.test.ts tests/interfaces/universal-interaction-manager.session.test.ts"
+            }
+          ],
+          "updatedAt": "2025-10-14T21:28:15Z",
+          "plannedFiles": [
+            "tests/interfaces/interface-adapter-integration.test.ts",
+            "tests/interfaces/universal-interaction-manager.session.test.ts",
+            "tests/interfaces/vscode/"
+          ],
+          "searchTerms": [
+            "console.error",
+            "console.log",
+            "console.warn"
+          ],
+          "startedAt": "2025-10-14T21:18:32Z",
+          "elapsedMs": 583000
+        },
+        "6d": {
+          "status": "blocked",
+          "scope": "Runtime: backend routers adopt consolidated logger",
+          "commands": [
+            {
+              "command": "node scripts/run-with-timeout.mjs --preset jest-ci -- npx jest --config jest.backend.config.js"
+            }
+          ],
+          "updatedAt": "2025-10-14T21:29:48Z",
+          "plannedFiles": [
+            "src/backend/backend-dependency-resolver.ts",
+            "src/backend/backend-service-router.ts"
+          ],
+          "searchTerms": [
+            "console.error",
+            "console.log",
+            "console.warn"
+          ]
+        },
+        "6e": {
+          "status": "blocked",
+          "scope": "Runtime: CLI entrypoints leverage consolidated logger",
+          "commands": [
+            {
+              "command": "node scripts/run-with-timeout.mjs --preset jest-ci -- npx jest tests/scripts/phase6-validation-cli.test.ts"
+            }
+          ],
+          "updatedAt": "2025-10-14T21:23:30Z",
+          "plannedFiles": [
+            "src/cli-entry.ts",
+            "src/monitoring/cli-performance-monitor.ts",
+            "src/scripts/run-phase6-integration-validation.ts"
+          ],
+          "searchTerms": [
+            "console.error",
+            "console.log",
+            "console.warn"
+          ]
+        },
+        "6f": {
+          "status": "blocked",
+          "scope": "Runtime: VSCode adapters + registry consolidate logging",
+          "commands": [
+            {
+              "command": "node scripts/run-with-timeout.mjs --preset jest-ci -- npx jest tests/interfaces/interface-adapter-integration.test.ts"
+            }
+          ],
+          "updatedAt": "2025-10-14T21:28:04Z",
+          "plannedFiles": [
+            "src/extension.ts",
+            "src/interfaces/interface-adapter-registry.legacy.ts"
+          ],
+          "searchTerms": [
+            "console.error",
+            "console.log",
+            "console.warn"
+          ]
         }
       },
       "handoff": {
@@ -460,6 +585,54 @@
           "body": "Phase 6 gating battery executed via node scripts/run-with-timeout.mjs --preset phase6-validation -- npm run phase6-validation (UTC 2025-10-14T14:15Z). Output captured at dev/architecture/logs/pattern-1-stage5b-phase6-validation-20251014T141551Z.log; cross-interface validation reported 100% consistency and all workflows completed within baseline thresholds. No outstanding approvals required; Stage 6 lanes 6a/6b/6c stay blocked pending hand-off.",
           "scope": [
             "stage-5"
+          ]
+        },
+        {
+          "id": "stage-3-note-20251014T165258",
+          "timestamp": "2025-10-14T16:52:58Z",
+          "body": "Reason: Stage 7 sweep surfaced unmanaged console.* output across backend router + CLI/VSCode entrypoints, so Stage 3 is reopened to restage work under the guardrail-first workflow; Guardrail prep (Stage 4): expand src/tests/backend/manual-override-* suites, tests/service-discovery/pty-mcp-server-test-harness.test.ts, and tests/interfaces/vscode/* to assert logger channels and fail fast on raw console usage before migrations land; Migration plan (Stage 6): replace console.* in src/backend/backend-service-router.ts, src/backend/backend-dependency-resolver.ts, src/cli-entry.ts, src/extension.ts, src/interfaces/interface-adapter-registry.legacy.ts, src/monitoring/cli-performance-monitor.ts, and src/scripts/run-phase6-integration-validation.ts alongside dependency shims; Dependencies: sync with Error Handler + Async Utils patterns so logger injection stays DI-driven, line up CLI skin generator + Phase 6 harness docs for the widened scope.",
+          "scope": [
+            "stage-3"
+          ]
+        },
+        {
+          "id": "stage-7-note-20251014T165314",
+          "timestamp": "2025-10-14T16:53:14Z",
+          "body": "Reason: Stage 7 validation highlights the guardrail→migration workflow shift—console.* remains across backend/router + CLI/VSC entrypoints, so we reopened Stage 3 to resequence prep (Stage 4) versus execution (Stage 6); Required check: rerun node scripts/run-with-timeout.mjs --preset jest-ci -- npm run test:ci plus the phase6-health/phase6-validation presets once the new Stage 4 guardrails and Stage 6 migrations land, then repeat the stage-7 sweep; Docs verified: dev/architecture/plans/1.generated.md, dev/architecture/utility-consolidation-activity-log.generated.md.",
+          "scope": [
+            "stage-7"
+          ]
+        },
+        {
+          "id": "stage-3-note-20251014T181232",
+          "timestamp": "2025-10-14T18:12:32Z",
+          "body": "Order: 4i -> 4j -> 4k guardrails, with 6d/6e/6f executing immediately after their paired guardrail merges (4i->6d backend, 4j->6e CLI/phase6, 4k->6f interface) to keep migration lockstep; Guardrails: 4i extends manual-override + comprehensive backend suites to stub consolidated logger and fail fast on raw console.* (20 legacy hits logged via rg), 4j hardens PTY MCP harness (1 legacy console.log) against raw console usage, 4k adds VSCode adapter fixtures via tests/interfaces/vscode plus existing interface suites to assert logger channel wiring; Failure signature: targeted run-with-timeout jest suites go red when console.log|warn|error appear or logger injection breaks; Dependencies: Stage6 lanes replace runtime calls (backend router 193 + resolver 14, CLI entry 55 + monitor 38 + phase6 script 69, extension 95 + legacy registry 21) using jest-ci presets; coordinate with Error Handler and Async Utils patterns for DI shims, and mirror updates in cli-skin-generator.md and phase6 harness docs; Stage7 sweep anchored to Templum/ with console.* search ensures registry catches regressions.",
+          "scope": [
+            "stage-3"
+          ]
+        },
+        {
+          "id": "stage-4-note-20251014T211931",
+          "timestamp": "2025-10-14T21:19:31Z",
+          "body": "Lane 4i: Guardrail=Manual override backend suites enforce consolidated logger usage; Expected failure='Logger guardrail violation (manual override suites)'; Paired Stage 6=6d.",
+          "scope": [
+            "stage-4"
+          ]
+        },
+        {
+          "id": "stage-4-note-20251014T211940",
+          "timestamp": "2025-10-14T21:19:40Z",
+          "body": "Lane 4j: Guardrail=Service discovery PTY MCP harness fails when raw console.* usage is detected; Expected failure=Jest assertion \"Expected console.log to have been called 0 times\" surfaces when guardrail suite runs; Paired Stage 6=6e (CLI + phase6 logger migration).",
+          "scope": [
+            "stage-4"
+          ]
+        },
+        {
+          "id": "stage-4-note-20251014T212105",
+          "timestamp": "2025-10-14T21:21:05Z",
+          "body": "Lane 4k: Guardrail=VSCode adapter emits consolidated logger records instead of console.*; Expected failure=Jest assertion that logger.info is called while console.log remains unused; Paired Stage 6=6f",
+          "scope": [
+            "stage-4"
           ]
         }
       ],
@@ -948,9 +1121,354 @@
           "files": [
             "dev/architecture/logs/pattern-1-stage6-lane6b-jest-ci-20251014T150700Z.log"
           ]
+        },
+        {
+          "stage": "stage-7",
+          "timestamp": "2025-10-14T16:38:07Z",
+          "summary": "Stage 7 claimed",
+          "agent": "1-stage7"
+        },
+        {
+          "stage": "stage-7",
+          "timestamp": "2025-10-14T16:50:05Z",
+          "summary": "Stage 7 status remains in_progress",
+          "files": [
+            "dev/architecture/logs/pattern-1-stage7-jest-ci-20251014T164656Z.log",
+            "dev/architecture/logs/pattern-1-stage7-phase6-validation-20251014T164934Z.log",
+            "dev/architecture/logs/pattern-1-stage7-phase6-health-20251014T164947Z.log"
+          ]
+        },
+        {
+          "stage": "stage-7",
+          "timestamp": "2025-10-14T16:50:55Z",
+          "summary": "Stage 7 metadata updated (status in_progress)"
+        },
+        {
+          "stage": "stage-7",
+          "timestamp": "2025-10-14T16:52:04Z",
+          "summary": "Stage 7 metadata updated (status in_progress)"
+        },
+        {
+          "stage": "stage-3",
+          "timestamp": "2025-10-14T16:52:19Z",
+          "summary": "Stage 3 status set to in_progress"
+        },
+        {
+          "stage": "stage-3",
+          "timestamp": "2025-10-14T16:52:46Z",
+          "summary": "Stage 3 metadata updated (status in_progress)"
+        },
+        {
+          "stage": "stage-7",
+          "timestamp": "2025-10-14T16:53:24Z",
+          "summary": "Stage 7 status set to pending",
+          "durationMs": 917000
+        },
+        {
+          "stage": "stage-7",
+          "timestamp": "2025-10-14T16:56:39Z",
+          "summary": "Stage 7 metadata updated (status pending)"
+        },
+        {
+          "stage": "stage-3",
+          "timestamp": "2025-10-14T17:00:48Z",
+          "summary": "Stage 3 status set to pending",
+          "durationMs": 509000
+        },
+        {
+          "stage": "stage-7",
+          "timestamp": "2025-10-14T17:00:53Z",
+          "summary": "Stage 7 status set to blocked"
+        },
+        {
+          "stage": "stage-3",
+          "timestamp": "2025-10-14T18:07:14Z",
+          "summary": "Stage 3 claimed",
+          "agent": "1-stage3"
+        },
+        {
+          "stage": "stage-4",
+          "timestamp": "2025-10-14T18:09:05Z",
+          "summary": "Add guardrail coverage for backend manual override logging"
+        },
+        {
+          "stage": "lane-4i",
+          "timestamp": "2025-10-14T18:09:11Z",
+          "summary": "Lane 4i status set to pending"
+        },
+        {
+          "stage": "stage-4",
+          "timestamp": "2025-10-14T18:09:17Z",
+          "summary": "Guardrail tests enforce logger wiring for service discovery harness"
+        },
+        {
+          "stage": "lane-4j",
+          "timestamp": "2025-10-14T18:09:20Z",
+          "summary": "Lane 4j status set to pending"
+        },
+        {
+          "stage": "stage-4",
+          "timestamp": "2025-10-14T18:09:40Z",
+          "summary": "Extend interface adapter tests to catch raw console usage"
+        },
+        {
+          "stage": "lane-4k",
+          "timestamp": "2025-10-14T18:09:44Z",
+          "summary": "Lane 4k status set to pending"
+        },
+        {
+          "stage": "stage-6",
+          "timestamp": "2025-10-14T18:10:03Z",
+          "summary": "Backend router/resolver migration to shared logger"
+        },
+        {
+          "stage": "lane-6d",
+          "timestamp": "2025-10-14T18:10:08Z",
+          "summary": "Lane 6d status remains pending"
+        },
+        {
+          "stage": "stage-6",
+          "timestamp": "2025-10-14T18:10:13Z",
+          "summary": "CLI entry + monitoring migration to logger"
+        },
+        {
+          "stage": "lane-6e",
+          "timestamp": "2025-10-14T18:10:18Z",
+          "summary": "Lane 6e status remains pending"
+        },
+        {
+          "stage": "stage-6",
+          "timestamp": "2025-10-14T18:10:23Z",
+          "summary": "VSCode adapter/logger convergence"
+        },
+        {
+          "stage": "lane-6f",
+          "timestamp": "2025-10-14T18:10:27Z",
+          "summary": "Lane 6f status remains pending"
+        },
+        {
+          "stage": "lane-4k",
+          "timestamp": "2025-10-14T18:10:50Z",
+          "summary": "Lane 4k metadata updated (status blocked)"
+        },
+        {
+          "stage": "lane-4k",
+          "timestamp": "2025-10-14T18:10:55Z",
+          "summary": "Lane 4k status set to pending"
+        },
+        {
+          "stage": "stage-7",
+          "timestamp": "2025-10-14T18:11:48Z",
+          "summary": "Stage 7 metadata updated (status blocked)"
+        },
+        {
+          "stage": "stage-3",
+          "timestamp": "2025-10-14T18:12:36Z",
+          "summary": "Stage 3 status set to complete",
+          "durationMs": 322000
+        },
+        {
+          "stage": "stage-3",
+          "timestamp": "2025-10-14T19:27:02Z",
+          "summary": "Reopen Stage 3 for diagnostics"
+        },
+        {
+          "stage": "stage-3",
+          "timestamp": "2025-10-14T19:31:23Z",
+          "summary": "Close Stage 3 after diagnostics"
+        },
+        {
+          "stage": "stage-3",
+          "timestamp": "2025-10-14T19:31:49Z",
+          "summary": "Reopen Stage 3 for diagnostics"
+        },
+        {
+          "stage": "stage-3",
+          "timestamp": "2025-10-14T19:32:18Z",
+          "summary": "Close Stage 3 baseline"
+        },
+        {
+          "stage": "stage-5",
+          "timestamp": "2025-10-14T19:32:50Z",
+          "summary": "Stage 5 restored"
+        },
+        {
+          "stage": "stage-6",
+          "timestamp": "2025-10-14T19:32:59Z",
+          "summary": "Stage 6 restored"
+        },
+        {
+          "stage": "stage-3",
+          "timestamp": "2025-10-14T19:34:26Z",
+          "summary": "Reopen Stage 3 freshly"
+        },
+        {
+          "stage": "stage-3",
+          "timestamp": "2025-10-14T19:38:53Z",
+          "summary": "Reopen Stage 3 blocking test"
+        },
+        {
+          "stage": "stage-3",
+          "timestamp": "2025-10-14T19:39:03Z",
+          "summary": "Reseal Stage 3"
+        },
+        {
+          "stage": "stage-3",
+          "timestamp": "2025-10-14T19:39:09Z",
+          "summary": "Reopen Stage 3 blocking test"
+        },
+        {
+          "stage": "stage-3",
+          "timestamp": "2025-10-14T19:40:09Z",
+          "summary": "Restore Stage 3"
+        },
+        {
+          "stage": "stage-5",
+          "timestamp": "2025-10-14T19:40:19Z",
+          "summary": "Restore Stage5"
+        },
+        {
+          "stage": "stage-6",
+          "timestamp": "2025-10-14T19:40:27Z",
+          "summary": "Restore Stage6"
+        },
+        {
+          "stage": "lane-6e",
+          "timestamp": "2025-10-14T19:53:46Z",
+          "summary": "Lane 6e claimed",
+          "agent": "1-6e"
+        },
+        {
+          "stage": "lane-6e",
+          "timestamp": "2025-10-14T19:53:53Z",
+          "summary": "Lane 6e status set to complete",
+          "durationMs": 6000
+        },
+        {
+          "stage": "lane-6d",
+          "timestamp": "2025-10-14T19:54:01Z",
+          "summary": "Lane 6d status set to complete"
+        },
+        {
+          "stage": "lane-6f",
+          "timestamp": "2025-10-14T19:54:09Z",
+          "summary": "Lane 6f status set to complete"
+        },
+        {
+          "stage": "lane-6f",
+          "timestamp": "2025-10-14T19:54:23Z",
+          "summary": "Lane 6f status set to blocked"
+        },
+        {
+          "stage": "lane-6d",
+          "timestamp": "2025-10-14T19:54:37Z",
+          "summary": "Lane 6d status set to blocked"
+        },
+        {
+          "stage": "lane-6e",
+          "timestamp": "2025-10-14T19:54:47Z",
+          "summary": "Lane 6e status set to blocked"
+        },
+        {
+          "stage": "stage-5",
+          "timestamp": "2025-10-14T19:55:42Z",
+          "summary": "Stage 5B status remains blocked"
+        },
+        {
+          "stage": "lane-4i",
+          "timestamp": "2025-10-14T21:17:37Z",
+          "summary": "Lane 4i claimed",
+          "agent": "1-4i"
+        },
+        {
+          "stage": "lane-4j",
+          "timestamp": "2025-10-14T21:18:16Z",
+          "summary": "Lane 4j claimed",
+          "agent": "1-4j"
+        },
+        {
+          "stage": "lane-4k",
+          "timestamp": "2025-10-14T21:18:32Z",
+          "summary": "Lane 4k claimed",
+          "agent": "1-4k"
+        },
+        {
+          "stage": "lane-4j",
+          "timestamp": "2025-10-14T21:23:11Z",
+          "summary": "Expected failure: jest guardrail caught 128 raw console calls in MCP lifecycle bootstrap",
+          "files": [
+            "logs/consolidation/pattern-1/lane-4j-20251014T212228Z.log"
+          ]
+        },
+        {
+          "stage": "lane-4j",
+          "timestamp": "2025-10-14T21:23:17Z",
+          "summary": "Guardrail failing as expected; Stage 6e will use consolidated logger replacements",
+          "files": [
+            "logs/consolidation/pattern-1/lane-4j-20251014T212228Z.log"
+          ],
+          "durationMs": 301000
+        },
+        {
+          "stage": "lane-6e",
+          "timestamp": "2025-10-14T21:23:30Z",
+          "summary": "Stage 4j guardrail: raw console.* failure log linked for upcoming CLI/phase6 migration",
+          "files": [
+            "logs/consolidation/pattern-1/lane-4j-20251014T212228Z.log"
+          ]
+        },
+        {
+          "stage": "lane-4k",
+          "timestamp": "2025-10-14T21:27:36Z",
+          "summary": "Expected failure: logger guardrail requires VSCode adapter to emit via consolidated logger",
+          "files": [
+            "logs/consolidation/pattern-1/lane-4k-20251014T212716Z.log"
+          ]
+        },
+        {
+          "stage": "lane-6f",
+          "timestamp": "2025-10-14T21:28:04Z",
+          "summary": "Guardrail reference: lane 4k logger guardrail log captured",
+          "files": [
+            "logs/consolidation/pattern-1/lane-4k-20251014T212716Z.log"
+          ]
+        },
+        {
+          "stage": "lane-4k",
+          "timestamp": "2025-10-14T21:28:15Z",
+          "summary": "Guardrail failing as expected; Stage 6 6f primed",
+          "files": [
+            "logs/consolidation/pattern-1/lane-4k-20251014T212716Z.log"
+          ],
+          "durationMs": 583000
+        },
+        {
+          "stage": "lane-4i",
+          "timestamp": "2025-10-14T21:28:55Z",
+          "summary": "Expected failure: Logger guardrail violation (manual override suites) captured via manual-override suites",
+          "files": [
+            "logs/consolidation/pattern-1/lane-4i-20251014T212738Z.log"
+          ]
+        },
+        {
+          "stage": "lane-6d",
+          "timestamp": "2025-10-14T21:29:48Z",
+          "summary": "Guardrail reference: lane 4i logger guardrail log captured",
+          "files": [
+            "logs/consolidation/pattern-1/lane-4i-20251014T212738Z.log"
+          ]
+        },
+        {
+          "stage": "lane-4i",
+          "timestamp": "2025-10-14T21:29:56Z",
+          "summary": "Guardrail failing as expected; Stage 6 6d primed",
+          "files": [
+            "logs/consolidation/pattern-1/lane-4i-20251014T212738Z.log"
+          ],
+          "durationMs": 739000
         }
       ],
-      "updatedAt": "2025-10-14T15:10:09Z",
+      "updatedAt": "2025-10-14T21:29:56Z",
       "cohorts": [
         "D"
       ]
@@ -1167,7 +1685,7 @@
       "patternId": 2,
       "name": "Error Handler Consolidation",
       "description": "695 catch blocks with repeated manual error wrapping",
-      "stage": 6,
+      "stage": 4,
       "owner": {
         "agent": "Codex",
         "claimedAt": "2025-10-08T00:58:06Z"
@@ -1184,31 +1702,78 @@
         },
         "3": {
           "status": "complete",
-          "notes": "Stage 3 complete: Stage 4/6 lanes sequenced and dependencies logged for ErrorHandler rollout"
+          "startedAt": "2025-10-14T18:07:24Z",
+          "notes": "Stage 4/6 lanes refreshed (4d-4g ↔ 6c-6f); Stage 7 search terms mirrored; dependencies recorded via stage note stage-3-note-20251014T182252",
+          "elapsedMs": 947000
         },
         "4": {
           "status": "complete",
-          "startedAt": "2025-10-14T12:29:07Z",
-          "elapsedMs": 506000,
-          "completedAt": "2025-10-14T12:37:33Z"
+          "startedAt": "2025-10-14T21:50:59Z",
+          "elapsedMs": 994000,
+          "completedAt": "2025-10-14T22:07:33Z"
         },
         "5": {
-          "status": "complete",
-          "startedAt": "2025-10-14T14:05:17Z",
-          "notes": "Cohort aligned; Stage 6 gating ready",
-          "elapsedMs": 432000,
+          "status": "blocked",
           "plannedFiles": [
             "dev/architecture/logger-error-handler-alignment.md"
           ]
         },
         "6": {
-          "status": "complete",
-          "startedAt": "2025-10-14T15:14:16Z",
-          "elapsedMs": 785000,
-          "completedAt": "2025-10-14T15:27:21Z"
+          "status": "blocked"
         },
         "7": {
-          "status": "pending"
+          "status": "blocked",
+          "plannedFiles": [
+            "Templum/"
+          ],
+          "searchTerms": [
+            "[DEPENDENCY_RESOLVER] Failed to resolve",
+            "[DEPENDENCY_RESOLVER] Warning: Success rate",
+            "[EVENT_MANAGER] Failed to register listener",
+            "[HEALTH_MONITOR] Error checking",
+            "[MCP_HEALTH] Health check failed:",
+            "[MCP_REGISTRATION] Registration failed",
+            "[PROGRESSIVE_TIMEOUT] Error updating timeout metrics",
+            "catch (",
+            "catch(",
+            "CLI Interface Adapter Integration",
+            "CLI shared parser",
+            "Could not parse Jest output for detailed analysis",
+            "createSession",
+            "error instanceof Error ? error.message : String(error)",
+            "Error: --timeout must be a positive number of milliseconds.",
+            "Failed to handle VSCode input:",
+            "Failed to initialize CLI adapter",
+            "Failed to initialize VSCode adapter:",
+            "Failed to render CLI interface",
+            "Failed to render VSCode interface:",
+            "Generic Backend Integration System",
+            "Health check error:",
+            "Health check failed:",
+            "Interface Adapter Integration Tests",
+            "InterfaceAdapterRegistry: Initialization failed:",
+            "Manual Override Flow",
+            "Manual override watcher integration",
+            "MCP Protocol Communication Tests",
+            "Phase 6 Validation CLI Backend Toggle Tests",
+            "Phase6ValidationCLI backend selection",
+            "Please fix test compilation errors before committing.",
+            "Pty-MCP-Server Test Harness",
+            "PTYManager",
+            "TASK-SKIN-007: Comprehensive Backend Integration Validation",
+            "Templum Interface WebView initialization failed:",
+            "TemplumBackendServiceRouter lifecycle events",
+            "TemplumCore backend lifecycle bridge",
+            "TemplumUniversalSessionManager",
+            "TemplumUniversalSessionManager Integration",
+            "Test compilation failed",
+            "Uncaught exception:",
+            "Unexpected error reading PTY",
+            "Unhandled rejection:",
+            "UniversalInteractionManager session integration",
+            "VSCode Interface Adapter Integration",
+            "WebSocket health check failed"
+          ]
         }
       },
       "lanes": {
@@ -1316,6 +1881,343 @@
           ],
           "startedAt": "2025-10-14T15:18:46Z",
           "elapsedMs": 62000
+        },
+        "4d": {
+          "status": "complete",
+          "scope": "Backend router & dependency resolver guardrail",
+          "commands": [
+            {
+              "command": "rg 'catch \\(' src/backend/backend-service-router.ts"
+            },
+            {
+              "command": "rg 'catch \\(' src/backend/backend-dependency-resolver.ts"
+            },
+            {
+              "command": "rg 'catch \\(' src/backend/service-health-check.ts"
+            },
+            {
+              "command": "npm run test -- --runTestsByPath src/tests/backend/manual-override-flow.test.ts"
+            },
+            {
+              "command": "npm run test -- --runTestsByPath src/tests/backend/backend-connection-lifecycle.test.ts"
+            },
+            {
+              "command": "npm run test -- --runTestsByPath src/tests/backend/generic-backend-integration.test.ts"
+            }
+          ],
+          "updatedAt": "2025-10-14T22:07:33Z",
+          "plannedFiles": [
+            "src/tests/backend/backend-connection-lifecycle.test.ts",
+            "src/tests/backend/comprehensive-backend-validation.test.ts",
+            "src/tests/backend/generic-backend-integration.test.ts",
+            "src/tests/backend/manual-override-flow.test.ts",
+            "src/tests/backend/manual-override-watcher.integration.test.ts"
+          ],
+          "searchTerms": [
+            "Generic Backend Integration System",
+            "Manual Override Flow",
+            "Manual override watcher integration",
+            "TASK-SKIN-007: Comprehensive Backend Integration Validation",
+            "TemplumBackendServiceRouter lifecycle events"
+          ],
+          "startedAt": "2025-10-14T21:50:59Z",
+          "elapsedMs": 994000
+        },
+        "6c": {
+          "status": "blocked",
+          "scope": "Backend router & dependency resolver runtime migration",
+          "commands": [
+            {
+              "command": "rg '\\[HEALTH_MONITOR\\] Error checking' src/backend/backend-service-router.ts"
+            },
+            {
+              "command": "rg '\\[DEPENDENCY_RESOLVER\\] Failed to resolve' src/backend/backend-dependency-resolver.ts"
+            },
+            {
+              "command": "npm run test -- --runTestsByPath src/tests/backend/manual-override-flow.test.ts"
+            },
+            {
+              "command": "npm run test -- --runTestsByPath src/tests/backend/backend-connection-lifecycle.test.ts"
+            },
+            {
+              "command": "npm run test -- --runTestsByPath src/tests/backend/generic-backend-integration.test.ts"
+            }
+          ],
+          "updatedAt": "2025-10-14T19:54:37Z",
+          "plannedFiles": [
+            "src/backend/backend-dependency-resolver.ts",
+            "src/backend/backend-service-router.ts",
+            "src/backend/service-health-check.ts"
+          ],
+          "searchTerms": [
+            "[DEPENDENCY_RESOLVER] Failed to resolve",
+            "[DEPENDENCY_RESOLVER] Warning: Success rate",
+            "[HEALTH_MONITOR] Error checking",
+            "Health check error:",
+            "WebSocket health check failed"
+          ]
+        },
+        "4e": {
+          "status": "complete",
+          "scope": "Interface/session guardrail coverage",
+          "commands": [
+            {
+              "command": "rg 'catch \\(' src/interfaces/cli-adapter.ts"
+            },
+            {
+              "command": "rg 'catch \\(' src/interfaces/vscode-adapter.ts"
+            },
+            {
+              "command": "rg 'catch \\(' src/session/templum-universal-session-manager.ts"
+            },
+            {
+              "command": "npm run test -- --runTestsByPath tests/interfaces/interface-adapter-integration.test.ts"
+            },
+            {
+              "command": "npm run test -- --runTestsByPath tests/interfaces/universal-interaction-manager.session.test.ts"
+            },
+            {
+              "command": "npm run test -- --runTestsByPath tests/session/unified-session-manager.integration.test.ts"
+            },
+            {
+              "command": "npm run test -- --runTestsByPath src/tests/session/templum-universal-session-manager.test.ts"
+            },
+            {
+              "command": "npm run test -- --runTestsByPath src/tests/core/templum-core-connection-events.test.ts"
+            }
+          ],
+          "updatedAt": "2025-10-14T22:00:06Z",
+          "plannedFiles": [
+            "src/tests/core/templum-core-connection-events.test.ts",
+            "src/tests/session/templum-universal-session-manager.test.ts",
+            "tests/interfaces/interface-adapter-integration.test.ts",
+            "tests/interfaces/universal-interaction-manager.session.test.ts",
+            "tests/session/unified-session-manager.integration.test.ts"
+          ],
+          "searchTerms": [
+            "CLI Interface Adapter Integration",
+            "Interface Adapter Integration Tests",
+            "TemplumCore backend lifecycle bridge",
+            "TemplumUniversalSessionManager",
+            "TemplumUniversalSessionManager Integration",
+            "UniversalInteractionManager session integration",
+            "VSCode Interface Adapter Integration"
+          ],
+          "startedAt": "2025-10-14T21:52:39Z",
+          "elapsedMs": 447000
+        },
+        "6d": {
+          "status": "blocked",
+          "scope": "Interface & session runtime migration",
+          "commands": [
+            {
+              "command": "rg 'Failed to initialize CLI adapter' src/interfaces/cli-adapter.ts"
+            },
+            {
+              "command": "rg 'Failed to render CLI interface' src/interfaces/cli-adapter.ts"
+            },
+            {
+              "command": "rg 'Failed to initialize VSCode adapter:' src/interfaces/vscode-adapter.ts"
+            },
+            {
+              "command": "rg 'Failed to render VSCode interface:' src/interfaces/vscode-adapter.ts"
+            },
+            {
+              "command": "rg 'Templum Interface WebView initialization failed:' src/interfaces/vscode-templum-webview.ts"
+            },
+            {
+              "command": "npm run test -- --runTestsByPath tests/interfaces/interface-adapter-integration.test.ts"
+            },
+            {
+              "command": "npm run test -- --runTestsByPath tests/session/unified-session-manager.integration.test.ts"
+            }
+          ],
+          "updatedAt": "2025-10-14T22:00:17Z",
+          "plannedFiles": [
+            "src/interfaces/cli-adapter-abstracted.ts",
+            "src/interfaces/cli-adapter.ts",
+            "src/interfaces/cli-session-bridge.ts",
+            "src/interfaces/interface-adapter-registry.legacy.ts",
+            "src/interfaces/interface-adapter-registry.ts",
+            "src/interfaces/vscode-adapter.ts",
+            "src/interfaces/vscode-templum-webview.ts",
+            "src/session/templum-universal-session-manager.ts"
+          ],
+          "searchTerms": [
+            "Failed to handle VSCode input:",
+            "Failed to initialize CLI adapter",
+            "Failed to initialize VSCode adapter:",
+            "Failed to render CLI interface",
+            "Failed to render VSCode interface:",
+            "InterfaceAdapterRegistry: Initialization failed:",
+            "Templum Interface WebView initialization failed:"
+          ]
+        },
+        "4f": {
+          "status": "complete",
+          "scope": "CLI/Phase6 script guardrail coverage",
+          "commands": [
+            {
+              "command": "rg 'catch \\(' scripts/run-comprehensive-backend-tests.js"
+            },
+            {
+              "command": "rg 'catch \\(' scripts/test-health-monitor.js"
+            },
+            {
+              "command": "rg 'catch \\(' scripts/check-tests.js"
+            },
+            {
+              "command": "npm run test -- --runTestsByPath tests/scripts/phase6-validation-cli.test.ts"
+            },
+            {
+              "command": "npm run test -- --runTestsByPath tests/scripts/cli-shared-parser.test.ts"
+            }
+          ],
+          "updatedAt": "2025-10-14T21:26:05Z",
+          "plannedFiles": [
+            "tests/scripts/cli-shared-parser.test.ts",
+            "tests/scripts/helpers/cli-parser-probe.mjs",
+            "tests/scripts/phase6-validation-cli.test.ts"
+          ],
+          "searchTerms": [
+            "CLI shared parser",
+            "Phase 6 Validation CLI Backend Toggle Tests",
+            "Phase6ValidationCLI backend selection"
+          ],
+          "startedAt": "2025-10-14T21:19:55Z",
+          "elapsedMs": 370000
+        },
+        "6e": {
+          "status": "blocked",
+          "scope": "CLI/Phase6 script runtime migration",
+          "commands": [
+            {
+              "command": "rg 'Could not parse Jest output for detailed analysis' scripts/run-comprehensive-backend-tests.js"
+            },
+            {
+              "command": "rg 'Unhandled rejection:' scripts/run-comprehensive-backend-tests.js"
+            },
+            {
+              "command": "rg 'Uncaught exception:' scripts/run-comprehensive-backend-tests.js"
+            },
+            {
+              "command": "rg 'Health check failed:' scripts/test-health-monitor.js"
+            },
+            {
+              "command": "rg 'Error: --timeout must be a positive number of milliseconds.' scripts/run-with-timeout.mjs"
+            },
+            {
+              "command": "rg 'Please fix test compilation errors before committing.' scripts/check-tests.js"
+            },
+            {
+              "command": "node scripts/run-phase6-full.js --no-build"
+            }
+          ],
+          "updatedAt": "2025-10-14T21:26:15Z",
+          "plannedFiles": [
+            "scripts/check-tests.js",
+            "scripts/check-types.js",
+            "scripts/coverage-reality-check.js",
+            "scripts/run-comprehensive-backend-tests.js",
+            "scripts/run-phase6-full.js",
+            "scripts/run-with-timeout.mjs",
+            "scripts/test-health-monitor.js"
+          ],
+          "searchTerms": [
+            "Could not parse Jest output for detailed analysis",
+            "Error: --timeout must be a positive number of milliseconds.",
+            "Health check failed:",
+            "Please fix test compilation errors before committing.",
+            "Test compilation failed",
+            "Uncaught exception:",
+            "Unhandled rejection:"
+          ]
+        },
+        "4g": {
+          "status": "complete",
+          "scope": "MCP tests & helper guardrail",
+          "commands": [
+            {
+              "command": "rg 'catch \\(' src/mcp-channel/src/cli-mcp-server.ts"
+            },
+            {
+              "command": "rg 'catch \\(' src/mcp-channel/src/enhanced-mcp-integration.ts"
+            },
+            {
+              "command": "rg 'catch \\(' src/mcp-channel/src/progressive-timeout-manager.ts"
+            },
+            {
+              "command": "npm run test -- --runTestsByPath tests/service-discovery/pty-mcp-server-test-harness.test.ts"
+            },
+            {
+              "command": "npm run --prefix src/mcp-channel test -- --runTestsByPath tests/pty-manager.test.ts"
+            }
+          ],
+          "updatedAt": "2025-10-14T21:59:48Z",
+          "plannedFiles": [
+            "src/mcp-channel/test-mcp-tools.js",
+            "src/mcp-channel/test-service-registration.js",
+            "src/mcp-channel/tests/pty-manager.test.ts",
+            "tests/service-discovery/pty-mcp-server-test-harness.test.ts"
+          ],
+          "searchTerms": [
+            "createSession",
+            "MCP Protocol Communication Tests",
+            "Pty-MCP-Server Test Harness",
+            "PTYManager"
+          ],
+          "startedAt": "2025-10-14T21:53:14Z",
+          "elapsedMs": 394000
+        },
+        "6f": {
+          "status": "blocked",
+          "scope": "MCP runtime migration",
+          "commands": [
+            {
+              "command": "rg '\\[EVENT_MANAGER\\] Failed to register listener' src/mcp-channel/src/event-listener-manager.ts"
+            },
+            {
+              "command": "rg '\\[MCP_HEALTH\\] Health check failed:' src/mcp-channel/src/health-monitor.ts"
+            },
+            {
+              "command": "rg '\\[MCP_REGISTRATION\\] Registration failed' src/mcp-channel/src/service-registration.ts"
+            },
+            {
+              "command": "rg '\\[PROGRESSIVE_TIMEOUT\\] Error updating timeout metrics' src/mcp-channel/src/progressive-timeout-manager.ts"
+            },
+            {
+              "command": "rg 'error instanceof Error ? error.message : String(error)' src/mcp-channel/src"
+            },
+            {
+              "command": "rg 'Unexpected error reading PTY' scripts/mcp/minimal_terminal_bridge/server.py"
+            },
+            {
+              "command": "npm run test -- --runTestsByPath tests/service-discovery/pty-mcp-server-test-harness.test.ts"
+            },
+            {
+              "command": "npm run --prefix src/mcp-channel test -- --runTestsByPath tests/pty-manager.test.ts"
+            }
+          ],
+          "updatedAt": "2025-10-14T21:59:56Z",
+          "plannedFiles": [
+            "scripts/mcp/minimal_terminal_bridge/server.py",
+            "src/mcp-channel/src/cli-mcp-server.ts",
+            "src/mcp-channel/src/enhanced-mcp-integration.ts",
+            "src/mcp-channel/src/event-listener-manager.ts",
+            "src/mcp-channel/src/health-monitor.ts",
+            "src/mcp-channel/src/lifecycle-coordinator.ts",
+            "src/mcp-channel/src/progressive-timeout-manager.ts",
+            "src/mcp-channel/src/pty-manager.ts",
+            "src/mcp-channel/src/service-registration.ts"
+          ],
+          "searchTerms": [
+            "[EVENT_MANAGER] Failed to register listener",
+            "[MCP_HEALTH] Health check failed:",
+            "[MCP_REGISTRATION] Registration failed",
+            "[PROGRESSIVE_TIMEOUT] Error updating timeout metrics",
+            "error instanceof Error ? error.message : String(error)",
+            "Unexpected error reading PTY"
+          ]
         }
       },
       "handoff": {
@@ -1406,6 +2308,86 @@
           "body": "Guardrails: Stage 5A alignment spec (dev/architecture/logger-error-handler-alignment.md) remains source of record; preserve zero-knowledge registry + logger/error-handler DI seams; no bespoke CLI UI beyond skin payload rendering.\nApprovals: Cohort 1-2 sign-offs from Stage 5A remain valid; reconfirmed backend + interface reps before gating run.\nActions Completed:\n- Cleared TypeScript regression in templum-core commandError listener to respect string payloads and keep ErrorHandler telemetry structured.\n- Updated CLI adapter menu handling to persist namespace metadata + align logger.warn signature.\n- Executed Phase 6 gating battery via `node scripts/run-with-timeout.mjs --preset phase6-validation -- npm run phase6-validation`.\nEvidence: logs/consolidation/pattern-2/stage5b/phase6-validation-20251014T140958Z.log",
           "scope": [
             "stage-5"
+          ]
+        },
+        {
+          "id": "stage-7-note-20251014T164521",
+          "timestamp": "2025-10-14T16:45:21Z",
+          "body": "Reason: Stage 7 reopened to archive the post-lane validation battery and confirm no revertable code remains; Required check: run-with-timeout presets for error-handler + connection-factory suites, jest-ci batch, phase6-validation, and phase6-health with sweep confirmation; Docs verified: docs/current/progress.md, dev/tasks/phase6-validation-signal.md.",
+          "scope": [
+            "stage-7"
+          ]
+        },
+        {
+          "id": "stage-7-note-20251014T165301",
+          "timestamp": "2025-10-14T16:53:01Z",
+          "body": "Sweep hit exception list; backend/service/adapter files remain until guardrail migrations land; refer to Stage 4 post-migration plan for follow-up.",
+          "scope": [
+            "stage-7"
+          ]
+        },
+        {
+          "id": "stage-3-note-20251014T170059",
+          "timestamp": "2025-10-14T17:00:59Z",
+          "body": "Stage 7 sweep flagged unmigrated catch blocks across scripts, backends, adapters, session/core, and validation harnesses. Stage 3 needs a refreshed migration plan that: (1) reintroduces Stage 4 lanes for backend-service-router + dependency resolver + service-health modules to replace catch blocks with ErrorHandler.wrap semantics; (2) adds interface/CLI/VSCode adapter lanes to eliminate console-driven catch paths and fold them into shared ErrorHandler utilities; (3) captures CLI/Phase6 scripts + tooling exceptions so we either migrate them or document why they remain; (4) coordinates with Pattern 1 logger consolidation, Pattern 3 async-utils retries, and Event Utils guardrails so DI seams stay compliant; (5) inventories tests and MCP channel helpers that still rely on bare catch clauses and schedules coverage to enforce the new guardrail. Block downstream lanes until the refreshed Stage 3 plan spells out owners, dependencies, and an updated exception list.",
+          "scope": [
+            "stage-3"
+          ]
+        },
+        {
+          "id": "stage-7-note-20251014T170117",
+          "timestamp": "2025-10-14T17:01:17Z",
+          "body": "Blocked pending Stage 3 replan: Stage 7 sweep still reports >100 catch blocks across backend/interface/mcp/script surfaces. Will resume Stage 7 validation once refreshed migration plan lands and lanes are updated.",
+          "scope": [
+            "stage-7"
+          ]
+        },
+        {
+          "id": "stage-3-note-20251014T182225",
+          "timestamp": "2025-10-14T18:22:25Z",
+          "body": "Order: 4d → 4e → 4f → 4g → 6c → 6d → 6e → 6f (rerun 6a/6b after 6f sweep) so backend contract hardening leads interface/runtime migrations; Guardrails: 4d↔6c cover backend service router+dependency resolver+service health (tests in src/tests/backend/** map to runtime src/backend/**/*); 4e↔6d cover CLI/VSCode adapters + session manager (tests/interfaces/** + tests/session/** guard  src/interfaces/** & src/session/**); 4f↔6e cover CLI/Phase6 orchestration scripts (tests/scripts/** guard scripts/*.js & run-phase6-full); 4g↔6f cover MCP harness + minimal terminal bridge (tests/service-discovery/pty-mcp-server-test-harness.test.ts + src/mcp-channel/tests/** guard src/mcp-channel/src/** + scripts/mcp/minimal_terminal_bridge/server.py); Failure signatures: guardrail suites intentionally red today because manual catch blocks still emit console/logError paths—expect Phase6ValidationCLI backend toggle test to surface leaked env flags, backend manual override flow to log  errors, and MCP harness to continue returning plain objects instead of structured ErrorHandler output until migrations land; Stage 7 search terms now union all guardrail/runtime sweeps plus legacy catch( ) so final sweep fails until every manual catch + ad-hoc logger string above is removed; Dependencies: 4d/6c blocked on Pattern 3 async-utils retry API (to avoid double-wrapping timeouts) and Pattern 1 logger consolidation (replacement for console.*); 4e/6d wait on 4d completion and require Interface guild sign-off on DI seams; 4f/6e coordinate with QA automation to capture new log artefacts under dev/architecture/evidence; 4g/6f depend on Event Utils guardrail refresh to keep MCP lifecycle metrics aligned and need Haruspex owner ack before server.py handler swap.",
+          "scope": [
+            "stage-3"
+          ]
+        },
+        {
+          "id": "stage-3-note-20251014T182252",
+          "timestamp": "2025-10-14T18:22:52Z",
+          "body": "Order: 4d → 4e → 4f → 4g → 6c → 6d → 6e → 6f (rerun 6a/6b after 6f sweep) so backend contract hardening leads interface/runtime migrations; Guardrails: 4d↔6c cover backend service router + dependency resolver + service health (tests in src/tests/backend/** map to runtime src/backend/**/*); 4e↔6d cover CLI/VSCode adapters and session manager (tests/interfaces/** + tests/session/** guard src/interfaces/** & src/session/**); 4f↔6e cover CLI/Phase6 orchestration scripts (tests/scripts/** guard scripts/*.js plus run-phase6-full); 4g↔6f cover MCP harness + minimal terminal bridge (tests/service-discovery/pty-mcp-server-test-harness.test.ts + src/mcp-channel/tests/** guard src/mcp-channel/src/** + scripts/mcp/minimal_terminal_bridge/server.py); Failure signatures: guardrail suites intentionally red today because manual catch blocks still emit console/logError paths—expect Phase6ValidationCLI backend toggle test to surface leaked env flags, backend manual override flow to keep logging [HEALTH_MONITOR] health check errors, and MCP harness to continue returning plain objects instead of structured ErrorHandler output until migrations land; Stage 7 search terms now union all guardrail/runtime sweeps plus legacy catch( ) so final sweep fails until every manual catch + ad-hoc logger string above is removed; Dependencies: 4d/6c blocked on Pattern 3 async-utils retry API (to avoid double-wrapping timeouts) and Pattern 1 logger consolidation (replacement for console.*); 4e/6d wait on 4d completion and require Interface guild sign-off on DI seams; 4f/6e coordinate with QA automation to capture new log artefacts under dev/architecture/evidence; 4g/6f depend on Event Utils guardrail refresh to keep MCP lifecycle metrics aligned and need Haruspex owner ack before server.py handler swap.",
+          "scope": [
+            "stage-3"
+          ]
+        },
+        {
+          "id": "stage-4-note-20251014T212533",
+          "timestamp": "2025-10-14T21:25:33Z",
+          "body": "Lane 4f: Guardrail=Phase6 CLI error handler guardrail; Expected failure=tests/scripts/phase6-validation-cli.test.ts flags manual console.error catch blocks and direct process.exit usage; Paired Stage 6=6e",
+          "scope": [
+            "stage-4"
+          ]
+        },
+        {
+          "id": "stage-4-note-20251014T215140",
+          "timestamp": "2025-10-14T21:51:40Z",
+          "body": "Lane 4d: Guardrail=Backend router & dependency resolver must emit ErrorHandler-standardized failures for manual override and lifecycle flows; Expected failure=jest assertion that router throws via ErrorHandler.handle rather than console.error/log; Paired Stage 6=6c",
+          "scope": [
+            "stage-4"
+          ]
+        },
+        {
+          "id": "stage-4-note-20251014T215416",
+          "timestamp": "2025-10-14T21:54:16Z",
+          "body": "Lane 4e: Guardrail=Interface/session error handling guardrail covering CLI + session adapters; Expected failure=isTemplumError guard assertion fails because manual catch blocks still return plain Error; Paired Stage 6=6d",
+          "scope": [
+            "stage-4"
+          ]
+        },
+        {
+          "id": "stage-4-note-20251014T215540",
+          "timestamp": "2025-10-14T21:55:40Z",
+          "body": "Lane 4g: Guardrail=CLIMCPServer requests must route errors through ErrorHandler; Expected failure=jest assertion that ErrorHandler.handle is called when handleMCPRequest rejects; Paired Stage 6=6f",
+          "scope": [
+            "stage-4"
           ]
         }
       ],
@@ -1599,9 +2581,328 @@
             "logs/consolidation/pattern-2/lane-6a/test-ci-20251014T152253Z.log"
           ],
           "durationMs": 785000
+        },
+        {
+          "stage": "stage-7",
+          "timestamp": "2025-10-14T16:37:49Z",
+          "summary": "Stage 7 claimed",
+          "agent": "2-stage7"
+        },
+        {
+          "stage": "stage-7",
+          "timestamp": "2025-10-14T16:43:37Z",
+          "summary": "Stage 7 status remains in_progress",
+          "files": [
+            "logs/consolidation/pattern-2/stage7/error-handler-20251014T163942Z.log",
+            "logs/consolidation/pattern-2/stage7/connection-factory-20251014T163955Z.log",
+            "logs/consolidation/pattern-2/stage7/test-ci-20251014T164009Z.log",
+            "logs/consolidation/pattern-2/stage7/phase6-validation-20251014T164249Z.log",
+            "logs/consolidation/pattern-2/stage7/phase6-health-20251014T164303Z.log"
+          ]
+        },
+        {
+          "stage": "stage-7",
+          "timestamp": "2025-10-14T16:45:27Z",
+          "summary": "Stage 7 status set to complete",
+          "durationMs": 458000
+        },
+        {
+          "stage": "stage-7",
+          "timestamp": "2025-10-14T16:51:46Z",
+          "summary": "Stage 7 metadata updated (status complete)"
+        },
+        {
+          "stage": "stage-7",
+          "timestamp": "2025-10-14T16:52:30Z",
+          "summary": "Stage 7 metadata updated (status complete)"
+        },
+        {
+          "stage": "stage-7",
+          "timestamp": "2025-10-14T16:52:52Z",
+          "summary": "Stage 7 metadata updated (status complete)"
+        },
+        {
+          "stage": "stage-7",
+          "timestamp": "2025-10-14T16:53:56Z",
+          "summary": "Stage 7 metadata updated (status complete)"
+        },
+        {
+          "stage": "stage-7",
+          "timestamp": "2025-10-14T16:54:58Z",
+          "summary": "Stage 7 status set to in_progress"
+        },
+        {
+          "stage": "stage-3",
+          "timestamp": "2025-10-14T17:00:48Z",
+          "summary": "Stage 3 status set to in_progress"
+        },
+        {
+          "stage": "stage-7",
+          "timestamp": "2025-10-14T17:01:08Z",
+          "summary": "Stage 7 status set to blocked",
+          "durationMs": 370000
+        },
+        {
+          "stage": "stage-3",
+          "timestamp": "2025-10-14T17:02:19Z",
+          "summary": "Stage 3 status set to pending",
+          "durationMs": 91000
+        },
+        {
+          "stage": "stage-3",
+          "timestamp": "2025-10-14T18:07:24Z",
+          "summary": "Stage 3 claimed",
+          "agent": "2-stage3"
+        },
+        {
+          "stage": "stage-4",
+          "timestamp": "2025-10-14T18:15:55Z",
+          "summary": "Created lane 4d (Backend router & dependency resolver guardrail)"
+        },
+        {
+          "stage": "stage-6",
+          "timestamp": "2025-10-14T18:16:03Z",
+          "summary": "Created lane 6c (Backend router & dependency resolver runtime migration)"
+        },
+        {
+          "stage": "stage-4",
+          "timestamp": "2025-10-14T18:16:40Z",
+          "summary": "Created lane 4e (Interface/session guardrail coverage)"
+        },
+        {
+          "stage": "stage-6",
+          "timestamp": "2025-10-14T18:17:36Z",
+          "summary": "Created lane 6d (Interface & session runtime migration)"
+        },
+        {
+          "stage": "stage-4",
+          "timestamp": "2025-10-14T18:18:30Z",
+          "summary": "Created lane 4f (CLI/Phase6 script guardrail coverage)"
+        },
+        {
+          "stage": "stage-6",
+          "timestamp": "2025-10-14T18:18:44Z",
+          "summary": "Created lane 6e (CLI/Phase6 script runtime migration)"
+        },
+        {
+          "stage": "stage-4",
+          "timestamp": "2025-10-14T18:19:34Z",
+          "summary": "Created lane 4g (MCP tests & helper guardrail)"
+        },
+        {
+          "stage": "stage-6",
+          "timestamp": "2025-10-14T18:20:44Z",
+          "summary": "Created lane 6f (MCP runtime migration)"
+        },
+        {
+          "stage": "stage-7",
+          "timestamp": "2025-10-14T18:21:53Z",
+          "summary": "Stage 7 metadata updated (status blocked)"
+        },
+        {
+          "stage": "stage-3",
+          "timestamp": "2025-10-14T18:23:11Z",
+          "summary": "Stage 3 status set to complete",
+          "durationMs": 947000
+        },
+        {
+          "stage": "stage-5",
+          "timestamp": "2025-10-14T19:33:41Z",
+          "summary": "Stage 5 restored for pattern2"
+        },
+        {
+          "stage": "stage-6",
+          "timestamp": "2025-10-14T19:33:56Z",
+          "summary": "Stage 6 restored for pattern2"
+        },
+        {
+          "stage": "stage-5",
+          "timestamp": "2025-10-14T19:40:46Z",
+          "summary": "Restore Stage5 pattern2"
+        },
+        {
+          "stage": "stage-6",
+          "timestamp": "2025-10-14T19:40:54Z",
+          "summary": "Restore Stage6 pattern2"
+        },
+        {
+          "stage": "lane-6e",
+          "timestamp": "2025-10-14T19:51:11Z",
+          "summary": "Lane 6e claimed",
+          "agent": "2-6e"
+        },
+        {
+          "stage": "lane-6e",
+          "timestamp": "2025-10-14T19:52:54Z",
+          "summary": "Lane 6e status set to complete",
+          "durationMs": 98000
+        },
+        {
+          "stage": "lane-6f",
+          "timestamp": "2025-10-14T19:53:01Z",
+          "summary": "Lane 6f claimed",
+          "agent": "2-6f"
+        },
+        {
+          "stage": "lane-6f",
+          "timestamp": "2025-10-14T19:53:06Z",
+          "summary": "Lane 6f status set to complete",
+          "durationMs": 4000
+        },
+        {
+          "stage": "lane-6f",
+          "timestamp": "2025-10-14T19:54:57Z",
+          "summary": "Lane 6f status set to blocked"
+        },
+        {
+          "stage": "lane-6e",
+          "timestamp": "2025-10-14T19:55:05Z",
+          "summary": "Lane 6e status set to blocked"
+        },
+        {
+          "stage": "lane-6e",
+          "timestamp": "2025-10-14T19:55:15Z",
+          "summary": "Lane 6e status set to blocked"
+        },
+        {
+          "stage": "stage-5",
+          "timestamp": "2025-10-14T19:55:39Z",
+          "summary": "Stage 5B status set to blocked"
+        },
+        {
+          "stage": "lane-4f",
+          "timestamp": "2025-10-14T21:19:55Z",
+          "summary": "Lane 4f claimed",
+          "agent": "2-4f"
+        },
+        {
+          "stage": "lane-4f",
+          "timestamp": "2025-10-14T21:25:47Z",
+          "summary": "Expected failure: manual console.error catch blocks + direct process.exit usage persist",
+          "files": [
+            "tmp/consolidation-pattern2-lane4f-guardrail-phase6-validation-cli.log"
+          ]
+        },
+        {
+          "stage": "lane-4f",
+          "timestamp": "2025-10-14T21:26:05Z",
+          "summary": "Guardrail failing as expected; Stage 6 6e primed with Phase6 CLI error handler consolidation checks",
+          "files": [
+            "tmp/consolidation-pattern2-lane4f-guardrail-phase6-validation-cli.log"
+          ],
+          "durationMs": 370000
+        },
+        {
+          "stage": "lane-6e",
+          "timestamp": "2025-10-14T21:26:15Z",
+          "summary": "Stage 4 4f guardrail log linked: manual console.error catch blocks (5) and direct process.exit require ErrorHandler migration",
+          "files": [
+            "tmp/consolidation-pattern2-lane4f-guardrail-phase6-validation-cli.log"
+          ]
+        },
+        {
+          "stage": "lane-4d",
+          "timestamp": "2025-10-14T21:50:59Z",
+          "summary": "Lane 4d claimed",
+          "agent": "2-4d"
+        },
+        {
+          "stage": "lane-4e",
+          "timestamp": "2025-10-14T21:52:39Z",
+          "summary": "Lane 4e claimed",
+          "agent": "2-4e"
+        },
+        {
+          "stage": "lane-4g",
+          "timestamp": "2025-10-14T21:53:14Z",
+          "summary": "Lane 4g claimed",
+          "agent": "2-4g"
+        },
+        {
+          "stage": "lane-4e",
+          "timestamp": "2025-10-14T21:58:34Z",
+          "summary": "Expected failure: guardrail flags 402 catch clauses missing ErrorHandler.handle",
+          "files": [
+            "tmp/consolidation-pattern2-lane4e-guardrail.log"
+          ]
+        },
+        {
+          "stage": "lane-4g",
+          "timestamp": "2025-10-14T21:59:26Z",
+          "summary": "Expected failure: CLIMCPServer guardrail missing ErrorHandler.handle invocation",
+          "files": [
+            "tmp/consolidation-pattern2-lane4g-guardrail.log"
+          ]
+        },
+        {
+          "stage": "lane-4g",
+          "timestamp": "2025-10-14T21:59:48Z",
+          "summary": "Guardrail failing as expected; Stage 6 6f primed",
+          "files": [
+            "tmp/consolidation-pattern2-lane4g-guardrail.log",
+            "tmp/consolidation-pattern2-lane4g-harness.log",
+            "tmp/consolidation-pattern2-lane4g-pty-manager.log"
+          ],
+          "durationMs": 394000
+        },
+        {
+          "stage": "lane-6f",
+          "timestamp": "2025-10-14T21:59:56Z",
+          "summary": "Linked guardrail: CLIMCPServer ErrorHandler coverage failing; see log for failure signature",
+          "files": [
+            "tmp/consolidation-pattern2-lane4g-guardrail.log"
+          ]
+        },
+        {
+          "stage": "lane-4e",
+          "timestamp": "2025-10-14T22:00:06Z",
+          "summary": "Guardrail failing as expected; Stage 6 6d primed",
+          "files": [
+            "tmp/consolidation-pattern2-lane4e-guardrail.log"
+          ],
+          "durationMs": 447000
+        },
+        {
+          "stage": "lane-6d",
+          "timestamp": "2025-10-14T22:00:17Z",
+          "summary": "Mirrored guardrail log from Stage 4e catch-clause enforcement",
+          "files": [
+            "tmp/consolidation-pattern2-lane4e-guardrail.log"
+          ]
+        },
+        {
+          "stage": "lane-4d",
+          "timestamp": "2025-10-14T22:07:07Z",
+          "summary": "Expected failure: Logger guardrail still sees console output and ErrorHandler guardrails report missing centralized handling",
+          "files": [
+            "tmp/consolidation-pattern2-lane4d-manual-override-flow.log",
+            "tmp/consolidation-pattern2-lane4d-backend-connection-lifecycle.log",
+            "tmp/consolidation-pattern2-lane4d-generic-backend-integration.log"
+          ]
+        },
+        {
+          "stage": "lane-4d",
+          "timestamp": "2025-10-14T22:07:33Z",
+          "summary": "Guardrail failing as expected; Stage 6 6c primed with logger + ErrorHandler coverage",
+          "files": [
+            "tmp/consolidation-pattern2-lane4d-manual-override-flow.log",
+            "tmp/consolidation-pattern2-lane4d-backend-connection-lifecycle.log",
+            "tmp/consolidation-pattern2-lane4d-generic-backend-integration.log"
+          ],
+          "durationMs": 994000
+        },
+        {
+          "stage": "lane-6c",
+          "timestamp": "2025-10-14T22:07:49Z",
+          "summary": "Mirror guardrail artefacts from 4d; run with ErrorHandler instrumentation once migrations land",
+          "files": [
+            "tmp/consolidation-pattern2-lane4d-backend-connection-lifecycle.log",
+            "tmp/consolidation-pattern2-lane4d-generic-backend-integration.log",
+            "tmp/consolidation-pattern2-lane4d-manual-override-flow.log"
+          ]
         }
       ],
-      "updatedAt": "2025-10-14T15:27:21Z",
+      "updatedAt": "2025-10-14T22:07:49Z",
       "cohorts": [
         "D"
       ]
@@ -7072,15 +8373,12 @@
         1,
         2
       ],
-      "updatedAt": "2025-10-14T14:32:00Z",
+      "updatedAt": "2025-10-14T19:55:42Z",
       "stages": {
         "5a": {
           "segment": "5a",
-          "status": "complete",
-          "notes": "Stage 5A alignment complete for cohort 1-2; spec dev/architecture/logger-error-handler-alignment.md published with shared dependencies matrix and Stage 6 checklist.",
-          "startedAt": "2025-10-14T13:20:00Z",
-          "elapsedMs": 900000,
-          "completedAt": "2025-10-14T14:32:00Z",
+          "status": "blocked",
+          "notes": "Alignment intact",
           "plannedFiles": [
             "dev/architecture/logger-error-handler-alignment.md"
           ]

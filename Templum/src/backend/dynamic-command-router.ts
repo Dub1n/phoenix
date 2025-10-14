@@ -16,6 +16,7 @@ import {
 } from '../types/templum-types';
 import { EventDrivenComponent } from '../utils/event-bus-adapter';
 import type { TypedEventMap } from '../utils/event-utils';
+import { getBackendSerializationLogger } from './backend-serialization-log';
 
 /**
  * Command routing information
@@ -65,6 +66,11 @@ export class DynamicCommandRouter extends EventDrivenComponent<DynamicCommandRou
   private aliasMap: Map<string, string> = new Map(); // alias -> original command
   private backendCommands: Map<string, Set<string>> = new Map(); // backend ID -> command IDs
   private duplicateCommands: Set<string> = new Set(); // Commands registered by multiple backends
+
+  private readonly logger = getBackendSerializationLogger('dynamic-command-router');
+  private readonly registrationLogger = this.logger.child('registration');
+  private readonly lifecycleLogger = this.logger.child('lifecycle');
+  private readonly diagnosticsLogger = this.logger.child('diagnostics');
   
   constructor() {
     super(`dynamic-command-router:${DynamicCommandRouter.instanceCounter++}`, 80);
@@ -84,10 +90,10 @@ export class DynamicCommandRouter extends EventDrivenComponent<DynamicCommandRou
    */
   registerBackend(backend: BackendConnection, skin: UniversalSkinDefinition): void {
     try {
-      console.log(`[DynamicCommandRouter] Registering commands for backend: ${backend.id}`);
+      this.registrationLogger.info('Registering backend commands', { backendId: backend.id });
       
       if (!skin.commands) {
-        console.log(`[DynamicCommandRouter] No commands found in skin for backend: ${backend.id}`);
+        this.registrationLogger.info('No commands found in skin', { backendId: backend.id });
         return;
       }
 
@@ -100,7 +106,11 @@ export class DynamicCommandRouter extends EventDrivenComponent<DynamicCommandRou
         // Check for duplicate commands across backends
         if (this.commandMap.has(commandId)) {
           const existingBackend = this.commandMap.get(commandId)!;
-          console.warn(`[DynamicCommandRouter] Command '${commandId}' already registered to ${existingBackend.id}, now registering to ${backend.id}`);
+          this.registrationLogger.warn('Duplicate command registration detected', {
+            commandId,
+            existingBackendId: existingBackend.id,
+            backendId: backend.id
+          });
           this.duplicateCommands.add(commandId);
         }
 
@@ -109,7 +119,10 @@ export class DynamicCommandRouter extends EventDrivenComponent<DynamicCommandRou
         backendCommandSet.add(commandId);
         commandCount++;
 
-        console.log(`[DynamicCommandRouter] Registered command: ${commandId} -> ${backend.id}`);
+        this.registrationLogger.debug('Command registered', {
+          commandId,
+          backendId: backend.id
+        });
       }
 
       // Handle shortcuts as aliases if they exist at root level
@@ -121,9 +134,17 @@ export class DynamicCommandRouter extends EventDrivenComponent<DynamicCommandRou
             this.commandMap.set(shortcut, backend);
             aliasCount++;
             
-            console.log(`[DynamicCommandRouter] Registered shortcut: ${shortcut} -> ${commandId} (${backend.id})`);
+            this.registrationLogger.debug('Shortcut registered', {
+              shortcut,
+              commandId,
+              backendId: backend.id
+            });
           } else {
-            console.warn(`[DynamicCommandRouter] Shortcut '${shortcut}' points to non-existent command '${commandId}' in backend ${backend.id}`);
+            this.registrationLogger.warn('Shortcut target missing', {
+              shortcut,
+              commandId,
+              backendId: backend.id
+            });
           }
         }
       }
@@ -131,7 +152,11 @@ export class DynamicCommandRouter extends EventDrivenComponent<DynamicCommandRou
       // Store backend command mapping
       this.backendCommands.set(backend.id, backendCommandSet);
 
-      console.log(`[DynamicCommandRouter] Registration complete for ${backend.id}: ${commandCount} commands, ${aliasCount} aliases`);
+      this.registrationLogger.info('Backend registration complete', {
+        backendId: backend.id,
+        commandCount,
+        aliasCount
+      });
       
       // Emit event for monitoring/debugging
       this.emit('backendRegistered', {
@@ -142,7 +167,10 @@ export class DynamicCommandRouter extends EventDrivenComponent<DynamicCommandRou
       });
 
     } catch (error) {
-      console.error(`[DynamicCommandRouter] Failed to register backend ${backend.id}:`, error);
+      const normalizedError = error instanceof Error ? error : new Error(String(error));
+      this.registrationLogger.error('Failed to register backend commands', normalizedError, {
+        backendId: backend.id
+      });
       throw createTemplumError(
         `Failed to register backend commands: ${backend.id}`,
         'COMMAND_REGISTRATION_FAILED',
@@ -158,11 +186,11 @@ export class DynamicCommandRouter extends EventDrivenComponent<DynamicCommandRou
    */
   unregisterBackend(backendId: string): void {
     try {
-      console.log(`[DynamicCommandRouter] Unregistering backend: ${backendId}`);
+      this.lifecycleLogger.info('Unregistering backend', { backendId });
       
       const commandsToRemove = this.backendCommands.get(backendId);
       if (!commandsToRemove) {
-        console.log(`[DynamicCommandRouter] Backend ${backendId} was not registered`);
+        this.lifecycleLogger.debug('Backend not registered; skipping unregister', { backendId });
         return;
       }
 
@@ -193,7 +221,11 @@ export class DynamicCommandRouter extends EventDrivenComponent<DynamicCommandRou
       // Clean up backend tracking
       this.backendCommands.delete(backendId);
 
-      console.log(`[DynamicCommandRouter] Unregistered ${backendId}: ${removedCount} commands, ${aliasesToRemove.length} aliases removed`);
+      this.lifecycleLogger.info('Backend unregistered', {
+        backendId,
+        removedCommands: removedCount,
+        removedAliases: aliasesToRemove.length
+      });
       
       this.emit('backendUnregistered', {
         backendId,
@@ -202,7 +234,8 @@ export class DynamicCommandRouter extends EventDrivenComponent<DynamicCommandRou
       });
 
     } catch (error) {
-      console.error(`[DynamicCommandRouter] Failed to unregister backend ${backendId}:`, error);
+      const normalizedError = error instanceof Error ? error : new Error(String(error));
+      this.lifecycleLogger.error('Failed to unregister backend', normalizedError, { backendId });
       throw createTemplumError(
         `Failed to unregister backend: ${backendId}`,
         'COMMAND_UNREGISTRATION_FAILED',
@@ -286,7 +319,7 @@ export class DynamicCommandRouter extends EventDrivenComponent<DynamicCommandRou
    * Used for testing or complete reset
    */
   clear(): void {
-    console.log('[DynamicCommandRouter] Clearing all command mappings');
+    this.lifecycleLogger.info('Clearing all command mappings');
     
     this.commandMap.clear();
     this.aliasMap.clear();
@@ -300,15 +333,15 @@ export class DynamicCommandRouter extends EventDrivenComponent<DynamicCommandRou
    * Debug method to dump current routing state
    */
   dumpRoutingTable(): void {
-    console.log('[DynamicCommandRouter] === Routing Table Dump ===');
-    console.log('Commands:', Object.fromEntries(
-      Array.from(this.commandMap.entries()).map(([cmd, backend]) => [cmd, backend.id])
-    ));
-    console.log('Aliases:', Object.fromEntries(this.aliasMap));
-    console.log('Backend Commands:', Object.fromEntries(
-      Array.from(this.backendCommands.entries()).map(([id, cmds]) => [id, Array.from(cmds)])
-    ));
-    console.log('Duplicate Commands:', Array.from(this.duplicateCommands));
-    console.log('=== End Routing Table Dump ===');
+    this.diagnosticsLogger.debug('Routing table snapshot', {
+      commands: Object.fromEntries(
+        Array.from(this.commandMap.entries()).map(([cmd, backend]) => [cmd, backend.id])
+      ),
+      aliases: Object.fromEntries(this.aliasMap),
+      backendCommands: Object.fromEntries(
+        Array.from(this.backendCommands.entries()).map(([id, cmds]) => [id, Array.from(cmds)])
+      ),
+      duplicateCommands: Array.from(this.duplicateCommands)
+    });
   }
 }

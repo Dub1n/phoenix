@@ -10,6 +10,7 @@ import { ServiceDiscovery } from '../../backend/service-discovery';
 import type { BackendConfig } from '../../types/universal-skin-engine-types';
 import { serializeServiceManifest } from '../../backend/schemas/service-manifest';
 import { MockBackendConnection } from './__utils__/mock-backend-connection';
+import { withManualOverrideLoggerGuardrail } from './__utils__/logger-guardrail';
 
 const removeIfExists = (targetPath: string) => {
   if (fs.existsSync(targetPath)) {
@@ -123,19 +124,21 @@ describe('Manual override watcher integration', () => {
       handleServiceFileChange: (filePath: string, eventType: 'add' | 'change') => Promise<void>;
     }).handleServiceFileChange(manifestPath, 'add');
 
-    const descriptor = await router.applyManualOverride(serviceId, { reason: 'watcher-test' });
-    expect(descriptor.serviceId).toBe(serviceId);
-    await appliedPromise;
-    expect(router.getManualOverrideSnapshot().overrides).toHaveLength(1);
+    await withManualOverrideLoggerGuardrail(async () => {
+      const descriptor = await router.applyManualOverride(serviceId, { reason: 'watcher-test' });
+      expect(descriptor.serviceId).toBe(serviceId);
+      await appliedPromise;
+      expect(router.getManualOverrideSnapshot().overrides).toHaveLength(1);
 
-    fs.rmSync(manifestPath);
-    (serviceDiscovery as unknown as { handleServiceFileRemoval: (filePath: string) => void }).handleServiceFileRemoval(manifestPath);
-    await clearedPromise;
+      fs.rmSync(manifestPath);
+      (serviceDiscovery as unknown as { handleServiceFileRemoval: (filePath: string) => void }).handleServiceFileRemoval(manifestPath);
+      await clearedPromise;
 
-    expect(router.getManualOverrideSnapshot().overrides).toHaveLength(0);
-    expect(connectionSpy).toHaveBeenCalledWith(
-      serviceId,
-      expect.objectContaining({ endpoint: 'http://127.0.0.1:4311' })
-    );
+      expect(router.getManualOverrideSnapshot().overrides).toHaveLength(0);
+      expect(connectionSpy).toHaveBeenCalledWith(
+        serviceId,
+        expect.objectContaining({ endpoint: 'http://127.0.0.1:4311' })
+      );
+    });
   }, 15000);
 });

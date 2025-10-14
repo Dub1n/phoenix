@@ -55,7 +55,7 @@ describe('HaruspexCoreEngine', () => {
       privacyCompliant: true,
       performanceMetrics: true,
       errorReporting: true,
-      outputChannel: true
+      logLevel: 'info'
     },
     fileMonitoring: {
       enabled: true,
@@ -227,19 +227,14 @@ describe('HaruspexCoreEngine', () => {
 
   describe('File Monitoring', () => {
     let engine: HaruspexCoreEngine;
-    let mockContext: vscode.ExtensionContext;
 
     beforeEach(async () => {
       engine = new HaruspexCoreEngine(testWorkspaceRoot, defaultConfig);
       await engine.initialize();
-      
-      mockContext = {
-        subscriptions: []
-      } as any;
     });
 
     it('should setup file watching when file monitoring is enabled', () => {
-      expect(() => engine.setupFileWatching(mockContext)).not.toThrow();
+      expect(() => engine.setupFileWatching(testWorkspaceRoot)).not.toThrow();
       
       // Should create file system watcher
       expect(vscode.workspace.createFileSystemWatcher).toHaveBeenCalled();
@@ -254,7 +249,7 @@ describe('HaruspexCoreEngine', () => {
       const engineWithoutMonitoring = new HaruspexCoreEngine(testWorkspaceRoot, configWithoutMonitoring);
       
       (vscode.workspace.createFileSystemWatcher as jest.Mock).mockClear();
-      engineWithoutMonitoring.setupFileWatching(mockContext);
+      engineWithoutMonitoring.setupFileWatching(testWorkspaceRoot);
       
       // Should not create watcher when disabled
       expect(vscode.workspace.createFileSystemWatcher).not.toHaveBeenCalled();

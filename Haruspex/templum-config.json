@@ -1,0 +1,65 @@
+{
+  "serviceId": "haruspex-1760274994068",
+  "serviceName": "haruspex-analysis",
+  "serviceVersion": "2.1.0",
+  "templum": {
+    "discoveryEnabled": true,
+    "autoRegistration": true,
+    "heartbeatInterval": 30000,
+    "registrationPath": "~/.templum/services/",
+    "capabilities": [
+      "code-analysis",
+      "prediction",
+      "diagnostics",
+      "health-monitoring"
+    ]
+  },
+  "runtime": {
+    "configUpdateEndpoint": true,
+    "hotReloadEnabled": true,
+    "persistConfig": true,
+    "configValidation": true
+  },
+  "baseConfig": {
+    "api": {
+      "http": {
+        "port": 3002,
+        "cors": true,
+        "rateLimit": {
+          "requests": 1000,
+          "windowMs": 60000
+        }
+      },
+      "websocket": {
+        "port": 3003,
+        "heartbeat": 30000,
+        "maxClients": 100
+      },
+      "ipc": {
+        "port": 3001,
+        "timeout": 30000,
+        "maxConnections": 50
+      }
+    },
+    "analysis": {
+      "maxConcurrentAnalyses": 10,
+      "timeoutMs": 30000,
+      "cacheEnabled": true,
+      "cacheTtlMs": 3600000
+    },
+    "prediction": {
+      "modelsPath": "./models",
+      "confidenceThreshold": 0.7,
+      "maxPredictionTime": 15000
+    },
+    "diagnostics": {
+      "healthCheckInterval": 30000,
+      "metricsRetention": 86400000,
+      "alertThresholds": {
+        "memoryUsageMB": 512,
+        "responseTimeMs": 5000,
+        "errorRate": 0.1
+      }
+    }
+  }
+}

@@ -1,5 +1,5 @@
-import { parseCommandInvocation, resolveDescriptor } from '../../../dev/architecture/cli-shared-parser.mjs';
-import { getCommandDescriptor } from '../../../dev/architecture/cli-command-registry.mjs';
+import { parseCommandInvocation, resolveDescriptor } from '../../../dev/architecture/consolidation-scripts/cli-shared-parser.mjs';
+import { getCommandDescriptor } from '../../../dev/architecture/consolidation-scripts/cli-command-registry.mjs';
 
 const [, , mode, payload] = process.argv;
 

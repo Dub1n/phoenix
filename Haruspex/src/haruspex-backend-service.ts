@@ -205,7 +205,8 @@ export class HaruspexBackendService extends EventEmitter {
       console.log('Haruspex Backend Service: Core Engine initialization complete');
 
       console.log('Haruspex Backend Service: Initializing diagnostic system...');
-      await this.diagnosticSystem.startMonitoring();
+      await this.diagnosticSystem.initialize();
+      this.diagnosticSystem.startMonitoring();
       this.serviceStatus.components.diagnostics = 'operational';
 
       console.log('Haruspex Backend Service: Starting API gateway with configuration manager...');

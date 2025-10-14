@@ -127,8 +127,7 @@ export async function activate(context: vscode.ExtensionContext) {
     telemetryCollector = new TelemetryCollector({
       privacyCompliant: true,
       performanceMetrics: true,
-      errorReporting: true,
-      outputChannel: true
+      errorReporting: true
     });
 
     debugManager.log('Telemetry collector initialized');
@@ -147,8 +146,7 @@ export async function activate(context: vscode.ExtensionContext) {
           telemetry: {
             privacyCompliant: true,
             performanceMetrics: true,
-            errorReporting: true,
-            outputChannel: true
+            errorReporting: true
           },
           fileMonitoring: {
             enabled: true,
@@ -164,7 +162,7 @@ export async function activate(context: vscode.ExtensionContext) {
           debugManager.log('Core engine initialized successfully');
           
           // Setup file monitoring
-          coreEngine.setupFileWatching(context);
+          coreEngine.setupFileWatching(workspaceRoot);
           debugManager.log('File monitoring setup complete');
           
           // Show success message with compatibility score

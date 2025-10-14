@@ -45,6 +45,7 @@ import {
 import { createTimeout, TIMEOUTS } from '../utils/async-utils';
 import type { ManagedTimeout } from '../utils/async-utils';
 import type { Logger } from '../utils/logger';
+import { ErrorHandler } from '../utils/error-handler';
 
 export interface DiscoveredService {
   id: string;
@@ -156,8 +157,11 @@ function parseJsonFile<T>(
     const raw = fs.readFileSync(filePath, 'utf-8');
     return parseJsonString(context, raw, options);
   } catch (error) {
-    const normalizedError = error instanceof Error ? error : new Error(String(error));
-    logger.error('Failed to read JSON file', normalizedError, { context, filePath });
+    const templumError = ErrorHandler.handle(error, 'backend:service-discovery:parse-json-file', {
+      context,
+      filePath,
+    });
+    logger.error('Failed to read JSON file', templumError, { context, filePath });
     return null;
   }
 }
@@ -415,12 +419,17 @@ export class ServiceDiscovery extends EventDrivenComponent<ServiceDiscoveryEvent
         });
         return services;
       } catch (error) {
-        const normalizedError = error instanceof Error ? error : new Error(String(error));
+        const templumError = ErrorHandler.handle(
+          error,
+          'backend:service-discovery:strategy-discover',
+          { strategy: strategy.name },
+        );
         serviceDiscoveryLogger.warn('Strategy failed', {
           strategy: strategy.name,
-          error: normalizedError.message,
+          errorCode: templumError.code,
+          errorMessage: templumError.message,
         });
-        this.emit('strategyError', { strategy: strategy.name, error });
+        this.emit('strategyError', { strategy: strategy.name, error: templumError });
         return [];
       }
     });
@@ -598,8 +607,12 @@ export class ServiceDiscovery extends EventDrivenComponent<ServiceDiscoveryEvent
         filePath,
       });
     } catch (error) {
-      const normalizedError = error instanceof Error ? error : new Error(String(error));
-      fileWatcherLogger.error('Failed to process service file', normalizedError, {
+      const templumError = ErrorHandler.handle(
+        error,
+        'backend:service-discovery:file-watcher:update',
+        { filePath, eventType },
+      );
+      fileWatcherLogger.error('Failed to process service file', templumError, {
         filePath,
         eventType,
       });
@@ -781,8 +794,12 @@ export class RegistryBasedDiscoveryStrategy implements DiscoveryStrategy {
         registryLogger.info('Discovered service via registry', { serviceId });
       }
     } catch (error) {
-      const normalizedError = error instanceof Error ? error : new Error(String(error));
-      registryLogger.error('Registry file discovery failed', normalizedError, {
+      const templumError = ErrorHandler.handle(
+        error,
+        'backend:service-discovery:registry-discover',
+        { registryPath: this.options.registryPath },
+      );
+      registryLogger.error('Registry file discovery failed', templumError, {
         path: this.options.registryPath,
       });
     }
@@ -821,8 +838,15 @@ export class RegistryBasedDiscoveryStrategy implements DiscoveryStrategy {
       }
       
     } catch (error) {
-      const normalizedError = error instanceof Error ? error : new Error(String(error));
-      registryLogger.error('Services directory discovery failed', normalizedError, {
+      const templumError = ErrorHandler.handle(
+        error,
+        'backend:service-discovery:services-directory-discover',
+        {
+          directory: this.options.servicesDir,
+          sharedDirectory: path.resolve(process.cwd(), '..', '.templum', 'services'),
+        },
+      );
+      registryLogger.error('Services directory discovery failed', templumError, {
         directory: this.options.servicesDir,
       });
     }
@@ -884,8 +908,12 @@ export class RegistryBasedDiscoveryStrategy implements DiscoveryStrategy {
         });
       }
     } catch (error) {
-      const normalizedError = error instanceof Error ? error : new Error(String(error));
-      registryLogger.error('Directory discovery failed', normalizedError, { directory: servicesDir });
+      const templumError = ErrorHandler.handle(
+        error,
+        'backend:service-discovery:scan-directory',
+        { directory: servicesDir },
+      );
+      registryLogger.error('Directory discovery failed', templumError, { directory: servicesDir });
     }
 
     return services;
@@ -992,16 +1020,25 @@ export class ConfigurationBasedDiscoveryStrategy implements DiscoveryStrategy {
         });
       }
     } catch (error) {
-      const normalizedError = error instanceof Error ? error : new Error(String(error));
-      configurationLogger.error('Configuration discovery failed', normalizedError, {
+      const templumError = ErrorHandler.handle(
+        error,
+        'backend:service-discovery:configuration-discover',
+        { path: this.options.configurationPath },
+      );
+      const configDiscoveryError = createTemplumError(
+        `Configuration discovery failed: ${templumError.message}`,
+        'CONFIG_DISCOVERY_ERROR',
+        'configuration',
+        {
+          path: this.options.configurationPath,
+          cause: templumError,
+        },
+      );
+      configurationLogger.error('Configuration discovery failed', configDiscoveryError, {
         path: this.options.configurationPath,
       });
 
-      throw createTemplumError(
-        `Configuration discovery failed: ${normalizedError.message}`,
-        'CONFIG_DISCOVERY_ERROR',
-        'configuration',
-      );
+      throw configDiscoveryError;
     }
 
     return services;

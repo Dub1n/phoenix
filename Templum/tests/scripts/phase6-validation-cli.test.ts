@@ -6,6 +6,8 @@
  * description: Covers environment flag handling for mock vs real backend execution so the new dual-run automation can rely on deterministic toggles
  * ---*/
 
+import * as fs from 'fs';
+import * as path from 'path';
 import { Phase6ValidationCLI } from '../../src/scripts/run-phase6-integration-validation';
 
 const resetEnv = (keys: string[]) => {
@@ -70,3 +72,24 @@ describe('Phase6ValidationCLI backend selection', () => {
   });
 });
 
+describe('Phase6ValidationCLI guardrails — error handler consolidation', () => {
+  const readSource = (relativePath: string): string =>
+    fs.readFileSync(path.resolve(__dirname, relativePath), 'utf8');
+
+  it('rejects manual catch blocks that call console.error in the CLI implementation', () => {
+    const cliSource = readSource('../../src/scripts/run-phase6-integration-validation.ts');
+    const catchBlocks = cliSource.match(/catch\s*\([^)]*\)\s*{[\s\S]*?}/g) ?? [];
+    const manualConsoleCatches = catchBlocks.filter((block) =>
+      block.includes('console.error')
+    );
+
+    expect(manualConsoleCatches).toHaveLength(0);
+  });
+
+  it('disallows direct process.exit usage in the Phase 6 orchestrator script', () => {
+    const orchestratorSource = readSource('../../scripts/run-phase6-full.js');
+    const directProcessExit = orchestratorSource.includes('process.exit(');
+
+    expect(directProcessExit).toBe(false);
+  });
+});

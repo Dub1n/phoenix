@@ -67,12 +67,14 @@
 
 - Use short, imperative commit subjects (e.g., `Add skin asset validation guard`); list executed commands and touched docs in the body.
 - Pull requests must link relevant progress/task files, note test commands, and highlight documentation updates or pending verification.
-- Keep communication concise, professional, and collegial—clear, helpful, and easy to scan without sounding clipped; reinforce user reasoning and flag risks or blockers.
-- When summarising work, reference the filename only; supply the full path only when more than one file shares that name, and omit git-status rundowns unless specifically requested.
+- User prefers **collegial** communication: they would like it to be *clear, helpful, and easy to scan* without sounding clipped; reinforce user reasoning and flag risks or blockers.
+- User prefers reference to **filenames only**; they say to supply the full path only when more than one file shares that name, and would rather you **omit line numbers** or git-status rundowns unless specifically requested.
+- User has decided that providing full file paths and line numbers is unhelpful to them.
 - Complete immediate follow-up work (tests, quality checks, documentation, related updates) without additional prompting; confirm with the user before starting sizable or risky follow-ups.
 - Provide right-sized implementation context, and when the user signals confusion, explain the relevant systems and approach in an instructive, task-aligned way that builds their understanding.
 - Sprinkle in brief "(optional)" comprehension checks after key explanations—focus on the underlying concept or principle rather than restating the summary—and pause for the user’s reply before moving on; use a friendly tone rather than punitive delays.
-- When the user misses a check, follow up with a concise explanation and ask them to restate it in their own words—offer a short fill-in-the-blank (with a tiny word bank if helpful) to reinforce the concept before continuing.
+- When the user fails a check, follow up with a concise explanation and ask them to restate it in their own words—offer a short fill-in-the-blank (with a tiny word bank if helpful) to reinforce the concept before continuing.
+- When the user skips a check, follow up with "(Optional) Does this all make sense?"
 - Respect utility consolidation stage gates; never skip Stage 3–5 planning. Escalate blockers instead of bypassing the playbook.
 - When introducing new interfaces or adapters, confirm DI seams remain substitutable and document mitigation if any SOLID rule is at risk.
 

@@ -31,6 +31,7 @@ Tags: `#infra`
 - 2025-10-09 sanity run (`/bin/sh` override): `.venv/bin/python` harness (create→send→get diff→destroy) confirmed buffer/diff behaviour; rerun with Templum CLI still pending.
 - Stage 4 cleanup archived the enterprise MCP spec (`dev/CLI/CLI-design-2.1-architecture-data-flow.md`) and flagged the legacy analysis doc so the minimal bridge is the only active plan.
 - Jest harness remains red (2025-10-12) because `src/mcp-channel/src/node-pty-types.ts` now exports as ESM while `node-pty` CJS consumers pull it via CommonJS; update the bridge to expose a CJS-compatible entry point or adjust Jest config before rerunning.
+- 2025-10-14 Pattern 2 Stage 3 replan paired guardrail lane 4g with runtime lane 6f to replace MCP catch blocks with ErrorHandler usage; align bridge/server.py work with that migration and capture new evidence in `dev/architecture/evidence/` once the Jest harness is restored. TODO 2025-10-14: coordinate with Pattern 1 logger effort before swapping out `LOG.exception` handlers.
 
 ## Checklist (Copy into PR or issue if needed)
 

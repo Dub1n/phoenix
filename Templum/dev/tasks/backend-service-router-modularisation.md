@@ -25,3 +25,8 @@ Refactor `backend-service-router.ts` into three collaborating modules so discove
 
 - Progress tracker: `docs/target/post-mvp-progress.md` (Backend Connectivity section).
 - Dependent tasks: `dev/tasks/multi-protocol-auto-registration.md`, `dev/tasks/zero-knowledge-registry.md` (must stay green).
+
+## Status — 2025-10-14
+
+- Pattern 2 Stage 3 orchestration refreshed with guardrail lane 4d / runtime lane 6c covering the router, dependency resolver, and service-health flows. Manual catch blocks and console logging remain until ErrorHandler.wrap adoption lands; modularisation stays blocked behind that migration.
+- TODO 2025-10-14: Pair with Pattern 1 logger + Pattern 3 async-utils owners on replacement logging/timeouts before extracting modules; rerun Stage 4 guardrail suites once ErrorHandler integration is staged.

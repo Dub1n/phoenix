@@ -1,0 +1,25 @@
+[project]
+name = "templum-mcp-terminal-bridge"
+version = "0.1.0"
+description = "Minimal FastMCP-based PTY bridge for exercising the Templum CLI"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "fastmcp>=2.0.0",
+  "ptyprocess>=0.7.0",
+  "pyte>=0.8.1",
+  "typing-extensions>=4.12.2",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.3.0"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv]
+package = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["templum_mcp_terminal_bridge"]

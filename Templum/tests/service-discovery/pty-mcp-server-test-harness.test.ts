@@ -273,6 +273,40 @@ describe('Pty-MCP-Server Test Harness', () => {
       expect(coordinator.getState().phase).toBe('stopped');
       expect(existsSync(expectedServiceFile)).toBe(false);
     });
+
+    test('should fail fast on raw console usage during lifecycle bootstrap', async () => {
+      // Guardrail: Stage 4 lane 4j asserts consolidated logger adoption before Stage 6e lands.
+      const logSpy = jest.spyOn(console, 'log');
+      const warnSpy = jest.spyOn(console, 'warn');
+      const errorSpy = jest.spyOn(console, 'error');
+
+      let coordinator: MCPLifecycleCoordinator | null = null;
+      try {
+        coordinator = new MCPLifecycleCoordinator({
+          serviceId: 'guardrail-mcp-lifecycle',
+          servicesDir: testServicesDir,
+          enableAutoCleanup: false,
+          enablePerformanceOptimization: false,
+          healthCheckInterval: 250
+        });
+
+        await coordinator.start();
+
+        const logCount =
+          logSpy.mock.calls.length +
+          warnSpy.mock.calls.length +
+          errorSpy.mock.calls.length;
+
+        expect(logCount).toBe(0);
+      } finally {
+        if (coordinator) {
+          await coordinator.stop();
+        }
+        logSpy.mockRestore();
+        warnSpy.mockRestore();
+        errorSpy.mockRestore();
+      }
+    });
   });
 
   describe('Configuration Validation Tests', () => {

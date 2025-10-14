@@ -6,6 +6,7 @@ import { ServiceDiscovery } from '../../backend/service-discovery';
 import type { DiscoveredService } from '../../backend/service-discovery';
 import { MockBackendConnection } from './__utils__/mock-backend-connection';
 import type { UniversalSkinDefinition, BackendConfig } from '../../types/universal-skin-engine-types';
+import { withManualOverrideLoggerGuardrail } from './__utils__/logger-guardrail';
 
 jest.mock('../../backend/connection-factory');
 jest.mock('../../backend/service-discovery');
@@ -128,41 +129,47 @@ describe('Manual Override Flow', () => {
   });
 
   test('applies manual override and emits sanitized descriptor', async () => {
-    const appliedEvents: any[] = [];
-    router.on('manualOverride:applied', payload => appliedEvents.push(payload));
+    await withManualOverrideLoggerGuardrail(async () => {
+      const appliedEvents: any[] = [];
+      router.on('manualOverride:applied', payload => appliedEvents.push(payload));
 
-    const descriptor = await router.applyManualOverride('haruspex', { scope: 'session', reason: 'test' });
+      const descriptor = await router.applyManualOverride('haruspex', { scope: 'session', reason: 'test' });
 
-    expect(descriptor.serviceId).toBe('haruspex');
-    expect(descriptor.scope).toBe('session');
-    expect(descriptor).not.toHaveProperty('endpoint');
-    expect(descriptor.metadata).toEqual({ discoveryMethod: 'registry', confidence: 0.95 });
+      expect(descriptor.serviceId).toBe('haruspex');
+      expect(descriptor.scope).toBe('session');
+      expect(descriptor).not.toHaveProperty('endpoint');
+      expect(descriptor.metadata).toEqual({ discoveryMethod: 'registry', confidence: 0.95 });
 
-    const snapshot = router.getManualOverrideSnapshot();
-    expect(snapshot.overrides).toHaveLength(1);
-    expect(mockConnectionFactory.create).toHaveBeenCalledWith('haruspex', backendConfig);
+      const snapshot = router.getManualOverrideSnapshot();
+      expect(snapshot.overrides).toHaveLength(1);
+      expect(mockConnectionFactory.create).toHaveBeenCalledWith('haruspex', backendConfig);
 
-    expect(appliedEvents).toHaveLength(1);
-    expect(appliedEvents[0]).toEqual(descriptor);
+      expect(appliedEvents).toHaveLength(1);
+      expect(appliedEvents[0]).toEqual(descriptor);
+    });
   });
 
   test('clears manual override and resets snapshot', async () => {
-    await router.applyManualOverride('haruspex');
-    const result = await router.clearManualOverride('haruspex');
+    await withManualOverrideLoggerGuardrail(async () => {
+      await router.applyManualOverride('haruspex');
+      const result = await router.clearManualOverride('haruspex');
 
-    expect(result.descriptor?.serviceId).toBe('haruspex');
-    expect(router.getManualOverrideSnapshot().overrides).toHaveLength(0);
+      expect(result.descriptor?.serviceId).toBe('haruspex');
+      expect(router.getManualOverrideSnapshot().overrides).toHaveLength(0);
+    });
   });
 
   test('auto-clears override when service is removed', async () => {
-    await router.applyManualOverride('haruspex');
+    await withManualOverrideLoggerGuardrail(async () => {
+      const clearedEvents: Array<{ serviceId?: string }> = [];
+      router.on('manualOverride:cleared', descriptor => clearedEvents.push({ serviceId: descriptor?.serviceId }));
 
-    const clearedEvents: Array<{ serviceId?: string }> = [];
-    router.on('manualOverride:cleared', descriptor => clearedEvents.push({ serviceId: descriptor?.serviceId }));
+      await router.applyManualOverride('haruspex');
 
-    serviceDiscoveryController.instance.emit('serviceRemoved', { serviceId: 'haruspex' });
+      serviceDiscoveryController.instance.emit('serviceRemoved', { serviceId: 'haruspex' });
 
-    expect(router.getManualOverrideSnapshot().overrides).toHaveLength(0);
-    expect(clearedEvents.some(event => event.serviceId === 'haruspex')).toBe(true);
+      expect(router.getManualOverrideSnapshot().overrides).toHaveLength(0);
+      expect(clearedEvents.some(event => event.serviceId === 'haruspex')).toBe(true);
+    });
   });
 });
