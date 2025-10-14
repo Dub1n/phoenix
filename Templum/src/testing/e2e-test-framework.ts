@@ -160,6 +160,13 @@ export class E2ETestFramework extends EventDrivenComponent<E2ETestFrameworkEvent
   private activeScenarios: Map<string, E2ETestScenario> = new Map();
   private testResults: Map<string, E2ETestOutcome> = new Map();
   private readonly logger = createLogger('e2e-test-framework');
+  private logMockAction(message: string, details?: Record<string, unknown>): void {
+    if (details) {
+      this.logger.info(message, details);
+      return;
+    }
+    this.logger.info(message);
+  }
 
   constructor(orchestrator: ITemplumOrchestrator) {
     super(`e2e-test-framework:${E2ETestFramework.instanceCounter++}`, 30);
@@ -362,21 +369,21 @@ export class E2ETestFramework extends EventDrivenComponent<E2ETestFrameworkEvent
     // Implementation: Update to use real orchestrator initialization pattern
     
     // Mock orchestrator initialization check
-    this.logger.info('Mock orchestrator initialization');
+    this.logMockAction('Mock orchestrator initialization');
   }
 
   private async executeCommandAction(action: E2ETestAction): Promise<void> {
     // Mock implementation - execute command through orchestrator
     const { command, args } = action.payload;
     // TODO: Real command execution through orchestrator
-    this.logger.info('Mock command execution', { command, args });
+    this.logMockAction('Mock command execution', { command, args });
   }
 
   private async executeSkinApplyAction(action: E2ETestAction): Promise<void> {
     // Mock implementation - apply skin through orchestrator
     const { skinDefinition } = action.payload;
     // TODO: Real skin application through orchestrator
-    this.logger.info('Mock skin application', {
+    this.logMockAction('Mock skin application', {
       skinName: skinDefinition?.metadata?.name ?? 'default'
     });
   }
@@ -385,7 +392,7 @@ export class E2ETestFramework extends EventDrivenComponent<E2ETestFrameworkEvent
     // Mock implementation - trigger state synchronization
     const { stateUpdate } = action.payload;
     // TODO: Real state synchronization through orchestrator
-    this.logger.info('Mock state synchronization', {
+    this.logMockAction('Mock state synchronization', {
       updatedKeys: Object.keys(stateUpdate ?? {})
     });
   }
@@ -394,13 +401,13 @@ export class E2ETestFramework extends EventDrivenComponent<E2ETestFrameworkEvent
     // Mock implementation - switch active interface
     const { targetInterface } = action.payload;
     // TODO: Real interface switching through orchestrator
-    this.logger.info('Mock interface switch', { targetInterface });
+    this.logMockAction('Mock interface switch', { targetInterface });
   }
 
   private async executePerformanceCheckAction(_action: E2ETestAction): Promise<void> {
     // Mock implementation - check system performance metrics
     const memoryUsage = process.memoryUsage();
-    this.logger.info('Mock performance check', {
+    this.logMockAction('Mock performance check', {
       heapUsed: memoryUsage.heapUsed
     });
   }
