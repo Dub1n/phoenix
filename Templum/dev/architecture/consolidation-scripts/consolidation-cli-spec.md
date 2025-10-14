@@ -245,7 +245,7 @@ sequenceDiagram
 - Record the guardrail/runtime pairing, sequencing, and expected failure signatures in the Stage 3 note so downstream owners inherit the choreography.
 - Apply the combined search-term set to both lane types and the Stage 7 gate (add the project root, e.g., `Templum/`) so sweeps enforce the full contract.
 - When new scope appears, reopen Stage 3, add the guardrail/runtime lane pair, and update dependencies before handing off.
-- The CLI automatically reopens and blocks all downstream gates (Stage 5 onward), resets every linked cohort Stage 5A segment, and mirrors the Stage 5/6 reopen across cohort peers whenever Stage 3 leaves `complete`/`ready`. That keeps every pattern in the cohort paused until the refreshed plan lands, while Stage 4/6 lanes stay closed until Stage 3 recreates them.
+- The CLI automatically reopens and blocks all downstream gates (Stage 5 onward), resets every linked cohort Stage 5A segment (dropping it to `blocked` until Stage 4 readiness is restored), and mirrors the Stage 5/6 reopen across cohort peers whenever Stage 3 leaves `complete`/`ready`. Stage 4/6 lanes stay closed until Stage 3 recreates them.
 
 ### Stage 4 expectations
 
@@ -258,7 +258,7 @@ sequenceDiagram
 - Stage 5A keeps cohorts aligned: log the shared spec via `cohort-stage … --plan-files`, ensure every Stage 4 guardrail is in place, and attach blockers/dependencies in-band.
 - Stage 5B rehearses the guardrails: replay the timeout-wrapped suites against the unmigrated baseline, capture failing evidence in Stage 5 notes, and document the migration checklist plus approvals in the hand-off.
 - Update each Stage 6 lane with its guardrail link, dependencies, and migration steps before marking Stage 5 complete.
-- If Stage 5 slips back to `pending`/`blocked`, expect Stage 6 and Stage 7 gates plus the owning cohort’s Stage 5A segment (and all cohort peers’ Stage 5/6 gates) to reopen automatically; keep the hand-off doc and `update-handoff` metadata in sync while the upstream work is restored.
+- If Stage 5 slips back to `pending`/`blocked`, expect Stage 6 and Stage 7 gates plus the owning cohort’s Stage 5A segment (reset to `blocked`) and all cohort peers’ Stage 5/6 gates to reopen automatically; keep the hand-off doc and `update-handoff` metadata in sync while the upstream work is restored.
 
 ### Stage 6 expectations
 
@@ -321,7 +321,7 @@ Stage gates mirror these signals with `[ ] pending`, `[?] blocked`, `[~] in-prog
 ### Stage Gate Updates
 
 - Use `npm run consolidate -- update-stage <patternId> <stageId> [--status <value>]` to advance or reopen a stage gate; include `--add-dependency` / `--remove-dependency` / `--clear-dependencies` when external blockers must be recorded. The CLI updates timestamps/notes, logs dependency changes, and adds an activity entry automatically; when `--status` is omitted the gate status is preserved while the supplied metadata changes are applied.
-- Reopening a stage now cascades automatically: any downstream gate that was previously `complete`/`ready` is reset to `pending` (and auto-blocked) so the schedule reflects the open prerequisite. Linked cohort Stage 5A segments are also reset to `pending`, and any cohort peers with an auto-reopened Stage 5 will have their Stage 6/7 gates reset as well. Stage 4 and Stage 6 lanes are **not** reopened—Stage 3 recreation still generates the replacement lanes when needed.
+- Reopening a stage now cascades automatically: any downstream gate that was previously `complete`/`ready` is reset to `pending` (and auto-blocked) so the schedule reflects the open prerequisite. Linked cohort Stage 5A segments are also reset—defaulting to `blocked` until Stage 4 readiness is restored—and any cohort peers with an auto-reopened Stage 5 will have their Stage 6/7 gates reset as well. Stage 4 and Stage 6 lanes are **not** reopened—Stage 3 recreation still generates the replacement lanes when needed.
 - When the cascade runs, the CLI prints the list of reopened stages so coordinators can spot the implied TODOs without scanning the registry manually. Downstream agents wait for the upstream stage to return to `complete`; no manual re-block toggles are required.
 - Cohort peer cascades are summarised as `Pattern <id> (Stage 5B, Stage 6, …)` so the coordinator can nudge the right owners before resuming work.
 - Log discovery or coordination details for a stage with `npm run consolidate -- stage-note <patternId> <stageId> --body "..."` so the guidance surface stays current.

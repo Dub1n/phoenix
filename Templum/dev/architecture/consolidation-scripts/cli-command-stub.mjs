@@ -2441,12 +2441,17 @@ function reopenCohortSegmentsForPattern(registry, pattern, segments) {
         return;
       }
       const entry = ensureCohortStage(cohort, segment);
+      const prerequisitesSatisfied = segment === '5a' ? cohortStage4Ready(registry, cohort) : true;
+      const targetStatus = prerequisitesSatisfied ? 'pending' : 'blocked';
       const currentStatus = normaliseStageStatusValue(entry?.status || 'blocked');
-      if (currentStatus === 'pending' || currentStatus === 'blocked') {
-        return;
+      if (currentStatus === targetStatus) {
+        if (targetStatus !== 'blocked') {
+          return;
+        }
+        // even if already blocked, ensure timestamps reflect cascade trigger
       }
-      setCohortStageStatus(cohort, segment, 'pending');
-      reopened.push({ cohortId: cohort.id, segment });
+      setCohortStageStatus(cohort, segment, targetStatus);
+      reopened.push({ cohortId: cohort.id, segment, status: targetStatus });
     });
   });
   return reopened;
@@ -4636,10 +4641,12 @@ async function main() {
           console.log(`Downstream stages reopened (auto-blocked until prerequisites complete): ${reopenedLabels.join(', ')}.`);
         }
         if (cascadeResult.cohortSegments.length) {
-          const reopenedCohorts = cascadeResult.cohortSegments.map(
-            (entry) => `Cohort ${entry.cohortId} segment ${entry.segment.toUpperCase()}`
-          );
-          console.log(`Cohort segments reset to pending: ${reopenedCohorts.join(', ')}.`);
+          const reopenedCohorts = cascadeResult.cohortSegments.map((entry) => {
+            const label = entry.segment.toUpperCase();
+            const statusLabel = entry.status ?? 'pending';
+            return `Cohort ${entry.cohortId} segment ${label} → ${statusLabel}`;
+          });
+          console.log(`Cohort segments reset: ${reopenedCohorts.join('; ')}.`);
         }
         if (peerReopens.length) {
           const peerMessages = peerReopens.map((entry) => {
