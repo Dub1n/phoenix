@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "updatedAt": "2025-10-14T14:32:00Z",
+  "updatedAt": "2025-10-14T15:27:21Z",
   "patterns": [
     {
       "patternId": 1,
@@ -47,10 +47,13 @@
           ]
         },
         "6": {
-          "status": "pending"
+          "status": "complete",
+          "startedAt": "2025-10-14T14:33:23Z",
+          "elapsedMs": 1520000,
+          "completedAt": "2025-10-14T15:10:09Z"
         },
         "7": {
-          "status": "blocked",
+          "status": "pending",
           "searchTerms": [
             "console.error",
             "console.log",
@@ -223,14 +226,14 @@
           "elapsedMs": 415000
         },
         "6a": {
-          "status": "pending",
+          "status": "complete",
           "scope": "Stage 6: Backend connectivity regression (covers lanes 4a,4b)",
           "commands": [
             {
               "command": "node scripts/run-with-timeout.mjs --preset jest-ci -- npm run test:ci"
             }
           ],
-          "updatedAt": "2025-10-14T14:16:32Z",
+          "updatedAt": "2025-10-14T14:38:13Z",
           "plannedFiles": [
             "src/tests/backend/manual-override-flow.test.ts",
             "src/tests/backend/manual-override-watcher.integration.test.ts",
@@ -241,17 +244,19 @@
             "console.error",
             "console.log",
             "console.warn"
-          ]
+          ],
+          "startedAt": "2025-10-14T14:33:23Z",
+          "elapsedMs": 290000
         },
         "6b": {
-          "status": "pending",
+          "status": "complete",
           "scope": "Stage 6: Interface delivery regression (covers lanes 4c-4e)",
           "commands": [
             {
               "command": "node scripts/run-with-timeout.mjs --preset jest-ci -- npm run test:ci"
             }
           ],
-          "updatedAt": "2025-10-14T14:16:32Z",
+          "updatedAt": "2025-10-14T15:10:09Z",
           "plannedFiles": [
             "src/tests/rendering/menu-definition-adapter.test.ts",
             "src/tests/rendering/terminal-ui-components.formatter.test.ts",
@@ -262,17 +267,19 @@
             "console.error",
             "console.log",
             "console.warn"
-          ]
+          ],
+          "startedAt": "2025-10-14T14:33:38Z",
+          "elapsedMs": 815000
         },
         "6c": {
-          "status": "pending",
+          "status": "complete",
           "scope": "Stage 6: Session/core regression (covers lanes 4f-4h)",
           "commands": [
             {
               "command": "node scripts/run-with-timeout.mjs --preset jest-ci -- npm run test:ci"
             }
           ],
-          "updatedAt": "2025-10-14T14:16:32Z",
+          "updatedAt": "2025-10-14T14:58:43Z",
           "plannedFiles": [
             "src/tests/core/templum-core-connection-events.test.ts",
             "src/tests/session/templum-universal-session-manager.test.ts",
@@ -283,7 +290,9 @@
             "console.error",
             "console.log",
             "console.warn"
-          ]
+          ],
+          "startedAt": "2025-10-14T14:33:57Z",
+          "elapsedMs": 1486000
         }
       },
       "handoff": {
@@ -886,9 +895,62 @@
           "timestamp": "2025-10-14T14:16:32Z",
           "summary": "Stage 5B status set to complete",
           "durationMs": 676000
+        },
+        {
+          "stage": "lane-6a",
+          "timestamp": "2025-10-14T14:33:23Z",
+          "summary": "Lane 6a claimed",
+          "agent": "1-6a"
+        },
+        {
+          "stage": "lane-6b",
+          "timestamp": "2025-10-14T14:33:38Z",
+          "summary": "Lane 6b claimed",
+          "agent": "1-6b"
+        },
+        {
+          "stage": "lane-6c",
+          "timestamp": "2025-10-14T14:33:57Z",
+          "summary": "Lane 6c claimed",
+          "agent": "1-6c"
+        },
+        {
+          "stage": "lane-6a",
+          "timestamp": "2025-10-14T14:38:13Z",
+          "summary": "Completed jest-ci regression battery; coverage thresholds stable; no console.* matches after sweep.",
+          "files": [
+            "dev/architecture/logs/pattern-1-stage6a-jest-ci-20251014T143442Z.log"
+          ],
+          "durationMs": 290000
+        },
+        {
+          "stage": "lane-6b",
+          "timestamp": "2025-10-14T14:47:13Z",
+          "summary": "Migrated E2E framework mocks to consolidated logger and reran jest-ci regression",
+          "files": [
+            "dev/architecture/logs/pattern-1-stage6-lane6b-jest-ci-20251014T144415Z.log"
+          ],
+          "durationMs": 815000
+        },
+        {
+          "stage": "lane-6c",
+          "timestamp": "2025-10-14T14:58:43Z",
+          "summary": "Aligned session/core regression tests with consolidated logger outputs; CLI stdout captured; jest-ci battery green",
+          "files": [
+            "dev/architecture/logs/pattern-1-stage6-lane6c-jest-ci-20251014T145516Z.log"
+          ],
+          "durationMs": 1486000
+        },
+        {
+          "stage": "lane-6b",
+          "timestamp": "2025-10-14T15:10:09Z",
+          "summary": "Centralized mock logging helper on consolidated logger and reran jest-ci",
+          "files": [
+            "dev/architecture/logs/pattern-1-stage6-lane6b-jest-ci-20251014T150700Z.log"
+          ]
         }
       ],
-      "updatedAt": "2025-10-14T14:32:00Z",
+      "updatedAt": "2025-10-14T15:10:09Z",
       "cohorts": [
         "D"
       ]
@@ -1140,10 +1202,13 @@
           ]
         },
         "6": {
-          "status": "pending"
+          "status": "complete",
+          "startedAt": "2025-10-14T15:14:16Z",
+          "elapsedMs": 785000,
+          "completedAt": "2025-10-14T15:27:21Z"
         },
         "7": {
-          "status": "blocked"
+          "status": "pending"
         }
       },
       "lanes": {
@@ -1213,7 +1278,7 @@
           "elapsedMs": 81000
         },
         "6a": {
-          "status": "pending",
+          "status": "complete",
           "scope": "Regression & coverage validation",
           "commands": [
             {
@@ -1226,19 +1291,31 @@
               "command": "npm run test:ci"
             }
           ],
-          "updatedAt": "2025-10-14T14:12:29Z",
-          "notes": "Capture outputs under tmp/error-handler-stage2.log and attach coverage delta in registry."
+          "updatedAt": "2025-10-14T15:27:21Z",
+          "notes": "Capture outputs under tmp/error-handler-stage2.log and attach coverage delta in registry.",
+          "plannedFiles": [
+            "logs/consolidation/pattern-2/lane-6a",
+            "src/backend/service-discovery.ts",
+            "tests/service-discovery/discovery-cache.integration.test.ts"
+          ],
+          "startedAt": "2025-10-14T15:14:16Z",
+          "elapsedMs": 785000
         },
         "6b": {
-          "status": "pending",
+          "status": "complete",
           "scope": "Phase 6 connectivity validation",
           "commands": [
             {
               "command": "npm run phase6-validation"
             }
           ],
-          "updatedAt": "2025-10-14T14:12:29Z",
-          "notes": "Ensure .templum/services cleared before run; capture logs for registry evidence."
+          "updatedAt": "2025-10-14T15:19:48Z",
+          "notes": "Ensure .templum/services cleared before run; capture logs for registry evidence.\nRan node scripts/run-with-timeout.mjs --preset phase6-validation --log-file dev/architecture/logs/pattern-2-stage6b-phase6-validation-20251014T151846Z.log; .templum/services stayed clear after run.",
+          "plannedFiles": [
+            "dev/architecture/logs/pattern-2-stage6b-phase6-validation-20251014T151846Z.log"
+          ],
+          "startedAt": "2025-10-14T15:18:46Z",
+          "elapsedMs": 62000
         }
       },
       "handoff": {
@@ -1488,9 +1565,43 @@
           "timestamp": "2025-10-14T14:12:29Z",
           "summary": "Stage 5B status set to complete",
           "durationMs": 432000
+        },
+        {
+          "stage": "lane-6a",
+          "timestamp": "2025-10-14T15:14:16Z",
+          "summary": "Lane 6a claimed",
+          "agent": "2-6a"
+        },
+        {
+          "stage": "lane-6b",
+          "timestamp": "2025-10-14T15:18:46Z",
+          "summary": "Phase 6 connectivity validation",
+          "agent": "2-6b"
+        },
+        {
+          "stage": "lane-6b",
+          "timestamp": "2025-10-14T15:19:48Z",
+          "summary": "Phase 6 validation suite green via run-with-timeout phase6-validation",
+          "files": [
+            "dev/architecture/logs/pattern-2-stage6b-phase6-validation-20251014T151846Z.log"
+          ],
+          "durationMs": 62000
+        },
+        {
+          "stage": "lane-6a",
+          "timestamp": "2025-10-14T15:27:21Z",
+          "summary": "Restored service-discovery coverage and ErrorHandler regressions; Stage 6 battery green",
+          "files": [
+            "tests/service-discovery/discovery-cache.integration.test.ts",
+            "src/tests/utils/error-handler.test.ts",
+            "logs/consolidation/pattern-2/lane-6a/error-handler-20251014T152143Z.log",
+            "logs/consolidation/pattern-2/lane-6a/connection-factory-20251014T152158Z.log",
+            "logs/consolidation/pattern-2/lane-6a/test-ci-20251014T152253Z.log"
+          ],
+          "durationMs": 785000
         }
       ],
-      "updatedAt": "2025-10-14T14:32:00Z",
+      "updatedAt": "2025-10-14T15:27:21Z",
       "cohorts": [
         "D"
       ]
