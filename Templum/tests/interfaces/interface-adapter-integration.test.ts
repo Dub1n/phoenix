@@ -1082,6 +1082,7 @@ describe("Interface Adapter Integration Tests", () => {
         });
         expect(errorRecord?.error).toBeDefined();
         expect(errorRecord?.error?.message).toBe('Skin validation failed: metadata.backendService is required');
+        expect((errorRecord?.error as any)?.code).toBe('skin-validation-error');
       } finally {
         restoreLoggerConfiguration();
         engineSpy.mockRestore();

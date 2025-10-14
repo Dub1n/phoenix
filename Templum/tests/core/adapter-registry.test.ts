@@ -141,6 +141,12 @@ describe('TemplumAdapterRegistry', () => {
       );
 
       expect(warningRecord).toBeDefined();
+      const warnRecords = transport.records.filter(
+        (record) =>
+          record.context === 'templum-adapter-registry:registry' &&
+          record.level === LogLevel.WARN
+      );
+      expect(warnRecords).toHaveLength(1);
     });
 
     test('emits initialized event on successful initialization', async () => {
@@ -509,6 +515,7 @@ describe('TemplumAdapterRegistry', () => {
 
       expect(errorRecord).toBeDefined();
       expect(errorRecord?.data).toEqual({ errorMessage: 'Disposal failed' });
+      expect(errorRecord?.error).toBeInstanceOf(Error);
 
       // Restore original dispose method
       dependencies.skinEngine.dispose = originalDispose;

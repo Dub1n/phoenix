@@ -273,6 +273,7 @@ describe('Skin payload consumption integration', () => {
       const loggedLines = stdoutSpy.mock.calls
         .flat()
         .filter((value): value is string => typeof value === 'string');
+      expect(loggedLines.length).toBeGreaterThan(0);
       expect(
         loggedLines.some(
           (line) =>
