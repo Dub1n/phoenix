@@ -2421,11 +2421,42 @@ function setStageGate(pattern, stageId, status, options = {}) {
   return { gate, previousStatus, durationMs, statusChanged: statusProvided && nextStatus !== previousStatus };
 }
 
-function reopenDownstreamStageGates(pattern, stageId) {
+function reopenCohortSegmentsForPattern(registry, pattern, segments) {
   const reopened = [];
+  if (!registry || !pattern || !segments || !segments.length) {
+    return reopened;
+  }
+  const cohortIds = getPatternCohortIds(pattern);
+  if (!cohortIds.length) {
+    return reopened;
+  }
+  const normalizedSegments = segments.map((segment) => String(segment || '').toLowerCase()).filter(Boolean);
+  if (!normalizedSegments.length) {
+    return reopened;
+  }
+  normalizedSegments.forEach((segment) => {
+    cohortIds.forEach((cohortId) => {
+      const cohort = findCohortById(registry, cohortId);
+      if (!cohort) {
+        return;
+      }
+      const entry = ensureCohortStage(cohort, segment);
+      const currentStatus = normalizeStatus(entry?.status || 'blocked');
+      if (currentStatus === 'pending' || currentStatus === 'blocked') {
+        return;
+      }
+      setCohortStageStatus(cohort, segment, 'pending');
+      reopened.push({ cohortId: cohort.id, segment });
+    });
+  });
+  return reopened;
+}
+
+function reopenDownstreamStageGates(registry, pattern, stageId) {
+  const reopenedStageIds = [];
   const startIndex = stageOrder.indexOf(stageId);
   if (startIndex === -1) {
-    return reopened;
+    return { stageIds: reopenedStageIds, cohortSegments: [] };
   }
   for (let index = startIndex + 1; index < stageOrder.length; index += 1) {
     const downstreamStageId = stageOrder[index];
@@ -2435,9 +2466,17 @@ function reopenDownstreamStageGates(pattern, stageId) {
       continue;
     }
     setStageGate(pattern, downstreamStageId, 'pending');
-    reopened.push(downstreamStageId);
+    reopenedStageIds.push(downstreamStageId);
   }
-  return reopened;
+  const cohortSegments = [];
+  const stageIndex = stageOrder.indexOf(stageId);
+  const stage5Index = stageOrder.indexOf('5');
+  if (stageIndex !== -1 && stage5Index !== -1 && stageIndex <= stage5Index) {
+    cohortSegments.push(...reopenCohortSegmentsForPattern(registry, pattern, ['5a']));
+  } else if (reopenedStageIds.includes('5')) {
+    cohortSegments.push(...reopenCohortSegmentsForPattern(registry, pattern, ['5a']));
+  }
+  return { stageIds: reopenedStageIds, cohortSegments };
 }
 
 function recomputePatternStagePointer(pattern) {
@@ -4519,7 +4558,7 @@ async function main() {
           removeDependencies,
           clearDependencies: Boolean(stageOptions.clearDependencies)
         });
-        let reopenedStageIds = [];
+        let cascadeResult = { stageIds: [], cohortSegments: [] };
         const { durationMs, previousStatus, statusChanged } = setStageGate(pattern, stageId, requestedStatus, {
           statusProvided,
           notes: stageOptions.notesProvided ? stageOptions.notes : undefined,
@@ -4527,21 +4566,24 @@ async function main() {
           planFiles: normalizedPlanFiles,
           clearPlanFiles: stageOptions.clearPlanFiles
         });
-        const normalizedPreviousStatus = String(previousStatus || '').toLowerCase();
-        const wasPreviouslyComplete =
-          stageCompletionStatuses.has(normalizedPreviousStatus) || normalizedPreviousStatus === 'ready';
-        const isNowIncomplete = !stageCompletionStatuses.has(requestedStatus) && requestedStatus !== 'ready';
-        if (statusProvided && statusChanged && wasPreviouslyComplete && isNowIncomplete) {
-          reopenedStageIds = reopenDownstreamStageGates(pattern, stageId);
+        const updatedStageStatus = normalizeStatus(gate.status || defaultStageStatus(stageId));
+        if (!stageCompletionStatuses.has(updatedStageStatus) && updatedStageStatus !== 'ready') {
+          cascadeResult = reopenDownstreamStageGates(registry, pattern, stageId);
         }
         if (stageOptions.planFiles.length === 0 && stageOptions.clearPlanFiles) {
           console.log('Planned files cleared from stage gate.');
         }
         autoUpdatePatternStatuses(registry, pattern);
         recomputePatternStagePointer(pattern);
-        if (reopenedStageIds.length) {
-          const reopenedLabels = reopenedStageIds.map((id) => displayStageLabel(id));
+        if (cascadeResult.stageIds.length) {
+          const reopenedLabels = cascadeResult.stageIds.map((id) => displayStageLabel(id));
           console.log(`Downstream stages reopened (auto-blocked until prerequisites complete): ${reopenedLabels.join(', ')}.`);
+        }
+        if (cascadeResult.cohortSegments.length) {
+          const reopenedCohorts = cascadeResult.cohortSegments.map(
+            (entry) => `Cohort ${entry.cohortId} segment ${entry.segment.toUpperCase()}`
+          );
+          console.log(`Cohort segments reset to pending: ${reopenedCohorts.join(', ')}.`);
         }
 
         if (stageDependencyChanges.changed) {
