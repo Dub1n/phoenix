@@ -841,6 +841,11 @@ function applySymmetricPlanBlocking(waves) {
     if (!blockedEntries.length) {
       return;
     }
+    const primaryOwner =
+      tasks.find(
+        (entry) =>
+          statusEligibleForAutoBlocking(entry) && normalizeStatus(entry.status) !== 'blocked'
+      ) || null;
     tasks.forEach((entry) => {
       if (!statusEligibleForAutoBlocking(entry)) {
         return;
@@ -855,6 +860,9 @@ function applySymmetricPlanBlocking(waves) {
         return true;
       });
       if (!shouldBlock) {
+        return;
+      }
+      if (primaryOwner && entry === primaryOwner) {
         return;
       }
       entry.status = 'blocked';
