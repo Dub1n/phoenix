@@ -73,7 +73,7 @@ class PTYSession:
                 LOG.info("PTY session %s reached EOF", self.session_id)
                 break
             except Exception as exc:  # pragma: no cover - safety net
-                LOG.exception("Unexpected error reading PTY %s: %s", self.session_id, exc)
+                LOG.exception("Error while reading PTY %s: %s", self.session_id, exc)
                 break
 
             if not chunk:

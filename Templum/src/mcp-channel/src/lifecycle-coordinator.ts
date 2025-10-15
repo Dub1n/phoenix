@@ -16,6 +16,9 @@ import { CLIMCPServer } from './cli-mcp-server';
 import { PTYManager } from './pty-manager';
 import { MCPServiceRegistration, ServiceRegistrationOptions } from './service-registration';
 import { MCPHealthMonitor, HealthStatus } from './health-monitor';
+import { createMCPDiagnostics } from './mcp-diagnostics';
+
+const lifecycleDiagnostics = createMCPDiagnostics('mcp-lifecycle');
 
 export interface LifecycleState {
   phase: 'initializing' | 'starting' | 'running' | 'stopping' | 'stopped' | 'error';
@@ -103,7 +106,7 @@ export class MCPLifecycleCoordinator {
    * Start MCP server with full service integration
    */
   async start(): Promise<void> {
-    console.log('[MCP_LIFECYCLE] Starting MCP server with service integration...');
+    lifecycleDiagnostics.info('Starting MCP server with service integration');
     this.updateState('starting');
 
     try {
@@ -120,15 +123,20 @@ export class MCPLifecycleCoordinator {
       }
 
       this.updateState('running');
-      console.log(`[MCP_LIFECYCLE] MCP server started successfully (${Date.now() - this.startTime}ms)`);
+      lifecycleDiagnostics.info('MCP server started successfully', {
+        startupDurationMs: Date.now() - this.startTime
+      });
       
     } catch (error) {
-      this.updateState('error', error instanceof Error ? error.message : String(error));
-      console.error('[MCP_LIFECYCLE] Startup failed:', error);
+      const templumError = lifecycleDiagnostics.error('Startup failed', error, {
+        phase: 'start',
+        errorMessage: this.getErrorMessage(error)
+      });
+      this.updateState('error', templumError.message);
       
       // Attempt cleanup on startup failure
       await this.cleanup();
-      throw error;
+      throw templumError;
     }
   }
 
@@ -146,7 +154,7 @@ export class MCPLifecycleCoordinator {
    * Stop MCP server and cleanup all resources
    */
   async stop(): Promise<void> {
-    console.log('[MCP_LIFECYCLE] Stopping MCP server...');
+    lifecycleDiagnostics.info('Stopping MCP server');
     this.updateState('stopping');
 
     try {
@@ -160,12 +168,15 @@ export class MCPLifecycleCoordinator {
       await this.stopPTYManager();
 
       this.updateState('stopped');
-      console.log('[MCP_LIFECYCLE] MCP server stopped successfully');
+      lifecycleDiagnostics.info('MCP server stopped successfully');
       
     } catch (error) {
-      this.updateState('error', error instanceof Error ? error.message : String(error));
-      console.error('[MCP_LIFECYCLE] Shutdown failed:', error);
-      throw error;
+      const templumError = lifecycleDiagnostics.error('Shutdown failed', error, {
+        phase: 'stop',
+        errorMessage: this.getErrorMessage(error)
+      });
+      this.updateState('error', templumError.message);
+      throw templumError;
     }
   }
 
@@ -204,17 +215,19 @@ export class MCPLifecycleCoordinator {
    * Start PTY Manager
    */
   private async startPTYManager(): Promise<void> {
-    console.log('[MCP_LIFECYCLE] Starting PTY Manager...');
+    const diagnostics = createMCPDiagnostics('mcp-lifecycle.pty-manager');
+    diagnostics.info('Starting PTY Manager');
     this.state.services.ptyManager = 'starting';
     
     try {
       this.ptyManager = new PTYManager();
       this.state.services.ptyManager = 'running';
-      console.log('[MCP_LIFECYCLE] PTY Manager started');
+      diagnostics.info('PTY Manager started');
       
     } catch (error) {
       this.state.services.ptyManager = 'error';
-      throw new Error(`PTY Manager startup failed: ${error instanceof Error ? error.message : error}`);
+      const templumError = diagnostics.error('PTY Manager startup failed', error);
+      throw templumError;
     }
   }
 
@@ -222,7 +235,8 @@ export class MCPLifecycleCoordinator {
    * Start MCP Server
    */
   private async startMCPServer(): Promise<void> {
-    console.log('[MCP_LIFECYCLE] Starting MCP Server...');
+    const diagnostics = createMCPDiagnostics('mcp-lifecycle.mcp-server');
+    diagnostics.info('Starting MCP Server');
     this.state.services.mcpServer = 'starting';
     
     try {
@@ -232,11 +246,12 @@ export class MCPLifecycleCoordinator {
       
       this.mcpServer = new CLIMCPServer();
       this.state.services.mcpServer = 'running';
-      console.log('[MCP_LIFECYCLE] MCP Server started');
+      diagnostics.info('MCP Server started');
       
     } catch (error) {
       this.state.services.mcpServer = 'error';
-      throw new Error(`MCP Server startup failed: ${error instanceof Error ? error.message : error}`);
+      const templumError = diagnostics.error('MCP Server startup failed', error);
+      throw templumError;
     }
   }
 
@@ -244,7 +259,8 @@ export class MCPLifecycleCoordinator {
    * Start Health Monitor
    */
   private async startHealthMonitor(): Promise<void> {
-    console.log('[MCP_LIFECYCLE] Starting Health Monitor...');
+    const diagnostics = createMCPDiagnostics('mcp-lifecycle.health-monitor');
+    diagnostics.info('Starting Health Monitor');
     this.state.services.healthMonitor = 'starting';
     
     try {
@@ -254,11 +270,12 @@ export class MCPLifecycleCoordinator {
       
       this.healthMonitor = new MCPHealthMonitor(this.mcpServer, this.ptyManager);
       this.state.services.healthMonitor = 'running';
-      console.log('[MCP_LIFECYCLE] Health Monitor started');
+      diagnostics.info('Health Monitor started');
       
     } catch (error) {
       this.state.services.healthMonitor = 'error';
-      throw new Error(`Health Monitor startup failed: ${error instanceof Error ? error.message : error}`);
+      const templumError = diagnostics.error('Health Monitor startup failed', error);
+      throw templumError;
     }
   }
 
@@ -266,7 +283,8 @@ export class MCPLifecycleCoordinator {
    * Start Service Registration
    */
   private async startServiceRegistration(): Promise<void> {
-    console.log('[MCP_LIFECYCLE] Starting Service Registration...');
+    const diagnostics = createMCPDiagnostics('mcp-lifecycle.service-registration');
+    diagnostics.info('Starting Service Registration');
     this.state.services.serviceRegistration = 'starting';
     
     try {
@@ -288,11 +306,12 @@ export class MCPLifecycleCoordinator {
       await this.serviceRegistration.register();
       
       this.state.services.serviceRegistration = 'running';
-      console.log('[MCP_LIFECYCLE] Service Registration started');
+      diagnostics.info('Service Registration started');
       
     } catch (error) {
       this.state.services.serviceRegistration = 'error';
-      throw new Error(`Service Registration startup failed: ${error instanceof Error ? error.message : error}`);
+      const templumError = diagnostics.error('Service Registration startup failed', error);
+      throw templumError;
     }
   }
 
@@ -309,13 +328,17 @@ export class MCPLifecycleCoordinator {
           
           // Handle degraded performance
           if (health.status === 'degraded') {
-            console.warn('[MCP_LIFECYCLE] Service health degraded, considering optimization');
+            lifecycleDiagnostics.warn('Service health degraded', {
+              healthStatus: health.status
+            });
           } else if (health.status === 'unhealthy') {
-            console.error('[MCP_LIFECYCLE] Service unhealthy, may need restart');
+            lifecycleDiagnostics.warn('Service unhealthy, restart recommended', {
+              healthStatus: health.status
+            });
           }
         }
       } catch (error) {
-        console.error('[MCP_LIFECYCLE] Health check failed:', error);
+        lifecycleDiagnostics.error('Health check execution failed', error);
       }
     }, this.options.healthCheckInterval, { unref: true });
   }
@@ -345,7 +368,9 @@ export class MCPLifecycleCoordinator {
       
       // Clean up response time history if it gets too large
       if (metrics.responseTimeHistory.length > 100) {
-        console.log('[MCP_LIFECYCLE] Optimizing response time history');
+        lifecycleDiagnostics.info('Optimizing response time history', {
+          historyLength: metrics.responseTimeHistory.length
+        });
         // This is handled in the health monitor itself
       }
 
@@ -353,7 +378,9 @@ export class MCPLifecycleCoordinator {
       if (this.ptyManager) {
         const sessionIds = this.ptyManager.getActiveSessions();
         if (sessionIds.length > 10) {
-          console.log(`[MCP_LIFECYCLE] Consider cleaning up ${sessionIds.length} PTY sessions`);
+          lifecycleDiagnostics.warn('High PTY session count detected', {
+            sessionCount: sessionIds.length
+          });
           // Could implement automatic cleanup of old sessions here
         }
       }
@@ -361,14 +388,16 @@ export class MCPLifecycleCoordinator {
       // Memory optimization
       const memUsage = process.memoryUsage();
       if (memUsage.heapUsed > 200 * 1024 * 1024) { // 200MB
-        console.log('[MCP_LIFECYCLE] High memory usage detected, suggesting GC');
+        lifecycleDiagnostics.warn('High memory usage detected', {
+          heapUsed: memUsage.heapUsed
+        });
         if (global.gc) {
           global.gc();
         }
       }
 
     } catch (error) {
-      console.error('[MCP_LIFECYCLE] Performance optimization failed:', error);
+      lifecycleDiagnostics.error('Performance optimization failed', error);
     }
   }
 
@@ -385,10 +414,10 @@ export class MCPLifecycleCoordinator {
 
   /**
    * Stop PTY Manager
-   */
+  */
   private async stopPTYManager(): Promise<void> {
     if (this.ptyManager) {
-      console.log('[MCP_LIFECYCLE] Stopping PTY Manager...');
+      lifecycleDiagnostics.info('Stopping PTY Manager');
       this.ptyManager.cleanup();
       this.ptyManager = undefined;
     }
@@ -397,10 +426,10 @@ export class MCPLifecycleCoordinator {
 
   /**
    * Stop MCP Server
-   */
+  */
   private async stopMCPServer(): Promise<void> {
     if (this.mcpServer) {
-      console.log('[MCP_LIFECYCLE] Stopping MCP Server...');
+      lifecycleDiagnostics.info('Stopping MCP Server');
       this.mcpServer.cleanup();
       this.mcpServer = undefined;
     }
@@ -409,10 +438,10 @@ export class MCPLifecycleCoordinator {
 
   /**
    * Stop Health Monitor
-   */
+  */
   private async stopHealthMonitor(): Promise<void> {
     if (this.healthMonitor) {
-      console.log('[MCP_LIFECYCLE] Stopping Health Monitor...');
+      lifecycleDiagnostics.info('Stopping Health Monitor');
       // Health monitor doesn't need explicit cleanup
       this.healthMonitor = undefined;
     }
@@ -421,10 +450,10 @@ export class MCPLifecycleCoordinator {
 
   /**
    * Stop Service Registration
-   */
+  */
   private async stopServiceRegistration(): Promise<void> {
     if (this.serviceRegistration) {
-      console.log('[MCP_LIFECYCLE] Stopping Service Registration...');
+      lifecycleDiagnostics.info('Stopping Service Registration');
       await this.serviceRegistration.unregister();
       this.serviceRegistration = undefined;
     }
@@ -433,9 +462,9 @@ export class MCPLifecycleCoordinator {
 
   /**
    * Complete cleanup of all resources
-   */
+  */
   private async cleanup(): Promise<void> {
-    console.log('[MCP_LIFECYCLE] Performing complete cleanup...');
+    lifecycleDiagnostics.info('Performing complete cleanup');
     
     this.stopTimers();
     
@@ -447,7 +476,7 @@ export class MCPLifecycleCoordinator {
         this.stopPTYManager()
       ]);
     } catch (error) {
-      console.error('[MCP_LIFECYCLE] Cleanup error:', error);
+      lifecycleDiagnostics.error('Cleanup error', error);
     }
   }
 
@@ -461,6 +490,19 @@ export class MCPLifecycleCoordinator {
       timestamp: Date.now(),
       errorMessage
     };
+  }
+
+  private getErrorMessage(error: unknown): string {
+    if (error && typeof error === 'object' && 'message' in (error as Record<string, unknown>)) {
+      const message = (error as { message?: unknown }).message;
+      if (typeof message === 'string') {
+        return message;
+      }
+      if (message !== undefined && message !== null) {
+        return String(message);
+      }
+    }
+    return String(error);
   }
 }
 

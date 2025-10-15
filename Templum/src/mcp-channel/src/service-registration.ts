@@ -18,6 +18,7 @@ import { ProgressiveTimeoutManager, createOperationSpecificTimeoutManager } from
 import { AsyncUtils, type ManagedInterval } from '../../utils/async-utils';
 import { serialization, type SerializationOutcome } from '../../utils/serialization-utils';
 import { emitSerializationWarnings } from '../../backend/backend-serialization-log';
+import { createMCPDiagnostics } from './mcp-diagnostics';
 
 export interface MCPServiceConfig {
   id: string;
@@ -66,6 +67,7 @@ export class MCPServiceRegistration {
   private ptyManager?: PTYManager;
   private progressiveTimeoutManager?: ProgressiveTimeoutManager;
   private registrationAttempts: number = 0;
+  private readonly diagnostics = createMCPDiagnostics('service-registration');
 
   constructor(options: ServiceRegistrationOptions = {}) {
     // Generate service configuration
@@ -110,7 +112,7 @@ export class MCPServiceRegistration {
     // Initialize progressive timeout manager if enabled
     if (this.options.enableProgressiveTimeout) {
       this.progressiveTimeoutManager = createOperationSpecificTimeoutManager('service-discovery');
-      console.log('[MCP_REGISTRATION] Progressive timeout management enabled');
+      this.diagnostics.info('Progressive timeout management enabled');
     }
   }
 
@@ -153,7 +155,9 @@ export class MCPServiceRegistration {
     try {
       // Ensure services directory exists
       if (!fs.existsSync(this.options.servicesDir)) {
-        console.log(`[MCP_REGISTRATION] Creating services directory: ${this.options.servicesDir}`);
+        this.diagnostics.info('Creating services directory', {
+          servicesDir: this.options.servicesDir
+        });
         fs.mkdirSync(this.options.servicesDir, { recursive: true });
       }
 
@@ -167,8 +171,11 @@ export class MCPServiceRegistration {
       await this.writeServiceRegistrationFile();
       
       this.isRegistered = true;
-      console.log(`[MCP_REGISTRATION] Service registered: ${this.config.id} (attempt ${this.registrationAttempts})`);
-      console.log(`[MCP_REGISTRATION] Service file: ${this.serviceFilePath}`);
+      this.diagnostics.info('Service registered', {
+        serviceId: this.config.id,
+        attempt: this.registrationAttempts,
+        serviceFile: this.serviceFilePath
+      });
 
       // Start health check monitoring
       this.startHealthChecking();
@@ -179,14 +186,17 @@ export class MCPServiceRegistration {
       }
 
     } catch (error) {
-      console.error(`[MCP_REGISTRATION] Registration failed (attempt ${this.registrationAttempts}):`, error);
+      const templumError = this.diagnostics.error('Registration failed', error, {
+        attempt: this.registrationAttempts,
+        serviceId: this.config.id
+      });
       
       // Reset attempt counter if max retries exceeded
       if (this.registrationAttempts >= this.options.maxRegistrationRetries) {
         this.registrationAttempts = 0;
       }
       
-      throw new Error(`MCP service registration failed: ${error instanceof Error ? error.message : error}`);
+      throw templumError;
     }
   }
 
@@ -216,15 +226,19 @@ export class MCPServiceRegistration {
       // Remove service file
       if (fs.existsSync(this.serviceFilePath)) {
         fs.unlinkSync(this.serviceFilePath);
-        console.log(`[MCP_REGISTRATION] Service unregistered: ${this.config.id}`);
+        this.diagnostics.info('Service unregistered', {
+          serviceId: this.config.id
+        });
       }
 
       this.isRegistered = false;
       this.registrationAttempts = 0;
 
     } catch (error) {
-      console.error('[MCP_REGISTRATION] Unregistration failed:', error);
-      throw new Error(`MCP service unregistration failed: ${error instanceof Error ? error.message : error}`);
+      const templumError = this.diagnostics.error('Unregistration failed', error, {
+        serviceId: this.config.id
+      });
+      throw templumError;
     }
   }
 
@@ -245,15 +259,22 @@ export class MCPServiceRegistration {
         // Update service file
         this.writeConfigToFile(this.serviceFilePath, 'mcp:service-registration:health-update');
         
-        console.log(`[MCP_HEALTH] Health updated: ${this.config.id} (${new Date(this.config.lastSeen).toISOString()})`);
+        this.diagnostics.info('Health updated', {
+          serviceId: this.config.id,
+          lastSeen: new Date(this.config.lastSeen).toISOString()
+        });
       } else {
-        console.warn(`[MCP_HEALTH] Health check failed for: ${this.config.id}`);
+        this.diagnostics.warn('Health check failed', {
+          serviceId: this.config.id
+        });
         // Optionally unregister if unhealthy for too long
         // await this.unregister();
       }
 
     } catch (error) {
-      console.error('[MCP_HEALTH] Health update failed:', error);
+      this.diagnostics.error('Health update failed', error, {
+        serviceId: this.config.id
+      });
     }
   }
 
@@ -276,7 +297,9 @@ export class MCPServiceRegistration {
         try {
           // This should not throw if PTY manager is working
           const sessions = this.ptyManager.getActiveSessions();
-          console.log(`[MCP_HEALTH] Active PTY sessions: ${sessions.length}`);
+          this.diagnostics.info('Active PTY sessions recorded', {
+            sessionCount: sessions.length
+          });
         } catch (_error) {
           return false;
         }
@@ -285,7 +308,7 @@ export class MCPServiceRegistration {
       return true;
 
     } catch (error) {
-      console.error('[MCP_HEALTH] Health check error:', error);
+      this.diagnostics.error('Health check error', error);
       return false;
     }
   }
@@ -300,7 +323,9 @@ export class MCPServiceRegistration {
       await this.updateHealth();
     }, this.options.healthCheckInterval, { unref: true });
 
-    console.log(`[MCP_REGISTRATION] Health checking started (interval: ${this.options.healthCheckInterval}ms)`);
+    this.diagnostics.info('Health checking started', {
+      intervalMs: this.options.healthCheckInterval
+    });
   }
 
   /**
@@ -308,7 +333,7 @@ export class MCPServiceRegistration {
    */
   private setupCleanupHandlers(): void {
     const cleanup = async () => {
-      console.log('[MCP_REGISTRATION] Performing cleanup...');
+      this.diagnostics.info('Performing cleanup');
       await this.unregister();
       process.exit(0);
     };
@@ -320,13 +345,13 @@ export class MCPServiceRegistration {
     
     // Handle uncaught exceptions
     process.on('uncaughtException', async (error) => {
-      console.error('[MCP_REGISTRATION] Uncaught exception:', error);
+      this.diagnostics.error('Uncaught exception during service registration', error);
       await this.unregister();
       process.exit(1);
     });
 
     process.on('unhandledRejection', async (reason) => {
-      console.error('[MCP_REGISTRATION] Unhandled rejection:', reason);
+      this.diagnostics.error('Unhandled rejection during service registration', reason as unknown);
       await this.unregister();
       process.exit(1);
     });
@@ -440,7 +465,7 @@ export class MCPServiceRegistration {
       throw new Error('TCP protocol requires valid port number');
     }
 
-    console.log('[MCP_REGISTRATION] Service configuration validated');
+    this.diagnostics.info('Service configuration validated');
   }
 
   /**
@@ -464,7 +489,9 @@ export class MCPServiceRegistration {
       // Validate PTY manager is functional
       if (this.ptyManager) {
         const sessions = this.ptyManager.getActiveSessions();
-        console.log(`[MCP_REGISTRATION] PTY manager functional with ${sessions.length} sessions`);
+        this.diagnostics.info('PTY manager functional', {
+          sessionCount: sessions.length
+        });
       }
 
       // Validate services directory is writable
@@ -476,11 +503,11 @@ export class MCPServiceRegistration {
         throw new Error(`Services directory not writable: ${this.options.servicesDir}`);
       }
 
-      console.log('[MCP_REGISTRATION] Connectivity validation passed');
+      this.diagnostics.info('Connectivity validation passed');
       
     } catch (error) {
-      console.error('[MCP_REGISTRATION] Connectivity validation failed:', error);
-      throw new Error(`Connectivity validation failed: ${error instanceof Error ? error.message : error}`);
+      const templumError = this.diagnostics.error('Connectivity validation failed', error);
+      throw templumError;
     }
   }
 
@@ -497,11 +524,11 @@ export class MCPServiceRegistration {
       this.writeConfigToFile(tempFilePath, 'mcp:service-registration:temp-config');
       fs.renameSync(tempFilePath, this.serviceFilePath);
       
-      console.log('[MCP_REGISTRATION] Service registration file written successfully');
+      this.diagnostics.info('Service registration file written successfully');
       
     } catch (error) {
-      console.error('[MCP_REGISTRATION] Failed to write service registration file:', error);
-      throw new Error(`Failed to write service registration: ${error instanceof Error ? error.message : error}`);
+      const templumError = this.diagnostics.error('Failed to write service registration file', error);
+      throw templumError;
     }
   }
 
@@ -532,7 +559,7 @@ export class MCPServiceRegistration {
   resetTimeoutContext(): void {
     if (this.progressiveTimeoutManager) {
       this.progressiveTimeoutManager.resetOperationContext(`service-registration-${this.config.id}`);
-      console.log('[MCP_REGISTRATION] Progressive timeout context reset');
+      this.diagnostics.info('Progressive timeout context reset');
     }
   }
 

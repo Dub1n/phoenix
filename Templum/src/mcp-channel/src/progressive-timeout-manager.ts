@@ -28,6 +28,7 @@ import { EventDrivenComponent } from '../../utils/event-bus-adapter';
 import type { TypedEventMap } from '../../utils/event-utils';
 import { AsyncUtils } from '../../utils/async-utils';
 import { cleanupComponentListeners } from './event-listener-manager';
+import { createMCPDiagnostics } from './mcp-diagnostics';
 
 /**
  * Progressive timeout configuration levels
@@ -154,6 +155,7 @@ export class ProgressiveTimeoutManager extends EventDrivenComponent<ProgressiveT
   private metrics: AdaptationMetrics;
   private circuitBreakerThresholds: CircuitBreakerThresholds;
   private adaptationConfig: AdaptationConfig;
+  private readonly diagnostics = createMCPDiagnostics('progressive-timeout-manager');
 
   constructor(customTimeouts?: Partial<TimeoutLevels>) {
     super(`progressive-timeout-manager:${ProgressiveTimeoutManager.instanceCounter++}`, 80);
@@ -199,7 +201,9 @@ export class ProgressiveTimeoutManager extends EventDrivenComponent<ProgressiveT
       templateDrivenEfficiencyEnabled: true
     };
 
-    console.log('[PROGRESSIVE_TIMEOUT] Initialized with levels:', this.timeoutLevels);
+    this.diagnostics.info('Initialized with timeout levels', {
+      timeoutLevels: this.timeoutLevels
+    });
   }
 
   /**
@@ -226,7 +230,12 @@ export class ProgressiveTimeoutManager extends EventDrivenComponent<ProgressiveT
       const timeoutLevel = this.determineTimeoutLevel(context);
       const timeout = this.getTimeoutForLevel(timeoutLevel);
       
-      console.log(`[PROGRESSIVE_TIMEOUT] Executing ${operationType} (${operationId}) with level ${timeoutLevel} timeout: ${timeout}ms`);
+      this.diagnostics.info('Executing operation with timeout level', {
+        operationId,
+        operationType,
+        timeoutLevel,
+        timeoutMs: timeout
+      });
 
       // Execute operation with timeout
       const result = await this.executeWithTimeout(operation, timeout);
@@ -262,7 +271,10 @@ export class ProgressiveTimeoutManager extends EventDrivenComponent<ProgressiveT
 
       // Implement error recovery mechanisms
       if (timeoutResult.retryRecommended && timeoutResult.nextTimeoutLevel) {
-        console.log(`[PROGRESSIVE_TIMEOUT] Retry recommended with level ${timeoutResult.nextTimeoutLevel}`);
+        this.diagnostics.info('Retry recommended with adjusted timeout level', {
+          operationId,
+          nextTimeoutLevel: timeoutResult.nextTimeoutLevel
+        });
         return this.executeWithProgressiveTimeout(operationId, operationType, operation);
       }
 
@@ -453,14 +465,19 @@ export class ProgressiveTimeoutManager extends EventDrivenComponent<ProgressiveT
         if (currentFailureRate >= this.circuitBreakerThresholds.failureRate) {
           context.circuitBreakerState = 'open';
           this.metrics.circuitBreakerTrips++;
-          console.log(`[PROGRESSIVE_TIMEOUT] Circuit breaker opened for ${context.operationType} (failure rate: ${(currentFailureRate * 100).toFixed(1)}%)`);
+          this.diagnostics.warn('Circuit breaker opened', {
+            operationType: context.operationType,
+            failureRate: currentFailureRate
+          });
           
           // Schedule transition to half-open after timeout
           AsyncUtils.createTimeout(
             () => {
               if (context.circuitBreakerState === 'open') {
                 context.circuitBreakerState = 'half-open';
-                console.log(`[PROGRESSIVE_TIMEOUT] Circuit breaker half-open for ${context.operationType}`);
+                this.diagnostics.info('Circuit breaker half-open', {
+                  operationType: context.operationType
+                });
               }
             },
             this.circuitBreakerThresholds.openDuration,
@@ -472,10 +489,14 @@ export class ProgressiveTimeoutManager extends EventDrivenComponent<ProgressiveT
       case 'half-open':
         if (success) {
           context.circuitBreakerState = 'closed';
-          console.log(`[PROGRESSIVE_TIMEOUT] Circuit breaker closed for ${context.operationType}`);
+          this.diagnostics.info('Circuit breaker closed', {
+            operationType: context.operationType
+          });
         } else if (context.attemptCount >= this.circuitBreakerThresholds.halfOpenMaxAttempts) {
           context.circuitBreakerState = 'open';
-          console.log(`[PROGRESSIVE_TIMEOUT] Circuit breaker reopened for ${context.operationType}`);
+          this.diagnostics.info('Circuit breaker reopened', {
+            operationType: context.operationType
+          });
         }
         break;
 
@@ -489,7 +510,9 @@ export class ProgressiveTimeoutManager extends EventDrivenComponent<ProgressiveT
    * Handle circuit breaker open state
    */
   private handleCircuitBreakerOpen(context: TimeoutContext): TimeoutResult {
-    console.log(`[PROGRESSIVE_TIMEOUT] Circuit breaker open for ${context.operationType}, activating fallback`);
+    this.diagnostics.warn('Circuit breaker open, activating fallback', {
+      operationType: context.operationType
+    });
     
     this.metrics.fallbackActivations++;
     
@@ -622,7 +645,7 @@ export class ProgressiveTimeoutManager extends EventDrivenComponent<ProgressiveT
    */
   resetOperationContext(operationId: string): void {
     this.contexts.delete(operationId);
-    console.log(`[PROGRESSIVE_TIMEOUT] Reset context for operation: ${operationId}`);
+    this.diagnostics.info('Reset context for operation', { operationId });
   }
 
   /**
@@ -630,7 +653,7 @@ export class ProgressiveTimeoutManager extends EventDrivenComponent<ProgressiveT
    */
   updateTimeoutLevels(newLevels: Partial<TimeoutLevels>): void {
     this.timeoutLevels = { ...this.timeoutLevels, ...newLevels };
-    console.log('[PROGRESSIVE_TIMEOUT] Updated timeout levels:', this.timeoutLevels);
+    this.diagnostics.info('Timeout levels updated', { timeoutLevels: this.timeoutLevels });
     this.emit('timeout-levels-updated', this.timeoutLevels);
   }
 
@@ -639,7 +662,7 @@ export class ProgressiveTimeoutManager extends EventDrivenComponent<ProgressiveT
    */
   updateAdaptationConfig(newConfig: Partial<AdaptationConfig>): void {
     this.adaptationConfig = { ...this.adaptationConfig, ...newConfig };
-    console.log('[PROGRESSIVE_TIMEOUT] Updated adaptation config:', this.adaptationConfig);
+    this.diagnostics.info('Adaptation config updated', { adaptationConfig: this.adaptationConfig });
     this.emit('adaptation-config-updated', this.adaptationConfig);
   }
 
@@ -669,7 +692,10 @@ export class ProgressiveTimeoutManager extends EventDrivenComponent<ProgressiveT
         if (context) {
           const currentLevelNum = this.safeGetNumericLevel(context.currentLevel);
           context.currentLevel = Math.max(1, currentLevelNum - 1) as 1 | 2 | 3;
-          console.log(`[PROGRESSIVE_TIMEOUT] Template optimization: reduced timeout level for fast tool registration`);
+          this.diagnostics.info('Template optimization applied for tool registration', {
+            operationId: event.operationId,
+            timeoutLevel
+          });
         }
       }
       
@@ -679,12 +705,15 @@ export class ProgressiveTimeoutManager extends EventDrivenComponent<ProgressiveT
         const context = this.contexts.get(event.operationId);
         if (context) {
           context.currentLevel = 1;
-          console.log(`[PROGRESSIVE_TIMEOUT] Template optimization: level 1 for fast service discovery`);
+          this.diagnostics.info('Template optimization applied for service discovery', {
+            operationId: event.operationId,
+            timeoutLevel
+          });
         }
       }
     });
 
-    console.log('[PROGRESSIVE_TIMEOUT] Template-driven efficiency enabled');
+    this.diagnostics.info('Template-driven efficiency enabled');
   }
 
   /**
@@ -714,7 +743,9 @@ export class ProgressiveTimeoutManager extends EventDrivenComponent<ProgressiveT
     }
     
     // Risk-adaptive fallback - default to level 1 for safety
-    console.warn(`[PROGRESSIVE_TIMEOUT] Invalid level '${level}', defaulting to level 1`);
+    this.diagnostics.warn('Invalid timeout level requested, defaulting to level1', {
+      level
+    });
     return 1;
   }
 
@@ -734,7 +765,7 @@ export class ProgressiveTimeoutManager extends EventDrivenComponent<ProgressiveT
       case 3: return 'level3';
       case 'fallback': return 'fallback';
       default:
-        console.warn(`[PROGRESSIVE_TIMEOUT] Unknown level '${level}', defaulting to level1`);
+        this.diagnostics.warn('Unknown timeout level encountered', { level });
         return 'level1';
     }
   }
@@ -755,10 +786,10 @@ export class ProgressiveTimeoutManager extends EventDrivenComponent<ProgressiveT
       } else {
         // Initialize if missing (defensive programming)
         this.metrics.timeoutsByLevel[metricsKey] = 1;
-        console.warn(`[PROGRESSIVE_TIMEOUT] Initialized missing metrics for ${metricsKey}`);
+        this.diagnostics.warn('Initialized missing metrics entry', { metricsKey });
       }
     } catch (error) {
-      console.error(`[PROGRESSIVE_TIMEOUT] Error updating timeout metrics for level ${level}:`, error);
+      this.diagnostics.error('Error updating timeout metrics', error, { level });
       // Probabilistic error handling - continue operation despite metrics error
     }
   }
@@ -792,7 +823,7 @@ export class ProgressiveTimeoutManager extends EventDrivenComponent<ProgressiveT
       this.metrics.averageResponseTimeByLevel[metricsKey] = newAverage;
       
     } catch (error) {
-      console.error(`[PROGRESSIVE_TIMEOUT] Error updating response time metrics for level ${level}:`, error);
+      this.diagnostics.error('Error updating response time metrics', error, { level });
       // Continue operation despite metrics error (graceful degradation)
     }
   }
@@ -811,14 +842,16 @@ export class ProgressiveTimeoutManager extends EventDrivenComponent<ProgressiveT
       const requiredTimeouts = ['level1', 'level2', 'level3', 'fallbackTimeout'];
       for (const timeout of requiredTimeouts) {
         if (typeof this.timeoutLevels[timeout as keyof TimeoutLevels] !== 'number' || this.timeoutLevels[timeout as keyof TimeoutLevels] <= 0) {
-          console.error(`[PROGRESSIVE_TIMEOUT] Invalid timeout configuration for ${timeout}: ${this.timeoutLevels[timeout as keyof TimeoutLevels]}`);
+          this.diagnostics.error('Invalid timeout configuration', new Error(`Invalid timeout configuration for ${String(timeout)}`), {
+            timeout
+          });
           return false;
         }
       }
       
       // Verify metrics structure integrity
       if (!this.metrics || typeof this.metrics.totalOperations !== 'number') {
-        console.error('[PROGRESSIVE_TIMEOUT] Invalid metrics structure');
+        this.diagnostics.error('Invalid metrics structure', new Error('Invalid metrics structure'));
         return false;
       }
       
@@ -826,21 +859,21 @@ export class ProgressiveTimeoutManager extends EventDrivenComponent<ProgressiveT
       if (!this.adaptationConfig || 
           typeof this.adaptationConfig.successThreshold !== 'number' ||
           typeof this.adaptationConfig.escalationThreshold !== 'number') {
-        console.error('[PROGRESSIVE_TIMEOUT] Invalid adaptation configuration');
+        this.diagnostics.error('Invalid adaptation configuration', new Error('Invalid adaptation configuration'));
         return false;
       }
       
       // Verify event emitter functionality
       if (typeof this.emit !== 'function' || typeof this.on !== 'function') {
-        console.error('[PROGRESSIVE_TIMEOUT] EventEmitter functionality unavailable');
+        this.diagnostics.error('EventEmitter functionality unavailable', new Error('EventEmitter functionality unavailable'));
         return false;
       }
       
-      console.log('[PROGRESSIVE_TIMEOUT] Runtime compatibility verified successfully');
+      this.diagnostics.info('Runtime compatibility verified successfully');
       return true;
       
     } catch (error) {
-      console.error('[PROGRESSIVE_TIMEOUT] Runtime compatibility check failed:', error);
+      this.diagnostics.error('Runtime compatibility check failed', error);
       return false;
     }
   }
@@ -864,13 +897,13 @@ export class ProgressiveTimeoutManager extends EventDrivenComponent<ProgressiveT
       // Clean up any registered process listeners via event manager
       const cleanedListeners = cleanupComponentListeners('progressive-timeout-manager');
       if (cleanedListeners > 0) {
-        console.log(`[PROGRESSIVE_TIMEOUT] Cleaned up ${cleanedListeners} tracked event listeners`);
+        this.diagnostics.info('Cleaned up tracked event listeners', { cleanedListeners });
       }
       
-      console.log('[PROGRESSIVE_TIMEOUT] Cleaned up progressive timeout manager');
+      this.diagnostics.info('Cleaned up progressive timeout manager');
       
     } catch (error) {
-      console.error('[PROGRESSIVE_TIMEOUT] Error during cleanup:', error);
+      this.diagnostics.error('Error during progressive timeout cleanup', error);
       // Continue cleanup despite errors (graceful degradation)
     }
   }

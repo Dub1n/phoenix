@@ -26,6 +26,7 @@ tags: ["memory-management", "event-cleanup", "leak-prevention", "process-listene
 
 import { EventEmitter } from 'events';
 import type { AnyTypedEventEmitter } from '../../utils/event-utils';
+import { createMCPDiagnostics } from './mcp-diagnostics';
 
 type ManagedEmitter = AnyTypedEventEmitter | NodeJS.Process;
 
@@ -86,6 +87,7 @@ export class EventListenerManager {
     memoryLeakWarnings: 0,
     cleanupOperations: 0
   };
+  private readonly diagnostics = createMCPDiagnostics('event-listener-manager');
   
   // Risk-adaptive listener limits
   private readonly MAX_PROCESS_LISTENERS = 10;
@@ -127,13 +129,21 @@ export class EventListenerManager {
       // Risk-adaptive limit checking
       if (emitter === process) {
         if (this.metrics.processListeners >= this.MAX_PROCESS_LISTENERS) {
-          console.warn(`[EVENT_MANAGER] Process listener limit (${this.MAX_PROCESS_LISTENERS}) exceeded for component ${componentId}`);
+          this.diagnostics.warn('Process listener limit exceeded', {
+            componentId,
+            limit: this.MAX_PROCESS_LISTENERS,
+            current: this.metrics.processListeners
+          });
           this.metrics.memoryLeakWarnings++;
           return '';
         }
         
         if (this.metrics.processListeners >= this.WARNING_THRESHOLD) {
-          console.warn(`[EVENT_MANAGER] Approaching process listener limit: ${this.metrics.processListeners}/${this.MAX_PROCESS_LISTENERS}`);
+          this.diagnostics.warn('Approaching process listener limit', {
+            componentId,
+            current: this.metrics.processListeners,
+            limit: this.MAX_PROCESS_LISTENERS
+          });
         }
       }
 
@@ -161,11 +171,18 @@ export class EventListenerManager {
       this.registrations.set(registrationId, registration);
       this.updateMetrics(componentId, 1);
       
-      console.log(`[EVENT_MANAGER] Registered ${event} listener for ${componentId} (ID: ${registrationId})`);
+      this.diagnostics.info('Listener registered', {
+        componentId,
+        event,
+        registrationId
+      });
       return registrationId;
       
     } catch (error) {
-      console.error(`[EVENT_MANAGER] Failed to register listener for ${componentId}:`, error);
+      this.diagnostics.error('Failed to register listener', error, {
+        componentId,
+        event
+      });
       this.metrics.memoryLeakWarnings++;
       return '';
     }
@@ -183,7 +200,7 @@ export class EventListenerManager {
     try {
       const registration = this.registrations.get(registrationId);
       if (!registration) {
-        console.warn(`[EVENT_MANAGER] Registration ${registrationId} not found`);
+        this.diagnostics.warn('Registration not found', { registrationId });
         return false;
       }
 
@@ -195,11 +212,14 @@ export class EventListenerManager {
       this.updateMetrics(registration.componentId, -1);
       this.metrics.cleanupOperations++;
       
-      console.log(`[EVENT_MANAGER] Unregistered ${registration.event} listener for ${registration.componentId}`);
+      this.diagnostics.info('Listener unregistered', {
+        componentId: registration.componentId,
+        event: registration.event
+      });
       return true;
       
     } catch (error) {
-      console.error(`[EVENT_MANAGER] Failed to unregister listener ${registrationId}:`, error);
+      this.diagnostics.error('Failed to unregister listener', error, { registrationId });
       return false;
     }
   }
@@ -231,11 +251,14 @@ export class EventListenerManager {
         }
       }
       
-      console.log(`[EVENT_MANAGER] Cleaned up ${cleanedCount} listeners for component ${componentId}`);
+      this.diagnostics.info('Component listeners cleaned', {
+        componentId,
+        cleanedCount
+      });
       return cleanedCount;
       
     } catch (error) {
-      console.error(`[EVENT_MANAGER] Error during component cleanup for ${componentId}:`, error);
+      this.diagnostics.error('Component cleanup failed', error, { componentId });
       return cleanedCount;
     }
   }
@@ -261,7 +284,10 @@ export class EventListenerManager {
         }
       }
       
-      console.log(`[EVENT_MANAGER] Final cleanup: ${successCount}/${registrationIds.length} listeners removed`);
+      this.diagnostics.info('Final cleanup summary', {
+        successCount,
+        totalRegistrations: registrationIds.length
+      });
       
       // Reset metrics
       this.metrics = {
@@ -275,7 +301,7 @@ export class EventListenerManager {
       return finalMetrics;
       
     } catch (error) {
-      console.error('[EVENT_MANAGER] Error during complete cleanup:', error);
+      this.diagnostics.error('Complete cleanup failed', error);
       return finalMetrics;
     }
   }
@@ -321,29 +347,39 @@ export class EventListenerManager {
             }
           }, 0);
         } catch (introspectionError) {
-          console.warn('[EVENT_MANAGER] Process introspection failed, using tracked count:', introspectionError);
+          this.diagnostics.warn('Process introspection failed, using tracked count', {
+            error: introspectionError instanceof Error ? introspectionError.message : String(introspectionError)
+          });
           processListenerCount = this.metrics.processListeners;
         }
       }
       
       // Check for discrepancies
       if (Math.abs(processListenerCount - this.metrics.processListeners) > 2) {
-        console.warn(`[EVENT_MANAGER] Listener count discrepancy: tracked=${this.metrics.processListeners}, actual=${processListenerCount}`);
+        this.diagnostics.warn('Listener count discrepancy detected', {
+          tracked: this.metrics.processListeners,
+          actual: processListenerCount
+        });
         this.metrics.memoryLeakWarnings++;
         return false;
       }
       
       // Check for excessive listeners
       if (this.metrics.processListeners > this.WARNING_THRESHOLD) {
-        console.warn(`[EVENT_MANAGER] High process listener count: ${this.metrics.processListeners}`);
+        this.diagnostics.warn('High process listener count', {
+          processListeners: this.metrics.processListeners
+        });
         return false;
       }
       
-      console.log(`[EVENT_MANAGER] Memory health verified: ${this.metrics.processListeners} process listeners, ${this.metrics.totalListeners} total`);
+      this.diagnostics.info('Memory health verified', {
+        processListeners: this.metrics.processListeners,
+        totalListeners: this.metrics.totalListeners
+      });
       return true;
       
     } catch (error) {
-      console.error('[EVENT_MANAGER] Memory health verification failed:', error);
+      this.diagnostics.error('Memory health verification failed', error);
       return false;
     }
   }
@@ -358,7 +394,7 @@ export class EventListenerManager {
     // Pattern-Info: { approach: "cross-platform-signal-handling", alternatives: "platform-specific", trade-offs: "compatibility-vs-optimization" }
     
     const cleanup = () => {
-      console.log('[EVENT_MANAGER] Process cleanup initiated');
+      this.diagnostics.info('Process cleanup initiated');
       this.cleanupAll();
     };
 
@@ -376,12 +412,14 @@ export class EventListenerManager {
         process.on('SIGINT', cleanup);
       }
     } catch (signalError) {
-      console.warn('[EVENT_MANAGER] Some process signals unavailable:', signalError);
+      this.diagnostics.warn('Some process signals unavailable', {
+        error: signalError instanceof Error ? signalError.message : String(signalError)
+      });
       // Ensure at least exit cleanup is registered
       try {
         process.on('exit', cleanup);
       } catch (exitError) {
-        console.error('[EVENT_MANAGER] Critical: Cannot register exit handler:', exitError);
+        this.diagnostics.error('Critical: Cannot register exit handler', exitError);
       }
     }
   }

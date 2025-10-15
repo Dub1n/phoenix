@@ -30,6 +30,7 @@ import { MCPHealthMonitor } from './health-monitor';
 import { ProgressiveTimeoutManager } from './progressive-timeout-manager';
 import { PTYManager } from './pty-manager';
 import { AsyncUtils } from '../../utils/async-utils';
+import { createMCPDiagnostics } from './mcp-diagnostics';
 
 export interface EnhancedMCPConfig {
   enableVisualFeedback: boolean;
@@ -121,6 +122,7 @@ export class EnhancedMCPIntegration extends EventDrivenComponent<EnhancedMCPInte
   private startTime: number;
   private isInitialized: boolean = false;
   private isMonitoring: boolean = false;
+  private readonly diagnostics = createMCPDiagnostics('enhanced-mcp-integration');
 
   constructor(config?: Partial<EnhancedMCPConfig>) {
     super(`enhanced-mcp-integration:${EnhancedMCPIntegration.instanceCounter++}`, 40);
@@ -227,17 +229,18 @@ export class EnhancedMCPIntegration extends EventDrivenComponent<EnhancedMCPInte
 
     } catch (error) {
       this.updateIntegrationStatus('error');
+      const templumError = this.diagnostics.error('Enhanced MCP Integration initialization failed', error);
       
       if (this.visualFeedback) {
         this.visualFeedback.addIndicator({
           status: 'error',
           message: 'Enhanced MCP Integration initialization failed',
-          details: error instanceof Error ? error.message : String(error),
+          details: templumError.message,
           category: 'integration'
         });
       }
 
-      throw error;
+      throw templumError;
     }
   }
 
@@ -265,7 +268,9 @@ export class EnhancedMCPIntegration extends EventDrivenComponent<EnhancedMCPInte
 
     } catch (error) {
       this.updateComponentStatus('visualFeedback', 'error');
-      throw new Error(`Visual feedback initialization failed: ${error}`);
+      this.raiseIntegrationError('Visual feedback initialization failed', error, {
+        component: 'visualFeedback'
+      });
     }
   }
 
@@ -300,15 +305,18 @@ export class EnhancedMCPIntegration extends EventDrivenComponent<EnhancedMCPInte
 
       } catch (error) {
         this.updateComponentStatus(component.key as keyof IntegrationStatus['components'], 'error');
-        
+        const templumError = this.diagnostics.error(`${component.name} initialization failed`, error, {
+          component: component.key
+        });
+
         this.visualFeedback?.addIndicator({
           status: 'error',
           message: `${component.name} initialization failed`,
-          details: error instanceof Error ? error.message : String(error),
+          details: templumError.message,
           category: 'initialization'
         });
 
-        throw error;
+        throw templumError;
       }
 
       progress += progressStep;
@@ -460,20 +468,21 @@ export class EnhancedMCPIntegration extends EventDrivenComponent<EnhancedMCPInte
 
     } catch (error) {
       const duration = Date.now() - startTime;
+      const templumError = this.diagnostics.error('Tool registration validation failed', error);
       
       this.recordValidation({
         operation: 'Tool Registration',
         status: 'failed',
         duration,
         timestamp: startTime,
-        error: error instanceof Error ? error.message : String(error)
+        error: templumError.message
       });
 
       this.visualFeedback?.showValidationFeedback('Tool Registration', false, duration, {
-        error: error instanceof Error ? error.message : String(error)
+        error: templumError.message
       });
 
-      throw error;
+      throw templumError;
     }
   }
 
@@ -508,17 +517,20 @@ export class EnhancedMCPIntegration extends EventDrivenComponent<EnhancedMCPInte
 
     } catch (error) {
       const duration = Date.now() - startTime;
+      const templumError = this.diagnostics.error('Communication stability validation failed', error);
       
       this.recordValidation({
         operation: 'Communication Stability',
         status: 'failed',
         duration,
         timestamp: startTime,
-        error: error instanceof Error ? error.message : String(error)
+        error: templumError.message
       });
 
-      this.visualFeedback?.showValidationFeedback('Communication Stability', false, duration);
-      throw error;
+      this.visualFeedback?.showValidationFeedback('Communication Stability', false, duration, {
+        error: templumError.message
+      });
+      throw templumError;
     }
   }
 
@@ -546,17 +558,20 @@ export class EnhancedMCPIntegration extends EventDrivenComponent<EnhancedMCPInte
 
     } catch (error) {
       const duration = Date.now() - startTime;
+      const templumError = this.diagnostics.error('Performance validation failed', error);
       
       this.recordValidation({
         operation: 'Performance Validation',
         status: 'failed',
         duration,
         timestamp: startTime,
-        error: error instanceof Error ? error.message : String(error)
+        error: templumError.message
       });
 
-      this.visualFeedback?.showValidationFeedback('Performance Validation', false, duration);
-      throw error;
+      this.visualFeedback?.showValidationFeedback('Performance Validation', false, duration, {
+        error: templumError.message
+      });
+      throw templumError;
     }
   }
 
@@ -596,17 +611,20 @@ export class EnhancedMCPIntegration extends EventDrivenComponent<EnhancedMCPInte
 
     } catch (error) {
       const duration = Date.now() - startTime;
+      const templumError = this.diagnostics.error('Error handling validation failed', error);
       
       this.recordValidation({
         operation: 'Error Handling',
         status: 'failed',
         duration,
         timestamp: startTime,
-        error: error instanceof Error ? error.message : String(error)
+        error: templumError.message
       });
 
-      this.visualFeedback?.showValidationFeedback('Error Handling', false, duration);
-      throw error;
+      this.visualFeedback?.showValidationFeedback('Error Handling', false, duration, {
+        error: templumError.message
+      });
+      throw templumError;
     }
   }
 
@@ -688,6 +706,9 @@ export class EnhancedMCPIntegration extends EventDrivenComponent<EnhancedMCPInte
 
     } catch (error) {
       const duration = Date.now() - startTime;
+      const templumError = this.diagnostics.error('Enhanced MCP request handling failed', error, {
+        method: request.method
+      });
 
       // Record failed request
       if (this.realTimeMonitor) {
@@ -695,19 +716,19 @@ export class EnhancedMCPIntegration extends EventDrivenComponent<EnhancedMCPInte
           `MCP Request: ${request.method}`,
           false,
           duration,
-          { error: error instanceof Error ? error.message : String(error) }
+          { error: templumError.message }
         );
       }
 
       // Attempt error recovery if enabled
       if (this.config.enableErrorRecovery) {
-        const recovery = await this.attemptErrorRecovery(error, request);
+        const recovery = await this.attemptErrorRecovery(templumError, request);
         if (recovery.success) {
           return recovery.details.response;
         }
       }
 
-      throw error;
+      throw templumError;
     }
   }
 
@@ -720,7 +741,7 @@ export class EnhancedMCPIntegration extends EventDrivenComponent<EnhancedMCPInte
     this.visualFeedback?.addIndicator({
       status: 'warning',
       message: 'Attempting error recovery...',
-      details: error instanceof Error ? error.message : String(error),
+      details: this.getErrorMessage(error),
       category: 'error-recovery'
     });
 
@@ -981,6 +1002,24 @@ export class EnhancedMCPIntegration extends EventDrivenComponent<EnhancedMCPInte
       errorRecoveries: this.errorRecoveryHistory.length,
       successRate
     };
+  }
+
+  private raiseIntegrationError(message: string, error: unknown, context?: Record<string, unknown>): never {
+    const templumError = this.diagnostics.error(message, error, context);
+    throw templumError;
+  }
+
+  private getErrorMessage(error: unknown): string {
+    if (error && typeof error === 'object' && 'message' in (error as Record<string, unknown>)) {
+      const message = (error as { message?: unknown }).message;
+      if (typeof message === 'string') {
+        return message;
+      }
+      if (message !== undefined && message !== null) {
+        return String(message);
+      }
+    }
+    return String(error);
   }
 
   /**

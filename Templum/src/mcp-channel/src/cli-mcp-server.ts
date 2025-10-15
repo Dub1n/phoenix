@@ -15,6 +15,7 @@ import { AsyncUtils, type ManagedInterval } from '../../utils/async-utils';
 import { PTYManager } from './pty-manager';
 import { serialization } from '../../utils/serialization-utils';
 import { emitSerializationWarnings } from '../../backend/backend-serialization-log';
+import { createMCPDiagnostics } from './mcp-diagnostics';
 import { 
   NavigationAction,
   CLIResponse,
@@ -171,6 +172,7 @@ export class CLIMCPServer {
   private readonly CACHE_TTL = 5000; // 5 seconds
   private readonly MAX_CACHE_SIZE = 100;
   private cacheCleanupInterval?: ManagedInterval;
+  private readonly diagnostics = createMCPDiagnostics('cli-mcp-server');
 
   constructor() {
     this.ptyManager = new PTYManager();
@@ -258,13 +260,22 @@ export class CLIMCPServer {
     } catch (error) {
       // Record performance even for errors
       this.recordPerformance(Date.now() - startTime);
-      
+      const errorDetails = error instanceof MCPChannelError ? error.details : undefined;
+      const templumError = this.diagnostics.error('handleMCPRequest failure', error, {
+        requestId: request.id,
+        method: request.method,
+        errorDetails
+      });
+
       return {
         id: request.id,
         error: {
           code: this.getErrorCode(error),
-          message: error instanceof Error ? error.message : String(error),
-          data: error instanceof MCPChannelError ? error.details : undefined
+          message: templumError.message,
+          data: {
+            templumError,
+            details: errorDetails
+          }
         }
       };
     }
@@ -339,6 +350,9 @@ export class CLIMCPServer {
       if (error instanceof MCPChannelError) {
         throw error;
       }
+      this.diagnostics.error('Failed to create session', error, {
+        sessionId: params.sessionId
+      });
       throw new MCPChannelError(
         MCPChannelErrorType.INTERNAL_ERROR,
         `Failed to create session: ${error instanceof Error ? error.message : error}`,
@@ -382,6 +396,10 @@ export class CLIMCPServer {
       if (error instanceof MCPChannelError) {
         throw error;
       }
+      this.diagnostics.error('Navigation failed', error, {
+        sessionId: params.sessionId,
+        action: params.action
+      });
       throw new MCPChannelError(
         MCPChannelErrorType.INTERNAL_ERROR,
         `Navigation failed: ${error instanceof Error ? error.message : error}`,
@@ -422,6 +440,9 @@ export class CLIMCPServer {
       if (error instanceof MCPChannelError) {
         throw error;
       }
+      this.diagnostics.error('Send text failed', error, {
+        sessionId: params.sessionId
+      });
       throw new MCPChannelError(
         MCPChannelErrorType.INTERNAL_ERROR,
         `Send text failed: ${error instanceof Error ? error.message : error}`,
@@ -451,6 +472,9 @@ export class CLIMCPServer {
       if (error instanceof MCPChannelError) {
         throw error;
       }
+      this.diagnostics.error('Get state failed', error, {
+        sessionId: params.sessionId
+      });
       throw new MCPChannelError(
         MCPChannelErrorType.INTERNAL_ERROR,
         `Get state failed: ${error instanceof Error ? error.message : error}`,
@@ -468,6 +492,9 @@ export class CLIMCPServer {
       return { success: result };
 
     } catch (error) {
+      this.diagnostics.error('Destroy session failed', error, {
+        sessionId: params.sessionId
+      });
       throw new MCPChannelError(
         MCPChannelErrorType.INTERNAL_ERROR,
         `Destroy session failed: ${error instanceof Error ? error.message : error}`,
@@ -632,7 +659,9 @@ export class CLIMCPServer {
     }
 
     if (expiredKeys.length > 0) {
-      console.log(`[MCP_PERFORMANCE] Cleaned up ${expiredKeys.length} expired cache entries`);
+      this.diagnostics.info('Cleaned up expired cache entries', {
+        expiredCacheEntries: expiredKeys.length
+      });
     }
   }
 
@@ -669,13 +698,18 @@ export class CLIMCPServer {
 
     // Log slow requests for monitoring
     if (responseTime > 100) {
-      console.warn(`[MCP_PERFORMANCE] Slow request: ${responseTime}ms`);
+      this.diagnostics.warn('Slow request detected', {
+        responseTimeMs: responseTime
+      });
     }
 
     // Periodic performance reporting
     if (this.performanceMetrics.requestCount % 100 === 0) {
       const avgResponse = this.performanceMetrics.totalResponseTime / this.performanceMetrics.requestCount;
-      console.log(`[MCP_PERFORMANCE] Processed ${this.performanceMetrics.requestCount} requests, avg response: ${avgResponse.toFixed(2)}ms`);
+      this.diagnostics.info('Processed requests summary', {
+        requestCount: this.performanceMetrics.requestCount,
+        averageResponseMs: Number(avgResponse.toFixed(2))
+      });
     }
   }
 

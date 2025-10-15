@@ -14,6 +14,7 @@
 // Alternative: Use existing PTY MCP servers like pty-mcp-server or terminal-controller-mcp
 import { spawn, IPty, SpawnOptions } from './node-pty-types';
 import { AsyncUtils, type ManagedInterval } from '../../utils/async-utils';
+import { createMCPDiagnostics } from './mcp-diagnostics';
 import { v4 as uuidv4 } from 'uuid';
 import { 
   CLISession, 
@@ -35,6 +36,7 @@ export class PTYManager {
   private readonly defaultTimeout = 30000; // 30 seconds
   private readonly cleanupInterval = 60000; // 1 minute
   private cleanupTimer?: ManagedInterval;
+  private readonly diagnostics = createMCPDiagnostics('pty-manager');
 
   constructor() {
     // Start cleanup timer for idle sessions
@@ -145,7 +147,7 @@ export class PTYManager {
       return true;
     } catch (error) {
       // Log error but still remove from tracking
-      console.error(`Error destroying session ${sessionId}:`, error);
+      this.diagnostics.error('Error destroying session', error, { sessionId });
       this.sessions.delete(sessionId);
       return true;
     }
@@ -223,7 +225,7 @@ export class PTYManager {
       const idleTime = now - session.lastActivity.getTime();
       
       if (idleTime > this.defaultTimeout) {
-        console.log(`Cleaning up idle session: ${sessionId}`);
+        this.diagnostics.info('Cleaning up idle session', { sessionId });
         this.destroySession(sessionId);
       }
     }
@@ -244,13 +246,19 @@ export class PTYManager {
 
     // Handle PTY process exit
     processHandle.onExit((exitCode, signal) => {
-      console.log(`PTY session ${session.sessionId} exited with code ${exitCode}, signal ${signal}`);
+      this.diagnostics.info('PTY session exited', {
+        sessionId: session.sessionId,
+        exitCode,
+        signal
+      });
       this.sessions.delete(session.sessionId);
     });
 
     // Handle PTY errors
     processHandle.onError((error) => {
-      console.error(`PTY session ${session.sessionId} error:`, error);
+      this.diagnostics.error('PTY session error', error, {
+        sessionId: session.sessionId
+      });
       // Keep session alive for error recovery
     });
   }
@@ -285,7 +293,9 @@ export class PTYManager {
    * Cleanup all sessions on shutdown
    */
   cleanup(): void {
-    console.log(`Cleaning up ${this.sessions.size} PTY sessions...`);
+    this.diagnostics.info('Cleaning up PTY sessions', {
+      sessionCount: this.sessions.size
+    });
     
     // Clear the cleanup timer to prevent process hanging
     this.cleanupTimer?.stop();
@@ -296,6 +306,6 @@ export class PTYManager {
       this.destroySession(sessionId);
     }
     
-    console.log('PTY Manager cleanup complete');
+    this.diagnostics.info('PTY Manager cleanup complete');
   }
 }

@@ -12,6 +12,7 @@
 import { CLIMCPServer, MCPRequest } from './cli-mcp-server';
 import { PTYManager } from './pty-manager';
 import { ProgressiveTimeoutManager, createOperationSpecificTimeoutManager, TimeoutResult, AdaptationMetrics } from './progressive-timeout-manager';
+import { createMCPDiagnostics } from './mcp-diagnostics';
 
 export interface HealthStatus {
   status: 'healthy' | 'degraded' | 'unhealthy';
@@ -74,6 +75,7 @@ export class MCPHealthMonitor {
     lastStabilityCheck: number;
   };
   private metrics: AdaptationMetrics;
+  private readonly diagnostics = createMCPDiagnostics('mcp-health-monitor');
   
   constructor(mcpServer: CLIMCPServer, ptyManager: PTYManager) {
     this.mcpServer = mcpServer;
@@ -180,11 +182,14 @@ export class MCPHealthMonitor {
       // Add to history
       this.addToHistory(healthStatus);
       
-      console.log(`[MCP_HEALTH] Health check completed in ${Date.now() - startTime}ms: ${status}`);
+      this.diagnostics.info('Health check completed', {
+        durationMs: Date.now() - startTime,
+        status
+      });
       return healthStatus;
 
     } catch (error) {
-      console.error('[MCP_HEALTH] Health check failed:', error);
+      this.diagnostics.error('Health check failed', error);
       
       const failedStatus: HealthStatus = {
         status: 'unhealthy',
