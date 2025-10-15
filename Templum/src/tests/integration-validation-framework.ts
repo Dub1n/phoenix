@@ -15,6 +15,10 @@ import * as http from 'http';
 import WebSocket from 'ws';
 import { MockBackendContractValidator, MockBackendResponseFactory } from '../validation/mock-backend-contracts';
 import { createInterval, createTimeout, sleep, ManagedInterval } from '../utils/async-utils';
+import {
+  Phase6PerformanceBaselineLoader,
+  Phase6BaselineMetricDefinition,
+} from './phase6/performance-baseline-loader';
 
 // Phase 6 Real Backend Integration Interfaces
 export interface BackendServiceInstance {
@@ -101,6 +105,53 @@ const nextPhase6Id = (prefix: string): string => {
   return `${prefix}_${Date.now()}_${phase6IdCounter}`;
 };
 
+export type ServiceHealthSummary = {
+  [K in BackendServiceInstance['name']]: {
+    operational: boolean;
+    responseTime: number;
+    memoryUsage: number;
+    errorRate: number;
+    lastHealthCheck: number;
+  };
+};
+
+export interface Phase6BaselineMetadata {
+  baselineRunId?: string;
+  capturedAt?: string;
+  command?: string;
+  source?: string;
+}
+
+export interface Phase6PerformanceSnapshot {
+  baselineComparison: PerformanceBaseline[];
+  regressionDetected: boolean;
+  criticalRegressions: string[];
+  performanceImprovement: number;
+  overallScore: number;
+  baselineDefinitions: Phase6BaselineMetricDefinition[];
+  baselineMetadata?: Phase6BaselineMetadata;
+}
+
+export interface Phase6RawMetrics {
+  workflows: WorkflowExecution[];
+  performance: Phase6PerformanceSnapshot;
+  crossInterface: {
+    overallConsistency: number;
+    interfaceResults: Record<string, any>;
+    consistencyIssues: string[];
+    recommendations: string[];
+  };
+  production: {
+    deploymentValidation: boolean;
+    healthMonitoring: boolean;
+    failoverTesting: boolean;
+    scalabilityTesting: boolean;
+    securityValidation: boolean;
+    overallReadiness: number;
+  };
+  serviceHealth: ServiceHealthSummary;
+}
+
 export interface Phase6ValidationReport {
   reportId: string;
   generatedAt: number;
@@ -115,20 +166,14 @@ export interface Phase6ValidationReport {
     averageWorkflowTime: number;
     crossInterfaceConsistency: number; // 0-100%
   };
-  serviceHealth: {
-    [K in BackendServiceInstance['name']]: {
-      operational: boolean;
-      responseTime: number;
-      memoryUsage: number;
-      errorRate: number;
-      lastHealthCheck: number;
-    };
-  };
+  serviceHealth: ServiceHealthSummary;
   performanceRegression: {
     baselineComparison: PerformanceBaseline[];
     regressionDetected: boolean;
     criticalRegressions: string[];
     performanceImprovement: number; // % change from Phase 5
+    overallScore: number;
+    baselineMetadata?: Phase6BaselineMetadata;
   };
   productionReadiness: {
     deploymentValidation: boolean;
@@ -150,6 +195,8 @@ export interface Phase6ValidationReport {
     medium: string[];
     improvements: string[];
   };
+  baselineMetadata?: Phase6BaselineMetadata;
+  rawMetrics?: Phase6RawMetrics;
 }
 
 export interface IntegrationStatus {
@@ -175,6 +222,14 @@ export interface PerformanceBaseline {
   deviationPercentage?: number;
   unit?: string;
   regressionDetected?: boolean;
+  higherIsBetter?: boolean;
+  sampleSize?: number;
+  notes?: string;
+  baselineRunId?: string;
+  capturedAt?: string;
+  sourceCommand?: string;
+  baselineSource?: string;
+  metadata?: Record<string, unknown>;
 }
 
 // Legacy interfaces for backward compatibility
@@ -1898,8 +1953,14 @@ export class PhaseAlignmentValidator extends IntegrationEventComponent {
 /**
  * PerformanceRegressionMonitor - Phase 6 Performance Regression Monitoring with Phase 5 Baselines
  */
+interface PerformanceRegressionMonitorOptions {
+  useRealBackends?: boolean;
+  baselinePath?: string;
+}
+
 export class PerformanceRegressionMonitor extends IntegrationEventComponent {
-  private phase5Baselines: Map<string, PerformanceBaseline> = new Map();
+  private baselineDefinitions: Map<string, Phase6BaselineMetricDefinition> = new Map();
+  private baselineMetadata?: Phase6BaselineMetadata;
   private serviceOrchestrator: BackendServiceOrchestrator;
   private monitoringInterval?: ManagedInterval;
   private currentMetrics: Map<string, number> = new Map();
@@ -1907,15 +1968,113 @@ export class PerformanceRegressionMonitor extends IntegrationEventComponent {
   private mockValidator?: MockBackendContractValidator;
   private mockResponseFactory?: MockBackendResponseFactory;
 
-  constructor(serviceOrchestrator: BackendServiceOrchestrator, options: { useRealBackends?: boolean } = {}) {
+  constructor(serviceOrchestrator: BackendServiceOrchestrator, options: PerformanceRegressionMonitorOptions = {}) {
     super('performance-regression-monitor', 200);
     this.serviceOrchestrator = serviceOrchestrator;
     this.useRealBackends = options.useRealBackends ?? true;
-    this.initializePhase5Baselines();
+    this.loadBaselines(options.baselinePath);
     if (!this.useRealBackends) {
       this.mockValidator = new MockBackendContractValidator();
       this.mockResponseFactory = new MockBackendResponseFactory();
     }
+  }
+
+  private loadBaselines(baselinePath?: string): void {
+    if (baselinePath) {
+      try {
+        const loader = new Phase6PerformanceBaselineLoader(baselinePath);
+        const { data, map } = loader.load();
+        this.baselineDefinitions = map;
+        this.baselineMetadata = {
+          baselineRunId: data.baselineRunId,
+          capturedAt: data.capturedAt,
+          command: data.command,
+          source: data.source,
+        };
+        console.log(`PerformanceRegressionMonitor: Loaded baselines from ${baselinePath}`);
+        return;
+      } catch (error) {
+        console.warn(
+          `PerformanceRegressionMonitor: Failed to load baseline file ${baselinePath}, falling back to defaults:`,
+          error
+        );
+      }
+    }
+
+    this.setDefaultBaselines();
+  }
+
+  private setDefaultBaselines(): void {
+    const defaults: Phase6BaselineMetricDefinition[] = [
+      {
+        metric: 'multi_system_workflow_time',
+        baselineValue: 2000,
+        target: 1500,
+        criticalThreshold: -20,
+        unit: 'ms',
+        notes: 'Fallback baseline; replace with captured baseline artefact',
+      },
+      {
+        metric: 'cross_interface_consistency',
+        baselineValue: 5,
+        target: 3,
+        criticalThreshold: 10,
+        unit: '%',
+        notes: 'Fallback baseline; replace with captured baseline artefact',
+      },
+      {
+        metric: 'system_integration_latency',
+        baselineValue: 100,
+        target: 75,
+        criticalThreshold: -25,
+        unit: 'ms',
+        notes: 'Fallback baseline; replace with captured baseline artefact',
+      },
+      {
+        metric: 'memory_usage_under_load',
+        baselineValue: 50,
+        target: 40,
+        criticalThreshold: -30,
+        unit: 'MB',
+        notes: 'Fallback baseline; replace with captured baseline artefact',
+      },
+      {
+        metric: 'concurrent_request_handling',
+        baselineValue: 100,
+        target: 120,
+        criticalThreshold: -15,
+        unit: 'req/s',
+        higherIsBetter: true,
+        notes: 'Fallback baseline; replace with captured baseline artefact',
+      },
+      {
+        metric: 'service_startup_time',
+        baselineValue: 5000,
+        target: 3000,
+        criticalThreshold: -25,
+        unit: 'ms',
+        notes: 'Fallback baseline; replace with captured baseline artefact',
+      },
+      {
+        metric: 'interface_switching_performance',
+        baselineValue: 200,
+        target: 150,
+        criticalThreshold: -30,
+        unit: 'ms',
+        notes: 'Fallback baseline; replace with captured baseline artefact',
+      },
+      {
+        metric: 'real_time_state_sync',
+        baselineValue: 50,
+        target: 30,
+        criticalThreshold: -40,
+        unit: 'ms',
+        notes: 'Fallback baseline; replace with captured baseline artefact',
+      },
+    ];
+
+    this.baselineDefinitions = new Map(defaults.map((definition) => [definition.metric, definition]));
+    this.baselineMetadata = undefined;
   }
 
   /**
@@ -1927,6 +2086,8 @@ export class PerformanceRegressionMonitor extends IntegrationEventComponent {
     criticalRegressions: string[];
     performanceImprovement: number;
     overallScore: number;
+    baselineDefinitions: Phase6BaselineMetricDefinition[];
+    baselineMetadata?: Phase6BaselineMetadata;
   }> {
     console.log('PerformanceRegressionMonitor: Starting regression testing against Phase 5 baselines...');
 
@@ -1941,39 +2102,53 @@ export class PerformanceRegressionMonitor extends IntegrationEventComponent {
     let validBaselines = 0;
 
     // Test each performance metric against Phase 5 baselines
-    for (const [metric, baseline] of this.phase5Baselines.entries()) {
+    for (const [metric, baselineDefinition] of this.baselineDefinitions.entries()) {
       const currentValue = await this.measureCurrentMetric(metric);
-      
-      const higherIsBetter = this.isHigherBetterMetric(metric);
-      const improvement = baseline.phase5Baseline > 0
+      const baselineValue = baselineDefinition.baselineValue ?? 0;
+      const higherIsBetter = baselineDefinition.higherIsBetter ?? this.isHigherBetterMetric(metric);
+      const improvement = baselineValue > 0
         ? (higherIsBetter
-            ? ((currentValue - baseline.phase5Baseline) / baseline.phase5Baseline) * 100
-            : ((baseline.phase5Baseline - currentValue) / baseline.phase5Baseline) * 100)
+            ? ((currentValue - baselineValue) / baselineValue) * 100
+            : ((baselineValue - currentValue) / baselineValue) * 100)
         : 0;
 
-      const meetsTarget = higherIsBetter ? currentValue >= baseline.target : currentValue <= baseline.target;
+      const meetsTarget = higherIsBetter ? currentValue >= baselineDefinition.target : currentValue <= baselineDefinition.target;
       const isImproved = improvement >= 0;
-      const withinRegressionTolerance = improvement >= baseline.criticalThreshold;
+      const withinRegressionTolerance = improvement >= baselineDefinition.criticalThreshold;
 
       const passed = meetsTarget || isImproved || withinRegressionTolerance;
+      const deviationPercentage = improvement;
+      const regressionDetectedForMetric = improvement < baselineDefinition.criticalThreshold;
 
       const result: PerformanceBaseline = {
         metric,
-        phase5Baseline: baseline.phase5Baseline,
+        phase5Baseline: baselineValue,
         currentValue,
-        target: baseline.target,
+        target: baselineDefinition.target,
         passed,
         improvement,
-        criticalThreshold: baseline.criticalThreshold
+        criticalThreshold: baselineDefinition.criticalThreshold,
+        baselineValue,
+        actualValue: currentValue,
+        deviationPercentage,
+        unit: baselineDefinition.unit,
+        regressionDetected: regressionDetectedForMetric,
+        higherIsBetter,
+        sampleSize: baselineDefinition.sampleSize,
+        notes: baselineDefinition.notes,
+        baselineRunId: this.baselineMetadata?.baselineRunId,
+        capturedAt: this.baselineMetadata?.capturedAt,
+        sourceCommand: this.baselineMetadata?.command,
+        baselineSource: this.baselineMetadata?.source,
       };
 
       baselineComparison.push(result);
 
-      if (improvement < baseline.criticalThreshold) {
-        criticalRegressions.push(`${metric}: ${improvement.toFixed(2)}% regression (threshold: ${baseline.criticalThreshold}%)`);
+      if (regressionDetectedForMetric) {
+        criticalRegressions.push(`${metric}: ${improvement.toFixed(2)}% regression (threshold: ${baselineDefinition.criticalThreshold}%)`);
       }
 
-      if (baseline.phase5Baseline > 0) {
+      if (baselineValue > 0) {
         totalImprovement += improvement;
         validBaselines++;
       }
@@ -1990,7 +2165,9 @@ export class PerformanceRegressionMonitor extends IntegrationEventComponent {
       regressionDetected,
       criticalRegressions,
       performanceImprovement: averageImprovement,
-      overallScore
+      overallScore,
+      baselineDefinitions: Array.from(this.baselineDefinitions.values()).map((definition) => ({ ...definition })),
+      baselineMetadata: this.baselineMetadata ? { ...this.baselineMetadata } : undefined,
     };
 
     console.log(`PerformanceRegressionMonitor: Testing complete. Average improvement: ${averageImprovement.toFixed(2)}%, Score: ${overallScore}/100`);
@@ -2655,7 +2832,7 @@ export class PerformanceRegressionMonitor extends IntegrationEventComponent {
    * Update current metrics for continuous monitoring
    */
   private async updateCurrentMetrics(): Promise<void> {
-    for (const metric of this.phase5Baselines.keys()) {
+    for (const metric of this.baselineDefinitions.keys()) {
       try {
         const currentValue = await this.measureCurrentMetric(metric);
         this.currentMetrics.set(metric, currentValue);
@@ -2671,15 +2848,19 @@ export class PerformanceRegressionMonitor extends IntegrationEventComponent {
   private async checkForRegressions(): Promise<void> {
     const regressions: string[] = [];
 
-    for (const [metric, baseline] of this.phase5Baselines.entries()) {
+    for (const [metric, baseline] of this.baselineDefinitions.entries()) {
       const currentValue = this.currentMetrics.get(metric);
       
       if (currentValue !== undefined) {
-        const improvement = baseline.phase5Baseline > 0 
-          ? ((baseline.phase5Baseline - currentValue) / baseline.phase5Baseline) * 100 
+        const baselineValue = baseline.baselineValue ?? 0;
+        const higherIsBetter = baseline.higherIsBetter ?? this.isHigherBetterMetric(metric);
+        const improvement = baselineValue > 0
+          ? (higherIsBetter
+              ? ((currentValue - baselineValue) / baselineValue) * 100
+              : ((baselineValue - currentValue) / baselineValue) * 100)
           : 0;
 
-        if (Math.abs(improvement) > Math.abs(baseline.criticalThreshold) && improvement < 0) {
+        if (improvement < baseline.criticalThreshold) {
           regressions.push(`${metric}: ${improvement.toFixed(2)}% regression detected`);
         }
       }
@@ -2738,73 +2919,11 @@ export class PerformanceRegressionMonitor extends IntegrationEventComponent {
     return totalWeight > 0 ? Math.round(totalScore / totalWeight) : 0;
   }
 
-  /**
-   * Initialize Phase 5 performance baselines
-   */
-  private initializePhase5Baselines(): void {
-    // Phase 5 achieved exceptional performance improvements (50-100%)
-    // These baselines represent the targets for Phase 6
-    const baselines: Array<[string, Omit<PerformanceBaseline, 'currentValue' | 'passed' | 'improvement'>]> = [
-      ['multi_system_workflow_time', {
-        metric: 'multi_system_workflow_time',
-        phase5Baseline: 2000, // 2 seconds (improved from 4 seconds in Phase 4)
-        target: 1500, // Target: 1.5 seconds (25% improvement)
-        criticalThreshold: -20 // Alert if >20% regression
-      }],
-      ['cross_interface_consistency', {
-        metric: 'cross_interface_consistency',
-        phase5Baseline: 5, // 5% inconsistency (improved from 15% in Phase 4)
-        target: 3, // Target: 3% inconsistency
-        criticalThreshold: 10 // Alert if >10% absolute increase
-      }],
-      ['system_integration_latency', {
-        metric: 'system_integration_latency',
-        phase5Baseline: 100, // 100ms (improved from 300ms in Phase 4)
-        target: 75, // Target: 75ms
-        criticalThreshold: -25 // Alert if >25% regression
-      }],
-      ['memory_usage_under_load', {
-        metric: 'memory_usage_under_load',
-        phase5Baseline: 50, // 50MB (improved from 200MB in Phase 4)
-        target: 40, // Target: 40MB
-        criticalThreshold: -30 // Alert if >30% regression
-      }],
-      ['concurrent_request_handling', {
-        metric: 'concurrent_request_handling',
-        phase5Baseline: 100, // 100 req/s (improved from 25 req/s in Phase 4)
-        target: 120, // Target: 120 req/s
-        criticalThreshold: -15 // Alert if >15% regression
-      }],
-      ['service_startup_time', {
-        metric: 'service_startup_time',
-        phase5Baseline: 5000, // 5 seconds (improved from 15 seconds in Phase 4)
-        target: 3000, // Target: 3 seconds
-        criticalThreshold: -25 // Alert if >25% regression
-      }],
-      ['interface_switching_performance', {
-        metric: 'interface_switching_performance',
-        phase5Baseline: 200, // 200ms (improved from 800ms in Phase 4)
-        target: 150, // Target: 150ms
-        criticalThreshold: -30 // Alert if >30% regression
-      }],
-      ['real_time_state_sync', {
-        metric: 'real_time_state_sync',
-        phase5Baseline: 50, // 50ms (improved from 500ms in Phase 4)
-        target: 30, // Target: 30ms
-        criticalThreshold: -40 // Alert if >40% regression
-      }]
-    ];
-
-    baselines.forEach(([metric, baseline]) => {
-      this.phase5Baselines.set(metric, {
-        ...baseline,
-        currentValue: 0,
-        passed: false,
-        improvement: 0
-      });
-    });
-
-    console.log('PerformanceRegressionMonitor: Phase 5 baselines initialized');
+  getBaselineInfo(): { metadata?: Phase6BaselineMetadata; definitions: Phase6BaselineMetricDefinition[] } {
+    return {
+      metadata: this.baselineMetadata ? { ...this.baselineMetadata } : undefined,
+      definitions: Array.from(this.baselineDefinitions.values()).map((definition) => ({ ...definition })),
+    };
   }
 }
 
@@ -4286,6 +4405,11 @@ export class ProductionReadinessValidator extends IntegrationEventComponent {
 /**
  * Phase6IntegrationValidationSuite - Main orchestrator for Phase 6 integration validation
  */
+interface Phase6IntegrationValidationSuiteOptions {
+  useRealBackends?: boolean;
+  baselinePath?: string;
+}
+
 export class Phase6IntegrationValidationSuite extends IntegrationEventComponent {
   private serviceOrchestrator: BackendServiceOrchestrator;
   private workflowOrchestrator: MultiSystemWorkflowOrchestrator;
@@ -4293,19 +4417,24 @@ export class Phase6IntegrationValidationSuite extends IntegrationEventComponent 
   private crossInterfaceValidator: CrossInterfaceValidator;
   private productionValidator: ProductionReadinessValidator;
   private readonly useRealBackends: boolean;
+  private readonly baselinePath?: string;
 
   private validationHistory: Phase6ValidationReport[] = [];
 
-  constructor(options: { useRealBackends?: boolean } = {}) {
+  constructor(options: Phase6IntegrationValidationSuiteOptions = {}) {
     super('phase6-integration-validation-suite', 160);
     this.useRealBackends = options.useRealBackends ?? true;
+    this.baselinePath = options.baselinePath;
     
     // Initialize orchestrators and validators
     this.serviceOrchestrator = this.useRealBackends
       ? new RealBackendServiceOrchestrator()
       : new MockBackendServiceOrchestrator();
     this.workflowOrchestrator = new MultiSystemWorkflowOrchestrator(this.serviceOrchestrator, { useRealBackends: this.useRealBackends });
-    this.performanceMonitor = new PerformanceRegressionMonitor(this.serviceOrchestrator, { useRealBackends: this.useRealBackends });
+    this.performanceMonitor = new PerformanceRegressionMonitor(this.serviceOrchestrator, {
+      useRealBackends: this.useRealBackends,
+      baselinePath: this.baselinePath,
+    });
     this.crossInterfaceValidator = new CrossInterfaceValidator(this.serviceOrchestrator, { useRealBackends: this.useRealBackends });
     this.productionValidator = new ProductionReadinessValidator(
       this.serviceOrchestrator,
@@ -4394,7 +4523,9 @@ export class Phase6IntegrationValidationSuite extends IntegrationEventComponent 
             baselineComparison: performanceResults.baselineComparison,
             regressionDetected: performanceResults.regressionDetected,
             criticalRegressions: performanceResults.criticalRegressions,
-            performanceImprovement: performanceResults.performanceImprovement
+            performanceImprovement: performanceResults.performanceImprovement,
+            overallScore: performanceResults.overallScore,
+            baselineMetadata: performanceResults.baselineMetadata
           },
           productionReadiness: {
             deploymentValidation: productionResults.deploymentValidation,
@@ -4410,7 +4541,35 @@ export class Phase6IntegrationValidationSuite extends IntegrationEventComponent 
             performanceResults,
             crossInterfaceResults,
             productionResults
-          )
+          ),
+          baselineMetadata: performanceResults.baselineMetadata,
+          rawMetrics: {
+            workflows,
+            performance: {
+              baselineComparison: performanceResults.baselineComparison,
+              regressionDetected: performanceResults.regressionDetected,
+              criticalRegressions: performanceResults.criticalRegressions,
+              performanceImprovement: performanceResults.performanceImprovement,
+              overallScore: performanceResults.overallScore,
+              baselineDefinitions: performanceResults.baselineDefinitions,
+              baselineMetadata: performanceResults.baselineMetadata,
+            },
+            crossInterface: {
+              overallConsistency: crossInterfaceResults.overallConsistency,
+              interfaceResults: crossInterfaceResults.interfaceResults,
+              consistencyIssues: crossInterfaceResults.consistencyIssues,
+              recommendations: crossInterfaceResults.recommendations,
+            },
+            production: {
+              deploymentValidation: productionResults.deploymentValidation,
+              healthMonitoring: productionResults.healthMonitoring,
+              failoverTesting: productionResults.failoverTesting,
+              scalabilityTesting: productionResults.scalabilityTesting,
+              securityValidation: productionResults.securityValidation,
+              overallReadiness: productionResults.overallReadiness,
+            },
+            serviceHealth,
+          }
         };
 
         this.validationHistory.push(skippedReport);
@@ -4498,7 +4657,9 @@ export class Phase6IntegrationValidationSuite extends IntegrationEventComponent 
           baselineComparison: performanceResults.baselineComparison,
           regressionDetected: performanceResults.regressionDetected,
           criticalRegressions: performanceResults.criticalRegressions,
-          performanceImprovement: performanceResults.performanceImprovement
+          performanceImprovement: performanceResults.performanceImprovement,
+          overallScore: performanceResults.overallScore,
+          baselineMetadata: performanceResults.baselineMetadata
         },
         productionReadiness: {
           deploymentValidation: productionResults.deploymentValidation,
@@ -4514,7 +4675,35 @@ export class Phase6IntegrationValidationSuite extends IntegrationEventComponent 
           performanceResults,
           crossInterfaceResults,
           productionResults
-        )
+        ),
+        baselineMetadata: performanceResults.baselineMetadata,
+        rawMetrics: {
+          workflows,
+          performance: {
+            baselineComparison: performanceResults.baselineComparison,
+            regressionDetected: performanceResults.regressionDetected,
+            criticalRegressions: performanceResults.criticalRegressions,
+            performanceImprovement: performanceResults.performanceImprovement,
+            overallScore: performanceResults.overallScore,
+            baselineDefinitions: performanceResults.baselineDefinitions,
+            baselineMetadata: performanceResults.baselineMetadata,
+          },
+          crossInterface: {
+            overallConsistency: crossInterfaceResults.overallConsistency,
+            interfaceResults: crossInterfaceResults.interfaceResults,
+            consistencyIssues: crossInterfaceResults.consistencyIssues,
+            recommendations: crossInterfaceResults.recommendations,
+          },
+          production: {
+            deploymentValidation: productionResults.deploymentValidation,
+            healthMonitoring: productionResults.healthMonitoring,
+            failoverTesting: productionResults.failoverTesting,
+            scalabilityTesting: productionResults.scalabilityTesting,
+            securityValidation: productionResults.securityValidation,
+            overallReadiness: productionResults.overallReadiness,
+          },
+          serviceHealth,
+        }
       };
 
       // Store validation history
@@ -4714,6 +4903,7 @@ export class Phase6IntegrationValidationSuite extends IntegrationEventComponent 
     console.log('Phase6IntegrationValidationSuite: Checking system health...');
     
     const healthStartTime = Date.now();
+    const baselineInfo = this.performanceMonitor.getBaselineInfo();
     
     try {
       // Get current service statuses
@@ -4773,6 +4963,12 @@ export class Phase6IntegrationValidationSuite extends IntegrationEventComponent 
       });
       
       const passed = phase6ReadinessScore === 100;
+      const crossInterfaceSnapshot = {
+        overallConsistency: phase6ReadinessScore,
+        interfaceResults: {},
+        consistencyIssues: [] as string[],
+        recommendations: [] as string[]
+      };
 
       const report: Phase6ValidationReport = {
         reportId: nextPhase6Id('health_check'),
@@ -4793,7 +4989,9 @@ export class Phase6IntegrationValidationSuite extends IntegrationEventComponent 
           baselineComparison: [],
           regressionDetected: false,
           criticalRegressions: [],
-          performanceImprovement: 0
+          performanceImprovement: 0,
+          overallScore: 0,
+          baselineMetadata: baselineInfo.metadata
         },
         integrationMatrix: this.buildIntegrationMatrixFromFlags(passed),
         productionReadiness: {
@@ -4811,6 +5009,29 @@ export class Phase6IntegrationValidationSuite extends IntegrationEventComponent 
           improvements: passed
             ? ['System ready for Phase 6 deployment']
             : ['Improve service stability before Phase 6 deployment']
+        },
+        baselineMetadata: baselineInfo.metadata,
+        rawMetrics: {
+          workflows: [],
+          performance: {
+            baselineComparison: [],
+            regressionDetected: false,
+            criticalRegressions: [],
+            performanceImprovement: 0,
+            overallScore: 0,
+            baselineDefinitions: baselineInfo.definitions,
+            baselineMetadata: baselineInfo.metadata
+          },
+          crossInterface: crossInterfaceSnapshot,
+          production: {
+            deploymentValidation: passed,
+            healthMonitoring: passed,
+            failoverTesting: passed,
+            scalabilityTesting: passed,
+            securityValidation: passed,
+            overallReadiness: phase6ReadinessScore
+          },
+          serviceHealth
         }
       };
       

@@ -23,6 +23,7 @@ import { createCliRuntimeOutput } from '../utils/cli-runtime-output';
 const CLI_VERSION = '1.0.0';
 const DEFAULT_OUTPUT_DIR = './validation-reports';
 const DEFAULT_CONFIG_FILE = './phase6-validation-config.json';
+const DEFAULT_BASELINE_FILE = './validation-reports/phase6-baselines/phase5-stage6-baseline.json';
 const scriptOutput = createCliRuntimeOutput({ context: 'phase6-integration-validation' });
 
 type ColumnAlignment = 'left' | 'right' | 'center';
@@ -88,11 +89,13 @@ class Phase6ValidationCLI {
   private config: ValidationConfig;
   private outputDir: string;
   private useRealBackends: boolean;
+  private baselineFile?: string;
 
   constructor() {
     this.config = this.loadDefaultConfig();
     this.outputDir = DEFAULT_OUTPUT_DIR;
     this.useRealBackends = this.parseEnvUseRealBackends();
+    this.baselineFile = DEFAULT_BASELINE_FILE;
     this.configureBackendEnv(this.useRealBackends);
   }
 
@@ -148,6 +151,7 @@ class Phase6ValidationCLI {
       .description('Execute complete Phase 6 integration validation')
       .option('-c, --config <file>', 'Configuration file path', DEFAULT_CONFIG_FILE)
       .option('-o, --output <dir>', 'Output directory for reports', DEFAULT_OUTPUT_DIR)
+      .option('--baseline <file>', 'Performance baseline JSON file', DEFAULT_BASELINE_FILE)
       .option('--no-performance', 'Disable performance regression testing')
       .option('--no-cross-interface', 'Disable cross-interface validation')
       .option('--no-production', 'Disable production readiness validation')
@@ -164,6 +168,7 @@ class Phase6ValidationCLI {
       .command('health')
       .description('Check system health and service availability')
       .option('-c, --config <file>', 'Configuration file path', DEFAULT_CONFIG_FILE)
+      .option('--baseline <file>', 'Performance baseline JSON file', DEFAULT_BASELINE_FILE)
       .option('--use-real-backends', 'Check health using real backend services (default: mocks)')
       .option('-v, --verbose', 'Enable verbose logging')
       .action(async (options) => {
@@ -227,7 +232,8 @@ class Phase6ValidationCLI {
 
       // Override configuration with CLI options
       this.applyCliOptionsToConfig(options);
-      this.outputDir = options.output;
+      this.baselineFile = this.resolveBaselinePath(options);
+      this.outputDir = this.config.reporting.outputDir;
 
       // Ensure output directory exists
       if (!fs.existsSync(this.outputDir)) {
@@ -238,7 +244,13 @@ class Phase6ValidationCLI {
       scriptOutput.info('📋 Initializing Phase 6 validation suite...');
       const useRealBackends = this.shouldUseRealBackends(options);
       this.configureBackendEnv(useRealBackends);
-      this.validationSuite = new Phase6IntegrationValidationSuite({ useRealBackends });
+      this.validationSuite = new Phase6IntegrationValidationSuite({
+        useRealBackends,
+        baselinePath: this.baselineFile,
+      });
+      if (this.baselineFile) {
+        scriptOutput.info(`📦 Performance baselines: ${this.baselineFile}`);
+      }
       
       // Setup progress monitoring
       this.setupProgressMonitoring();
@@ -313,10 +325,16 @@ class Phase6ValidationCLI {
         this.config = { ...this.config, ...JSON.parse(fs.readFileSync(options.config, 'utf8')) };
       }
 
+      this.applyCliOptionsToConfig(options);
+      this.baselineFile = this.resolveBaselinePath(options);
+
       // Initialize validation suite for health check
       const useRealBackends = this.shouldUseRealBackends(options);
       this.configureBackendEnv(useRealBackends);
-      this.validationSuite = new Phase6IntegrationValidationSuite({ useRealBackends });
+      this.validationSuite = new Phase6IntegrationValidationSuite({
+        useRealBackends,
+        baselinePath: this.baselineFile,
+      });
       await this.validationSuite.initialize();
 
       // Check service health
@@ -384,8 +402,13 @@ class Phase6ValidationCLI {
         return;
       }
 
+      this.applyCliOptionsToConfig(options);
+      this.baselineFile = this.resolveBaselinePath(options);
       this.configureBackendEnv(useRealBackends);
-      this.validationSuite = new Phase6IntegrationValidationSuite({ useRealBackends });
+      this.validationSuite = new Phase6IntegrationValidationSuite({
+        useRealBackends,
+        baselinePath: this.baselineFile,
+      });
       await this.validationSuite.initialize();
 
       if (action === 'start') {
@@ -422,8 +445,13 @@ class Phase6ValidationCLI {
 
     try {
       const useRealBackends = this.shouldUseRealBackends(options);
+      this.applyCliOptionsToConfig(options);
+      this.baselineFile = this.resolveBaselinePath(options);
       this.configureBackendEnv(useRealBackends);
-      this.validationSuite = new Phase6IntegrationValidationSuite({ useRealBackends });
+      this.validationSuite = new Phase6IntegrationValidationSuite({
+        useRealBackends,
+        baselinePath: this.baselineFile,
+      });
       await this.validationSuite.initialize();
 
       const services = await this.validationSuite.getAllServiceStatuses();
@@ -540,9 +568,26 @@ class Phase6ValidationCLI {
       this.config.validation.enableProductionReadiness = false;
     }
 
+    if (options.baseline) {
+      this.config.validation.performanceBaselinesFile = options.baseline;
+    }
+
     // Override reporting settings
     this.config.reporting.outputDir = options.output || this.config.reporting.outputDir;
     this.config.reporting.exportFormat = options.format || this.config.reporting.exportFormat;
+  }
+
+  private resolveBaselinePath(options?: any): string | undefined {
+    if (options && options.baseline) {
+      return path.resolve(options.baseline);
+    }
+    if (process.env.PHASE6_BASELINE_FILE) {
+      return path.resolve(process.env.PHASE6_BASELINE_FILE);
+    }
+    if (this.config.validation.performanceBaselinesFile) {
+      return path.resolve(this.config.validation.performanceBaselinesFile);
+    }
+    return path.resolve(DEFAULT_BASELINE_FILE);
   }
 
   /**
@@ -585,8 +630,20 @@ class Phase6ValidationCLI {
 
     // Always save JSON
     const jsonPath = path.join(this.outputDir, `${baseFilename}.json`);
-    fs.writeFileSync(jsonPath, JSON.stringify(report, null, 2));
+    const summaryJson = JSON.stringify(report, (key, value) => (key === 'rawMetrics' ? undefined : value), 2);
+    fs.writeFileSync(jsonPath, summaryJson);
     scriptOutput.info(`📄 JSON report saved: ${jsonPath}`);
+
+    if (report.rawMetrics) {
+      const rawPath = path.join(this.outputDir, `${baseFilename}.raw.json`);
+      const rawPayload = {
+        generatedAt: new Date().toISOString(),
+        baselineMetadata: report.baselineMetadata ?? report.performanceRegression?.baselineMetadata,
+        rawMetrics: report.rawMetrics,
+      };
+      fs.writeFileSync(rawPath, JSON.stringify(rawPayload, null, 2));
+      scriptOutput.info(`📄 Raw metrics saved: ${rawPath}`);
+    }
 
     // Generate additional formats as requested
     if (format === 'html' || format === 'all') {
@@ -619,6 +676,13 @@ class Phase6ValidationCLI {
     scriptOutput.info(`Multi-System Workflows: ${report.realIntegrationSummary.successfulWorkflows}/${report.realIntegrationSummary.totalWorkflows} successful`);
     scriptOutput.info(`Cross-Interface Consistency: ${report.realIntegrationSummary.crossInterfaceConsistency.toFixed(1)}%`);
     scriptOutput.info(`Average Workflow Time: ${report.realIntegrationSummary.averageWorkflowTime.toFixed(1)}ms`);
+    scriptOutput.info(`Performance Score: ${report.performanceRegression.overallScore}/100`);
+    if (report.performanceRegression.baselineMetadata?.baselineRunId) {
+      const captured = report.performanceRegression.baselineMetadata.capturedAt
+        ? ` @ ${report.performanceRegression.baselineMetadata.capturedAt}`
+        : '';
+      scriptOutput.info(`Baseline Run: ${report.performanceRegression.baselineMetadata.baselineRunId}${captured}`);
+    }
     
     scriptOutput.info('\nService Health:');
     Object.entries(report.serviceHealth).forEach(([service, health]) => {
@@ -717,8 +781,9 @@ class Phase6ValidationCLI {
     </ul>` : ''}
 
     <h2>Performance Baselines</h2>
+    <p><strong>Signal coverage:</strong> ${report.status === 'skipped' ? 'Estimated (mock instrumentation only)' : 'Real instrumentation (live backend data)'}.</p>
     <table>
-        <tr><th>Metric</th><th>Baseline</th><th>Actual</th><th>Deviation</th><th>Status</th></tr>
+        <tr><th>Metric</th><th>Baseline</th><th>Actual</th><th>Deviation</th><th>Status</th><th>Signal Type</th></tr>
         ${report.performanceRegression.baselineComparison.map(baseline => `
         <tr>
             <td>${baseline.metric}</td>
@@ -726,6 +791,7 @@ class Phase6ValidationCLI {
             <td>${(baseline.actualValue ?? 0).toFixed(1)}${baseline.unit}</td>
             <td>${(baseline.deviationPercentage ?? 0).toFixed(1)}%</td>
             <td class="${baseline.regressionDetected ? 'failure' : 'success'}">${baseline.regressionDetected ? '❌ Regression' : '✅ OK'}</td>
+            <td>${report.status === 'skipped' ? 'Estimated (Mock)' : 'Real'}</td>
         </tr>
         `).join('')}
     </table>
@@ -774,10 +840,12 @@ ${report.recommendations.high.map(rec => `- ${rec}`).join('\n')}
 
 ## Performance Baselines
 
-| Metric | Baseline | Actual | Deviation | Status |
-|--------|----------|--------|-----------|--------|
+> Signal coverage: ${report.status === 'skipped' ? 'Estimated (mock instrumentation only)' : 'Real instrumentation'}
+
+| Metric | Baseline | Actual | Deviation | Status | Signal Type |
+|--------|----------|--------|-----------|--------|--------------|
 ${report.performanceRegression.baselineComparison.map(baseline => 
-`| ${baseline.metric} | ${(baseline.baselineValue ?? 0).toFixed(1)}${baseline.unit} | ${(baseline.actualValue ?? 0).toFixed(1)}${baseline.unit} | ${(baseline.deviationPercentage ?? 0).toFixed(1)}% | ${baseline.regressionDetected ? '❌ Regression' : '✅ OK'} |`
+`| ${baseline.metric} | ${(baseline.baselineValue ?? 0).toFixed(1)}${baseline.unit} | ${(baseline.actualValue ?? 0).toFixed(1)}${baseline.unit} | ${(baseline.deviationPercentage ?? 0).toFixed(1)}% | ${baseline.regressionDetected ? '❌ Regression' : '✅ OK'} | ${report.status === 'skipped' ? 'Estimated (Mock)' : 'Real'} |`
 ).join('\n')}
 
 ---
@@ -808,7 +876,8 @@ ${report.performanceRegression.baselineComparison.map(baseline =>
       validation: {
         enablePerformanceRegression: true,
         enableCrossInterfaceValidation: true,
-        enableProductionReadiness: true
+        enableProductionReadiness: true,
+        performanceBaselinesFile: DEFAULT_BASELINE_FILE
       },
       reporting: {
         outputDir: DEFAULT_OUTPUT_DIR,

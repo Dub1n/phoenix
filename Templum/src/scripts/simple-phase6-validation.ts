@@ -50,16 +50,20 @@ interface ServiceHealth {
   lastHealthCheck: number;
 }
 
+type ServiceHealthMap = Record<'haruspex' | 'pcl' | 'templum', ServiceHealth>;
+
+interface SimplePhase6RawMetrics {
+  tests: Array<{ name: string; durationMs: number; passed: boolean }>;
+  serviceHealthSnapshot: ServiceHealthMap;
+  durationMs: number;
+}
+
 interface ValidationReport {
   reportId: string;
   generatedAt: number;
   phase6ReadinessScore: number;
   phase6ReadinessScoreNote: string;
-  serviceHealth: {
-    haruspex: ServiceHealth;
-    pcl: ServiceHealth;
-    templum: ServiceHealth;
-  };
+  serviceHealth: ServiceHealthMap;
   testResults: {
     totalTests: number;
     passedTests: number;
@@ -71,6 +75,7 @@ interface ValidationReport {
     high: string[];
     medium: string[];
   };
+  rawMetrics: SimplePhase6RawMetrics;
 }
 
 class SimplePhase6Validator {
@@ -97,7 +102,7 @@ class SimplePhase6Validator {
     
     // Run integration tests
     console.log('🔄 Running integration tests...');
-    const testResults = await this.runIntegrationTests();
+    const { summary: testResults, details: testDetails } = await this.runIntegrationTests();
     
     // Calculate readiness score
     const readinessScore = this.calculateReadinessScore(serviceHealth, testResults);
@@ -114,7 +119,12 @@ class SimplePhase6Validator {
       phase6ReadinessScoreNote: READINESS_SCORE_NOTE,
       serviceHealth,
       testResults,
-      recommendations: this.generateRecommendations(readinessScore, serviceHealth, testResults)
+      recommendations: this.generateRecommendations(readinessScore, serviceHealth, testResults),
+      rawMetrics: {
+        tests: testDetails,
+        serviceHealthSnapshot: serviceHealth,
+        durationMs: duration
+      }
     };
 
     return report;
@@ -156,7 +166,10 @@ class SimplePhase6Validator {
   /**
    * Run simplified integration tests
    */
-  private async runIntegrationTests(): Promise<ValidationReport['testResults']> {
+  private async runIntegrationTests(): Promise<{
+    summary: ValidationReport['testResults'];
+    details: Array<{ name: string; durationMs: number; passed: boolean }>;
+  }> {
     const tests = [
       'Service connectivity test',
       'Interface switching test',
@@ -168,6 +181,7 @@ class SimplePhase6Validator {
 
     let passedTests = 0;
     const responseTimes: number[] = [];
+    const testDetails: Array<{ name: string; durationMs: number; passed: boolean }> = [];
 
     for (const test of tests) {
       const startTime = performance.now();
@@ -187,15 +201,20 @@ class SimplePhase6Validator {
       } else {
         console.log(`  ❌ ${test} - ${responseTime.toFixed(1)}ms`);
       }
+
+      testDetails.push({ name: test, durationMs: responseTime, passed });
     }
 
     const averageResponseTime = responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length;
 
     return {
-      totalTests: tests.length,
-      passedTests,
-      failedTests: tests.length - passedTests,
-      averageResponseTime
+      summary: {
+        totalTests: tests.length,
+        passedTests,
+        failedTests: tests.length - passedTests,
+        averageResponseTime
+      },
+      details: testDetails
     };
   }
 
@@ -281,9 +300,21 @@ class SimplePhase6Validator {
 
     // Always save JSON
     const jsonPath = path.join(this.outputDir, `${baseFilename}.json`);
-    fs.writeFileSync(jsonPath, JSON.stringify(report, null, 2));
+    const summaryJson = JSON.stringify(report, (key, value) => (key === 'rawMetrics' ? undefined : value), 2);
+    fs.writeFileSync(jsonPath, summaryJson);
     savedFiles.push(jsonPath);
     console.log(`📄 JSON report saved: ${jsonPath}`);
+
+    if (report.rawMetrics) {
+      const rawPath = path.join(this.outputDir, `${baseFilename}.raw.json`);
+      const rawPayload = {
+        generatedAt: new Date().toISOString(),
+        rawMetrics: report.rawMetrics
+      };
+      fs.writeFileSync(rawPath, JSON.stringify(rawPayload, null, 2));
+      savedFiles.push(rawPath);
+      console.log(`📄 Raw metrics saved: ${rawPath}`);
+    }
 
     // Generate additional formats
     if (format === 'html' || format === 'all') {

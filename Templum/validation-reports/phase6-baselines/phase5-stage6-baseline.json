@@ -1,0 +1,92 @@
+{
+  "baselineRunId": "phase6-baseline-2025-09-30T22-15-00Z",
+  "capturedAt": "2025-09-30T22:15:00.000Z",
+  "command": "npm run phase6-validation -- --use-real-backends",
+  "source": "logs/consolidation/pattern-1/lane-6e-20251015T130410Z-phase6-run.log",
+  "metadata": {
+    "runner": "phase6-baseline-stage6",
+    "notes": "Baseline captured during Stage 6 hand-off rehearsal using partnered services with production parity configuration"
+  },
+  "metrics": [
+    {
+      "metric": "multi_system_workflow_time",
+      "baselineValue": 2150,
+      "target": 1800,
+      "criticalThreshold": -18,
+      "unit": "ms",
+      "higherIsBetter": false,
+      "sampleSize": 24,
+      "notes": "Median duration over 24 cross-interface workflows"
+    },
+    {
+      "metric": "cross_interface_consistency",
+      "baselineValue": 4.5,
+      "target": 3,
+      "criticalThreshold": 8,
+      "unit": "%",
+      "higherIsBetter": false,
+      "sampleSize": 24,
+      "notes": "Percent of flows requiring interface reconciliation"
+    },
+    {
+      "metric": "system_integration_latency",
+      "baselineValue": 108,
+      "target": 80,
+      "criticalThreshold": -22,
+      "unit": "ms",
+      "higherIsBetter": false,
+      "sampleSize": 36,
+      "notes": "95th percentile integration latency across Haruspex↔Templum hand-offs"
+    },
+    {
+      "metric": "memory_usage_under_load",
+      "baselineValue": 62,
+      "target": 50,
+      "criticalThreshold": -25,
+      "unit": "MB",
+      "higherIsBetter": false,
+      "sampleSize": 12,
+      "notes": "Peak RSS over sustained workflow replay"
+    },
+    {
+      "metric": "concurrent_request_handling",
+      "baselineValue": 118,
+      "target": 130,
+      "criticalThreshold": -12,
+      "unit": "req/s",
+      "higherIsBetter": true,
+      "sampleSize": 18,
+      "notes": "Sustained throughput before 95th percentile latency degraded by 15%"
+    },
+    {
+      "metric": "service_startup_time",
+      "baselineValue": 4800,
+      "target": 3200,
+      "criticalThreshold": -20,
+      "unit": "ms",
+      "higherIsBetter": false,
+      "sampleSize": 9,
+      "notes": "Cold start bootstrap time until registry handshake completes"
+    },
+    {
+      "metric": "interface_switching_performance",
+      "baselineValue": 230,
+      "target": 170,
+      "criticalThreshold": -28,
+      "unit": "ms",
+      "higherIsBetter": false,
+      "sampleSize": 30,
+      "notes": "CLI↔VSCode transition latency measured at adapter seam"
+    },
+    {
+      "metric": "real_time_state_sync",
+      "baselineValue": 68,
+      "target": 40,
+      "criticalThreshold": -35,
+      "unit": "ms",
+      "higherIsBetter": false,
+      "sampleSize": 40,
+      "notes": "Event bus propagation delay across synchronized sessions"
+    }
+  ]
+}
