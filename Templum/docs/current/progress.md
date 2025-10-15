@@ -58,8 +58,8 @@ last_updated: 2025-10-15
   Progress 100% — CLI adapters now render bordered procedural windows exclusively from `EnhancedWindowSystem.renderWindowSet`, the fallback ASCII scaffold has been removed, and the new `CLI Procedural Windows` e2e coverage (`npm run test -- --runTestsByPath tests/e2e/e2e-complete-workflows.test.ts`) asserts both rendered output and the absence of legacy banners. Full coverage remains gated on the `babel-plugin-istanbul` tooling fix tracked under test architecture governance.
 - [~] [CLI generator uses skin metadata](../../dev/tasks/cli-skin-generator.md)
   Progress 10% — No dedicated generator module; CLI adapters emit fallback text rather than payload-derived menus.
-- [ ] [Minimal MCP terminal bridge for agent CLI validation](../../dev/tasks/minimal-mcp-terminal-bridge.md)
-  Progress 90% — Stage 1–4 complete (minimal FastMCP bridge live, legacy MCP architecture removed, in-repo MCP integration stripped from validation system). Pending: capture smoke-test evidence and wire automated validation before closing the task.
+- [x] [Minimal MCP terminal bridge for agent CLI validation](../../dev/tasks/minimal-mcp-terminal-bridge.md)
+  Progress 100% — Restored the Jest harness by adding an explicit CommonJS export shim in `src/mcp-channel/src/node-pty-types.ts` and covering it with `src/mcp-channel/src/__tests__/node-pty-types.cjs.test.ts`. `npm test -- --runTestsByPath src/mcp-channel/src/__tests__/node-pty-types.cjs.test.ts tests/service-discovery/pty-mcp-server-test-harness.test.ts` now runs without the previous ESM import failure; coverage thresholds remain tracked through the broader suite.
 
 ## Interface Delivery
 
@@ -78,8 +78,8 @@ last_updated: 2025-10-15
   Progress 0% — Requires consuming Phoenix Code Lite workflow metadata so deterministic checks auto-complete with evidence links while residual manual steps surface targeted prompts (Development-Process-1.pdf Practical Developer Guide, pp.14–22).
 - [ ] [Templum backlog tooling visibility](../../dev/tasks/backlog-tooling-visibility.md)
   Progress 0% — Awaiting final backlog tooling decision from Phoenix Code Lite to update CLI/VS Code onboarding and help flows (Development-Process-1.pdf Software Comparison, pp.29–31).
-- [ ] [Restore consolidation CLI shared parser](../../dev/tasks/cli-shared-parser-restoration.md)
-  Progress 80% — Updated all consolidate workflows and tests to import directly from `dev/architecture/consolidation-scripts/cli-shared-parser.mjs` / `cli-command-registry.mjs`, removed the temporary top-level shims, and reran the probe (`npm run test -- --runTestsByPath tests/scripts/cli-shared-parser.test.ts --runInBand --no-cache`). Follow-up: close out the restoration task once documentation sign-off is captured.
+- [x] [Restore consolidation CLI shared parser](../../dev/tasks/cli-shared-parser-restoration.md)
+  Progress 100% — Consolidate commands now normalise argv via the shared parser and descriptor registry (`dev/architecture/consolidation-scripts/cli-command-stub.mjs`, `cli-shared-parser.mjs`), regression coverage stays green (`tests/scripts/cli-shared-parser.test.ts`, `tests/scripts/phase6-validation-cli.test.ts`), and documentation/task trackers were refreshed on 2025-10-15.
 
 ## Quality & Runtime Stability
 

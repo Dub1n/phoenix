@@ -65,3 +65,11 @@ export function spawn(file: string, args: string[], options: SpawnOptions): IPty
 
   return mockPty;
 }
+
+// Ensure CommonJS consumers (e.g. Jest harnesses that require compiled output directly)
+// receive the mock API without needing a `.default` access pattern.
+const cjsExports = { spawn };
+
+if (typeof module !== 'undefined' && module.exports) {
+  Object.assign(module.exports, cjsExports);
+}

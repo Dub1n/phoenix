@@ -3,7 +3,7 @@ doc-type: architecture-spec
 title: MCP ↔ PTY Bridge Blueprint
 tags: [templum, cli, mcp, pty, automation]
 status: draft
-last_updated: 2025-10-09
+last_updated: 2025-10-15
 ---
 
 # Minimal MCP Terminal Bridge — Blueprint & Stage 2 Implementation
@@ -12,7 +12,7 @@ last_updated: 2025-10-09
 
 - **Purpose:** Provide a lean, stateful MCP transport that lets agents press keys, send text, and see the resulting Templum CLI screen without the “enterprise” MCP scaffolding (health monitors, caches, registry hooks).
 - **Outcome:** A FastMCP-based Python service that launches the compiled Templum CLI inside a pseudo-terminal, exposes three MCP tools (`create_session`, `send_input`, `destroy_session`), and returns both raw and ANSI-stripped buffers so agents can reason about the UI.
-- **Implementation Status:** Stage 2 scaffolding lives in `scripts/mcp/minimal_terminal_bridge/server.py`; it provides the session store, PTY reader, idle reaper, and unified input tool emitting raw/clean buffers. Stage 3 adds `get_state` + diff packaging so agents can request snapshots without mutating CLI state.
+- **Implementation Status:** Stage 2 scaffolding lives in `scripts/mcp/minimal_terminal_bridge/server.py`; it provides the session store, PTY reader, idle reaper, and unified input tool emitting raw/clean buffers. Stage 3 adds `get_state` + diff packaging so agents can request snapshots without mutating CLI state. 2025-10-15: Added a CommonJS export shim for the mock `node-pty` module so Jest-based harnesses can require the bridge helpers without ESM loaders.
 - **Interface Touchpoints:** The bridge shells out to `node dist/src/cli-entry.js` (same binary exposed by the `templum` npm bin). No changes inside Templum core—`ServiceDiscovery`, `ConnectionFactory`, and the CLI adapter operate unchanged; the bridge only orchestrates the terminal process and buffers.
 - **Follow-up:** Subsequent stages (per `dev/tasks/minimal-mcp-terminal-bridge.md`) implement the tools, add buffer/diff helpers, and formally remove the legacy MCP integration plans from the documentation set.
 
@@ -142,6 +142,7 @@ No changes required in `TemplumCore` or the CLI adapter—this bridge is a sidec
 - Added a historical disclaimer to `dev/auto/agent-cli-interaction-analysis.md` so future work recognises the minimal bridge as the active solution.
 - Confirmed no runtime dependencies remain on the deprecated health/caching scaffolding; the bridge relies solely on FastMCP + PTY helpers.
 - Captured a sanity run using `/bin/sh`: `.venv/bin/python` harness (`create_session` → `send_input` "echo hello" → `get_state` diff → `destroy_session`) verifying raw/clean buffer updates and diff packaging.
+- Verified Jest harness compatibility via `npm test -- --runTestsByPath src/mcp-channel/src/__tests__/node-pty-types.cjs.test.ts tests/service-discovery/pty-mcp-server-test-harness.test.ts`, ensuring the CommonJS shim prevents the prior import error.
 - Removed the in-repo MCP integration surface (`MCPIntegrationManager`, CLI validation component, templum config fields) so the bridge is purely a developer tool; validation now skips MCP scenarios by default.
 - Next validation step: rerun the same cycle with the built Templum CLI once it boots reliably and log evidence in the task file before closing the task.
 

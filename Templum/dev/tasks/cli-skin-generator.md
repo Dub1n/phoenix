@@ -7,7 +7,7 @@
 
 ## Prerequisites
 
-- [ ] Skin payload consumption powering full UI without hardcoding (see dev/tasks/skin-payload-consumption.md) — ensures the orchestrator delivers complete skin descriptors to CLI consumers.
+- [x] Skin payload consumption powering full UI without hardcoding (see dev/tasks/skin-payload-consumption.md) — ensures the orchestrator delivers complete skin descriptors to CLI consumers.
 
 ## Implementation Steps
 
@@ -20,9 +20,6 @@
 - [ ] Refactor `src/interfaces/cli-adapter-abstracted.ts`, `src/interfaces/adaptive-cli-integration.ts`, and `src/interfaces/cli-display-consistency-engine.ts` to rely on the new generator output (menu tree, navigation stack, command bindings) and strip out hardcoded defaults.
 - [ ] Ensure orchestrator plumbing (`src/core/templum-core.ts` `TemplumCore.loadSkin`, `src/core/adapter-registry.ts` `TemplumAdapterRegistry.buildCLIAdapter`) supplies the generator with validated skins and handles error surfacing when metadata is incomplete, plugging into observability hooks for telemetry.
 - [ ] Update documentation (`docs/current/architecture-spec.md` Interface Delivery + Skin-Driven Rendering sections) describing the metadata-driven CLI pipeline and log the migration in `docs/current/progress.md` once complete.
-
-### Blocked Actions (pending Skin payload consumption powering full UI without hardcoding)
-
 - [ ] Finalize fallback removal and legacy template deletion once the metadata-to-CLI pipeline is proven stable in tests.
 - [ ] Wire CLI generator output into `TemplumUniversalSessionManager` to keep CLI state in sync with other adapters using shared skin-derived descriptors.
 
