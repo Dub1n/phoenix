@@ -1,0 +1,332 @@
+npx ts-node --transpile-only <<'TS'
+import { CLIInterfaceAdapter } from './src/interfaces/cli-adapter-abstracted';
+import type { UniversalSkinDefinition, InterfaceType, CommandResult, CommandContext, TemplumSystemStatus, InterfaceAdapter } from './src/types/templum-types';
+import type { TemplumSessionManagerContract, TemplumSessionState, TemplumSessionMetrics, SessionStateUpdate } from './src/session/universal-session-manager.types';
+import type { ITemplumOrchestrator, IInterfaceAdapter } from './src/interfaces/templum-orchestrator-interface';
+import type { ISkinEngine, IBackendServiceRouter, IResourceManager } from './src/interfaces/core-component-interfaces';
+import type { ResourceUsage } from './src/core/templum-resource-manager';
+import type { ManualOverrideDescriptor, ManualOverrideOptions, ManualOverrideSnapshot, ManualOverrideClearResult } from './src/backend/manual-override-manager';
+import { createFormatter } from './src/utils/terminal-formatter';
+import { EnhancedWindowSystem } from './src/interfaces/enhanced-window-system';
+import { UniversalSkinEngine } from './src/skin/universal-skin-engine';
+import { EventEmitter } from 'events';
+
+// Monkey-patch the window system to return deterministic windows for the demo
+const demoRenderWindowSet = async (_skin: UniversalSkinDefinition, context: { menuId?: string; navigationHistory?: string[] }) => {
+  const activeMenuId = context.menuId ?? 'main-menu';
+  return {
+    success: true,
+    mode: 'enhanced' as const,
+    capabilities: {
+      supportsStructuredWindows: true,
+      supportsUnicodeBorders: true,
+      fallbackMode: 'unicode' as const,
+      terminalCapabilities: {
+        supportsAnsi: true,
+        supportsUnicode: true,
+        supportsBoxDrawing: true,
+        supportsColor: true,
+        supportsTrueColor: false,
+        supportsEmojis: false,
+        supportsMouseInput: false,
+        supportsKeyboardShortcuts: true,
+        screenReaderCompatible: true,
+        renderingSpeed: 'standard',
+        width: 80,
+        height: 24,
+        name: 'demo-terminal',
+      },
+      recommendedTheme: {},
+      themeMetrics: { coverage: 1, overrides: [] },
+    },
+    renderTime: 5,
+    windowSet: {
+      activeMenuId,
+      navigationHistory: context.navigationHistory ?? ['root'],
+      windows: [
+        {
+          menuId: 'main-menu',
+          title: 'Root Operations',
+          output:
+`┌──────────────────────────── Root Operations ────────────────────────────┐\n│                                                                          │\n│ 1. Launch Workspace                                                      │\n│ 2. Inspect Assets ➜                                                      │\n│                                                                          │\n│ Navigation: [Home]                                                       │\n└──────────────────────────────────────────────────────────────────────────┘`,
+          layout: { totalWidth: 72 },
+          content: {
+            title: 'Root Operations',
+            sections: [
+              {
+                id: 'items',
+                items: [
+                  { id: 'launch', label: '1. Launch Workspace' },
+                  { id: 'inspect', label: '2. Inspect Assets ➜' },
+                ],
+              },
+            ],
+          },
+          navigation: {
+            breadcrumb: ['Home'],
+            items: [{ id: 'help', label: 'Help' }],
+          },
+          capabilities: { supportsUnicode: true, supportsBoxDrawing: true, supportsColor: true, width: 80, height: 24 },
+          isNested: false,
+        },
+        {
+          menuId: 'inspect-menu',
+          parentMenuId: 'main-menu',
+          title: 'Inspect Assets',
+          output:
+`┌──────────────────────── Inspect Assets ─────────────────────────┐\n│                                                                  │\n│ 1. Open Asset                                                    │\n│ 2. Close Asset                                                   │\n│                                                                  │\n│ Navigation: Home › Inspect Assets                                │\n└──────────────────────────────────────────────────────────────────┘`,
+          layout: { totalWidth: 66 },
+          content: {
+            title: 'Inspect Assets',
+            sections: [
+              {
+                id: 'inspect-items',
+                items: [
+                  { id: 'open', label: '1. Open Asset' },
+                  { id: 'close', label: '2. Close Asset' },
+                ],
+              },
+            ],
+          },
+          navigation: {
+            breadcrumb: ['Home', 'Inspect Assets'],
+            items: [{ id: 'back', label: 'Back' }],
+          },
+          capabilities: { supportsUnicode: true, supportsBoxDrawing: true, supportsColor: true, width: 80, height: 24 },
+          isNested: true,
+        },
+      ],
+    },
+  };
+};
+(EnhancedWindowSystem.prototype as any).renderWindowSet = demoRenderWindowSet;
+
+class DemoSessionManager extends EventEmitter implements TemplumSessionManagerContract {
+  private readonly sessionId = 'cli-session';
+  private snapshot: TemplumSessionState;
+
+  constructor() {
+    super();
+    const now = new Date();
+    this.snapshot = {
+      sessionId: this.sessionId,
+      startTime: now,
+      activeInterface: 'cli',
+      preferences: {},
+      capabilities: [],
+      activeBackends: [],
+      loadedSkins: [],
+      interfaceHistory: ['cli'],
+      sessionMetrics: this.createMetrics(),
+      lastActivity: now,
+      navigationHistory: ['main-menu'],
+      currentMenu: 'main-menu',
+      interactionMode: 'menu',
+      commandHistory: [],
+    };
+  }
+
+  private createMetrics(): TemplumSessionMetrics {
+    return {
+      interfaceSwitches: 0,
+      backendInteractions: 0,
+      commandsExecuted: 0,
+      sessionsCreated: 1,
+      totalSkinLoads: 0,
+      averageSwitchTime: 0,
+      completion: { completed: false },
+    } as TemplumSessionMetrics;
+  }
+
+  async initialize(): Promise<void> { return; }
+  attachOrchestrator(): void { return; }
+  async ensureSessionForInterface(interfaceType: InterfaceType): Promise<string> {
+    this.snapshot.activeInterface = interfaceType;
+    return this.sessionId;
+  }
+  getActiveSessionId(): string | null { return this.sessionId; }
+  getSessionSnapshot(): TemplumSessionState | null { return this.snapshot; }
+  async updateSessionState(update: SessionStateUpdate): Promise<void> {
+    if (update.state.currentMenu) {
+      this.snapshot.currentMenu = update.state.currentMenu;
+    }
+    if (update.state.navigationStack) {
+      this.snapshot.navigationHistory = [...update.state.navigationStack];
+    }
+    this.snapshot.lastActivity = new Date();
+  }
+  async registerInterfaceAdapter(): Promise<void> { return; }
+  async syncInterfaces(): Promise<void> { return; }
+  notifyInterfaceDisconnect(): void { return; }
+}
+
+class DemoOrchestrator implements ITemplumOrchestrator {
+  private readonly sessionManager: TemplumSessionManagerContract;
+  private readonly skinEngine = new UniversalSkinEngine();
+  private readonly adapters = new Map<InterfaceType, IInterfaceAdapter>();
+  private readonly loadedSkins: UniversalSkinDefinition[] = [];
+
+  constructor(sessionManager: TemplumSessionManagerContract) {
+    this.sessionManager = sessionManager;
+  }
+
+  isInitialized(): boolean { return true; }
+  getSupportedInterfaces(): InterfaceType[] { return ['vscode', 'cli', 'command']; }
+  async registerInterface(interfaceType: InterfaceType, adapter: InterfaceAdapter): Promise<void> {
+    this.adapters.set(interfaceType, adapter as IInterfaceAdapter);
+  }
+  async loadSkin(skinDefinition: UniversalSkinDefinition): Promise<void> {
+    this.loadedSkins.push(skinDefinition);
+    await Promise.all(Array.from(this.adapters.values()).map(adapter => adapter.applySkin(skinDefinition)));
+  }
+  async loadBackendSkin(): Promise<UniversalSkinDefinition | null> { return null; }
+  async executeCommand(command: string, sourceInterface: InterfaceType, args?: any[], context?: CommandContext): Promise<CommandResult> {
+    return { success: true, message: `Command ${command} executed`, data: { sourceInterface, args, context } };
+  }
+  getSystemStatus(): TemplumSystemStatus {
+    return {
+      health: 'healthy',
+      activeBackends: [],
+      activeInterfaces: Array.from(this.adapters.keys()),
+      coreEngine: {
+        initialized: true,
+        activeInterfaces: Array.from(this.adapters.keys()),
+        loadedSkins: this.loadedSkins.map(skin => skin.id),
+        backendConnections: { totalConnections: 0, healthyConnections: 0, backends: {} },
+      },
+      stateManager: { synchronized: true, globalState: {}, sessionState: {}, subscribers: this.adapters.size, historySize: 0, persistence: null },
+      skinEngine: { cachedSkins: this.loadedSkins.length, renderers: {}, performance: { averageRenderTime: 0, cacheHitRate: 1 } },
+      performance: { memory: { heapUsed: 0, rss: 0 }, cpu: { user: 0, system: 0 }, interfaces: {} },
+    };
+  }
+  getLoadedSkins(): UniversalSkinDefinition[] { return [...this.loadedSkins]; }
+  async refreshBackendServices(): Promise<void> { return; }
+  getUniversalSkinEngine(): ISkinEngine { return this.skinEngine; }
+  getBackendRouter(): IBackendServiceRouter {
+    return {
+      discoverAndConnect: async () => undefined,
+      loadBackendSkin: async () => null,
+      getConnectionStatus: () => ({ totalConnections: 0, healthyConnections: 0, backends: {} }),
+      applyManualOverride: async (serviceId: string) => this.applyManualOverride(serviceId),
+      clearManualOverride: async (serviceId?: string) => this.clearManualOverride(serviceId),
+      getManualOverrideSnapshot: () => this.getManualOverrideSnapshot(),
+    } as IBackendServiceRouter;
+  }
+  getResourceManager(): IResourceManager {
+    const usage: ResourceUsage = {
+      memory: { used: 0, allocated: 0, limit: 0, percentage: 0 },
+      connections: { active: 0, allocated: 0, limit: 0, percentage: 0 },
+      cache: { used: 0, limit: 0, hitRate: 0, entries: 0 },
+      fileHandles: { open: 0, limit: 0, percentage: 0 },
+      processes: { active: 0, limit: 0, percentage: 0 },
+    };
+    return {
+      initialize: async () => undefined,
+      allocateResource: async () => 'res',
+      deallocateResource: async () => undefined,
+      updateResourceAccess: () => undefined,
+      getResourceUsage: () => usage,
+      registerService: async () => undefined,
+      updateServiceHealth: async () => undefined,
+      getServiceHealth: () => [],
+      getStatus: () => ({ initialized: true, resourceUsage: usage, activeResources: 0, serviceHealth: [], policyViolations: 0, lastCleanup: Date.now(), nextCleanup: Date.now() }),
+      updateResourcePolicy: () => undefined,
+      shutdown: async () => undefined,
+    } as IResourceManager;
+  }
+  getSessionManager(): TemplumSessionManagerContract { return this.sessionManager; }
+  async applyManualOverride(serviceId: string, options: ManualOverrideOptions = {}): Promise<ManualOverrideDescriptor> {
+    const descriptor: ManualOverrideDescriptor = { serviceId, scope: options.scope ?? 'session', appliedAt: Date.now(), expiresAt: options.expiresAt, reason: options.reason };
+    (this as any)._manualOverrides = (this as any)._manualOverrides ?? new Map<string, ManualOverrideDescriptor>();
+    (this as any)._manualOverrides.set(serviceId, descriptor);
+    return descriptor;
+  }
+  async clearManualOverride(serviceId?: string): Promise<ManualOverrideClearResult> {
+    const map: Map<string, ManualOverrideDescriptor> = (this as any)._manualOverrides ?? new Map();
+    if (!serviceId) {
+      map.clear();
+      return { descriptor: undefined, snapshot: this.getManualOverrideSnapshot() };
+    }
+    const descriptor = map.get(serviceId);
+    map.delete(serviceId);
+    return { descriptor: descriptor ?? { serviceId, scope: 'session', appliedAt: Date.now() }, snapshot: this.getManualOverrideSnapshot() };
+  }
+  getManualOverrideSnapshot(): ManualOverrideSnapshot {
+    const map: Map<string, ManualOverrideDescriptor> = (this as any)._manualOverrides ?? new Map();
+    return { overrides: Array.from(map.values()), updatedAt: Date.now() };
+  }
+  async shutdown(): Promise<void> { return; }
+}
+
+(async () => {
+  const sessionManager = new DemoSessionManager();
+  const orchestrator = new DemoOrchestrator(sessionManager);
+  const formatter = createFormatter({}, {
+    supportsColor: true,
+    supports256Colors: true,
+    supportsTrueColor: false,
+    supportsStyles: true,
+    supportsUnicode: true,
+    width: 80,
+    height: 24,
+    isInteractive: false,
+    platform: 'unix',
+  });
+
+  const cliAdapter = new CLIInterfaceAdapter({
+    formatter,
+    enableInteractiveMode: false,
+    enableKeyboardShortcuts: false,
+    enableProgressIndicators: false,
+    clearScreenOnRender: false,
+  });
+
+  await cliAdapter.initialize(orchestrator);
+
+  const skinDefinition: UniversalSkinDefinition = {
+    id: 'cli-demo-skin',
+    name: 'CLI Demo Skin',
+    version: '1.0.0',
+    metadata: {
+      id: 'cli-demo-skin',
+      name: 'CLI Demo Skin',
+      version: '1.0.0',
+      backend: 'haruspex',
+      backendService: 'haruspex-demo',
+      compatibleInterfaces: ['cli'],
+    },
+    menus: {
+      main: {
+        id: 'main-menu',
+        title: 'Root Operations',
+        items: [
+          { id: 'launch', label: 'Launch Workspace', type: 'command', command: 'workspace:launch' },
+          { id: 'inspect', label: 'Inspect Assets', type: 'submenu', submenu: 'inspect-menu' },
+        ],
+      },
+      submenus: {
+        'inspect-menu': {
+          id: 'inspect-menu',
+          title: 'Inspect Assets',
+          items: [
+            { id: 'open', label: 'Open Asset', type: 'command', command: 'assets:open' },
+            { id: 'close', label: 'Close Asset', type: 'command', command: 'assets:close' },
+          ],
+          navigation: { canGoBack: true },
+        },
+      },
+    },
+  };
+
+  await orchestrator.loadSkin(skinDefinition);
+
+  console.log('\n=== CLI Procedural Windows Demo ===\n');
+  console.log('[Main Menu]\n');
+  await cliAdapter.renderMenuWindow('main-menu');
+
+  console.log('\n[Nested Menu]\n');
+  await cliAdapter.renderMenuWindow('inspect-menu');
+
+  await cliAdapter.dispose();
+})();
+TS
