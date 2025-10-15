@@ -731,8 +731,19 @@ export class TemplumBackendServiceRouter
           this.log.info(`[HEALTH_MONITOR] Tier 2 (Minimal) ${backendId}: ${isConnected ? 'connected' : 'disconnected'} (stability: ${this.getConnectionStability(backendId).toFixed(1)}%)`);
         }
       } catch (error) {
-        this.updateServiceHealth(backendId, false, 'error', `Health check error: ${error}`);
-        this.log.error(`[HEALTH_MONITOR] Error checking ${backendId}:`, error);
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        this.updateServiceHealth(
+          backendId,
+          false,
+          'error',
+          `Health check failure (${errorMessage})`
+        );
+        const parsedError = error instanceof Error ? error : new Error(errorMessage);
+        this.log.error(
+          'Health monitor failed to evaluate backend status',
+          parsedError,
+          { backendId }
+        );
       }
     }
   }

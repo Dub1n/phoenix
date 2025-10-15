@@ -193,7 +193,7 @@ function checkWebSocketHealth(url: string, request: ServiceHealthCheckRequest): 
       if (completed) {
         return;
       }
-      logger.warn('WebSocket health check failed', {
+      logger.warn('WebSocket health check reported failure', {
         serviceId: manifest.id,
         url,
         error: error instanceof Error ? error.message : String(error),

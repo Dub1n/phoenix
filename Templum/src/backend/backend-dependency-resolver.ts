@@ -21,6 +21,7 @@ import { createTemplumError } from '../types/templum-types';
 import { createTimeout } from '../utils/async-utils';
 import type { ManagedTimeout } from '../utils/async-utils';
 import { createBackendLogger, type ScopedLogEmitter } from './backend-logger';
+import { ErrorHandler } from '../utils/error-handler';
 
 export interface DependencyResolutionResult {
   serviceId: string;
@@ -213,13 +214,21 @@ export class BackendDependencyResolver extends EventDrivenComponent<DependencyRe
         }
 
       } catch (error) {
+        const templumError = ErrorHandler.handle(
+          error,
+          'backend-dependency-resolver.resolve-dependency',
+          {
+            serviceId,
+            required: isRequired
+          }
+        );
         const errorResult: DependencyResolutionResult = {
           serviceId,
           resolved: false,
           resolutionMethod: 'fallback',
           confidence: 0,
           healthScore: 0,
-          errors: [error instanceof Error ? error.message : String(error)],
+          errors: [templumError.message],
           timestamp: Date.now()
         };
         
@@ -229,8 +238,7 @@ export class BackendDependencyResolver extends EventDrivenComponent<DependencyRe
           dependencyChain.criticalFailures.push(serviceId);
         }
         
-        this.log.error(`[DEPENDENCY_RESOLVER] Failed to resolve ${serviceId}:`, error);
-        this.emit('resolutionError', { serviceId, error });
+        this.emit('resolutionError', { serviceId, error: templumError });
       }
     }
 
@@ -241,7 +249,11 @@ export class BackendDependencyResolver extends EventDrivenComponent<DependencyRe
     this.log.info(`[DEPENDENCY_RESOLVER] Resolution completed: ${successCount}/${totalAttempts} services (${successRate.toFixed(1)}% success rate)`);
     
     if (successRate < 95 && dependencyChain.criticalFailures.length > 0) {
-      this.log.warn(`[DEPENDENCY_RESOLVER] Warning: Success rate ${successRate.toFixed(1)}% below target 95%`);
+      this.log.warn('Dependency resolver success rate below target threshold', {
+        successRate: Number(successRate.toFixed(1)),
+        targetSuccessRate: 95,
+        criticalFailures: dependencyChain.criticalFailures,
+      });
     }
 
     this.emit('resolutionCompleted', { 
@@ -298,9 +310,15 @@ export class BackendDependencyResolver extends EventDrivenComponent<DependencyRe
         }
         
       } catch (error) {
-        const errorMsg = `${strategy.name}: ${error instanceof Error ? error.message : String(error)}`;
-        errors.push(errorMsg);
-        this.log.warn(`[DEPENDENCY_RESOLVER] Strategy ${strategy.name} failed for ${serviceId}: ${errorMsg}`);
+        const templumError = ErrorHandler.handle(
+          error,
+          'backend-dependency-resolver.strategy',
+          {
+            serviceId,
+            strategy: strategy.name
+          }
+        );
+        errors.push(`${strategy.name}: ${templumError.message}`);
       }
     }
 
@@ -448,11 +466,15 @@ export class BackendDependencyResolver extends EventDrivenComponent<DependencyRe
       };
       
     } catch (error) {
-      this.log.error(`[HEALTH_VALIDATOR] Health validation failed for ${serviceId}:`, error);
+      const templumError = ErrorHandler.handle(
+        error,
+        'backend-dependency-resolver.health-validation',
+        { serviceId }
+      );
       return {
         healthy: false,
         score: 0,
-        details: { error: error instanceof Error ? error.message : String(error) }
+        details: { error: templumError.message }
       };
     }
   }
@@ -582,10 +604,10 @@ class ServiceDiscoveryResolutionStrategy implements ResolutionStrategy {
       };
 
     } catch (error) {
-      throw createTemplumError(
-        `Service discovery resolution failed: ${error instanceof Error ? error.message : String(error)}`,
-        'SERVICE_DISCOVERY_ERROR',
-        'integration'
+      throw ErrorHandler.handle(
+        error,
+        'backend-dependency-resolver.service-discovery',
+        { serviceId }
       );
     }
   }
@@ -631,7 +653,15 @@ class AlternativeDiscoveryStrategy implements ResolutionStrategy {
           };
         }
       } catch (error) {
-        errors.push(`${strategy}: ${error instanceof Error ? error.message : String(error)}`);
+        const templumError = ErrorHandler.handle(
+          error,
+          'backend-dependency-resolver.alternative-discovery',
+          {
+            serviceId,
+            strategy
+          }
+        );
+        errors.push(`${strategy}: ${templumError.message}`);
       }
     }
 
@@ -767,10 +797,10 @@ class ConfigurationFallbackStrategy implements ResolutionStrategy {
       };
 
     } catch (error) {
-      throw createTemplumError(
-        `Configuration fallback failed: ${error instanceof Error ? error.message : String(error)}`,
-        'CONFIGURATION_FALLBACK_ERROR',
-        'integration'
+      throw ErrorHandler.handle(
+        error,
+        'backend-dependency-resolver.configuration-fallback',
+        { serviceId }
       );
     }
   }
