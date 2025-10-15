@@ -18,7 +18,8 @@ import {
   consolidationDirectoryLabel,
   consolidationScriptsRelativePath,
   resolveRepoPath,
-  scheduleToolsModulePath
+  scheduleToolsModulePath,
+  shouldGenerateArtifact
 } from './modules/environment.mjs';
 import { computeDurationMs, formatDuration, nowIso } from './modules/time-utils.mjs';
 import {
@@ -275,7 +276,7 @@ const stageGuidance = {
     reminders: [
       'Aggregate Stage 4 guardrail artefacts (expected failure logs, helper locations, owners) inside Stage 5 notes and the hand-off record so execution lanes inherit the baseline.',
       'Replay the guardrail battery to confirm it still fails pre-migration; document the command preset, failure signature, and the migration checklist each Stage 6 lane must follow.',
-      'Keep Stage 5 planned files limited to the assets Stage 5B will change; if the handoff record needs edits, resolve them by reopening Stage 5A before proceeding.',
+      'Keep Stage 5 plan-files limited to the assets Stage 5B will edit; capture read-only reference surfaces in Stage 6 lanes or the alignment spec so they remain non-blocking. If the handoff record needs edits, reopen Stage 5A before proceeding.',
       'Refine Stage 6 lanes so each one references its guardrail counterpart, dependencies, and runtime plan-files before unlocking them for execution.',
       'Use Stage 5B notes/activity entries to broadcast approvals and readiness; keep the stage open until every lane has clear instructions and evidence attached.',
       'When alignment waits on another scope, add explicit dependencies (or new lanes) so the schedule reflects the outstanding work.',
@@ -357,7 +358,7 @@ const stageActionGuidance = {
   '5': (pattern) => [
     `1. Claim this stage with \`npm run consolidate -- claim ${pattern.patternId} --stage 5\`.`,
     `2. Use \`npm run consolidate -- stage-note ${pattern.patternId} 5 --body "Guardrails: ...; Approvals: ...; Stage6 lanes: ..."\` and \`update-handoff\` to capture the baseline failure logs, ownership, and migration checklist that Stage 6 will execute.`,
-    `3. Record Stage 5 plan-files with \`npm run consolidate -- update-stage ${pattern.patternId} 5 --plan-files "<fileA,fileB>"\`, listing only the assets you expect to change; leave the handoff record out because Stage 5A finalised it (reopen alignment first if it needs edits).`,
+    `3. Record Stage 5 plan-files with \`npm run consolidate -- update-stage ${pattern.patternId} 5 --plan-files "<fileA,fileB>"\`, listing only the assets you expect to modify; document read-only runtime surfaces through Stage 6 lanes or the alignment spec so they stay non-blocking. Leave the handoff record out because Stage 5A finalised it (reopen alignment first if it needs edits).`,
     `4. Replay the guardrail battery via \`node scripts/run-with-timeout.mjs --preset <preset> -- …\` (e.g., \`--preset phase6-validation -- npm run phase6-validation\`) to confirm the unmigrated failure still reproduces; record the log with \`npm run consolidate -- update-stage ${pattern.patternId} 5 --status in_progress --files <log>\`.`,
     `5. Update each Stage 6 lane with the guardrail reference, dependencies, and expected migration steps via \`npm run consolidate -- update-lane ${pattern.patternId} <stage6LaneId> --summary "Guardrail: <suite>; Steps: <...>" --add-dependency ${pattern.patternId}:<stage4LaneId>\` (swap placeholders) so execution owners inherit clear instructions.`,
     `6. Close Stage 5B with \`npm run consolidate -- update-stage ${pattern.patternId} 5 --status complete --notes "Guardrails rehearsed; Stage 6 lanes unlocked"\` only after every lane has evidence and instructions attached.`,
@@ -2992,31 +2993,52 @@ async function runRegen(registry, options = {}) {
     : registry.patterns.filter((pattern) => patternSet.has(pattern.patternId));
   for (const pattern of targetPatterns) {
     const generatedPath = path.join(planDir, `${pattern.patternId}.generated.md`);
+    if (!shouldGenerateArtifact({ type: 'plan', patternId: pattern.patternId })) {
+      generatedFiles.push({ file: generatedPath, skipped: true });
+      continue;
+    }
     const content = renderPatternMarkdown(pattern, registry.updatedAt);
     const changed = await writeFileIfChanged(generatedPath, content, checkOnly);
     generatedFiles.push({ file: generatedPath, changed });
   }
   const trackerPath = cliPaths.registryStatus;
-  const trackerChanged = await writeFileIfChanged(trackerPath, renderTrackerMarkdown(registry), checkOnly);
-  generatedFiles.push({ file: trackerPath, changed: trackerChanged });
+  if (shouldGenerateArtifact({ type: 'registry-status' })) {
+    const trackerChanged = await writeFileIfChanged(
+      trackerPath,
+      renderTrackerMarkdown(registry),
+      checkOnly
+    );
+    generatedFiles.push({ file: trackerPath, changed: trackerChanged });
+  } else {
+    generatedFiles.push({ file: trackerPath, skipped: true });
+  }
 
   try {
     const { generateScheduleArtifacts } = await import(scheduleToolsModulePath);
     const schedulesDir = cliPaths.schedulesDir;
     const scheduleArtifacts = [];
+    const scheduleRequests = [];
     if (includeGlobalSchedule) {
-      scheduleArtifacts.push(
-        await generateScheduleArtifacts(registry, {
+      const markdownPath = path.join(schedulesDir, 'schedule-all.md');
+      if (shouldGenerateArtifact({ type: 'schedule', scope: 'all', format: 'markdown' })) {
+        scheduleRequests.push({
           format: 'markdown',
-          output: path.join(schedulesDir, 'schedule-all.md')
-        })
-      );
-      scheduleArtifacts.push(
-        await generateScheduleArtifacts(registry, {
+          output: markdownPath,
+          scope: 'all'
+        });
+      } else {
+        generatedFiles.push({ file: markdownPath, skipped: true });
+      }
+      const jsonPath = path.join(schedulesDir, 'schedule-all.json');
+      if (shouldGenerateArtifact({ type: 'schedule', scope: 'all', format: 'json' })) {
+        scheduleRequests.push({
           format: 'json',
-          output: path.join(schedulesDir, 'schedule-all.json')
-        })
-      );
+          output: jsonPath,
+          scope: 'all'
+        });
+      } else {
+        generatedFiles.push({ file: jsonPath, skipped: true });
+      }
     }
     const cohortIds = forceAll
       ? (registry.cohorts || []).map((cohort) => normaliseCohortId(cohort.id))
@@ -3034,26 +3056,45 @@ async function runRegen(registry, options = {}) {
       const safeId = normaliseCohortId(cohort.id);
       const baseName = safeId;
       const cohortPatterns = Array.isArray(cohort.patterns) ? cohort.patterns : [];
-      scheduleArtifacts.push(
-        await generateScheduleArtifacts(registry, {
+      const cohortMarkdownPath = path.join(schedulesDir, `${baseName}.md`);
+      if (shouldGenerateArtifact({ type: 'schedule', scope: safeId, format: 'markdown' })) {
+        scheduleRequests.push({
           format: 'markdown',
-          output: path.join(schedulesDir, `${baseName}.md`),
+          output: cohortMarkdownPath,
           patterns: cohortPatterns,
           patternsProvided: true,
           cohorts: [safeId],
-          cohortsProvided: true
-        })
-      );
-      scheduleArtifacts.push(
-        await generateScheduleArtifacts(registry, {
+          cohortsProvided: true,
+          scope: safeId
+        });
+      } else {
+        generatedFiles.push({ file: cohortMarkdownPath, skipped: true });
+      }
+      const cohortJsonPath = path.join(schedulesDir, `${baseName}.json`);
+      if (shouldGenerateArtifact({ type: 'schedule', scope: safeId, format: 'json' })) {
+        scheduleRequests.push({
           format: 'json',
-          output: path.join(schedulesDir, `${baseName}.json`),
+          output: cohortJsonPath,
           patterns: cohortPatterns,
           patternsProvided: true,
           cohorts: [safeId],
-          cohortsProvided: true
-        })
-      );
+          cohortsProvided: true,
+          scope: safeId
+        });
+      } else {
+        generatedFiles.push({ file: cohortJsonPath, skipped: true });
+      }
+    }
+    for (const request of scheduleRequests) {
+      const artifact = await generateScheduleArtifacts(registry, {
+        format: request.format,
+        output: request.output,
+        patterns: request.patterns,
+        patternsProvided: request.patternsProvided,
+        cohorts: request.cohorts,
+        cohortsProvided: request.cohortsProvided
+      });
+      scheduleArtifacts.push(artifact);
     }
     scheduleArtifacts.forEach((artifact) => {
       if (artifact.outputPath) {
@@ -3067,15 +3108,29 @@ async function runRegen(registry, options = {}) {
   }
 
   const activityPath = cliPaths.activityLog;
-  const activityChanged = await writeFileIfChanged(activityPath, renderActivityMarkdown(registry), checkOnly);
-  generatedFiles.push({ file: activityPath, changed: activityChanged });
+  if (shouldGenerateArtifact({ type: 'activity' })) {
+    const activityChanged = await writeFileIfChanged(
+      activityPath,
+      renderActivityMarkdown(registry),
+      checkOnly
+    );
+    generatedFiles.push({ file: activityPath, changed: activityChanged });
+  } else {
+    generatedFiles.push({ file: activityPath, skipped: true });
+  }
 
   if (!silent) {
     const changedCount = generatedFiles.filter((item) => item.changed).length;
-    const summary = changedCount === 0 ? 'No changes' : `Updated ${changedCount} file(s).`;
+    const skippedCount = generatedFiles.filter((item) => item.skipped).length;
+    const summaryBase = changedCount === 0 ? 'No changes' : `Updated ${changedCount} file(s).`;
+    const summary =
+      skippedCount > 0
+        ? `${summaryBase} Skipped ${skippedCount} file(s) via generatedArtifacts config.`
+        : summaryBase;
     console.log(summary);
     generatedFiles.forEach((item) => {
-      console.log(` - ${item.changed ? 'updated' : 'no-op'} ${item.file}`);
+      const status = item.skipped ? 'skipped' : item.changed ? 'updated' : 'no-op';
+      console.log(` - ${status} ${item.file}`);
     });
   }
 }

@@ -173,6 +173,228 @@ const consolidationScriptsRelativePath = (() => {
 const consolidationDirectoryLabel =
   consolidationScriptsRelativePath || '(consolidation CLI directory)';
 
+function normaliseSymbol(value) {
+  if (!value) {
+    return '';
+  }
+  return String(value)
+    .trim()
+    .replace(/^\.\/+/, '')
+    .toLowerCase();
+}
+
+function stripExtensions(value) {
+  let target = value;
+  if (target.endsWith('.json')) {
+    target = target.slice(0, -5);
+    return { core: target, format: 'json' };
+  }
+  if (target.endsWith('.markdown')) {
+    target = target.slice(0, -9);
+    return { core: target, format: 'markdown' };
+  }
+  if (target.endsWith('.md')) {
+    target = target.slice(0, -3);
+    return { core: target, format: 'markdown' };
+  }
+  return { core: target, format: null };
+}
+
+function stripGeneratedSuffix(value) {
+  const suffixes = ['.generated', '_generated', '-generated'];
+  for (const suffix of suffixes) {
+    if (value.endsWith(suffix)) {
+      return value.slice(0, -suffix.length);
+    }
+  }
+  return value;
+}
+
+function normaliseToken(value) {
+  const normalised = normaliseSymbol(value);
+  if (!normalised) {
+    return { token: '', format: null };
+  }
+  const basename = path.basename(normalised);
+  const { core, format } = stripExtensions(basename);
+  const withoutGenerated = stripGeneratedSuffix(core);
+  const collapsed = withoutGenerated.replace(/[\s._-]+/g, '-');
+  return { token: collapsed, format };
+}
+
+function parseGeneratedArtifactSpec(entry) {
+  if (typeof entry !== 'string') {
+    return { keys: [], error: 'Entries must be strings.' };
+  }
+  const trimmed = entry.trim();
+  if (!trimmed) {
+    return { keys: [], error: 'Entries must not be empty.' };
+  }
+  const { token, format } = normaliseToken(trimmed);
+  if (!token) {
+    return { keys: [], error: `Unable to interpret "${entry}".` };
+  }
+
+  const keys = [];
+  const genericSchedules = new Set(['schedule', 'schedules']);
+  const genericPlans = new Set(['plan', 'plans']);
+  const genericCohorts = new Set(['cohort', 'cohorts', 'schedule-cohort', 'schedule-cohorts']);
+  const genericTracker = new Set(['registry-status', 'registrystatus', 'tracker', 'registry']);
+  const genericActivity = new Set([
+    'activity',
+    'activitylog',
+    'activity-log',
+    'utility-consolidation-activity-log',
+    'utility-consolidation-activity'
+  ]);
+  const wildcardTokens = new Set(['*', 'all-files', 'everything']);
+
+  if (wildcardTokens.has(token)) {
+    return { keys: ['*'], error: null };
+  }
+  if (genericPlans.has(token)) {
+    return { keys: ['plan'], error: null };
+  }
+  if (genericSchedules.has(token)) {
+    return { keys: ['schedule'], error: null };
+  }
+  if (genericCohorts.has(token)) {
+    return { keys: ['schedule:cohort'], error: null };
+  }
+  if (genericTracker.has(token)) {
+    return { keys: ['registry-status'], error: null };
+  }
+  if (genericActivity.has(token)) {
+    return { keys: ['activity'], error: null };
+  }
+
+  if (/^pattern-(\d+)$/.test(token)) {
+    const match = token.match(/^pattern-(\d+)$/);
+    return { keys: [`plan:${match[1]}`], error: null };
+  }
+  if (/^\d+$/.test(token)) {
+    return { keys: [`plan:${token}`], error: null };
+  }
+  if (/^schedule-all$/.test(token) || /^scheduleall$/.test(token) || token === 'global' || token === 'all') {
+    if (format) {
+      return { keys: [`schedule:all:${format}`], error: null };
+    }
+    return { keys: ['schedule:all'], error: null };
+  }
+  if (/^schedule-(.+)$/.test(token)) {
+    const match = token.match(/^schedule-(.+)$/);
+    const scope = match[1];
+    if (scope === 'all') {
+      if (format) {
+        return { keys: [`schedule:all:${format}`], error: null };
+      }
+      return { keys: ['schedule:all'], error: null };
+    }
+    const cohortId = scope.toLowerCase();
+    if (format) {
+      return { keys: [`schedule:cohort:${cohortId}:${format}`], error: null };
+    }
+    return { keys: [`schedule:cohort:${cohortId}`], error: null };
+  }
+  if (/^cohort-(.+)$/.test(token)) {
+    const match = token.match(/^cohort-(.+)$/);
+    const cohortId = match[1].toLowerCase();
+    if (format) {
+      return { keys: [`schedule:cohort:${cohortId}:${format}`], error: null };
+    }
+    return { keys: [`schedule:cohort:${cohortId}`], error: null };
+  }
+  if (/^[a-z0-9]+$/.test(token) && !/^\d+$/.test(token)) {
+    const cohortId = token.toLowerCase();
+    if (format) {
+      return { keys: [`schedule:cohort:${cohortId}:${format}`], error: null };
+    }
+    return { keys: [`schedule:cohort:${cohortId}`], error: null };
+  }
+  if (/^registry-status(?:-generated)?$/.test(token)) {
+    return { keys: ['registry-status'], error: null };
+  }
+  if (/^utility-consolidation-activity-log(?:-generated)?$/.test(token)) {
+    return { keys: ['activity'], error: null };
+  }
+
+  return { keys: [], error: `Unknown generatedArtifacts entry "${entry}".` };
+}
+
+function compileArtifactFilter(entries) {
+  if (!Array.isArray(entries) || entries.length === 0) {
+    return () => true;
+  }
+  const include = new Set();
+  let allowAll = false;
+  entries.forEach((entry) => {
+    const { keys, error } = parseGeneratedArtifactSpec(entry);
+    if (error) {
+      throw new Error(error);
+    }
+    keys.forEach((key) => {
+      if (key === '*') {
+        allowAll = true;
+      } else {
+        include.add(key);
+      }
+    });
+  });
+  if (allowAll) {
+    return () => true;
+  }
+  return (descriptor) => {
+    if (!descriptor || typeof descriptor !== 'object') {
+      return true;
+    }
+    const keys = [];
+    switch (descriptor.type) {
+      case 'plan': {
+        const patternId = descriptor.patternId !== undefined ? String(descriptor.patternId) : '';
+        keys.push(`plan:${patternId}`, 'plan');
+        break;
+      }
+      case 'schedule': {
+        const scope =
+          descriptor.scope === 'all'
+            ? 'all'
+            : descriptor.scope !== undefined && descriptor.scope !== null
+              ? String(descriptor.scope).toLowerCase()
+              : '';
+        const format = descriptor.format === 'json' ? 'json' : 'markdown';
+        if (scope === 'all') {
+          keys.push(`schedule:all:${format}`, 'schedule:all', 'schedule');
+        } else if (scope) {
+          keys.push(
+            `schedule:cohort:${scope}:${format}`,
+            `schedule:cohort:${scope}`,
+            'schedule:cohort',
+            'schedule'
+          );
+        } else {
+          keys.push('schedule');
+        }
+        break;
+      }
+      case 'activity':
+        keys.push('activity');
+        break;
+      case 'registry-status':
+        keys.push('registry-status');
+        break;
+      default:
+        keys.push(descriptor.type);
+        break;
+    }
+    return keys.some((key) => include.has(key));
+  };
+}
+
+const generatedArtifactEntries = Array.isArray(cliConfig.generatedArtifacts)
+  ? cliConfig.generatedArtifacts
+  : [];
+const shouldGenerateArtifact = compileArtifactFilter(generatedArtifactEntries);
+
 export {
   cliConfig,
   cliPaths,
@@ -186,5 +408,6 @@ export {
   scheduleToolsModulePath,
   schemaPath,
   scriptsDir,
+  shouldGenerateArtifact,
   templumRoot
 };
