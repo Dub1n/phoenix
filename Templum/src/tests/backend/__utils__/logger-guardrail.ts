@@ -1,4 +1,5 @@
 import { jest } from '@jest/globals';
+import { LoggerConfig, type LoggerConfiguration, LogLevel, type LogRecord } from '../../../utils/logger';
 
 export const MANUAL_OVERRIDE_LOGGER_GUARDRAIL_MESSAGE =
   'Logger guardrail violation (manual override suites)';
@@ -20,6 +21,15 @@ const LABELS: Record<ConsoleMethod, string> = {
 export async function withManualOverrideLoggerGuardrail<T>(
   callback: GuardrailCallback<T>
 ): Promise<T> {
+  const originalConfiguration: LoggerConfiguration = LoggerConfig.getConfiguration();
+  LoggerConfig.useTransport({
+    log(_: LogRecord): void {
+      // swallow logger output during guardrail execution
+    }
+  });
+  LoggerConfig.setLevel(LogLevel.DEBUG);
+  LoggerConfig.disableStructuredLogging();
+
   const spies = CONSOLE_METHODS.map(method => ({
     label: LABELS[method],
     spy: jest.spyOn(console, method).mockImplementation(() => undefined)
@@ -41,5 +51,12 @@ export async function withManualOverrideLoggerGuardrail<T>(
     return result;
   } finally {
     spies.forEach(({ spy }) => spy.mockRestore());
+    LoggerConfig.useTransport(originalConfiguration.transport);
+    if (originalConfiguration.structured) {
+      LoggerConfig.useStructuredLogging(originalConfiguration.serializer);
+    } else {
+      LoggerConfig.disableStructuredLogging();
+    }
+    LoggerConfig.setLevel(originalConfiguration.level);
   }
 }

@@ -20,6 +20,7 @@ import { backendIntegrationConfig } from './backend-integration-config';
 import { createTemplumError } from '../types/templum-types';
 import { createTimeout } from '../utils/async-utils';
 import type { ManagedTimeout } from '../utils/async-utils';
+import { createBackendLogger, type ScopedLogEmitter } from './backend-logger';
 
 export interface DependencyResolutionResult {
   serviceId: string;
@@ -91,6 +92,7 @@ export class BackendDependencyResolver extends EventDrivenComponent<DependencyRe
   private alternativeDiscoveryConfig: AlternativeDiscoveryConfig;
   private healthValidationEnabled: boolean;
   private optimizationHeuristics: Map<string, number> = new Map();
+  private readonly log: ScopedLogEmitter = createBackendLogger('backend-dependency-resolver');
 
   constructor(options: {
     serviceDiscoveryOptions?: ServiceDiscoveryOptions;
@@ -168,7 +170,7 @@ export class BackendDependencyResolver extends EventDrivenComponent<DependencyRe
     optionalServices: string[] = [],
     requirements?: Map<string, ServiceRequirements>
   ): Promise<DependencyChain> {
-    console.log(`[DEPENDENCY_RESOLVER] Starting resolution for ${requiredServices.length} required + ${optionalServices.length} optional services`);
+    this.log.info(`[DEPENDENCY_RESOLVER] Starting resolution for ${requiredServices.length} required + ${optionalServices.length} optional services`);
     this.emit('resolutionStarted', { required: requiredServices.length, optional: optionalServices.length });
 
     const dependencyChain: DependencyChain = {
@@ -193,7 +195,7 @@ export class BackendDependencyResolver extends EventDrivenComponent<DependencyRe
       const serviceRequirements = requirements?.get(serviceId);
 
       try {
-        console.log(`[DEPENDENCY_RESOLVER] Resolving ${serviceId} (${isRequired ? 'required' : 'optional'})`);
+        this.log.info(`[DEPENDENCY_RESOLVER] Resolving ${serviceId} (${isRequired ? 'required' : 'optional'})`);
         
         const result = await this.resolveService(serviceId, serviceRequirements);
         dependencyChain.discoveredServices.set(serviceId, result);
@@ -203,11 +205,11 @@ export class BackendDependencyResolver extends EventDrivenComponent<DependencyRe
           dependencyChain.resolutionOrder.push(serviceId);
           dependencyChain.totalHealthScore += result.healthScore;
           
-          console.log(`[DEPENDENCY_RESOLVER] Successfully resolved ${serviceId} via ${result.resolutionMethod} (confidence: ${result.confidence})`);
+          this.log.info(`[DEPENDENCY_RESOLVER] Successfully resolved ${serviceId} via ${result.resolutionMethod} (confidence: ${result.confidence})`);
           this.emit('serviceResolved', { serviceId, result });
         } else if (isRequired) {
           dependencyChain.criticalFailures.push(serviceId);
-          console.error(`[DEPENDENCY_RESOLVER] Critical failure: Required service ${serviceId} could not be resolved`);
+          this.log.error(`[DEPENDENCY_RESOLVER] Critical failure: Required service ${serviceId} could not be resolved`);
         }
 
       } catch (error) {
@@ -227,7 +229,7 @@ export class BackendDependencyResolver extends EventDrivenComponent<DependencyRe
           dependencyChain.criticalFailures.push(serviceId);
         }
         
-        console.error(`[DEPENDENCY_RESOLVER] Failed to resolve ${serviceId}:`, error);
+        this.log.error(`[DEPENDENCY_RESOLVER] Failed to resolve ${serviceId}:`, error);
         this.emit('resolutionError', { serviceId, error });
       }
     }
@@ -236,10 +238,10 @@ export class BackendDependencyResolver extends EventDrivenComponent<DependencyRe
     const successRate = totalAttempts > 0 ? (successCount / totalAttempts) * 100 : 0;
     dependencyChain.totalHealthScore = dependencyChain.totalHealthScore / Math.max(successCount, 1);
 
-    console.log(`[DEPENDENCY_RESOLVER] Resolution completed: ${successCount}/${totalAttempts} services (${successRate.toFixed(1)}% success rate)`);
+    this.log.info(`[DEPENDENCY_RESOLVER] Resolution completed: ${successCount}/${totalAttempts} services (${successRate.toFixed(1)}% success rate)`);
     
     if (successRate < 95 && dependencyChain.criticalFailures.length > 0) {
-      console.warn(`[DEPENDENCY_RESOLVER] Warning: Success rate ${successRate.toFixed(1)}% below target 95%`);
+      this.log.warn(`[DEPENDENCY_RESOLVER] Warning: Success rate ${successRate.toFixed(1)}% below target 95%`);
     }
 
     this.emit('resolutionCompleted', { 
@@ -265,7 +267,7 @@ export class BackendDependencyResolver extends EventDrivenComponent<DependencyRe
     if (this.alternativeDiscoveryConfig.enableCaching) {
       const cached = this.dependencyCache.get(serviceId);
       if (cached && (Date.now() - cached.timestamp) < 60000) { // 1 minute cache
-        console.log(`[DEPENDENCY_RESOLVER] Using cached result for ${serviceId}`);
+        this.log.info(`[DEPENDENCY_RESOLVER] Using cached result for ${serviceId}`);
         return { ...cached, resolutionMethod: 'cached' };
       }
     }
@@ -276,7 +278,7 @@ export class BackendDependencyResolver extends EventDrivenComponent<DependencyRe
     // Try each resolution strategy in priority order
     for (const strategy of this.resolutionStrategies) {
       try {
-        console.log(`[DEPENDENCY_RESOLVER] Trying ${strategy.name} strategy for ${serviceId}`);
+        this.log.info(`[DEPENDENCY_RESOLVER] Trying ${strategy.name} strategy for ${serviceId}`);
         
         const result = await strategy.resolveService(serviceId, requirements);
         
@@ -298,7 +300,7 @@ export class BackendDependencyResolver extends EventDrivenComponent<DependencyRe
       } catch (error) {
         const errorMsg = `${strategy.name}: ${error instanceof Error ? error.message : String(error)}`;
         errors.push(errorMsg);
-        console.warn(`[DEPENDENCY_RESOLVER] Strategy ${strategy.name} failed for ${serviceId}: ${errorMsg}`);
+        this.log.warn(`[DEPENDENCY_RESOLVER] Strategy ${strategy.name} failed for ${serviceId}: ${errorMsg}`);
       }
     }
 
@@ -406,7 +408,7 @@ export class BackendDependencyResolver extends EventDrivenComponent<DependencyRe
       return { healthy: true, score: 1.0, details: { reason: 'health_validation_disabled' } };
     }
 
-    console.log(`[HEALTH_VALIDATOR] Validating health for ${serviceId}`);
+    this.log.info(`[HEALTH_VALIDATOR] Validating health for ${serviceId}`);
     
     try {
       const healthChecks = [];
@@ -433,7 +435,7 @@ export class BackendDependencyResolver extends EventDrivenComponent<DependencyRe
       const healthScore = successfulChecks / totalChecks;
       const healthy = healthScore > 0.5; // At least 50% of health checks must pass
       
-      console.log(`[HEALTH_VALIDATOR] ${serviceId} health: ${healthy ? 'healthy' : 'unhealthy'} (score: ${healthScore.toFixed(2)})`);
+      this.log.info(`[HEALTH_VALIDATOR] ${serviceId} health: ${healthy ? 'healthy' : 'unhealthy'} (score: ${healthScore.toFixed(2)})`);
       
       return {
         healthy,
@@ -446,7 +448,7 @@ export class BackendDependencyResolver extends EventDrivenComponent<DependencyRe
       };
       
     } catch (error) {
-      console.error(`[HEALTH_VALIDATOR] Health validation failed for ${serviceId}:`, error);
+      this.log.error(`[HEALTH_VALIDATOR] Health validation failed for ${serviceId}:`, error);
       return {
         healthy: false,
         score: 0,
@@ -508,7 +510,7 @@ export class BackendDependencyResolver extends EventDrivenComponent<DependencyRe
    */
   clearCache(): void {
     this.dependencyCache.clear();
-    console.log('[DEPENDENCY_RESOLVER] Dependency cache cleared');
+    this.log.info('[DEPENDENCY_RESOLVER] Dependency cache cleared');
   }
 
   /**
