@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "updatedAt": "2025-10-15T14:56:58Z",
+  "updatedAt": "2025-10-15T15:11:20Z",
   "patterns": [
     {
       "patternId": 1,
@@ -60,11 +60,13 @@
           ]
         },
         "6": {
-          "status": "in_progress",
-          "startedAt": "2025-10-15T14:56:58Z"
+          "status": "complete",
+          "startedAt": "2025-10-15T14:56:58Z",
+          "elapsedMs": 862000,
+          "completedAt": "2025-10-15T15:11:20Z"
         },
         "7": {
-          "status": "blocked",
+          "status": "pending",
           "searchTerms": [
             "console.error",
             "console.log",
@@ -437,14 +439,14 @@
           "elapsedMs": 2618000
         },
         "6f": {
-          "status": "in_progress",
+          "status": "complete",
           "scope": "Runtime: VSCode adapters + registry consolidate logging",
           "commands": [
             {
               "command": "node scripts/run-with-timeout.mjs --preset jest-ci -- npx jest tests/interfaces/interface-adapter-integration.test.ts"
             }
           ],
-          "updatedAt": "2025-10-15T14:56:58Z",
+          "updatedAt": "2025-10-15T15:11:20Z",
           "plannedFiles": [
             "src/extension.ts",
             "src/interfaces/interface-adapter-registry.legacy.ts"
@@ -468,7 +470,8 @@
               "gate": "lane-4h"
             }
           ],
-          "startedAt": "2025-10-15T14:56:58Z"
+          "startedAt": "2025-10-15T14:56:58Z",
+          "elapsedMs": 862000
         }
       },
       "handoff": {
@@ -1727,9 +1730,35 @@
           "timestamp": "2025-10-15T14:56:58Z",
           "summary": "Lane 6f claimed",
           "agent": "1-6f"
+        },
+        {
+          "stage": "lane-6f",
+          "timestamp": "2025-10-15T15:10:31Z",
+          "summary": "Guardrail passing: interface adapter integration via scoped config (jest.guardrail-interface-adapter.config.js)",
+          "files": [
+            "logs/consolidation/pattern-1/lane-6f-20251015T1507Z-jest-guardrail.log"
+          ]
+        },
+        {
+          "stage": "lane-6f",
+          "timestamp": "2025-10-15T15:11:12Z",
+          "summary": "Phase6 validation passing after logging migration",
+          "files": [
+            "logs/consolidation/pattern-1/lane-6f-20251015T122803Z-phase6-attempt3.log"
+          ]
+        },
+        {
+          "stage": "lane-6f",
+          "timestamp": "2025-10-15T15:11:20Z",
+          "summary": "Migration complete; guardrail config scoped to interface adapters; phase6 + jest evidence attached",
+          "files": [
+            "logs/consolidation/pattern-1/lane-6f-20251015T122803Z-phase6-attempt3.log",
+            "logs/consolidation/pattern-1/lane-6f-20251015T1507Z-jest-guardrail.log"
+          ],
+          "durationMs": 862000
         }
       ],
-      "updatedAt": "2025-10-15T14:56:58Z",
+      "updatedAt": "2025-10-15T15:11:20Z",
       "cohorts": [
         "D"
       ]
@@ -2277,7 +2306,7 @@
           "elapsedMs": 447000
         },
         "6d": {
-          "status": "blocked",
+          "status": "pending",
           "scope": "Interface & session runtime migration",
           "commands": [
             {
@@ -2302,7 +2331,7 @@
               "command": "npm run test -- --runTestsByPath tests/session/unified-session-manager.integration.test.ts"
             }
           ],
-          "updatedAt": "2025-10-15T12:08:18Z",
+          "updatedAt": "2025-10-15T15:11:20Z",
           "plannedFiles": [
             "src/interfaces/cli-adapter-abstracted.ts",
             "src/interfaces/cli-adapter.ts",
@@ -3335,7 +3364,7 @@
           "durationMs": 3920000
         }
       ],
-      "updatedAt": "2025-10-15T13:33:19Z",
+      "updatedAt": "2025-10-15T15:11:20Z",
       "cohorts": [
         "D"
       ]
