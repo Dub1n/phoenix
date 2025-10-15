@@ -3495,7 +3495,8 @@ async function main() {
           cascadeResult = reopenDownstreamStageGates(registry, pattern, stageId);
           const stageIndex = stageOrder.indexOf(stageId);
           const stage5Index = stageOrder.indexOf('5');
-          if (stageIndex !== -1 && stage5Index !== -1 && stageIndex <= stage5Index) {
+          // Only reopen peer Stage 5 gates when an upstream stage reopens; Stage 5 self-claims should not un-complete peers.
+          if (stageIndex !== -1 && stage5Index !== -1 && stageIndex < stage5Index) {
             peerReopens = reopenCohortPeerStages(registry, pattern, ['5']);
           }
         }

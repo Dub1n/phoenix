@@ -273,7 +273,7 @@ sequenceDiagram
 - Stage 5A keeps cohorts aligned: log the shared spec via `cohort-stage … --plan-files`, ensure every Stage 4 guardrail is in place, and attach blockers/dependencies in-band.
 - Stage 5B rehearses the guardrails: replay the timeout-wrapped suites against the unmigrated baseline, capture failing evidence in Stage 5 notes, and document the migration checklist plus approvals in the hand-off.
 - Update each Stage 6 lane with its guardrail link, dependencies, and migration steps before marking Stage 5 complete.
-- If Stage 5 slips back to `pending`/`blocked`, expect Stage 6 and Stage 7 gates plus the owning cohort’s Stage 5A segment (reset to `blocked`) and all cohort peers’ Stage 5/6 gates to reopen automatically; keep the hand-off doc and `update-handoff` metadata in sync while the upstream work is restored.
+- If Stage 5 slips back to `pending`/`blocked`, the owning pattern auto-blocks Stage 6/Stage 7 and resets its cohort’s Stage 5A segment. Cohort peers only reopen when an upstream stage (1–4) triggers the cascade—Stage 5 self-reopens no longer undo completed peer gates. Keep the hand-off doc and `update-handoff` metadata in sync while the upstream work is restored.
 
 ### Stage 6 expectations
 
@@ -336,7 +336,7 @@ Stage gates mirror these signals with `[ ] pending`, `[?] blocked`, `[~] in-prog
 ### Stage Gate Updates
 
 - Use `npm run consolidate -- update-stage <patternId> <stageId> [--status <value>]` to advance or reopen a stage gate; include `--add-dependency` / `--remove-dependency` / `--clear-dependencies` when external blockers must be recorded. The CLI updates timestamps/notes, logs dependency changes, and adds an activity entry automatically; when `--status` is omitted the gate status is preserved while the supplied metadata changes are applied.
-- Reopening a stage now cascades automatically: any downstream gate that was previously `complete`/`ready` is reset to `pending` (and auto-blocked) so the schedule reflects the open prerequisite. Linked cohort Stage 5A segments are also reset—defaulting to `blocked` until Stage 4 readiness is restored—and any cohort peers with an auto-reopened Stage 5 will have their Stage 6/7 gates reset as well. Stage 4 and Stage 6 lanes are **not** reopened—Stage 3 recreation still generates the replacement lanes when needed.
+- Reopening a stage now cascades automatically: any downstream gate that was previously `complete`/`ready` is reset to `pending` (and auto-blocked) so the schedule reflects the open prerequisite. Linked cohort Stage 5A segments are also reset—defaulting to `blocked` until Stage 4 readiness is restored—and, when the reopen originates from an upstream stage (1–4), cohort peers with an auto-reopened Stage 5 will have their Stage 6/7 gates reset as well. Stage 5 self-reopens no longer touch peer patterns. Stage 4 and Stage 6 lanes are **not** reopened—Stage 3 recreation still generates the replacement lanes when needed.
 - When the cascade runs, the CLI prints the list of reopened stages so coordinators can spot the implied TODOs without scanning the registry manually. Downstream agents wait for the upstream stage to return to `complete`; no manual re-block toggles are required.
 - Cohort peer cascades are summarised as `Pattern <id> (Stage 5B, Stage 6, …)` so the coordinator can nudge the right owners before resuming work.
 - Log discovery or coordination details for a stage with `npm run consolidate -- stage-note <patternId> <stageId> --body "..."` so the guidance surface stays current.
@@ -355,6 +355,12 @@ Stage gates mirror these signals with `[ ] pending`, `[?] blocked`, `[~] in-prog
 - All writes are validated against the registry schema via Ajv; validation errors abort the operation with a detailed pointer so agents can correct the input.
 - After every successful write the CLI quietly regenerates only the plans, schedules, and activity log entries whose patterns or cohorts changed (plus their dependants), keeping artefacts current without spamming the terminal.
 - Dependency-aware status propagation keeps downstream lanes/stages blocked when prerequisites fail and reopens them once dependencies complete, reducing the chance of progressing while an upstream fix is still pending.
+
+### Auto-blocking validation roadmap
+
+- Unit-focused coverage will exercise `reopenDownstreamStageGates` and `reopenCohortPeerStages` directly, seeding a minimal in-memory registry to assert which gates flip to `pending` for upstream stage reopen events versus Stage 5 self-reopens (which should now leave cohort peers untouched).
+- CLI integration checks will run the driver against a temporary registry via `CONSOLIDATION_STATE_PATH`, mirroring the manual smoke tests (e.g., `update-stage`, `cohort-stage`, `claim`) to confirm Stage 5 peer completions persist while Stage 3 reopenings still cascade across the cohort.
+- `dev/architecture/consolidation-scripts/tests/auto-blocking-cascade.test.ts` holds the initial scaffolding (`it.todo`) for both layers; implement these once the helper harness is wired, and capture evidence paths in the activity log when the suite guards ship.
 
 ## Implementation Outline
 
