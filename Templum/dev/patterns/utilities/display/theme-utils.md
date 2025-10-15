@@ -3,7 +3,7 @@ date-created: 2025-09-14T20:00:00Z
 last-updated: 2025-09-14T20:00:00Z
 name: theme-utils
 description: Centralized theme management utility for dynamic theme loading, switching, palette operations, and interface-specific adaptations across the Universal Skin Engine ecosystem
-status: established
+status: "[x]"
 category: display-ui
 use-when:
   - Dynamic theme switching and loading must be shared across interfaces
@@ -166,15 +166,18 @@ const cssVars = ThemeUtils.getAdaptations(theme, 'vscode');
 ## Implementation Checklist
 
 **Before migration**
+
 - [ ] Catalogue all manual theme loads and color conversions.
 - [ ] Capture inheritance/override rules currently applied in skins.
 
 **During migration**
+
 - [ ] Replace theme loads with `ThemeUtils.loadTheme` and enforce caching.
 - [ ] Map existing ANSI/CSS conversions to `getColor`/`getAdaptations`.
 - [ ] Log theme switches via the shared logger for traceability.
 
 **After migration**
+
 - [ ] Validate CLI/VSCode theming visually.
 - [ ] Benchmark theme switching to confirm caching wins.
 - [ ] Update consolidation checklist to reflect migrated files.

@@ -3,7 +3,7 @@ date-created: 2025-09-13-103229
 last-updated: 2025-09-13-103229
 name: bordered-window-layout
 description: Enhanced window rendering system with borders, centered titles, and consistent padding for CLI design specification compliance
-status: established
+status: "[x]"
 category: display-ui
 use-when:
   - CLI interface needs bordered windows with proper visual structure

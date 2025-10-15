@@ -3,7 +3,7 @@ date-created: 2025-09-06-0000
 last-updated: 2025-09-11-0000
 name: generic-agent-template
 description: Project-agnostic Analysis Agents with context isolation and file-based handoff communication
-status: established
+status: "[x]"
 category: development-tools
 use-when: 
   - Need context isolation during research phases

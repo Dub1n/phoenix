@@ -1906,9 +1906,9 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
         }
       }
 
-      // Display fallback content if no skins loaded
       if (!skinLoaded) {
-        this.printLine(this.getFallbackCLIOutput(backendConnections));
+        this.logger.warn('No CLI-compatible skins available after discovery; waiting for backend payloads.');
+        this.printLine(this.formatWarning('No CLI-compatible skins available; waiting for backend payloads.'));
       }
 
     } catch (error) {
@@ -2270,31 +2270,6 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
   }
 
   /**
-   * Get fallback CLI output for initial content
-   * @private
-   */
-  private getFallbackCLIOutput(backendConnections: any): string {
-    const connectedCount = Object.values(backendConnections.backends).filter((b: any) => b.connected).length;
-    const totalCount = Object.keys(backendConnections.backends).length;
-    const healthyCount = Object.values(backendConnections.backends).filter((b: any) => b.health === 'healthy').length;
-    
-    return `
-🌟 Templum Universal Interface - CLI Mode
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-✅ CLI Interface Adapter Active (Real Backend Integration)
-
-Backend Status: Connected ${connectedCount}/${totalCount} | Healthy ${healthyCount}/${connectedCount}
-System Status: ${healthyCount > 0 ? '🟢 Operational' : '🟡 Discovery Mode'}
-
-${healthyCount === 0 ? 'Waiting for backend services to become available...' : 'Ready for command execution with real backend integration.'}
-
-Type 'help' for available commands or 'status' for detailed backend information.
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    `;
-  }
-
-  /**
    * Get error CLI output for display
    * @private
    */
@@ -2311,9 +2286,8 @@ Timestamp: ${new Date().toISOString()}
 - Check backend service accessibility on configured ports
 - Verify backend endpoint configuration in Templum config
 - Backend service discovery may be in progress
-- System will use orchestrator fallback for functionality
 
-Using abstraction layer with real backend integration.
+Renderer remains in skin-driven mode; waiting for valid backend payloads.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     `;
   }

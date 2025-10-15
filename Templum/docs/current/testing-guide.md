@@ -94,6 +94,7 @@ last_updated: 2025-10-15
 - **Location:** `tests/e2e/*.test.ts`.
 - **Behaviour:** Drive the mock orchestrator (`src/testing/e2e-test-framework.ts`) through end-to-end scenarios without launching real interfaces. Useful for validating contract shape and workflow sequencing.
 - **Runtime:** Seconds. Safe to include in watch mode.
+- **Command:** `npm run test -- --runTestsByPath tests/e2e/e2e-complete-workflows.test.ts` now exercises the CLI procedural window pipeline, asserting skin-driven output and the absence of legacy fallback banners.
 
 ### 3.5 Scripted Health Checks
 

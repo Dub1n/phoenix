@@ -3,7 +3,7 @@ date-created: 2025-08-28-0000
 last-updated: 2025-09-11-121733
 name: backend-service-integration-unified
 description: Fully generic, skin-driven backend integration supporting multiple protocols with zero Templum code changes for new backends
-status: ESTABLISHED
+status: "[x]"
 category: integration
 use-when:
   - Integrating new backend services without code changes

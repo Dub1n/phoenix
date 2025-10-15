@@ -3,7 +3,7 @@ date-created: 2025-08-27-0000
 last-updated: 2025-09-11-0000
 name: efficient-fallback
 description: Graceful null-check patterns and efficient fallback mechanisms that eliminate exceptions for expected behavior
-status: established
+status: "[x]"
 category: resilience
 use-when:
   - Exception-based control flow for expected fallback behavior causes performance degradation

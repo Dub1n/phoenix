@@ -3,7 +3,7 @@ date-created: 2025-09-01-0000
 last-updated: 2025-09-11-0000
 name: node.js-type-system-alignment
 description: Proper import syntax, variable naming conventions, and Node.js type system integration
-status: established
+status: "[x]"
 category: development-tools
 use-when:
   - WebSocket constructors require correct import syntax

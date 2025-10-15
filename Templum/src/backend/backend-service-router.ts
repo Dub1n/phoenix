@@ -74,6 +74,7 @@ import {
   type ManagedTimeout
 } from '../utils/async-utils';
 import { createBackendLogger, type ScopedLogEmitter } from './backend-logger';
+import { LogLevel } from '../utils/logger';
 
 // IPC Protocol Types (Based on Haruspex IPC Protocol)
 export type IPCMessageType = 
@@ -474,6 +475,8 @@ export class TemplumBackendServiceRouter
     this.useGenericDiscovery = discoveryOptions?.useGenericDiscovery ?? true;
     this.lifecycleChannel = new BackendLifecycleChannel(this);
     this.manualOverrideManager = new ManualOverrideManager();
+
+    this.log.base().setLevel(LogLevel.WARN);
 
     // ENHANCED: Configure health monitoring parameters
     this.healthCheckInterval = discoveryOptions?.healthCheckInterval ?? 30000;

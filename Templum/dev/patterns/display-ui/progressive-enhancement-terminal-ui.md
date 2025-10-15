@@ -3,7 +3,7 @@ date-created: 2025-09-12-174343
 last-updated: 2025-09-12-174343
 name: progressive-enhancement-terminal-ui
 description: Environment capability detection with multi-layer fallback strategies and adaptive UI enhancement selection for optimal terminal experience across all platforms
-status: established
+status: "[x]"
 category: display-ui
 use-when:
   - Building CLI interfaces that must work across diverse terminal environments

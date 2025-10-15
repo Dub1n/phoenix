@@ -44,7 +44,7 @@ import {
 } from './service-discovery/file-watcher';
 import { createTimeout, TIMEOUTS } from '../utils/async-utils';
 import type { ManagedTimeout } from '../utils/async-utils';
-import type { Logger } from '../utils/logger';
+import { LogLevel, type Logger } from '../utils/logger';
 import { ErrorHandler } from '../utils/error-handler';
 
 export interface DiscoveredService {
@@ -124,6 +124,12 @@ const registryLogger = serviceDiscoveryLogger.child('registry');
 const configurationLogger = serviceDiscoveryLogger.child('configuration');
 const fileWatcherLogger = serviceDiscoveryLogger.child('file-watcher');
 const scanningLogger = serviceDiscoveryLogger.child('scanning');
+
+serviceDiscoveryLogger.setLevel(LogLevel.WARN);
+registryLogger.setLevel(LogLevel.WARN);
+configurationLogger.setLevel(LogLevel.WARN);
+fileWatcherLogger.setLevel(LogLevel.WARN);
+scanningLogger.setLevel(LogLevel.WARN);
 
 interface ServiceDiscoveryEvents extends TypedEventMap {
   discoveryStarted: (payload: { strategies: number }) => void;

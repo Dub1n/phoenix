@@ -3,7 +3,7 @@ date-created: 2025-09-14T14:12:30Z
 last-updated: 2025-09-14T14:12:30Z
 name: configuration-utils
 description: Unified configuration loading utilities covering environment parsing, schema validation, file persistence, and hot reloading
-status: established
+status: "[x]"
 category: configuration
 use-when:
   - Loading configuration from files, environment variables, or defaults
@@ -155,15 +155,18 @@ const templumConfig = await ConfigurationUtils.load('config/templum.json', {
 ## Implementation Checklist
 
 **Before migration**
+
 - [ ] Inventory config sources (files, env, defaults) per component.
 - [ ] Extract existing validation rules to shared schema definitions.
 
 **During migration**
+
 - [ ] Replace manual JSON parsing with `ConfigurationUtils.load`.
 - [ ] Map env overrides to descriptors (type, env var, fallback).
 - [ ] Enable watch mode where live reload is required.
 
 **After migration**
+
 - [ ] Verify logging includes missing/invalid configuration warnings.
 - [ ] Exercise hot reload to confirm listeners receive updates.
 - [ ] Tick consolidation checklist entries.

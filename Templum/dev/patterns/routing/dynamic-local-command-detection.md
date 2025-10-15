@@ -3,7 +3,7 @@ date-created: 2025-09-13-103229
 last-updated: 2025-09-13-103229
 name: dynamic-local-command-detection
 description: Dynamic command routing system that replaces hardcoded command detection with skin-definition based routing for flexible CLI command resolution
-status: established
+status: "[x]"
 category: routing
 use-when:
   - CLI command detection needs to be dynamic rather than hardcoded

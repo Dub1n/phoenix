@@ -14,10 +14,10 @@ tags:
 
 ## Templum Implementation Patterns
 
-> **Purpose**: Single source of truth for active Templum implementation patterns and utility consolidation plans.
-> **Usage**: Align implementation work with established patterns before writing code; confirm prerequisites, keywords, and related patterns.
-> **Maintenance**: Regenerate tables and pattern reference blocks whenever frontmatter changes; update `last-updated` in this README with each refresh.
-> **Upstream Sources**: Pattern metadata (`frontmatter`) inside `Templum/dev/patterns/**/*.md`.
+- **Purpose**: Single source of truth for active Templum implementation patterns and utility consolidation plans.
+- **Usage**: Align implementation work with established patterns before writing code; confirm prerequisites, keywords, and related patterns.
+- **Maintenance**: Regenerate tables and pattern reference blocks whenever frontmatter changes; update `last-updated` in this README with each refresh.
+- **Upstream Sources**: Pattern metadata (`frontmatter`) inside `Templum/dev/patterns/**/*.md`.
 
 ### Generated Pattern Directory
 
@@ -26,99 +26,99 @@ tags:
 <!-- PATTERN:ACTIVE_TABLE -->
 | Pattern | Status | Category | Keywords |
 | --- | --- | --- | --- |
-| [abstraction-layer-architecture](architecture/abstraction-layer-architecture.md) | established | architecture | abstraction, dependency-inversion, interface-adapters, orchestrator, decoupling, testability |
-| [accessibility-compliance-cli-interfaces](display-ui/accessibility-compliance-cli-interfaces.md) | established | display-ui | accessibility-compliance, wcag-2-1-aa, screen-reader-support, keyboard-navigation, assistive-technologies, semantic-markup, inclusive-design |
-| [adaptive-mcp-integration](integration/adaptive-mcp-integration.md) | established | integration | mcp-integration, adaptive-timeout, circuit-breaker, fallback-strategies, connection-resilience, cli-validation |
-| [advanced-compatibility-validation](quality/advanced-compatibility-validation.md) | ESTABLISHED | quality | validation, compatibility, interfaces, performance, structural, cross-platform, multi-dimensional, constraints |
+| [abstraction-layer-architecture](architecture/abstraction-layer-architecture.md) | [x] | architecture | abstraction, dependency-inversion, interface-adapters, orchestrator, decoupling, testability |
+| [accessibility-compliance-cli-interfaces](display-ui/accessibility-compliance-cli-interfaces.md) | [x] | display-ui | accessibility-compliance, wcag-2-1-aa, screen-reader-support, keyboard-navigation, assistive-technologies, semantic-markup, inclusive-design |
+| [adaptive-mcp-integration](integration/adaptive-mcp-integration.md) | [x] | integration | mcp-integration, adaptive-timeout, circuit-breaker, fallback-strategies, connection-resilience, cli-validation |
+| [advanced-compatibility-validation](quality/advanced-compatibility-validation.md) | [x] | quality | validation, compatibility, interfaces, performance, structural, cross-platform, multi-dimensional, constraints |
 | [async-utils](utilities/core/async-utils.md) | [x] | infrastructure | async-utilities, timeout-management, retry-logic, debouncing, throttling, promise-utilities |
-| [backend-service-integration-unified](integration/backend-service-integration-unified.md) | ESTABLISHED | integration | backend-integration, protocol-abstraction, skin-driven, generic-factory, multi-protocol |
-| [bordered-window-layout](display-ui/bordered-window-layout.md) | established | display-ui | window-borders, terminal-layout, cli-design, visual-structure, procedural-rendering |
-| [cache-utils](utilities/system/cache-utils.md) | established | system | cache, ttl, lru, performance, analytics |
+| [backend-service-integration-unified](integration/backend-service-integration-unified.md) | [x] | integration | backend-integration, protocol-abstraction, skin-driven, generic-factory, multi-protocol |
+| [bordered-window-layout](display-ui/bordered-window-layout.md) | [x] | display-ui | window-borders, terminal-layout, cli-design, visual-structure, procedural-rendering |
+| [cache-utils](utilities/system/cache-utils.md) | [x] | system | cache, ttl, lru, performance, analytics |
 | [chainable-string-utils](utilities/data/chainable-string-utils.md) | [x] | data-management | string-utils, chainable-api, text-formatting, cli-output |
-| [circuit-breaker-resilience](resilience/circuit-breaker-resilience.md) | ESTABLISHED | resilience | circuit-breaker, resilience, error-recovery, fault-tolerance, cascading-failures, isolation |
+| [circuit-breaker-resilience](resilience/circuit-breaker-resilience.md) | [x] | resilience | circuit-breaker, resilience, error-recovery, fault-tolerance, cascading-failures, isolation |
 | [cli-process-separation](architecture/cli-process-separation.md) | established | architecture | cli-separation, process-architecture, service-discovery, ipc-communication, headless-deployment, multi-terminal |
-| [cli-visual-design-structured-windows](display-ui/cli-visual-design-structured-windows.md) | established | display-ui | structured-windows, border-rendering, unicode-fallback, terminal-compatibility, progressive-enhancement, emoji-elimination, accessibility-compliance |
-| [configuration-management](configuration/configuration-management.md) | ESTABLISHED | configuration | configuration, config-management, schema-bridging, templum-config-manager, component-initialization, environment-detection |
-| [configuration-utils](utilities/system/configuration-utils.md) | established | configuration | configuration, environment-variables, schema-validation, file-management, hot-reload |
-| [core-component-unit-testing](testing/core-component-unit-testing.md) | established | testing | unit-testing, mock-management, integration-testing, backend-validation, jest, typescript, service-discovery, connection-factory |
-| [cross-separator-navigation](display-ui/cross-separator-navigation.md) | established | display-ui | menu-navigation, separator-handling, exit-behavior, keyboard-input, raw-mode, confirmation-dialogs |
+| [cli-visual-design-structured-windows](display-ui/cli-visual-design-structured-windows.md) | [x] | display-ui | structured-windows, border-rendering, unicode-fallback, terminal-compatibility, progressive-enhancement, emoji-elimination, accessibility-compliance |
+| [configuration-management](configuration/configuration-management.md) | [x] | configuration | configuration, config-management, schema-bridging, templum-config-manager, component-initialization, environment-detection |
+| [configuration-utils](utilities/system/configuration-utils.md) | [x] | configuration | configuration, environment-variables, schema-validation, file-management, hot-reload |
+| [core-component-unit-testing](testing/core-component-unit-testing.md) | [x] | testing | unit-testing, mock-management, integration-testing, backend-validation, jest, typescript, service-discovery, connection-factory |
+| [cross-separator-navigation](display-ui/cross-separator-navigation.md) | [x] | display-ui | menu-navigation, separator-handling, exit-behavior, keyboard-input, raw-mode, confirmation-dialogs |
 | [debug-utils](utilities/dev/debug-utils.md) | [~] | development-tools | debug-toolkit, profiling, state-inspection |
-| [dependency-injection-unified](architecture/dependency-injection-unified.md) | ESTABLISHED | architecture | dependency-injection, adapter-pattern, initialization, lifecycle-management, validation |
-| [display-utils](utilities/display/display-utils.md) | established | display-ui | display-utilities, ui-consistency, service-ordering, layout-calculations, terminal-standards |
-| [dynamic-command-router-integration](integration/dynamic-command-router-integration.md) | established | integration | dynamic-command-router, menu-integration, registry-systems, backward-compatibility, skin-driven |
-| [dynamic-command-routing](routing/dynamic-command-routing.md) | established | routing | dynamic-routing, command-mapping, backend-integration, skin-definitions, runtime-configuration, generic-routing |
-| [dynamic-local-command-detection](routing/dynamic-local-command-detection.md) | established | routing | dynamic-routing, command-detection, skin-definition-driven, routing-accuracy, backward-compatibility |
-| [dynamic-routing-initialization](initialization/dynamic-routing-initialization.md) | established | initialization | lazy-initialization, routing-startup, error-handling, performance-optimization, graceful-degradation |
-| [efficient-fallback](resilience/efficient-fallback.md) | established | resilience | fallback, null-check, performance, graceful-degradation, exception-handling, error-reduction |
-| [emoji-elimination-systematic-replacement](display-ui/emoji-elimination-systematic-replacement.md) | established | display-ui | emoji-elimination, systematic-replacement, text-equivalents, batch-processing, accessibility-compliance, clean-design, unicode-cleanup |
-| [end-to-end-testing-scenarios](testing-integration/end-to-end-testing-scenarios.md) | established | testing-integration | e2e-testing, integration-testing, performance-monitoring, workflow-validation, cross-interface-testing, mock-services, jest-framework |
-| [enhanced-backendconfig-schema](configuration/enhanced-backendconfig-schema.md) | established | configuration | backend-config, connection-schema, protocol-support, authentication, service-discovery, backward-compatibility |
-| [enhanced-menu-integration](integration/enhanced-menu-integration.md) | established | integration | menu-integration, backward-compatibility, hybrid-architecture, performance-optimization, progressive-enhancement |
-| [enhanced-skin-registration-validation](quality/enhanced-skin-registration-validation.md) | established | quality | skin-registration, validation, version-management, conflict-detection, error-handling, universal-skin-engine |
-| [enhanced-validation-testing](testing/enhanced-validation-testing.md) | established | testing | validation-testing, autonomous-systems, safety-framework, agent-integration, rollback-recovery, audit-trail, production-readiness, quality-gates |
+| [dependency-injection-unified](architecture/dependency-injection-unified.md) | x | architecture | dependency-injection, adapter-pattern, initialization, lifecycle-management, validation |
+| [display-utils](utilities/display/display-utils.md) | [x] | display-ui | display-utilities, ui-consistency, service-ordering, layout-calculations, terminal-standards |
+| [dynamic-command-router-integration](integration/dynamic-command-router-integration.md) | [x] | integration | dynamic-command-router, menu-integration, registry-systems, backward-compatibility, skin-driven |
+| [dynamic-command-routing](routing/dynamic-command-routing.md) | [x] | routing | dynamic-routing, command-mapping, backend-integration, skin-definitions, runtime-configuration, generic-routing |
+| [dynamic-local-command-detection](routing/dynamic-local-command-detection.md) | [x] | routing | dynamic-routing, command-detection, skin-definition-driven, routing-accuracy, backward-compatibility |
+| [dynamic-routing-initialization](initialization/dynamic-routing-initialization.md) | [x] | initialization | lazy-initialization, routing-startup, error-handling, performance-optimization, graceful-degradation |
+| [efficient-fallback](resilience/efficient-fallback.md) | [x] | resilience | fallback, null-check, performance, graceful-degradation, exception-handling, error-reduction |
+| [emoji-elimination-systematic-replacement](display-ui/emoji-elimination-systematic-replacement.md) | [x] | display-ui | emoji-elimination, systematic-replacement, text-equivalents, batch-processing, accessibility-compliance, clean-design, unicode-cleanup |
+| [end-to-end-testing-scenarios](testing-integration/end-to-end-testing-scenarios.md) | [x] | testing-integration | e2e-testing, integration-testing, performance-monitoring, workflow-validation, cross-interface-testing, mock-services, jest-framework |
+| [enhanced-backendconfig-schema](configuration/enhanced-backendconfig-schema.md) | [x] | configuration | backend-config, connection-schema, protocol-support, authentication, service-discovery, backward-compatibility |
+| [enhanced-menu-integration](integration/enhanced-menu-integration.md) | [x] | integration | menu-integration, backward-compatibility, hybrid-architecture, performance-optimization, progressive-enhancement |
+| [enhanced-skin-registration-validation](quality/enhanced-skin-registration-validation.md) | [x] | quality | skin-registration, validation, version-management, conflict-detection, error-handling, universal-skin-engine |
+| [enhanced-validation-testing](testing/enhanced-validation-testing.md) | [x] | testing | validation-testing, autonomous-systems, safety-framework, agent-integration, rollback-recovery, audit-trail, production-readiness, quality-gates |
 | [error-handler](utilities/core/error-handler.md) | [x] | infrastructure | error-handling, catch-block-consolidation, error-recovery, timeout-management, structured-errors |
-| [error-recovery](resilience/error-recovery.md) | established | resilience | error-recovery, fallback-rendering, graceful-degradation, system-availability, fault-tolerance, integration-failure, circuit-breaker, resilience |
+| [error-recovery](resilience/error-recovery.md) | [x] | resilience | error-recovery, fallback-rendering, graceful-degradation, system-availability, fault-tolerance, integration-failure, circuit-breaker, resilience |
 | [event-utils](utilities/core/event-utils.md) | [x] | infrastructure | event-utilities, typed-events, event-emitter-consolidation, subscription-management, automatic-cleanup, event-bus |
-| [factory-registry-with-context-management](architecture/factory-registry-with-context-management.md) | established | architecture | factory-pattern, registry, context-management, error-boundaries, vscode-extension, dependency-injection |
+| [factory-registry-with-context-management](architecture/factory-registry-with-context-management.md) | [x] | architecture | factory-pattern, registry, context-management, error-boundaries, vscode-extension, dependency-injection |
 | [factory-utils](utilities/core/factory-utils.md) | [!] | infrastructure | factory-utils, factory-registry, strategy-orchestration |
-| [file-based-handoff-infrastructure](infrastructure/file-based-handoff-infrastructure.md) | established | infrastructure | agent-communication, context-isolation, handoff, json-schemas, file-system, workflow, audit-trail |
-| [generic-agent-template](development-tools/generic-agent-template.md) | established | development-tools | agent-template, context-isolation, handoff-protocol, cross-project, research-automation |
-| [http-protocol-communication](integration/http-protocol-communication.md) | established | integration | http, pcl-integration, backend-communication, api-endpoints, error-handling, timeout-handling, service-mapping |
-| [hybrid-cli-development-testing](testing-integration/hybrid-cli-development-testing.md) | established | testing-integration | hybrid-synthesis, cli-development, agent-interaction, multi-category-validation, context-preservation |
-| [integration-test-framework-transition](testing-integration/integration-test-framework-transition.md) | established | testing-integration | integration-testing, jest, public-api, mock-elimination, real-behavior-validation |
-| [interface-adapter-integration-testing](testing-integration/interface-adapter-integration-testing.md) | established | testing-integration | interface-adapters, integration-testing, orchestrator, testing-framework, mock-implementation, cross-interface, state-synchronization |
-| [ipc-protocol-communication](integration/ipc-protocol-communication.md) | established | integration | ipc, inter-process-communication, backend-service, haruspex, childprocess, real-time-messaging |
+| [file-based-handoff-infrastructure](infrastructure/file-based-handoff-infrastructure.md) | [x] | infrastructure | agent-communication, context-isolation, handoff, json-schemas, file-system, workflow, audit-trail |
+| [generic-agent-template](development-tools/generic-agent-template.md) | [x] | development-tools | agent-template, context-isolation, handoff-protocol, cross-project, research-automation |
+| [http-protocol-communication](integration/http-protocol-communication.md) | [x] | integration | http, pcl-integration, backend-communication, api-endpoints, error-handling, timeout-handling, service-mapping |
+| [hybrid-cli-development-testing](testing-integration/hybrid-cli-development-testing.md) | [x] | testing-integration | hybrid-synthesis, cli-development, agent-interaction, multi-category-validation, context-preservation |
+| [integration-test-framework-transition](testing-integration/integration-test-framework-transition.md) | [x] | testing-integration | integration-testing, jest, public-api, mock-elimination, real-behavior-validation |
+| [interface-adapter-integration-testing](testing-integration/interface-adapter-integration-testing.md) | [x] | testing-integration | interface-adapters, integration-testing, orchestrator, testing-framework, mock-implementation, cross-interface, state-synchronization |
+| [ipc-protocol-communication](integration/ipc-protocol-communication.md) | [x] | integration | ipc, inter-process-communication, backend-service, haruspex, childprocess, real-time-messaging |
 | [library-module-interop-resolution](development-tools/library-module-iterop-resolution.md) | experimental | development-tools | typescript, esmodule, interop, compilation, library-integration, zod, configuration |
 | [logger](utilities/core/logger.md) | [x] | infrastructure | logging, console-consolidation, structured-logging, context-management, performance-tracking |
-| [mcp-integration-preservation-ui-changes](integration/mcp-integration-preservation-ui-changes.md) | established | integration | mcp-preservation, agent-cli-compatibility, backward-compatibility, ui-transformation, command-mapping, session-management, mcp-bridge |
-| [mcp-pty-integration](integration/mcp-pty-integration.md) | established | integration | mcp, pty, terminal, session-management, cross-platform, mock-development |
-| [minimal-compilation-stabilization-pattern](development-tools/minimal-compilation-stabilization-pattern.md) | established | development-tools | compilation, stabilization, dependencies, typescript, test-fixes, scope-discipline, error-reduction |
-| [mock-real-api-alignment](integration/mock-real-api-alignment.md) | established | integration | api-alignment, typescript-interfaces, mocks, testing, compilation-errors, interface-conflicts |
+| [mcp-integration-preservation-ui-changes](integration/mcp-integration-preservation-ui-changes.md) | [x] | integration | mcp-preservation, agent-cli-compatibility, backward-compatibility, ui-transformation, command-mapping, session-management, mcp-bridge |
+| [mcp-pty-integration](integration/mcp-pty-integration.md) | [x] | integration | mcp, pty, terminal, session-management, cross-platform, mock-development |
+| [minimal-compilation-stabilization-pattern](development-tools/minimal-compilation-stabilization-pattern.md) | [x] | development-tools | compilation, stabilization, dependencies, typescript, test-fixes, scope-discipline, error-reduction |
+| [mock-real-api-alignment](integration/mock-real-api-alignment.md) | [x] | integration | api-alignment, typescript-interfaces, mocks, testing, compilation-errors, interface-conflicts |
 | [mock-real-api-contract-testing](testing-integration/mock-real-api-contract-testing.md) | experimental | testing-integration | contract-testing, mock-validation, api-consistency, test-infrastructure, automated-testing |
-| [multi-strategy-service-discovery](infrastructure/multi-strategy-service-discovery.md) | established | infrastructure | service-discovery, backend-integration, multi-strategy, dynamic-configuration, endpoint-scanning, registry-based |
+| [multi-strategy-service-discovery](infrastructure/multi-strategy-service-discovery.md) | [x] | infrastructure | service-discovery, backend-integration, multi-strategy, dynamic-configuration, endpoint-scanning, registry-based |
 | [navigation-utils](utilities/core/navigation-utils-utility.md) | [x] | business-logic | navigation-utils, breadcrumb-optimization, confidence-scoring, routing-flows, state-management |
-| [node.js-type-system-alignment](development-tools/node.js-type-system-alignment.md) | established | development-tools | nodejs, typescript, websocket, imports, scoping, constructors, type-system |
-| [observability-infrastructure](operations/observability-infrastructure.md) | established | operations | observability, logging, metrics, monitoring, alerting, structured-logging, performance, debugging |
+| [node.js-type-system-alignment](development-tools/node.js-type-system-alignment.md) | [x] | development-tools | nodejs, typescript, websocket, imports, scoping, constructors, type-system |
+| [observability-infrastructure](operations/observability-infrastructure.md) | [x] | operations | observability, logging, metrics, monitoring, alerting, structured-logging, performance, debugging |
 | [path-utils](utilities/system/path-utils.md) | [~] | system | safe-paths, sandbox-io, confidence-scoring, cross-platform |
-| [pcl-component-integration-unified](integration/pcl-component-integration-unified.md) | established | integration | pcl, component, integration, performance, validation, health-analysis, real-components, measurement |
-| [pcl-enhanced-rendering](display-ui/pcl-enhanced-rendering.md) | established | display-ui | pcl-rendering, theme-adapter, component-styling, universal-menu-item, type-specific-styling, visual-enhancement |
-| [pcl-rendering-integration-bridge-pattern](display-ui/pcl-rendering-integration-bridge.md) | established | display-ui | rendering, pcl-integration, universal-skin-engine, bridge-pattern, theme-mapping, layout-engine |
+| [pcl-component-integration-unified](integration/pcl-component-integration-unified.md) | [x] | integration | pcl, component, integration, performance, validation, health-analysis, real-components, measurement |
+| [pcl-enhanced-rendering](display-ui/pcl-enhanced-rendering.md) | [x] | display-ui | pcl-rendering, theme-adapter, component-styling, universal-menu-item, type-specific-styling, visual-enhancement |
+| [pcl-rendering-integration-bridge-pattern](display-ui/pcl-rendering-integration-bridge.md) | [x] | display-ui | rendering, pcl-integration, universal-skin-engine, bridge-pattern, theme-mapping, layout-engine |
 | [performance-utils](utilities/system/performance-utils.md) | [x] | system | performance, timing, metrics, telemetry |
-| [production-readiness-validation](quality/production-readiness-validation.md) | established | quality | production-readiness, system-validation, real-metrics, deployment-assessment, performance-validation, resource-management, error-handling, system-health |
-| [progressive-enhancement-terminal-ui](display-ui/progressive-enhancement-terminal-ui.md) | established | display-ui | progressive-enhancement, terminal-compatibility, capability-detection, adaptive-ui, fallback-strategies, environment-detection, graceful-degradation |
-| [protocol-communication-overview](integration/protocol-communication-overview.md) | established | integration | protocol, communication, backend-integration, ipc, http, websocket, service-integration |
+| [production-readiness-validation](quality/production-readiness-validation.md) | [x] | quality | production-readiness, system-validation, real-metrics, deployment-assessment, performance-validation, resource-management, error-handling, system-health |
+| [progressive-enhancement-terminal-ui](display-ui/progressive-enhancement-terminal-ui.md) | [x] | display-ui | progressive-enhancement, terminal-compatibility, capability-detection, adaptive-ui, fallback-strategies, environment-detection, graceful-degradation |
+| [protocol-communication-overview](integration/protocol-communication-overview.md) | [x] | integration | protocol, communication, backend-integration, ipc, http, websocket, service-integration |
 | [protocol-utils](utilities/core/protocol-utils.md) | [x] | infrastructure | protocol-utilities, connection-management, message-validation, confidence-scoring, protocol-optimization, health-monitoring |
-| [real-implementation-integration](integration/real-implementation-integration.md) | established | integration | implementation-integration, placeholder-replacement, universal-skin-engine, error-handling, fallback-coordination, real-implementations |
+| [real-implementation-integration](integration/real-implementation-integration.md) | [x] | integration | implementation-integration, placeholder-replacement, universal-skin-engine, error-handling, fallback-coordination, real-implementations |
 | [registry-utils](utilities/registry-utils.md) | x | infrastructure | registry-utils, lifecycle-management, dependency-injection, confidence-scoring |
 | [resilience-utils-consolidation-pattern](utilities/resilience-utils.md) | pending | resilience | resilience-utilities, fallback-strategies, performance-monitoring, rollback-automation, risk-mitigation, system-recovery |
 | [serialization-utils](utilities/data/serialization-utils.md) | [x] | data-management | serialization, json-safety, schema-validation, fallback-orchestration |
 | [service-utils](utilities/core/service-utils.md) | [x] | business-logic | service-utils, service-ordering, health-summary, dependency-resolution |
-| [session-management-unified](architecture/session-management-unified.md) | established | architecture | session-management, interface-coordination, state-preservation, error-recovery, multi-backend, session-lifecycle |
-| [skin-versioning-system](configuration/skin-versioning-system.md) | established | configuration | versioning, semantic-versioning, skin-management, conflict-resolution, migration, compatibility, caching |
-| [templum-resource-management-unified](infrastructure/templum-resource-management-unified.md) | established | infrastructure | resource-management, memory-allocation, connection-pooling, policy-enforcement, service-health, automated-cleanup, resource-tracking, performance-monitoring |
-| [templumerror-integration](resilience/templumerror-integration.md) | established | resilience | error-handling, typescript, error-interfaces, error-categorization, monitoring, debugging, type-safety, signal-system |
+| [session-management-unified](architecture/session-management-unified.md) | [x] | architecture | session-management, interface-coordination, state-preservation, error-recovery, multi-backend, session-lifecycle |
+| [skin-versioning-system](configuration/skin-versioning-system.md) | [x] | configuration | versioning, semantic-versioning, skin-management, conflict-resolution, migration, compatibility, caching |
+| [templum-resource-management-unified](infrastructure/templum-resource-management-unified.md) | [x] | infrastructure | resource-management, memory-allocation, connection-pooling, policy-enforcement, service-health, automated-cleanup, resource-tracking, performance-monitoring |
+| [templumerror-integration](resilience/templumerror-integration.md) | [x] | resilience | error-handling, typescript, error-interfaces, error-categorization, monitoring, debugging, type-safety, signal-system |
 | [terminal-formatter](utilities/display/terminal-formatter.md) | [x] | display-ui | terminal-formatter, semantic-formatting, cli-consistency, capability-detection |
-| [terminal-state-management](infrastructure/terminal-state-management.md) | established | infrastructure | terminal, state-management, inquirer, cli, stdin, process-control |
-| [terminal-ui-components](display-ui/terminal-ui-components.md) | established | display-ui | terminal-ui, cli-components, progress-bars, interactive-prompts, responsive-layout, chalk-theming |
-| [test-health-monitoring](quality/test-health-monitoring.md) | established | quality | test-health, monitoring, pre-commit, coverage, validation, infrastructure, quality-gates |
-| [test-infrastructure-repair](testing/test-infrastructure-repair.md) | established | testing | test-infrastructure, typescript, compilation-errors, type-system, test-repair, interface-alignment |
-| [test-type-system-alignment](testing/test-type-system-alignment.md) | established | testing | type-alignment, test-interfaces, typescript-compilation, dual-type-system, TDD-workflow, interface-contracts, templum-types, universal-skin-engine-types |
-| [test-utils](utilities/dev/test-utils.md) | established | development-tools | test-utilities, mock-generation, assertion-helpers, test-data-factories, integration-testing |
-| [theme-utils](utilities/display/theme-utils.md) | established | display-ui | theme-management, color-palette, interface-adaptations, dynamic-theming, performance-optimisation |
-| [type-conversion](foundation/type-conversion.md) | established | foundation | type-conversion, type-safety, interface-bridging, legacy-compatibility, design-tokens, theme-conversion |
+| [terminal-state-management](infrastructure/terminal-state-management.md) | [x] | infrastructure | terminal, state-management, inquirer, cli, stdin, process-control |
+| [terminal-ui-components](display-ui/terminal-ui-components.md) | [x] | display-ui | terminal-ui, cli-components, progress-bars, interactive-prompts, responsive-layout, chalk-theming |
+| [test-health-monitoring](quality/test-health-monitoring.md) | [x] | quality | test-health, monitoring, pre-commit, coverage, validation, infrastructure, quality-gates |
+| [test-infrastructure-repair](testing/test-infrastructure-repair.md) | [x] | testing | test-infrastructure, typescript, compilation-errors, type-system, test-repair, interface-alignment |
+| [test-type-system-alignment](testing/test-type-system-alignment.md) | [x] | testing | type-alignment, test-interfaces, typescript-compilation, dual-type-system, TDD-workflow, interface-contracts, templum-types, universal-skin-engine-types |
+| [test-utils](utilities/dev/test-utils.md) | [x] | development-tools | test-utilities, mock-generation, assertion-helpers, test-data-factories, integration-testing |
+| [theme-utils](utilities/display/theme-utils.md) | [x] | display-ui | theme-management, color-palette, interface-adaptations, dynamic-theming, performance-optimisation |
+| [type-conversion](foundation/type-conversion.md) | [x] | foundation | type-conversion, type-safety, interface-bridging, legacy-compatibility, design-tokens, theme-conversion |
 | [type-guards](utilities/data/type-guards.md) | [ ] | data-management | type-guards, typescript, runtime-validation, confidence-scoring, semantic-api, property-validation, type-narrowing, runtime-safety |
-| [typescript-configuration-optimization](configuration/typescript-configuration-optimization.md) | established | configuration | typescript, configuration, performance, compilation, module-resolution, esmodule-interop |
-| [unified-type-system](foundation/unified-type-system.md) | established | foundation | typescript, compilation, error-handling, type-system, map-iteration, signals, templum-types |
-| [universal-interface-orchestration](architecture/universal-interface-orchestration.md) | established | architecture | interface-switching, session-preservation, universal-skin-engine, validation, error-recovery, performance-monitoring, orchestration |
-| [universal-skin-engine](display-ui/universal-skin-engine.md) | established | display-ui | rendering, theming, cross-platform, version-management, interface-types, universal, engine, pcl-integration |
-| [unused-variable-cleanup-automation](quality/unused-variable-cleanup-automation.md) | established | quality | eslint, typescript, automation, unused-variables, imports, code-quality, compilation |
+| [typescript-configuration-optimization](configuration/typescript-configuration-optimization.md) | [x] | configuration | typescript, configuration, performance, compilation, module-resolution, esmodule-interop |
+| [unified-type-system](foundation/unified-type-system.md) | [x] | foundation | typescript, compilation, error-handling, type-system, map-iteration, signals, templum-types |
+| [universal-interface-orchestration](architecture/universal-interface-orchestration.md) | [x] | architecture | interface-switching, session-preservation, universal-skin-engine, validation, error-recovery, performance-monitoring, orchestration |
+| [universal-skin-engine](display-ui/universal-skin-engine.md) | [x] | display-ui | rendering, theming, cross-platform, version-management, interface-types, universal, engine, pcl-integration |
+| [unused-variable-cleanup-automation](quality/unused-variable-cleanup-automation.md) | [x] | quality | eslint, typescript, automation, unused-variables, imports, code-quality, compilation |
 | [validator](utilities/data/validator.md) | proposed | data-management | validation-utilities, data-consistency, schema-validation, input-validation, type-checking |
-| [vscode-extension-activation-pattern](initialization/vscode-extension-activation-pattern.md) | established | initialization | vscode, extension, activation, webview, commands, lifecycle, graceful-degradation |
-| [vscode-extension-configuration](configuration/vscode-extension-configuration.md) | established | configuration | vscode, extension, configuration, manifest, package.json, cli-conversion, activation-events, view-contributions |
-| [vscode-extension-integration-system](integration/vscode-extension-integration-system.md) | established | integration | vscode-extension, service-discovery, interface-switching, connection-management, resource-cleanup, tree-provider, templum-core |
-| [vscode-service-tree-provider](display-ui/vscode-service-tree-provider.md) | established | display-ui | vscode, tree-provider, conditional-display, backend-capability-profile, service-tree, visual-indicators |
-| [websocket-protocol-communication](integration/websocket-protocol-communication.md) | established | integration | websocket, real-time, bidirectional, protocol, litany, backend-service, messaging |
-| [window-utils](utilities/display/window-utils.md) | established | display-ui | window-utilities, ui-consistency, border-rendering, layout-management, terminal-ui |
+| [vscode-extension-activation-pattern](initialization/vscode-extension-activation-pattern.md) | [x] | initialization | vscode, extension, activation, webview, commands, lifecycle, graceful-degradation |
+| [vscode-extension-configuration](configuration/vscode-extension-configuration.md) | [x] | configuration | vscode, extension, configuration, manifest, package.json, cli-conversion, activation-events, view-contributions |
+| [vscode-extension-integration-system](integration/vscode-extension-integration-system.md) | [x] | integration | vscode-extension, service-discovery, interface-switching, connection-management, resource-cleanup, tree-provider, templum-core |
+| [vscode-service-tree-provider](display-ui/vscode-service-tree-provider.md) | [x] | display-ui | vscode, tree-provider, conditional-display, backend-capability-profile, service-tree, visual-indicators |
+| [websocket-protocol-communication](integration/websocket-protocol-communication.md) | [x] | integration | websocket, real-time, bidirectional, protocol, litany, backend-service, messaging |
+| [window-utils](utilities/display/window-utils.md) | [x] | display-ui | window-utilities, ui-consistency, border-rendering, layout-management, terminal-ui |
 <!-- /PATTERN:ACTIVE_TABLE -->
 
 #### Deprecated or Migrated Patterns
@@ -1031,7 +1031,7 @@ tags:
   - prerequisites: vscode-extension-development-knowledge
   - related patterns: extension-development-lifecycle, cli-to-extension-migration
 
-- [vscode-extension-integration-system](integration/vscode-extension-integration-system.md) | 2025-09-11-0000 | integration | Comprehensive VSCode extension integration with service discovery, connection management, interface switching, and resource cleanup
+- [vscode-extension-integration-system](integration/vscode-extension-integration-system.md) | 2025-10-14-0000 | integration | Comprehensive VSCode extension integration with service discovery, connection management, interface switching, and resource cleanup
   - use-when:
     - Building comprehensive VSCode extension integration systems
     - Implementing real-time service discovery in VSCode extensions

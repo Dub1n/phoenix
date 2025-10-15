@@ -8,6 +8,8 @@
 
 import type { TypedEventMap } from '../utils/event-utils';
 import { EventDrivenComponent } from '../utils/event-bus-adapter';
+import type { Logger } from '../utils/logger';
+import { getSkinLogger } from './skin-logger';
 import { 
   UniversalSkinDefinition, 
   SkinRenderResult, 
@@ -203,9 +205,19 @@ export class UniversalSkinEngine extends EventDrivenComponent<UniversalSkinEngin
     performanceMode: 'development' | 'production';
     systemVersion: string;
   };
+  private readonly coreLogger: Logger;
+  private readonly renderingLogger: Logger;
+  private readonly validationLogger: Logger;
+  private readonly integrationLogger: Logger;
 
   constructor(systemVersion?: string) {
     super(`universal-skin-engine:${UniversalSkinEngine.instanceCounter++}`, 200);
+    const instanceId = UniversalSkinEngine.instanceCounter - 1;
+    const instanceLogger = getSkinLogger('universal-skin-engine').child(`instance-${instanceId}`);
+    this.coreLogger = instanceLogger;
+    this.renderingLogger = instanceLogger.child('rendering');
+    this.validationLogger = instanceLogger.child('validation');
+    this.integrationLogger = instanceLogger.child('integration');
     this.config = {
       cacheTimeout: 300000, // 5 minutes
       maxCacheSize: 100, // 100 rendered skins
@@ -357,10 +369,13 @@ export class UniversalSkinEngine extends EventDrivenComponent<UniversalSkinEngin
         timestamp: Date.now()
       });
 
-      console.log(
-        `Universal Skin Engine: ${result.action === 'registered' ? 'Registered' : 'Updated'} ` +
-        `${optimizedSkin.name} v${optimizedSkin.version} with ${optimizedSkin.pclCompatibility?.reusePercentage ?? 0}% PCL reuse`
-      );
+      this.coreLogger.info('Skin registration completed', {
+        skinId: optimizedSkin.id,
+        skinName: optimizedSkin.name,
+        version: optimizedSkin.version,
+        action: result.action,
+        pclReusePercentage: optimizedSkin.pclCompatibility?.reusePercentage ?? 0
+      });
 
       return result;
     } catch (error) {
@@ -530,7 +545,11 @@ export class UniversalSkinEngine extends EventDrivenComponent<UniversalSkinEngin
           timestamp: Date.now()
         });
         
-        console.log(`Universal Skin Engine: Fallback rendering successful for ${skin.id} on ${interfaceType}`);
+        this.renderingLogger.info('Fallback rendering succeeded', {
+          skinId: skin.id,
+          interfaceType,
+          fallbackStrategy: 'basic-rendering'
+        });
         return fallbackResult;
         
       } else {
@@ -550,7 +569,12 @@ export class UniversalSkinEngine extends EventDrivenComponent<UniversalSkinEngin
         timestamp: Date.now()
       });
       
-      console.warn(`Universal Skin Engine: Fallback rendering also failed for ${skin.id}:`, fallbackErrorMessage);
+      this.renderingLogger.warn('Fallback rendering failed after retry', {
+        skinId: skin.id,
+        interfaceType,
+        originalError,
+        fallbackError: fallbackErrorMessage
+      });
       return this.createMinimalResponse(skin, interfaceType, context, startTime, `${originalError} | Fallback: ${fallbackErrorMessage}`);
     }
   }
@@ -1043,7 +1067,11 @@ export class UniversalSkinEngine extends EventDrivenComponent<UniversalSkinEngin
       timestamp: Date.now()
     });
 
-    console.log(`Universal Skin Engine: Created theme variant ${variantName} for ${baseSkinId}`);
+    this.themeLogger.info('Theme variant created', {
+      baseSkinId,
+      baseThemeName,
+      variantName
+    });
   }
 
   /**
@@ -1199,14 +1227,24 @@ export class UniversalSkinEngine extends EventDrivenComponent<UniversalSkinEngin
       const resolution = await this.versionManager.resolveVersion(query, availableVersions);
       
       if (resolution.resolved && resolution.skin) {
-        console.log(`Loaded skin ${query.skinId} v${resolution.version}${resolution.fallbackUsed ? ' (fallback)' : ''}`);
+        this.coreLogger.info('Skin version resolved', {
+          skinId: query.skinId,
+          version: resolution.version,
+          fallbackUsed: Boolean(resolution.fallbackUsed)
+        });
         return resolution.skin;
       }
 
-      console.warn(`Failed to load skin ${query.skinId}: ${resolution.reason}`);
+      this.coreLogger.warn('Skin version resolution failed', {
+        skinId: query.skinId,
+        reason: resolution.reason
+      });
       return null;
     } catch (error) {
-      console.error(`Error loading skin ${query.skinId}:`, error);
+      const errorInstance = error instanceof Error ? error : new Error(String(error));
+      this.coreLogger.error('Unexpected error loading skin', errorInstance, {
+        skinId: query.skinId
+      });
       return null;
     }
   }
@@ -1251,7 +1289,11 @@ export class UniversalSkinEngine extends EventDrivenComponent<UniversalSkinEngin
 
       return allVersionInfo.sort((a, b) => this.versionManager.compareVersions(b.version, a.version));
     } catch (error) {
-      console.error(`Error getting version info for ${skinId}:`, error);
+      const errorInstance = error instanceof Error ? error : new Error(String(error));
+      this.coreLogger.error('Failed to retrieve skin version info', errorInstance, {
+        skinId,
+        requestedVersion: version ?? 'latest'
+      });
       return null;
     }
   }
@@ -1278,7 +1320,11 @@ export class UniversalSkinEngine extends EventDrivenComponent<UniversalSkinEngin
 
       return await this.versionManager.validateCompatibility(skin, this.config.systemVersion);
     } catch (error) {
-      console.error(`Error checking compatibility for ${skinId} v${version}:`, error);
+      const errorInstance = error instanceof Error ? error : new Error(String(error));
+      this.coreLogger.error('Failed to evaluate skin compatibility', errorInstance, {
+        skinId,
+        version
+      });
       return null;
     }
   }
@@ -1323,7 +1369,11 @@ export class UniversalSkinEngine extends EventDrivenComponent<UniversalSkinEngin
 
       return null;
     } catch (error) {
-      console.error(`Error getting latest compatible skin for ${skinId}:`, error);
+      const errorInstance = error instanceof Error ? error : new Error(String(error));
+      this.coreLogger.error('Failed to resolve latest compatible skin', errorInstance, {
+        skinId,
+        includePrerelease
+      });
       return null;
     }
   }
@@ -1374,10 +1424,17 @@ export class UniversalSkinEngine extends EventDrivenComponent<UniversalSkinEngin
       this.versionManager.unregisterSkinVersion(skinId, version);
 
       this.emit('skinVersionUnregistered', { skinId, version, timestamp: Date.now() });
-      console.log(`Unregistered skin ${skinId} v${version}`);
+      this.coreLogger.info('Skin version unregistered', {
+        skinId,
+        version
+      });
       return true;
     } catch (error) {
-      console.error(`Error unregistering skin ${skinId} v${version}:`, error);
+      const errorInstance = error instanceof Error ? error : new Error(String(error));
+      this.coreLogger.error('Failed to unregister skin version', errorInstance, {
+        skinId,
+        version
+      });
       return false;
     }
   }
@@ -1394,7 +1451,10 @@ export class UniversalSkinEngine extends EventDrivenComponent<UniversalSkinEngin
       timestamp: Date.now()
     });
 
-    console.log('Universal Skin Engine: Connected to PCL-Skins service');
+    this.integrationLogger.info('PCL-Skins service connected', {
+      serviceVersion: pclSkinsService.version || 'unknown',
+      supportedPatterns: pclSkinsService.getSupportedPatterns?.() || []
+    });
   }
 
   /**
@@ -1423,7 +1483,10 @@ export class UniversalSkinEngine extends EventDrivenComponent<UniversalSkinEngin
     }
 
     if (validation.warnings && validation.warnings.length > 0) {
-      console.warn(`Skin ${skin.id ?? 'unknown'} validation warnings:`, validation.warnings);
+      this.validationLogger.warn('Skin validation produced warnings', {
+        skinId: skin.id ?? 'unknown',
+        warnings: validation.warnings
+      });
     }
 
     return {
@@ -1459,7 +1522,11 @@ export class UniversalSkinEngine extends EventDrivenComponent<UniversalSkinEngin
         errors.push(...compatibility.issues);
       } else if (compatibility.issues.length > 0) {
         // Add warnings for partial compatibility issues
-        console.warn(`Skin ${skin.id} v${skin.version} compatibility warnings:`, compatibility.issues);
+        this.validationLogger.warn('Skin compatibility warnings detected', {
+          skinId: skin.id,
+          version: skin.version,
+          issues: compatibility.issues
+        });
       }
 
       return { valid: errors.length === 0, errors };
@@ -1540,7 +1607,12 @@ export class UniversalSkinEngine extends EventDrivenComponent<UniversalSkinEngin
           }
 
         } catch (advancedError) {
-          console.warn(`Advanced compatibility validation failed: ${advancedError}`);
+          this.validationLogger.warn('Advanced compatibility validation failed', {
+            skinId: skin.id,
+            version: skin.version,
+            targetInterface,
+            error: advancedError instanceof Error ? advancedError.message : String(advancedError)
+          });
           if (opts.strictMode) {
             errors.push(`Advanced validation error: ${advancedError}`);
           } else {
@@ -1553,9 +1625,20 @@ export class UniversalSkinEngine extends EventDrivenComponent<UniversalSkinEngin
 
       // Log comprehensive validation results
       if (advancedReport) {
-        console.log(`[SKIN-VALIDATION] ${skin.id} v${skin.version} → ${targetInterface}: ${advancedReport.overall} (score: ${advancedReport.score})`);
+        this.validationLogger.info('Advanced compatibility summary', {
+          skinId: skin.id,
+          version: skin.version,
+          targetInterface,
+          overall: advancedReport.overall,
+          score: advancedReport.score
+        });
         if (advancedReport.recommendations && advancedReport.recommendations.length > 0) {
-          console.log(`[SKIN-VALIDATION] Recommendations:`, advancedReport.recommendations);
+          this.validationLogger.info('Advanced compatibility recommendations', {
+            skinId: skin.id,
+            version: skin.version,
+            targetInterface,
+            recommendations: advancedReport.recommendations
+          });
         }
       }
 
@@ -1646,7 +1729,10 @@ export class UniversalSkinEngine extends EventDrivenComponent<UniversalSkinEngin
       const parsedVersion = this.versionManager.parseVersion(skin.version);
       this.versionManager.registerSkinVersion(skin.id, parsedVersion);
 
-      console.log(`Stored skin ${skin.id} v${skin.version} in versioned storage`);
+      this.storageLogger.info('Skin version stored', {
+        skinId: skin.id,
+        version: skin.version
+      });
     } catch (error) {
       throw createTemplumError(`Failed to store skin version: ${error}`, 'skin-storage-error', 'validation');
     }
@@ -1670,9 +1756,16 @@ export class UniversalSkinEngine extends EventDrivenComponent<UniversalSkinEngin
       // TODO: Pre-warm cache for common interface/theme combinations
       // This could be added based on usage patterns
 
-      console.log(`Updated caches for skin ${skin.id} v${skin.version}`);
+      this.cacheLogger.info('Skin caches refreshed', {
+        skinId: skin.id,
+        version: skin.version,
+        removedEntries: keysToRemove.length
+      });
     } catch (error) {
-      console.warn(`Failed to update caches for skin ${skin.id}:`, error);
+      this.cacheLogger.warn('Failed to refresh skin caches', {
+        skinId: skin.id,
+        error: error instanceof Error ? error.message : String(error)
+      });
       // Don't throw - cache updates are not critical for registration success
     }
   }
@@ -2292,7 +2385,9 @@ export class UniversalSkinEngine extends EventDrivenComponent<UniversalSkinEngin
 
   private initializePCLSkinIntegration(): void {
     // Initialize PCL-Skins integration patterns
-    console.log('Universal Skin Engine: Initializing PCL-Skins integration for 70% reuse potential');
+    this.integrationLogger.info('Initializing PCL-Skins integration', {
+      reuseTargetPercentage: 70
+    });
   }
 
   private initializeDefaultSkins(): void {
@@ -2370,7 +2465,10 @@ export class UniversalSkinEngine extends EventDrivenComponent<UniversalSkinEngin
     };
 
     this.skins.set(defaultSkin.id, defaultSkin);
-    console.log(`Universal Skin Engine: Initialized default skin with 70% PCL reuse potential`);
+    this.themeLogger.info('Default universal skin initialized', {
+      skinId: defaultSkin.id,
+      reusePercentage: defaultSkin.pclCompatibility?.reusePercentage ?? null
+    });
   }
 
   private createDefaultTheme(type: 'light' | 'dark'): ThemeDefinition {

@@ -4,28 +4,30 @@ date-created: 2025-09-11-0000
 last-updated: 2025-09-11-0000
 name: real-interface-adapter-integration-unified
 description: Enhance interface adapters to prioritize real backend services with intelligent fallback mechanisms
-status: established
+status: "[x]"
 category: integration
 use-when:
-  - Interface adapters are falling back to simulated behavior
-  - Backend services are available but not being utilized
-  - Real system integration testing is required
-  - Users need clear feedback about backend connectivity status
+
+- Interface adapters are falling back to simulated behavior
+- Backend services are available but not being utilized
+- Real system integration testing is required
+- Users need clear feedback about backend connectivity status
 keywords:
-  - interface-adapters
-  - backend-integration
-  - fallback-mechanisms
-  - service-discovery
-  - timeout-handling
-  - real-time-status
+- interface-adapters
+- backend-integration
+- fallback-mechanisms
+- service-discovery
+- timeout-handling
+- real-time-status
 prerequisites:
-  - backend-service-integration
-  - abstraction-layer-architecture
-  - universal-interface-orchestration
+- backend-service-integration
+- abstraction-layer-architecture
+- universal-interface-orchestration
 related-patterns:
-  - backend-service-integration
-  - abstraction-layer-architecture
-  - universal-interface-orchestration
+- backend-service-integration
+- abstraction-layer-architecture
+- universal-interface-orchestration
+
 ---
 
 ### Real Interface Adapter Integration Unified Pattern

@@ -3,7 +3,7 @@ date-created: 2025-09-16T150000Z
 last-updated: 2025-09-16T150000Z
 name: validation-async-utils
 description: Shared execution helpers for the validation system that wrap Templum AsyncUtils to eliminate bespoke timeout logic.
-status: established
+status: "[x]"
 category: validation-core
 use-when:
   - Validator code needs to enforce execution timeouts or retries

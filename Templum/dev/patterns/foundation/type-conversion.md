@@ -3,7 +3,7 @@ date-created: 2025-09-11-0000
 last-updated: 2025-09-11-0000
 name: type-conversion
 description: Type-safe conversion utilities that bridge interface gaps while maintaining full type safety
-status: established
+status: "[x]"
 category: foundation
 use-when:
   - Type system mismatches between simple legacy interfaces and comprehensive modern type definitions

@@ -3,7 +3,7 @@ date-created: 2025-09-12-174343
 last-updated: 2025-09-12-174343
 name: mcp-integration-preservation-ui-changes
 description: Maintain MCP Channel compatibility and agent-CLI interaction capabilities during major UI transformations while preserving backward compatibility and command mapping
-status: established
+status: "[x]"
 category: integration
 use-when:
   - Performing major CLI interface redesigns while maintaining agent compatibility

@@ -3,7 +3,7 @@ date-created: 2025-08-29-0000
 last-updated: 2025-09-11-121733
 name: dynamic-command-router-integration
 description: Menu and registry systems need to integrate with DynamicCommandRouter for skin-driven command routing while maintaining backward compatibility with legacy hardcoded patterns
-status: established
+status: "[x]"
 category: integration
 use-when:
   - Menu and registry systems need to integrate with DynamicCommandRouter

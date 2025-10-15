@@ -3,7 +3,7 @@ date-created: 2025-08-27-0000
 last-updated: 2025-09-11-0000
 name: integration-test-framework-transition
 description: Transition from private property mocking to public API testing with real component validation
-status: established
+status: "[x]"
 category: testing-integration
 use-when:
   - Integration tests written for mock-based architecture need to validate real implementation behavior

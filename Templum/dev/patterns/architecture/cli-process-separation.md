@@ -3,7 +3,7 @@ date-created: 2025-09-02-0000
 last-updated: 2025-09-11-0000
 name: cli-process-separation
 description: Architectural separation of service and CLI into independent processes with IPC-based service discovery
-status: established
+status: "[x]"
 category: architecture
 use-when:
   - Need headless service deployment without CLI interface

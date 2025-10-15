@@ -3,7 +3,7 @@ date-created: 2025-09-11-0000
 last-updated: 2025-09-11-0000
 name: terminal-state-management
 description: Prevents terminal state corruption when using inquirer in CLI applications
-status: established
+status: "[x]"
 category: infrastructure
 use-when:
   - CLI applications using inquirer for menu navigation
@@ -25,6 +25,7 @@ related-patterns:
 ---
 
 ### Terminal State Management Pattern
+
 **Problem**: Terminal state corruption when nesting `inquirer` prompt sessions causes complete CLI freezing where even Ctrl+C becomes unresponsive.
 **Solution**: Use compatible input handling that cooperates with main inquirer session rather than creating nested prompt conflicts.
 

@@ -3,7 +3,7 @@ date-created: 2025-09-14T18:20:00Z
 last-updated: 2025-09-14T18:20:00Z
 name: display-utils
 description: Centralized display utilities to consolidate scattered UI calculations, display standards, and service ordering patterns across interface components
-status: established
+status: "[x]"
 category: display-ui
 use-when:
   - Consolidating display consistency calculations scattered across CLI components
@@ -237,16 +237,19 @@ const separator = DisplayUtils.separator(layout.separatorLength);
 ## Implementation Checklist
 
 **Before migration**
+
 - [ ] Inventory manual width/service ordering helpers in targeted files.
 - [ ] Capture terminal width edge cases (narrow terminals, ANSI content).
 
 **During migration**
+
 - [ ] Replace width calculations with `DisplayUtils.calculate()` fluent chains.
 - [ ] Apply `DisplayUtils.orderServices` for service state sorting.
 - [ ] Swap separator creation with `DisplayUtils.separator`.
 - [ ] Wire `TerminalFormatter` output in components that format menu text.
 
 **After migration**
+
 - [ ] Verify CLI layout snapshots for connected/disconnected services.
 - [ ] Ensure logging noise stays at debug level only.
 - [ ] Update consolidation checklist ticks in `safe-consolidation-candidates.md`.

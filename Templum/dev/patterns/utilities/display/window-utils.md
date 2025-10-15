@@ -3,7 +3,7 @@ date-created: 2025-09-15T10:00:00Z
 last-updated: 2025-09-15T10:00:00Z
 name: window-utils
 description: Chainable window utilities to consolidate border rendering, window layout logic, and modal composition across CLI components
-status: established
+status: "[x]"
 category: display-ui
 use-when:
   - Replacing duplicated border rendering and window layout helpers
@@ -239,15 +239,18 @@ const modal = WindowUtils.builder()
 ## Implementation Checklist
 
 **Before migration**
+
 - [ ] Capture existing border styles, title placements, and padding defaults.
 - [ ] Identify shared content formatting needs (wrapping, truncation).
 
 **During migration**
+
 - [ ] Replace manual border builders with `WindowUtils.builder()`.
 - [ ] Route width calculations through `DisplayUtils.responsiveWidth`.
 - [ ] Use formatter-provided characters for all borders.
 
 **After migration**
+
 - [ ] Validate modal rendering in a narrow and wide terminal.
 - [ ] Confirm debug logging is only emitted at `DEBUG` level.
 - [ ] Update consolidation checklist for window utilities.

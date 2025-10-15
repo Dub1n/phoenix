@@ -2,12 +2,12 @@
 
 ## Requirement Summary
 
-- Status: [~]
+- Status: [x]
 - Requirement text: "Procedural windowed TUI layout from skin descriptors."
 
 ## Prerequisites
 
-- [ ] Skin payload consumption powering full UI without hardcoding (see dev/tasks/skin-payload-consumption.md). — Skin metadata must reach the CLI renderer to drive procedural window layout.
+- [x] Skin payload consumption powering full UI without hardcoding (see dev/tasks/skin-payload-consumption.md). — Skin metadata must reach the CLI renderer to drive procedural window layout.
 
 ## Implementation Steps
 
@@ -22,8 +22,8 @@
 
 ### Blocked Actions (pending Skin payload consumption powering full UI without hardcoding)
 
-- [ ] Final CLI end-to-end validation in `tests/e2e/e2e-complete-workflows.test.ts` asserting loaded skins drive windowed layouts without fallback logic.
-- [ ] Removal of legacy hardcoded CLI windows/menu scaffolds after upstream payload flow is proven stable.
+- [x] Final CLI end-to-end validation in `tests/e2e/e2e-complete-workflows.test.ts` asserting loaded skins drive windowed layouts without fallback logic. (2025-10-15 — Added `CLI Procedural Windows` coverage and executed `npm run test -- --runTestsByPath tests/e2e/e2e-complete-workflows.test.ts`.)
+- [x] Removal of legacy hardcoded CLI windows/menu scaffolds after upstream payload flow is proven stable. (Replaced fallback ASCII banners with skin-driven warnings; CLI output is now sourced exclusively from `EnhancedWindowSystem.renderWindowSet`.)
 
 ## Definition of Done
 
@@ -38,9 +38,9 @@
 - Code: `src/rendering/content-layout-system.ts`, `src/rendering/universal-layout-engine.ts`, `src/interfaces/enhanced-window-system.ts`, `src/interfaces/cli-adapter-abstracted.ts`, `src/interfaces/adaptive-cli-integration.ts`, `src/menus/universal-menu-registry.ts`.
 - Tests: `tests/rendering/content-layout-system.test.ts`, `tests/interfaces/interface-adapter-integration.test.ts`, `tests/e2e/e2e-complete-workflows.test.ts`.
 
-## Current Assessment (2025-10-05)
+## Current Assessment (2025-10-15)
 
-- Implementation: `ContentLayoutSystem` can render windowed layouts, but CLI entry points never invoke it; adaptive CLI flows remain bound to legacy renderers.
-- Tests: No procedural TUI integration tests exist; existing CLI adapter tests merely assert legacy snapshots and trigger lingering process handles (`scripts/run-with-timeout.mjs --timeout 180000 -- npm test -- tests/interfaces/interface-adapter-integration.test.ts`).
-- Coverage: Global coverage threshold enforcement still blocks single-test runs; targeted suites (`tests/rendering/content-layout-system.test.ts`, CLI adapter integration focus) pass but continue to surface the longstanding coverage gate tracked elsewhere.
-- Required steps: finalize end-to-end validation once upstream blocked actions clear; rerun the full coverage harness after the `babel-plugin-istanbul` defect is addressed.
+- Implementation: CLI adapters now rely solely on procedural window sets delivered by `EnhancedWindowSystem.renderWindowSet`; fallback ASCII scaffolds were removed and replaced with a lightweight warning when no CLI-compatible skins are available.
+- Tests: `tests/e2e/e2e-complete-workflows.test.ts` verifies procedural window rendering and the absence of fallback output; adapter integration tests continue to cover nested menu rendering. Command executed: `npm run test -- --runTestsByPath tests/e2e/e2e-complete-workflows.test.ts`.
+- Coverage: Global coverage gating still hinges on the `babel-plugin-istanbul` fix in `dev/tasks/test-architecture-governance.md`; targeted rendering and adapter suites pass with the new e2e assertions.
+- Next steps: Re-run the full coverage harness once the instrumentation fix lands; keep the warning copy aligned with skin-driven behaviour while live backend payload validation remains pending.

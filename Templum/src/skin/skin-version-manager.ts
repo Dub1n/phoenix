@@ -38,6 +38,7 @@ import {
   createDefaultInterfaceCapabilityMatrix,
   createDefaultInterfaceRequirements
 } from './versioning/advanced-compatibility-service';
+import { createLogger, type Logger } from '../utils/logger';
 
 /**
  * Comprehensive skin version management with semantic versioning support
@@ -51,11 +52,18 @@ export class SkinVersionManager implements ISkinVersionManager {
   private readonly interfaceCapabilityMatrix: InterfaceCapabilityMatrix;
   private validatorVersion = '1.0.0';
   private readonly advancedCompatibilityService: AdvancedCompatibilityService;
+  private readonly logger: Logger;
+  private readonly compatibilityLogger: Logger;
+  private readonly migrationLogger: Logger;
 
   constructor(systemVersion?: string) {
     if (systemVersion) {
       this.systemVersion = systemVersion;
     }
+    const baseLogger = createLogger('skin-version-manager');
+    this.logger = baseLogger;
+    this.compatibilityLogger = baseLogger.child('compatibility');
+    this.migrationLogger = baseLogger.child('migration');
     this.initializeDefaultRules();
     this.initializeDefaultMigrationStrategies();
     this.interfaceRequirements = createDefaultInterfaceRequirements();
@@ -199,7 +207,11 @@ export class SkinVersionManager implements ISkinVersionManager {
       // Default to exact match if pattern not recognized
       return this.compareVersions(parsedVersion, range) === 0;
     } catch (error) {
-      console.warn(`SkinVersionManager: Failed to evaluate range ${range} for version ${version}:`, error);
+      this.logger.warn('Failed to evaluate version range', {
+        version,
+        range,
+        error: error instanceof Error ? error.message : String(error)
+      });
       return false;
     }
   }
@@ -471,7 +483,10 @@ export class SkinVersionManager implements ISkinVersionManager {
 
       return conflicts;
     } catch (error) {
-      console.warn(`SkinVersionManager: Failed to detect conflicts:`, error);
+      this.compatibilityLogger.warn('Failed to detect version conflicts', {
+        skinId: newSkin.id,
+        error: error instanceof Error ? error.message : String(error)
+      });
       return conflicts;
     }
   }
@@ -565,7 +580,11 @@ export class SkinVersionManager implements ISkinVersionManager {
 
       return matchingStrategies[0] || this.createDefaultMigrationStrategy(fromVersion, toVersion);
     } catch (error) {
-      console.warn(`SkinVersionManager: Failed to find migration strategy:`, error);
+      this.migrationLogger.warn('Failed to determine migration strategy', {
+        fromVersion,
+        toVersion,
+        error: error instanceof Error ? error.message : String(error)
+      });
       return null;
     }
   }

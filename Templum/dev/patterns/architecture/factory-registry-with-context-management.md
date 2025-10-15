@@ -3,7 +3,7 @@ date-created: 2025-08-29-0000
 last-updated: 2025-09-11-0000
 name: factory-registry-with-context-management
 description: Factory registration systems with context-dependent dependencies, error boundaries and graceful degradation
-status: established
+status: "[x]"
 category: architecture
 use-when:
   - Need factory registration with context dependencies

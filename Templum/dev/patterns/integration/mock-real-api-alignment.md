@@ -3,7 +3,7 @@ date-created: 2025-08-28-0000
 last-updated: 2025-09-11-0000
 name: mock-real-api-alignment
 description: Unifies mock interfaces with real implementation APIs to prevent compilation errors and integration failures
-status: established
+status: "[x]"
 category: integration
 use-when:
   - Mock interfaces and real implementation APIs become misaligned over time

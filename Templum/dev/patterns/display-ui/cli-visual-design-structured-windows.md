@@ -3,7 +3,7 @@ date-created: 2025-09-12-174343
 last-updated: 2025-09-12-174343
 name: cli-visual-design-structured-windows
 description: Structured window rendering system with Unicode box-drawing and ASCII fallback for clean, emoji-free CLI interfaces with proper padding and progressive enhancement
-status: established
+status: "[x]"
 category: display-ui
 use-when:
   - Migrating from emoji-heavy CLI interfaces to clean structured design

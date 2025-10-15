@@ -3,7 +3,7 @@ date-created: 2025-08-20-0000
 last-updated: 2025-09-11-0000
 name: circuit-breaker-resilience
 description: Circuit breaker implementation with operation-specific tracking, Templum error integration, signal emission, and specialized factory patterns
-status: ESTABLISHED
+status: "[x]"
 category: resilience
 use-when:
   - Critical operations need resilience against cascading failures

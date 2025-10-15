@@ -3,7 +3,7 @@ date-created: 2025-09-01-0000
 last-updated: 2025-09-11-0000
 name: templumerror-integration
 description: Standardized error handling pattern with typed error interfaces, utility functions, and consistent error categorization
-status: established
+status: "[x]"
 category: resilience
 use-when:
   - Components need consistent error handling approaches

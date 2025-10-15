@@ -3,7 +3,7 @@ date-created: 2025-09-01-0000
 last-updated: 2025-09-11-0000
 name: core-component-unit-testing
 description: Comprehensive unit testing pattern with mock management, integration test orchestration, and real backend validation for critical components
-status: established
+status: "[x]"
 category: testing
 use-when:
   - Testing core components in Templum with external dependencies

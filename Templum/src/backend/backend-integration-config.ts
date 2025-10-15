@@ -7,6 +7,7 @@
  */
 
 import { BackendConfig } from '../types/universal-skin-engine-types';
+import { createLogger, LogLevel, type Logger } from '../utils/logger';
 
 /**
  * Feature flags controlling backend integration behavior
@@ -135,8 +136,16 @@ export const DEFAULT_BACKEND_INTEGRATION_CONFIG: BackendIntegrationConfig = {
 export class BackendIntegrationConfigManager {
   private config: BackendIntegrationConfig;
   private configListeners: Array<(config: BackendIntegrationConfig) => void> = [];
+  private readonly logger: Logger;
+  private readonly configLogger: Logger;
+  private readonly listenerLogger: Logger;
 
   constructor(initialConfig?: Partial<BackendIntegrationConfig>) {
+    const baseLogger = createLogger('backend-integration-config');
+    baseLogger.setLevel(LogLevel.WARN);
+    this.logger = baseLogger;
+    this.configLogger = baseLogger.child('configuration');
+    this.listenerLogger = baseLogger.child('listeners');
     this.config = {
       ...DEFAULT_BACKEND_INTEGRATION_CONFIG,
       ...initialConfig,
@@ -229,7 +238,9 @@ export class BackendIntegrationConfigManager {
   getBackendConfig(backendName: string, skinConfig?: BackendConfig): BackendConfig | null {
     // Primary: Use skin configuration when available (fully generic approach)
     if (skinConfig) {
-      console.log(`[GENERIC_INTEGRATION] Using skin-provided configuration for ${backendName}`);
+      this.logger.info('Using skin-provided backend configuration', {
+        backendName
+      });
       // Apply any configured overrides
       const override = this.config.genericOverrides.get(backendName);
       return override ? { ...skinConfig, ...override } : skinConfig;
@@ -237,7 +248,9 @@ export class BackendIntegrationConfigManager {
 
     // Secondary: Service discovery will provide configuration
     // No fallback to hardcoded values - backends must self-describe
-    console.log(`[GENERIC_INTEGRATION] No skin configuration available for ${backendName}, relying on service discovery`);
+    this.logger.info('No skin configuration available; relying on service discovery', {
+      backendName
+    });
     return null;
   }
 
@@ -316,7 +329,8 @@ export class BackendIntegrationConfigManager {
       try {
         listener(this.config);
       } catch (error) {
-        console.error('Backend Integration Config: Error in config change listener:', error);
+        const errorInstance = error instanceof Error ? error : new Error(String(error));
+        this.listenerLogger.error('Configuration change listener failed', errorInstance);
       }
     });
   }
@@ -325,10 +339,10 @@ export class BackendIntegrationConfigManager {
    * Log current configuration for debugging
    */
   logConfiguration(): void {
-    console.log('Backend Integration Configuration:', {
+    this.configLogger.info('Backend integration configuration snapshot', {
       mode: this.config.mode,
       features: this.config.features,
-      serviceDiscovery: this.config.serviceDiscovery.enabled,
+      serviceDiscoveryEnabled: this.config.serviceDiscovery.enabled,
     });
   }
 }

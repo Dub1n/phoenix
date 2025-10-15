@@ -3,7 +3,7 @@ date-created: 2025-09-13-103229
 last-updated: 2025-09-13-103229
 name: adaptive-mcp-integration
 description: MCP integration with adaptive timeout handling, circuit breaker patterns, and intelligent fallback mechanisms for robust CLI validation testing
-status: established
+status: "[x]"
 category: integration
 use-when:
   - MCP server integration needs resilient connection handling

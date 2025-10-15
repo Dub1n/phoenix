@@ -3,7 +3,7 @@ date-created: 2025-09-05-0000
 last-updated: 2025-09-11-0000
 name: mcp-pty-integration
 description: Mock-ready PTY foundation with comprehensive session lifecycle management for agent-CLI interaction
-status: established
+status: "[x]"
 category: integration
 use-when:
   - Need agent-CLI interaction through pseudoterminal sessions

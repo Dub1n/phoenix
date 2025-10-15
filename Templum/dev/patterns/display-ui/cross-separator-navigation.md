@@ -3,7 +3,7 @@ date-created: 2025-09-13-103229
 last-updated: 2025-09-13-103229
 name: cross-separator-navigation
 description: Enhanced menu navigation system with proper separator handling, exit behavior, and keyboard responsiveness for CLI interfaces
-status: established
+status: "[x]"
 category: display-ui
 use-when:
   - Interactive menus need navigation across separator sections

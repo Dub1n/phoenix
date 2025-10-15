@@ -3,7 +3,7 @@ date-created: 2025-08-27-0000
 last-updated: 2025-09-11-1217
 name: abstraction-layer-architecture
 description: Complete abstraction layer with interface contracts enabling dependency inversion for all interface adapters, decoupling concrete implementations from interface layer
-status: established
+status: "[x]"
 category: architecture
 use-when:
   - Interface adapters are directly coupled to concrete implementations, violating dependency inversion principle and reducing testability

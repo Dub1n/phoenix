@@ -3,7 +3,7 @@ date-created: 2025-08-27-0000
 last-updated: 2025-09-11-0000
 name: vscode-extension-configuration
 description: Systematic package.json configuration for converting Node.js CLI applications to VSCode extensions
-status: established
+status: "[x]"
 category: configuration
 use-when:
   - Converting Node.js CLI applications to VSCode extensions

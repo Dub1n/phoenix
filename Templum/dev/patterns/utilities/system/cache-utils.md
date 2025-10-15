@@ -3,7 +3,7 @@ date-created: 2025-09-14T18:05:00Z
 last-updated: 2025-09-14T18:05:00Z
 name: cache-utils
 description: Cache utilities providing LRU + TTL storage, confidence scoring, and simple multi-level caching interfaces
-status: established
+status: "[x]"
 category: system
 use-when:
   - Replacing repeated in-memory cache implementations
@@ -205,15 +205,18 @@ function getService(id: string) {
 ## Implementation Checklist
 
 **Before migration**
+
 - [ ] Document current cache sizes, TTLs, and eviction policies per module.
 - [ ] Identify metrics needed for performance dashboards.
 
 **During migration**
+
 - [ ] Replace manual `Map` + TTL handling with `CacheUtils.createStore`.
 - [ ] Configure event listeners to feed metrics/logging.
 - [ ] Ensure confidence scoring or TTL overrides are passed for critical entries.
 
 **After migration**
+
 - [ ] Validate cache eviction behaviour under load.
 - [ ] Confirm metrics integrate with performance utils or logging.
 - [ ] Update consolidation checklist entries.

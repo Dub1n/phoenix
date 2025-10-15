@@ -3,7 +3,7 @@ date-created: 2025-08-27-0000
 last-updated: 2025-09-11-0000
 name: ipc-protocol-communication
 description: Real IPC implementation with service-specific enhancements and real-time message handling
-status: established
+status: "[x]"
 category: integration
 use-when:
   - Backend service requires IPC communication

@@ -3,7 +3,7 @@ date-created: 2025-08-27-0000
 last-updated: 2025-09-11-0000
 name: protocol-communication-overview
 description: Complete real protocol communication implemented through three specialized patterns for different backend services
-status: established
+status: "[x]"
 category: integration
 use-when:
   - Need to replace mock protocol implementations with real backend service integration

@@ -3,7 +3,7 @@ date-created: 2025-08-29-0000
 last-updated: 2025-09-11-0000
 name: dynamic-command-routing
 description: Dynamic command routing system that eliminates hardcoded patterns by building routing tables from skin definitions at runtime
-status: established
+status: "[x]"
 category: routing
 use-when:
   - Implementing generic backend integration without hardcoded routing

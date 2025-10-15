@@ -3,7 +3,7 @@ date-created: 2025-08-29-0000
 last-updated: 2025-09-11-0000
 name: terminal-ui-components
 description: Complete terminal UI components system with interactive search, progress bars, spinners, and responsive layout management
-status: established
+status: "[x]"
 category: display-ui
 use-when:
   - CLI interface lacks modern terminal UI components for user interaction

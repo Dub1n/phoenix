@@ -6,6 +6,7 @@
  * description: [Comprehensive E2E test suite validating complete user workflows, cross-interface scenarios, and performance characteristics]
  * ---*/
 
+import { EventEmitter } from 'events';
 import { EventDrivenComponent } from '../../src/utils/event-bus-adapter';
 import type { GenericEventMap } from '../../src/utils/event-utils';
 import {
@@ -15,6 +16,9 @@ import {
   E2ETestOutcome
 } from '../../src/testing/e2e-test-framework';
 import { E2EScenarioLibrary } from '../../src/tests/e2e/e2e-scenarios';
+import {
+  CLIInterfaceAdapter
+} from '../../src/interfaces/cli-adapter-abstracted';
 import {
   InterfaceType,
   UniversalSkinDefinition,
@@ -33,6 +37,24 @@ import {
   IBackendServiceRouter,
   IResourceManager
 } from '../../src/interfaces/core-component-interfaces';
+import type { ResourceUsage } from '../../src/core/templum-resource-manager';
+import {
+  createFormatter
+} from '../../src/utils/terminal-formatter';
+import * as TerminalCompatibility from '../../src/interfaces/terminal-compatibility-detector';
+import { UniversalSkinEngine } from '../../src/skin/universal-skin-engine';
+import type {
+  ManualOverrideDescriptor,
+  ManualOverrideOptions,
+  ManualOverrideSnapshot,
+  ManualOverrideClearResult
+} from '../../src/backend/manual-override-manager';
+import type {
+  SessionStateUpdate,
+  TemplumSessionManagerContract,
+  TemplumSessionMetrics,
+  TemplumSessionState
+} from '../../src/session/universal-session-manager.types';
 import { sleep } from '../../src/utils/async-utils';
 
 // Mock Orchestrator for E2E Testing
@@ -256,6 +278,318 @@ class MockE2EOrchestrator extends EventDrivenComponent<GenericEventMap> implemen
 
   getRegisteredInterfaces(): Map<InterfaceType, IInterfaceAdapter> {
     return new Map(this.registeredInterfaces);
+  }
+}
+
+class ProceduralWindowSessionManager extends EventEmitter implements TemplumSessionManagerContract {
+  private readonly sessionId = 'cli-session';
+  private snapshot: TemplumSessionState;
+
+  constructor() {
+    super();
+    const now = new Date();
+    this.snapshot = {
+      sessionId: this.sessionId,
+      startTime: now,
+      activeInterface: 'cli',
+      preferences: {},
+      capabilities: [],
+      activeBackends: [],
+      loadedSkins: [],
+      interfaceHistory: ['cli'],
+      sessionMetrics: this.createMetrics(),
+      lastActivity: now,
+      navigationHistory: ['main-menu'],
+      currentMenu: 'main-menu',
+      interactionMode: 'menu',
+      commandHistory: [],
+    };
+  }
+
+  private createMetrics(): TemplumSessionMetrics {
+    return {
+      interfaceSwitches: 0,
+      backendInteractions: 0,
+      commandsExecuted: 0,
+      sessionsCreated: 1,
+      totalSkinLoads: 0,
+      averageSwitchTime: 0,
+      completion: {
+        completed: false,
+        completionReason: undefined,
+        completedAt: undefined,
+        finalMetrics: undefined,
+      },
+    };
+  }
+
+  async initialize(): Promise<void> {
+    return;
+  }
+
+  attachOrchestrator(): void {
+    // No-op for procedural CLI harness
+  }
+
+  async ensureSessionForInterface(interfaceType: InterfaceType): Promise<string> {
+    this.snapshot.activeInterface = interfaceType;
+    return this.sessionId;
+  }
+
+  getActiveSessionId(): string | null {
+    return this.sessionId;
+  }
+
+  getSessionSnapshot(): TemplumSessionState | null {
+    return this.snapshot;
+  }
+
+  async updateSessionState(update: SessionStateUpdate): Promise<void> {
+    const { state } = update;
+    if (state.currentMenu) {
+      this.snapshot.currentMenu = state.currentMenu;
+    }
+    if (state.navigationStack) {
+      this.snapshot.navigationHistory = [...state.navigationStack];
+    }
+    if (state.commandHistory) {
+      this.snapshot.commandHistory = [...state.commandHistory];
+    }
+    this.snapshot.lastActivity = new Date();
+  }
+
+  async registerInterfaceAdapter(): Promise<void> {
+    return;
+  }
+
+  async syncInterfaces(): Promise<void> {
+    return;
+  }
+
+  notifyInterfaceDisconnect(): void {
+    // No-op for procedural CLI harness
+  }
+}
+
+class ProceduralWindowOrchestrator implements ITemplumOrchestrator {
+  private readonly sessionManager: TemplumSessionManagerContract;
+  private readonly skinEngine: UniversalSkinEngine;
+  private readonly registeredAdapters = new Map<InterfaceType, IInterfaceAdapter>();
+  private readonly loadedSkins: UniversalSkinDefinition[] = [];
+  private readonly backendSkins = new Map<string, UniversalSkinDefinition>();
+  private readonly manualOverrides = new Map<string, ManualOverrideDescriptor>();
+
+  constructor(sessionManager: TemplumSessionManagerContract) {
+    this.sessionManager = sessionManager;
+    this.skinEngine = new UniversalSkinEngine();
+  }
+
+  isInitialized(): boolean {
+    return true;
+  }
+
+  getSupportedInterfaces(): InterfaceType[] {
+    return ['vscode', 'cli', 'command'];
+  }
+
+  async registerInterface(interfaceType: InterfaceType, adapter: InterfaceAdapter): Promise<void> {
+    this.registeredAdapters.set(interfaceType, adapter as IInterfaceAdapter);
+  }
+
+  async loadSkin(skinDefinition: UniversalSkinDefinition): Promise<void> {
+    this.loadedSkins.push(skinDefinition);
+    for (const adapter of this.registeredAdapters.values()) {
+      if (typeof adapter.supportsSkin === 'function' && adapter.supportsSkin(skinDefinition)) {
+        await adapter.applySkin(skinDefinition);
+      }
+    }
+  }
+
+  async loadBackendSkin(backendId: string): Promise<UniversalSkinDefinition | null> {
+    return this.backendSkins.get(backendId) ?? null;
+  }
+
+  async executeCommand(
+    command: string,
+    sourceInterface: InterfaceType,
+    args?: any[],
+    context?: CommandContext
+  ): Promise<CommandResult> {
+    return {
+      success: true,
+      message: `Executed ${command}`,
+      data: { sourceInterface, args, context },
+      timestamp: Date.now(),
+      executionTime: 0,
+      metadata: { sourceInterface },
+    };
+  }
+
+  getSystemStatus(): TemplumSystemStatus {
+    const backendEntries = Array.from(this.backendSkins.keys()).reduce<Record<string, any>>((acc, id) => {
+      acc[id] = {
+        id,
+        name: id,
+        type: 'mock',
+        status: 'connected',
+        connected: true,
+        health: 'healthy',
+        responseTime: 15,
+      };
+      return acc;
+    }, {});
+
+    return {
+      health: 'healthy',
+      activeBackends: Array.from(this.backendSkins.keys()),
+      activeInterfaces: Array.from(this.registeredAdapters.keys()),
+      coreEngine: {
+        initialized: true,
+        activeInterfaces: Array.from(this.registeredAdapters.keys()),
+        loadedSkins: this.loadedSkins.map((skin) => skin.id),
+        backendConnections: {
+          totalConnections: this.backendSkins.size,
+          healthyConnections: this.backendSkins.size,
+          backends: backendEntries,
+        },
+      },
+      stateManager: {
+        synchronized: true,
+        globalState: {},
+        sessionState: {},
+        subscribers: this.registeredAdapters.size,
+        historySize: 0,
+        persistence: null,
+      },
+      skinEngine: {
+        cachedSkins: this.loadedSkins.length,
+        renderers: {},
+        performance: { averageRenderTime: 0, cacheHitRate: 1 },
+      },
+      performance: {
+        memory: { heapUsed: 0, rss: 0 },
+        cpu: { user: 0, system: 0 },
+        interfaces: {},
+      },
+    };
+  }
+
+  getLoadedSkins(): UniversalSkinDefinition[] {
+    return [...this.loadedSkins];
+  }
+
+  async refreshBackendServices(): Promise<void> {
+    return;
+  }
+
+  getUniversalSkinEngine(): ISkinEngine {
+    return this.skinEngine;
+  }
+
+  getBackendRouter(): IBackendServiceRouter {
+    const getConnectionStatus = () => ({
+      totalConnections: this.backendSkins.size,
+      healthyConnections: this.backendSkins.size,
+      backends: Array.from(this.backendSkins.keys()).reduce<Record<string, unknown>>((acc, id) => {
+        acc[id] = { id, status: 'connected', health: 'healthy' };
+        return acc;
+      }, {}),
+    });
+
+    return {
+      discoverAndConnect: async () => undefined,
+      loadBackendSkin: (backendId: string) => this.loadBackendSkin(backendId),
+      getConnectionStatus,
+      applyManualOverride: async (serviceId: string, options: ManualOverrideOptions = {}) =>
+        this.applyManualOverride(serviceId, options),
+      clearManualOverride: async (serviceId?: string) => this.clearManualOverride(serviceId),
+      getManualOverrideSnapshot: () => this.getManualOverrideSnapshot(),
+    } as IBackendServiceRouter;
+  }
+
+  getResourceManager(): IResourceManager {
+    const emptyUsage: ResourceUsage = {
+      memory: { used: 0, allocated: 0, limit: 0, percentage: 0 },
+      connections: { active: 0, allocated: 0, limit: 0, percentage: 0 },
+      cache: { used: 0, limit: 0, hitRate: 0, entries: 0 },
+      fileHandles: { open: 0, limit: 0, percentage: 0 },
+      processes: { active: 0, limit: 0, percentage: 0 },
+    };
+
+    return {
+      initialize: async () => undefined,
+      allocateResource: async () => 'resource',
+      deallocateResource: async () => undefined,
+      updateResourceAccess: () => undefined,
+      getResourceUsage: () => emptyUsage,
+      registerService: async () => undefined,
+      updateServiceHealth: async () => undefined,
+      getServiceHealth: () => [],
+      getStatus: () => ({
+        initialized: true,
+        resourceUsage: emptyUsage,
+        activeResources: 0,
+        serviceHealth: [],
+        policyViolations: 0,
+        lastCleanup: Date.now(),
+        nextCleanup: Date.now(),
+      }),
+      updateResourcePolicy: () => undefined,
+      shutdown: async () => undefined,
+    } as IResourceManager;
+  }
+
+  getSessionManager(): TemplumSessionManagerContract {
+    return this.sessionManager;
+  }
+
+  async applyManualOverride(serviceId: string, options: ManualOverrideOptions = {}): Promise<ManualOverrideDescriptor> {
+    const descriptor: ManualOverrideDescriptor = {
+      serviceId,
+      scope: options.scope ?? 'session',
+      appliedAt: Date.now(),
+      expiresAt: options.expiresAt,
+      reason: options.reason,
+    };
+    this.manualOverrides.set(serviceId, descriptor);
+    return descriptor;
+  }
+
+  async clearManualOverride(serviceId?: string): Promise<ManualOverrideClearResult> {
+    if (!serviceId) {
+      this.manualOverrides.clear();
+      return {
+        descriptor: undefined,
+        snapshot: this.getManualOverrideSnapshot(),
+      };
+    }
+
+    const descriptor = this.manualOverrides.get(serviceId);
+    this.manualOverrides.delete(serviceId);
+
+    return {
+      descriptor: descriptor ?? {
+        serviceId,
+        scope: 'session',
+        appliedAt: Date.now(),
+      },
+      snapshot: this.getManualOverrideSnapshot(),
+    };
+  }
+
+  getManualOverrideSnapshot(): ManualOverrideSnapshot {
+    return {
+      overrides: Array.from(this.manualOverrides.values()),
+      updatedAt: Date.now(),
+    };
+  }
+
+  async shutdown(): Promise<void> {
+    return;
+  }
+
+  addBackendSkin(backendId: string, skinDefinition: UniversalSkinDefinition): void {
+    this.backendSkins.set(backendId, skinDefinition);
   }
 }
 
@@ -484,6 +818,130 @@ describe('E2E Complete Workflows Test Suite', () => {
       // Validate extended operation completed successfully
       expect(outcome.performanceMetrics.totalExecutionTime).toBeLessThan(scenario!.timeoutMs * 0.9);
     }, 130000);
+  });
+
+  describe('CLI Procedural Windows', () => {
+    test('renders bordered windows from skin descriptors without fallback scaffolds', async () => {
+      const sessionManager = new ProceduralWindowSessionManager();
+      const orchestrator = new ProceduralWindowOrchestrator(sessionManager);
+
+      const formatterCapabilities = {
+        supportsColor: false,
+        supports256Colors: false,
+        supportsTrueColor: false,
+        supportsStyles: false,
+        supportsUnicode: true,
+        width: 80,
+        height: 24,
+        isInteractive: false,
+        platform: 'unix' as const,
+      };
+      const formatter = createFormatter({}, formatterCapabilities);
+
+      const cliAdapter = new CLIInterfaceAdapter({
+        formatter,
+        formatterCapabilities,
+        enableInteractiveMode: false,
+        enableKeyboardShortcuts: false,
+        enableProgressIndicators: false,
+        clearScreenOnRender: false,
+      });
+
+      const compatibility: TerminalCompatibility.TerminalCapabilities = {
+        supportsBoxDrawing: true,
+        supportsUnicode: true,
+        supportsColors: false,
+        supportsAnsi: true,
+        colorDepth: 1,
+        width: 80,
+        height: 24,
+        terminalType: 'jest',
+        platform: 'test',
+      };
+
+      const detectSpy = jest
+        .spyOn(TerminalCompatibility.TerminalCompatibilityDetector.prototype, 'detectCapabilities')
+        .mockResolvedValue(compatibility);
+      const capabilitiesSpy = jest
+        .spyOn(TerminalCompatibility, 'getTerminalCapabilities')
+        .mockResolvedValue(compatibility);
+
+      const writeSpy = jest
+        .spyOn(process.stdout, 'write')
+        .mockImplementation(((chunk: string | Uint8Array) => true) as any);
+
+      const skinDefinition: UniversalSkinDefinition = {
+        id: 'cli-procedural-skin',
+        name: 'CLI Procedural Skin',
+        version: '1.0.0',
+        metadata: {
+          id: 'cli-procedural-skin',
+          name: 'CLI Procedural Skin',
+          version: '1.0.0',
+          backend: 'haruspex',
+          backendService: 'haruspex',
+          compatibleInterfaces: ['cli'],
+          supportedInterfaces: ['cli'],
+          targetInterfaces: ['cli'],
+        },
+        menus: {
+          main: {
+            id: 'main-menu',
+            title: 'Root Operations',
+            items: [
+              { id: 'launch', label: 'Launch Workspace', type: 'command', command: 'workspace:launch' },
+              { id: 'inspect', label: 'Inspect Assets', type: 'submenu', submenu: 'inspect-menu' },
+            ],
+          },
+          submenus: {
+            'inspect-menu': {
+              id: 'inspect-menu',
+              title: 'Inspect Assets',
+              items: [
+                { id: 'open', label: 'Open Asset', type: 'command', command: 'assets:open' },
+              ],
+              navigation: { canGoBack: true },
+            },
+          },
+        },
+        views: {
+          panels: [{ id: 'overview', name: 'Overview', type: 'webview' }],
+        },
+      };
+
+      orchestrator.addBackendSkin('mock-backend', skinDefinition);
+
+      await cliAdapter.initialize(orchestrator);
+
+      try {
+        await orchestrator.loadSkin(skinDefinition);
+
+        const renderOutput = writeSpy.mock.calls
+          .map((args) => {
+            const [chunk, encoding] = args;
+            if (typeof chunk === 'string') {
+              return chunk;
+            }
+            if (chunk instanceof Buffer) {
+              return chunk.toString((encoding as BufferEncoding | undefined) ?? 'utf8');
+            }
+            return '';
+          })
+          .join('');
+
+        expect(renderOutput).toContain('Root Operations');
+        expect(renderOutput).toContain('1. Launch Workspace');
+        expect(renderOutput).toContain('Inspect Assets');
+        expect(renderOutput).toMatch(/┌/);
+        expect(renderOutput).not.toContain('Templum Universal Interface - CLI Mode');
+        expect(cliAdapter.getActiveMenuId()).toBe('main-menu');
+      } finally {
+        await cliAdapter.dispose();
+        writeSpy.mockRestore();
+        detectSpy.mockRestore();
+        capabilitiesSpy.mockRestore();
+      }
+    });
   });
 
   describe('E2E Test Framework Validation', () => {

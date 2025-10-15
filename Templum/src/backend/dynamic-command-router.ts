@@ -17,6 +17,7 @@ import {
 import { EventDrivenComponent } from '../utils/event-bus-adapter';
 import type { TypedEventMap } from '../utils/event-utils';
 import { getBackendSerializationLogger } from './backend-serialization-log';
+import { LogLevel } from '../utils/logger';
 
 /**
  * Command routing information
@@ -74,6 +75,10 @@ export class DynamicCommandRouter extends EventDrivenComponent<DynamicCommandRou
   
   constructor() {
     super(`dynamic-command-router:${DynamicCommandRouter.instanceCounter++}`, 80);
+    this.logger.setLevel(LogLevel.WARN);
+    this.registrationLogger.setLevel(LogLevel.WARN);
+    this.lifecycleLogger.setLevel(LogLevel.WARN);
+    this.diagnosticsLogger.setLevel(LogLevel.WARN);
     this.setupEventHandlers();
   }
 
