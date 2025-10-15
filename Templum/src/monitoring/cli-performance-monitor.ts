@@ -18,6 +18,7 @@ import { createInterval } from '../utils/async-utils';
 import type { ManagedInterval } from '../utils/async-utils';
 import { EventDrivenComponent } from '../utils/event-bus-adapter';
 import type { TypedEventMap } from '../utils/event-utils';
+import { createCliRuntimeOutput } from '../utils/cli-runtime-output';
 
 // TODO: [TASK-ID-CLI-PERF-001] Pattern: real-time-performance-monitoring | Complexity: 25 | Dependencies: CLI-stress-testing-infrastructure,performance-baselines
 // Context: Real-time performance monitoring with adaptive threshold detection for CLI stress testing
@@ -92,6 +93,7 @@ export class CLIPerformanceMonitor extends EventDrivenComponent<PerformanceMonit
   private baselineMetrics = new Map<string, number>();
   private trendAnalysisCache = new Map<string, TrendAnalysis>();
   private adaptiveThresholds = new Map<string, number>();
+  private readonly output = createCliRuntimeOutput({ context: 'cli-performance-monitor' });
   
   constructor(config?: Partial<MonitoringConfiguration>) {
     super(CLIPerformanceMonitor.createScope(), 50);
@@ -137,17 +139,17 @@ export class CLIPerformanceMonitor extends EventDrivenComponent<PerformanceMonit
   
   /**
    * Start real-time performance monitoring
-   */
+  */
   public startMonitoring(): void {
     if (this.monitoringActive) {
-      console.warn('Performance monitoring is already active');
+      this.output.warn('Performance monitoring is already active');
       return;
     }
     
-    console.log('🔍 Starting CLI Performance Monitoring...');
-    console.log(`  Sampling Interval: ${this.config.samplingInterval}ms`);
-    console.log(`  Retention Period: ${(this.config.retentionPeriod / 1000 / 60).toFixed(1)} minutes`);
-    console.log(`  Adaptive Thresholds: ${this.config.adaptiveThresholds ? 'ENABLED' : 'DISABLED'}`);
+    this.output.info('🔍 Starting CLI Performance Monitoring...');
+    this.output.info(`  Sampling Interval: ${this.config.samplingInterval}ms`);
+    this.output.info(`  Retention Period: ${(this.config.retentionPeriod / 1000 / 60).toFixed(1)} minutes`);
+    this.output.info(`  Adaptive Thresholds: ${this.config.adaptiveThresholds ? 'ENABLED' : 'DISABLED'}`);
     
     this.monitoringActive = true;
     this.monitoringInterval = createInterval(
@@ -169,7 +171,7 @@ export class CLIPerformanceMonitor extends EventDrivenComponent<PerformanceMonit
       return;
     }
     
-    console.log('🛑 Stopping CLI Performance Monitoring...');
+    this.output.info('🛑 Stopping CLI Performance Monitoring...');
     
     this.monitoringActive = false;
     this.monitoringInterval?.stop();
@@ -311,9 +313,9 @@ export class CLIPerformanceMonitor extends EventDrivenComponent<PerformanceMonit
       this.emit('performanceAlert', alert);
       
       if (alert.severity === 'critical') {
-        console.warn(`🚨 CRITICAL ALERT: ${alert.message}`);
+        this.output.warn(`🚨 CRITICAL ALERT: ${alert.message}`);
       } else if (alert.severity === 'high') {
-        console.warn(`⚠️  HIGH ALERT: ${alert.message}`);
+        this.output.warn(`⚠️  HIGH ALERT: ${alert.message}`);
       }
     }
     
@@ -400,7 +402,7 @@ export class CLIPerformanceMonitor extends EventDrivenComponent<PerformanceMonit
    */
   private generateMonitoringReport(): void {
     if (this.snapshots.length === 0) {
-      console.log('📊 No performance data collected during monitoring session');
+      this.output.info('📊 No performance data collected during monitoring session');
       return;
     }
     
@@ -408,63 +410,63 @@ export class CLIPerformanceMonitor extends EventDrivenComponent<PerformanceMonit
     const avgSnapshot = this.calculateAverageSnapshot();
     const peakSnapshot = this.calculatePeakSnapshot();
     
-    console.log('\\n📊 CLI PERFORMANCE MONITORING REPORT');
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log(`Monitoring Duration: ${duration.toFixed(1)} seconds`);
-    console.log(`Snapshots Collected: ${this.snapshots.length}`);
-    console.log(`Sampling Rate: ${(this.snapshots.length / duration).toFixed(1)} samples/second`);
-    console.log('');
+    this.output.info('\\n📊 CLI PERFORMANCE MONITORING REPORT');
+    this.output.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    this.output.info(`Monitoring Duration: ${duration.toFixed(1)} seconds`);
+    this.output.info(`Snapshots Collected: ${this.snapshots.length}`);
+    this.output.info(`Sampling Rate: ${(this.snapshots.length / duration).toFixed(1)} samples/second`);
+    this.output.blank();
     
     // Average performance
-    console.log('📈 AVERAGE PERFORMANCE:');
-    console.log(`  Response Time: ${avgSnapshot.responseTime.toFixed(2)}ms`);
-    console.log(`  Memory Usage: ${avgSnapshot.memoryUsage.toFixed(1)}MB`);
-    console.log(`  CPU Usage: ${avgSnapshot.cpuUsage.toFixed(1)}%`);
-    console.log(`  Throughput: ${avgSnapshot.throughput.toFixed(2)} commands/second`);
-    console.log(`  Error Rate: ${avgSnapshot.errorRate.toFixed(2)}%`);
-    console.log('');
+    this.output.info('📈 AVERAGE PERFORMANCE:');
+    this.output.info(`  Response Time: ${avgSnapshot.responseTime.toFixed(2)}ms`);
+    this.output.info(`  Memory Usage: ${avgSnapshot.memoryUsage.toFixed(1)}MB`);
+    this.output.info(`  CPU Usage: ${avgSnapshot.cpuUsage.toFixed(1)}%`);
+    this.output.info(`  Throughput: ${avgSnapshot.throughput.toFixed(2)} commands/second`);
+    this.output.info(`  Error Rate: ${avgSnapshot.errorRate.toFixed(2)}%`);
+    this.output.blank();
     
     // Peak performance
-    console.log('📊 PEAK PERFORMANCE:');
-    console.log(`  Max Response Time: ${peakSnapshot.responseTime.toFixed(2)}ms`);
-    console.log(`  Peak Memory Usage: ${peakSnapshot.memoryUsage.toFixed(1)}MB`);
-    console.log(`  Peak CPU Usage: ${peakSnapshot.cpuUsage.toFixed(1)}%`);
-    console.log(`  Max Throughput: ${peakSnapshot.throughput.toFixed(2)} commands/second`);
-    console.log('');
+    this.output.info('📊 PEAK PERFORMANCE:');
+    this.output.info(`  Max Response Time: ${peakSnapshot.responseTime.toFixed(2)}ms`);
+    this.output.info(`  Peak Memory Usage: ${peakSnapshot.memoryUsage.toFixed(1)}MB`);
+    this.output.info(`  Peak CPU Usage: ${peakSnapshot.cpuUsage.toFixed(1)}%`);
+    this.output.info(`  Max Throughput: ${peakSnapshot.throughput.toFixed(2)} commands/second`);
+    this.output.blank();
     
     // Alerts summary
     if (this.alerts.length > 0) {
-      console.log('🚨 ALERTS SUMMARY:');
+      this.output.info('🚨 ALERTS SUMMARY:');
       const alertCounts = this.alerts.reduce((counts, alert) => {
         counts[alert.severity] = (counts[alert.severity] || 0) + 1;
         return counts;
       }, {} as Record<string, number>);
       
       Object.entries(alertCounts).forEach(([severity, count]) => {
-        console.log(`  ${severity.toUpperCase()}: ${count} alerts`);
+        this.output.info(`  ${severity.toUpperCase()}: ${count} alerts`);
       });
-      console.log('');
+      this.output.blank();
     }
     
     // Trend analysis summary
     if (this.config.enableTrendAnalysis && this.trendAnalysisCache.size > 0) {
-      console.log('📈 TREND ANALYSIS:');
+      this.output.info('📈 TREND ANALYSIS:');
       for (const [metric, trend] of this.trendAnalysisCache.entries()) {
         const trendIcon = trend.trend === 'improving' ? '↗️' : trend.trend === 'degrading' ? '↘️' : '➡️';
-        console.log(`  ${metric}: ${trendIcon} ${trend.trend.toUpperCase()} (confidence: ${trend.confidence.toFixed(1)}%)`);
+        this.output.info(`  ${metric}: ${trendIcon} ${trend.trend.toUpperCase()} (confidence: ${trend.confidence.toFixed(1)}%)`);
       }
-      console.log('');
+      this.output.blank();
     }
     
     // Performance vs baseline comparison
-    console.log('⚖️ BASELINE COMPARISON:');
+    this.output.info('⚖️ BASELINE COMPARISON:');
     const baselineComparison = this.compareAgainstBaselines(avgSnapshot);
     Object.entries(baselineComparison).forEach(([metric, comparison]) => {
       const status = comparison.withinTarget ? '✅' : '❌';
-      console.log(`  ${metric}: ${status} ${comparison.percentage.toFixed(1)}% of baseline`);
+      this.output.info(`  ${metric}: ${status} ${comparison.percentage.toFixed(1)}% of baseline`);
     });
     
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    this.output.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   }
   
   /**
@@ -648,6 +650,6 @@ export class CLIPerformanceMonitor extends EventDrivenComponent<PerformanceMonit
     this.trendAnalysisCache.clear();
     this.removeAllListeners();
     
-    console.log('🧹 CLI Performance Monitor cleaned up');
+    this.output.info('🧹 CLI Performance Monitor cleaned up');
   }
 }

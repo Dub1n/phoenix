@@ -29,8 +29,10 @@ import {
 } from './utils/serialization-utils';
 import { createTimeout, sleep } from './utils/async-utils';
 import type { ManagedTimeout } from './utils/async-utils';
+import { createCliRuntimeOutput } from './utils/cli-runtime-output';
 
 const cliFormatter: TerminalFormatter = createFormatter();
+const cliOutput = createCliRuntimeOutput({ context: 'templum-cli-entry' });
 
 const cliFormat = {
   info: (message: string) => cliFormatter.status.info(message),
@@ -50,21 +52,21 @@ function reportCliSerializationOutcome<T>(
   const summary = `${context} [${outcome.meta.context}]`;
 
   if (!outcome.ok) {
-    console.error(cliFormat.error(`✗ ${summary} failed`), outcome.error);
+    cliOutput.error(cliFormat.error(`✗ ${summary} failed`), outcome.error);
     return null;
   }
 
   if (outcome.status === 'fallback') {
-    console.warn(cliFormat.warning(`⚠ ${summary} used fallback`), {
+    cliOutput.warn(cliFormat.warning(`⚠ ${summary} used fallback`), {
       warnings: outcome.meta.warnings,
       maskedFields: outcome.meta.maskedFields
     });
   } else if (outcome.status === 'defaults') {
-    console.warn(cliFormat.warning(`⚠ ${summary} applied defaults`), {
+    cliOutput.warn(cliFormat.warning(`⚠ ${summary} applied defaults`), {
       warnings: outcome.meta.warnings
     });
   } else if (outcome.meta.warnings.length > 0) {
-    console.warn(cliFormat.warning(`⚠ ${summary} warnings`), outcome.meta.warnings);
+    cliOutput.warn(cliFormat.warning(`⚠ ${summary} warnings`), outcome.meta.warnings);
   }
 
   return outcome.value as T;
@@ -168,19 +170,18 @@ class TemplumCliDiscovery {
           if (typeof pid === 'number' && this.isProcessRunning(pid)) {
             activeServices.push(serviceEntry);
           } else {
-            // Cleanup stale registry entry
             fs.unlinkSync(serviceFilePath);
-            console.log(cliFormat.muted(`🧹 Cleaned up stale service entry: ${serviceEntry.id}`));
+            cliOutput.muted(cliFormat.muted(`🧹 Cleaned up stale service entry: ${serviceEntry.id}`));
           }
         } catch (error) {
-          console.warn(cliFormat.warning(`⚠️  Failed to process service file ${serviceFile}:`), error);
+          cliOutput.warn(cliFormat.warning(`⚠️  Failed to process service file ${serviceFile}:`), error);
         }
       }
 
       return activeServices.sort((a, b) => b.registrationTime - a.registrationTime);
 
     } catch (error) {
-      console.error(cliFormat.error('❌ Service discovery failed:'), error);
+      cliOutput.error(cliFormat.error('❌ Service discovery failed:'), error);
       return [];
     }
   }
@@ -247,9 +248,12 @@ class RemoteTemplumAdapter {
     try {
       this.dynamicRouter = new DynamicCommandRouter();
       this.contentNavigationManager = new ContentNavigationManager(this.dynamicRouter);
-      console.log(cliFormat.info('[ROUTING] Dynamic command router initialized'));
+      cliOutput.info(cliFormat.info('[ROUTING] Dynamic command router initialized'));
     } catch (error) {
-      console.warn(cliFormat.warning('[ROUTING] Failed to initialize dynamic routing, falling back to compatibility mode:'), error);
+      cliOutput.warn(
+        cliFormat.warning('[ROUTING] Failed to initialize dynamic routing, falling back to compatibility mode:'),
+        error
+      );
       // System will fall back to compatibility mode
     }
   }
@@ -307,7 +311,7 @@ class RemoteTemplumAdapter {
         }
         
         if (attempt < maxRetries) {
-          console.warn(`IPC attempt ${attempt + 1}/${maxRetries + 1} failed for PID ${pid}: ${lastError.message}`);
+          cliOutput.warn(`IPC attempt ${attempt + 1}/${maxRetries + 1} failed for PID ${pid}: ${lastError.message}`);
           await this.delay(retryDelay * (attempt + 1)); // Exponential backoff
         }
       }
@@ -415,7 +419,7 @@ class RemoteTemplumAdapter {
                   : undefined;
 
                 if (responseMeta && Array.isArray(responseMeta.warnings) && responseMeta.warnings.length > 0) {
-                  console.warn(cliFormat.warning(`⚠ IPC warnings: ${responseMeta.warnings.join('; ')}`));
+                  cliOutput.warn(cliFormat.warning(`⚠ IPC warnings: ${responseMeta.warnings.join('; ')}`));
                 }
 
                 // Enhanced response validation
@@ -478,7 +482,7 @@ class RemoteTemplumAdapter {
     } catch (error) {
       // Only warn if the error is not "file not found"
       if ((error as any).code !== 'ENOENT') {
-        console.warn(`Warning: Failed to cleanup request file ${requestFile}:`, error);
+        cliOutput.warn(`Warning: Failed to cleanup request file ${requestFile}:`, error);
       }
     }
     
@@ -490,7 +494,7 @@ class RemoteTemplumAdapter {
     } catch (error) {
       // Only warn if the error is not "file not found"
       if ((error as any).code !== 'ENOENT') {
-        console.warn(`Warning: Failed to cleanup response file ${responseFile}:`, error);
+        cliOutput.warn(`Warning: Failed to cleanup response file ${responseFile}:`, error);
       }
     }
   }
@@ -499,11 +503,13 @@ class RemoteTemplumAdapter {
    * Connect to remote service and initialize CLI interface
    */
   async initializeCLI(): Promise<void> {
-    console.log(cliFormat.info('Connecting to Templum service...'));
+    cliOutput.info(cliFormat.info('Connecting to Templum service...'));
     const servicePid = this.requireServicePid();
-    console.log(cliFormat.muted(`   Service: ${this.serviceEntry.id} (PID: ${servicePid})`));
-    console.log(cliFormat.muted(`   Endpoint: ${this.serviceEntry.endpoint}`));
-    console.log(cliFormat.muted(`   Capabilities: ${this.serviceEntry.capabilities.join(', ')}`));
+    cliOutput.muted(cliFormat.muted(`   Service: ${this.serviceEntry.id} (PID: ${servicePid})`));
+    cliOutput.muted(cliFormat.muted(`   Endpoint: ${this.serviceEntry.endpoint}`));
+    cliOutput.muted(
+      cliFormat.muted(`   Capabilities: ${this.serviceEntry.capabilities.join(', ')}`)
+    );
     
     try {
       // Create CLI adapter with remote service configuration
@@ -529,15 +535,15 @@ class RemoteTemplumAdapter {
         await serviceOrchestrator.refreshSystemStatus();
       }
       
-      console.log(cliFormat.success('✅ Connected to Templum service successfully'));
-      console.log(cliFormat.info('🚀 Starting Templum CLI session...'));
-      console.log(cliFormat.separator(60));
+      cliOutput.success(cliFormat.success('✅ Connected to Templum service successfully'));
+      cliOutput.info(cliFormat.info('🚀 Starting Templum CLI session...'));
+      cliOutput.separator(cliFormat.separator(60));
       
       // Start interactive CLI session
       await cliAdapter.startInteractiveSession('main');
       
     } catch (error) {
-      console.error(cliFormat.error('❌ Failed to initialize CLI connection:'), error);
+      cliOutput.error(cliFormat.error('❌ Failed to initialize CLI connection:'), error);
       throw error;
     }
   }
@@ -577,13 +583,15 @@ class RemoteTemplumAdapter {
       timestamp: Date.now()
     };
     
-    console.log(cliFormat.info(`[${serviceProtocol.toUpperCase()}] Creating orchestrator proxy for ${serviceEndpoint}`));
+    cliOutput.info(cliFormat.info(`[${serviceProtocol.toUpperCase()}] Creating orchestrator proxy for ${serviceEndpoint}`));
     
     return {
       // Service-based command execution with protocol detection
       async executeCommand(command: string, interfaceType: string, args: any[], context?: any) {
-        console.log(cliFormat.info(`[${serviceProtocol.toUpperCase()}] Executing command: ${command}`));
-        console.log(cliFormat.muted(`[${serviceProtocol.toUpperCase()}] Interface: ${interfaceType}, Endpoint: ${serviceEndpoint}`));
+        cliOutput.info(cliFormat.info(`[${serviceProtocol.toUpperCase()}] Executing command: ${command}`));
+        cliOutput.muted(
+          cliFormat.muted(`[${serviceProtocol.toUpperCase()}] Interface: ${interfaceType}, Endpoint: ${serviceEndpoint}`)
+        );
         
         try {
           // TASK-CLI-014: Check for local CLI commands that should be processed locally
@@ -591,7 +599,9 @@ class RemoteTemplumAdapter {
           const isLocalCommand = this.isLocalCLICommand(command, interfaceType);
           
           if (isLocalCommand) {
-            console.log(cliFormat.success(`[LOCAL] Command '${command}' should be handled locally by CLI adapter`));
+            cliOutput.success(
+              cliFormat.success(`[LOCAL] Command '${command}' should be handled locally by CLI adapter`)
+            );
             
             // Return a special response indicating this should be handled locally
             // The CLI adapter will see this and process the command locally
@@ -643,7 +653,9 @@ class RemoteTemplumAdapter {
             
           } else {
             // IPC implementation - Real command execution via process communication
-            console.log(cliFormat.info(`[IPC] Forwarding command to Templum Core service (PID: ${servicePid})`));
+            cliOutput.info(
+              cliFormat.info(`[IPC] Forwarding command to Templum Core service (PID: ${servicePid})`)
+            );
             
             // Create IPC message for the Templum Core process
             const ipcMessage = {
@@ -668,7 +680,9 @@ class RemoteTemplumAdapter {
               
               const result = await sendIPCCommand(servicePid, ipcMessage, ipcOptions);
               
-              console.log(cliFormat.success(`[IPC] Command executed successfully via service PID ${servicePid}`));
+              cliOutput.success(
+                cliFormat.success(`[IPC] Command executed successfully via service PID ${servicePid}`)
+              );
               
               return {
                 success: true,
@@ -683,7 +697,9 @@ class RemoteTemplumAdapter {
               };
               
             } catch (ipcError) {
-              console.warn(cliFormat.warning(`[IPC] Direct IPC failed, using fallback execution: ${ipcError}`));
+              cliOutput.warn(
+                cliFormat.warning(`[IPC] Direct IPC failed, using fallback execution: ${ipcError}`)
+              );
               
               // Fallback to local execution if IPC fails
               return {
@@ -709,7 +725,10 @@ class RemoteTemplumAdapter {
           }
           
         } catch (error) {
-          console.error(cliFormat.error(`[${serviceProtocol.toUpperCase()}] Command execution failed:`), error);
+          cliOutput.error(
+            cliFormat.error(`[${serviceProtocol.toUpperCase()}] Command execution failed:`),
+            error
+          );
           return {
             success: false,
             error: error instanceof Error ? error.message : String(error),
@@ -735,7 +754,7 @@ class RemoteTemplumAdapter {
       
       // Background method to update cached system status via IPC
       async refreshSystemStatus() {
-        console.log(cliFormat.info(`[${serviceProtocol.toUpperCase()}] Refreshing system status...`));
+        cliOutput.info(cliFormat.info(`[${serviceProtocol.toUpperCase()}] Refreshing system status...`));
         
         try {
           // TASK-DIAG-001: Implement real IPC communication for system status
@@ -746,26 +765,30 @@ class RemoteTemplumAdapter {
             }
           };
 
-          const realStatus = await sendIPCCommand(servicePid, ipcMessage, { 
+          const realStatus = await sendIPCCommand(servicePid, ipcMessage, {
             maxRetries: 2, 
             timeoutMs: 5000, 
             priority: 'normal' 
           });
-          console.log(cliFormat.success(`[${serviceProtocol.toUpperCase()}] System status updated from service`));
+          cliOutput.success(
+            cliFormat.success(`[${serviceProtocol.toUpperCase()}] System status updated from service`)
+          );
           
           // Update cached status
           cachedSystemStatus = realStatus;
           return realStatus;
           
         } catch (error) {
-          console.warn(cliFormat.warning(`[${serviceProtocol.toUpperCase()}] IPC system status refresh failed: ${error}`));
+          cliOutput.warn(
+            cliFormat.warning(`[${serviceProtocol.toUpperCase()}] IPC system status refresh failed: ${error}`)
+          );
           // Keep existing cached status on failure
           return cachedSystemStatus;
         }
       },
 
-      async loadSkin(_skinDefinition: any) { 
-        console.log(cliFormat.info(`[${serviceProtocol.toUpperCase()}] Loading skin...`));
+      async loadSkin(_skinDefinition: any) {
+        cliOutput.info(cliFormat.info(`[${serviceProtocol.toUpperCase()}] Loading skin...`));
         // IPC-to-HTTP transition: Architecture implemented, service integration pending
         return { 
           success: true, 
@@ -774,8 +797,10 @@ class RemoteTemplumAdapter {
         };
       },
 
-      async loadBackendSkin(backendId: string) { 
-        console.log(cliFormat.info(`[${serviceProtocol.toUpperCase()}] Loading skin from backend: ${backendId}`));
+      async loadBackendSkin(backendId: string) {
+        cliOutput.info(
+          cliFormat.info(`[${serviceProtocol.toUpperCase()}] Loading skin from backend: ${backendId}`)
+        );
         
         try {
           // TASK-DIAG-001: Implement real IPC communication for backend skin loading
@@ -792,7 +817,9 @@ class RemoteTemplumAdapter {
             timeoutMs: 6000,
             priority: 'normal'
           });
-          console.log(cliFormat.success(`[${serviceProtocol.toUpperCase()}] Real backend skin loaded: ${skinDefinition?.name || backendId}`));
+          cliOutput.success(
+            cliFormat.success(`[${serviceProtocol.toUpperCase()}] Real backend skin loaded: ${skinDefinition?.name || backendId}`)
+          );
           
           // Initialize dynamic routing with the loaded skin
           if (this.dynamicRouter && this.contentNavigationManager && skinDefinition) {
@@ -800,16 +827,22 @@ class RemoteTemplumAdapter {
               await this.dynamicRouter.initialize(skinDefinition);
               await this.contentNavigationManager.initialize(skinDefinition);
               this.currentSkinId = skinDefinition.id;
-              console.log(cliFormat.success(`[ROUTING] Dynamic navigation initialized for ${skinDefinition.name || backendId}`));
+              cliOutput.success(
+                cliFormat.success(`[ROUTING] Dynamic navigation initialized for ${skinDefinition.name || backendId}`)
+              );
             } catch (routingError) {
-              console.warn(cliFormat.warning(`[ROUTING] Failed to initialize dynamic navigation: ${routingError}`));
+              cliOutput.warn(
+                cliFormat.warning(`[ROUTING] Failed to initialize dynamic navigation: ${routingError}`)
+              );
             }
           }
           
           return skinDefinition;
           
         } catch (error) {
-          console.warn(cliFormat.warning(`[${serviceProtocol.toUpperCase()}] IPC skin loading failed, using fallback: ${error}`));
+          cliOutput.warn(
+            cliFormat.warning(`[${serviceProtocol.toUpperCase()}] IPC skin loading failed, using fallback: ${error}`)
+          );
           
           // Fallback to transitional skin if IPC fails
           return {
@@ -825,7 +858,9 @@ class RemoteTemplumAdapter {
       getUniversalSkinEngine() {
         return {
           applySkin: async (skinDefinition: any, _context: any) => {
-            console.log(cliFormat.info(`[${serviceProtocol.toUpperCase()}] Applying skin: ${skinDefinition.name || skinDefinition.id}`));
+            cliOutput.info(
+              cliFormat.info(`[${serviceProtocol.toUpperCase()}] Applying skin: ${skinDefinition.name || skinDefinition.id}`)
+            );
             // IPC-to-HTTP transition: Architecture implemented, service integration pending
             return {
               success: true,
@@ -838,25 +873,31 @@ class RemoteTemplumAdapter {
       },
 
       async registerInterface(interfaceType: string, _adapter: any) { 
-        console.log(cliFormat.info(`[${serviceProtocol.toUpperCase()}] Registering interface: ${interfaceType}`));
+        cliOutput.info(cliFormat.info(`[${serviceProtocol.toUpperCase()}] Registering interface: ${interfaceType}`));
         // IPC-to-HTTP transition: Architecture implemented, service integration pending
         return { success: true, message: "Interface registration forwarded to service" };
       },
 
       async synchronizeInterfaceStates(_result: any) { 
-        console.log(cliFormat.info(`[${serviceProtocol.toUpperCase()}] Synchronizing interface states...`));
+        cliOutput.info(
+          cliFormat.info(`[${serviceProtocol.toUpperCase()}] Synchronizing interface states...`)
+        );
         // IPC-to-HTTP transition: Architecture implemented, service integration pending
         return { success: true, message: "State synchronization forwarded to service" };
       },
 
       async refreshBackendServices() {
-        console.log(cliFormat.info(`[${serviceProtocol.toUpperCase()}] Refreshing backend services...`));
+        cliOutput.info(
+          cliFormat.info(`[${serviceProtocol.toUpperCase()}] Refreshing backend services...`)
+        );
         // IPC-to-HTTP transition: Architecture implemented, service integration pending
         return { success: true, message: "Backend refresh forwarded to service" };
       },
 
       async shutdown() {
-        console.log(cliFormat.muted(`[${serviceProtocol.toUpperCase()}] Orchestrator proxy shutdown (service continues running)`));
+        cliOutput.muted(
+          cliFormat.muted(`[${serviceProtocol.toUpperCase()}] Orchestrator proxy shutdown (service continues running)`)
+        );
         return Promise.resolve();
       },
 
@@ -923,19 +964,19 @@ class RemoteTemplumAdapter {
  */
 async function main(): Promise<void> {
   try {
-    console.log(cliFormatter.ui.header('* Templum CLI - Connecting to Service', 2));
-    console.log(cliFormat.muted('Discovering running Templum service instances...'));
+    cliOutput.info(cliFormatter.ui.header('* Templum CLI - Connecting to Service', 2));
+    cliOutput.muted(cliFormat.muted('Discovering running Templum service instances...'));
     
     // Discover running Templum services
     const discovery = new TemplumCliDiscovery();
     const serviceEntry = await discovery.getBestService();
     
     if (!serviceEntry) {
-      console.error(cliFormat.error('❌ No running Templum service found'));
-      console.log(cliFormat.warning('💡 Please start Templum service first:'));
-      console.log(cliFormat.command('   node dist/src/index.js'));
-      console.log();
-      console.log(cliFormat.muted('   Or if installed globally: npm start'));
+      cliOutput.error(cliFormat.error('❌ No running Templum service found'));
+      cliOutput.warn(cliFormat.warning('💡 Please start Templum service first:'));
+      cliOutput.command(cliFormat.command('   node dist/src/index.js'));
+      cliOutput.blank();
+      cliOutput.muted(cliFormat.muted('   Or if installed globally: npm start'));
       process.exit(1);
     }
 
@@ -944,25 +985,20 @@ async function main(): Promise<void> {
     await remoteAdapter.initializeCLI();
 
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('❌ Templum CLI failed:', errorMessage);
-    
-    if (error instanceof Error && error.stack) {
-      console.error('Stack trace:');
-      console.error(error.stack);
-    }
+    const resolvedError = error instanceof Error ? error : new Error(String(error ?? 'Unknown error'));
+    cliOutput.error(cliFormat.error('❌ Templum CLI failed:'), resolvedError);
     process.exit(1);
   }
 }
 
 // Handle process cleanup
 process.on('SIGINT', () => {
-  console.log(cliFormat.warning('\n🛑 Templum CLI shutting down...'));
+  cliOutput.warn(cliFormat.warning('\n🛑 Templum CLI shutting down...'));
   process.exit(0);
 });
 
 process.on('SIGTERM', () => {
-  console.log(cliFormat.warning('\n🛑 Templum CLI shutting down...'));
+  cliOutput.warn(cliFormat.warning('\n🛑 Templum CLI shutting down...'));
   process.exit(0);
 });
 
