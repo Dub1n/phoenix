@@ -389,7 +389,6 @@ describe("AdaptiveCLIIntegration", () => {
     // Create original adapter
     originalAdapter = new CLIInterfaceAdapter({
       enableInteractiveMode: true,
-      enableInteractiveSearch: true,
     });
 
     await originalAdapter.initialize(mockOrchestrator);
@@ -415,7 +414,6 @@ describe("AdaptiveCLIIntegration", () => {
 
       const adapter = new CLIInterfaceAdapter({
         enableInteractiveMode: true,
-        enableInteractiveSearch: true,
       });
 
       await adapter.initialize(mockOrchestrator);

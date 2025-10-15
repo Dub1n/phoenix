@@ -65,7 +65,7 @@ export class VSCodeInterfaceAdapter implements IInterfaceAdapter {
     // Register this adapter with the orchestrator
     await this.orchestrator.registerInterface('vscode', this);
     
-    console.log('VSCodeInterfaceAdapter: Initialized with orchestrator abstraction');
+    this.logger.info('VSCodeInterfaceAdapter: Initialized with orchestrator abstraction');
   }
 
   getInterfaceType(): InterfaceType {
@@ -103,7 +103,7 @@ export class VSCodeInterfaceAdapter implements IInterfaceAdapter {
       void this.loadInitialContent();
       
       const initTime = Date.now() - startTime;
-      console.log(`VSCodeInterfaceAdapter: WebView resolved in ${initTime}ms using abstraction layer`);
+      this.logger.info(`VSCodeInterfaceAdapter: WebView resolved in ${initTime}ms using abstraction layer`);
       
     } catch (error) {
       const errorMessage = isTemplumError(error) ? error.message : (error instanceof Error ? error.message : 'Unknown error');
@@ -162,7 +162,7 @@ export class VSCodeInterfaceAdapter implements IInterfaceAdapter {
         }
       });
 
-      console.log(`VSCodeInterfaceAdapter: Applied skin ${skinDefinition.metadata.name} via orchestrator abstraction`);
+      this.logger.info(`VSCodeInterfaceAdapter: Applied skin ${skinDefinition.metadata.name} via orchestrator abstraction`);
       
     } catch (error) {
       const errorMessage = isTemplumError(error) ? error.message : (error instanceof Error ? error.message : 'Unknown error');
@@ -187,7 +187,7 @@ export class VSCodeInterfaceAdapter implements IInterfaceAdapter {
         { source: 'VSCodeInterfaceAdapter', timestamp: Date.now() }
       );
 
-      console.log(`VSCodeInterfaceAdapter: Executed command '${command}' via orchestrator abstraction`);
+      this.logger.info(`VSCodeInterfaceAdapter: Executed command '${command}' via orchestrator abstraction`);
       return result;
       
     } catch (error) {
@@ -207,7 +207,7 @@ export class VSCodeInterfaceAdapter implements IInterfaceAdapter {
       this.rejectPendingMessages(new Error('VSCode WebView disposed'));
       this.webviewReady = false;
       
-      console.log('VSCodeInterfaceAdapter: Disposed successfully');
+      this.logger.info('VSCodeInterfaceAdapter: Disposed successfully');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       this.logger.error('VSCodeInterfaceAdapter disposal error', undefined, { errorMessage });
@@ -225,7 +225,7 @@ export class VSCodeInterfaceAdapter implements IInterfaceAdapter {
 
     try {
       // Enhanced real backend service integration
-      console.log('VSCodeInterfaceAdapter: Loading initial content with real backend integration...');
+      this.logger.info('VSCodeInterfaceAdapter: Loading initial content with real backend integration...');
       
       // Get system status with real backend connection information
       const systemStatus = this.orchestrator.getSystemStatus();
@@ -271,7 +271,7 @@ export class VSCodeInterfaceAdapter implements IInterfaceAdapter {
           return (aTime - bTime) + (bCaps - aCaps) * 10; // Favor more capabilities
         });
 
-      console.log(`VSCodeInterfaceAdapter: Found ${healthyBackends.length} healthy backend(s) for real integration`);
+      this.logger.info(`VSCodeInterfaceAdapter: Found ${healthyBackends.length} healthy backend(s) for real integration`);
 
       // Attempt to load real skin from healthy backends with proper error handling
       for (const [backendId, status] of healthyBackends) {
@@ -279,7 +279,7 @@ export class VSCodeInterfaceAdapter implements IInterfaceAdapter {
           break;
         }
         try {
-          console.log(`VSCodeInterfaceAdapter: Attempting to load real skin from ${backendId} backend...`);
+          this.logger.info(`VSCodeInterfaceAdapter: Attempting to load real skin from ${backendId} backend...`);
           
           // Load real skin definition with timeout handling
           const skinDefinition = await withTimeout(
@@ -289,7 +289,7 @@ export class VSCodeInterfaceAdapter implements IInterfaceAdapter {
           );
           
           if (skinDefinition) {
-            console.log(`VSCodeInterfaceAdapter: Successfully loaded real skin from ${backendId}`);
+            this.logger.info(`VSCodeInterfaceAdapter: Successfully loaded real skin from ${backendId}`);
             await this.applySkin(skinDefinition);
             skinLoaded = true;
             
@@ -314,17 +314,17 @@ export class VSCodeInterfaceAdapter implements IInterfaceAdapter {
 
       // Enhanced fallback with real backend discovery attempts
       if (!skinLoaded) {
-        console.log('VSCodeInterfaceAdapter: No real skins loaded, checking for backend discovery...');
+        this.logger.info('VSCodeInterfaceAdapter: No real skins loaded, checking for backend discovery...');
         
         // Trigger backend discovery if no healthy backends found
         if (healthyBackends.length === 0) {
-          console.log('VSCodeInterfaceAdapter: No healthy backends found, triggering discovery...');
+          this.logger.info('VSCodeInterfaceAdapter: No healthy backends found, triggering discovery...');
           try {
             // Attempt to trigger backend discovery through orchestrator
             const backendRouter = this.orchestrator.getBackendRouter();
             if (backendRouter && typeof backendRouter.discoverAndConnect === 'function') {
               await backendRouter.discoverAndConnect();
-              console.log('VSCodeInterfaceAdapter: Backend discovery triggered, retrying skin load...');
+              this.logger.info('VSCodeInterfaceAdapter: Backend discovery triggered, retrying skin load...');
               
               // Retry with newly discovered backends
               const updatedStatus = this.orchestrator.getSystemStatus();
@@ -337,7 +337,7 @@ export class VSCodeInterfaceAdapter implements IInterfaceAdapter {
                 if (retryedSkin) {
                   await this.applySkin(retryedSkin);
                   skinLoaded = true;
-                  console.log(`VSCodeInterfaceAdapter: Successfully loaded skin after discovery from ${backendId}`);
+                  this.logger.info(`VSCodeInterfaceAdapter: Successfully loaded skin after discovery from ${backendId}`);
                 }
               }
             }
@@ -349,7 +349,7 @@ export class VSCodeInterfaceAdapter implements IInterfaceAdapter {
         // Load enhanced fallback HTML with backend status
         if (!skinLoaded) {
           this.view.webview.html = this.getEnhancedFallbackHTML(backendConnections);
-          console.log('VSCodeInterfaceAdapter: Loaded enhanced fallback HTML with backend status information');
+          this.logger.info('VSCodeInterfaceAdapter: Loaded enhanced fallback HTML with backend status information');
         }
       }
       
@@ -393,7 +393,7 @@ export class VSCodeInterfaceAdapter implements IInterfaceAdapter {
             });
             break;
           case 'retry_backend_connection':
-            console.log('VSCodeInterfaceAdapter: Retrying backend connections...');
+            this.logger.info('VSCodeInterfaceAdapter: Retrying backend connections...');
             try {
               const backendRouter = this.orchestrator.getBackendRouter();
               if (backendRouter && typeof backendRouter.discoverAndConnect === 'function') {
@@ -668,7 +668,7 @@ export class VSCodeInterfaceAdapter implements IInterfaceAdapter {
           payload: stateUpdate
         });
       }
-      console.log('VSCodeInterfaceAdapter: State synchronized', stateUpdate);
+      this.logger.info('VSCodeInterfaceAdapter: State synchronized', stateUpdate);
     } catch (error) {
       this.logger.error('VSCodeInterfaceAdapter: Failed to sync state', error instanceof Error ? error : undefined, error);
       throw createTemplumError(`Failed to synchronize state: ${error instanceof Error ? error.message : 'Unknown error'}`, 'STATE_SYNC_FAILED', 'runtime');

@@ -22,6 +22,7 @@ import {
 } from './templum-orchestrator-interface';
 import { EventDrivenComponent } from '../utils/event-bus-adapter';
 import { TypedEventMap } from '../utils/event-utils';
+import { createLogger } from '../utils/logger';
 
 interface InterfaceAdapterRegistryEvents extends TypedEventMap {
   initialized: (payload: { timestamp: number; adapterFactories: number }) => void;
@@ -42,6 +43,28 @@ export class InterfaceAdapterRegistry
   extends EventDrivenComponent<InterfaceAdapterRegistryEvents>
   implements IInterfaceAdapterFactory {
   private static instanceCounter = 0;
+  private static readonly logger = createLogger('interface-adapter-registry');
+  private static coerceError(error: unknown): Error | undefined {
+    if (error instanceof Error) {
+      return error;
+    }
+    if (error === undefined || error === null) {
+      return undefined;
+    }
+    if (typeof error === 'string' && error.trim().length > 0) {
+      return new Error(error);
+    }
+    try {
+      return new Error(JSON.stringify(error));
+    } catch {
+      return new Error(String(error));
+    }
+  }
+
+  private static logError(message: string, error?: unknown, data?: unknown): void {
+    InterfaceAdapterRegistry.logger.error(message, InterfaceAdapterRegistry.coerceError(error), data);
+  }
+
   private adapters: Map<InterfaceType, IInterfaceAdapter> = new Map();
   private adapterFactories: Map<InterfaceType, () => IInterfaceAdapter> = new Map();
   private orchestrator!: ITemplumOrchestrator;
@@ -57,7 +80,7 @@ export class InterfaceAdapterRegistry
    */
   async initialize(orchestrator: ITemplumOrchestrator): Promise<void> {
     if (this.initialized) {
-      console.warn('InterfaceAdapterRegistry: Already initialized');
+      InterfaceAdapterRegistry.logger.warn('InterfaceAdapterRegistry: Already initialized');
       return;
     }
 
@@ -70,7 +93,7 @@ export class InterfaceAdapterRegistry
       this.initialized = true;
       this.emit('initialized', { timestamp: Date.now(), adapterFactories: this.adapterFactories.size });
       
-      console.log('InterfaceAdapterRegistry: Initialized with abstraction layer', {
+      InterfaceAdapterRegistry.logger.info('InterfaceAdapterRegistry: Initialized with abstraction layer', {
         registeredFactories: Array.from(this.adapterFactories.keys()),
         orchestratorInitialized: orchestrator.isInitialized()
       });
@@ -87,7 +110,7 @@ export class InterfaceAdapterRegistry
         severity: 'critical'
       };
 
-      console.error('InterfaceAdapterRegistry: Initialization failed:', errorPayload.error);
+      InterfaceAdapterRegistry.logError('InterfaceAdapterRegistry: Initialization failed', errorPayload.error);
       throw createTemplumError(`Registry initialization failed: ${errorPayload.error.message}`, 'INITIALIZATION_ERROR', 'configuration');
     }
   }
@@ -103,7 +126,7 @@ export class InterfaceAdapterRegistry
     try {
       // Check if adapter already exists
       if (this.adapters.has(interfaceType)) {
-        console.warn(`InterfaceAdapterRegistry: Adapter for ${interfaceType} already exists, returning existing`);
+        InterfaceAdapterRegistry.logger.warn(`InterfaceAdapterRegistry: Adapter for ${interfaceType} already exists, returning existing`);
         return this.adapters.get(interfaceType)!;
       }
 
@@ -122,7 +145,7 @@ export class InterfaceAdapterRegistry
         totalAdapters: this.adapters.size
       });
       
-      console.log(`InterfaceAdapterRegistry: Created and registered ${interfaceType} adapter via abstraction layer`);
+      InterfaceAdapterRegistry.logger.info(`InterfaceAdapterRegistry: Created and registered ${interfaceType} adapter via abstraction layer`);
       return adapter;
       
     } catch (error) {
@@ -161,10 +184,9 @@ export class InterfaceAdapterRegistry
           remainingAdapters: this.adapters.size
         });
         
-        console.log(`InterfaceAdapterRegistry: Removed ${interfaceType} adapter`);
+        InterfaceAdapterRegistry.logger.info(`InterfaceAdapterRegistry: Removed ${interfaceType} adapter`);
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        console.error(`InterfaceAdapterRegistry: Failed to dispose ${interfaceType} adapter:`, errorMessage);
+        InterfaceAdapterRegistry.logError(`InterfaceAdapterRegistry: Failed to dispose ${interfaceType} adapter`, error);
       }
     }
   }
@@ -197,7 +219,7 @@ export class InterfaceAdapterRegistry
 
   registerAdapterFactory(interfaceType: InterfaceType, factory: () => IInterfaceAdapter): void {
     this.adapterFactories.set(interfaceType, factory);
-    console.log(`InterfaceAdapterRegistry: Registered factory for ${interfaceType} adapter`);
+    InterfaceAdapterRegistry.logger.info(`InterfaceAdapterRegistry: Registered factory for ${interfaceType} adapter`);
   }
 
   /**
@@ -208,8 +230,7 @@ export class InterfaceAdapterRegistry
       // Dispose all adapters
       const disposePromises = Array.from(this.adapters.values()).map(adapter => {
         return adapter.dispose().catch(error => {
-          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-          console.error('InterfaceAdapterRegistry: Adapter disposal error:', errorMessage);
+          InterfaceAdapterRegistry.logError('InterfaceAdapterRegistry: Adapter disposal error', error);
         });
       });
       
@@ -223,11 +244,11 @@ export class InterfaceAdapterRegistry
       this.emit('disposed', { timestamp: Date.now() });
       this.removeAllListeners();
       
-      console.log('InterfaceAdapterRegistry: Disposal complete');
+      InterfaceAdapterRegistry.logger.info('InterfaceAdapterRegistry: Disposal complete');
       
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error('InterfaceAdapterRegistry: Disposal failed:', errorMessage);
+      InterfaceAdapterRegistry.logError('InterfaceAdapterRegistry: Disposal failed', error);
       throw createTemplumError(`Registry disposal failed: ${errorMessage}`, 'DISPOSAL_ERROR', 'runtime');
     }
   }
@@ -245,7 +266,7 @@ export class InterfaceAdapterRegistry
       contextKeys: context ? Object.keys(context) : []
     });
     
-    console.log('InterfaceAdapterRegistry: VSCode context set', {
+    InterfaceAdapterRegistry.logger.info('InterfaceAdapterRegistry: VSCode context set', {
       hasContext: !!context,
       contextType: context?.constructor?.name || 'unknown'
     });
@@ -275,7 +296,7 @@ export class InterfaceAdapterRegistry
    */
   static setVSCodeContext(context: any): void {
     (global as any).__templumVSCodeContext = context;
-    console.log('InterfaceAdapterRegistry: VSCode context registered for adapter factory use');
+    InterfaceAdapterRegistry.logger.info('InterfaceAdapterRegistry: VSCode context registered for adapter factory use');
   }
 
   /**
@@ -283,7 +304,7 @@ export class InterfaceAdapterRegistry
    */
   static clearVSCodeContext(): void {
     delete (global as any).__templumVSCodeContext;
-    console.log('InterfaceAdapterRegistry: VSCode context cleared');
+    InterfaceAdapterRegistry.logger.info('InterfaceAdapterRegistry: VSCode context cleared');
   }
 
   /**
@@ -330,7 +351,7 @@ export class InterfaceAdapterRegistry
           // Strategy 2: Global state fallback for legacy integration
           else if ((global as any).__templumVSCodeContext) {
             context = (global as any).__templumVSCodeContext;
-            console.info('InterfaceAdapterRegistry: Using global VSCode context (legacy fallback)');
+            InterfaceAdapterRegistry.logger.info('InterfaceAdapterRegistry: Using global VSCode context (legacy fallback)');
           }
           // Strategy 3: Dynamic context resolution from VSCode environment
           else if (typeof process !== 'undefined' && process.env.VSCODE_IPC_HOOK) {
@@ -347,18 +368,18 @@ export class InterfaceAdapterRegistry
                 update: () => Promise.resolve()
               }
             };
-            console.info('InterfaceAdapterRegistry: Created minimal VSCode context from environment');
+            InterfaceAdapterRegistry.logger.info('InterfaceAdapterRegistry: Created minimal VSCode context from environment');
           }
           
           if (!context) {
-            console.warn('InterfaceAdapterRegistry: VSCode context not available, adapter creation will be deferred');
+            InterfaceAdapterRegistry.logger.warn('InterfaceAdapterRegistry: VSCode context not available, adapter creation will be deferred');
             throw createTemplumError('VSCode context not available for adapter creation', 'CONTEXT_NOT_AVAILABLE', 'configuration');
           }
           
           return createVSCodeInterfaceAdapter(context);
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Unknown VSCode adapter creation error';
-          console.error('InterfaceAdapterRegistry: VSCode adapter factory failed:', errorMessage);
+          InterfaceAdapterRegistry.logError('InterfaceAdapterRegistry: VSCode adapter factory failed', error);
           throw createTemplumError(`VSCode adapter creation failed: ${errorMessage}`, 'ADAPTER_FACTORY_ERROR', 'runtime');
         }
       });
@@ -372,7 +393,7 @@ export class InterfaceAdapterRegistry
           return createCLIInterfaceAdapter(); // Default configuration works for CLI
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Unknown CLI adapter creation error';
-          console.error('InterfaceAdapterRegistry: CLI adapter factory failed:', errorMessage);
+          InterfaceAdapterRegistry.logError('InterfaceAdapterRegistry: CLI adapter factory failed', error);
           throw createTemplumError(`CLI adapter creation failed: ${errorMessage}`, 'ADAPTER_FACTORY_ERROR', 'runtime');
         }
       });
@@ -386,13 +407,13 @@ export class InterfaceAdapterRegistry
           return createCommandInterfaceAdapter(); // Default configuration works for command interface
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Unknown command adapter creation error';
-          console.error('InterfaceAdapterRegistry: Command adapter factory failed:', errorMessage);
+          InterfaceAdapterRegistry.logError('InterfaceAdapterRegistry: Command adapter factory failed', error);
           throw createTemplumError(`Command adapter creation failed: ${errorMessage}`, 'ADAPTER_FACTORY_ERROR', 'runtime');
         }
       });
       registeredFactories.push('command');
 
-      console.log('InterfaceAdapterRegistry: Built-in factories registered with enhanced error handling', {
+      InterfaceAdapterRegistry.logger.info('InterfaceAdapterRegistry: Built-in factories registered with enhanced error handling', {
         factories: registeredFactories,
         implemented: ['vscode', 'cli', 'command'],
         contextDependencies: ['vscode'],
@@ -401,11 +422,11 @@ export class InterfaceAdapterRegistry
       
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.warn('InterfaceAdapterRegistry: Factory registration encountered errors:', errorMessage);
+      InterfaceAdapterRegistry.logger.warn('InterfaceAdapterRegistry: Factory registration encountered errors:', { errorMessage, error });
       failedFactories.push('unknown');
     } finally {
       // Log final registration status with Haruspex-style comprehensive reporting
-      console.log('InterfaceAdapterRegistry: Factory registration complete', {
+      InterfaceAdapterRegistry.logger.info('InterfaceAdapterRegistry: Factory registration complete', {
         successful: registeredFactories,
         failed: failedFactories,
         total: registeredFactories.length + failedFactories.length,

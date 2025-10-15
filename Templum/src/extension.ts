@@ -27,6 +27,7 @@ import {
 } from './interfaces/vscode/webview-registry';
 import { createPlaceholderWebViewProvider } from './interfaces/vscode/webview-placeholders';
 import { ObservabilityAdapter, createObservabilityAdapter } from './observability/observability-adapter';
+import { createLogger } from './utils/logger';
 
 // Global extension state
 let templumCore: TemplumCore | undefined;
@@ -35,6 +36,37 @@ let serviceTreeProvider: BackendServiceTreeProvider | undefined;
 let activeTreeViews: Map<string, vscode.TreeView<any>> = new Map();
 let registeredCommands: Map<string, vscode.Disposable> = new Map();
 let observabilityAdapter: ObservabilityAdapter | undefined;
+
+const extensionLogger = createLogger('templum-vscode-extension');
+
+function coerceError(error: unknown): Error | undefined {
+  if (error instanceof Error) {
+    return error;
+  }
+  if (error === undefined || error === null) {
+    return undefined;
+  }
+  if (typeof error === 'string' && error.trim().length > 0) {
+    return new Error(error);
+  }
+  try {
+    return new Error(JSON.stringify(error));
+  } catch {
+    return new Error(String(error));
+  }
+}
+
+function logInfo(message: string, data?: unknown): void {
+  extensionLogger.info(message, data);
+}
+
+function logWarn(message: string, data?: unknown): void {
+  extensionLogger.warn(message, data);
+}
+
+function logError(message: string, error?: unknown, data?: unknown): void {
+  extensionLogger.error(message, coerceError(error), data);
+}
 
 const CORE_WEBVIEW_IDS: TemplumWebviewId[] = [
   'templum.universalInterface',
@@ -64,7 +96,7 @@ async function ensureObservability(): Promise<void> {
   try {
     await observabilityAdapter.initialize();
   } catch (error) {
-    console.warn('Observability adapter initialization failed; continuing with console logging', error);
+    logWarn('Observability adapter initialization failed; continuing with console logging', error);
   }
 }
 
@@ -242,7 +274,7 @@ class BackendServiceTreeProvider implements vscode.TreeDataProvider<ServiceTreeI
 
       return serviceItems;
     } catch (error) {
-      console.error('Failed to get backend services for tree view:', error);
+      logError('Failed to get backend services for tree view:', error);
       return [new ServiceTreeItem('Error loading services', vscode.TreeItemCollapsibleState.None, 'error')];
     }
   }
@@ -454,7 +486,7 @@ function mapConfigToTemplumConfiguration(config: any): TemplumConfiguration {
 
 export async function activate(context: vscode.ExtensionContext) {
   try {
-    console.log('🔮 Starting Templum Universal Interface Extension activation...');
+    logInfo('🔮 Starting Templum Universal Interface Extension activation...');
 
     await ensureObservability();
     ensureWebviewRegistry(context);
@@ -462,7 +494,7 @@ export async function activate(context: vscode.ExtensionContext) {
     // Check for workspace folder
     const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
     if (!workspaceRoot) {
-      console.warn('No workspace folder detected');
+      logWarn('No workspace folder detected');
       observabilityAdapter?.logWarn(
         'Templum VSCode extension activated without workspace',
         { mode: 'limited' },
@@ -486,7 +518,7 @@ export async function activate(context: vscode.ExtensionContext) {
       }
       
       // Continue without workspace folder (limited functionality)
-      console.log('Continuing activation without workspace folder (limited functionality)');
+      logInfo('Continuing activation without workspace folder (limited functionality)');
       
       // Show limited functionality message
       vscode.window.showInformationMessage(
@@ -501,10 +533,10 @@ export async function activate(context: vscode.ExtensionContext) {
     let engineInitialized = false;
     
     try {
-      console.log('Initializing Templum Core engine...');
+      logInfo('Initializing Templum Core engine...');
       
       // Real Configuration Loading Implementation - TASK-NEW-044
-      console.log('Loading Templum configuration...');
+      logInfo('Loading Templum configuration...');
       const configManager = new TemplumConfigManager();
       await configManager.initialize();
       const comprehensiveConfig = configManager.getConfig();
@@ -512,24 +544,24 @@ export async function activate(context: vscode.ExtensionContext) {
       // Map comprehensive config to TemplumCore configuration
       const coreConfig = mapConfigToTemplumConfiguration(comprehensiveConfig);
       
-      console.log('✓ Configuration loaded successfully');
+      logInfo('✓ Configuration loaded successfully');
       templumCore = new TemplumCore(coreConfig);
 
       await templumCore.initialize();
       engineInitialized = true;
       
-      console.log('✅ Templum Core engine initialized successfully');
+      logInfo('✅ Templum Core engine initialized successfully');
       
       // Backend Service Discovery Integration - TASK-NEW-045
       try {
-        console.log('🔍 Checking backend service discovery results...');
+        logInfo('🔍 Checking backend service discovery results...');
         const backendRouter = templumCore.getBackendRouter();
         
         // Check if getConnectionStatus method is available
         if (backendRouter.getConnectionStatus) {
           const connectionStatus = backendRouter.getConnectionStatus();
           
-          console.log(`Backend Discovery Results: ${connectionStatus.healthyConnections}/${connectionStatus.totalConnections} services connected`);
+          logInfo(`Backend Discovery Results: ${connectionStatus.healthyConnections}/${connectionStatus.totalConnections} services connected`);
           
           // Provide user feedback about service discovery
           if (connectionStatus.healthyConnections === 0) {
@@ -549,7 +581,7 @@ export async function activate(context: vscode.ExtensionContext) {
                     }
                   }
                 }).catch(error => {
-                  console.error('Backend service rediscovery failed:', error);
+                  logError('Backend service rediscovery failed:', error);
                 });
               }
             });
@@ -570,13 +602,13 @@ export async function activate(context: vscode.ExtensionContext) {
           }
         } else {
           // Fallback when getConnectionStatus is not available
-          console.log('Backend service router initialized but status checking not available');
+          logInfo('Backend service router initialized but status checking not available');
           vscode.window.showInformationMessage(
             '🔮 Templum activated successfully with backend service router'
           );
         }
       } catch (error) {
-        console.error('Backend service status check failed:', error);
+        logError('Backend service status check failed:', error);
         // Fallback to basic success message
         vscode.window.showInformationMessage(
           '🔮 Templum activated successfully with real configuration loading'
@@ -590,7 +622,7 @@ export async function activate(context: vscode.ExtensionContext) {
         { stage: 'initialize' },
         'VSCodeExtension'
       );
-      console.error(`Templum Core engine error: ${templumError.message}`);
+      logError(`Templum Core engine error: ${templumError.message}`);
       engineInitialized = false;
     }
 
@@ -603,7 +635,7 @@ export async function activate(context: vscode.ExtensionContext) {
     // Register Service Tree Provider - TASK-NEW-046 Implementation Complete
     await registerServiceTreeProvider(context, engineInitialized);
     
-    console.log('🎉 Templum Universal Interface Extension activation complete');
+    logInfo('🎉 Templum Universal Interface Extension activation complete');
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown activation error';
@@ -614,7 +646,7 @@ export async function activate(context: vscode.ExtensionContext) {
       { stage: 'activate' },
       'VSCodeExtension'
     );
-    console.error('❌ Templum activation failed:', error);
+    logError('❌ Templum activation failed:', error);
     vscode.window.showErrorMessage(`Templum activation failed: ${errorMessage}`);
   }
 }
@@ -624,7 +656,7 @@ export async function activate(context: vscode.ExtensionContext) {
  */
 async function registerWebViewProviders(context: vscode.ExtensionContext, engineReady: boolean): Promise<void> {
   try {
-    console.log('📋 Registering Templum WebView providers...');
+    logInfo('📋 Registering Templum WebView providers...');
 
     const registry = ensureWebviewRegistry(context);
 
@@ -667,7 +699,7 @@ async function registerWebViewProviders(context: vscode.ExtensionContext, engine
       attachCoreEventListeners(context, templumCore);
     }
 
-    console.log('✅ All Templum WebView providers registered successfully');
+    logInfo('✅ All Templum WebView providers registered successfully');
   } catch (error) {
     observabilityAdapter?.logError(
       'WebView provider registration failed',
@@ -675,7 +707,7 @@ async function registerWebViewProviders(context: vscode.ExtensionContext, engine
       { engineReady },
       'VSCodeExtension'
     );
-    console.error('❌ WebView provider registration failed:', error);
+    logError('❌ WebView provider registration failed:', error);
     throw error;
   }
 }
@@ -685,7 +717,7 @@ async function registerWebViewProviders(context: vscode.ExtensionContext, engine
  */
 async function registerCommands(context: vscode.ExtensionContext, _engineReady: boolean): Promise<void> {
   try {
-    console.log('📋 Registering Templum commands...');
+    logInfo('📋 Registering Templum commands...');
 
     // Refresh All Services command
     const refreshAllCommand = vscode.commands.registerCommand(
@@ -697,7 +729,7 @@ async function registerCommands(context: vscode.ExtensionContext, _engineReady: 
             return;
           }
 
-          console.log('🔄 Refreshing all Templum services...');
+          logInfo('🔄 Refreshing all Templum services...');
           
           // Refresh backend services using real backend service router
           await templumCore.refreshBackendServices();
@@ -710,11 +742,11 @@ async function registerCommands(context: vscode.ExtensionContext, _engineReady: 
           vscode.window.showInformationMessage(
             `🔮 Templum refreshed: ${status.coreEngine.backendConnections.healthyConnections}/${status.coreEngine.backendConnections.totalConnections} backends active, ${status.coreEngine.activeInterfaces.length} interfaces`
           );
-          console.log('✅ All services refreshed successfully');
+          logInfo('✅ All services refreshed successfully');
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Unknown error';
           vscode.window.showErrorMessage(`Templum refresh failed: ${errorMessage}`);
-          console.error(`❌ Refresh failed: ${errorMessage}`);
+          logError(`❌ Refresh failed: ${errorMessage}`);
         }
       }
     );
@@ -741,11 +773,11 @@ async function registerCommands(context: vscode.ExtensionContext, _engineReady: 
             `🔮 Templum Status ${statusIcon} ${health.toUpperCase()} - ` +
             `${backendCount} backends, ${interfaceCount} interfaces`
           );
-          console.log(`Service status: ${status.health}`);
+          logInfo(`Service status: ${status.health}`);
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Unknown error';
           vscode.window.showErrorMessage(`Status check failed: ${errorMessage}`);
-          console.error(`❌ Status check failed: ${errorMessage}`);
+          logError(`❌ Status check failed: ${errorMessage}`);
         }
       }
     );
@@ -769,7 +801,7 @@ async function registerCommands(context: vscode.ExtensionContext, _engineReady: 
           const universalInterfaceManager = (templumCore as any).getUniversalInterfaceManager?.();
           
           if (!universalInterfaceManager) {
-            console.warn('Universal Interface Manager not available - proceeding with basic interface switch');
+            logWarn('Universal Interface Manager not available - proceeding with basic interface switch');
             // Continue without Universal Interface Manager for compatibility
           }
 
@@ -930,7 +962,7 @@ async function registerCommands(context: vscode.ExtensionContext, _engineReady: 
                   vscode.window.showInformationMessage(
                     `🔄 Successfully switched to ${choice.label.replace(' ✅ (Active)', '')} (${switchDuration}ms)`
                   );
-                  console.log(`✅ Interface switched to: ${choice.value} in ${switchDuration}ms`);
+                  logInfo(`✅ Interface switched to: ${choice.value} in ${switchDuration}ms`);
 
                 } catch (switchError) {
                   // Enhanced error handling with rollback capability
@@ -953,7 +985,7 @@ async function registerCommands(context: vscode.ExtensionContext, _engineReady: 
                   (process as any).emit('templum:error', errorPayload);
 
                   vscode.window.showErrorMessage(`❌ Interface switch failed: ${errorMessage}`);
-                  console.error(`❌ Interface switch failed: ${errorMessage}`);
+                  logError(`❌ Interface switch failed: ${errorMessage}`);
                   throw switchError;
                 }
               }
@@ -962,7 +994,7 @@ async function registerCommands(context: vscode.ExtensionContext, _engineReady: 
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Unknown error';
           vscode.window.showErrorMessage(`Interface switch failed: ${errorMessage}`);
-          console.error(`❌ Interface switch failed: ${errorMessage}`);
+          logError(`❌ Interface switch failed: ${errorMessage}`);
         }
       }
     );
@@ -993,7 +1025,7 @@ async function registerCommands(context: vscode.ExtensionContext, _engineReady: 
       'templum.refreshServiceTree',
       async () => {
         try {
-          console.log('🔄 Service tree refresh requested');
+          logInfo('🔄 Service tree refresh requested');
           
           if (!serviceTreeProvider) {
             vscode.window.showWarningMessage('Service tree provider not available');
@@ -1053,12 +1085,12 @@ async function registerCommands(context: vscode.ExtensionContext, _engineReady: 
           (process as any).emit('templum:metrics', metricsPayload);
 
           vscode.window.showInformationMessage('🔄 Service tree refreshed successfully');
-          console.log('✅ Service tree refresh completed');
+          logInfo('✅ Service tree refresh completed');
           
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Unknown refresh error';
           vscode.window.showErrorMessage(`Service tree refresh failed: ${errorMessage}`);
-          console.error('❌ Service tree refresh failed:', error);
+          logError('❌ Service tree refresh failed:', error);
         }
       }
     );
@@ -1193,7 +1225,7 @@ async function registerCommands(context: vscode.ExtensionContext, _engineReady: 
                   }
                 } catch (skinError) {
                   // Service connected but skin loading failed - continue anyway
-                  console.warn(`Skin loading failed for ${targetServiceId}:`, skinError);
+                  logWarn(`Skin loading failed for ${targetServiceId}:`, skinError);
                 }
 
                 // Phase 5: Complete connection
@@ -1236,11 +1268,11 @@ async function registerCommands(context: vscode.ExtensionContext, _engineReady: 
                 vscode.window.showInformationMessage(
                   `✅ Connected to ${serviceName}${healthInfo} (${connectionDuration}ms)`
                 );
-                console.log(`✅ Service connection successful: ${targetServiceId} in ${connectionDuration}ms`);
+                logInfo(`✅ Service connection successful: ${targetServiceId} in ${connectionDuration}ms`);
 
               } catch (connectionError) {
                 if (token.isCancellationRequested) {
-                  console.log('Connection cancelled by user');
+                  logInfo('Connection cancelled by user');
                   return;
                 }
 
@@ -1273,7 +1305,7 @@ async function registerCommands(context: vscode.ExtensionContext, _engineReady: 
                   }
                 });
 
-                console.error(`❌ Service connection failed: ${targetServiceId}`, connectionError);
+                logError(`❌ Service connection failed: ${targetServiceId}`, connectionError);
                 throw connectionError;
               }
             }
@@ -1282,7 +1314,7 @@ async function registerCommands(context: vscode.ExtensionContext, _engineReady: 
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Unknown error';
           if (!errorMessage.includes('cancelled')) {
-            console.error('❌ Service connection failed:', error);
+            logError('❌ Service connection failed:', error);
           }
         }
       }
@@ -1436,7 +1468,7 @@ async function registerCommands(context: vscode.ExtensionContext, _engineReady: 
                 const serviceStatus = updatedStatus?.backends?.[targetServiceId!];
                 
                 if (serviceStatus?.connected) {
-                  console.warn(`Service ${targetServiceId} still reports as connected after disconnection`);
+                  logWarn(`Service ${targetServiceId} still reports as connected after disconnection`);
                 }
 
                 // Phase 4: Cleanup and refresh UI
@@ -1476,7 +1508,7 @@ async function registerCommands(context: vscode.ExtensionContext, _engineReady: 
                 vscode.window.showInformationMessage(
                   `✅ Disconnected from ${serviceName} (${disconnectionDuration}ms)`
                 );
-                console.log(`✅ Service disconnection successful: ${targetServiceId} in ${disconnectionDuration}ms`);
+                logInfo(`✅ Service disconnection successful: ${targetServiceId} in ${disconnectionDuration}ms`);
 
               } catch (disconnectionError) {
                 // Enhanced error handling
@@ -1498,7 +1530,7 @@ async function registerCommands(context: vscode.ExtensionContext, _engineReady: 
                 (process as any).emit('templum:error', errorPayload);
 
                 vscode.window.showErrorMessage(`❌ Failed to disconnect from ${serviceName}: ${errorMessage}`);
-                console.error(`❌ Service disconnection failed: ${targetServiceId}`, disconnectionError);
+                logError(`❌ Service disconnection failed: ${targetServiceId}`, disconnectionError);
                 throw disconnectionError;
               }
             }
@@ -1506,7 +1538,7 @@ async function registerCommands(context: vscode.ExtensionContext, _engineReady: 
 
         } catch (error) {
           const _errorMessage = error instanceof Error ? error.message : 'Unknown error';
-          console.error('❌ Service disconnection failed:', error);
+          logError('❌ Service disconnection failed:', error);
         }
       }
     );
@@ -1521,10 +1553,10 @@ async function registerCommands(context: vscode.ExtensionContext, _engineReady: 
       disconnectServiceCommand
     );
 
-    console.log('✅ All Templum commands registered successfully');
+    logInfo('✅ All Templum commands registered successfully');
 
   } catch (error) {
-    console.error('❌ Command registration failed:', error);
+    logError('❌ Command registration failed:', error);
     throw error;
   }
 }
@@ -1535,7 +1567,7 @@ async function registerCommands(context: vscode.ExtensionContext, _engineReady: 
  */
 async function registerServiceTreeProvider(context: vscode.ExtensionContext, engineReady: boolean): Promise<void> {
   try {
-    console.log('📋 Registering Templum Service Tree Provider...');
+    logInfo('📋 Registering Templum Service Tree Provider...');
 
     if (engineReady && templumCore) {
       // Create enhanced tree data provider with backend integration
@@ -1578,9 +1610,9 @@ async function registerServiceTreeProvider(context: vscode.ExtensionContext, eng
               };
               (process as any).emit('templum:metrics', metricsPayload);
               
-              console.log(`Service tree selection: ${selectedItem.serviceId}`);
+              logInfo(`Service tree selection: ${selectedItem.serviceId}`);
             } catch (error) {
-              console.error('Service tree selection command failed:', error);
+              logError('Service tree selection command failed:', error);
             }
           }
         }
@@ -1602,7 +1634,7 @@ async function registerServiceTreeProvider(context: vscode.ExtensionContext, eng
         'templum.selectBackendService',
         async (serviceId: string, serviceStatus: any) => {
           try {
-            console.log(`Backend service selected: ${serviceId}`, serviceStatus);
+            logInfo(`Backend service selected: ${serviceId}`, serviceStatus);
             
             // Show service details in a quick pick or information message
             const names: { [key: string]: string } = {
@@ -1627,7 +1659,7 @@ async function registerServiceTreeProvider(context: vscode.ExtensionContext, eng
               }
             });
           } catch (error) {
-            console.error('Select backend service failed:', error);
+            logError('Select backend service failed:', error);
           }
         }
       );
@@ -1635,7 +1667,7 @@ async function registerServiceTreeProvider(context: vscode.ExtensionContext, eng
       registeredCommands.set('templum.selectBackendService', selectBackendServiceCommand);
       context.subscriptions.push(selectBackendServiceCommand);
 
-      console.log('✅ Service Tree Provider registered successfully');
+      logInfo('✅ Service Tree Provider registered successfully');
       
     } else {
       // Create placeholder tree provider for graceful degradation
@@ -1658,11 +1690,11 @@ async function registerServiceTreeProvider(context: vscode.ExtensionContext, eng
       activeTreeViews.set('templum.serviceTree', placeholderTreeView);
       context.subscriptions.push(placeholderTreeView);
 
-      console.log('⚠️ Service Tree Provider registered with placeholder (engine not ready)');
+      logInfo('⚠️ Service Tree Provider registered with placeholder (engine not ready)');
     }
 
   } catch (error) {
-    console.error('❌ Service Tree Provider registration failed:', error);
+    logError('❌ Service Tree Provider registration failed:', error);
     throw error;
   }
 }
@@ -1672,12 +1704,12 @@ export async function deactivate() {
   const deactivationStartTime = Date.now();
   
   try {
-    console.log('🔄 Starting Templum extension deactivation...');
+    logInfo('🔄 Starting Templum extension deactivation...');
 
     // TASK-NEW-052: Comprehensive Extension Cleanup Implementation - Complete
 
     // Phase 1: Disconnect all backend services gracefully
-    console.log('📋 Phase 1: Backend service cleanup...');
+    logInfo('📋 Phase 1: Backend service cleanup...');
     if (templumCore) {
       try {
         const backendRouter = templumCore.getBackendRouter();
@@ -1691,119 +1723,119 @@ export async function deactivate() {
           // Gracefully disconnect all connected services
           const disconnectionPromises = connectedServices.map(async (serviceId) => {
             try {
-              console.log(`🔌 Disconnecting from ${serviceId}...`);
+              logInfo(`🔌 Disconnecting from ${serviceId}...`);
               const result = await (backendRouter as any).disconnectFromService?.(serviceId);
               if (result?.success) {
-                console.log(`✅ Successfully disconnected from ${serviceId}`);
+                logInfo(`✅ Successfully disconnected from ${serviceId}`);
               } else {
-                console.warn(`⚠️ Disconnection warning for ${serviceId}: ${result?.message || 'Unknown result'}`);
+                logWarn(`⚠️ Disconnection warning for ${serviceId}: ${result?.message || 'Unknown result'}`);
               }
             } catch (error) {
-              console.error(`❌ Failed to disconnect from ${serviceId}:`, error);
+              logError(`❌ Failed to disconnect from ${serviceId}:`, error);
             }
           });
 
           // Wait for all disconnections with timeout
           await Promise.allSettled(disconnectionPromises);
-          console.log(`✅ Backend service cleanup complete (${connectedServices.length} services)`);
+          logInfo(`✅ Backend service cleanup complete (${connectedServices.length} services)`);
         }
       } catch (error) {
-        console.error('❌ Backend service cleanup failed:', error);
+        logError('❌ Backend service cleanup failed:', error);
       }
     }
 
     // Phase 2: Clean up tree views and providers
-    console.log('🌳 Phase 2: Tree view and provider cleanup...');
+    logInfo('🌳 Phase 2: Tree view and provider cleanup...');
     
     // Stop service tree provider auto-refresh
     if (serviceTreeProvider) {
       try {
         // Clear any intervals/timers if accessible
-        console.log('🛑 Stopping service tree auto-refresh...');
+        logInfo('🛑 Stopping service tree auto-refresh...');
         serviceTreeProvider.dispose();
         serviceTreeProvider = undefined;
-        console.log('✅ Service tree provider cleaned up');
+        logInfo('✅ Service tree provider cleaned up');
       } catch (error) {
-        console.error('❌ Service tree provider cleanup failed:', error);
+        logError('❌ Service tree provider cleanup failed:', error);
       }
     }
 
     // Clean up all active tree views
     if (activeTreeViews.size > 0) {
-      console.log(`🗂️ Cleaning up ${activeTreeViews.size} active tree views...`);
+      logInfo(`🗂️ Cleaning up ${activeTreeViews.size} active tree views...`);
       for (const [treeViewId, _treeView] of Array.from(activeTreeViews)) {
         try {
           // Tree views are disposed automatically by VSCode context subscriptions
-          console.log(`✅ Tree view ${treeViewId} marked for cleanup`);
+          logInfo(`✅ Tree view ${treeViewId} marked for cleanup`);
         } catch (error) {
-          console.error(`❌ Failed to cleanup tree view ${treeViewId}:`, error);
+          logError(`❌ Failed to cleanup tree view ${treeViewId}:`, error);
         }
       }
       activeTreeViews.clear();
-      console.log('✅ All tree views cleaned up');
+      logInfo('✅ All tree views cleaned up');
     }
 
     // Phase 3: Clean up registered commands
-    console.log('Phase 3: Command registration cleanup...');
+    logInfo('Phase 3: Command registration cleanup...');
     if (registeredCommands.size > 0) {
-      console.log(`Cleaning up ${registeredCommands.size} registered commands...`);
+      logInfo(`Cleaning up ${registeredCommands.size} registered commands...`);
       for (const [commandId, _disposable] of Array.from(registeredCommands)) {
         try {
           // Commands are disposed automatically by VSCode context subscriptions
-          console.log(`Command ${commandId} marked for cleanup`);
+          logInfo(`Command ${commandId} marked for cleanup`);
         } catch (error) {
-          console.error(`Failed to cleanup command ${commandId}:`, error);
+          logError(`Failed to cleanup command ${commandId}:`, error);
         }
       }
       registeredCommands.clear();
-      console.log('All registered commands cleaned up');
+      logInfo('All registered commands cleaned up');
     }
 
     // Phase 4: Clean up WebView providers with state preservation
-    console.log('Phase 4: WebView provider cleanup...');
+    logInfo('Phase 4: WebView provider cleanup...');
     
     if (webviewRegistry) {
       try {
         webviewRegistry.dispose();
         webviewRegistry = undefined;
-        console.log('WebView provider registry cleaned up');
+        logInfo('WebView provider registry cleaned up');
       } catch (error) {
-        console.error('WebView provider registry cleanup failed:', error);
+        logError('WebView provider registry cleanup failed:', error);
       }
     }
 
     // Phase 5: State persistence and core engine shutdown
-    console.log('Phase 5: Core engine shutdown...');
+    logInfo('Phase 5: Core engine shutdown...');
     if (templumCore) {
       try {
         // Save current state if state manager available
         const stateManager = (templumCore as any).getStateManager?.();
         if (stateManager && (stateManager as any).persistState) {
-          console.log('Persisting current state...');
+          logInfo('Persisting current state...');
           await (stateManager as any).persistState();
-          console.log('State persisted successfully');
+          logInfo('State persisted successfully');
         }
 
         // Graceful shutdown with timeout
-        console.log('Initiating core engine shutdown...');
+        logInfo('Initiating core engine shutdown...');
         await withTimeout(
           templumCore.shutdown(),
           10000,
           new Error('Shutdown timeout after 10 seconds')
         );
         templumCore = undefined;
-        console.log('Templum Core engine shutdown completed');
+        logInfo('Templum Core engine shutdown completed');
         
       } catch (shutdownError) {
-        console.error('Error during Templum Core shutdown:', shutdownError);
+        logError('Error during Templum Core shutdown:', shutdownError);
         // Force cleanup even if shutdown fails
         templumCore = undefined;
-        console.log('Templum Core force-cleaned after shutdown error');
+        logInfo('Templum Core force-cleaned after shutdown error');
       }
     }
 
     // Phase 6: Final cleanup and metrics
-    console.log('Phase 6: Final cleanup and metrics...');
+    logInfo('Phase 6: Final cleanup and metrics...');
     
     try {
       // Clear any remaining global state
@@ -1837,29 +1869,29 @@ export async function deactivate() {
         (process as any).emit('templum:metrics', metricsPayload);
       } catch (metricsError) {
         // Metrics emission failed, but don't block deactivation
-        console.warn('Failed to emit final metrics:', metricsError);
+        logWarn('Failed to emit final metrics:', metricsError);
       }
 
-      console.log(`Final cleanup completed in ${deactivationDuration}ms`);
-      console.log('Templum extension deactivation complete - all resources cleaned up');
+      logInfo(`Final cleanup completed in ${deactivationDuration}ms`);
+      logInfo('Templum extension deactivation complete - all resources cleaned up');
       
       if (observabilityAdapter) {
         try {
           await observabilityAdapter.shutdown();
         } catch (obsError) {
-          console.error('Observability adapter shutdown failed:', obsError);
+          logError('Observability adapter shutdown failed:', obsError);
         } finally {
           observabilityAdapter = undefined;
         }
       }
       
     } catch (finalError) {
-      console.error('Error during final cleanup phase:', finalError);
+      logError('Error during final cleanup phase:', finalError);
     }
 
   } catch (error) {
     const deactivationDuration = Date.now() - deactivationStartTime;
-    console.error(`❌ Critical error during Templum deactivation (${deactivationDuration}ms):`, error);
+    logError(`❌ Critical error during Templum deactivation (${deactivationDuration}ms):`, error);
     
     // Emit error signal about failed deactivation
     try {
@@ -1879,7 +1911,7 @@ export async function deactivate() {
       };
       (process as any).emit('templum:error', errorPayload);
     } catch (errorEmissionError) {
-      console.error('❌ Failed to emit deactivation error signal:', errorEmissionError);
+      logError('❌ Failed to emit deactivation error signal:', errorEmissionError);
     }
   }
 }

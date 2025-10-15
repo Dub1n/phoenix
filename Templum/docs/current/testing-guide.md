@@ -3,7 +3,7 @@ doc-type: operations-guide
 title: Templum Testing Guide
 tags: [templum, testing, qa]
 status: current
-last_updated: 2025-10-14
+last_updated: 2025-10-15
 ---
 
 # Templum — Testing Guide
@@ -31,6 +31,7 @@ last_updated: 2025-10-14
 | `npm run test -- --runTestsByPath <path>`                                                                                                                 | Execute an individual test file                                                 | Example: `npm run test -- --runTestsByPath src/tests/backend/service-discovery.test.ts`                                                                                               |
 | `node scripts/run-with-timeout.mjs --timeout 180000 -- npm test -- --runTestsByPath tests/session/unified-session-manager.integration.test.ts`             | Smoke the shared session manager wiring across interfaces                       | Uses the timeout wrapper so Jest can be killed cleanly if a listener leaks; mirrors the evidence recorded in the unified session task                                                   |
 | `npm test -- --runTestsByPath tests/templum/universal-skin-system.test.ts tests/templum/skin-contract.integration.test.ts tests/interfaces/interface-adapter-integration.test.ts --runInBand --forceExit` | Contract enforcement + adapter regression bundle                                | Keeps the Ajv-backed validator and adapter rejection surfaces green; `--forceExit` avoids lingering handles once Jest reports success                                                 |
+| `node scripts/run-with-timeout.mjs --preset jest-ci -- npx jest --config jest.guardrail-interface-adapter.config.js tests/interfaces/interface-adapter-integration.test.ts` | Interface adapter logging guardrail                                             | Uses the domain guardrail config to scope coverage to the adapter seam; attach the log to Pattern 1 lanes before marking Stage 6 complete.                                            |
 | `npm run test:watch`                                                                                                                                      | Redrive targeted suites during development                                      | Honors Jest watch prompts; avoid for backend tests that spawn servers                                                                                                                 |
 | `npm run test:coverage`                                                                                                                                   | Generate unit-suite coverage (developer feedback)                               | Uses `jest.config.js`, writes reports to `coverage/unit`; pair with `npm run coverage:governance` when you need enforced thresholds.                                                 |
 | `npm run coverage:governance`                                                                                                                             | Enforce suite-specific coverage bands + aggregate governance                    | Runs unit (`jest.config.js`), backend (`jest.backend.config.js`), and e2e (`jest.e2e.config.js`) sequentially, merges summaries, enforces 75/65/70/75 · 60/55/60/60 · 45/40/45/45 suite bands with a 75/65/70/75 aggregate bar, and records history in `.coverage-history.json`. |
@@ -61,6 +62,7 @@ last_updated: 2025-10-14
 - Backend integration suites reset `ConnectionFactory.create` and `global.fetch` in `beforeEach`/`afterEach`. When adding specs, copy that pattern to avoid leaving mocked sockets alive between tests; doing so keeps the timeout wrapper from surfacing false positives.
 - When diagnosing leaks locally, run `node scripts/run-with-timeout.mjs --timeout 30000 -- node scripts/run-jest-ci.mjs adapter-registry`. The wrapper guarantees the command exits; the teardown output lists the constructor names (and socket endpoints) of anything left behind so you can target the culprit quickly.
 - Tests should invoke `registry.dispose()` (or equivalent) in `afterEach` blocks. The core adapter-registry suite has been updated to dispose unconditionally; copy that pattern in new specs to avoid orphaned sockets from connection factories.
+- When creating a new guardrail config, copy the `jest.guardrail-interface-adapter.config.js` pattern: extend `jest.config.js`, narrow `collectCoverageFrom` to the domain files, set a domain entry in `scripts/coverage-thresholds.js`, and document the config + lane linkage here. Keep configs per-domain (interface adapters, backend connectivity, skin-engine, etc.) so multiple lanes reuse the same preset rather than spawning one-off configs.
 
 ## 3. Suite Taxonomy
 

@@ -706,7 +706,11 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
             });
           }
         } catch (renderError) {
-          this.logger.warn('Skin engine render failed, continuing with procedural renderer', this.normalizeError(renderError));
+          const normalizedError = this.normalizeError(renderError);
+          this.logger.warn('Skin engine render failed, continuing with procedural renderer', normalizedError);
+          this.logger.error('Failed to apply skin', normalizedError, {
+            errorMessage: normalizedError?.message ?? 'Unknown skin engine render error',
+          });
         }
       } else {
         this.logger.warn('Skin engine does not implement renderForInterface; relying on procedural renderer');
@@ -765,7 +769,9 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
       const templumError = ErrorHandler.handle(error, 'interfaces.cli-adapter.apply-skin', {
         skinId: skinDefinition?.metadata?.id ?? skinDefinition?.id ?? this.activeSkin?.id,
       });
-      this.logger.error('Failed to apply skin', templumError);
+      this.logger.error('Failed to apply skin', templumError, {
+        errorMessage: templumError.message,
+      });
       this.printLine(this.formatError('Failed to apply skin. See logs for details.'));
     }
   }

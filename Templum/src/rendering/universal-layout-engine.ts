@@ -25,7 +25,12 @@ import {
   TerminalCapabilities as LayoutTerminalCapabilities
 } from './content-layout-system';
 import { computeDisplayLayout } from '../interfaces/display-utils-layout';
-import type { UniversalSkinDefinition, MenuDefinition as SkinMenuDefinition } from '../types/universal-skin-definition';
+import type {
+  UniversalSkinDefinition,
+  MenuDefinition as SkinMenuDefinition,
+  MenuItemDefinition,
+  SkinTheme as UniversalSkinTheme
+} from '../types/universal-skin-definition';
 
 // Re-export InterfaceType for other modules
 export type { InterfaceType };
@@ -228,6 +233,184 @@ export class UniversalLayoutEngine {
     return 'main';
   }
 
+  private toMenuDefinition(
+    skin: UniversalSkinDefinition | UniversalSkinMenuDefinition | PCLSkinMenuDefinition,
+    interfaceType: InterfaceType
+  ): UniversalSkinMenuDefinition | PCLSkinMenuDefinition {
+    if (!this.isUniversalSkinDefinition(skin)) {
+      return skin;
+    }
+
+    const primaryMenu = this.resolvePrimaryMenuDefinition(skin);
+    const menuItems = this.convertMenuItems(primaryMenu.items, primaryMenu.id ?? this.getDefaultMenuId(skin));
+    const interfaces = this.resolveInterfacesFromSkin(skin, interfaceType);
+
+    const menuTheme = this.coerceMenuTheme(primaryMenu.theme ?? skin.theme);
+
+    const menuDefinition: UniversalSkinMenuDefinition = {
+      title: primaryMenu.title ?? skin.name ?? skin.metadata.name,
+      subtitle: primaryMenu.subtitle ?? primaryMenu.description ?? skin.description,
+      items: menuItems,
+      theme: menuTheme,
+      interfaces,
+      interfaceConfig: undefined
+    };
+
+    return Object.assign(menuDefinition, {
+      metadata: skin.metadata,
+      layout: (primaryMenu as { layout?: unknown }).layout
+    });
+  }
+
+  private resolveInterfacesFromSkin(
+    skin: UniversalSkinDefinition,
+    fallback: InterfaceType
+  ): InterfaceType[] {
+    const candidates = [
+      skin.metadata?.compatibleInterfaces,
+      skin.metadata?.supportedInterfaces,
+      skin.metadata?.targetInterfaces
+    ]
+      .filter((set): set is InterfaceType[] => Array.isArray(set) && set.length > 0)
+      .flat()
+      .map((entry) => entry.toLowerCase() as InterfaceType);
+
+    if (candidates.length === 0) {
+      return [fallback];
+    }
+
+    return Array.from(new Set(candidates)) as InterfaceType[];
+  }
+
+  private resolvePrimaryMenuDefinition(skin: UniversalSkinDefinition): SkinMenuDefinition {
+    const menus = skin.menus;
+    if (menus) {
+      if (this.isSkinMenuDefinition(menus.main)) {
+        return { ...menus.main, id: menus.main.id ?? 'main' };
+      }
+
+      const defaultMenuId = this.getDefaultMenuId(skin);
+      const submenus = menus.submenus ?? {};
+      const submenuCandidate = Object.entries(submenus).find((entry) => {
+        const [key, value] = entry;
+        if (!this.isSkinMenuDefinition(value)) {
+          return false;
+        }
+        return key === defaultMenuId || !defaultMenuId;
+      });
+
+      if (submenuCandidate && this.isSkinMenuDefinition(submenuCandidate[1])) {
+        const menu = submenuCandidate[1];
+        return { ...menu, id: menu.id ?? submenuCandidate[0] };
+      }
+
+      // Search other submenu entries
+      for (const value of Object.values(submenus)) {
+        if (this.isSkinMenuDefinition(value)) {
+          return { ...value, id: value.id ?? defaultMenuId };
+        }
+      }
+
+      // Some skins may define menus at the top level (legacy format)
+      for (const value of Object.values(menus)) {
+        if (this.isSkinMenuDefinition(value)) {
+          return { ...value, id: value.id ?? defaultMenuId };
+        }
+      }
+    }
+
+    return {
+      id: 'main',
+      title: skin.name ?? skin.metadata.name ?? 'Main',
+      items: [],
+      theme: skin.theme
+    };
+  }
+
+  private isSkinMenuDefinition(value: unknown): value is SkinMenuDefinition {
+    return (
+      !!value &&
+      typeof value === 'object' &&
+      Array.isArray((value as SkinMenuDefinition).items)
+    );
+  }
+
+  private convertMenuItems(
+    items?: MenuItemDefinition[],
+    parentId: string = 'item'
+  ): SkinMenuItem[] {
+    if (!Array.isArray(items) || items.length === 0) {
+      return [];
+    }
+
+    return items.map((item, index) =>
+      this.convertMenuItemDefinition(item, `${parentId}-${index + 1}`)
+    );
+  }
+
+  private convertMenuItemDefinition(
+    item: MenuItemDefinition,
+    fallbackId: string
+  ): SkinMenuItem {
+    const resolvedId = item.id ?? fallbackId;
+    const resolvedLabel = item.label ?? resolvedId;
+    const hasSubmenu = item.type === 'submenu' || typeof item.submenu !== 'undefined';
+
+    const resolvedType: SkinMenuItem['type'] = hasSubmenu
+      ? 'submenu'
+      : item.type === 'action'
+        ? 'action'
+        : 'command';
+
+    const converted: SkinMenuItem = {
+      id: resolvedId,
+      label: resolvedLabel,
+      description: item.description,
+      type: resolvedType
+    };
+
+    if (hasSubmenu) {
+      if (typeof item.submenu === 'string') {
+        converted.command = item.submenu;
+      } else if (Array.isArray(item.submenu)) {
+        converted.items = this.convertMenuItems(item.submenu, resolvedId);
+      }
+    } else if (item.command || item.action) {
+      converted.command = item.command ?? item.action ?? resolvedId;
+    }
+
+    return converted;
+  }
+
+  private coerceMenuTheme(theme?: UniversalSkinTheme | null): SkinTheme | undefined {
+    if (!theme) {
+      return undefined;
+    }
+
+    const normalizeColor = (value: string | undefined, fallback: SkinTheme['primaryColor']): SkinTheme['primaryColor'] => {
+      if (!value) {
+        return fallback;
+      }
+
+      const lower = value.toLowerCase();
+      if (lower.includes('red')) return 'red';
+      if (lower.includes('green')) return 'green';
+      if (lower.includes('blue')) return 'blue';
+      if (lower.includes('yellow')) return 'yellow';
+      if (lower.includes('magenta') || lower.includes('purple') || lower.includes('pink')) return 'magenta';
+      if (lower.includes('cyan') || lower.includes('teal') || lower.includes('aqua')) return 'cyan';
+
+      return fallback;
+    };
+
+    return {
+      primaryColor: normalizeColor(theme.primary, 'blue'),
+      accentColor: normalizeColor(theme.accent, 'cyan'),
+      separatorChar: '─',
+      useIcons: true
+    };
+  }
+
   private extractSubmenuTargets(menu: SkinMenuDefinition): string[] {
     if (!menu.items) {
       return [];
@@ -304,11 +487,13 @@ export class UniversalLayoutEngine {
     }
 
     try {
+      const baseMenuDefinition = this.toMenuDefinition(skinDefinition, interfaceType);
+
       // TASK-MCP-009: Verify and adapt skin compatibility
-      const compatibilityCheck = this.verifySkinCompatibility(skinDefinition, interfaceType);
-      const adaptedSkinDefinition = compatibilityCheck.compatible 
-        ? skinDefinition 
-        : this.applySkinAdaptations(skinDefinition, compatibilityCheck.adaptations);
+      const compatibilityCheck = this.verifySkinCompatibility(baseMenuDefinition, interfaceType);
+      const adaptedMenuDefinition = compatibilityCheck.compatible 
+        ? baseMenuDefinition 
+        : this.applySkinAdaptations(baseMenuDefinition, compatibilityCheck.adaptations);
       
       // Log compatibility issues for debugging
       if (!compatibilityCheck.compatible) {
@@ -321,24 +506,24 @@ export class UniversalLayoutEngine {
       }
       
       // Determine if this is PCL compatibility mode
-      const compatibilityMode = this.determineCompatibilityMode(adaptedSkinDefinition, interfaceType);
+      const compatibilityMode = this.determineCompatibilityMode(adaptedMenuDefinition, interfaceType);
 
       // Create content-driven constraints for algorithmic consistency
       const universalConstraints = this.createContentDrivenConstraints(
-        adaptedSkinDefinition,
+        adaptedMenuDefinition,
         interfaceType,
         constraints
       );
 
       // Calculate layout for the specific interface
       const layout = this.calculateUniversalLayout(
-        adaptedSkinDefinition,
+        adaptedMenuDefinition,
         universalConstraints
       );
 
       // Render for the specific interface
       const output = await this.renderForSpecificInterface(
-        adaptedSkinDefinition,
+        adaptedMenuDefinition,
         layout,
         interfaceType
       );

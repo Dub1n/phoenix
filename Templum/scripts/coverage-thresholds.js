@@ -15,6 +15,12 @@ const coverageThresholds = {
     functions: 20,
     lines: 20
   },
+  guardrailInterfaceAdapter: {
+    statements: 20,
+    branches: 5,
+    functions: 20,
+    lines: 20
+  },
   e2e: {
     statements: 35,
     branches: 12,

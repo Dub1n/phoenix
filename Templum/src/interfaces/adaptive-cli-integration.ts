@@ -926,7 +926,6 @@ export async function setupEnhancedCLI(
 
   const originalAdapter = new CLIInterfaceAdapter({
     enableInteractiveMode: true,
-    enableInteractiveSearch: true,
     enableKeyboardShortcuts: true
   });
 
@@ -972,7 +971,6 @@ export async function setupAccessibleCLI(
     enableInteractiveMode: true,
     enableColorOutput: false,
     enableKeyboardShortcuts: true,
-    enableInteractiveSearch: true,
     terminalTheme: 'light'
   });
 

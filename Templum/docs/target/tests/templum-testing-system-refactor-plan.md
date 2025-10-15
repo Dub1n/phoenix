@@ -41,8 +41,8 @@ tags: [testing, jest, integration, phase6, architecture]
 
 ### Phase 0 – Stabilise & Document (1-2 days)
 
-- ✅ Wire hard fails for leaked handles / hanging suites (global teardown + `scripts/run-jest-ci.mjs`).
-- ✅ Document the CI entry point and leak expectations (`docs/current/testing-guide.md`).
+- [x] Wire hard fails for leaked handles / hanging suites (global teardown + `scripts/run-jest-ci.mjs`).
+- [x] Document the CI entry point and leak expectations (`docs/current/testing-guide.md`).
 - [ ] Freeze current behaviour with targeted skip markers or explicit `test.todo` entries where fixtures are incomplete (document in `docs/current/testing-guide.md`).
 - [ ] Add CI guardrail to run `npm test -- --passWithNoTests --listTests` to alert when suites disappear unexpectedly.
 
@@ -67,6 +67,7 @@ tags: [testing, jest, integration, phase6, architecture]
 - Adjust `jest.config.js:4-19` to treat `src/tests/**` as tests (not roots for coverage) or relocate reusable harness code to `src/testing/**` while keeping specs under `tests/**`.
 - Update `tsconfig.json:45-54` to exclude pure Jest files from the production build; include only harness modules in `src/testing/**` as needed.
 - Ensure `npm run build` omits `src/tests/**` outputs, shrinking `dist/` and clarifying runtime boundaries.
+- Introduce domain-scoped guardrail Jest configs (e.g., interface adapters, backend connectivity, skin engine) that narrow `collectCoverageFrom` to each seam while inheriting shared thresholds; document the mapping so future lanes reuse the same presets instead of cloning configs. Initial implementation: `jest.guardrail-interface-adapter.config.js` using `coverageThresholds.guardrailInterfaceAdapter`, referenced by Pattern 1 Stage 6 guardrails.
 
 ### Phase 4 – Reliability Hardening (ongoing)
 

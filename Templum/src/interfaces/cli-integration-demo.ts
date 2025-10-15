@@ -331,7 +331,6 @@ export class CLIIntegrationDemo extends EventDrivenComponent<CLIIntegrationDemoE
     return {
       enableInteractiveMode: true,
       enableColorOutput: environment.capabilities.supportsColor || false,
-      enableInteractiveSearch: environment.capabilities.supportsMouseInput || false,
       terminalTheme: environment.capabilities.supportsColor ? 'default' : 'monochrome'
     };
   }
@@ -588,7 +587,7 @@ export async function runQuickDemo(
   commandRegistry: UniversalCommandRegistry,
   menuRegistry: UniversalMenuRegistry,
   sessionContext: SessionContextFoundation,
-  orchestrator?: ITemplumOrchestrator
+  orchestrator: ITemplumOrchestrator
 ): Promise<string> {
   const demo = createCLIIntegrationDemo();
   
