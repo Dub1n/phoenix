@@ -3,7 +3,7 @@ doc-type: progress
 name: Templum MVP Progress Tracker
 tags: [templum, progress, mvp]
 status: current
-last_updated: 2025-10-15
+last_updated: 2025-10-16
 ---
 
 # Templum — MVP Route Tracker
@@ -56,8 +56,8 @@ last_updated: 2025-10-15
   Progress 100% — Orchestrator now caches backend skins and immediately replays them to active adapters, CLI/VSCode load flows render directly from `UniversalSkinDefinition` payloads, and integration coverage proves skins surface without fallback scaffolds (`npm test -- --runTestsByPath tests/rendering/skin-payload-consumption.integration.test.ts`).
 - [x] [Procedural windowed TUI layout from skin descriptors](../../dev/tasks/procedural-windowed-tui.md)
   Progress 100% — CLI adapters now render bordered procedural windows exclusively from `EnhancedWindowSystem.renderWindowSet`, the fallback ASCII scaffold has been removed, and the new `CLI Procedural Windows` e2e coverage (`npm run test -- --runTestsByPath tests/e2e/e2e-complete-workflows.test.ts`) asserts both rendered output and the absence of legacy banners. Full coverage remains gated on the `babel-plugin-istanbul` tooling fix tracked under test architecture governance.
-- [~] [CLI generator uses skin metadata](../../dev/tasks/cli-skin-generator.md)
-  Progress 10% — No dedicated generator module; CLI adapters emit fallback text rather than payload-derived menus.
+- [x] [CLI generator uses skin metadata](../../dev/tasks/cli-skin-generator.md)
+  Progress 100% — Added `src/interfaces/cli-generator.ts` to transform `UniversalSkinDefinition` payloads into CLI menu graphs, shortcuts, and command bindings. `CLIInterfaceAdapter.applySkin`, `TemplumAdapterRegistry`, and `TemplumCore.loadSkin` now invoke the generator, hydrate the menu registry, and inject metadata-driven shortcuts, while the CLI entry point passes the generator through dependency injection. Regression coverage lives in `tests/cli/cli-generator.integration.test.ts` and the refreshed metadata scenario inside `tests/e2e/e2e-complete-workflows.test.ts` (`npm test -- --runTestsByPath tests/cli/cli-generator.integration.test.ts tests/e2e/e2e-complete-workflows.test.ts`).
 - [x] [Minimal MCP terminal bridge for agent CLI validation](../../dev/tasks/minimal-mcp-terminal-bridge.md)
   Progress 100% — Restored the Jest harness by adding an explicit CommonJS export shim in `src/mcp-channel/src/node-pty-types.ts` and covering it with `src/mcp-channel/src/__tests__/node-pty-types.cjs.test.ts`. `npm test -- --runTestsByPath src/mcp-channel/src/__tests__/node-pty-types.cjs.test.ts tests/service-discovery/pty-mcp-server-test-harness.test.ts` now runs without the previous ESM import failure; coverage thresholds remain tracked through the broader suite.
 

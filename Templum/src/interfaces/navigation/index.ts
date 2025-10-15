@@ -33,11 +33,13 @@ import {
   createTerminalCompatibilitySystem
 } from './terminal-compatibility';
 import { DefaultColorThemes } from '../terminal-ui-components';
+import type { CLIMenuModel } from '../cli-generator';
 
 // Import create functions needed by NavigationSystem class
 import { createBorderRenderer } from './border-renderer';
 import { createWidthCalculator } from './width-calculator';
 import { createWindowStack } from './window-stack';
+import type { WindowStackConfig } from './window-stack';
 import { createBreadcrumbManager } from './breadcrumb-manager';
 import { createExitHandler } from './exit-handler';
 import { createSelectorUpdater } from './selector-updater';
@@ -216,6 +218,8 @@ export interface NavigationSystemConfig {
     highContrastMode?: boolean;
     verbosityLevel?: 'minimal' | 'standard' | 'verbose';
   };
+
+  menuModel?: CLIMenuModel;
 }
 
 /**
@@ -244,6 +248,7 @@ export class NavigationSystem {
   private compatibilitySystem?: ReturnType<typeof createTerminalCompatibilitySystem>;
   private accessibilityManager?: ReturnType<typeof createAccessibilityManager>;
   private initialized = false;
+  private readonly menuModel: CLIMenuModel | null;
 
   constructor(config: NavigationSystemConfig = {}) {
     this.config = {
@@ -279,6 +284,8 @@ export class NavigationSystem {
       },
       ...config
     };
+
+    this.menuModel = this.config.menuModel ?? null;
   }
 
   /**
@@ -322,10 +329,17 @@ export class NavigationSystem {
       this.widthCalculator = createWidthCalculator(this.config.widthCalculation);
 
       // Initialize window stack
-      this.windowStack = createWindowStack({
+      const windowStackConfig: Partial<WindowStackConfig> = {
         ...this.config.windowManagement,
-        theme: capabilities?.supportsColor ? undefined : DefaultColorThemes.monochrome
-      });
+      };
+
+      if (this.menuModel?.theme) {
+        windowStackConfig.theme = this.menuModel.theme;
+      } else if (!(capabilities?.supportsColor ?? true)) {
+        windowStackConfig.theme = DefaultColorThemes.monochrome;
+      }
+
+      this.windowStack = createWindowStack(windowStackConfig);
 
       // Initialize breadcrumb manager
       if (this.config.windowManagement?.enableBreadcrumbs) {
@@ -352,7 +366,9 @@ export class NavigationSystem {
         accessibilityMode: !capabilities?.supportsUnicode
       };
 
-      if (capabilities && !capabilities.supportsColor) {
+      if (this.menuModel?.theme) {
+        selectorConfig.theme = this.menuModel.theme;
+      } else if (capabilities && !capabilities.supportsColor) {
         selectorConfig.theme = DefaultColorThemes.monochrome;
       }
 

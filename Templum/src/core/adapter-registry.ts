@@ -38,6 +38,7 @@ import { ObservabilityAdapter } from '../observability/observability-adapter';
 import { CLIInterfaceAdapter } from '../interfaces/cli-adapter-abstracted';
 import { VSCodeInterfaceAdapter } from '../interfaces/vscode-adapter-abstracted';
 import type { IInterfaceAdapter } from '../interfaces/templum-orchestrator-interface';
+import { buildCLIMenuModel } from '../interfaces/cli-generator';
 import type {
   ManualOverrideDescriptor,
   ManualOverrideClearResult,
@@ -1870,7 +1871,9 @@ export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistry
 
     const adapters: Partial<Record<InterfaceType, IInterfaceAdapter>> = {};
 
-    adapters.cli = overrides.cli ?? new CLIInterfaceAdapter();
+    adapters.cli = overrides.cli ?? new CLIInterfaceAdapter({
+      cliGenerator: { buildMenuModel: buildCLIMenuModel }
+    });
 
     if (overrides.vscode) {
       if (overrides.vscode.adapter) {

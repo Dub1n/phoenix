@@ -33,6 +33,7 @@ import {
   type CliIpcRequestPayload
 } from '../backend/defaults/serialization-defaults';
 import { serializeServiceManifest } from '../backend/schemas/service-manifest';
+import { buildCLIMenuModel } from '../interfaces/cli-generator';
 import {
   serialization,
   type SerializationOutcome,
@@ -395,6 +396,32 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
     // Store skin definition
     this.loadedSkins.set(skinDefinition.metadata.id, skinDefinition);
     this.registerCommandsFromSkin(skinDefinition);
+
+    try {
+      const menuModel = buildCLIMenuModel(skinDefinition);
+      this.dependencies.observabilityService?.logInfo(
+        'CLI menu model generated',
+        {
+          skinId: skinDefinition.metadata.id,
+          menuCount: Object.keys(menuModel.menuGraph).length,
+        },
+        'TemplumCore'
+      );
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.logWarn('CLI generator failed to produce menu model', {
+        skinId: skinDefinition.metadata.id,
+        error: errorMessage,
+      });
+      this.dependencies.observabilityService?.logWarn(
+        'CLI menu model generation failed',
+        {
+          skinId: skinDefinition.metadata.id,
+          error: errorMessage,
+        },
+        'TemplumCore'
+      );
+    }
 
     // Apply skin across all active interfaces
     await this.applySkinToActiveInterfaces(skinDefinition);

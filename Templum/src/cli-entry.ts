@@ -12,6 +12,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { createFormatter, TerminalFormatter, getFormatterSeparatorLength } from './utils/terminal-formatter';
 import { CLIInterfaceAdapter } from './interfaces/cli-adapter-abstracted';
+import { buildCLIMenuModel } from './interfaces/cli-generator';
 import { DynamicCommandRouter } from './navigation/dynamic-command-router';
 import { ContentNavigationManager } from './navigation/content-driven-navigation';
 import {
@@ -521,7 +522,10 @@ class RemoteTemplumAdapter {
         clearScreenOnRender: true,
         maxHistorySize: 50,
         terminalTheme: 'dark',
-        enableResponsiveLayout: true
+        enableResponsiveLayout: true,
+        cliGenerator: {
+          buildMenuModel: buildCLIMenuModel,
+        },
       });
 
       // TASK-CLI-006: IPC-to-HTTP Transition - Real orchestrator proxy implementation  

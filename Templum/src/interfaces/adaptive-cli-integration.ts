@@ -30,6 +30,7 @@ import { UniversalMenuRegistry } from '../menus/universal-menu-registry';
 import { SessionContextFoundation } from '../session/session-context-foundation';
 import { ITemplumOrchestrator } from './templum-orchestrator-interface';
 import type { WindowSetRenderResult } from './enhanced-window-system';
+import type { CLIMenuModel } from './cli-generator';
 
 // Import navigation system components
 import {
@@ -149,6 +150,7 @@ export interface EnhancedCLIState {
   // Core adapter state
   originalAdapter: CLIInterfaceAdapter;
   isEnhanced: boolean;
+  cliMenuModel: CLIMenuModel | null;
   
   // Navigation system state
   navigationSystem: NavigationSystem | null;
@@ -378,6 +380,7 @@ export class AdaptiveCLIIntegration extends EventDrivenComponent<AdaptiveCLIInte
     this.state = {
       originalAdapter,
       isEnhanced: false,
+      cliMenuModel: originalAdapter.getGeneratedMenuModel ? originalAdapter.getGeneratedMenuModel() : null,
       navigationSystem: null,
       navigationInitialized: false,
       compatibilitySystem: null,
@@ -548,6 +551,8 @@ export class AdaptiveCLIIntegration extends EventDrivenComponent<AdaptiveCLIInte
       this.state.navigationInitialized = navigationResult.success;
       result.navigationSystemActive = navigationResult.success;
 
+      this.captureMenuModel();
+
       if (navigationResult.warnings) {
         result.warnings?.push(...navigationResult.warnings);
       }
@@ -577,6 +582,15 @@ export class AdaptiveCLIIntegration extends EventDrivenComponent<AdaptiveCLIInte
 
       if (this.config.mcpPreservation?.fallbackToOriginal) {
         await this.fallbackToOriginal(result);
+      }
+    }
+  }
+
+  private captureMenuModel(): void {
+    if (typeof this.state.originalAdapter.getGeneratedMenuModel === 'function') {
+      const model = this.state.originalAdapter.getGeneratedMenuModel();
+      if (model) {
+        this.state.cliMenuModel = model;
       }
     }
   }
@@ -623,6 +637,18 @@ export class AdaptiveCLIIntegration extends EventDrivenComponent<AdaptiveCLIInte
         ...baseConfig.accessibility
       }
     };
+
+    if (this.state.cliMenuModel) {
+      adaptiveConfig.menuModel = this.state.cliMenuModel;
+      adaptiveConfig.windowManagement = {
+        ...adaptiveConfig.windowManagement,
+        enableBreadcrumbs: true,
+        maxStackSize: Math.max(
+          adaptiveConfig.windowManagement?.maxStackSize ?? 5,
+          Object.keys(this.state.cliMenuModel.menuGraph).length + 1
+        ),
+      };
+    }
 
     return adaptiveConfig;
   }

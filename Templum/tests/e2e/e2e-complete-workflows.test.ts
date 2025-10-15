@@ -38,6 +38,12 @@ import {
   IResourceManager
 } from '../../src/interfaces/core-component-interfaces';
 import type { ResourceUsage } from '../../src/core/templum-resource-manager';
+import type {
+  TemplumSessionManagerContract,
+  TemplumSessionState,
+  SessionStateUpdate,
+  TemplumSessionMetrics,
+} from '../../src/session/universal-session-manager.types';
 import {
   createFormatter
 } from '../../src/utils/terminal-formatter';
@@ -59,6 +65,75 @@ import { sleep } from '../../src/utils/async-utils';
 
 // Mock Orchestrator for E2E Testing
 class MockE2EOrchestrator extends EventDrivenComponent<GenericEventMap> implements ITemplumOrchestrator {
+  private readonly sessionManager: TemplumSessionManagerContract = new (class implements TemplumSessionManagerContract {
+    private snapshot: TemplumSessionState = {
+      sessionId: 'e2e-session',
+      startTime: new Date(),
+      activeInterface: 'cli',
+      preferences: {},
+      capabilities: [],
+      activeBackends: [],
+      loadedSkins: [],
+      interfaceHistory: ['cli'],
+      sessionMetrics: {
+        interfaceSwitches: 0,
+        backendInteractions: 0,
+        commandsExecuted: 0,
+        sessionsCreated: 1,
+        totalSkinLoads: 0,
+        averageSwitchTime: 0,
+        completion: { completed: false },
+      } as TemplumSessionMetrics,
+      lastActivity: new Date(),
+      navigationHistory: [],
+      commandHistory: [],
+      interactionMode: 'menu',
+      currentMenu: 'main',
+    };
+
+    async initialize(): Promise<void> {
+      return Promise.resolve();
+    }
+
+    attachOrchestrator(): void {}
+
+    async ensureSessionForInterface(): Promise<string> {
+      return 'e2e-session';
+    }
+
+    getActiveSessionId(): string | null {
+      return 'e2e-session';
+    }
+
+    getSessionSnapshot(): TemplumSessionState | null {
+      return this.snapshot;
+    }
+
+    async updateSessionState(update: SessionStateUpdate): Promise<void> {
+      this.snapshot = {
+        ...this.snapshot,
+        navigationHistory: update.state.navigationStack ?? this.snapshot.navigationHistory,
+        currentMenu: update.state.currentMenu ?? this.snapshot.currentMenu,
+        interactionMode: update.state.interactionMode ?? this.snapshot.interactionMode ?? 'menu',
+        commandHistory: update.state.commandHistory ?? this.snapshot.commandHistory,
+        lastActivity: new Date(),
+      };
+    }
+
+    async registerInterfaceAdapter(): Promise<void> {
+      return Promise.resolve();
+    }
+
+    async syncInterfaces(): Promise<void> {
+      return Promise.resolve();
+    }
+
+    notifyInterfaceDisconnect(): void {}
+
+    on(): void {}
+
+    off(): void {}
+  })();
   private initialized: boolean = false;
   private registeredInterfaces: Map<InterfaceType, IInterfaceAdapter> = new Map();
   private supportedInterfaces: InterfaceType[] = ['vscode', 'cli', 'command'];
@@ -222,6 +297,10 @@ class MockE2EOrchestrator extends EventDrivenComponent<GenericEventMap> implemen
     return {} as IResourceManager;
   }
 
+  getSessionManager(): TemplumSessionManagerContract {
+    return this.sessionManager;
+  }
+
   async applyManualOverride(
     serviceId: string,
     options: ManualOverrideOptions = {}
@@ -280,6 +359,61 @@ class MockE2EOrchestrator extends EventDrivenComponent<GenericEventMap> implemen
     return new Map(this.registeredInterfaces);
   }
 }
+
+const createCLIMetadataSkin = (): UniversalSkinDefinition => ({
+  id: 'cli-metadata-skin',
+  name: 'CLI Metadata Skin',
+  version: '1.0.0',
+  metadata: {
+    id: 'cli-metadata-skin',
+    name: 'CLI Metadata Skin',
+    version: '1.0.0',
+    backend: 'pcl',
+    backendService: 'pcl',
+    compatibleInterfaces: ['cli'],
+  },
+  menus: {
+    main: {
+      id: 'main-menu',
+      title: 'Metadata Main',
+      items: [
+        {
+          id: 'analyze',
+          label: 'Analyze Project',
+          command: 'haruspex.analyze',
+          shortcuts: ['Ctrl+Shift+A'],
+        },
+        {
+          id: 'settings',
+          label: 'Open Settings',
+          command: 'templum.openSettings',
+          shortcut: 'Ctrl+,',
+        },
+      ],
+    },
+  },
+  commands: {
+    primary: [
+      {
+        id: 'haruspex.analyze',
+        title: 'Analyze Project',
+        description: 'Run analysis on the active workspace.',
+        handler: 'haruspex.analysis.start',
+        parameters: [],
+      },
+      {
+        id: 'templum.openSettings',
+        title: 'Open Settings',
+        description: 'Open settings menu.',
+        handler: 'templum.settings.open',
+        parameters: [],
+      },
+    ],
+  },
+  shortcuts: {
+    'Ctrl+Alt+M': 'templum.openSettings',
+  },
+});
 
 class ProceduralWindowSessionManager extends EventEmitter implements TemplumSessionManagerContract {
   private readonly sessionId = 'cli-session';
@@ -991,6 +1125,27 @@ describe('E2E Complete Workflows Test Suite', () => {
       );
       expect(variance).toBe(true);
     }, 90000);
+  });
+});
+
+describe('CLI metadata-driven generator integration', () => {
+  test('hydrates keyboard shortcuts directly from skin metadata', async () => {
+    const orchestrator = new MockE2EOrchestrator();
+    await orchestrator.initialize();
+
+    const cliAdapter = new CLIInterfaceAdapter({ enableKeyboardShortcuts: true });
+    await cliAdapter.initialize(orchestrator as unknown as ITemplumOrchestrator);
+
+    const skin = createCLIMetadataSkin();
+    await cliAdapter.applySkin(skin);
+
+    const model = cliAdapter.getGeneratedMenuModel();
+    expect(model).not.toBeNull();
+    expect(model?.commandBindings.find((binding) => binding.commandId === 'haruspex.analyze')).toBeDefined();
+
+    const shortcuts = (cliAdapter as unknown as { keyboardShortcuts: Map<string, string> }).keyboardShortcuts;
+    expect(shortcuts.get('Ctrl+Shift+A')).toBe('haruspex.analyze');
+    expect(shortcuts.get('Ctrl+,')).toBe('templum.openSettings');
   });
 });
 

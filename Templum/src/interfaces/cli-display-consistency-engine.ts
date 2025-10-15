@@ -44,6 +44,7 @@ import {
 } from './layout-normalizer';
 
 import { TerminalColorTheme } from './terminal-ui-components';
+import type { CLIMenuModel } from './cli-generator';
 
 /**
  * Display pattern types for consistent formatting
@@ -315,6 +316,12 @@ export class CLIDisplayConsistencyEngine {
    */
   setTheme(theme: TerminalColorTheme): void {
     this.currentTheme = theme;
+  }
+
+  applyGeneratedModel(model: CLIMenuModel): void {
+    if (model.theme) {
+      this.setTheme(model.theme);
+    }
   }
 
   /**

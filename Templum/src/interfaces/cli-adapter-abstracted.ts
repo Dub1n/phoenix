@@ -67,6 +67,12 @@ import { createLogger, LogLevel } from '../utils/logger';
 import { ErrorHandler } from '../utils/error-handler';
 import { TypeGuards, TypeValidators } from '../utils/type-guards';
 import type { UniversalMenuRegistry, UniversalMenuDefinition } from '../menus/universal-menu-registry';
+import {
+  buildCLIMenuModel,
+  type CLIMenuModel,
+  type CLIShortcutDefinition,
+  type CLICommandBinding,
+} from './cli-generator';
 
 /**
  * CLI Input Types (Interface-specific)
@@ -160,12 +166,19 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
   private windowSystem: EnhancedWindowSystem;
   private activeSkin: UniversalSkinDefinition | null = null;
   private readonly compatibilityLayoutEngine = new UniversalLayoutEngine();
+  private readonly cliGenerator: { buildMenuModel: typeof buildCLIMenuModel };
+  private cliMenuModel: CLIMenuModel | null = null;
+  private cliCommandBindings: CLICommandBinding[] = [];
 
   constructor(config?: CLIAdapterInitializationOptions) {
-    const { formatter, formatterCapabilities, ...adapterConfig } = config ?? {};
+    const { formatter, formatterCapabilities, cliGenerator, ...adapterConfig } = config ?? {};
 
     this.eventScope = `cli-interface-adapter:${CLIInterfaceAdapter.instanceCounter++}`;
     this.events = EventUtils.createScopedBus<CLIInterfaceAdapterEvents>(this.eventScope, 75);
+
+    this.cliGenerator = {
+      buildMenuModel: cliGenerator?.buildMenuModel ?? buildCLIMenuModel,
+    };
 
     this.config = {
       enableInteractiveMode: true,
@@ -423,6 +436,55 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
     }
   }
 
+  private async applySkinMetadata(
+    skinDefinition: UniversalSkinDefinition
+  ): Promise<void> {
+    try {
+      const model = this.cliGenerator.buildMenuModel(skinDefinition);
+      this.cliMenuModel = model;
+      this.cliCommandBindings = model.commandBindings;
+
+      this.consistencyEngine.applyGeneratedModel(model);
+
+      if (this.config.enableKeyboardShortcuts) {
+        this.applyKeyboardShortcuts(model.shortcuts);
+      }
+
+      await this.hydrateMenuRegistry(model);
+    } catch (error) {
+      this.logger.warn('Failed to derive CLI metadata from skin', this.normalizeError(error), {
+        skinId: skinDefinition?.metadata?.id ?? skinDefinition?.id ?? 'unknown',
+      });
+    }
+  }
+
+  private applyKeyboardShortcuts(shortcuts: CLIShortcutDefinition[]): void {
+    this.keyboardShortcuts.clear();
+
+    for (const shortcut of shortcuts) {
+      const normalizedKey = shortcut.key.trim();
+      if (!normalizedKey || this.keyboardShortcuts.has(normalizedKey)) {
+        continue;
+      }
+      this.keyboardShortcuts.set(normalizedKey, shortcut.command);
+    }
+  }
+
+  private async hydrateMenuRegistry(model: CLIMenuModel): Promise<void> {
+    const registry = await this.resolveMenuRegistry();
+    if (!registry) {
+      return;
+    }
+
+    try {
+      await registry.loadSkin(model.loadedSkin);
+    } catch (error) {
+      this.logger.warn('Failed to load CLI menu model into registry', this.normalizeError(error), {
+        skinId: model.skinId,
+      });
+    }
+  }
+
   private validateMenuPayload(menuData: unknown): {
     isValid: boolean;
     reason?: string;
@@ -613,6 +675,14 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
     return this.getCurrentMenu();
   }
 
+  getGeneratedMenuModel(): CLIMenuModel | null {
+    return this.cliMenuModel;
+  }
+
+  getCommandBindings(): CLICommandBinding[] {
+    return [...this.cliCommandBindings];
+  }
+
   /**
    * Sync state update from orchestrator
    */
@@ -745,6 +815,7 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
 
       this.sessionManager.navigateToMenu(windowSetResult.windowSet.activeMenuId, false);
       await this.updateMenuRegistryState(windowSetResult);
+      await this.applySkinMetadata(skinDefinition);
 
       if (this.config.enableKeyboardShortcuts && this.keyboardShortcuts.size > 0) {
         this.displayKeyboardShortcuts();
@@ -1946,17 +2017,7 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
    * @private
    */
   private async setupKeyboardShortcuts(): Promise<void> {
-    const defaultShortcuts = [
-      { key: 'h', command: 'help', description: 'Show help' },
-      { key: 'q', command: 'quit', description: 'Quit application' },
-      { key: 'b', command: 'back', description: 'Go back' },
-      { key: 'r', command: 'refresh', description: 'Refresh current view' },
-      { key: 's', command: 'status', description: 'Show system status' }
-    ];
-
-    for (const shortcut of defaultShortcuts) {
-      this.keyboardShortcuts.set(shortcut.key, shortcut.command);
-    }
+    this.keyboardShortcuts.clear();
   }
 
   /**
@@ -1972,9 +2033,23 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
    * Process interactive input
    * @private
    */
-  private async processInteractiveInput(input: string): Promise<void> {
+  private async processInteractiveInput(rawInput: string): Promise<void> {
+    const input = rawInput.trim();
+
     if (!input) {
       this.readlineInterface?.prompt();
+      return;
+    }
+
+    if (this.config.enableKeyboardShortcuts && this.keyboardShortcuts.has(input)) {
+      await this.handleInput({
+        type: 'keyboard_shortcut',
+        value: input,
+        context: { currentMenu: this.getCurrentMenu() }
+      });
+      if (this.isInteractiveMode) {
+        this.readlineInterface?.prompt();
+      }
       return;
     }
 
@@ -2383,6 +2458,9 @@ export interface CLIAdapterConfig {
 export type CLIAdapterInitializationOptions = Partial<CLIAdapterConfig> & {
   formatter?: TerminalFormatter;
   formatterCapabilities?: Partial<TerminalCapabilities>;
+  cliGenerator?: {
+    buildMenuModel?: typeof buildCLIMenuModel;
+  };
 };
 
 /**
