@@ -1,5 +1,6 @@
 import type { TemplumSessionManagerContract, TemplumSessionState } from '../session/universal-session-manager.types';
 import type { InterfaceType } from '../types/templum-types';
+import { ErrorHandler } from '../utils/error-handler';
 
 const CLI_INTERFACE: InterfaceType = 'cli';
 
@@ -168,7 +169,11 @@ export class CLISessionBridge {
         },
       })
       .catch((error) => {
-        console.warn('CLI session bridge failed to persist state', error);
+        ErrorHandler.handle(error, 'interfaces.cli-session-bridge.persistState', {
+          sessionId: this.sessionId,
+          currentMenu: this.currentMenu,
+          navigationDepth: this.navigationHistory.length,
+        });
       });
   }
 }

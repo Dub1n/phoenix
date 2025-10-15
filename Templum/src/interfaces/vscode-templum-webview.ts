@@ -18,6 +18,7 @@ import {
   UniversalSkinDefinition
 } from '../types/templum-types';
 import { withTimeout } from '../utils/async-utils';
+import { ErrorHandler } from '../utils/error-handler';
 import type { BackendServiceInfo, BackendStatusSnapshot } from './vscode/backend-service-model';
 
 /**
@@ -66,9 +67,6 @@ export class TemplumUniversalWebViewProvider implements vscode.WebviewViewProvid
       this.emitErrorSignal('webview_init_failed', error, {
         initialization_ms: Date.now() - startTime
       });
-      
-      // UI should never crash - always provide safe fallback
-      console.error('Templum Interface WebView initialization failed:', error);
     }
   }
 
@@ -1157,16 +1155,31 @@ export class TemplumUniversalWebViewProvider implements vscode.WebviewViewProvid
    * Emit error signal using Templum signal pattern
    */
   private emitErrorSignal(errorCode: string, error: unknown, context?: Record<string, any>): void {
-    const message = isTemplumError(error) 
-      ? error.message 
-      : (error instanceof Error ? error.message : 'Unknown error');
-    
+    const templumError = ErrorHandler.handle(error, `interfaces.vscode-webview.${errorCode}`, {
+      ...context,
+      errorCode,
+    });
+
+    if (!templumError.code) {
+      templumError.code = errorCode.toUpperCase();
+    }
+
+    if (!templumError.category) {
+      templumError.category = 'runtime';
+    }
+
+    templumError.context = {
+      ...(templumError.context ?? {}),
+      ...context,
+      errorCode,
+    };
+
     const errorPayload: ErrorSignalPayload = {
-      error: isTemplumError(error) ? error : createTemplumError(message, 'WEBVIEW_ERROR', 'runtime'),
+      error: templumError,
       severity: 'medium',
       timestamp: Date.now(),
       source: 'TemplumInterfaceWebView',
-      data: context
+      data: { ...context, errorCode }
     };
     (process as any).emit('templum:error', errorPayload);
   }
