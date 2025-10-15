@@ -33,11 +33,13 @@ import {
 } from '../types/templum-types';
 import { serialization, type SerializationOutcome } from '../utils/serialization-utils';
 import { emitSerializationWarnings } from '../backend/backend-serialization-log';
+import type { Logger } from '../utils/logger';
 import {
   AdvancedCompatibilityService,
   createDefaultInterfaceCapabilityMatrix,
   createDefaultInterfaceRequirements
 } from './versioning/advanced-compatibility-service';
+import { getSkinLogger } from './skin-logger';
 import { createLogger, type Logger } from '../utils/logger';
 
 /**
@@ -52,18 +54,17 @@ export class SkinVersionManager implements ISkinVersionManager {
   private readonly interfaceCapabilityMatrix: InterfaceCapabilityMatrix;
   private validatorVersion = '1.0.0';
   private readonly advancedCompatibilityService: AdvancedCompatibilityService;
-  private readonly logger: Logger;
-  private readonly compatibilityLogger: Logger;
-  private readonly migrationLogger: Logger;
+  private readonly coreLogger: Logger;
+  private readonly validationLogger: Logger;
+  private readonly integrationLogger: Logger;
 
   constructor(systemVersion?: string) {
     if (systemVersion) {
       this.systemVersion = systemVersion;
     }
-    const baseLogger = createLogger('skin-version-manager');
-    this.logger = baseLogger;
-    this.compatibilityLogger = baseLogger.child('compatibility');
-    this.migrationLogger = baseLogger.child('migration');
+    this.coreLogger = getSkinLogger('skin-version-manager');
+    this.validationLogger = getSkinLogger('skin-version-manager', 'validation');
+    this.integrationLogger = getSkinLogger('skin-version-manager', 'integration');
     this.initializeDefaultRules();
     this.initializeDefaultMigrationStrategies();
     this.interfaceRequirements = createDefaultInterfaceRequirements();
@@ -207,7 +208,7 @@ export class SkinVersionManager implements ISkinVersionManager {
       // Default to exact match if pattern not recognized
       return this.compareVersions(parsedVersion, range) === 0;
     } catch (error) {
-      this.logger.warn('Failed to evaluate version range', {
+      this.coreLogger.warn('Failed to evaluate version range', {
         version,
         range,
         error: error instanceof Error ? error.message : String(error)
@@ -483,7 +484,7 @@ export class SkinVersionManager implements ISkinVersionManager {
 
       return conflicts;
     } catch (error) {
-      this.compatibilityLogger.warn('Failed to detect version conflicts', {
+      this.validationLogger.warn('Failed to detect version conflicts', {
         skinId: newSkin.id,
         error: error instanceof Error ? error.message : String(error)
       });
@@ -580,7 +581,7 @@ export class SkinVersionManager implements ISkinVersionManager {
 
       return matchingStrategies[0] || this.createDefaultMigrationStrategy(fromVersion, toVersion);
     } catch (error) {
-      this.migrationLogger.warn('Failed to determine migration strategy', {
+      this.integrationLogger.warn('Failed to determine migration strategy', {
         fromVersion,
         toVersion,
         error: error instanceof Error ? error.message : String(error)

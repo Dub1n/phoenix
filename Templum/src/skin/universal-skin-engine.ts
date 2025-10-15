@@ -213,11 +213,14 @@ export class UniversalSkinEngine extends EventDrivenComponent<UniversalSkinEngin
   constructor(systemVersion?: string) {
     super(`universal-skin-engine:${UniversalSkinEngine.instanceCounter++}`, 200);
     const instanceId = UniversalSkinEngine.instanceCounter - 1;
-    const instanceLogger = getSkinLogger('universal-skin-engine').child(`instance-${instanceId}`);
-    this.coreLogger = instanceLogger;
-    this.renderingLogger = instanceLogger.child('rendering');
-    this.validationLogger = instanceLogger.child('validation');
-    this.integrationLogger = instanceLogger.child('integration');
+    const coreLogger = getSkinLogger('universal-skin-engine').child(`instance-${instanceId}`);
+    const renderingLogger = getSkinLogger('universal-skin-engine', 'rendering').child(`instance-${instanceId}`);
+    const validationLogger = getSkinLogger('universal-skin-engine', 'validation').child(`instance-${instanceId}`);
+    const integrationLogger = getSkinLogger('universal-skin-engine', 'integration').child(`instance-${instanceId}`);
+    this.coreLogger = coreLogger;
+    this.renderingLogger = renderingLogger;
+    this.validationLogger = validationLogger;
+    this.integrationLogger = integrationLogger;
     this.config = {
       cacheTimeout: 300000, // 5 minutes
       maxCacheSize: 100, // 100 rendered skins
@@ -1067,7 +1070,7 @@ export class UniversalSkinEngine extends EventDrivenComponent<UniversalSkinEngin
       timestamp: Date.now()
     });
 
-    this.themeLogger.info('Theme variant created', {
+    this.coreLogger.info('Theme variant created', {
       baseSkinId,
       baseThemeName,
       variantName
@@ -1729,7 +1732,7 @@ export class UniversalSkinEngine extends EventDrivenComponent<UniversalSkinEngin
       const parsedVersion = this.versionManager.parseVersion(skin.version);
       this.versionManager.registerSkinVersion(skin.id, parsedVersion);
 
-      this.storageLogger.info('Skin version stored', {
+      this.coreLogger.info('Skin version stored', {
         skinId: skin.id,
         version: skin.version
       });
@@ -1756,13 +1759,13 @@ export class UniversalSkinEngine extends EventDrivenComponent<UniversalSkinEngin
       // TODO: Pre-warm cache for common interface/theme combinations
       // This could be added based on usage patterns
 
-      this.cacheLogger.info('Skin caches refreshed', {
+      this.coreLogger.info('Skin caches refreshed', {
         skinId: skin.id,
         version: skin.version,
         removedEntries: keysToRemove.length
       });
     } catch (error) {
-      this.cacheLogger.warn('Failed to refresh skin caches', {
+      this.coreLogger.warn('Failed to refresh skin caches', {
         skinId: skin.id,
         error: error instanceof Error ? error.message : String(error)
       });
@@ -2465,7 +2468,7 @@ export class UniversalSkinEngine extends EventDrivenComponent<UniversalSkinEngin
     };
 
     this.skins.set(defaultSkin.id, defaultSkin);
-    this.themeLogger.info('Default universal skin initialized', {
+    this.coreLogger.info('Default universal skin initialized', {
       skinId: defaultSkin.id,
       reusePercentage: defaultSkin.pclCompatibility?.reusePercentage ?? null
     });

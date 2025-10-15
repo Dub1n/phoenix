@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "updatedAt": "2025-10-15T18:27:17Z",
+  "updatedAt": "2025-10-15T19:01:25Z",
   "patterns": [
     {
       "patternId": 1,
@@ -2830,6 +2830,33 @@
           "scope": [
             "stage-5"
           ]
+        },
+        {
+          "id": "stage-3-note-20251015T190107",
+          "timestamp": "2025-10-15T19:01:07Z",
+          "body": "Documented skin-domain logging helper getSkinLogger with fixed segments (core/rendering/validation/integration) so upcoming migrations stop introducing ad-hoc child loggers.",
+          "scope": [
+            "stage-3"
+          ],
+          "author": "Codex"
+        },
+        {
+          "id": "stage-4-note-20251015T190116",
+          "timestamp": "2025-10-15T19:01:16Z",
+          "body": "Refactored Universal Skin Engine and Skin Version Manager to use getSkinLogger segments, collapsing legacy child loggers into core/rendering/validation/integration and keeping per-instance scoping under helper-provided paths.",
+          "scope": [
+            "stage-4"
+          ],
+          "author": "Codex"
+        },
+        {
+          "id": "stage-6-note-20251015T190125",
+          "timestamp": "2025-10-15T19:01:25Z",
+          "body": "Re-ran backend manual override guardrail after adopting getSkinLogger (node scripts/run-with-timeout.mjs --preset jest-suite -- npx jest …manual-override-flow.test.ts …manual-override-watcher.integration.test.ts) to confirm lane 6g remains green.",
+          "scope": [
+            "stage-6"
+          ],
+          "author": "Codex"
         }
       ],
       "evidence": [],
@@ -3557,7 +3584,7 @@
           "durationMs": 2482000
         }
       ],
-      "updatedAt": "2025-10-15T18:27:17Z",
+      "updatedAt": "2025-10-15T19:01:25Z",
       "cohorts": [
         "D"
       ]

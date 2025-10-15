@@ -1,6 +1,6 @@
 ---
 date-created: 2025-09-14T18:05:00Z
-last-updated: 2025-09-14T18:05:00Z
+last-updated: 2025-10-15T18:57:00Z
 name: logger
 description: Centralized logging infrastructure to eliminate 2,810 console.log/warn/error calls across 75+ files with structured, contextual logging
 status: "[x]"
@@ -223,6 +223,25 @@ ipcLog.info('IPC connection opened');   // [backend-router:ipc]
 **All Additional Files** (68+ files with remaining 898 console calls):
 
 - [ ] All components with console.log/warn/error usage migrate to centralized logger
+
+#### Skin Domain Helper (Universal Pattern)
+
+To keep Stage 6 migrations aligned, skin-domain components (Universal Skin Engine, Skin Version Manager, related helpers) must acquire loggers through `getSkinLogger(domain, segment)`. The helper enforces a single shared tree per domain with the following allowed segments:
+
+```typescript
+import { getSkinLogger } from '../../skin/skin-logger';
+
+const coreLogger = getSkinLogger('universal-skin-engine');
+const renderingLogger = getSkinLogger('universal-skin-engine', 'rendering');
+const validationLogger = getSkinLogger('universal-skin-engine', 'validation');
+const integrationLogger = getSkinLogger('universal-skin-engine', 'integration');
+```
+
+- `domain` must be `'universal-skin-engine'` or `'skin-version-manager'` (additions require pattern review).
+- Segments are limited to `core`, `rendering`, `validation`, and `integration`; call the helper for each segment instead of creating new child names.
+- Instance-specific scoping (e.g., `getSkinLogger(..., 'rendering').child('instance-1')`) is permitted, but the segment must originate from the helper.
+
+Future Stage 6 lanes should reference this helper instead of introducing bespoke child loggers; Stage 3 guardrails will flag direct `.child()` calls under `src/skin/**` that bypass it.
 
 #### Expected Impact
 
