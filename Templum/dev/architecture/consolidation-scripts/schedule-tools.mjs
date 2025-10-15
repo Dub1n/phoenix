@@ -378,13 +378,25 @@ function buildCohortStageTasks(registry, selectedPatterns, options = {}) {
       const plannedFiles = normalisePlanFiles(entry?.plannedFiles || []);
       const stageNumber = inferStageNumberFromScope(cohortStageScope(segment));
       const dependencies = buildCohortDependencies(registry, cohort, segment);
+      const normalizedSegment = String(segment).toLowerCase();
+      const rawStatus = entry?.status || 'blocked';
+      let status = rawStatus;
+      const normalizedStatus = normalizeStatus(rawStatus) || 'blocked';
+      if (normalizedSegment === '5a' && normalizedStatus === 'blocked') {
+        const dependenciesSatisfied =
+          !dependencies.length ||
+          dependencies.every((dependency) => dependencySatisfiedViaRegistry(registry, dependency.patternId, dependency.scope));
+        if (dependenciesSatisfied) {
+          status = 'pending';
+        }
+      }
       cohortTasks.push({
         key: dependencyKey(`cohort:${normalizedId}`, cohortStageScope(segment)),
         patternId: `cohort:${normalizedId}`,
         cohortId: normalizedId,
         name: cohort.name || `Cohort ${normalizedId}`,
         scope: cohortStageScope(segment),
-        status: entry?.status || 'blocked',
+        status,
         type: 'cohort-stage',
         targetId: segment,
         stageNumber,
@@ -394,7 +406,7 @@ function buildCohortStageTasks(registry, selectedPatterns, options = {}) {
         elapsedMs: entry?.elapsedMs || null,
         durationMinutes: roundUpToMinutes(entry?.elapsedMs || null),
         startedAt: entry?.startedAt || null,
-        isBlocked: blockedStatuses.has(entry?.status),
+        isBlocked: blockedStatuses.has(status),
         focus: deriveCohortFocus(cohort, segment)
       });
     });
