@@ -9,6 +9,10 @@
 const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const { createScriptRuntime } = require('./utils/script-runtime');
+
+const runtime = createScriptRuntime('scripts:test-health-monitor');
+const { logger, handleError, setExitCode } = runtime;
 
 class TestHealthMonitor {
     constructor() {
@@ -40,14 +44,15 @@ class TestHealthMonitor {
             await this.checkCoverageConfiguration();
             
             // Generate health report
-            this.generateHealthReport();
-            
-            return this.isHealthy();
-        } catch (error) {
-            console.error('❌ Health check failed:', error.message);
-            return false;
-        }
+        this.generateHealthReport();
+        
+        return this.isHealthy();
+    } catch (error) {
+        handleError(error, 'scripts:test-health-monitor.run', { stage: 'health-check' });
+        logger.warn(`Health check run failed: ${error instanceof Error ? error.message : String(error)}`);
+        return false;
     }
+}
 
     /**
      * Check TypeScript compilation status
@@ -70,6 +75,10 @@ class TestHealthMonitor {
         } catch (error) {
             const errorOutput = error.stdout?.toString() || error.stderr?.toString() || '';
             const errorCount = this.countCompilationErrors(errorOutput);
+            handleError(error, 'scripts:test-health-monitor.typescript-check', {
+                command: 'npx tsc --noEmit',
+                errorCount
+            });
             
             this.healthStatus.typescript = {
                 status: 'unhealthy',
@@ -103,6 +112,10 @@ class TestHealthMonitor {
         } catch (error) {
             const errorOutput = error.stdout?.toString() || error.stderr?.toString() || '';
             const errorCount = this.countTestErrors(errorOutput);
+            handleError(error, 'scripts:test-health-monitor.test-check', {
+                command: 'npx jest --listTests --passWithNoTests',
+                errorCount
+            });
             
             this.healthStatus.tests = {
                 status: 'unhealthy',
@@ -197,6 +210,9 @@ class TestHealthMonitor {
                 console.log('⚠️  Coverage configuration: INCOMPLETE');
             }
         } catch (error) {
+            handleError(error, 'scripts:test-health-monitor.coverage-config', {
+                configPath: path.join(process.cwd(), 'jest.config.js')
+            });
             this.healthStatus.coverage = {
                 status: 'unhealthy',
                 percentage: 0,
@@ -301,7 +317,7 @@ async function main() {
         case undefined:
             const isHealthy = await monitor.runHealthCheck();
             monitor.saveHealthStatus();
-            process.exit(isHealthy ? 0 : 1);
+            setExitCode(isHealthy ? 0 : 1);
             break;
             
         case 'status':
@@ -314,17 +330,22 @@ async function main() {
             } else {
                 console.log('No health status found. Run "npm run test:health" first.');
             }
+            setExitCode(0);
             break;
             
         default:
             console.log('Usage: node scripts/test-health-monitor.js [check|status]');
             console.log('  check  - Run health check (default)');
             console.log('  status - Show last health status');
+            setExitCode(0);
     }
 }
 
 if (require.main === module) {
-    main().catch(console.error);
+    main().catch((error) => {
+        handleError(error, 'scripts:test-health-monitor.main');
+        setExitCode(1);
+    });
 }
 
 module.exports = { TestHealthMonitor };

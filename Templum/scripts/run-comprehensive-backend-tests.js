@@ -18,6 +18,9 @@ const { execSync, spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
+const { createScriptRuntime } = require('./utils/script-runtime');
+
+const runtime = createScriptRuntime('scripts:run-comprehensive-backend-tests');
 
 // Test Configuration
 const TEST_CONFIG = {
@@ -243,7 +246,7 @@ class TestResultsAnalyzer {
         this.processJestResults(jestResults);
       }
     } catch (error) {
-      logWarning(`Could not parse Jest output for detailed analysis: ${error.message}`);
+      logWarning(`Jest output parsing failed for detailed analysis: ${error.message}`);
     }
   }
   
@@ -324,7 +327,8 @@ class TestResultsAnalyzer {
  * Main Test Runner
  */
 class ComprehensiveTestRunner {
-  constructor() {
+  constructor(runtimeHandle = runtime) {
+    this.runtime = runtimeHandle;
     this.analyzer = new TestResultsAnalyzer();
   }
   
@@ -350,22 +354,30 @@ class ComprehensiveTestRunner {
         logSection('🎉 COMPREHENSIVE VALIDATION SUCCESSFUL');
         logSuccess('All backend integration tests passed!');
         logSuccess('The skin-definition-only architecture is validated.');
-        process.exit(0);
-      } else {
-        logSection('❌ VALIDATION FAILED');
-        logError(`${results.failedTests} test(s) failed`);
-        process.exit(1);
+        this.runtime.setExitCode(0);
+        return true;
       }
+      
+      logSection('❌ VALIDATION FAILED');
+      logError(`${results.failedTests} test(s) failed`);
+      this.runtime.setExitCode(1);
+      return false;
       
     } catch (error) {
       logSection('💥 TEST EXECUTION FAILED');
-      logError(`Error: ${error.message}`);
+      const templumError = this.runtime.handleError(
+        error,
+        'scripts:run-comprehensive-backend-tests.run',
+        { verbose: TEST_CONFIG.verbose }
+      );
+      logError(`Error: ${templumError.message}`);
       
-      if (TEST_CONFIG.verbose && error.stack) {
+      if (TEST_CONFIG.verbose && error instanceof Error && error.stack) {
         console.log(error.stack);
       }
       
-      process.exit(1);
+      this.runtime.setExitCode(1);
+      return false;
     }
   }
   
@@ -422,24 +434,31 @@ class ComprehensiveTestRunner {
  * Main execution
  */
 async function main() {
-  const runner = new ComprehensiveTestRunner();
-  await runner.run();
+  const runner = new ComprehensiveTestRunner(runtime);
+  const success = await runner.run();
+  runtime.setExitCode(success ? 0 : 1);
 }
 
 // Handle uncaught errors
 process.on('unhandledRejection', (error) => {
-  logError(`Unhandled rejection: ${error.message}`);
-  process.exit(1);
+  const reason = error instanceof Error ? error : new Error(String(error));
+  runtime.handleError(reason, 'scripts:run-comprehensive-backend-tests.unhandledRejection');
+  logError(`Unhandled promise rejection detected: ${reason.message}`);
+  runtime.setExitCode(1);
 });
 
 process.on('uncaughtException', (error) => {
-  logError(`Uncaught exception: ${error.message}`);
-  process.exit(1);
+  runtime.handleError(error, 'scripts:run-comprehensive-backend-tests.uncaughtException');
+  logError(`Uncaught exception detected: ${error.message}`);
+  runtime.setExitCode(1);
 });
 
 // Run if called directly
 if (require.main === module) {
-  main().catch(console.error);
+  main().catch((error) => {
+    runtime.handleError(error, 'scripts:run-comprehensive-backend-tests.entry');
+    runtime.setExitCode(1);
+  });
 }
 
 module.exports = {

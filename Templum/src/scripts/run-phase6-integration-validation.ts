@@ -16,11 +16,14 @@ import {
   Phase6IntegrationValidationSuite,
   Phase6ValidationReport,
 } from '../validation/phase6-harness';
+import { ErrorHandler } from '../utils/error-handler';
+import { createCliRuntimeOutput } from '../utils/cli-runtime-output';
 
 // CLI Configuration
 const CLI_VERSION = '1.0.0';
 const DEFAULT_OUTPUT_DIR = './validation-reports';
 const DEFAULT_CONFIG_FILE = './phase6-validation-config.json';
+const scriptOutput = createCliRuntimeOutput({ context: 'phase6-integration-validation' });
 
 type ColumnAlignment = 'left' | 'right' | 'center';
 
@@ -91,6 +94,35 @@ class Phase6ValidationCLI {
     this.outputDir = DEFAULT_OUTPUT_DIR;
     this.useRealBackends = this.parseEnvUseRealBackends();
     this.configureBackendEnv(this.useRealBackends);
+  }
+
+  private setExitCode(code: number): void {
+    if (typeof code !== 'number' || Number.isNaN(code)) {
+      return;
+    }
+    if (code === 0) {
+      if (process.exitCode === undefined) {
+        process.exitCode = 0;
+      }
+      return;
+    }
+    if (process.exitCode === undefined || process.exitCode === 0) {
+      process.exitCode = code;
+      return;
+    }
+    process.exitCode = Math.max(Number(process.exitCode ?? 0), code);
+  }
+
+  private async safeShutdown(context: string): Promise<void> {
+    if (!this.validationSuite) {
+      return;
+    }
+
+    await ErrorHandler.handleAsync(
+      this.validationSuite.shutdown(),
+      `phase6-validation-cli.${context}.shutdown`,
+      { swallow: true }
+    );
   }
 
   /**
@@ -185,7 +217,7 @@ class Phase6ValidationCLI {
    * Execute comprehensive Phase 6 validation
    */
   private async executeValidation(options: any): Promise<void> {
-    console.log('🚀 Phase 6 Integration Validation Starting...\n');
+    scriptOutput.info('🚀 Phase 6 Integration Validation Starting...\n');
 
     try {
       // Load configuration
@@ -203,7 +235,7 @@ class Phase6ValidationCLI {
       }
 
       // Initialize validation suite
-      console.log('📋 Initializing Phase 6 validation suite...');
+      scriptOutput.info('📋 Initializing Phase 6 validation suite...');
       const useRealBackends = this.shouldUseRealBackends(options);
       this.configureBackendEnv(useRealBackends);
       this.validationSuite = new Phase6IntegrationValidationSuite({ useRealBackends });
@@ -213,55 +245,59 @@ class Phase6ValidationCLI {
 
       // Initialize and start validation
       await this.validationSuite.initialize();
-      console.log('✅ Validation suite initialized\n');
+      scriptOutput.info('✅ Validation suite initialized\n');
 
-      console.log('🔄 Running comprehensive integration validation...');
-      console.log('   • Multi-system workflow testing (PCL ↔ Haruspex ↔ Templum)');
-      console.log('   • Cross-interface consistency validation (VSCode, CLI, Command)');
-      console.log('   • Performance regression monitoring (Phase 5 baselines)');
-      console.log('   • Production readiness verification');
-      console.log('   • System reliability and failover testing\n');
+      scriptOutput.info('🔄 Running comprehensive integration validation...');
+      scriptOutput.info('   • Multi-system workflow testing (PCL ↔ Haruspex ↔ Templum)');
+      scriptOutput.info('   • Cross-interface consistency validation (VSCode, CLI, Command)');
+      scriptOutput.info('   • Performance regression monitoring (Phase 5 baselines)');
+      scriptOutput.info('   • Production readiness verification');
+      scriptOutput.info('   • System reliability and failover testing\n');
 
       const startTime = Date.now();
       const report = await this.validationSuite.runPhase6IntegrationValidation();
       const duration = Date.now() - startTime;
 
-      console.log(`\n✅ Validation completed in ${(duration / 1000).toFixed(2)}s\n`);
+      scriptOutput.info(`\n✅ Validation completed in ${(duration / 1000).toFixed(2)}s\n`);
 
       // Generate and save reports
       await this.saveValidationReport(report, options.format);
       this.displayValidationSummary(report);
 
       // Cleanup
-      await this.validationSuite.shutdown();
+      await this.safeShutdown('executeValidation');
 
       // Exit with appropriate code
       const validationStatus = report.status ?? (report.phase6ReadinessScore >= 80 ? 'passed' : 'failed');
 
       if (validationStatus === 'passed') {
-        console.log('\n🎉 Phase 6 Integration Validation PASSED - System ready for production deployment');
-        process.exit(0);
+        scriptOutput.info('\n🎉 Phase 6 Integration Validation PASSED - System ready for production deployment');
+        this.setExitCode(0);
+        return;
       }
 
       if (validationStatus === 'skipped') {
-        console.log('\n⚠️ Phase 6 Integration Validation SKIPPED - ' + (report.statusReason ?? 'Mocks in use; run with --use-real-backends for full validation.'));
-        process.exit(0);
+        scriptOutput.info('\n⚠️ Phase 6 Integration Validation SKIPPED - ' + (report.statusReason ?? 'Mocks in use; run with --use-real-backends for full validation.'));
+        this.setExitCode(0);
+        return;
       }
 
-      console.log('\n❌ Phase 6 Integration Validation FAILED - Address critical issues before deployment');
+      scriptOutput.info('\n❌ Phase 6 Integration Validation FAILED - Address critical issues before deployment');
       if (report.statusReason) {
-        console.log(`   Reason: ${report.statusReason}`);
+        scriptOutput.info(`   Reason: ${report.statusReason}`);
       }
-      process.exit(1);
+      this.setExitCode(1);
+      return;
 
     } catch (error) {
-      console.error('\n❌ Validation failed:', error instanceof Error ? error.message : 'Unknown error');
-      
-      if (this.validationSuite) {
-        await this.validationSuite.shutdown().catch(() => {});
-      }
-      
-      process.exit(1);
+      const resolvedError = error instanceof Error ? error : new Error(String(error ?? 'Unknown error'));
+      ErrorHandler.handle(resolvedError, 'phase6-validation-cli.executeValidation', {
+        outputDir: this.outputDir,
+      });
+      scriptOutput.error('\n❌ Validation failed:', resolvedError);
+
+      await this.safeShutdown('executeValidation');
+      this.setExitCode(1);
     }
   }
 
@@ -269,7 +305,7 @@ class Phase6ValidationCLI {
    * Execute system health check
    */
   private async executeHealthCheck(options: any): Promise<void> {
-    console.log('🏥 Phase 6 System Health Check\n');
+    scriptOutput.info('🏥 Phase 6 System Health Check\n');
 
     try {
       // Load configuration
@@ -286,8 +322,8 @@ class Phase6ValidationCLI {
       // Check service health
       const healthResults = await this.validationSuite.checkSystemHealth();
       
-      console.log('Service Health Status:');
-      console.log('─'.repeat(50));
+      scriptOutput.info('Service Health Status:');
+      scriptOutput.info('─'.repeat(50));
       
       Object.entries(healthResults.serviceHealth).forEach(([service, health]) => {
         const status = health.operational ? '✅ HEALTHY' : '❌ UNHEALTHY';
@@ -300,35 +336,37 @@ class Phase6ValidationCLI {
         const responseColumn = formatColumn(responseTime, 10);
         const memoryColumn = formatColumn(memoryUsage, 10);
 
-        console.log(`${serviceColumn} ${statusColumn} Response: ${responseColumn} Memory: ${memoryColumn} Errors: ${errorRate}`);
+        scriptOutput.info(`${serviceColumn} ${statusColumn} Response: ${responseColumn} Memory: ${memoryColumn} Errors: ${errorRate}`);
       });
 
-      console.log('─'.repeat(50));
+      scriptOutput.info('─'.repeat(50));
       const healthStatus = healthResults.status ?? (healthResults.phase6ReadinessScore >= 80 ? 'passed' : 'failed');
       const healthLabel = healthStatus === 'passed' ? '✅ HEALTHY' : healthStatus === 'skipped' ? '⚠️ SKIPPED' : '❌ NEEDS ATTENTION';
-      console.log(`Overall System Health: ${healthLabel}`);
+      scriptOutput.info(`Overall System Health: ${healthLabel}`);
       if (healthResults.statusReason) {
-        console.log(`Reason: ${healthResults.statusReason}`);
+        scriptOutput.info(`Reason: ${healthResults.statusReason}`);
       }
-      console.log(`Phase 6 Note: ${healthResults.phase6ReadinessScoreNote ?? PHASE6_READINESS_SCORE_NOTE}`);
+      scriptOutput.info(`Phase 6 Note: ${healthResults.phase6ReadinessScoreNote ?? PHASE6_READINESS_SCORE_NOTE}`);
 
       if (healthResults.recommendations.critical.length > 0) {
-        console.log('\n🚨 Critical Issues:');
-        healthResults.recommendations.critical.forEach(rec => console.log(`   • ${rec}`));
+        scriptOutput.info('\n🚨 Critical Issues:');
+        healthResults.recommendations.critical.forEach(rec => scriptOutput.info(`   • ${rec}`));
       }
 
-      await this.validationSuite.shutdown();
-      
-      process.exit(healthStatus === 'failed' ? 1 : 0);
+      await this.safeShutdown('health-check');
+
+      this.setExitCode(healthStatus === 'failed' ? 1 : 0);
+      return;
 
     } catch (error) {
-      console.error('\n❌ Health check failed:', error instanceof Error ? error.message : 'Unknown error');
-      
-      if (this.validationSuite) {
-        await this.validationSuite.shutdown().catch(() => {});
-      }
-      
-      process.exit(1);
+      const resolvedError = error instanceof Error ? error : new Error(String(error ?? 'Unknown error'));
+      ErrorHandler.handle(resolvedError, 'phase6-validation-cli.executeHealthCheck', {
+        options,
+      });
+      scriptOutput.error('\n❌ Health check failed:', resolvedError);
+
+      await this.safeShutdown('health-check');
+      this.setExitCode(1);
     }
   }
 
@@ -336,13 +374,13 @@ class Phase6ValidationCLI {
    * Manage backend services
    */
   private async manageServices(action: 'start' | 'stop', options: any): Promise<void> {
-    console.log(`${action === 'start' ? '🚀' : '🛑'} ${action.charAt(0).toUpperCase() + action.slice(1)}ing services...\n`);
+    scriptOutput.info(`${action === 'start' ? '🚀' : '🛑'} ${action.charAt(0).toUpperCase() + action.slice(1)}ing services...\n`);
 
     try {
       const useRealBackends = this.shouldUseRealBackends(options);
       if (!useRealBackends) {
-        console.log('ℹ️ Service management commands require real backend processes. Use --use-real-backends to enable them.');
-        process.exit(0);
+        scriptOutput.info('ℹ️ Service management commands require real backend processes. Use --use-real-backends to enable them.');
+        this.setExitCode(0);
         return;
       }
 
@@ -352,22 +390,27 @@ class Phase6ValidationCLI {
 
       if (action === 'start') {
         if (options.service) {
-          console.log(`Starting ${options.service} service...`);
+          scriptOutput.info(`Starting ${options.service} service...`);
           // Would implement specific service startup
         } else {
-          console.log('Starting all services...');
+          scriptOutput.info('Starting all services...');
           await this.validationSuite.startAllServices();
         }
-        console.log('✅ Services started successfully');
+        scriptOutput.info('✅ Services started successfully');
       } else {
-        console.log('Stopping all services...');
+        scriptOutput.info('Stopping all services...');
         await this.validationSuite.shutdown();
-        console.log('✅ Services stopped successfully');
+        scriptOutput.info('✅ Services stopped successfully');
       }
 
+      this.setExitCode(0);
+
     } catch (error) {
-      console.error(`\n❌ Service ${action} failed:`, error instanceof Error ? error.message : 'Unknown error');
-      process.exit(1);
+      const resolvedError = error instanceof Error ? error : new Error(String(error ?? 'Unknown error'));
+      ErrorHandler.handle(resolvedError, `phase6-validation-cli.manageServices.${action}`, options);
+      scriptOutput.error(`\n❌ Service ${action} failed:`, resolvedError);
+      await this.safeShutdown(`manageServices.${action}`);
+      this.setExitCode(1);
     }
   }
 
@@ -375,7 +418,7 @@ class Phase6ValidationCLI {
    * Check service status
    */
   private async checkServiceStatus(options: any = {}): Promise<void> {
-    console.log('📊 Service Status Check\n');
+    scriptOutput.info('📊 Service Status Check\n');
 
     try {
       const useRealBackends = this.shouldUseRealBackends(options);
@@ -385,8 +428,8 @@ class Phase6ValidationCLI {
 
       const services = await this.validationSuite.getAllServiceStatuses();
       
-      console.log('Service Status:');
-      console.log('─'.repeat(40));
+      scriptOutput.info('Service Status:');
+      scriptOutput.info('─'.repeat(40));
       
       services.forEach(service => {
         const nameColumn = formatColumn(service.name.toUpperCase(), 10);
@@ -396,14 +439,17 @@ class Phase6ValidationCLI {
           .map(([type, port]) => `${type}:${port}`)
           .join(', ') || 'none';
 
-        console.log(`${nameColumn} ${statusColumn} Ports: ${ports}`);
+        scriptOutput.info(`${nameColumn} ${statusColumn} Ports: ${ports}`);
       });
 
-      await this.validationSuite.shutdown();
+      await this.safeShutdown('service-status');
 
     } catch (error) {
-      console.error('\n❌ Status check failed:', error instanceof Error ? error.message : 'Unknown error');
-      process.exit(1);
+      const resolvedError = error instanceof Error ? error : new Error(String(error ?? 'Unknown error'));
+      ErrorHandler.handle(resolvedError, 'phase6-validation-cli.checkServiceStatus', options);
+      scriptOutput.error('\n❌ Status check failed:', resolvedError);
+      await this.safeShutdown('service-status');
+      this.setExitCode(1);
     }
   }
 
@@ -411,7 +457,7 @@ class Phase6ValidationCLI {
    * Generate report from validation results
    */
   private async generateReport(reportFile: string, options: any): Promise<void> {
-    console.log(`📄 Generating ${options.format} report from ${reportFile}\n`);
+    scriptOutput.info(`📄 Generating ${options.format} report from ${reportFile}\n`);
 
     try {
       if (!fs.existsSync(reportFile)) {
@@ -424,17 +470,22 @@ class Phase6ValidationCLI {
         const htmlReport = this.generateHTMLReport(report);
         const outputFile = options.output || reportFile.replace('.json', '.html');
         fs.writeFileSync(outputFile, htmlReport);
-        console.log(`✅ HTML report generated: ${outputFile}`);
+        scriptOutput.info(`✅ HTML report generated: ${outputFile}`);
       } else if (options.format === 'markdown') {
         const mdReport = this.generateMarkdownReport(report);
         const outputFile = options.output || reportFile.replace('.json', '.md');
         fs.writeFileSync(outputFile, mdReport);
-        console.log(`✅ Markdown report generated: ${outputFile}`);
+        scriptOutput.info(`✅ Markdown report generated: ${outputFile}`);
       }
 
     } catch (error) {
-      console.error('\n❌ Report generation failed:', error instanceof Error ? error.message : 'Unknown error');
-      process.exit(1);
+      const resolvedError = error instanceof Error ? error : new Error(String(error ?? 'Unknown error'));
+      ErrorHandler.handle(resolvedError, 'phase6-validation-cli.generateReport', {
+        reportFile,
+        format: options.format,
+      });
+      scriptOutput.error('\n❌ Report generation failed:', resolvedError);
+      this.setExitCode(1);
     }
   }
 
@@ -501,27 +552,27 @@ class Phase6ValidationCLI {
     if (!this.validationSuite) return;
 
     this.validationSuite.on('servicesReady', () => {
-      console.log('✅ All backend services ready');
+      scriptOutput.info('✅ All backend services ready');
     });
 
     this.validationSuite.on('workflowCompleted', (workflow) => {
-      console.log(`✅ Workflow completed: ${workflow.workflowType} (${workflow.totalDuration}ms)`);
+      scriptOutput.info(`✅ Workflow completed: ${workflow.workflowType} (${workflow.totalDuration}ms)`);
     });
 
     this.validationSuite.on('workflowFailure', (event) => {
-      console.log(`❌ Workflow failed: ${event.workflowType} - ${event.error}`);
+      scriptOutput.info(`❌ Workflow failed: ${event.workflowType} - ${event.error}`);
     });
 
     this.validationSuite.on('performanceAlert', (event) => {
-      console.log(`⚠️  Performance alert: ${event.metric} regression detected`);
+      scriptOutput.info(`⚠️  Performance alert: ${event.metric} regression detected`);
     });
 
     this.validationSuite.on('crossInterfaceValidated', (results) => {
-      console.log(`✅ Cross-interface validation: ${results.overallConsistency.toFixed(1)}% consistency`);
+      scriptOutput.info(`✅ Cross-interface validation: ${results.overallConsistency.toFixed(1)}% consistency`);
     });
 
     this.validationSuite.on('productionValidated', (results) => {
-      console.log(`✅ Production readiness: ${results.overallReadiness.toFixed(1)}% ready`);
+      scriptOutput.info(`✅ Production readiness: ${results.overallReadiness.toFixed(1)}% ready`);
     });
   }
 
@@ -535,21 +586,21 @@ class Phase6ValidationCLI {
     // Always save JSON
     const jsonPath = path.join(this.outputDir, `${baseFilename}.json`);
     fs.writeFileSync(jsonPath, JSON.stringify(report, null, 2));
-    console.log(`📄 JSON report saved: ${jsonPath}`);
+    scriptOutput.info(`📄 JSON report saved: ${jsonPath}`);
 
     // Generate additional formats as requested
     if (format === 'html' || format === 'all') {
       const htmlReport = this.generateHTMLReport(report);
       const htmlPath = path.join(this.outputDir, `${baseFilename}.html`);
       fs.writeFileSync(htmlPath, htmlReport);
-      console.log(`📄 HTML report saved: ${htmlPath}`);
+      scriptOutput.info(`📄 HTML report saved: ${htmlPath}`);
     }
 
     if (format === 'markdown' || format === 'all') {
       const mdReport = this.generateMarkdownReport(report);
       const mdPath = path.join(this.outputDir, `${baseFilename}.md`);
       fs.writeFileSync(mdPath, mdReport);
-      console.log(`📄 Markdown report saved: ${mdPath}`);
+      scriptOutput.info(`📄 Markdown report saved: ${mdPath}`);
     }
   }
 
@@ -557,44 +608,44 @@ class Phase6ValidationCLI {
    * Display validation summary to console
    */
   private displayValidationSummary(report: Phase6ValidationReport): void {
-    console.log('\n📊 Phase 6 Integration Validation Summary');
-    console.log('═'.repeat(50));
+    scriptOutput.info('\n📊 Phase 6 Integration Validation Summary');
+    scriptOutput.info('═'.repeat(50));
     const statusLabel = report.status ? report.status.toUpperCase() : 'UNKNOWN';
-    console.log(`Phase 6 Status: ${statusLabel}`);
+    scriptOutput.info(`Phase 6 Status: ${statusLabel}`);
     if (report.statusReason) {
-      console.log(`Reason: ${report.statusReason}`);
+      scriptOutput.info(`Reason: ${report.statusReason}`);
     }
-    console.log(`Phase 6 Note: ${report.phase6ReadinessScoreNote ?? PHASE6_READINESS_SCORE_NOTE}`);
-    console.log(`Multi-System Workflows: ${report.realIntegrationSummary.successfulWorkflows}/${report.realIntegrationSummary.totalWorkflows} successful`);
-    console.log(`Cross-Interface Consistency: ${report.realIntegrationSummary.crossInterfaceConsistency.toFixed(1)}%`);
-    console.log(`Average Workflow Time: ${report.realIntegrationSummary.averageWorkflowTime.toFixed(1)}ms`);
+    scriptOutput.info(`Phase 6 Note: ${report.phase6ReadinessScoreNote ?? PHASE6_READINESS_SCORE_NOTE}`);
+    scriptOutput.info(`Multi-System Workflows: ${report.realIntegrationSummary.successfulWorkflows}/${report.realIntegrationSummary.totalWorkflows} successful`);
+    scriptOutput.info(`Cross-Interface Consistency: ${report.realIntegrationSummary.crossInterfaceConsistency.toFixed(1)}%`);
+    scriptOutput.info(`Average Workflow Time: ${report.realIntegrationSummary.averageWorkflowTime.toFixed(1)}ms`);
     
-    console.log('\nService Health:');
+    scriptOutput.info('\nService Health:');
     Object.entries(report.serviceHealth).forEach(([service, health]) => {
       const status = health.operational ? '✅' : '❌';
-      console.log(`  ${service.toUpperCase()}: ${status} ${health.responseTime.toFixed(1)}ms, ${health.memoryUsage.toFixed(1)}MB`);
+      scriptOutput.info(`  ${service.toUpperCase()}: ${status} ${health.responseTime.toFixed(1)}ms, ${health.memoryUsage.toFixed(1)}MB`);
     });
 
     if (report.performanceRegression.regressionDetected) {
-      console.log('\n⚠️  Performance Regressions Detected:');
+      scriptOutput.info('\n⚠️  Performance Regressions Detected:');
       report.performanceRegression.baselineComparison
         .filter(baseline => baseline.regressionDetected)
         .forEach(baseline => {
           const actualValue = baseline.actualValue ?? 0;
           const baselineValue = baseline.baselineValue ?? 0;
           const deviationPercentage = baseline.deviationPercentage ?? 0;
-          console.log(`  • ${baseline.metric}: ${actualValue.toFixed(1)} vs ${baselineValue.toFixed(1)} (${deviationPercentage.toFixed(1)}%)`);
+          scriptOutput.info(`  • ${baseline.metric}: ${actualValue.toFixed(1)} vs ${baselineValue.toFixed(1)} (${deviationPercentage.toFixed(1)}%)`);
         });
     }
 
     if (report.recommendations.critical.length > 0) {
-      console.log('\n🚨 Critical Issues:');
-      report.recommendations.critical.forEach(rec => console.log(`  • ${rec}`));
+      scriptOutput.info('\n🚨 Critical Issues:');
+      report.recommendations.critical.forEach(rec => scriptOutput.info(`  • ${rec}`));
     }
 
     if (report.recommendations.high.length > 0) {
-      console.log('\n⚠️  High Priority Issues:');
-      report.recommendations.high.forEach(rec => console.log(`  • ${rec}`));
+      scriptOutput.info('\n⚠️  High Priority Issues:');
+      report.recommendations.high.forEach(rec => scriptOutput.info(`  • ${rec}`));
     }
   }
 
@@ -773,8 +824,10 @@ ${report.performanceRegression.baselineComparison.map(baseline =>
 if (require.main === module) {
   const cli = new Phase6ValidationCLI();
   cli.run().catch((error) => {
-    console.error('CLI execution failed:', error);
-    process.exit(1);
+    const resolvedError = error instanceof Error ? error : new Error(String(error ?? 'Unknown error'));
+    ErrorHandler.handle(resolvedError, 'phase6-validation-cli.entrypoint');
+    scriptOutput.error('CLI execution failed:', resolvedError);
+    process.exitCode = Math.max(Number(process.exitCode ?? 0), 1);
   });
 }
 

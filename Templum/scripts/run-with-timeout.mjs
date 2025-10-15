@@ -5,21 +5,32 @@ import path from 'node:path';
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
+const { createScriptRuntime } = require('./utils/script-runtime.js');
+const runtime = createScriptRuntime('scripts:run-with-timeout');
 
 let createTimeout;
 let createInterval;
 
-try {
-  ({ createTimeout, createInterval } = require('../dist/src/utils/async-utils.js'));
-} catch (error) {
-  const message =
-    'Managed timer utilities not available. Run `npm run build` to generate dist/src/utils/async-utils.js before executing scripts/run-with-timeout.mjs.';
-  console.error(message);
-  console.error('Underlying error:', error instanceof Error ? error.message : error);
-  process.exit(1);
-}
+const loadAsyncUtils = () => {
+  try {
+    return require('../dist/src/utils/async-utils.js');
+  } catch (error) {
+    runtime.handleError(error, 'scripts:run-with-timeout.load-async-utils');
+    const message =
+      'Managed timer utilities not available. Run `npm run build` to generate dist/src/utils/async-utils.js before executing scripts/run-with-timeout.mjs.';
+    throw new Error(
+      `${message}\nUnderlying error: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
+  }
+};
+
+({ createTimeout, createInterval } = loadAsyncUtils());
 
 const args = process.argv.slice(2);
+
+try {
 
 const presetPatternMap = new Map([
   ['jest-ci', ['✅ Overall: PASSED']],
@@ -31,15 +42,12 @@ const presetPatternMap = new Map([
 const usage = `Usage:\n  node scripts/run-with-timeout.mjs [options] -- <command> [args...]\n\nOptions:\n  --timeout <ms>        Maximum runtime before sending SIGTERM (default 30000).\n  --kill-after <ms>     Grace period after SIGTERM before SIGKILL (default 5000).\n  --signal <name>       Signal to send at timeout (default SIGTERM).\n  --cwd <path>          Working directory for the spawned process.\n  --log-file <path>     Append diagnostic output to the given file.\n  --heartbeat <ms>      Log a heartbeat every N ms (requires --log-file for file output).\n  --exit-on-pattern <p> Terminate early once stdout/stderr contains the pattern.\n  --preset <name>       Shorthand for predefined exit pattern sets (e.g. jest-ci).\n`;
 
 if (args.length === 0) {
-  console.error(usage);
-  process.exit(1);
+  throw new Error(usage);
 }
 
 const separatorIndex = args.indexOf('--');
 if (separatorIndex === -1 || separatorIndex === args.length - 1) {
-  console.error('Error: specify a command after `--`.');
-  console.error('\n' + usage);
-  process.exit(1);
+  throw new Error(`Error: specify a command after \`--\`.\n\n${usage}`);
 }
 
 const optionArgs = args.slice(0, separatorIndex);
@@ -60,24 +68,21 @@ for (let i = 0; i < optionArgs.length; i += 1) {
       i += 1;
       timeoutMs = Number(optionArgs[i]);
       if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
-        console.error('Error: --timeout must be a positive number of milliseconds.');
-        process.exit(1);
+        throw new Error('Invalid --timeout value; provide a positive number of milliseconds.');
       }
       break;
     case '--kill-after':
       i += 1;
       killAfterMs = Number(optionArgs[i]);
       if (!Number.isFinite(killAfterMs) || killAfterMs < 0) {
-        console.error('Error: --kill-after must be a non-negative number of milliseconds.');
-        process.exit(1);
+        throw new Error('Error: --kill-after must be a non-negative number of milliseconds.');
       }
       break;
     case '--signal':
       i += 1;
       timeoutSignal = optionArgs[i];
       if (typeof timeoutSignal !== 'string' || timeoutSignal.length === 0) {
-        console.error('Error: --signal must be a valid signal name.');
-        process.exit(1);
+        throw new Error('Error: --signal must be a valid signal name.');
       }
       break;
     case '--cwd':
@@ -88,54 +93,49 @@ for (let i = 0; i < optionArgs.length; i += 1) {
       i += 1;
       logFilePath = optionArgs[i];
       if (typeof logFilePath !== 'string' || logFilePath.length === 0) {
-        console.error('Error: --log-file requires a file path.');
-        process.exit(1);
+        throw new Error('Error: --log-file requires a file path.');
       }
       break;
     case '--heartbeat':
       i += 1;
       heartbeatMs = Number(optionArgs[i]);
       if (!Number.isFinite(heartbeatMs) || heartbeatMs <= 0) {
-        console.error('Error: --heartbeat must be a positive number of milliseconds.');
-        process.exit(1);
+        throw new Error('Error: --heartbeat must be a positive number of milliseconds.');
       }
       break;
     case '--exit-on-pattern':
       i += 1;
       if (typeof optionArgs[i] !== 'string' || optionArgs[i].length === 0) {
-        console.error('Error: --exit-on-pattern requires a non-empty pattern string.');
-        process.exit(1);
+        throw new Error('Error: --exit-on-pattern requires a non-empty pattern string.');
       }
       exitPatterns.push(optionArgs[i]);
       break;
     case '--preset':
       i += 1;
       if (typeof optionArgs[i] !== 'string' || optionArgs[i].length === 0) {
-        console.error('Error: --preset requires a preset name.');
-        process.exit(1);
+        throw new Error('Error: --preset requires a preset name.');
       }
       {
         const preset = presetPatternMap.get(optionArgs[i]);
         if (!preset) {
-          console.error(`Error: unknown preset "${optionArgs[i]}". Available presets: ${Array.from(presetPatternMap.keys()).join(', ') || '(none)'}.`);
-          process.exit(1);
+          throw new Error(
+            `Error: unknown preset "${optionArgs[i]}". Available presets: ${
+              Array.from(presetPatternMap.keys()).join(', ') || '(none)'
+            }.`
+          );
         }
         exitPatterns.push(...preset);
       }
       break;
     default:
-      console.error(`Error: Unknown option ${option}`);
-      console.error('\n' + usage);
-      process.exit(1);
+      throw new Error(`Error: Unknown option ${option}\n\n${usage}`);
   }
 }
 
 const [command, ...commandRest] = commandArgs;
 
 if (!command) {
-  console.error('Error: missing command to execute.');
-  console.error('\n' + usage);
-  process.exit(1);
+  throw new Error(`Error: missing command to execute.\n\n${usage}`);
 }
 
 const isPosix = process.platform !== 'win32';
@@ -147,8 +147,12 @@ if (logFilePath) {
     mkdirSync(path.dirname(logFilePath), { recursive: true });
     logStream = createWriteStream(logFilePath, { flags: 'a' });
   } catch (error) {
-    console.error(`Error: unable to open log file '${logFilePath}':`, error instanceof Error ? error.message : error);
-    process.exit(1);
+    runtime.handleError(error, 'scripts:run-with-timeout.open-log', { logFilePath });
+    throw new Error(
+      `Error: unable to open log file '${logFilePath}': ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
   }
 }
 
@@ -157,9 +161,9 @@ const formatTime = () => `+${(Date.now() - startTime).toString().padStart(5, ' '
 const logLine = (message, level = 'info') => {
   const line = `[run-with-timeout] [${new Date().toISOString()}] ${formatTime()} ${message}`;
   if (level === 'error') {
-    console.error(line);
-  } else {
     console.warn(line);
+  } else {
+    console.log(line);
   }
   if (logStream) {
     logStream.write(line + '\n');
@@ -167,11 +171,9 @@ const logLine = (message, level = 'info') => {
 };
 
 const finish = (code = 0) => {
-  const exit = () => process.exit(code);
+  runtime.setExitCode(code);
   if (logStream) {
-    logStream.end(exit);
-  } else {
-    exit();
+    logStream.end();
   }
 };
 
@@ -328,13 +330,17 @@ child.on('error', (error) => {
   heartbeatHandle = undefined;
   killAfterGuard?.cancel?.();
   killAfterGuard = null;
+  runtime.handleError(error, 'scripts:run-with-timeout.child-error', {
+    command,
+    args: commandRest,
+  });
   logLine(`Failed to start command: ${error.message}`, 'error');
   finish(1);
 });
 
 const forwardSignal = (sig) => {
   if (completed) {
-    process.exit();
+    return;
   }
   sendSignal(sig);
 };
@@ -348,3 +354,7 @@ process.on('exit', () => {
     sendSignal('SIGTERM');
   }
 });
+} catch (error) {
+  runtime.exitWithError(error, 'scripts:run-with-timeout.main', { argv: args });
+  console.log(error instanceof Error ? error.message : String(error));
+}

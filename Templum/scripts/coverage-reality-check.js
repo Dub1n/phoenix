@@ -10,6 +10,10 @@ const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const { coverageThresholds } = require('./coverage-thresholds');
+const { createScriptRuntime } = require('./utils/script-runtime');
+
+const runtime = createScriptRuntime('scripts:coverage-reality-check');
+const rootLogger = runtime.logger;
 
 const SUITE_DEFINITIONS = [
   {
@@ -38,7 +42,9 @@ const SUITE_DEFINITIONS = [
 const METRICS = ['statements', 'branches', 'functions', 'lines'];
 
 class CoverageRealityCheck {
-  constructor() {
+  constructor(runtimeHandle = runtime) {
+    this.runtime = runtimeHandle;
+    this.logger = rootLogger.child('runner');
     this.projectRoot = process.cwd();
     this.historyFile = path.join(this.projectRoot, '.coverage-history.json');
     this.suites = SUITE_DEFINITIONS.map((suite) => ({
@@ -49,6 +55,7 @@ class CoverageRealityCheck {
   }
 
   async runRealityCheck() {
+    this.logger.info('📊 Running Coverage Governance (unit + backend + e2e)');
     console.log('📊 Running Coverage Governance (unit + backend + e2e)\n');
 
     try {
@@ -59,7 +66,13 @@ class CoverageRealityCheck {
       this.generateCoverageReport(coverageResults, thresholdResults);
       return thresholdResults.passed;
     } catch (error) {
-      console.error('❌ Coverage governance failed:', error.message);
+      this.runtime.handleError(error, 'scripts:coverage-reality-check.run', {
+        suites: this.suites.map((suite) => suite.name),
+      });
+      console.log(
+        '❌ Coverage governance failed:',
+        error instanceof Error ? error.message : String(error)
+      );
       return false;
     }
   }
@@ -309,31 +322,33 @@ class CoverageRealityCheck {
 
 async function main() {
   const command = process.argv[2];
-  const checker = new CoverageRealityCheck();
+  const checker = new CoverageRealityCheck(runtime);
 
   switch (command) {
     case 'check':
     case 'governance':
     case undefined: {
       const passed = await checker.runRealityCheck();
-      process.exit(passed ? 0 : 1);
+      runtime.setExitCode(passed ? 0 : 1);
       break;
     }
     case 'set-thresholds': {
       const phase = process.argv[3] || 'development';
       checker.setRealisticThresholds(phase);
+      runtime.setExitCode(0);
       break;
     }
     default: {
       console.log('Usage: node scripts/coverage-reality-check.js [governance|set-thresholds <phase>]');
+      runtime.setExitCode(0);
     }
   }
 }
 
 if (require.main === module) {
   main().catch((error) => {
-    console.error(error);
-    process.exit(1);
+    runtime.handleError(error, 'scripts:coverage-reality-check.main');
+    runtime.setExitCode(1);
   });
 }
 

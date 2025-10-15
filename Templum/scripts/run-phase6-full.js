@@ -8,6 +8,9 @@
 
 const { spawnSync } = require('child_process');
 const path = require('path');
+const { createScriptRuntime } = require('./utils/script-runtime');
+
+const runtime = createScriptRuntime('scripts:run-phase6-full');
 
 const isWindows = process.platform === 'win32';
 const npmCmd = isWindows ? 'npm.cmd' : 'npm';
@@ -22,7 +25,19 @@ const run = (command, args, extraEnv = {}) => {
   });
 
   if (result.status !== 0) {
-    process.exit(result.status ?? 1);
+    const details = {
+      command,
+      args,
+      status: result.status,
+      signal: result.signal,
+    };
+    const error =
+      result.error ??
+      new Error(
+        `Command ${command} ${args.join(' ')} exited with status ${result.status ?? 'unknown'}`
+      );
+    runtime.exitWithError(error, 'scripts:run-phase6-full.spawn', details);
+    throw error;
   }
 };
 
@@ -32,19 +47,30 @@ const shouldRunReal =
   process.argv.includes('--real') ||
   process.argv.includes('--with-real');
 
-if (!shouldSkipBuild) {
-  run(npmCmd, ['run', 'build']);
+const main = () => {
+  try {
+    if (!shouldSkipBuild) {
+      run(npmCmd, ['run', 'build']);
+    }
+
+    run('node', [cliEntry, 'run']);
+
+    if (shouldRunReal) {
+      console.log('\n🔁 Running Phase 6 validation against real backend services...');
+      run('node', [cliEntry, 'run', '--use-real-backends'], {
+        PHASE6_USE_REAL_BACKENDS: '1',
+        PHASE6_SKIP_HARUSPEX: '0',
+      });
+    } else {
+      console.log('\nℹ️ Skipping real backend run (set PHASE6_RUN_REAL=1 or pass --real to enable).');
+    }
+
+    runtime.setExitCode(0);
+  } catch (error) {
+    runtime.exitWithError(error, 'scripts:run-phase6-full.main');
+  }
+};
+
+if (require.main === module) {
+  main();
 }
-
-run('node', [cliEntry, 'run']);
-
-if (shouldRunReal) {
-  console.log('\n🔁 Running Phase 6 validation against real backend services...');
-  run('node', [cliEntry, 'run', '--use-real-backends'], {
-    PHASE6_USE_REAL_BACKENDS: '1',
-    PHASE6_SKIP_HARUSPEX: '0',
-  });
-} else {
-  console.log('\nℹ️ Skipping real backend run (set PHASE6_RUN_REAL=1 or pass --real to enable).');
-}
-
