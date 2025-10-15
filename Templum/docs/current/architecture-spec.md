@@ -88,7 +88,7 @@ last_updated: 2025-10-16
 
 Mock orchestration now validates request/response contracts via `Templum/src/tests/mock-backend-contracts.ts`; any mismatch surfaces as a `Mock contract violation` before real services are touched.
 
-> **Phase 6 status (2025-10-15):** Baseline instrumentation now loads the Stage 6 artefact at `validation-reports/phase6-baselines/phase5-stage6-baseline.json`, with the CLI persisting paired `.raw.json` payloads (workflows, metrics, baseline definitions) alongside human-readable summaries. Mock executions remain flagged as estimated until partner services open the real-backend window tracked in `dev/tasks/phase6-validation-signal.md`.
+> **Phase 6 status (2025-10-15):** Baseline instrumentation now loads the Stage 6 artefact at `validation-reports/phase6-baselines/phase5-stage6-baseline.json`, with the CLI persisting paired `.raw.json` payloads (workflows, metrics, baseline definitions) alongside human-readable summaries. Mock executions remain flagged as estimated; upcoming work builds a high-fidelity IPC surrogate for partner flows while the real-backend window waits in `docs/target/post-mvp-progress.md` / `dev/tasks/phase6-validation-signal.md`.
 
 ## 5. Outstanding Work & Risks
 

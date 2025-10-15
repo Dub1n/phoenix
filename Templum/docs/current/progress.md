@@ -90,7 +90,7 @@ last_updated: 2025-10-16
 - [ ] [Process signal listener consolidation](../../dev/tasks/process-signal-listener-consolidation.md)
   Progress 10% — Dozens of direct `process.on` registrations remain, leaving Jest hanging.
 - [ ] [Phase 6 validation signal overhaul](../../dev/tasks/phase6-validation-signal.md)
-  Progress 35% — Seeded the Stage 6 baseline artefact (`validation-reports/phase6-baselines/phase5-stage6-baseline.json`) and taught the Phase 6 runners to load it while emitting `.raw.json` payloads for every execution; mock runs are now flagged as estimated so readiness stays tied to instrumented signals. Real-backend capture + reporting template hardening remain pending partner availability.
+  Progress 35% — Seeded the Stage 6 baseline artefact (`validation-reports/phase6-baselines/phase5-stage6-baseline.json`) and taught the Phase 6 runners to load it while emitting `.raw.json` payloads for every execution; mock runs are now flagged as estimated so readiness stays tied to instrumented signals. Next pass focuses on standing up a high-fidelity IPC mock that mimics partner behaviour; the real-backend capture is deferred to Post-MVP (see `docs/target/post-mvp-progress.md`).
 - [ ] [QMS bundle crosswalk for legacy SSI-QF obligations](../../dev/tasks/qms-bundle-crosswalk.md)
   Progress 0% — Needs bundle schema outline and contextual mapping from retired SSI-QF forms to Phoenix Code Lite exports so auditors can see how each regulatory obligation is met once Word/Excel SOP artefacts are removed.
 - [ ] [Table component schema & rendering support](../../dev/tasks/table-component-schema.md)

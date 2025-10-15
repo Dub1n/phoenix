@@ -60,7 +60,7 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` not started · `[!]` broken · 
 ## Universal Interface Core
 
 - [ ] [Phase 6 real-backend verification for zero-knowledge registry](../../dev/tasks/phase6-validation-signal.md) — **Post-MVP follow-up**
-  Progress 0% — Latest build covers watcher overrides/tests; capture a live Phase 6 run with partner services once Haruspex/PCL builds stabilize and archive manifests/log output.
+  Progress 0% — Baseline artefact and raw-metric persistence are in place; once Haruspex/PCL stabilize, rerun Phase 6 against live services, archive manifests/logs, and promote the captured metrics into the baseline set.
 - [~] [Versioned skin contract enforcement](../../dev/tasks/versioned-skin-contract.md) (schema validation pending integration tests) — **Must-have**
   Progress 15% — `src/validation/skin-validator.ts` remains a hand-written checker, Ajv-backed schema enforcement is unused, and no adapter tests exercise rejection/telemetry; coverage runs abort with `babel-plugin-istanbul` wiring errors before reaching new specs.
 - [ ] [Unified session/context layer across adapters](../../dev/tasks/unified-session-layer.md) — **Must-have**
