@@ -1,16 +1,11 @@
 #!/usr/bin/env node
-import path from 'path';
 import process from 'process';
-import { fileURLToPath } from 'url';
 import {
   parseCliArgs,
   loadRegistry,
   generateScheduleArtifacts
 } from './schedule-tools.mjs';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const repoRoot = path.resolve(__dirname, '../..');
+import { resolveRepoPath } from './modules/environment.mjs';
 
 async function runCli() {
   const options = parseCliArgs(process.argv);
@@ -25,8 +20,8 @@ async function runCli() {
     console.log('  --registry    Optional override path for consolidation-state.json');
     return;
   }
-  const registryPath = options.registry ? path.resolve(repoRoot, options.registry) : undefined;
-  const registry = await loadRegistry(registryPath);
+  const registryOverride = resolveRepoPath(options.registry) || undefined;
+  const registry = await loadRegistry(registryOverride);
   const artifactOptions = { ...options };
   delete artifactOptions.registry;
   if (artifactOptions.cohorts && artifactOptions.cohorts.length) {

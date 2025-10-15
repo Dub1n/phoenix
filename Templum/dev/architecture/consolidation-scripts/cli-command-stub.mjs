@@ -14,11 +14,11 @@ import {
 } from './cli-shared-parser.mjs';
 import { deriveNoteScopeLabel } from './schedule-format-helpers.mjs';
 import {
+  cliPaths,
   consolidationDirectoryLabel,
   consolidationScriptsRelativePath,
-  repoRoot,
-  scheduleToolsModulePath,
-  scriptsDir
+  resolveRepoPath,
+  scheduleToolsModulePath
 } from './modules/environment.mjs';
 import { computeDurationMs, formatDuration, nowIso } from './modules/time-utils.mjs';
 import {
@@ -2986,7 +2986,7 @@ function normalizeRegenOptions(registry, options = {}) {
 async function runRegen(registry, options = {}) {
   const { checkOnly, forceAll, includeGlobalSchedule, patternSet, cohortSet, silent } = normalizeRegenOptions(registry, options);
   const generatedFiles = [];
-  const planDir = path.join(repoRoot, 'dev/architecture/plans');
+  const planDir = cliPaths.plansDir;
   const targetPatterns = forceAll
     ? [...registry.patterns]
     : registry.patterns.filter((pattern) => patternSet.has(pattern.patternId));
@@ -2996,13 +2996,13 @@ async function runRegen(registry, options = {}) {
     const changed = await writeFileIfChanged(generatedPath, content, checkOnly);
     generatedFiles.push({ file: generatedPath, changed });
   }
-  const trackerPath = path.join(scriptsDir, 'registry-status.generated.md');
+  const trackerPath = cliPaths.registryStatus;
   const trackerChanged = await writeFileIfChanged(trackerPath, renderTrackerMarkdown(registry), checkOnly);
   generatedFiles.push({ file: trackerPath, changed: trackerChanged });
 
   try {
     const { generateScheduleArtifacts } = await import(scheduleToolsModulePath);
-    const schedulesDir = path.join(repoRoot, 'dev/architecture/schedules');
+    const schedulesDir = cliPaths.schedulesDir;
     const scheduleArtifacts = [];
     if (includeGlobalSchedule) {
       scheduleArtifacts.push(
@@ -3066,7 +3066,7 @@ async function runRegen(registry, options = {}) {
     }
   }
 
-  const activityPath = path.join(repoRoot, 'dev/architecture/utility-consolidation-activity-log.generated.md');
+  const activityPath = cliPaths.activityLog;
   const activityChanged = await writeFileIfChanged(activityPath, renderActivityMarkdown(registry), checkOnly);
   generatedFiles.push({ file: activityPath, changed: activityChanged });
 
@@ -3879,11 +3879,7 @@ async function main() {
           ? [...new Set(scheduleOptions.cohorts.map((value) => normaliseCohortId(value)))]
           : [];
         const format = scheduleOptions.format ? scheduleOptions.format.toLowerCase() : 'markdown';
-        const outputPath = scheduleOptions.output
-          ? path.isAbsolute(scheduleOptions.output)
-            ? scheduleOptions.output
-            : path.join(repoRoot, scheduleOptions.output)
-          : undefined;
+        const outputPath = resolveRepoPath(scheduleOptions.output) || undefined;
         const { generateScheduleArtifacts } = await import(scheduleToolsModulePath);
         const artifacts = await generateScheduleArtifacts(registry, {
           patterns,

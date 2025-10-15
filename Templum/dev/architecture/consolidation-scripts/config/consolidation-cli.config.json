@@ -1,0 +1,10 @@
+{
+  "root": null,
+  "paths": {
+    "plansDir": null,
+    "schedulesDir": null,
+    "activityLog": null,
+    "registryStatus": null,
+    "registryState": null
+  }
+}

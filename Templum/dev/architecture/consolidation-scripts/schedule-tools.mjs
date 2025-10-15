@@ -1,18 +1,12 @@
 #!/usr/bin/env node
 import { readFile, writeFile, mkdir } from 'fs/promises';
 import path from 'path';
-import process from 'process';
-import { fileURLToPath } from 'url';
 import { renderScheduleMarkdown } from './schedule-markdown.mjs';
 import { renderScheduleJson } from './schedule-json.mjs';
 import { enforceNoteIndentation } from './schedule-format-helpers.mjs';
+import { cliPaths, registryPath, resolveRepoPath } from './modules/environment.mjs';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const repoRoot = path.resolve(__dirname, '../..');
-const registryPath =
-  process.env.CONSOLIDATION_STATE_PATH || path.join(__dirname, 'config/consolidation-state.json');
-const schedulesDir = path.join(__dirname, '../schedules');
+const schedulesDir = cliPaths.schedulesDir;
 
 const stageOrder = ['1', '2', '3', '4', '5', '6', '7'];
 const includedStageIds = new Set(['1', '2', '3', '5', '7']);
@@ -1099,10 +1093,7 @@ export async function generateScheduleArtifacts(registry, options = {}) {
     cohortIds
   });
   const saveEnabled = options.save !== false;
-  let outputPath = options.output || null;
-  if (outputPath && !path.isAbsolute(outputPath)) {
-    outputPath = path.resolve(repoRoot, outputPath);
-  }
+  let outputPath = resolveRepoPath(options.output);
   let changed = false;
   if (saveEnabled) {
     if (!outputPath) {
