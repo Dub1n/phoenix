@@ -1,5 +1,5 @@
 ---
-date: 2025-10-14T13:24:00Z
+date: 2025-10-15T10:56:00Z
 name: logger-error-handler-alignment
 TASK-ID: ['TASK-ARCH-005-STAGE5A']
 category: architecture-operations
@@ -22,8 +22,8 @@ Stage 4 prerequisites for Pattern 1 (Logger Consolidation) and Pattern 2 (Er
 ## Alignment Snapshot
 
 - **Cohort**: 1‑2 — Logger + Error Handler
-- **Coordinator**: Codex (2025-10-14T13:00:00Z session)
-- **Stage 5A window**: 2025-10-14T13:20:00Z → 2025-10-14T13:35:00Z
+- **Coordinator**: Codex (2025-10-15T10:45:00Z session)
+- **Stage 5A window**: 2025-10-15T10:45:00Z → 2025-10-15T11:30:00Z
 - **Attendees**: Logger owner, Error Handler owner, Backend Connectivity owner, Interface Delivery owner, Session/Core owner
 - **Artifacts captured**: this spec; cohort-stage notes for `cohort-1` and `cohort-2`; activity log updates for Patterns 1 & 2
 
@@ -46,6 +46,29 @@ Stage 4 prerequisites for Pattern 1 (Logger Consolidation) and Pattern 2 (Er
   - `src/interfaces/cli-adapter-abstracted.ts` + adapter integration suite verified under Error Handler (`tmp/consolidation-pattern2-lane4c-rg.log`, `tmp/consolidation-pattern2-lane4c-tests.log`).
 - **Guardrails reaffirmed**: zero-knowledge registry, existing timeout semantics, and logger DI remain intact; Haruspex/Phoenix contracts left untouched.
 - **Residuals**: `tests/service-discovery/discovery-cache.integration.test.ts` absent — command logged, failure captured, and carried as Stage 5B follow-up to restore coverage.
+
+## 2025-10-15 Alignment Refresh
+
+- **Stage 4 guardrail validation**: Re-checked the guardrail artefacts from 2025-10-14 to ensure expected failures remain intact for Stage 5 rehearsals:
+  - Pattern 1: `logs/consolidation/pattern-1/lane-4i-20251014T212738Z.log`, `logs/consolidation/pattern-1/lane-4j-20251014T212228Z.log`, `logs/consolidation/pattern-1/lane-4k-20251014T212716Z.log`.
+  - Pattern 2: `tmp/consolidation-pattern2-lane4d-backend-connection-lifecycle.log`, `tmp/consolidation-pattern2-lane4e-guardrail.log`, `tmp/consolidation-pattern2-lane4f-guardrail-phase6-validation-cli.log`, `tmp/consolidation-pattern2-lane4g-guardrail.log`.
+- **Stage 5B rehearsal commands** (execute with `node scripts/run-with-timeout.mjs --preset jest-suite -- …` unless otherwise noted):
+  - Pattern 1:
+    - Backend manual override guardrail: `npx jest src/tests/backend/manual-override-flow.test.ts src/tests/backend/manual-override-watcher.integration.test.ts src/tests/backend/comprehensive-backend-validation.test.ts`.
+    - MCP harness guardrail: `npx jest tests/service-discovery/pty-mcp-server-test-harness.test.ts`.
+    - VSCode adapter guardrail: `npx jest tests/interfaces/interface-adapter-integration.test.ts tests/interfaces/universal-interaction-manager.session.test.ts`.
+  - Pattern 2:
+    - Backend router guardrail: `npx jest src/tests/backend/backend-connection-lifecycle.test.ts src/tests/backend/comprehensive-backend-validation.test.ts src/tests/backend/generic-backend-integration.test.ts src/tests/backend/manual-override-flow.test.ts src/tests/backend/manual-override-watcher.integration.test.ts`.
+    - Session/interface guardrail: `npx jest src/tests/core/templum-core-connection-events.test.ts src/tests/session/templum-universal-session-manager.test.ts tests/interfaces/interface-adapter-integration.test.ts`.
+    - Phase6 CLI guardrail: `npm run test -- --runTestsByPath tests/scripts/phase6-validation-cli.test.ts`.
+    - MCP guardrail: `npm run --prefix src/mcp-channel test -- --runTestsByPath tests/pty-manager.test.ts`.
+- **Stage 5 planned surfaces** (seeded for Stage 5B execution):
+  - Pattern 1: `src/backend/backend-dependency-resolver.ts`, `src/backend/backend-service-router.ts`, `src/cli-entry.ts`, `src/monitoring/cli-performance-monitor.ts`, `src/scripts/run-phase6-integration-validation.ts`, `src/extension.ts`, `src/interfaces/interface-adapter-registry.legacy.ts`.
+  - Pattern 2: `src/backend/backend-dependency-resolver.ts`, `src/backend/backend-service-router.ts`, `src/backend/service-health-check.ts`, `src/interfaces/cli-adapter-abstracted.ts`, `src/interfaces/cli-adapter.ts`, `src/interfaces/cli-session-bridge.ts`, `src/interfaces/interface-adapter-registry.legacy.ts`, `src/interfaces/interface-adapter-registry.ts`, `src/interfaces/vscode-adapter.ts`, `src/interfaces/vscode-templum-webview.ts`, `src/session/templum-universal-session-manager.ts`, `scripts/check-tests.js`, `scripts/check-types.js`, `scripts/coverage-reality-check.js`, `scripts/run-comprehensive-backend-tests.js`, `scripts/run-phase6-full.js`, `scripts/run-with-timeout.mjs`, `scripts/test-health-monitor.js`, `scripts/mcp/minimal_terminal_bridge/server.py`, `src/mcp-channel/src/cli-mcp-server.ts`, `src/mcp-channel/src/enhanced-mcp-integration.ts`, `src/mcp-channel/src/event-listener-manager.ts`, `src/mcp-channel/src/health-monitor.ts`, `src/mcp-channel/src/lifecycle-coordinator.ts`, `src/mcp-channel/src/progressive-timeout-manager.ts`, `src/mcp-channel/src/pty-manager.ts`, `src/mcp-channel/src/service-registration.ts`.
+- **Dependencies and follow-ups**:
+  - Pattern 2 remains dependent on the reinstatement of `discovery-cache.integration.test.ts`; Stage 5B must either restore it or document a replacement guardrail.
+  - Phase 6 telemetry updates still route through `observability-instrumentation.md`; Stage 5B commits touching telemetry must coordinate across both patterns.
+  - Documentation sync remains queued for `progress.md`, `unified-session-layer.md`, and `manual-override-flow.md` once Stage 5B migrations close.
 
 ## Shared Dependencies Matrix
 
