@@ -2,6 +2,7 @@
 import fs from 'node:fs';
 import { readFile, writeFile, mkdir } from 'fs/promises';
 import path from 'path';
+import { pathToFileURL } from 'node:url';
 import process from 'process';
 import { spawnSync } from 'node:child_process';
 import readline from 'readline/promises';
@@ -1327,8 +1328,12 @@ function reopenDownstreamStageGates(registry, pattern, stageId) {
   if (startIndex === -1) {
     return { stageIds: reopenedStageIds, cohortSegments: [] };
   }
+  const cascadeImmuneLaneStages = new Set(['4', '6']);
   for (let index = startIndex + 1; index < stageOrder.length; index += 1) {
     const downstreamStageId = stageOrder[index];
+    if (cascadeImmuneLaneStages.has(downstreamStageId)) {
+      continue;
+    }
     const downstreamGate = ensureStageGate(pattern, downstreamStageId);
     const currentStatus = downstreamGate.status || defaultStageStatus(downstreamStageId);
     if (currentStatus === 'pending' || currentStatus === 'blocked') {
@@ -2269,7 +2274,15 @@ function propagateLaneStatuses(pattern, originLaneId, options) {
 function promoteDependentLanes(registry, pattern, originLaneId) {
   const promoted = [];
   const dependents = findDependentLanes(pattern, originLaneId);
+  const originStageNumber = inferStageNumberFromLaneId(originLaneId);
   dependents.forEach((laneId) => {
+    const dependentStageNumber = inferStageNumberFromLaneId(laneId);
+    if (dependentStageNumber === null) {
+      return;
+    }
+    if (originStageNumber !== null && dependentStageNumber <= originStageNumber) {
+      return;
+    }
     const lane = pattern.lanes?.[laneId];
     if (!lane) {
       return;
@@ -4959,4 +4972,20 @@ async function main() {
   }
 }
 
-main();
+const invokedDirectly = (() => {
+  const entryPath = process.argv?.[1];
+  if (!entryPath) {
+    return false;
+  }
+  try {
+    return import.meta.url === pathToFileURL(path.resolve(entryPath)).href;
+  } catch {
+    return false;
+  }
+})();
+
+if (invokedDirectly) {
+  main();
+}
+
+export { reopenCohortPeerStages, reopenDownstreamStageGates, promoteDependentLanes };
