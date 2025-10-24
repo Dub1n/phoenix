@@ -133,7 +133,8 @@ ipcEnabled: config?.ipcEnabled !== false,
 };
 
 const stateManager = new EnhancedStateManager(stateManagerConfig);
-return new StateManagerAdapter(stateManager);
+const stateManagerScope = scopedErrorHandler.child('state-manager-adapter');
+return new StateManagerAdapter(stateManager, stateManagerScope);
 }
 ```
 

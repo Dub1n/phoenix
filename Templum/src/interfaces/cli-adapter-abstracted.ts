@@ -64,7 +64,7 @@ import { CLISessionBridge, CLISessionSnapshot } from './cli-session-bridge';
 import { EnhancedWindowSystem, WindowSetRenderResult } from './enhanced-window-system';
 import { sleep } from '../utils/async-utils';
 import { createLogger, LogLevel } from '../utils/logger';
-import { ErrorHandler } from '../utils/error-handler';
+import { ErrorHandler, type ErrorMetadata, type ScopedErrorHandler } from '../utils/error-handler';
 import { TypeGuards, TypeValidators } from '../utils/type-guards';
 import type { UniversalMenuRegistry, UniversalMenuDefinition } from '../menus/universal-menu-registry';
 import {
@@ -73,6 +73,24 @@ import {
   type CLIShortcutDefinition,
   type CLICommandBinding,
 } from './cli-generator';
+
+const cliAdapterErrorScope = ErrorHandler.scope(
+  ErrorHandler.formatContext('interfaces.cli-adapter')
+);
+
+const resolveCliAdapterScope = (
+  ...segments: Array<string | number>
+): ScopedErrorHandler =>
+  segments.reduce<ScopedErrorHandler>(
+    (scope, segment) => scope.child(`${segment}`),
+    cliAdapterErrorScope
+  );
+
+const handleCliAdapterError = (
+  error: unknown,
+  segments: Array<string | number>,
+  metadata?: ErrorMetadata
+) => resolveCliAdapterScope(...segments).handle(error, metadata);
 
 /**
  * CLI Input Types (Interface-specific)
@@ -452,7 +470,9 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
 
       await this.hydrateMenuRegistry(model);
     } catch (error) {
-      this.logger.warn('Failed to derive CLI metadata from skin', this.normalizeError(error), {
+      const normalizedError = this.normalizeError(error);
+      this.logger.warn('Failed to derive CLI metadata from skin', {
+        error: normalizedError,
         skinId: skinDefinition?.metadata?.id ?? skinDefinition?.id ?? 'unknown',
       });
     }
@@ -479,7 +499,9 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
     try {
       await registry.loadSkin(model.loadedSkin);
     } catch (error) {
-      this.logger.warn('Failed to load CLI menu model into registry', this.normalizeError(error), {
+      const normalizedError = this.normalizeError(error);
+      this.logger.warn('Failed to load CLI menu model into registry', {
+        error: normalizedError,
         skinId: model.skinId,
       });
     }
@@ -649,7 +671,7 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
         errors: renderResult.errors ?? ['Unknown rendering error'],
       };
     } catch (error) {
-      const templumError = ErrorHandler.handle(error, 'interfaces.cli-adapter.render');
+      const templumError = handleCliAdapterError(error, ['render']);
       return {
         success: false,
         rendered: false,
@@ -837,9 +859,13 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
       this.activeSkin = skinDefinition;
       
     } catch (error) {
-      const templumError = ErrorHandler.handle(error, 'interfaces.cli-adapter.apply-skin', {
-        skinId: skinDefinition?.metadata?.id ?? skinDefinition?.id ?? this.activeSkin?.id,
-      });
+      const templumError = handleCliAdapterError(
+        error,
+        ['apply-skin'],
+        {
+          skinId: skinDefinition?.metadata?.id ?? skinDefinition?.id ?? this.activeSkin?.id,
+        }
+      );
       this.logger.error('Failed to apply skin', templumError, {
         errorMessage: templumError.message,
       });
@@ -1983,7 +2009,7 @@ export class CLIInterfaceAdapter implements IInterfaceAdapter {
       }
 
     } catch (error) {
-      const templumError = ErrorHandler.handle(error, 'interfaces.cli-adapter.load-initial-content');
+      const templumError = handleCliAdapterError(error, ['load-initial-content']);
       this.logger.error('Failed to load initial content', templumError);
       this.printLine(this.getErrorCLIOutput(templumError.message));
     }

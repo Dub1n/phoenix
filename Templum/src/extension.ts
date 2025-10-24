@@ -28,6 +28,7 @@ import {
 import { createPlaceholderWebViewProvider } from './interfaces/vscode/webview-placeholders';
 import { ObservabilityAdapter, createObservabilityAdapter } from './observability/observability-adapter';
 import { createLogger } from './utils/logger';
+import { ErrorHandler, type ErrorMetadata, type ScopedErrorHandler } from './utils/error-handler';
 
 // Global extension state
 let templumCore: TemplumCore | undefined;
@@ -38,6 +39,27 @@ let registeredCommands: Map<string, vscode.Disposable> = new Map();
 let observabilityAdapter: ObservabilityAdapter | undefined;
 
 const extensionLogger = createLogger('templum-vscode-extension');
+
+const extensionErrorScope = ErrorHandler.scope(
+  ErrorHandler.formatContext('session-manager', 'vscode-extension')
+);
+
+const resolveExtensionScope = (
+  ...segments: Array<string | number>
+): ScopedErrorHandler =>
+  segments.reduce<ScopedErrorHandler>(
+    (scope, segment) => scope.child(`${segment}`),
+    extensionErrorScope
+  );
+
+const handleExtensionError = (
+  error: unknown,
+  segments: string | Array<string | number>,
+  metadata?: ErrorMetadata
+) => {
+  const normalizedSegments = Array.isArray(segments) ? segments : [segments];
+  return resolveExtensionScope(...normalizedSegments).handle(error, metadata);
+};
 
 function coerceError(error: unknown): Error | undefined {
   if (error instanceof Error) {
@@ -96,6 +118,7 @@ async function ensureObservability(): Promise<void> {
   try {
     await observabilityAdapter.initialize();
   } catch (error) {
+    handleExtensionError(error, ['observability', 'initialize']);
     logWarn('Observability adapter initialization failed; continuing with console logging', error);
   }
 }
@@ -274,6 +297,7 @@ class BackendServiceTreeProvider implements vscode.TreeDataProvider<ServiceTreeI
 
       return serviceItems;
     } catch (error) {
+      handleExtensionError(error, ['backend-tree', 'load-services']);
       logError('Failed to get backend services for tree view:', error);
       return [new ServiceTreeItem('Error loading services', vscode.TreeItemCollapsibleState.None, 'error')];
     }
@@ -608,6 +632,7 @@ export async function activate(context: vscode.ExtensionContext) {
           );
         }
       } catch (error) {
+        handleExtensionError(error, ['activation', 'backend-status-check']);
         logError('Backend service status check failed:', error);
         // Fallback to basic success message
         vscode.window.showInformationMessage(
@@ -615,6 +640,7 @@ export async function activate(context: vscode.ExtensionContext) {
         );
       }
     } catch (error) {
+      handleExtensionError(error, ['activation', 'core-initialize']);
       const templumError = error instanceof Error ? error : new Error(String(error));
       observabilityAdapter?.logError(
         'Templum Core engine initialization failed',
@@ -638,6 +664,7 @@ export async function activate(context: vscode.ExtensionContext) {
     logInfo('🎉 Templum Universal Interface Extension activation complete');
 
   } catch (error) {
+    handleExtensionError(error, ['activation', 'complete']);
     const errorMessage = error instanceof Error ? error.message : 'Unknown activation error';
     const activationError = error instanceof Error ? error : new Error(errorMessage);
     observabilityAdapter?.logError(
@@ -701,6 +728,7 @@ async function registerWebViewProviders(context: vscode.ExtensionContext, engine
 
     logInfo('✅ All Templum WebView providers registered successfully');
   } catch (error) {
+    handleExtensionError(error, ['webview', 'register']);
     observabilityAdapter?.logError(
       'WebView provider registration failed',
       error instanceof Error ? error : new Error(String(error)),
@@ -744,6 +772,7 @@ async function registerCommands(context: vscode.ExtensionContext, _engineReady: 
           );
           logInfo('✅ All services refreshed successfully');
         } catch (error) {
+          handleExtensionError(error, ['commands', 'refresh-all']);
           const errorMessage = error instanceof Error ? error.message : 'Unknown error';
           vscode.window.showErrorMessage(`Templum refresh failed: ${errorMessage}`);
           logError(`❌ Refresh failed: ${errorMessage}`);
@@ -775,6 +804,7 @@ async function registerCommands(context: vscode.ExtensionContext, _engineReady: 
           );
           logInfo(`Service status: ${status.health}`);
         } catch (error) {
+          handleExtensionError(error, ['commands', 'show-service-status']);
           const errorMessage = error instanceof Error ? error.message : 'Unknown error';
           vscode.window.showErrorMessage(`Status check failed: ${errorMessage}`);
           logError(`❌ Status check failed: ${errorMessage}`);
@@ -965,6 +995,11 @@ async function registerCommands(context: vscode.ExtensionContext, _engineReady: 
                   logInfo(`✅ Interface switched to: ${choice.value} in ${switchDuration}ms`);
 
                 } catch (switchError) {
+                  handleExtensionError(
+                    switchError,
+                    ['commands', 'switch-interface', 'progress'],
+                    { targetInterface: choice.value }
+                  );
                   // Enhanced error handling with rollback capability
                   const errorMessage = isTemplumError(switchError) 
                     ? switchError.message 
@@ -992,6 +1027,7 @@ async function registerCommands(context: vscode.ExtensionContext, _engineReady: 
             );
           }
         } catch (error) {
+          handleExtensionError(error, ['commands', 'switch-interface']);
           const errorMessage = error instanceof Error ? error.message : 'Unknown error';
           vscode.window.showErrorMessage(`Interface switch failed: ${errorMessage}`);
           logError(`❌ Interface switch failed: ${errorMessage}`);
@@ -1088,6 +1124,7 @@ async function registerCommands(context: vscode.ExtensionContext, _engineReady: 
           logInfo('✅ Service tree refresh completed');
           
         } catch (error) {
+          handleExtensionError(error, ['commands', 'refresh-service-tree']);
           const errorMessage = error instanceof Error ? error.message : 'Unknown refresh error';
           vscode.window.showErrorMessage(`Service tree refresh failed: ${errorMessage}`);
           logError('❌ Service tree refresh failed:', error);
@@ -1224,6 +1261,11 @@ async function registerCommands(context: vscode.ExtensionContext, _engineReady: 
                     await (skinEngine as any).loadBackendSkin(targetServiceId!);
                   }
                 } catch (skinError) {
+                  handleExtensionError(
+                    skinError,
+                    ['commands', 'connect-service', 'skin-loading'],
+                    { serviceId: targetServiceId }
+                  );
                   // Service connected but skin loading failed - continue anyway
                   logWarn(`Skin loading failed for ${targetServiceId}:`, skinError);
                 }
@@ -1276,6 +1318,12 @@ async function registerCommands(context: vscode.ExtensionContext, _engineReady: 
                   return;
                 }
 
+                handleExtensionError(
+                  connectionError,
+                  ['commands', 'connect-service', 'progress'],
+                  { serviceId: targetServiceId }
+                );
+
                 // Enhanced error handling with user guidance
                 const errorMessage = isTemplumError(connectionError) 
                   ? connectionError.message 
@@ -1312,8 +1360,9 @@ async function registerCommands(context: vscode.ExtensionContext, _engineReady: 
           );
 
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          const errorMessage = error instanceof Error ? error.message : String(error);
           if (!errorMessage.includes('cancelled')) {
+            handleExtensionError(error, ['commands', 'connect-service']);
             logError('❌ Service connection failed:', error);
           }
         }
@@ -1511,6 +1560,11 @@ async function registerCommands(context: vscode.ExtensionContext, _engineReady: 
                 logInfo(`✅ Service disconnection successful: ${targetServiceId} in ${disconnectionDuration}ms`);
 
               } catch (disconnectionError) {
+                handleExtensionError(
+                  disconnectionError,
+                  ['commands', 'disconnect-service', 'progress'],
+                  { serviceId: targetServiceId }
+                );
                 // Enhanced error handling
                 const errorMessage = isTemplumError(disconnectionError) 
                   ? disconnectionError.message 
@@ -1537,6 +1591,7 @@ async function registerCommands(context: vscode.ExtensionContext, _engineReady: 
           );
 
         } catch (error) {
+          handleExtensionError(error, ['commands', 'disconnect-service']);
           const _errorMessage = error instanceof Error ? error.message : 'Unknown error';
           logError('❌ Service disconnection failed:', error);
         }
@@ -1556,6 +1611,7 @@ async function registerCommands(context: vscode.ExtensionContext, _engineReady: 
     logInfo('✅ All Templum commands registered successfully');
 
   } catch (error) {
+    handleExtensionError(error, ['commands', 'register']);
     logError('❌ Command registration failed:', error);
     throw error;
   }
@@ -1612,6 +1668,9 @@ async function registerServiceTreeProvider(context: vscode.ExtensionContext, eng
               
               logInfo(`Service tree selection: ${selectedItem.serviceId}`);
             } catch (error) {
+              handleExtensionError(error, ['service-tree', 'selection-handler'], {
+                serviceId: selectedItem.serviceId
+              });
               logError('Service tree selection command failed:', error);
             }
           }
@@ -1659,6 +1718,11 @@ async function registerServiceTreeProvider(context: vscode.ExtensionContext, eng
               }
             });
           } catch (error) {
+            handleExtensionError(
+              error,
+              ['service-tree', 'select-service'],
+              { serviceId }
+            );
             logError('Select backend service failed:', error);
           }
         }
@@ -1694,6 +1758,7 @@ async function registerServiceTreeProvider(context: vscode.ExtensionContext, eng
     }
 
   } catch (error) {
+    handleExtensionError(error, ['service-tree', 'register']);
     logError('❌ Service Tree Provider registration failed:', error);
     throw error;
   }
@@ -1731,6 +1796,7 @@ export async function deactivate() {
                 logWarn(`⚠️ Disconnection warning for ${serviceId}: ${result?.message || 'Unknown result'}`);
               }
             } catch (error) {
+              handleExtensionError(error, ['deactivate', 'disconnect-service'], { serviceId });
               logError(`❌ Failed to disconnect from ${serviceId}:`, error);
             }
           });
@@ -1740,6 +1806,7 @@ export async function deactivate() {
           logInfo(`✅ Backend service cleanup complete (${connectedServices.length} services)`);
         }
       } catch (error) {
+        handleExtensionError(error, ['deactivate', 'backend-cleanup']);
         logError('❌ Backend service cleanup failed:', error);
       }
     }
@@ -1756,6 +1823,7 @@ export async function deactivate() {
         serviceTreeProvider = undefined;
         logInfo('✅ Service tree provider cleaned up');
       } catch (error) {
+        handleExtensionError(error, ['deactivate', 'service-tree-provider']);
         logError('❌ Service tree provider cleanup failed:', error);
       }
     }
@@ -1768,6 +1836,7 @@ export async function deactivate() {
           // Tree views are disposed automatically by VSCode context subscriptions
           logInfo(`✅ Tree view ${treeViewId} marked for cleanup`);
         } catch (error) {
+          handleExtensionError(error, ['deactivate', 'tree-view'], { treeViewId });
           logError(`❌ Failed to cleanup tree view ${treeViewId}:`, error);
         }
       }
@@ -1784,6 +1853,7 @@ export async function deactivate() {
           // Commands are disposed automatically by VSCode context subscriptions
           logInfo(`Command ${commandId} marked for cleanup`);
         } catch (error) {
+          handleExtensionError(error, ['deactivate', 'command'], { commandId });
           logError(`Failed to cleanup command ${commandId}:`, error);
         }
       }
@@ -1800,6 +1870,7 @@ export async function deactivate() {
         webviewRegistry = undefined;
         logInfo('WebView provider registry cleaned up');
       } catch (error) {
+        handleExtensionError(error, ['deactivate', 'webview-registry']);
         logError('WebView provider registry cleanup failed:', error);
       }
     }
@@ -1827,6 +1898,7 @@ export async function deactivate() {
         logInfo('Templum Core engine shutdown completed');
         
       } catch (shutdownError) {
+        handleExtensionError(shutdownError, ['deactivate', 'core-shutdown']);
         logError('Error during Templum Core shutdown:', shutdownError);
         // Force cleanup even if shutdown fails
         templumCore = undefined;
@@ -1869,6 +1941,7 @@ export async function deactivate() {
         (process as any).emit('templum:metrics', metricsPayload);
       } catch (metricsError) {
         // Metrics emission failed, but don't block deactivation
+        handleExtensionError(metricsError, ['deactivate', 'final-metrics']);
         logWarn('Failed to emit final metrics:', metricsError);
       }
 
@@ -1879,6 +1952,7 @@ export async function deactivate() {
         try {
           await observabilityAdapter.shutdown();
         } catch (obsError) {
+          handleExtensionError(obsError, ['deactivate', 'observability-shutdown']);
           logError('Observability adapter shutdown failed:', obsError);
         } finally {
           observabilityAdapter = undefined;
@@ -1886,10 +1960,12 @@ export async function deactivate() {
       }
       
     } catch (finalError) {
+      handleExtensionError(finalError, ['deactivate', 'final-cleanup']);
       logError('Error during final cleanup phase:', finalError);
     }
 
   } catch (error) {
+    handleExtensionError(error, ['deactivate', 'failed']);
     const deactivationDuration = Date.now() - deactivationStartTime;
     logError(`❌ Critical error during Templum deactivation (${deactivationDuration}ms):`, error);
     
@@ -1911,6 +1987,7 @@ export async function deactivate() {
       };
       (process as any).emit('templum:error', errorPayload);
     } catch (errorEmissionError) {
+      handleExtensionError(errorEmissionError, ['deactivate', 'error-signal']);
       logError('❌ Failed to emit deactivation error signal:', errorEmissionError);
     }
   }

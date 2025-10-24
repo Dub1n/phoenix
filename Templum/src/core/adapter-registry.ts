@@ -22,8 +22,8 @@ import {
 import { IObservabilityService } from '../observability/observability-adapter';
 import {
   isTemplumError,
-  createTemplumError,
   ErrorSignalPayload,
+  type TemplumError,
   InterfaceType
 } from '../types/templum-types';
 import { SemanticValidators, TypeAssertions, TypeGuards } from '../utils/type-guards';
@@ -50,8 +50,63 @@ import type { TemplumSessionManagerContract } from '../session/universal-session
 import { type TypedEventMap } from '../utils/event-utils';
 import { EventDrivenComponent } from '../utils/event-bus-adapter';
 import { createLogger } from '../utils/logger';
+import { ErrorHandler, type ScopedErrorHandler, buildTemplumError } from '../utils/error-handler';
 
 const adapterRegistryLogger = createLogger('templum-adapter-registry');
+
+const describeErrorCause = (error: unknown): Record<string, unknown> | string | undefined => {
+  if (isTemplumError(error)) {
+    return {
+      code: error.code,
+      category: error.category,
+      message: error.message,
+      context: error.context
+    };
+  }
+
+  if (error instanceof Error) {
+    return {
+      name: error.name,
+      message: error.message,
+      stack: error.stack
+    };
+  }
+
+  if (error === undefined || error === null) {
+    return undefined;
+  }
+
+  if (typeof error === 'object') {
+    try {
+      return JSON.parse(JSON.stringify(error));
+    } catch {
+      return String(error);
+    }
+  }
+
+  return String(error);
+};
+
+const createScopedTemplumError = (
+  scope: ScopedErrorHandler,
+  segment: string,
+  error: unknown,
+  message: string,
+  code: string,
+  category: TemplumError['category'],
+  metadata?: Record<string, unknown>
+): TemplumError => {
+  const handler = scope.child(segment, metadata);
+  const contextDetails: Record<string, unknown> = metadata ? { ...metadata } : {};
+  const cause = describeErrorCause(error);
+  if (cause !== undefined) {
+    contextDetails.cause = cause;
+  }
+
+  return handler.handle(
+    buildTemplumError(message, code, category, contextDetails)
+  );
+};
 
 interface AdapterRegistryEvents extends TypedEventMap {
   initialized: (payload: {
@@ -68,10 +123,12 @@ interface AdapterRegistryEvents extends TypedEventMap {
  */
 export class SkinEngineAdapter implements ISkinEngine {
   private static readonly logger = adapterRegistryLogger.child('skin-engine-adapter');
+  private readonly errorScope: ScopedErrorHandler;
   private skinEngine: UniversalSkinEngine;
 
-  constructor(skinEngine: UniversalSkinEngine) {
+  constructor(skinEngine: UniversalSkinEngine, errorScope: ScopedErrorHandler) {
     this.skinEngine = skinEngine;
+    this.errorScope = errorScope;
   }
 
   async initialize(config?: any): Promise<void> {
@@ -95,7 +152,16 @@ export class SkinEngineAdapter implements ISkinEngine {
       });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      throw createTemplumError(`Skin engine initialization failed: ${errorMessage}`, 'ADAPTER_INITIALIZATION_ERROR', 'configuration');
+      const context = { errorMessage, operation: 'initialize' };
+      throw createScopedTemplumError(
+        this.errorScope,
+        'initialize',
+        error,
+        `Skin engine initialization failed: ${errorMessage}`,
+        'ADAPTER_INITIALIZATION_ERROR',
+        'configuration',
+        context
+      );
     }
   }
 
@@ -137,7 +203,14 @@ export class SkinEngineAdapter implements ISkinEngine {
       // Fallback for empty or invalid render results
       return '<div class="templum-skin-container theme-default"><div class="templum-component">No rendered components available</div></div>';
     } catch (error) {
-      SkinEngineAdapter.logger.warn('Error generating HTML from render result', { error });
+      const metadata = {
+        hasComponents: Array.isArray(renderResult?.components),
+        componentCount: Array.isArray(renderResult?.components) ? renderResult.components.length : 0,
+        theme: renderResult?.theme ?? null
+      };
+      this.errorScope
+        .child('generate-html', metadata)
+        .handle(error, metadata);
       return '<div class="templum-skin-container theme-default"><div class="templum-component templum-error">Error rendering skin components</div></div>';
     }
   }
@@ -156,9 +229,13 @@ export class SkinEngineAdapter implements ISkinEngine {
       
       SkinEngineAdapter.logger.info('Disposed with resource cleanup');
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      const errorInstance = error instanceof Error ? error : new Error(errorMessage);
-      SkinEngineAdapter.logger.error('SkinEngineAdapter disposal error', errorInstance, { errorMessage });
+      const metadata = {
+        operation: 'dispose',
+        errorMessage: error instanceof Error ? error.message : String(error)
+      };
+      this.errorScope
+        .child('dispose', metadata)
+        .handle(error, metadata);
       // Don't throw during disposal to prevent cascade failures
     }
   }
@@ -166,10 +243,12 @@ export class SkinEngineAdapter implements ISkinEngine {
 
 export class StateManagerAdapter implements IStateManager {
   private static readonly logger = adapterRegistryLogger.child('state-manager-adapter');
+  private readonly errorScope: ScopedErrorHandler;
   private stateManager: EnhancedStateManager;
 
-  constructor(stateManager: EnhancedStateManager) {
+  constructor(stateManager: EnhancedStateManager, errorScope: ScopedErrorHandler) {
     this.stateManager = stateManager;
+    this.errorScope = errorScope;
   }
 
   async initialize(_config?: any): Promise<void> {
@@ -177,13 +256,24 @@ export class StateManagerAdapter implements IStateManager {
   }
 
   async syncState(interfaceType: any, stateUpdate: any, source: string): Promise<void> {
+    const supportedInterfaces = ['vscode', 'cli', 'command'];
+    if (!supportedInterfaces.includes(interfaceType)) {
+      throw createScopedTemplumError(
+        this.errorScope,
+        'sync-state.validate-interface',
+        undefined,
+        `Unsupported interface type: ${interfaceType}`,
+        'INVALID_INTERFACE_TYPE',
+        'validation',
+        {
+          interfaceType,
+          source,
+          supportedInterfaces
+        }
+      );
+    }
+
     try {
-      // Validate interface type
-      const supportedInterfaces = ['vscode', 'cli', 'command'];
-      if (!supportedInterfaces.includes(interfaceType)) {
-        throw createTemplumError(`Unsupported interface type: ${interfaceType}`, 'INVALID_INTERFACE_TYPE', 'validation');
-      }
-      
       // Use enhanced state manager's IPC-based synchronization if available
       if (SemanticValidators.hasFunction(this.stateManager, 'synchronizeState', { required: false })) {
         await (this.stateManager as unknown as {
@@ -212,17 +302,41 @@ export class StateManagerAdapter implements IStateManager {
       });
     } catch (error) {
       const errorMessage = isTemplumError(error) ? error.message : (error instanceof Error ? error.message : 'Unknown error');
-      throw createTemplumError(`State sync failed: ${errorMessage}`, 'STATE_SYNC_ERROR', 'runtime');
+      const context = {
+        errorMessage,
+        interfaceType,
+        source,
+        updateKeys: Object.keys(stateUpdate || {})
+      };
+      throw createScopedTemplumError(
+        this.errorScope,
+        'sync-state',
+        error,
+        `State sync failed: ${errorMessage}`,
+        'STATE_SYNC_ERROR',
+        'runtime',
+        context
+      );
     }
   }
 
   async sendMessage(message: any): Promise<void> {
+    if (!TypeGuards.isPlainObject(message)) {
+      throw createScopedTemplumError(
+        this.errorScope,
+        'send-message.validate',
+        undefined,
+        'Invalid message format',
+        'INVALID_MESSAGE',
+        'validation',
+        {
+          adapter: 'StateManagerAdapter',
+          providedType: typeof message
+        }
+      );
+    }
+
     try {
-      // Validate message structure
-      if (!TypeGuards.isPlainObject(message)) {
-        throw createTemplumError('Invalid message format', 'INVALID_MESSAGE', 'validation');
-      }
-      
       // Add adapter metadata
       const enrichedMessage = {
         ...message,
@@ -245,7 +359,21 @@ export class StateManagerAdapter implements IStateManager {
       });
     } catch (error) {
       const errorMessage = isTemplumError(error) ? error.message : (error instanceof Error ? error.message : 'Unknown error');
-      throw createTemplumError(`Message send failed: ${errorMessage}`, 'MESSAGE_SEND_ERROR', 'runtime');
+      const context = {
+        errorMessage,
+        messageType: message?.type ?? 'unknown',
+        messageId: message?.messageId,
+        adapter: 'StateManagerAdapter'
+      };
+      throw createScopedTemplumError(
+        this.errorScope,
+        'send-message',
+        error,
+        `Message send failed: ${errorMessage}`,
+        'MESSAGE_SEND_ERROR',
+        'runtime',
+        context
+      );
     }
   }
 
@@ -283,12 +411,16 @@ export class StateManagerAdapter implements IStateManager {
         warning: 'State manager getCurrentState method not available'
       };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      const errorInstance = error instanceof Error ? error : new Error(errorMessage);
-      StateManagerAdapter.logger.error('getCurrentState retrieval failed', errorInstance, { errorMessage });
+      const metadata = {
+        operation: 'getCurrentState',
+        errorMessage: error instanceof Error ? error.message : String(error)
+      };
+      this.errorScope
+        .child('get-current-state', metadata)
+        .handle(error, metadata);
       return {
         error: true,
-        errorMessage,
+        errorMessage: metadata.errorMessage,
         timestamp: Date.now(),
         adapter: 'StateManagerAdapter'
       };
@@ -302,12 +434,14 @@ export class StateManagerAdapter implements IStateManager {
 
 export class BackendRouterAdapter implements IBackendRouter {
   private static readonly logger = adapterRegistryLogger.child('backend-router-adapter');
+  private readonly errorScope: ScopedErrorHandler;
   private backendRouter: PCLBackendIntegrator;
   private wiringContext: { stateManager?: IStateManager } = {};
   private dependenciesSnapshot: Record<string, unknown> = {};
 
-  constructor(backendRouter: PCLBackendIntegrator) {
+  constructor(backendRouter: PCLBackendIntegrator, errorScope: ScopedErrorHandler) {
     this.backendRouter = backendRouter;
+    this.errorScope = errorScope;
   }
 
   initialize(dependencies: any): void {
@@ -350,7 +484,15 @@ export class BackendRouterAdapter implements IBackendRouter {
     try {
       // Validate command input
       if (!command || typeof command !== 'string') {
-        throw createTemplumError('Invalid command format', 'INVALID_COMMAND', 'validation');
+        throw createScopedTemplumError(
+          this.errorScope,
+          'execute-command.validate',
+          undefined,
+          'Invalid command format',
+          'INVALID_COMMAND',
+          'validation',
+          { command }
+        );
       }
       
       // Prepare command context with adapter metadata
@@ -386,6 +528,14 @@ export class BackendRouterAdapter implements IBackendRouter {
       };
     } catch (error) {
       const errorMessage = isTemplumError(error) ? error.message : (error instanceof Error ? error.message : 'Unknown error');
+      const metadata = {
+        command,
+        errorMessage,
+        argsLength: Array.isArray(args) ? args.length : 0
+      };
+      this.errorScope
+        .child('execute-command', metadata)
+        .handle(error, metadata);
       return {
         command,
         success: false,
@@ -429,6 +579,13 @@ export class BackendRouterAdapter implements IBackendRouter {
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const metadata = {
+        operation: 'getStatus',
+        errorMessage
+      };
+      this.errorScope
+        .child('get-status', metadata)
+        .handle(error, metadata);
       return {
         connected: false,
         health: 'error' as const,
@@ -447,10 +604,12 @@ export class BackendRouterAdapter implements IBackendRouter {
 
 export class BackendServiceRouterAdapter implements IBackendServiceRouter {
   private static readonly logger = adapterRegistryLogger.child('backend-service-router-adapter');
+  private readonly errorScope: ScopedErrorHandler;
   private backendServiceRouter: TemplumBackendServiceRouter;
 
-  constructor(backendServiceRouter: TemplumBackendServiceRouter) {
+  constructor(backendServiceRouter: TemplumBackendServiceRouter, errorScope: ScopedErrorHandler) {
     this.backendServiceRouter = backendServiceRouter;
+    this.errorScope = errorScope;
   }
 
   async discoverAndConnect(): Promise<void> {
@@ -478,10 +637,15 @@ export class BackendServiceRouterAdapter implements IBackendServiceRouter {
     options?: ManualOverrideOptions
   ): Promise<ManualOverrideDescriptor> {
     if (!this.backendServiceRouter.applyManualOverride) {
-      throw createTemplumError(
+      const context = { serviceId, operation: 'applyManualOverride' };
+      throw createScopedTemplumError(
+        this.errorScope,
+        'manual-override',
+        undefined,
         'Manual override operations are not available in the current backend router',
         'MANUAL_OVERRIDE_UNSUPPORTED',
-        'configuration'
+        'configuration',
+        context
       );
     }
 
@@ -490,10 +654,15 @@ export class BackendServiceRouterAdapter implements IBackendServiceRouter {
 
   async clearManualOverride(serviceId?: string): Promise<ManualOverrideClearResult> {
     if (!this.backendServiceRouter.clearManualOverride) {
-      throw createTemplumError(
+      const context = { serviceId, operation: 'clearManualOverride' };
+      throw createScopedTemplumError(
+        this.errorScope,
+        'manual-override',
+        undefined,
         'Manual override operations are not available in the current backend router',
         'MANUAL_OVERRIDE_UNSUPPORTED',
-        'configuration'
+        'configuration',
+        context
       );
     }
 
@@ -535,9 +704,13 @@ export class BackendServiceRouterAdapter implements IBackendServiceRouter {
         timestamp: Date.now()
       });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      const errorInstance = error instanceof Error ? error : new Error(errorMessage);
-      BackendServiceRouterAdapter.logger.error('Cleanup error', errorInstance, { errorMessage });
+      const metadata = {
+        operation: 'cleanup',
+        errorMessage: error instanceof Error ? error.message : String(error)
+      };
+      this.errorScope
+        .child('cleanup', metadata)
+        .handle(error, metadata);
       // Don't throw during cleanup to prevent cascade failures
     }
   }
@@ -637,9 +810,11 @@ export class TemplumComponentFactory implements IComponentFactory {
   private config: any;
   private registry?: TemplumAdapterRegistry;
   private static readonly logger = adapterRegistryLogger.child('component-factory');
+  private readonly errorScope: ScopedErrorHandler;
 
-  constructor(config: any = {}) {
+  constructor(config: any = {}, errorScope: ScopedErrorHandler) {
     this.config = config;
+    this.errorScope = errorScope;
   }
 
   setRegistry(registry: TemplumAdapterRegistry) {
@@ -648,7 +823,10 @@ export class TemplumComponentFactory implements IComponentFactory {
 
   createSkinEngine(_config?: any): ISkinEngine {
     const skinEngine = new UniversalSkinEngine();
-    return new SkinEngineAdapter(skinEngine);
+    return new SkinEngineAdapter(
+      skinEngine,
+      this.errorScope.child('skin-engine-adapter')
+    );
   }
 
   createStateManager(config?: any): IStateManager {
@@ -671,7 +849,10 @@ export class TemplumComponentFactory implements IComponentFactory {
       };
       
       const stateManager = new EnhancedStateManager(stateManagerConfig);
-      const adapter = new StateManagerAdapter(stateManager);
+      const adapter = new StateManagerAdapter(
+        stateManager,
+        this.errorScope.child('state-manager-adapter')
+      );
       
       TemplumComponentFactory.logger.info('StateManager created with validated configuration', {
         coalescingEnabled: stateManagerConfig.coalescingConfig.enabled,
@@ -682,7 +863,16 @@ export class TemplumComponentFactory implements IComponentFactory {
       return adapter;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      throw createTemplumError(`StateManager creation failed: ${errorMessage}`, 'STATE_MANAGER_CREATION_ERROR', 'configuration');
+      const context = { errorMessage, component: 'stateManager' };
+      throw createScopedTemplumError(
+        this.errorScope,
+        'create-state-manager',
+        error,
+        `StateManager creation failed: ${errorMessage}`,
+        'STATE_MANAGER_CREATION_ERROR',
+        'configuration',
+        context
+      );
     }
   }
 
@@ -705,7 +895,10 @@ export class TemplumComponentFactory implements IComponentFactory {
       };
       
       const backendRouter = new PCLBackendIntegrator(backendRouterConfig);
-      const adapter = new BackendRouterAdapter(backendRouter);
+      const adapter = new BackendRouterAdapter(
+        backendRouter,
+        this.errorScope.child('backend-router-adapter')
+      );
       
       TemplumComponentFactory.logger.info('BackendRouter created with validated configuration', {
         circuitBreakerEnabled: backendRouterConfig.enableCircuitBreaker,
@@ -716,13 +909,25 @@ export class TemplumComponentFactory implements IComponentFactory {
       return adapter;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      throw createTemplumError(`BackendRouter creation failed: ${errorMessage}`, 'BACKEND_ROUTER_CREATION_ERROR', 'configuration');
+      const context = { errorMessage, component: 'backendRouter' };
+      throw createScopedTemplumError(
+        this.errorScope,
+        'create-backend-router',
+        error,
+        `BackendRouter creation failed: ${errorMessage}`,
+        'BACKEND_ROUTER_CREATION_ERROR',
+        'configuration',
+        context
+      );
     }
   }
 
   createBackendServiceRouter(_config?: any): IBackendServiceRouter {
     const backendServiceRouter = new TemplumBackendServiceRouter();
-    return new BackendServiceRouterAdapter(backendServiceRouter);
+    return new BackendServiceRouterAdapter(
+      backendServiceRouter,
+      this.errorScope.child('backend-service-router-adapter')
+    );
   }
 
   createResourceManager(config?: any): IResourceManager {
@@ -760,7 +965,16 @@ export class TemplumComponentFactory implements IComponentFactory {
       return adapter;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      throw createTemplumError(`ResourceManager creation failed: ${errorMessage}`, 'RESOURCE_MANAGER_CREATION_ERROR', 'configuration');
+      const context = { errorMessage, component: 'resourceManager' };
+      throw createScopedTemplumError(
+        this.errorScope,
+        'create-resource-manager',
+        error,
+        `ResourceManager creation failed: ${errorMessage}`,
+        'RESOURCE_MANAGER_CREATION_ERROR',
+        'configuration',
+        context
+      );
     }
   }
   
@@ -789,6 +1003,10 @@ export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistry
   private readonly sessionLogger = adapterRegistryLogger.child('session-manager');
   private readonly disposalLogger = adapterRegistryLogger.child('disposal');
   private readonly configurationLogger = adapterRegistryLogger.child('configuration');
+  private readonly errorHandler: ScopedErrorHandler = ErrorHandler.scope(
+    ErrorHandler.formatContext('core', 'adapter-registry'),
+    { component: 'templum-adapter-registry' }
+  );
 
   constructor(config: IDependencyInjectionConfig = {}) {
     super('templum-adapter-registry', 50);
@@ -808,8 +1026,55 @@ export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistry
       validationTimeout: 5000,
       ...config
     };
-    this.factory = new TemplumComponentFactory(config);
+    this.factory = new TemplumComponentFactory(
+      config,
+      this.getScopedErrorHandler('component-factory')
+    );
     (this.factory as TemplumComponentFactory).setRegistry(this);
+  }
+
+  private getScopedErrorHandler(
+    segment: string,
+    metadata?: Record<string, unknown>
+  ): ScopedErrorHandler {
+    return this.errorHandler.child(segment, metadata);
+  }
+
+  private scopedTemplumError(
+    segment: string,
+    error: unknown,
+    message: string,
+    code: string,
+    category: TemplumError['category'],
+    metadata?: Record<string, unknown>
+  ): TemplumError {
+    return createScopedTemplumError(
+      this.errorHandler,
+      segment,
+      error,
+      message,
+      code,
+      category,
+      metadata
+    );
+  }
+
+  private lifecycleTemplumError(
+    segment: string,
+    error: unknown,
+    message: string,
+    code: string,
+    category: TemplumError['category'],
+    metadata?: Record<string, unknown>
+  ): TemplumError {
+    return this.scopedTemplumError(
+      ErrorHandler.formatContext('component-lifecycle', segment),
+      error,
+      message,
+      code,
+      category,
+      metadata
+    );
   }
 
   /**
@@ -902,7 +1167,13 @@ export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistry
 
     } catch (error) {
       status.valid = false;
-      status.issues.push(`Component validation error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      const metadata = {
+        component: name,
+        errorMessage: error instanceof Error ? error.message : String(error)
+      };
+      this.getScopedErrorHandler('validate-component', metadata)
+        .handle(error, metadata);
+      status.issues.push(`Component validation error: ${metadata.errorMessage}`);
     }
 
     return status;
@@ -987,8 +1258,12 @@ export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistry
       }
 
     } catch (error) {
-      const errorInstance = error instanceof Error ? error : new Error(String(error));
-      this.wiringLogger.error('Dependency wiring validation error', errorInstance);
+      const metadata = {
+        operation: 'validateDependencyWiring',
+        errorMessage: error instanceof Error ? error.message : String(error)
+      };
+      this.getScopedErrorHandler('validate-dependency-wiring', metadata)
+        .handle(error, metadata);
     }
 
     return wiringStatuses;
@@ -1103,8 +1378,12 @@ export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistry
 
       return true;
     } catch (error) {
-      const errorInstance = error instanceof Error ? error : new Error(String(error));
-      this.initializationLogger.error('Initialization order validation error', errorInstance);
+      const metadata = {
+        operation: 'validateInitializationOrder',
+        errorMessage: error instanceof Error ? error.message : String(error)
+      };
+      this.getScopedErrorHandler('validate-initialization-order', metadata)
+        .handle(error, metadata);
       return false;
     }
   }
@@ -1223,10 +1502,17 @@ export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistry
             ...missing.map(m => `Missing required component: ${m}`),
             ...circularDepPaths.map(c => `Circular dependency: ${c}`)
           ];
-          throw createTemplumError(
-            `Dependency injection validation failed: ${allIssues.join('; ')}`, 
-            'DEPENDENCY_VALIDATION_ERROR', 
-            'configuration'
+          throw this.lifecycleTemplumError(
+            'validation',
+            undefined,
+            `Dependency injection validation failed: ${allIssues.join('; ')}`,
+            'DEPENDENCY_VALIDATION_ERROR',
+            'configuration',
+            {
+              issues: allIssues,
+              missingComponents: missing,
+              circularDependencies: circularDepPaths
+            }
           );
         } else {
           this.validationLogger.warn('Dependency injection validation warnings (non-strict mode)', {
@@ -1242,10 +1528,13 @@ export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistry
       }
       
       const errorMessage = error instanceof Error ? error.message : 'Unknown validation error';
-      throw createTemplumError(
-        `Dependency integrity validation failed: ${errorMessage}`, 
-        'VALIDATION_ERROR', 
-        'configuration'
+      throw this.lifecycleTemplumError(
+        'validation',
+        error,
+        `Dependency integrity validation failed: ${errorMessage}`,
+        'VALIDATION_ERROR',
+        'configuration',
+        { errorMessage }
       );
     }
   }
@@ -1259,7 +1548,14 @@ export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistry
 
   private assertPlainObject(candidate: unknown, fieldName: string): asserts candidate is Record<string, unknown> {
     if (!TypeGuards.isPlainObject(candidate)) {
-      throw createTemplumError(`${fieldName} must be a plain object`, 'VALIDATION_ERROR', 'validation', { fieldName });
+      throw this.scopedTemplumError(
+        ErrorHandler.formatContext('configuration', 'assert-plain-object'),
+        undefined,
+        `${fieldName} must be a plain object`,
+        'VALIDATION_ERROR',
+        'validation',
+        { fieldName }
+      );
     }
   }
 
@@ -1284,20 +1580,26 @@ export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistry
       const numericValue = value as number;
 
       if ((options.min !== undefined && numericValue < options.min) || (options.max !== undefined && numericValue > options.max)) {
-        throw createTemplumError(
+        throw this.scopedTemplumError(
+          ErrorHandler.formatContext('configuration', 'sanitize-numeric-option'),
+          undefined,
           `${options.fieldName} must be between ${options.min ?? '-∞'} and ${options.max ?? '+∞'}`,
           'NUMERIC_RANGE_VALIDATION_ERROR',
           'validation',
-          { fieldName: options.fieldName, value: numericValue, min: options.min, max: options.max },
+          { fieldName: options.fieldName, value: numericValue, min: options.min, max: options.max }
         );
       }
     } catch (error) {
+      const metadata = {
+        field: options.fieldName,
+        value,
+        bounds: options,
+        errorMessage: error instanceof Error ? error.message : String(error)
+      };
+      this.getScopedErrorHandler('sanitize-numeric-option', metadata)
+        .handle(error, metadata);
       if (value !== undefined) {
-        this.configurationLogger.warn('Invalid configuration value removed', {
-          field: options.fieldName,
-          value,
-          bounds: options
-        });
+        this.configurationLogger.warn('Invalid configuration value removed', metadata);
       }
       delete target[key];
     }
@@ -1332,16 +1634,28 @@ export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistry
       const numericValue = value as number;
 
       if (Number.isNaN(numericValue) || numericValue < min || numericValue > max) {
-        throw createTemplumError(
+        throw this.scopedTemplumError(
+          ErrorHandler.formatContext('configuration', 'validate-numeric-range'),
+          undefined,
           `${fieldName} must be between ${min} and ${max}`,
           'NUMERIC_RANGE_VALIDATION_ERROR',
           'validation',
-          { fieldName, value: numericValue, min, max },
+          { fieldName, value: numericValue, min, max }
         );
       }
 
       return numericValue;
-    } catch (_error) {
+    } catch (error) {
+      const metadata = {
+        fieldName,
+        value,
+        min,
+        max,
+        defaultValue,
+        errorMessage: error instanceof Error ? error.message : String(error)
+      };
+      this.getScopedErrorHandler('validate-numeric-range', metadata)
+        .handle(error, metadata);
       if (value !== undefined) {
         this.configurationLogger.warn('Invalid numeric configuration value', {
           fieldName,
@@ -1415,11 +1729,13 @@ export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistry
       typeof this.config.validationTimeout === 'number' &&
       this.config.validationTimeout < 50
     ) {
-      throw createTemplumError(
+      throw this.lifecycleTemplumError(
+        'configuration',
+        undefined,
         `Validation timeout ${this.config.validationTimeout}ms is below the strict-mode minimum (50ms)`,
         'VALIDATION_TIMEOUT_ERROR',
         'configuration',
-        { minimum: 50, provided: this.config.validationTimeout },
+        { minimum: 50, provided: this.config.validationTimeout }
       );
     }
 
@@ -1459,18 +1775,33 @@ export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistry
         });
       }
     } catch (error) {
+      const detailMessage = isTemplumError(error)
+        ? error.message
+        : error instanceof Error
+          ? error.message
+          : 'Unknown registry initialization error';
+
+      const templumError = this.scopedTemplumError(
+        'initialize',
+        error,
+        `Registry initialization failed: ${detailMessage}`,
+        'INITIALIZATION_ERROR',
+        'configuration',
+        { phase: 'initialize' }
+      );
+
       const errorPayload: ErrorSignalPayload = {
         timestamp: Date.now(),
         source: 'TemplumAdapterRegistry',
-        error: isTemplumError(error) ? error : createTemplumError(
-          error instanceof Error ? error.message : 'Unknown registry initialization error',
-          'REGISTRY_INITIALIZATION_ERROR',
-          'configuration'
-        ),
+        error: templumError,
         severity: 'critical'
       };
-      this.logger.error('Registry initialization failed', errorPayload.error);
-      throw createTemplumError(`Registry initialization failed: ${errorPayload.error.message}`, 'INITIALIZATION_ERROR', 'configuration');
+
+      this.logger.error('Registry initialization failed', templumError, {
+        context: templumError.context,
+        errorPayload
+      });
+      throw templumError;
     }
   }
 
@@ -1500,10 +1831,13 @@ export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistry
             const validation = this.validateComponentInstance(name, component);
             
             if (!validation.valid && this.config.validationLevel === 'strict') {
-              throw createTemplumError(
-                `Component ${name} validation failed: ${validation.issues.join('; ')}`, 
-                'COMPONENT_VALIDATION_ERROR', 
-                'configuration'
+              throw this.scopedTemplumError(
+                ErrorHandler.formatContext('component-factory', 'validation'),
+                undefined,
+                `Component ${name} validation failed: ${validation.issues.join('; ')}`,
+                'COMPONENT_VALIDATION_ERROR',
+                'configuration',
+                { component: name, issues: validation.issues }
               );
             } else if (!validation.valid) {
               this.componentLogger.warn('Component validation warnings', {
@@ -1517,8 +1851,21 @@ export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistry
           this.componentLogger.info('Created and validated component', { component: name });
           
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-          throw createTemplumError(`Failed to create ${name}: ${errorMessage}`, 'COMPONENT_CREATION_ERROR', 'configuration');
+          const templumError = this.scopedTemplumError(
+            'component-factory',
+            error,
+            `Failed to create ${name}`,
+            'COMPONENT_CREATION_ERROR',
+            'configuration',
+            { component: name }
+          );
+
+          this.componentLogger.error('Component creation failed', templumError, {
+            component: name,
+            context: templumError.context
+          });
+
+          throw templumError;
         }
       }
     }
@@ -1585,16 +1932,22 @@ export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistry
         this.wiringLogger.info('Successfully wired dependency', { name });
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        
         if (this.config.validationLevel === 'strict') {
-          throw createTemplumError(
-            `Dependency wiring failed for ${name}: ${errorMessage}`, 
-            'DEPENDENCY_WIRING_ERROR', 
-            'configuration'
+          throw this.lifecycleTemplumError(
+            'wiring',
+            error,
+            `Dependency wiring failed for ${name}: ${errorMessage}`,
+            'DEPENDENCY_WIRING_ERROR',
+            'configuration',
+            { operation: name, errorMessage }
           );
-        } else {
-          this.wiringLogger.warn('Dependency wiring warning', { name, error: errorMessage });
         }
+
+        const metadata = { operation: name, errorMessage };
+        this.getScopedErrorHandler('wire-dependency', metadata)
+          .handle(error, metadata);
+
+        this.wiringLogger.warn('Dependency wiring warning', metadata);
       }
     }
 
@@ -1605,10 +1958,13 @@ export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistry
       
       if (failedWiring.length > 0 && this.config.validationLevel === 'strict') {
         const issues = failedWiring.map(w => `${w.sourceComponent} → ${w.targetComponent}: ${w.issues.join(', ')}`);
-        throw createTemplumError(
-          `Dependency wiring validation failed: ${issues.join('; ')}`, 
-          'DEPENDENCY_WIRING_VALIDATION_ERROR', 
-          'configuration'
+        throw this.lifecycleTemplumError(
+          'wiring',
+          undefined,
+          `Dependency wiring validation failed: ${issues.join('; ')}`,
+          'DEPENDENCY_WIRING_VALIDATION_ERROR',
+          'configuration',
+          { issues, failedWiring }
         );
       } else if (failedWiring.length > 0) {
         this.wiringLogger.warn('Dependency wiring validation warnings', {
@@ -1644,9 +2000,11 @@ export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistry
     if (this.config.validateInitializationOrder) {
       const orderValid = this.validateInitializationOrder();
       if (!orderValid && this.config.validationLevel === 'strict') {
-        throw createTemplumError(
-          'Component initialization order validation failed', 
-          'INITIALIZATION_ORDER_ERROR', 
+        throw this.lifecycleTemplumError(
+          'initialization',
+          undefined,
+          'Component initialization order validation failed',
+          'INITIALIZATION_ORDER_ERROR',
           'configuration'
         );
       }
@@ -1682,13 +2040,23 @@ export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistry
           error = initError instanceof Error ? initError.message : 'Unknown initialization error';
           
           if (this.config.validationLevel === 'strict') {
-            throw createTemplumError(
-              `Failed to initialize ${componentName}: ${error}`, 
-              'COMPONENT_INITIALIZATION_ERROR', 
-              'configuration'
+            throw this.lifecycleTemplumError(
+              'initialization',
+              initError,
+              `Failed to initialize ${componentName}: ${error}`,
+              'COMPONENT_INITIALIZATION_ERROR',
+              'configuration',
+              { component: componentName, errorMessage: error }
             );
           } else {
             const errorInstance = initError instanceof Error ? initError : new Error(error);
+            const metadata = {
+              component: componentName,
+              errorMessage: error,
+              phase: 'initialize-component'
+            };
+            this.getScopedErrorHandler('initialize-component', metadata)
+              .handle(initError, metadata);
             this.initializationLogger.error('Initialization warning', errorInstance, {
               component: componentName,
               message: error
@@ -1720,10 +2088,13 @@ export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistry
       const failureDetails = failedInitializations.map(f => `${f.component}: ${f.error}`);
       
       if (this.config.validationLevel === 'strict') {
-        throw createTemplumError(
-          `Component initialization failures: ${failureDetails.join('; ')}`, 
-          'INITIALIZATION_FAILURES', 
-          'configuration'
+        throw this.lifecycleTemplumError(
+          'initialization',
+          undefined,
+          `Component initialization failures: ${failureDetails.join('; ')}`,
+          'INITIALIZATION_FAILURES',
+          'configuration',
+          { failureDetails }
         );
       } else {
         this.initializationLogger.warn('Component initialization warnings', { failureDetails });
@@ -1751,10 +2122,13 @@ export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistry
       | undefined;
 
     if (!backendServiceRouter) {
-      throw createTemplumError(
+      throw this.lifecycleTemplumError(
+        'session-manager',
+        undefined,
         'Backend service router must be initialized before creating the session manager',
         'SESSION_MANAGER_INITIALIZATION_ERROR',
-        'configuration'
+        'configuration',
+        { requirement: 'backendServiceRouter' }
       );
     }
 
@@ -1777,6 +2151,13 @@ export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistry
           this.sessionLogger.info('Registered session manager with resource manager');
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          const metadata = {
+            component: 'sessionManager',
+            operation: 'resource-registration',
+            errorMessage
+          };
+          this.getScopedErrorHandler('session-manager', metadata)
+            .handle(error, metadata);
           this.sessionLogger.warn('Failed to register session manager with resource manager', {
             error: errorMessage
           });
@@ -1786,10 +2167,13 @@ export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistry
       this.sessionLogger.info('Session manager initialized and registered');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      throw createTemplumError(
+      throw this.lifecycleTemplumError(
+        'session-manager',
+        error,
         `Failed to initialize session manager: ${errorMessage}`,
         'SESSION_MANAGER_INITIALIZATION_ERROR',
-        'configuration'
+        'configuration',
+        { errorMessage }
       );
     }
   }
@@ -1805,7 +2189,13 @@ export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistry
    */
   getDependencies(): ITemplumCoreDependencies {
     if (!this.initialized) {
-      throw createTemplumError('Registry not initialized', 'REGISTRY_NOT_INITIALIZED', 'configuration');
+      throw this.lifecycleTemplumError(
+        'dependencies',
+        undefined,
+        'Registry not initialized',
+        'REGISTRY_NOT_INITIALIZED',
+        'configuration'
+      );
     }
 
     // Ensure all required dependencies are present
@@ -1819,7 +2209,14 @@ export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistry
     ];
     for (const dep of required) {
       if (!this.dependencies[dep as keyof ITemplumCoreDependencies]) {
-        throw createTemplumError(`Missing required dependency: ${dep}`, 'MISSING_DEPENDENCY', 'configuration');
+        throw this.lifecycleTemplumError(
+          'dependencies',
+          undefined,
+          `Missing required dependency: ${dep}`,
+          'MISSING_DEPENDENCY',
+          'configuration',
+          { dependency: dep }
+        );
       }
     }
 
@@ -1843,12 +2240,25 @@ export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistry
    */
   getComponent<K extends keyof ITemplumCoreDependencies>(name: K): ITemplumCoreDependencies[K] {
     if (!this.initialized) {
-      throw createTemplumError('Registry not initialized', 'REGISTRY_NOT_INITIALIZED', 'configuration');
+      throw this.lifecycleTemplumError(
+        'dependencies',
+        undefined,
+        'Registry not initialized',
+        'REGISTRY_NOT_INITIALIZED',
+        'configuration'
+      );
     }
 
     const component = this.dependencies[name];
     if (!component) {
-      throw createTemplumError(`Component not found: ${name}`, 'COMPONENT_NOT_FOUND', 'configuration');
+      throw this.lifecycleTemplumError(
+        'dependencies',
+        undefined,
+        `Component not found: ${name}`,
+        'COMPONENT_NOT_FOUND',
+        'configuration',
+        { component: name }
+      );
     }
 
     return component as ITemplumCoreDependencies[K];
@@ -1862,7 +2272,9 @@ export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistry
     } = {}
   ): Record<InterfaceType, IInterfaceAdapter> {
     if (!this.sessionManager) {
-      throw createTemplumError(
+      throw this.lifecycleTemplumError(
+        'interfaces',
+        undefined,
         'Session manager must be initialized before building interface adapters',
         'SESSION_MANAGER_INITIALIZATION_ERROR',
         'configuration'
@@ -1916,10 +2328,15 @@ export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistry
             }
           }
         } catch (error) {
-          const errorInstance = error instanceof Error ? error : new Error(String(error));
-          this.sessionLogger.warn('Failed to shutdown session manager during disposal', {
-            error: errorInstance.message
-          });
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          const metadata = {
+            component: 'sessionManager',
+            phase: 'disposal-shutdown',
+            errorMessage
+          };
+          this.getScopedErrorHandler('disposal', metadata)
+            .handle(error, metadata);
+          this.sessionLogger.warn('Failed to shutdown session manager during disposal', metadata);
         }
       }
 
@@ -1968,8 +2385,13 @@ export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistry
         }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        const errorInstance = error instanceof Error ? error : new Error(errorMessage);
-        this.disposalLogger.error('Failed to dispose component', errorInstance, { errorMessage });
+        const metadata = {
+          phase: 'component-disposal',
+          errorMessage
+        };
+        this.getScopedErrorHandler('disposal', metadata)
+          .handle(error, metadata);
+        this.disposalLogger.error('Failed to dispose component', error instanceof Error ? error : new Error(errorMessage), metadata);
       }
 
       this.dependencies = {};
@@ -1984,7 +2406,14 @@ export class TemplumAdapterRegistry extends EventDrivenComponent<AdapterRegistry
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       const errorInstance = error instanceof Error ? error : new Error(errorMessage);
       this.disposalLogger.error('Disposal failed', errorInstance, { errorMessage });
-      throw createTemplumError(`Registry disposal failed: ${errorMessage}`, 'DISPOSAL_ERROR', 'runtime');
+      throw this.lifecycleTemplumError(
+        'disposal',
+        error,
+        `Registry disposal failed: ${errorMessage}`,
+        'DISPOSAL_ERROR',
+        'runtime',
+        { errorMessage }
+      );
     }
   }
 

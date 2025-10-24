@@ -24,6 +24,12 @@ const extractCatchClauses = (sourceFile: ts.SourceFile): ts.CatchClause[] => {
   return clauses;
 };
 
+const HANDLER_HELPERS = new Set([
+  'ErrorHandler.handle',
+  'handleSessionError',
+  'handleSessionScopedError'
+]);
+
 const catchClauseHasErrorHandler = (clause: ts.CatchClause, sourceFile: ts.SourceFile): boolean => {
   let handled = false;
 
@@ -32,14 +38,20 @@ const catchClauseHasErrorHandler = (clause: ts.CatchClause, sourceFile: ts.Sourc
       return;
     }
 
-    if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression)) {
-      const callee = node.expression;
-      if (
-        callee.expression.getText(sourceFile) === 'ErrorHandler' &&
-        callee.name.getText(sourceFile) === 'handle'
-      ) {
-        handled = true;
-        return;
+    if (ts.isCallExpression(node)) {
+      if (ts.isPropertyAccessExpression(node.expression)) {
+        const callee = node.expression;
+        const helperName = `${callee.expression.getText(sourceFile)}.${callee.name.getText(sourceFile)}`;
+        if (HANDLER_HELPERS.has(helperName)) {
+          handled = true;
+          return;
+        }
+      } else if (ts.isIdentifier(node.expression)) {
+        const identifierName = node.expression.getText(sourceFile);
+        if (HANDLER_HELPERS.has(identifierName)) {
+          handled = true;
+          return;
+        }
       }
     }
 

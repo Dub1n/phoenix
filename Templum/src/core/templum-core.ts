@@ -23,8 +23,8 @@ import {
   NotificationUpdate,
   BackendConnectionLifecycleEvent,
   BackendConnectionLifecycleState,
+  type TemplumError,
   isTemplumError,
-  createTemplumError,
   ErrorSignalPayload
 } from '../types/templum-types';
 import { BackendStatus } from '../backend/backend-service-router';
@@ -39,6 +39,8 @@ import {
   type SerializationOutcome,
   type SerializationMeta
 } from '../utils/serialization-utils';
+import { createLogger } from '../utils/logger';
+import type { ErrorMetadata, ScopedErrorHandler } from '../utils/error-handler';
 import { createInterval, type ManagedInterval } from '../utils/async-utils';
 
 // Import dependency injection interfaces and registry
@@ -111,6 +113,12 @@ interface TemplumCoreEvents extends TypedEventMap {
 }
 import { type TypedEventMap } from '../utils/event-utils';
 import { EventDrivenComponent } from '../utils/event-bus-adapter';
+import {
+  captureScopedAsync,
+  captureScopedSync,
+  createTemplumCoreError,
+  createTemplumCoreErrorHandler
+} from './templum-core-error-handling';
 
 type RegisteredCommand = CommandDefinition & {
   backend?: string;
@@ -135,6 +143,8 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
   private backendLifecycleState: Map<string, BackendConnectionLifecycleEvent> = new Map();
   private sessionManager!: TemplumSessionManagerContract;
   private ipcCommandMonitor?: ManagedInterval;
+  private readonly logger = createLogger('templum-core');
+  private readonly errorHandler: ScopedErrorHandler = createTemplumCoreErrorHandler();
 
   constructor(
     config: Partial<TemplumConfiguration> = {},
@@ -173,7 +183,7 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
       return;
     }
 
-    try {
+    const initializationError = await (async () => {
       // Initialize adapter registry and get dependencies
       await this.adapterRegistry.initialize();
       this.dependencies = this.adapterRegistry.getDependencies();
@@ -206,56 +216,71 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
       this.logInfo('Universal Interface Manager initialized successfully');
       
       // Initialize backend service router with enhanced error handling (Haruspex pattern)
-      try {
-        // Set orchestrator reference for skin loading integration
-        if (this.dependencies.backendServiceRouter && 'setOrchestrator' in this.dependencies.backendServiceRouter) {
-          (this.dependencies.backendServiceRouter as any).setOrchestrator(this);
-        }
-        
-        this.registerBackendLifecycleListeners();
-        this.logInfo('Starting backend service router discovery...');
-        await this.dependencies.backendServiceRouter.discoverAndConnect();
-        
-        // Get backend connection status following proper interface alignment
-        const connectionStatus = this.dependencies.backendServiceRouter.getConnectionStatus?.() || {
-          totalConnections: 0,
-          healthyConnections: 0,
-          backends: {}
-        };
-        
-        // Validate connection status and provide detailed logging
-        if (connectionStatus.healthyConnections === 0) {
-          this.logWarn('No healthy backend connections established', {
-            totalAttempted: connectionStatus.totalConnections,
-            backendStates: connectionStatus.backends
-          });
-        } else {
-          this.logInfo('Backend service router discovery completed successfully', {
-            totalConnections: connectionStatus.totalConnections,
-            healthyConnections: connectionStatus.healthyConnections,
-            availableBackends: Object.keys(connectionStatus.backends),
-            backendDetails: connectionStatus.backends
-          });
-        }
-        
-        // Log individual backend status for diagnostics
-        Object.entries(connectionStatus.backends).forEach(([backendId, status]) => {
-          const backendStatus = status as BackendStatus;
-          if (backendStatus.health === 'error') {
-            this.logError(`Backend ${backendId} connection failed: ${backendStatus.lastError || 'Unknown error'}`);
-          } else if (backendStatus.health === 'unhealthy') {
-            this.logWarn(`Backend ${backendId} connection unhealthy`, { responseTime: backendStatus.responseTime });
+      const backendRouterResult = await captureScopedAsync(
+        this.getScopedErrorHandler('initialize.backend-service-router', {
+          operation: 'discover-and-connect'
+        }),
+        async () => {
+          if (this.dependencies.backendServiceRouter && 'setOrchestrator' in this.dependencies.backendServiceRouter) {
+            (this.dependencies.backendServiceRouter as any).setOrchestrator(this);
           }
+
+          this.registerBackendLifecycleListeners();
+          this.logInfo('Starting backend service router discovery...');
+          await this.dependencies.backendServiceRouter.discoverAndConnect();
+
+          const status = this.dependencies.backendServiceRouter.getConnectionStatus?.() ?? {
+            totalConnections: 0,
+            healthyConnections: 0,
+            backends: {}
+          };
+
+          if (status.healthyConnections === 0) {
+            this.logWarn('No healthy backend connections established', {
+              totalAttempted: status.totalConnections,
+              backendStates: status.backends
+            });
+          } else {
+            this.logInfo('Backend service router discovery completed successfully', {
+              totalConnections: status.totalConnections,
+              healthyConnections: status.healthyConnections,
+              availableBackends: Object.keys(status.backends),
+              backendDetails: status.backends
+            });
+          }
+
+          Object.entries(status.backends).forEach(([backendId, entry]) => {
+            const backendStatus = entry as BackendStatus;
+            if (backendStatus.health === 'error') {
+              this.logError(`Backend ${backendId} connection failed: ${backendStatus.lastError || 'Unknown error'}`);
+            } else if (backendStatus.health === 'unhealthy') {
+              this.logWarn(`Backend ${backendId} connection unhealthy`, { responseTime: backendStatus.responseTime });
+            }
+          });
+
+          return status;
+        },
+        { phase: 'initialization' }
+      );
+
+      const backendConnectionStatus = backendRouterResult.ok
+        ? backendRouterResult.value
+        : {
+            totalConnections: 0,
+            healthyConnections: 0,
+            backends: {} as Record<string, BackendStatus>
+          };
+
+      if (!backendRouterResult.ok) {
+        const templumError = backendRouterResult.error;
+        this.logError('Backend service router initialization failed', templumError, {
+          degradedMode: true
         });
-        
-      } catch (backendError) {
-        const _errorMessage = isTemplumError(backendError) ? backendError.message : 
-          (backendError instanceof Error ? backendError.message : 'Unknown backend initialization error');
-        
-        this.logError('Backend service router initialization failed');
-        
-        // Continue initialization with degraded functionality rather than failing completely
-        this.logWarn('Continuing initialization with degraded backend functionality');
+
+        this.logWarn('Continuing initialization with degraded backend functionality', {
+          degradedMode: true,
+          context: templumError.context
+        });
       }
       
       // Register core Templum services with resource manager for monitoring
@@ -270,46 +295,91 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
       // Start IPC command monitoring for CLI communication
       this.startIPCCommandMonitoring();
       
-      // Load skins from connected backends after initialization is complete
-      try {
-        const connectionStatus = this.dependencies.backendServiceRouter.getConnectionStatus?.() || { backends: {} };
-        for (const [backendId, status] of Object.entries(connectionStatus.backends)) {
-          const backendStatus = status as BackendStatus;
-          if (backendStatus.connected && backendStatus.health === 'healthy') {
-            try {
-              this.logInfo(`Loading skin from backend ${backendId}...`);
-              await this.loadBackendSkin(backendId);
-              this.logInfo(`Successfully loaded skin from backend ${backendId}`);
-            } catch (skinError) {
-              this.logWarn(`Failed to load skin from backend ${backendId}`, { 
-                error: skinError instanceof Error ? skinError.message : String(skinError)
+      const backendSkinResult = await captureScopedAsync(
+        this.getScopedErrorHandler('initialize.backend-skin-load', {
+          phase: 'post-initialization'
+        }),
+        async () => {
+          const connectionStatus =
+            backendConnectionStatus ??
+            this.dependencies.backendServiceRouter.getConnectionStatus?.() ?? { backends: {} };
+
+          for (const [backendId, status] of Object.entries(connectionStatus.backends)) {
+            const backendStatus = status as BackendStatus;
+            if (!backendStatus.connected || backendStatus.health !== 'healthy') {
+              continue;
+            }
+
+            const skinLoadResult = await captureScopedAsync(
+              this.getScopedErrorHandler('initialize.backend-skin-load', {
+                backendId
+              }),
+              async () => {
+                this.logInfo(`Loading skin from backend ${backendId}...`);
+                await this.loadBackendSkin(backendId);
+                this.logInfo(`Successfully loaded skin from backend ${backendId}`);
+              },
+              { phase: 'initialization' }
+            );
+
+            if (!skinLoadResult.ok) {
+              const templumError = skinLoadResult.error;
+              this.logWarn(`Failed to load skin from backend ${backendId}`, {
+                backendId,
+                context: templumError.context,
+                error: templumError.message
               });
             }
           }
         }
-      } catch (skinLoadError) {
+      );
+
+      if (!backendSkinResult.ok) {
+        const templumError = backendSkinResult.error;
         this.logWarn('Failed to load skins from backends after initialization', {
-          error: skinLoadError instanceof Error ? skinLoadError.message : String(skinLoadError)
+          context: templumError.context,
+          error: templumError.message
         });
       }
       
       this.logInfo('Templum Core Engine initialization complete with dependency injection');
-    } catch (error) {
-      const errorMessage = isTemplumError(error) ? error.message : (error instanceof Error ? error.message : 'Unknown error');
-      
-      const _errorPayload: ErrorSignalPayload = {
+      return null;
+    })().catch((error) => error);
+
+    if (initializationError) {
+      const errorMessage = isTemplumError(initializationError)
+        ? initializationError.message
+        : initializationError instanceof Error
+          ? initializationError.message
+          : 'Unknown error';
+
+      const templumError = this.raiseScopedError(
+        'initialize',
+        initializationError,
+        `Failed to initialize Templum Core Engine: ${errorMessage}`,
+        'INITIALIZATION_ERROR',
+        'configuration',
+        { stage: 'initialize' }
+      );
+
+      const errorPayload: ErrorSignalPayload = {
         timestamp: Date.now(),
         source: 'TemplumCoreInitialization',
-        error: createTemplumError(errorMessage, 'INITIALIZATION_ERROR', 'configuration'),
+        error: templumError,
         severity: 'critical'
       };
-      
-      this.emit('initializationError', { error: errorMessage, timestamp: Date.now() });
-      this.logError('Templum Core initialization failed', error instanceof Error ? error : undefined, {
-        errorMessage
+
+      this.emit('initializationError', {
+        error: templumError.message,
+        timestamp: Date.now()
       });
-      
-      throw createTemplumError(`Failed to initialize Templum Core Engine: ${errorMessage}`, 'INITIALIZATION_ERROR', 'configuration');
+      this.logError('Templum Core initialization failed', templumError, {
+        stage: 'initialize',
+        context: templumError.context,
+        errorPayload
+      });
+
+      throw templumError;
     }
   }
 
@@ -387,38 +457,61 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
 
     // Basic skin validation - real component has different validation approach
     if (!skinDefinition.metadata?.id) {
-      throw createTemplumError('Invalid skin definition: missing required id', 'SKIN_VALIDATION_ERROR', 'validation');
+      throw this.raiseScopedError(
+        'load-skin.validation',
+        undefined,
+        'Invalid skin definition: missing required id',
+        'SKIN_VALIDATION_ERROR',
+        'validation',
+        { field: 'metadata.id' }
+      );
     }
     if (!skinDefinition.metadata?.name) {
-      throw createTemplumError('Invalid skin definition: missing required name', 'SKIN_VALIDATION_ERROR', 'validation');
+      throw this.raiseScopedError(
+        'load-skin.validation',
+        undefined,
+        'Invalid skin definition: missing required name',
+        'SKIN_VALIDATION_ERROR',
+        'validation',
+        { field: 'metadata.name' }
+      );
     }
 
     // Store skin definition
     this.loadedSkins.set(skinDefinition.metadata.id, skinDefinition);
     this.registerCommandsFromSkin(skinDefinition);
 
-    try {
-      const menuModel = buildCLIMenuModel(skinDefinition);
-      this.dependencies.observabilityService?.logInfo(
-        'CLI menu model generated',
-        {
-          skinId: skinDefinition.metadata.id,
-          menuCount: Object.keys(menuModel.menuGraph).length,
-        },
-        'TemplumCore'
-      );
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      this.logWarn('CLI generator failed to produce menu model', {
+    const menuModelResult = captureScopedSync(
+      this.getScopedErrorHandler('load-skin.cli-menu-model', {
+        skinId: skinDefinition.metadata.id
+      }),
+      () => {
+        const menuModel = buildCLIMenuModel(skinDefinition);
+        this.dependencies.observabilityService?.logInfo(
+          'CLI menu model generated',
+          {
+            skinId: skinDefinition.metadata.id,
+            menuCount: Object.keys(menuModel.menuGraph).length
+          },
+          'TemplumCore'
+        );
+        return menuModel;
+      },
+      { operation: 'build-cli-menu-model' }
+    );
+
+    if (!menuModelResult.ok) {
+      const templumError = menuModelResult.error;
+      const logMetadata = {
         skinId: skinDefinition.metadata.id,
-        error: errorMessage,
-      });
+        context: templumError.context,
+        error: templumError.message
+      };
+
+      this.logWarn('CLI generator failed to produce menu model', logMetadata);
       this.dependencies.observabilityService?.logWarn(
         'CLI menu model generation failed',
-        {
-          skinId: skinDefinition.metadata.id,
-          error: errorMessage,
-        },
+        logMetadata,
         'TemplumCore'
       );
     }
@@ -446,7 +539,13 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
     _context: CommandContext = {}
   ): Promise<CommandResult> {
     if (!this.initialized) {
-      throw new Error('Templum Core Engine must be initialized before executing commands');
+      throw this.raiseScopedError(
+        'execute-command.preflight',
+        undefined,
+        'Templum Core Engine must be initialized before executing commands',
+        'CORE_NOT_INITIALIZED',
+        'configuration'
+      );
     }
 
     const startTime = Date.now();
@@ -473,7 +572,7 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
       return unknownResult;
     }
 
-    try {
+    return (async () => {
       this.logInfo(`Executing command '${command}'`, {
         sourceInterface,
         targetBackend: resolvedCommand.backend
@@ -489,7 +588,12 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
         selectedBackend !== 'core';
 
       if (shouldRouteToBackend) {
-        try {
+        const backendPreflightMetadata = {
+          command,
+          requestedBackend: resolvedCommand.backend ?? 'unknown',
+          sourceInterface
+        };
+        await (async () => {
           // TASK-SKIN-005: Two-tier backend prioritization system
           const systemStatus = this.getSystemStatus();
           const availableBackends = Object.entries(systemStatus.coreEngine.backendConnections.backends)
@@ -512,11 +616,25 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
             
             // Execute command through real backend service
             if (!backendServiceRouter) {
-              throw createTemplumError('Backend service router not initialized', 'SERVICE_NOT_READY', 'configuration');
+              throw this.raiseScopedError(
+                'execute-command.backend.preflight',
+                undefined,
+                'Backend service router not initialized',
+                'SERVICE_NOT_READY',
+                'configuration',
+                backendPreflightMetadata
+              );
             }
             
-            if (!backendServiceRouter.executeCommand) {
-              throw createTemplumError('Backend service router executeCommand method not available', 'SERVICE_NOT_READY', 'configuration');
+            if (typeof backendServiceRouter.executeCommand !== 'function') {
+              throw this.raiseScopedError(
+                'execute-command.backend.preflight',
+                undefined,
+                'Backend service router executeCommand method not available',
+                'SERVICE_NOT_READY',
+                'configuration',
+                backendPreflightMetadata
+              );
             }
             executionResult = await backendServiceRouter.executeCommand(
               selectedBackend,
@@ -532,13 +650,35 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
             this.logWarn('No healthy backends available for command execution', {
               requestedBackend: resolvedCommand.backend
             });
-            throw new Error('No healthy backends available');
+            throw this.raiseScopedError(
+              'execute-command.backend.prioritization',
+              undefined,
+              'No healthy backends available for command execution',
+              'BACKEND_UNAVAILABLE',
+              'runtime',
+              {
+                command,
+                requestedBackend: resolvedCommand.backend ?? 'unknown',
+                sourceInterface
+              }
+            );
           }
           
-        } catch (backendError) {
+        })().catch((backendError) => {
+          const backendHandler = this.getScopedErrorHandler('execute-command.backend', {
+            command,
+            backendId: selectedBackend ?? resolvedCommand.backend ?? 'unknown',
+            sourceInterface
+          });
+          const templumError = backendHandler.handle(backendError, {
+            operation: 'backend-execution'
+          });
+
           this.logWarn('Backend command execution failed, creating fallback result', {
-            error: backendError instanceof Error ? backendError.message : String(backendError),
-            backendId: selectedBackend ?? resolvedCommand.backend
+            command,
+            backendId: selectedBackend ?? resolvedCommand.backend,
+            context: templumError.context,
+            error: templumError.message
           });
           
           // Fallback to local execution result
@@ -546,9 +686,9 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
             executed: true, 
             timestamp: Date.now(),
             fallback: true,
-            backendError: backendError instanceof Error ? backendError.message : 'Unknown backend error'
+            backendError: templumError.message
           };
-        }
+        });
       } else {
         this.logWarn('Backend service router not available for command execution, creating local result', {
           requestedBackend: resolvedCommand.backend
@@ -570,15 +710,22 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
       };
 
       // Synchronize state across interfaces after command execution
-      try {
-        await this.synchronizeInterfaceStates({ commandResult: result });
-      } catch (syncError) {
+      await this.synchronizeInterfaceStates({ commandResult: result }).catch((syncError) => {
+        const stateSyncHandler = this.getScopedErrorHandler('execute-command.state-sync', {
+          command,
+          backendId: selectedBackend ?? resolvedCommand.backend
+        });
+        const templumError = stateSyncHandler.handle(syncError, {
+          operation: 'synchronize-interface-states'
+        });
+
         this.logWarn('Interface state synchronization failed after command execution', {
-          error: syncError instanceof Error ? syncError.message : String(syncError),
-          command
+          command,
+          context: templumError.context,
+          error: templumError.message
         });
         // Continue - synchronization failure shouldn't fail the command
-      }
+      });
 
       const commandResult: CommandResult = {
         success: true,
@@ -604,19 +751,25 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
       });
 
       return commandResult;
-    } catch (error) {
-      const errorMessage = isTemplumError(error) ? error.message : (error instanceof Error ? error.message : 'Unknown error');
+    })().catch((error) => {
+      const scopedHandler = this.getScopedErrorHandler('execute-command', {
+        command,
+        sourceInterface
+      });
+      const templumError = scopedHandler.handle(error, {
+        phase: 'command-execution'
+      });
       
-      const _errorPayload: ErrorSignalPayload = {
+      const errorPayload: ErrorSignalPayload = {
         timestamp: Date.now(),
         source: `CommandExecution:${command}`,
-        error: createTemplumError(errorMessage, 'COMMAND_EXECUTION_ERROR', 'runtime'),
+        error: templumError,
         severity: 'high'
       };
       
       const errorResult: CommandResult = {
         success: false,
-        error: errorMessage,
+        error: templumError.message,
         source: sourceInterface,
         timestamp: Date.now(),
         executionTime: Date.now() - startTime
@@ -625,17 +778,18 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
       this.emit('commandError', {
         command,
         sourceInterface,
-        error: errorMessage,
+        error: templumError.message,
         timestamp: Date.now()
       });
 
-      this.logError('Templum Core command execution failed', error instanceof Error ? error : undefined, {
+      this.logError('Templum Core command execution failed', templumError, {
         command,
         sourceInterface,
-        errorMessage
+        context: templumError.context,
+        errorPayload
       });
       return errorResult;
-    }
+    });
   }
 
   resolveCommand(command: string): { backend: string; commandInfo: RegisteredCommand } | null {
@@ -667,7 +821,7 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
     const baseUpdate = await this.buildStateUpdate(normalizedPayload);
 
     for (const [interfaceType, adapter] of Array.from(this.interfaceAdapters.entries())) {
-      try {
+      await (async () => {
         const interfaceUpdate: StateUpdate = {
           ...baseUpdate,
           timestamp: Date.now()
@@ -686,13 +840,19 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
         }
 
         this.logInfo('State synchronized to interface', { interfaceType });
-      } catch (error) {
-        const errorMessage = isTemplumError(error) ? error.message : (error instanceof Error ? error.message : 'Unknown error');
-        const errorInstance = error instanceof Error ? error : new Error(errorMessage);
-        this.logError(`Failed to sync state to ${interfaceType} interface`, errorInstance, {
+      })().catch((error) => {
+        const syncHandler = this.getScopedErrorHandler('state-sync.interface', {
           interfaceType
         });
-      }
+        const templumError = syncHandler.handle(error, {
+          operation: 'synchronize-interface-states'
+        });
+
+        this.logError(`Failed to sync state to ${interfaceType} interface`, templumError, {
+          interfaceType,
+          context: templumError.context
+        });
+      });
     }
   }
 
@@ -700,14 +860,20 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
     let managerState: any = {};
 
     if (this.dependencies?.stateManager?.getCurrentState) {
-      try {
-        const maybeState = this.dependencies.stateManager.getCurrentState();
-        managerState = await Promise.resolve(maybeState) ?? {};
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        this.logWarn('State manager getCurrentState failed', { error: errorMessage });
-        managerState = {};
-      }
+      const maybeState = this.dependencies.stateManager.getCurrentState();
+      managerState = await Promise.resolve(maybeState).catch((error) => {
+        const stateManagerHandler = this.getScopedErrorHandler('state-update.state-manager', {
+          operation: 'get-current-state'
+        });
+        const templumError = stateManagerHandler.handle(error, {
+          operation: 'get-current-state'
+        });
+        this.logWarn('State manager getCurrentState failed', {
+          error: templumError.message,
+          context: templumError.context
+        });
+        return {};
+      }) ?? {};
     }
 
     const notificationsCandidate =
@@ -914,21 +1080,26 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
 
   async refreshBackendServices(): Promise<void> {
     if (!this.initialized) {
-      throw createTemplumError(
+      throw this.raiseScopedError(
+        'refresh-backend-services.preflight',
+        undefined,
         'Cannot refresh backend services: Templum core not initialized',
         'CORE_NOT_INITIALIZED',
         'runtime'
       );
     }
 
-    try {
+    await (async () => {
       this.logInfo('Refreshing backend services via backend service router');
       
       if (!this.dependencies.backendServiceRouter) {
-        throw createTemplumError(
+        throw this.raiseScopedError(
+          'refresh-backend-services.preflight',
+          undefined,
           'Backend service router not available',
           'BACKEND_ROUTER_UNAVAILABLE',
-          'configuration'
+          'configuration',
+          { operation: 'discover-and-connect' }
         );
       }
       
@@ -943,24 +1114,26 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
         status: this.dependencies?.backendServiceRouter?.getConnectionStatus?.() || { healthy: false, lastCheck: Date.now(), services: {} }
       });
       
-    } catch (error) {
-      const errorMessage = isTemplumError(error) ? error.message : (error instanceof Error ? error.message : 'Unknown error');
-      this.logError('Backend service refresh failed', error instanceof Error ? error : undefined, {
-        errorMessage
+    })().catch((error) => {
+      const scopedHandler = this.getScopedErrorHandler('refresh-backend-services', {
+        operation: 'discover-and-connect'
+      });
+      const templumError = scopedHandler.handle(error, {
+        phase: 'refresh'
+      });
+
+      this.logError('Backend service refresh failed', templumError, {
+        context: templumError.context
       });
       
       // Emit error event
       this.emit('backend-refresh-error', {
         timestamp: Date.now(),
-        error: errorMessage
+        error: templumError.message
       });
       
-      throw createTemplumError(
-        `Backend service refresh failed: ${errorMessage}`,
-        'BACKEND_REFRESH_FAILED',
-        'integration'
-      );
-    }
+      throw templumError;
+    });
   }
 
   /**
@@ -969,14 +1142,18 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
    */
   async registerForCliDiscovery(): Promise<void> {
     if (!this.initialized) {
-      throw createTemplumError(
+      throw this.raiseScopedError(
+        'cli-discovery.preflight',
+        undefined,
         'Cannot register for CLI discovery: Templum core not initialized',
         'CORE_NOT_INITIALIZED',
         'runtime'
       );
     }
 
-    try {
+    let serviceFilePath: string | undefined;
+
+    await (async () => {
       this.logInfo('Registering Templum service for CLI discovery');
       
       // Create service registry entry for CLI discovery
@@ -992,7 +1169,7 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
         require('fs').mkdirSync(servicesDir, { recursive: true });
       }
       
-      const serviceFilePath = path.join(servicesDir, `templum-core-${process.pid}.json`);
+      serviceFilePath = path.join(servicesDir, `templum-core-${process.pid}.json`);
       const now = Date.now();
       const manifestPayload = serializeServiceManifest({
         id: `templum-core-${process.pid}`,
@@ -1025,16 +1202,27 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
       
       // Setup cleanup on process exit
       const cleanupServiceEntry = () => {
-        try {
-          if (require('fs').existsSync(serviceFilePath)) {
+        if (!serviceFilePath || !require('fs').existsSync(serviceFilePath)) {
+          return;
+        }
+
+        const cleanupResult = captureScopedSync(
+          this.getScopedErrorHandler('cli-discovery.cleanup', {
+            serviceFilePath
+          }),
+          () => {
             require('fs').unlinkSync(serviceFilePath);
             this.logInfo('Service registry entry cleaned up', { serviceFilePath });
-          }
-        } catch (error) {
-          const cleanupErrorMessage = error instanceof Error ? error.message : String(error);
+          },
+          { operation: 'cleanup-service-registry-entry' }
+        );
+
+        if (!cleanupResult.ok) {
+          const templumError = cleanupResult.error;
           this.logWarn('Failed to clean up service registry entry', {
             serviceFilePath,
-            error: cleanupErrorMessage
+            context: templumError.context,
+            error: templumError.message
           });
         }
       };
@@ -1043,84 +1231,88 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
       process.on('SIGINT', cleanupServiceEntry);
       process.on('SIGTERM', cleanupServiceEntry);
       
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      this.logError('Failed to register for CLI discovery', error instanceof Error ? error : undefined, {
-        errorMessage
+    })().catch((error) => {
+      const scopedHandler = this.getScopedErrorHandler('cli-discovery.register', {
+        serviceFilePath
+      });
+      const templumError = scopedHandler.handle(error, {
+        operation: 'register-cli-discovery'
       });
       
-      throw createTemplumError(
-        `Service registration for CLI discovery failed: ${errorMessage}`,
-        'CLI_REGISTRATION_FAILED',
-        'configuration'
-      );
-    }
+      this.logError('Failed to register for CLI discovery', templumError, {
+        serviceFilePath,
+        context: templumError.context
+      });
+      
+      throw templumError;
+    });
   }
 
   async switchInterface(targetInterface: InterfaceType): Promise<{ success: boolean; message: string }> {
-    try {
-      if (!this.initialized) {
-        return { 
-          success: false, 
-          message: 'Templum Core not initialized' 
-        };
-      }
-
-      // Enhanced implementation using Universal Interface Manager - TASK-NEW-048
-      if (!this.universalInterfaceManager) {
-        // Fallback to basic implementation if Universal Interface Manager not available
-        return this.basicSwitchInterface(targetInterface);
-      }
-
-      // Get current active interfaces for tracking
-      const currentInterfaces = Array.from(this.activeInterfaces);
-      
-      // Use Universal Interface Manager for coordinated interface switching
-      const result = await this.universalInterfaceManager.executeInterfaceSwitch(targetInterface, {
-        preserveSession: true,
-        migrateState: true,
-        maintainConnections: true,
-        performanceMetrics: true
-      });
-
-      if (result.success) {
-        // Update TemplumCore's active interfaces to match the switch
-        this.activeInterfaces.clear();
-        this.activeInterfaces.add(targetInterface);
-
-        // Emit enhanced interface switch event
-        this.emit('interface-switch', {
-          timestamp: Date.now(),
-          fromInterfaces: currentInterfaces,
-          toInterface: targetInterface,
-          statePreserved: true,
-          switchTime: result.switchTime,
-          orchestrated: true
-        });
-
-        this.logInfo('Interface switched via Universal Interface Manager', {
-          fromInterfaces: currentInterfaces,
-          targetInterface,
-          switchTime: result.switchTime
-        });
-      }
-
-      return result;
-
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      this.logError('Interface switch failed', error instanceof Error ? error : undefined, {
-        targetInterface,
-        errorMessage
-      });
-      
-      return { 
-        success: false, 
-        message: `Interface switch failed: ${errorMessage}` 
+    if (!this.initialized) {
+      return {
+        success: false,
+        message: 'Templum Core not initialized'
       };
     }
-  }
 
+    if (!this.universalInterfaceManager) {
+      return this.basicSwitchInterface(targetInterface);
+    }
+
+    const currentInterfaces = Array.from(this.activeInterfaces);
+    const scopedHandler = this.getScopedErrorHandler('interface-switch', {
+      targetInterface
+    });
+    const switchResult = await scopedHandler.captureAsync(
+      async () => {
+        const result = await this.universalInterfaceManager.executeInterfaceSwitch(targetInterface, {
+          preserveSession: true,
+          migrateState: true,
+          maintainConnections: true,
+          performanceMetrics: true
+        });
+
+        if (result.success) {
+          this.activeInterfaces.clear();
+          this.activeInterfaces.add(targetInterface);
+
+          this.emit('interface-switch', {
+            timestamp: Date.now(),
+            fromInterfaces: currentInterfaces,
+            toInterface: targetInterface,
+            statePreserved: true,
+            switchTime: result.switchTime,
+            orchestrated: true
+          });
+
+          this.logInfo('Interface switched via Universal Interface Manager', {
+            fromInterfaces: currentInterfaces,
+            targetInterface,
+            switchTime: result.switchTime
+          });
+        }
+
+        return result;
+      },
+      { operation: 'execute-interface-switch' }
+    );
+
+    if (switchResult.ok) {
+      return switchResult.value;
+    }
+
+    const templumError = switchResult.error;
+    this.logError('Interface switch failed', templumError, {
+      targetInterface,
+      context: templumError.context
+    });
+
+    return {
+      success: false,
+      message: `Interface switch failed: ${templumError.message}`
+    };
+  }
   /**
    * Basic interface switching fallback implementation
    * Used when Universal Interface Manager is not available
@@ -1140,14 +1332,23 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
     
     // Preserve state from current interfaces if state manager available
     let preservedState = null;
-    if (this.dependencies?.stateManager && currentInterfaces.length > 0) {
-      try {
-        preservedState = await (this.dependencies.stateManager as any).getState?.();
-      } catch (error) {
-        const preserveError = error instanceof Error ? error.message : String(error);
+    const stateManager = this.dependencies?.stateManager;
+    if (stateManager && currentInterfaces.length > 0) {
+      const scopedHandler = this.getScopedErrorHandler('interface-switch.preserve-state', {
+        targetInterface
+      });
+      const preserveResult = await scopedHandler.captureAsync(
+        async () => (stateManager as any).getState?.(),
+        { operation: 'preserve-state' }
+      );
+
+      if (preserveResult.ok) {
+        preservedState = preserveResult.value;
+      } else {
         this.logWarn('Failed to preserve state during interface switch', {
           targetInterface,
-          error: preserveError
+          context: preserveResult.error.context,
+          error: preserveResult.error.message
         });
       }
     }
@@ -1159,17 +1360,24 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
     this.activeInterfaces.add(targetInterface);
 
     // Restore preserved state to new interface if available
-    if (preservedState && this.dependencies?.stateManager) {
-      try {
-        await (this.dependencies.stateManager as any).setState?.(preservedState);
+    if (preservedState && stateManager) {
+      const scopedHandler = this.getScopedErrorHandler('interface-switch.restore-state', {
+        targetInterface
+      });
+      const restoreResult = await scopedHandler.captureAsync(
+        async () => (stateManager as any).setState?.(preservedState),
+        { operation: 'restore-state' }
+      );
+
+      if (restoreResult.ok) {
         this.logInfo('State preserved and restored during interface switch', {
           targetInterface
         });
-      } catch (error) {
-        const restoreError = error instanceof Error ? error.message : String(error);
+      } else {
         this.logWarn('Failed to restore state after interface switch', {
           targetInterface,
-          error: restoreError
+          context: restoreResult.error.context,
+          error: restoreResult.error.message
         });
       }
     }
@@ -1199,65 +1407,80 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
       return;
     }
 
-    try {
-      this.stopIPCCommandMonitoring();
+    const scopedHandler = this.getScopedErrorHandler('shutdown', {
+      phase: 'teardown'
+    });
+    const shutdownResult = await scopedHandler.captureAsync(
+      async () => {
+        this.stopIPCCommandMonitoring();
 
-      // Dispose of all interface adapters
-      for (const [interfaceType, adapter] of Array.from(this.interfaceAdapters.entries())) {
-        try {
-          await adapter.dispose();
-        } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-          this.logError('Failed to dispose interface adapter during shutdown', error instanceof Error ? error : undefined, {
-            interfaceType,
-            errorMessage
+        for (const [interfaceType, adapter] of Array.from(this.interfaceAdapters.entries())) {
+          const adapterHandler = this.getScopedErrorHandler('shutdown.dispose-interface-adapter', {
+            interfaceType
           });
-        }
-      }
+          const disposeResult = await adapterHandler.captureAsync(
+            async () => adapter.dispose(),
+            { operation: 'adapter-disposal' }
+          );
 
-      if (this.sessionManager && 'stopSession' in this.sessionManager) {
-        try {
-          await (this.sessionManager as any).stopSession?.();
-        } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-          this.logWarn('Failed to stop session manager during shutdown', {
-            errorMessage
+          if (!disposeResult.ok) {
+            this.logError('Failed to dispose interface adapter during shutdown', disposeResult.error, {
+              interfaceType,
+              context: disposeResult.error.context
+            });
+          }
+        }
+
+        if (this.sessionManager && 'stopSession' in this.sessionManager) {
+          const sessionHandler = this.getScopedErrorHandler('shutdown.session-manager', {
+            component: 'session-manager'
           });
+          const stopResult = await sessionHandler.captureAsync(
+            async () => (this.sessionManager as any).stopSession?.(),
+            { operation: 'stop-session' }
+          );
+
+          if (!stopResult.ok) {
+            this.logWarn('Failed to stop session manager during shutdown', {
+              context: stopResult.error.context,
+              error: stopResult.error.message
+            });
+          }
         }
-      }
 
-      // Shutdown components via dependency injection
-      if (this.dependencies?.stateManager?.shutdown) {
-        await this.dependencies.stateManager.shutdown();
-      }
+        if (this.dependencies?.stateManager?.shutdown) {
+          await this.dependencies.stateManager.shutdown();
+        }
 
-      if (this.dependencies?.backendRouter?.shutdown) {
-        await this.dependencies.backendRouter.shutdown();
-      }
+        if (this.dependencies?.backendRouter?.shutdown) {
+          await this.dependencies.backendRouter.shutdown();
+        }
 
-      if (this.dependencies?.backendServiceRouter?.cleanup) {
-        await this.dependencies.backendServiceRouter.cleanup();
-      }
+        if (this.dependencies?.backendServiceRouter?.cleanup) {
+          await this.dependencies.backendServiceRouter.cleanup();
+        }
 
-      // Dispose adapter registry
-      await this.adapterRegistry.dispose();
+        await this.adapterRegistry.dispose();
 
-      this.activeInterfaces.clear();
-      this.interfaceAdapters.clear();
-      this.loadedSkins.clear();
-      this.initialized = false;
+        this.activeInterfaces.clear();
+        this.interfaceAdapters.clear();
+        this.loadedSkins.clear();
+        this.initialized = false;
 
-      this.emit('shutdown', { timestamp: Date.now() });
-      this.removeAllListeners();
-      this.cleanupEvents();
+        this.emit('shutdown', { timestamp: Date.now() });
+        this.removeAllListeners();
+        this.cleanupEvents();
 
-      this.logInfo('Templum Core Engine shutdown complete with dependency injection cleanup');
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      this.logError('Templum Core shutdown failed', error instanceof Error ? error : undefined, {
-        errorMessage
+        this.logInfo('Templum Core Engine shutdown complete with dependency injection cleanup');
+      },
+      { operation: 'shutdown' }
+    );
+
+    if (!shutdownResult.ok) {
+      this.logError('Templum Core shutdown failed', shutdownResult.error, {
+        context: shutdownResult.error.context
       });
-      throw error;
+      throw shutdownResult.error;
     }
   }
 
@@ -1265,16 +1488,25 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
     const compatibleInterfaces = skinDef.metadata.compatibleInterfaces;
 
     for (const [interfaceType, adapter] of Array.from(this.interfaceAdapters.entries())) {
-      if (compatibleInterfaces.includes(interfaceType)) {
-        try {
-          await adapter.applySkin(skinDef);
-        } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-          this.logError('Failed to apply skin to interface during initialization', error instanceof Error ? error : undefined, {
-            interfaceType,
-            errorMessage
-          });
-        }
+      if (!compatibleInterfaces.includes(interfaceType)) {
+        continue;
+      }
+
+      const scopedHandler = this.getScopedErrorHandler('skin-application.apply-to-interface', {
+        interfaceType,
+        skinId: skinDef.metadata.id
+      });
+      const applyResult = await scopedHandler.captureAsync(
+        async () => adapter.applySkin(skinDef),
+        { operation: 'apply-skin-to-interface' }
+      );
+
+      if (!applyResult.ok) {
+        this.logError('Failed to apply skin to interface during initialization', applyResult.error, {
+          interfaceType,
+          skinId: skinDef.metadata.id,
+          context: applyResult.error.context
+        });
       }
     }
   }
@@ -1290,31 +1522,47 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
       const interfaceType = adapterKey as InterfaceType;
       this.interfaceAdapters.set(interfaceType, adapter);
 
-      try {
-        if (this.sessionManager?.ensureSessionForInterface) {
-          await this.sessionManager.ensureSessionForInterface(interfaceType);
-        }
+      const registrationHandler = this.getScopedErrorHandler('interface-adapters.session-registration', {
+        interfaceType
+      });
+      const registrationResult = await registrationHandler.captureAsync(
+        async () => {
+          if (this.sessionManager?.ensureSessionForInterface) {
+            await this.sessionManager.ensureSessionForInterface(interfaceType);
+          }
 
-        if (this.sessionManager?.registerInterfaceAdapter) {
-          await this.sessionManager.registerInterfaceAdapter(interfaceType, adapter);
-        }
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          if (this.sessionManager?.registerInterfaceAdapter) {
+            await this.sessionManager.registerInterfaceAdapter(interfaceType, adapter);
+          }
+        },
+        { operation: 'register-interface-adapter' }
+      );
+
+      if (!registrationResult.ok) {
         this.logWarn('Failed to register interface adapter with session manager during bootstrap', {
           interfaceType,
-          errorMessage
+          context: registrationResult.error.context,
+          error: registrationResult.error.message
         });
       }
 
-      try {
-        if (typeof (adapter as any).initialize === 'function') {
-          await (adapter as any).initialize(this);
-        }
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const initializeHandler = this.getScopedErrorHandler('interface-adapters.adapter-initialize', {
+        interfaceType
+      });
+      const initializeResult = await initializeHandler.captureAsync(
+        async () => {
+          if (typeof (adapter as any).initialize === 'function') {
+            await (adapter as any).initialize(this);
+          }
+        },
+        { operation: 'initialize-interface-adapter' }
+      );
+
+      if (!initializeResult.ok) {
         this.logWarn('Failed to initialize interface adapter during bootstrap', {
           interfaceType,
-          errorMessage
+          context: initializeResult.error.context,
+          error: initializeResult.error.message
         });
       }
     }
@@ -1330,19 +1578,27 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
       const fallbackAdapter = new FallbackInterfaceAdapter(interfaceType);
       this.interfaceAdapters.set(interfaceType, fallbackAdapter);
 
-      try {
-        if (this.sessionManager?.ensureSessionForInterface) {
-          await this.sessionManager.ensureSessionForInterface(interfaceType);
-        }
+      const fallbackHandler = this.getScopedErrorHandler('interface-adapters.fallback-registration', {
+        interfaceType
+      });
+      const fallbackRegistration = await fallbackHandler.captureAsync(
+        async () => {
+          if (this.sessionManager?.ensureSessionForInterface) {
+            await this.sessionManager.ensureSessionForInterface(interfaceType);
+          }
 
-        if (this.sessionManager?.registerInterfaceAdapter) {
-          await this.sessionManager.registerInterfaceAdapter(interfaceType, fallbackAdapter);
-        }
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          if (this.sessionManager?.registerInterfaceAdapter) {
+            await this.sessionManager.registerInterfaceAdapter(interfaceType, fallbackAdapter);
+          }
+        },
+        { operation: 'register-fallback-adapter' }
+      );
+
+      if (!fallbackRegistration.ok) {
         this.logWarn('Failed to register fallback adapter during bootstrap', {
           interfaceType,
-          errorMessage
+          context: fallbackRegistration.error.context,
+          error: fallbackRegistration.error.message
         });
       }
 
@@ -1360,13 +1616,22 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
     }
 
     for (const [interfaceType, adapter] of Array.from(this.interfaceAdapters.entries())) {
-      try {
-        this.universalInterfaceManager.registerInterfaceAdapter(interfaceType, adapter);
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const scopedHandler = this.getScopedErrorHandler('universal-interface-manager.register-adapter', {
+        interfaceType
+      });
+      const registrationResult = scopedHandler.capture(
+        () => {
+          this.universalInterfaceManager.registerInterfaceAdapter(interfaceType, adapter);
+          return true;
+        },
+        { operation: 'register-interface-adapter' }
+      );
+
+      if (!registrationResult.ok) {
         this.logWarn('Failed to register adapter with Universal Interface Manager', {
           interfaceType,
-          errorMessage
+          context: registrationResult.error.context,
+          error: registrationResult.error.message
         });
       }
     }
@@ -1408,17 +1673,27 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
 
   private async forwardBackendLifecycleEvent(event: BackendConnectionLifecycleEvent): Promise<void> {
     const stateManager = this.dependencies?.stateManager;
-    try {
-      if (stateManager?.handleBackendLifecycleEvent) {
-        await stateManager.handleBackendLifecycleEvent(event);
-      }
-      await this.broadcastBackendLifecycleState(event);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
+    const scopedHandler = this.getScopedErrorHandler('backend-lifecycle.forward-event', {
+      backendId: event.backendId,
+      state: event.state
+    });
+
+    const forwardResult = await scopedHandler.captureAsync(
+      async () => {
+        if (stateManager?.handleBackendLifecycleEvent) {
+          await stateManager.handleBackendLifecycleEvent(event);
+        }
+        await this.broadcastBackendLifecycleState(event);
+      },
+      { operation: 'forward-backend-lifecycle-event' }
+    );
+
+    if (!forwardResult.ok) {
       this.logWarn('Failed to propagate backend lifecycle event', {
         backendId: event.backendId,
         state: event.state,
-        error: message
+        context: forwardResult.error.context,
+        error: forwardResult.error.message
       });
     }
   }
@@ -1614,7 +1889,13 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
    */
   getBackendRouter(): IBackendServiceRouter {
     if (!this.dependencies?.backendServiceRouter) {
-      throw createTemplumError('Backend service router not initialized', 'SERVICE_NOT_READY', 'configuration');
+      throw this.raiseScopedError(
+        'backend-router.get',
+        undefined,
+        'Backend service router not initialized',
+        'SERVICE_NOT_READY',
+        'configuration'
+      );
     }
     return this.dependencies.backendServiceRouter;
   }
@@ -1624,15 +1905,24 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
     options?: ManualOverrideOptions
   ): Promise<ManualOverrideDescriptor> {
     if (!this.initialized) {
-      throw createTemplumError('Templum Core not initialized', 'SERVICE_NOT_READY', 'configuration');
+      throw this.raiseScopedError(
+        'manual-override.apply.preflight',
+        undefined,
+        'Templum Core not initialized',
+        'SERVICE_NOT_READY',
+        'configuration'
+      );
     }
 
     const backendRouter = this.getBackendRouter();
     if (!backendRouter.applyManualOverride) {
-      throw createTemplumError(
+      throw this.raiseScopedError(
+        'manual-override.apply.unsupported',
+        undefined,
         'Manual override operations are unavailable in the current backend router',
         'MANUAL_OVERRIDE_UNSUPPORTED',
-        'configuration'
+        'configuration',
+        { serviceId }
       );
     }
 
@@ -1643,15 +1933,24 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
 
   async clearManualOverride(serviceId?: string): Promise<ManualOverrideClearResult> {
     if (!this.initialized) {
-      throw createTemplumError('Templum Core not initialized', 'SERVICE_NOT_READY', 'configuration');
+      throw this.raiseScopedError(
+        'manual-override.clear.preflight',
+        undefined,
+        'Templum Core not initialized',
+        'SERVICE_NOT_READY',
+        'configuration'
+      );
     }
 
     const backendRouter = this.getBackendRouter();
     if (!backendRouter.clearManualOverride) {
-      throw createTemplumError(
+      throw this.raiseScopedError(
+        'manual-override.clear.unsupported',
+        undefined,
         'Manual override operations are unavailable in the current backend router',
         'MANUAL_OVERRIDE_UNSUPPORTED',
-        'configuration'
+        'configuration',
+        { serviceId: serviceId ?? '$all' }
       );
     }
 
@@ -1684,7 +1983,13 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
    */
   getUniversalSkinEngine(): ISkinEngine {
     if (!this.dependencies?.skinEngine) {
-      throw createTemplumError('Universal Skin Engine not initialized', 'SERVICE_NOT_READY', 'configuration');
+      throw this.raiseScopedError(
+        'skin-engine.get',
+        undefined,
+        'Universal Skin Engine not initialized',
+        'SERVICE_NOT_READY',
+        'configuration'
+      );
     }
     return this.dependencies.skinEngine;
   }
@@ -1695,14 +2000,26 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
    */
   getUniversalInterfaceManager(): UniversalInterfaceManager {
     if (!this.universalInterfaceManager) {
-      throw createTemplumError('Universal Interface Manager not initialized', 'SERVICE_NOT_READY', 'configuration');
+      throw this.raiseScopedError(
+        'interface-manager.get',
+        undefined,
+        'Universal Interface Manager not initialized',
+        'SERVICE_NOT_READY',
+        'configuration'
+      );
     }
     return this.universalInterfaceManager;
   }
 
   getSessionManager(): TemplumSessionManagerContract {
     if (!this.sessionManager) {
-      throw createTemplumError('Session manager not initialized', 'SERVICE_NOT_READY', 'configuration');
+      throw this.raiseScopedError(
+        'session-manager.get',
+        undefined,
+        'Session manager not initialized',
+        'SERVICE_NOT_READY',
+        'configuration'
+      );
     }
     return this.sessionManager;
   }
@@ -1733,13 +2050,24 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
    */
   async loadBackendSkin(backendId: string): Promise<UniversalSkinDefinition | null> {
     if (!this.initialized) {
-      throw createTemplumError('Templum Core not initialized', 'SERVICE_NOT_READY', 'configuration');
+      throw this.raiseScopedError(
+        'backend-skin.load.preflight',
+        undefined,
+        'Templum Core not initialized',
+        'SERVICE_NOT_READY',
+        'configuration',
+        { backendId }
+      );
     }
 
     const cacheKey = `backend:${backendId}`;
     const startTime = Date.now();
 
-    try {
+    const scopedHandler = this.getScopedErrorHandler('backend-skin.load', {
+      backendId
+    });
+    const loadResult = await scopedHandler.captureAsync(
+      async () => {
       // Check enhanced cache first with TTL validation
       const cachedEntry = this.skinCache.get(cacheKey);
       if (cachedEntry && this.isCacheEntryValid(cachedEntry)) {
@@ -1789,10 +2117,16 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
         const validationResult = this.validateSkinDefinitionComprehensive(rawSkinDefinition);
         if (!validationResult.isValid) {
           this.skinCacheMetrics.validationFailures++;
-          throw createTemplumError(
+          throw this.raiseScopedError(
+            'backend-skin.load.validation',
+            undefined,
             `Skin validation failed for ${backendId}: ${validationResult.errors.join(', ')}`,
             'SKIN_VALIDATION_ERROR',
-            'validation'
+            'validation',
+            {
+              backendId,
+              validationErrors: [...validationResult.errors]
+            }
           );
         }
 
@@ -1822,15 +2156,21 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
         // Store in loaded skins for backward compatibility
         this.loadedSkins.set(rawSkinDefinition.metadata.id, rawSkinDefinition);
 
-        // Immediately surface the newly loaded skin to active interfaces
-        try {
-          await this.applySkinToActiveInterfaces(rawSkinDefinition);
-        } catch (applyError) {
-          const message = applyError instanceof Error ? applyError.message : String(applyError);
+        const broadcastHandler = this.getScopedErrorHandler('backend-skin.apply-to-interface', {
+          backendId,
+          skinId: rawSkinDefinition.metadata.id
+        });
+        const broadcastResult = await broadcastHandler.captureAsync(
+          async () => this.applySkinToActiveInterfaces(rawSkinDefinition),
+          { operation: 'apply-backend-skin' }
+        );
+
+        if (!broadcastResult.ok) {
           this.logWarn('Templum Core: Failed to broadcast backend skin to active interfaces', {
             backendId,
             skinId: rawSkinDefinition.metadata.id,
-            error: message
+            context: broadcastResult.error.context,
+            error: broadcastResult.error.message
           });
         }
 
@@ -1872,27 +2212,31 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
         return null;
       }
       
-    } catch (error) {
-      const loadTime = Date.now() - startTime;
-      this.skinCacheMetrics.totalLoadTime += loadTime;
-      
-      const errorMessage = isTemplumError(error) ? error.message : (error instanceof Error ? error.message : 'Unknown error');
-      this.logError('Failed to load backend skin', error instanceof Error ? error : undefined, {
-        backendId,
-        loadTime,
-        errorMessage
-      });
-      
-      // Emit error event with performance data
-      this.emit('skinLoadError', {
-        backend: backendId,
-        error: errorMessage,
-        loadTime,
-        timestamp: Date.now()
-      });
-      
-      return null;
+    },
+      { operation: 'load-backend-skin' }
+    );
+
+    if (loadResult.ok) {
+      return loadResult.value;
     }
+
+    const loadTime = Date.now() - startTime;
+    this.skinCacheMetrics.totalLoadTime += loadTime;
+
+    this.logError('Failed to load backend skin', loadResult.error, {
+      backendId,
+      loadTime,
+      context: loadResult.error.context
+    });
+
+    this.emit('skinLoadError', {
+      backend: backendId,
+      error: loadResult.error.message,
+      loadTime,
+      timestamp: Date.now()
+    });
+
+    return null;
   }
 
   /**
@@ -1902,69 +2246,69 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
   private validateSkinDefinitionComprehensive(skinDef: any): { isValid: boolean; errors: string[] } {
     const errors: string[] = [];
 
-    try {
-      // Basic structure validation
-      if (!skinDef || typeof skinDef !== 'object') {
-        errors.push('Skin definition must be a valid object');
-        return { isValid: false, errors };
-      }
-
-      // Core identification validation - support both formats with safe property access
-      const hasMetadataId = skinDef.metadata && typeof skinDef.metadata === 'object' && skinDef.metadata.id;
-      const hasDirectId = skinDef.id;
-
-      if (hasMetadataId) {
-        // templum-types format validation
-        this.validateTemplumTypesFormat(skinDef, errors);
-      } else if (hasDirectId) {
-        // universal-skin-engine-types format validation
-        this.validateUniversalSkinEngineFormat(skinDef, errors);
-      } else {
-        errors.push('Skin definition missing required id field');
-      }
-
-      // Version validation with safe property access
-      const version = (skinDef.metadata && skinDef.metadata.version) || skinDef.version;
-      if (!version || typeof version !== 'string') {
-        errors.push('Skin definition missing or invalid version');
-      } else if (!this.isValidSemanticVersion(version)) {
-        errors.push('Skin definition version must follow semantic versioning (e.g., 1.0.0)');
-      }
-
-      // Interface compatibility validation with safe property access
-      const compatibleInterfaces = (skinDef.metadata && skinDef.metadata.compatibleInterfaces) || 
-                                  (skinDef.metadata && skinDef.metadata.supportedInterfaces);
-      if (compatibleInterfaces && Array.isArray(compatibleInterfaces)) {
-        const validInterfaces = ['vscode', 'cli', 'command'];
-        const invalidInterfaces = compatibleInterfaces.filter((iface: string) => !validInterfaces.includes(iface));
-        if (invalidInterfaces.length > 0) {
-          errors.push(`Invalid interface types: ${invalidInterfaces.join(', ')}`);
+    const validationHandler = this.getScopedErrorHandler('backend-skin.validate-definition', {
+      scope: 'comprehensive'
+    });
+    const validationResult = validationHandler.capture(
+      () => {
+        if (!skinDef || typeof skinDef !== 'object') {
+          errors.push('Skin definition must be a valid object');
+          return false;
         }
-      }
 
-      // Theme validation if present (check both possible locations)
-      const theme = skinDef.theme || (skinDef.themes && skinDef.themes[0]);
-      if (theme) {
-        this.validateSkinTheme(theme, errors);
-      }
+        const hasMetadataId = skinDef.metadata && typeof skinDef.metadata === 'object' && skinDef.metadata.id;
+        const hasDirectId = skinDef.id;
 
-      // Menu structure validation if present
-      if (skinDef.menus) {
-        this.validateSkinMenus(skinDef.menus, errors);
-      }
+        if (hasMetadataId) {
+          this.validateTemplumTypesFormat(skinDef, errors);
+        } else if (hasDirectId) {
+          this.validateUniversalSkinEngineFormat(skinDef, errors);
+        } else {
+          errors.push('Skin definition missing required id field');
+        }
 
-      // Command structure validation if present
-      if (skinDef.commands) {
-        this.validateSkinCommands(skinDef.commands, errors);
-      }
+        const version = (skinDef.metadata && skinDef.metadata.version) || skinDef.version;
+        if (!version || typeof version !== 'string') {
+          errors.push('Skin definition missing or invalid version');
+        } else if (!this.isValidSemanticVersion(version)) {
+          errors.push('Skin definition version must follow semantic versioning (e.g., 1.0.0)');
+        }
 
-      // PCL compatibility validation if present
-      if (skinDef.pclCompatibility) {
-        this.validatePCLCompatibility(skinDef.pclCompatibility, errors);
-      }
+        const compatibleInterfaces =
+          (skinDef.metadata && skinDef.metadata.compatibleInterfaces) ||
+          (skinDef.metadata && skinDef.metadata.supportedInterfaces);
+        if (compatibleInterfaces && Array.isArray(compatibleInterfaces)) {
+          const validInterfaces = ['vscode', 'cli', 'command'];
+          const invalidInterfaces = compatibleInterfaces.filter((iface: string) => !validInterfaces.includes(iface));
+          if (invalidInterfaces.length > 0) {
+            errors.push(`Invalid interface types: ${invalidInterfaces.join(', ')}`);
+          }
+        }
 
-    } catch (validationError) {
-      const errorMessage = validationError instanceof Error ? validationError.message : 'Unknown validation error';
+        const theme = skinDef.theme || (skinDef.themes && skinDef.themes[0]);
+        if (theme) {
+          this.validateSkinTheme(theme, errors);
+        }
+
+        if (skinDef.menus) {
+          this.validateSkinMenus(skinDef.menus, errors);
+        }
+
+        if (skinDef.commands) {
+          this.validateSkinCommands(skinDef.commands, errors);
+        }
+
+        if (skinDef.pclCompatibility) {
+          this.validatePCLCompatibility(skinDef.pclCompatibility, errors);
+        }
+
+        return true;
+      },
+      { operation: 'validate-skin-definition' }
+    );
+
+    if (!validationResult.ok) {
+      const errorMessage = validationResult.error.message || 'Unknown validation error';
       errors.push(`Validation process error: ${errorMessage}`);
     }
 
@@ -2231,7 +2575,13 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
    */
   getResourceManager(): IResourceManager {
     if (!this.dependencies?.resourceManager) {
-      throw createTemplumError('Resource Manager not initialized', 'SERVICE_NOT_READY', 'configuration');
+      throw this.raiseScopedError(
+        'resource-manager.get',
+        undefined,
+        'Resource Manager not initialized',
+        'SERVICE_NOT_READY',
+        'configuration'
+      );
     }
     return this.dependencies.resourceManager;
   }
@@ -2241,7 +2591,11 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
    * @private
    */
   private async registerCoreServicesForMonitoring(): Promise<void> {
-    try {
+    const scopedHandler = this.getScopedErrorHandler('resource-monitoring.register-core-services', {
+      operation: 'register-services'
+    });
+    const registrationResult = await scopedHandler.captureAsync(
+      async () => {
       // Register core Templum services
       await this.dependencies.resourceManager.registerService('templum-core', 'core', {
         component: 'TemplumCore',
@@ -2268,9 +2622,14 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
         loadedSkins: this.loadedSkins.size,
         activeInterfaces: this.activeInterfaces.size
       });
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      this.logError('Failed to register core services for monitoring', error instanceof Error ? error : undefined, { errorMessage });
+    },
+      { operation: 'register-services' }
+    );
+
+    if (!registrationResult.ok) {
+      this.logError('Failed to register core services for monitoring', registrationResult.error, {
+        context: registrationResult.error.context
+      });
     }
   }
 
@@ -2303,6 +2662,68 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
     return { value: outcome.value as T, meta: outcome.meta };
   }
 
+  private getScopedErrorHandler(
+    segment: string,
+    metadata?: Record<string, unknown>
+  ): ScopedErrorHandler {
+    return this.errorHandler.child(segment, metadata);
+  }
+
+  private describeError(error: unknown): Record<string, unknown> | string | undefined {
+    if (isTemplumError(error)) {
+      return {
+        code: error.code,
+        category: error.category,
+        message: error.message,
+        context: error.context
+      };
+    }
+
+    if (error instanceof Error) {
+      return {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      };
+    }
+
+    if (error === undefined || error === null) {
+      return undefined;
+    }
+
+    if (typeof error === 'object') {
+      try {
+        return JSON.parse(JSON.stringify(error));
+      } catch {
+        return String(error);
+      }
+    }
+
+    return String(error);
+  }
+
+  private raiseScopedError(
+    segment: string,
+    error: unknown,
+    message: string,
+    code: string,
+    category: TemplumError['category'],
+    metadata?: Record<string, unknown>,
+    handlerMetadata?: ErrorMetadata
+  ): TemplumError {
+    const handler = this.getScopedErrorHandler(segment, metadata);
+    const contextDetails: Record<string, unknown> = metadata ? { ...metadata } : {};
+    const cause = this.describeError(error);
+    if (cause !== undefined) {
+      contextDetails.cause = cause;
+    }
+
+    return handler.handle(
+      createTemplumCoreError(message, code, category, contextDetails),
+      handlerMetadata
+    );
+  }
+
   // ============================================================================
   // Observability Helper Methods
   // ============================================================================
@@ -2314,7 +2735,7 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
     if (this.dependencies?.observabilityService) {
       this.dependencies.observabilityService.logInfo(message, metadata, 'TemplumCore');
     } else {
-      console.log(`[INFO] [TemplumCore] ${message}`, metadata || '');
+      this.logger.info(message, metadata);
     }
   }
 
@@ -2322,7 +2743,7 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
     if (this.dependencies?.observabilityService) {
       this.dependencies.observabilityService.logError(message, error, metadata, 'TemplumCore');
     } else {
-      console.error(`[ERROR] [TemplumCore] ${message}`, error || '', metadata || '');
+      this.logger.error(message, error, metadata);
     }
   }
 
@@ -2330,7 +2751,7 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
     if (this.dependencies?.observabilityService) {
       this.dependencies.observabilityService.logWarn(message, metadata, 'TemplumCore');
     } else {
-      console.warn(`[WARN] [TemplumCore] ${message}`, metadata || '');
+      this.logger.warn(message, metadata);
     }
   }
 
@@ -2390,16 +2811,30 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
     const path = require('path');
 
     const checkForIPCRequests = async (): Promise<void> => {
-      try {
-        const files = fs.readdirSync(tempDir);
-        const requestFiles = files.filter((file: string) =>
-          file.startsWith('templum-cli-') && file.endsWith('-request.json')
-        );
+      const scanHandler = this.getScopedErrorHandler('ipc.directory-scan', {
+        directory: tempDir
+      });
+      const filesResult = scanHandler.capture(
+        () => fs.readdirSync(tempDir),
+        { operation: 'scan-ipc-request-files' }
+      );
 
-        for (const requestFile of requestFiles) {
-          const requestPath = path.join(tempDir, requestFile);
+      if (!filesResult.ok) {
+        return;
+      }
 
-          try {
+      const requestFiles = filesResult.value.filter((file: string) =>
+        file.startsWith('templum-cli-') && file.endsWith('-request.json')
+      );
+
+      for (const requestFile of requestFiles) {
+        const requestPath = path.join(tempDir, requestFile);
+        const requestHandler = this.getScopedErrorHandler('ipc.request-file', {
+          requestFile
+        });
+
+        const requestResult = requestHandler.capture(
+          () => {
             const requestData = fs.readFileSync(requestPath, 'utf8');
             const requestId = this.extractCliRequestId(requestFile);
             const responseFile = path.join(tempDir, `templum-${requestId}-response.json`);
@@ -2410,40 +2845,36 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
             }).parse();
 
             const parsedRequest = this.handleSerializationOutcome('IPC request read', parseOutcome);
+            return { parsedRequest, requestId, responseFile };
+          },
+          { operation: 'process-ipc-request-file' }
+        );
 
-            if (!parsedRequest) {
-              this.logWarn('Skipping malformed IPC request', { requestFile });
-              try {
-                fs.unlinkSync(requestPath);
-              } catch (_cleanupError) {
-                // Ignore cleanup errors
-              }
-              continue;
-            }
-
-            const normalizedRequest = this.normalizeCliRequestPayload(
-              parsedRequest.value,
-              requestId,
-              responseFile
-            );
-
-            void this.processIPCCommandRequest(normalizedRequest, requestPath, parsedRequest.meta);
-          } catch (error) {
-            const ipcError = error instanceof Error ? error.message : String(error);
-            this.logWarn('Failed to process IPC request file', {
-              requestFile,
-              error: ipcError
-            });
-            // Clean up malformed request file
-            try {
-              fs.unlinkSync(requestPath);
-            } catch (_cleanupError) {
-              // Ignore cleanup errors
-            }
-          }
+        if (!requestResult.ok) {
+          this.logWarn('Failed to process IPC request file', {
+            requestFile,
+            context: requestResult.error.context,
+            error: requestResult.error.message
+          });
+          this.cleanupIpcRequestFile(requestPath, { requestFile });
+          continue;
         }
-      } catch (_error) {
-        // Continue monitoring even if directory scan fails
+
+        const { parsedRequest, requestId, responseFile } = requestResult.value;
+
+        if (!parsedRequest) {
+          this.logWarn('Skipping malformed IPC request', { requestFile });
+          this.cleanupIpcRequestFile(requestPath, { requestFile });
+          continue;
+        }
+
+        const normalizedRequest = this.normalizeCliRequestPayload(
+          parsedRequest.value,
+          requestId,
+          responseFile
+        );
+
+        void this.processIPCCommandRequest(normalizedRequest, requestPath, parsedRequest.meta);
       }
     };
 
@@ -2487,6 +2918,26 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
     });
   }
 
+  private cleanupIpcRequestFile(requestPath: string, metadata: Record<string, unknown>): void {
+    const fs = require('fs');
+    const scopedHandler = this.getScopedErrorHandler('ipc.cleanup-request-file', metadata);
+    const cleanupResult = scopedHandler.capture(
+      () => {
+        fs.unlinkSync(requestPath);
+        return true;
+      },
+      { operation: 'cleanup-ipc-request-file' }
+    );
+
+    if (!cleanupResult.ok) {
+      this.logWarn('Failed to cleanup IPC request file', {
+        ...metadata,
+        context: cleanupResult.error.context,
+        error: cleanupResult.error.message
+      });
+    }
+  }
+
   private isInterfaceTypeCandidate(value: unknown): value is InterfaceType {
     return value === 'cli' || value === 'vscode' || value === 'command';
   }
@@ -2505,158 +2956,164 @@ export class TemplumCore extends EventDrivenComponent<TemplumCoreEvents> impleme
   ): Promise<void> {
     const fs = require('fs');
 
-    try {
-      // Validate request structure
-      if (!request.type || !request.data) {
-        throw new Error('Invalid IPC request structure - missing type or data');
-      }
+    const scopedHandler = this.getScopedErrorHandler('ipc.process-request', {
+      requestType: request.type,
+      requestId: request.requestId
+    });
 
-      let result: any;
+    const executionResult = await scopedHandler.captureAsync(
+      async () => {
+        if (!request.type || !request.data) {
+          throw new Error('Invalid IPC request structure - missing type or data');
+        }
 
-      const payload = (request.data ?? {}) as Record<string, unknown>;
+        let result: any;
+        const payload = (request.data ?? {}) as Record<string, unknown>;
 
-      // Handle different IPC message types
-      switch (request.type) {
-        case 'executeCommand': {
-          const command = typeof payload.command === 'string' ? payload.command : undefined;
-          if (!command) {
-            throw new Error('Invalid IPC command payload: command missing');
+        switch (request.type) {
+          case 'executeCommand': {
+            const command = typeof payload.command === 'string' ? payload.command : undefined;
+            if (!command) {
+              throw new Error('Invalid IPC command payload: command missing');
+            }
+
+            const sourceInterface = this.normalizeInterfaceType(payload.sourceInterface);
+            const args = Array.isArray(payload.args) ? payload.args : [];
+            const context = (payload.context && typeof payload.context === 'object') ? payload.context : {};
+
+            this.logInfo('Processing IPC command request from CLI', {
+              command,
+              clientPid: request.clientPid,
+              requestId: request.requestId
+            });
+
+            result = await this.executeCommand(
+              command,
+              sourceInterface,
+              args,
+              context
+            );
+            break;
           }
-
-          const sourceInterface = this.normalizeInterfaceType(payload.sourceInterface);
-          const args = Array.isArray(payload.args) ? payload.args : [];
-          const context = (payload.context && typeof payload.context === 'object') ? payload.context : {};
-
-          this.logInfo('Processing IPC command request from CLI', {
-            command,
-            clientPid: request.clientPid,
-            requestId: request.requestId
-          });
-
-          result = await this.executeCommand(
-            command,
-            sourceInterface,
-            args,
-            context
-          );
-          break;
-        }
-
-        case 'getSystemStatus': {
-          this.logInfo('Processing IPC getSystemStatus request from CLI', {
-            clientPid: request.clientPid,
-            requestId: request.requestId
-          });
-          result = this.getSystemStatus();
-          break;
-        }
-
-        case 'loadBackendSkin': {
-          const backendId = typeof payload.backendId === 'string' ? payload.backendId : undefined;
-          if (!backendId) {
-            throw new Error('Invalid loadBackendSkin payload: backendId missing');
+          case 'getSystemStatus': {
+            this.logInfo('Processing IPC getSystemStatus request from CLI', {
+              clientPid: request.clientPid,
+              requestId: request.requestId
+            });
+            result = this.getSystemStatus();
+            break;
           }
+          case 'loadBackendSkin': {
+            const backendId = typeof payload.backendId === 'string' ? payload.backendId : undefined;
+            if (!backendId) {
+              throw new Error('Invalid loadBackendSkin payload: backendId missing');
+            }
 
-          this.logInfo('Processing IPC loadBackendSkin request from CLI', {
-            backendId,
-            clientPid: request.clientPid,
-            requestId: request.requestId
-          });
-          
-          // Use the real loadBackendSkin method through backend service router
-          if (this.dependencies?.backendServiceRouter) {
-            result = await this.dependencies.backendServiceRouter.loadBackendSkin(backendId);
-          } else {
-            result = null; // No backend service router available
+            this.logInfo('Processing IPC loadBackendSkin request from CLI', {
+              backendId,
+              clientPid: request.clientPid,
+              requestId: request.requestId
+            });
+
+            if (this.dependencies?.backendServiceRouter) {
+              result = await this.dependencies.backendServiceRouter.loadBackendSkin(backendId);
+            } else {
+              result = null;
+            }
+            break;
           }
-          break;
+          default:
+            throw new Error(`Unsupported IPC message type: ${request.type}`);
         }
 
-        default:
-          throw new Error(`Unsupported IPC message type: ${request.type}`);
-      }
+        const response = {
+          success: true,
+          result,
+          requestId: request.requestId,
+          timestamp: Date.now(),
+          serializationMeta: {
+            request: requestMeta
+          }
+        };
 
-      // Write response to the specified response file
-      const response = {
-        success: true,
-        result,
-        requestId: request.requestId,
-        timestamp: Date.now(),
-        serializationMeta: {
-          request: requestMeta
-        }
-      };
-
-      if (request.responseFile) {
-        const responseOutcome = serialization
-          .json(response, {
-            context: `core:ipc:response:${request.requestId}`,
-            maskFields: ['token', 'credentials']
-          })
-          .stringify();
-
-        const serializedResponse = this.handleSerializationOutcome('IPC response write', responseOutcome);
-
-        if (serializedResponse) {
-          fs.writeFileSync(request.responseFile, serializedResponse.value, 'utf8');
-        }
-      }
-
-      this.logInfo('IPC request processed successfully', {
-        requestType: request.type,
-        requestId: request.requestId
-      });
-      
-    } catch (error) {
-      this.logError('IPC command execution failed', error instanceof Error ? error : undefined, {
-        requestType: request.type,
-        requestId: request.requestId
-      });
-      
-      // Write error response
-      const errorResponse = {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-        requestId: request.requestId,
-        timestamp: Date.now(),
-        serializationMeta: {
-          request: requestMeta
-        }
-      };
-
-      try {
         if (request.responseFile) {
-          const errorOutcome = serialization
-            .json(errorResponse, {
-              context: `core:ipc:response:${request.requestId}:error`,
+          const responseOutcome = serialization
+            .json(response, {
+              context: `core:ipc:response:${request.requestId}`,
               maskFields: ['token', 'credentials']
             })
             .stringify();
 
-          const serializedError = this.handleSerializationOutcome('IPC response write (error)', errorOutcome);
+          const serializedResponse = this.handleSerializationOutcome('IPC response write', responseOutcome);
 
-          if (serializedError) {
-            fs.writeFileSync(request.responseFile, serializedError.value, 'utf8');
+          if (serializedResponse) {
+            fs.writeFileSync(request.responseFile, serializedResponse.value, 'utf8');
           }
         }
-      } catch (writeError) {
-        this.logError('Failed to write IPC error response', writeError instanceof Error ? writeError : undefined, {
+
+        this.logInfo('IPC request processed successfully', {
           requestType: request.type,
           requestId: request.requestId
         });
-      }
-    } finally {
-      // Clean up request file
-      try {
-        fs.unlinkSync(requestPath);
-      } catch (cleanupError) {
-        const cleanupErrorMessage = cleanupError instanceof Error ? cleanupError.message : String(cleanupError);
-        this.logWarn('Failed to cleanup IPC request file', {
-          requestType: request.type,
+      },
+      { operation: 'process-ipc-command' }
+    );
+
+    if (!executionResult.ok) {
+      const templumError = executionResult.error;
+      this.logError('IPC command execution failed', templumError, {
+        requestType: request.type,
+        requestId: request.requestId,
+        context: templumError.context
+      });
+
+      if (request.responseFile) {
+        const errorResponse = {
+          success: false,
+          error: templumError.message,
           requestId: request.requestId,
-          error: cleanupErrorMessage
+          timestamp: Date.now(),
+          serializationMeta: {
+            request: requestMeta
+          }
+        };
+
+        const writeHandler = this.getScopedErrorHandler('ipc.write-error-response', {
+          requestType: request.type,
+          requestId: request.requestId
         });
+        const writeResult = writeHandler.capture(
+          () => {
+            const errorOutcome = serialization
+              .json(errorResponse, {
+                context: `core:ipc:response:${request.requestId}:error`,
+                maskFields: ['token', 'credentials']
+              })
+              .stringify();
+
+            const serializedError = this.handleSerializationOutcome('IPC response write (error)', errorOutcome);
+
+            if (serializedError && request.responseFile) {
+              fs.writeFileSync(request.responseFile, serializedError.value, 'utf8');
+            }
+            return true;
+          },
+          { operation: 'write-ipc-error-response' }
+        );
+
+        if (!writeResult.ok) {
+          this.logError('Failed to write IPC error response', writeResult.error, {
+            requestType: request.type,
+            requestId: request.requestId,
+            context: writeResult.error.context
+          });
+        }
       }
     }
+
+    this.cleanupIpcRequestFile(requestPath, {
+      requestType: request.type,
+      requestId: request.requestId
+    });
   }
 }

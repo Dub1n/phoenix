@@ -1,6 +1,6 @@
 ---
 date-created: 2025-09-14T18:10:00Z
-last-updated: 2025-09-14T18:10:00Z
+last-updated: 2025-10-24T21:22:40Z
 name: error-handler
 description: Centralized error handling to standardize 695 catch blocks with consistent error wrapping, recovery strategies, and minimal usage footprint
 status: "[x]"
@@ -53,7 +53,7 @@ try {
 }
 ```
 
-**Solution**: Centralized ErrorHandler utility with one-line error wrapping, automatic timeout management, recovery strategies, and integration with structured logging.
+**Solution**: Centralized ErrorHandler utility with one-line error wrapping, automatic timeout management, recovery strategies, scoped capture helpers that return `{ ok | error }` results, and integration with structured logging.
 
 #### Error Handler Implementation
 
@@ -61,6 +61,8 @@ try {
 
 ```typescript
 import { createLogger } from './logger';
+
+type HandlerResult<T> = { ok: true; value: T } | { ok: false; error: TemplumError };
 
 export class ErrorHandler {
   private static logger = createLogger('error-handler');
@@ -96,6 +98,25 @@ export class ErrorHandler {
         return fallback;
       }
       throw templumError;
+    }
+  }
+
+  static capture<T>(fn: () => T, context: string): HandlerResult<T> {
+    try {
+      return { ok: true, value: fn() };
+    } catch (error) {
+      return { ok: false, error: this.handle(error, context) };
+    }
+  }
+  
+  static async captureAsync<T>(
+    fn: () => Promise<T>,
+    context: string
+  ): Promise<HandlerResult<T>> {
+    try {
+      return { ok: true, value: await fn() };
+    } catch (error) {
+      return { ok: false, error: this.handle(error, context) };
     }
   }
   
@@ -224,7 +245,16 @@ interface RetryOptions {
 }
 
 // Convenience functions for even more minimal usage
-export const { handle, handleAsync, wrap, wrapAsync, withFallback, retry } = ErrorHandler;
+export const {
+  handle,
+  handleAsync,
+  wrap,
+  wrapAsync,
+  withFallback,
+  retry,
+  capture,
+  captureAsync
+} = ErrorHandler;
 ```
 
 #### Usage Examples (Minimal Footprint)
@@ -291,6 +321,18 @@ const result = await retry(
 
 // Ultra-minimal sync error handling
 const result = wrap(() => dangerousOperation(), 'dangerous-op');
+
+// Capture pattern when downstream logic needs the normalized error
+const scoped = ErrorHandler.scope(ErrorHandler.formatContext('core', 'templum-core'));
+const verification = await scoped.captureAsync(
+  () => this.dependencies.sessionManager.verifySession(sessionId),
+  { operation: 'verify-session' }
+);
+if (!verification.ok) {
+  this.logger.warn('Session verification failed', {
+    context: verification.error.context
+  });
+}
 ```
 
 #### Files Using This Pattern
@@ -310,7 +352,7 @@ const result = wrap(() => dangerousOperation(), 'dangerous-op');
 
 **Core Components** (System error handling):
 
-- [ ] `src/core/templum-core.ts` (58 catch blocks → orchestrator error management)
+- [ ] `src/core/templum-core.ts` (58 catch blocks → orchestrator error management → migrate onto scoped `capture` helpers)
 - [ ] `src/skin/universal-skin-engine.ts` (71 catch blocks → skin processing error recovery)
 - [ ] `src/session/templum-universal-session-manager.ts` (45 catch blocks → session state recovery)
 
@@ -368,14 +410,14 @@ await handleAsync(promise, 'context', { timeout: 5000 });
 
 **After Migration**:
 
-- [ ] Verify all catch blocks use standardized patterns
+- [ ] Verify all catch blocks use standardized patterns or scoped capture helpers
 - [ ] Confirm consistent error logging across components  
 - [ ] Test timeout handling and automatic cleanup
-- [ ] Validate retry logic and exponential backoff
+- [ ] Validate retry logic, capture helpers, and exponential backoff
 
 #### Anti-Patterns
 
-- **X** Don't manually wrap errors in try/catch after migration
+- **X** Don't manually wrap errors in try/catch after migration—use scoped `capture` helpers for `{ ok | error }` branching
 - **X** Don't use setTimeout for timeouts - use `handleAsync` with timeout
 - **X** Don't manually log errors - ErrorHandler integrates with logger
 - **X** Don't ignore error context - always provide meaningful context strings

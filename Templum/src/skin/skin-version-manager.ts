@@ -40,8 +40,6 @@ import {
   createDefaultInterfaceRequirements
 } from './versioning/advanced-compatibility-service';
 import { getSkinLogger } from './skin-logger';
-import { createLogger, type Logger } from '../utils/logger';
-
 /**
  * Comprehensive skin version management with semantic versioning support
  */

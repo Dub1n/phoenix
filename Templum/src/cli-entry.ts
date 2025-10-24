@@ -31,6 +31,7 @@ import {
 import { createTimeout, sleep } from './utils/async-utils';
 import type { ManagedTimeout } from './utils/async-utils';
 import { createCliRuntimeOutput } from './utils/cli-runtime-output';
+import { ErrorHandler, type ErrorMetadata, type ScopedErrorHandler } from './utils/error-handler';
 
 const cliFormatter: TerminalFormatter = createFormatter();
 const cliOutput = createCliRuntimeOutput({ context: 'templum-cli-entry' });
@@ -44,6 +45,31 @@ const cliFormat = {
   command: (message: string) => cliFormatter.system.command(message),
   separator: (length: number = getFormatterSeparatorLength()) =>
     cliFormatter.ui.separator(length, 'double'),
+};
+
+const cliEntryErrorScope = ErrorHandler.scope(
+  ErrorHandler.formatContext('session-manager', 'cli-entry')
+);
+const cliEntryCatchScope = cliEntryErrorScope.child('catch');
+
+const resolveCliEntryScope = (
+  ...segments: Array<string | number>
+): ScopedErrorHandler =>
+  segments.reduce<ScopedErrorHandler>(
+    (scope, segment) => scope.child(`${segment}`),
+    cliEntryErrorScope
+  );
+
+const handleCliEntryCatch = (error: unknown, metadata?: ErrorMetadata) =>
+  cliEntryCatchScope.handle(error, metadata);
+
+const handleCliEntryError = (
+  error: unknown,
+  segments: string | Array<string | number>,
+  metadata?: ErrorMetadata
+) => {
+  const normalizedSegments = Array.isArray(segments) ? segments : [segments];
+  return resolveCliEntryScope(...normalizedSegments).handle(error, metadata);
 };
 
 function reportCliSerializationOutcome<T>(
@@ -175,6 +201,11 @@ class TemplumCliDiscovery {
             cliOutput.muted(cliFormat.muted(`🧹 Cleaned up stale service entry: ${serviceEntry.id}`));
           }
         } catch (error) {
+          handleCliEntryError(
+            error,
+            ['discovery', 'service-file'],
+            { serviceFile }
+          );
           cliOutput.warn(cliFormat.warning(`⚠️  Failed to process service file ${serviceFile}:`), error);
         }
       }
@@ -182,6 +213,7 @@ class TemplumCliDiscovery {
       return activeServices.sort((a, b) => b.registrationTime - a.registrationTime);
 
     } catch (error) {
+      handleCliEntryError(error, ['discovery', 'scan']);
       cliOutput.error(cliFormat.error('❌ Service discovery failed:'), error);
       return [];
     }
@@ -251,6 +283,7 @@ class RemoteTemplumAdapter {
       this.contentNavigationManager = new ContentNavigationManager(this.dynamicRouter);
       cliOutput.info(cliFormat.info('[ROUTING] Dynamic command router initialized'));
     } catch (error) {
+      handleCliEntryError(error, ['routing', 'initialize']);
       cliOutput.warn(
         cliFormat.warning('[ROUTING] Failed to initialize dynamic routing, falling back to compatibility mode:'),
         error
@@ -302,6 +335,11 @@ class RemoteTemplumAdapter {
         return result;
         
       } catch (error) {
+        handleCliEntryError(
+          error,
+          ['ipc', 'command-attempt'],
+          { pid, attempt }
+        );
         lastError = error instanceof Error ? error : new Error(String(error));
         circuit.failures++;
         circuit.lastFailure = Date.now();
@@ -331,19 +369,21 @@ class RemoteTemplumAdapter {
    */
   private async attemptIPCCommunication(pid: number, message: any, timeoutMs: number): Promise<any> {
     return new Promise((resolve, reject) => {
+      let requestId: string | null = null;
       try {
         const fs = require('fs');
         const path = require('path');
         const tempDir = require('os').tmpdir();
-        const requestId = `cli-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-        const requestFile = path.join(tempDir, `templum-${requestId}-request.json`);
-        const responseFile = path.join(tempDir, `templum-${requestId}-response.json`);
+        requestId = `cli-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        const requestIdentifier = requestId;
+        const requestFile = path.join(tempDir, `templum-${requestIdentifier}-request.json`);
+        const responseFile = path.join(tempDir, `templum-${requestIdentifier}-response.json`);
         
         // Enhanced request structure with metadata
         const ipcRequest = buildCliIpcRequest({
           type: message.type,
           data: message.data,
-          requestId,
+          requestId: requestIdentifier,
           responseFile,
           clientPid: process.pid,
           timestamp: Date.now(),
@@ -353,19 +393,19 @@ class RemoteTemplumAdapter {
 
         const requestOutcome = serialization
           .json(ipcRequest, {
-            context: `cli:ipc:request:${requestId}`,
+            context: `cli:ipc:request:${requestIdentifier}`,
             pretty: 2,
             maskFields: ['token', 'credentials']
           })
           .stringify();
 
         const serializedRequest = reportCliSerializationOutcome<string>(
-          `IPC request ${requestId}`,
+          `IPC request ${requestIdentifier}`,
           requestOutcome
         );
 
         if (!serializedRequest) {
-          throw new Error(`Failed to serialize IPC request ${requestId}`);
+          throw new Error(`Failed to serialize IPC request ${requestIdentifier}`);
         }
 
         fs.writeFileSync(requestFile, serializedRequest, 'utf8');
@@ -389,7 +429,7 @@ class RemoteTemplumAdapter {
 
         // Enhanced timeout with cleanup
         timeoutGuard = createTimeout(() => {
-          finish('reject', new Error(`IPC timeout after ${timeoutMs}ms for PID ${pid} (request: ${requestId})`));
+          finish('reject', new Error(`IPC timeout after ${timeoutMs}ms for PID ${pid} (request: ${requestIdentifier})`));
         }, timeoutMs, { unref: true });
 
         // Optimized response polling with adaptive intervals
@@ -397,17 +437,18 @@ class RemoteTemplumAdapter {
         let pollCount = 0;
 
         const pollForResponse = async () => {
+          const currentRequestId = requestId ?? requestIdentifier;
           try {
             while (!settled) {
               if (fs.existsSync(responseFile)) {
                 const responseData = fs.readFileSync(responseFile, 'utf8');
                 const responseOutcome = serialization.fromJson<Record<string, unknown>>(responseData, {
-                  context: `cli:ipc:response:${requestId}`,
+                  context: `cli:ipc:response:${currentRequestId}`,
                   fallback: {}
                 }).parse();
 
                 const response = reportCliSerializationOutcome<Record<string, unknown>>(
-                  `IPC response ${requestId}`,
+                  `IPC response ${currentRequestId}`,
                   responseOutcome
                 );
 
@@ -448,6 +489,11 @@ class RemoteTemplumAdapter {
               await sleep(pollInterval);
             }
           } catch (error) {
+            handleCliEntryError(
+              error,
+              ['ipc', 'response-processing'],
+              { requestId: currentRequestId }
+            );
             finish('reject', new Error(`IPC response processing failed: ${error instanceof Error ? error.message : String(error)}`));
           }
         };
@@ -456,6 +502,11 @@ class RemoteTemplumAdapter {
         void pollForResponse();
         
       } catch (error) {
+        handleCliEntryError(
+          error,
+          ['ipc', 'init'],
+          { pid, requestId: requestId ?? 'unknown' }
+        );
         reject(new Error(`Failed to initiate IPC communication: ${error}`));
       }
     });
@@ -483,6 +534,11 @@ class RemoteTemplumAdapter {
     } catch (error) {
       // Only warn if the error is not "file not found"
       if ((error as any).code !== 'ENOENT') {
+        handleCliEntryError(
+          error,
+          ['ipc', 'cleanup', 'request'],
+          { requestFile }
+        );
         cliOutput.warn(`Warning: Failed to cleanup request file ${requestFile}:`, error);
       }
     }
@@ -495,6 +551,11 @@ class RemoteTemplumAdapter {
     } catch (error) {
       // Only warn if the error is not "file not found"
       if ((error as any).code !== 'ENOENT') {
+        handleCliEntryError(
+          error,
+          ['ipc', 'cleanup', 'response'],
+          { responseFile }
+        );
         cliOutput.warn(`Warning: Failed to cleanup response file ${responseFile}:`, error);
       }
     }
@@ -547,6 +608,7 @@ class RemoteTemplumAdapter {
       await cliAdapter.startInteractiveSession('main');
       
     } catch (error) {
+      handleCliEntryError(error, ['cli-interface', 'initialize']);
       cliOutput.error(cliFormat.error('❌ Failed to initialize CLI connection:'), error);
       throw error;
     }
@@ -701,6 +763,11 @@ class RemoteTemplumAdapter {
               };
               
             } catch (ipcError) {
+              handleCliEntryError(
+                ipcError,
+                ['ipc', 'fallback-execution'],
+                { command, interfaceType }
+              );
               cliOutput.warn(
                 cliFormat.warning(`[IPC] Direct IPC failed, using fallback execution: ${ipcError}`)
               );
@@ -729,6 +796,11 @@ class RemoteTemplumAdapter {
           }
           
         } catch (error) {
+          handleCliEntryError(
+            error,
+            ['service-proxy', 'execute-command'],
+            { command, interfaceType }
+          );
           cliOutput.error(
             cliFormat.error(`[${serviceProtocol.toUpperCase()}] Command execution failed:`),
             error
@@ -783,6 +855,10 @@ class RemoteTemplumAdapter {
           return realStatus;
           
         } catch (error) {
+          handleCliEntryError(
+            error,
+            ['service-proxy', 'refresh-system-status']
+          );
           cliOutput.warn(
             cliFormat.warning(`[${serviceProtocol.toUpperCase()}] IPC system status refresh failed: ${error}`)
           );
@@ -835,6 +911,11 @@ class RemoteTemplumAdapter {
                 cliFormat.success(`[ROUTING] Dynamic navigation initialized for ${skinDefinition.name || backendId}`)
               );
             } catch (routingError) {
+              handleCliEntryError(
+                routingError,
+                ['routing', 'initialize-from-skin'],
+                { backendId }
+              );
               cliOutput.warn(
                 cliFormat.warning(`[ROUTING] Failed to initialize dynamic navigation: ${routingError}`)
               );
@@ -844,6 +925,11 @@ class RemoteTemplumAdapter {
           return skinDefinition;
           
         } catch (error) {
+          handleCliEntryError(
+            error,
+            ['service-proxy', 'load-backend-skin'],
+            { backendId }
+          );
           cliOutput.warn(
             cliFormat.warning(`[${serviceProtocol.toUpperCase()}] IPC skin loading failed, using fallback: ${error}`)
           );
@@ -989,6 +1075,7 @@ async function main(): Promise<void> {
     await remoteAdapter.initializeCLI();
 
   } catch (error) {
+    handleCliEntryCatch(error);
     const resolvedError = error instanceof Error ? error : new Error(String(error ?? 'Unknown error'));
     cliOutput.error(cliFormat.error('❌ Templum CLI failed:'), resolvedError);
     process.exit(1);

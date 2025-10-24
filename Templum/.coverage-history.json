@@ -1951,5 +1951,377 @@
         "total": 35376
       }
     }
+  },
+  {
+    "timestamp": "2025-10-17T12:48:00.146Z",
+    "suites": {
+      "unit": {
+        "statements": {
+          "pct": 37.24,
+          "covered": 11830,
+          "total": 31764
+        },
+        "branches": {
+          "pct": 27.21,
+          "covered": 4742,
+          "total": 17423
+        },
+        "functions": {
+          "pct": 37.76,
+          "covered": 2205,
+          "total": 5839
+        },
+        "lines": {
+          "pct": 37.82,
+          "covered": 11658,
+          "total": 30817
+        }
+      },
+      "backend": {
+        "statements": {
+          "pct": 24.93,
+          "covered": 1113,
+          "total": 4464
+        },
+        "branches": {
+          "pct": 14.81,
+          "covered": 362,
+          "total": 2443
+        },
+        "functions": {
+          "pct": 24.09,
+          "covered": 167,
+          "total": 693
+        },
+        "lines": {
+          "pct": 25.27,
+          "covered": 1110,
+          "total": 4391
+        }
+      },
+      "e2e": {
+        "statements": {
+          "pct": 24.29,
+          "covered": 1873,
+          "total": 7710
+        },
+        "branches": {
+          "pct": 14.26,
+          "covered": 713,
+          "total": 4997
+        },
+        "functions": {
+          "pct": 24.17,
+          "covered": 359,
+          "total": 1485
+        },
+        "lines": {
+          "pct": 24.71,
+          "covered": 1845,
+          "total": 7465
+        }
+      }
+    },
+    "aggregate": {
+      "statements": {
+        "pct": 33.72,
+        "covered": 14816,
+        "total": 43938
+      },
+      "branches": {
+        "pct": 23.4,
+        "covered": 5817,
+        "total": 24863
+      },
+      "functions": {
+        "pct": 34.07,
+        "covered": 2731,
+        "total": 8017
+      },
+      "lines": {
+        "pct": 34.24,
+        "covered": 14613,
+        "total": 42673
+      }
+    }
+  },
+  {
+    "timestamp": "2025-10-17T13:00:55.307Z",
+    "suites": {
+      "unit": {
+        "statements": {
+          "pct": 37.25,
+          "covered": 11834,
+          "total": 31769
+        },
+        "branches": {
+          "pct": 27.21,
+          "covered": 4742,
+          "total": 17423
+        },
+        "functions": {
+          "pct": 37.76,
+          "covered": 2205,
+          "total": 5839
+        },
+        "lines": {
+          "pct": 37.83,
+          "covered": 11662,
+          "total": 30822
+        }
+      },
+      "backend": {
+        "statements": {
+          "pct": 24.93,
+          "covered": 1113,
+          "total": 4464
+        },
+        "branches": {
+          "pct": 14.81,
+          "covered": 362,
+          "total": 2443
+        },
+        "functions": {
+          "pct": 24.09,
+          "covered": 167,
+          "total": 693
+        },
+        "lines": {
+          "pct": 25.27,
+          "covered": 1110,
+          "total": 4391
+        }
+      },
+      "e2e": {
+        "statements": {
+          "pct": 24.31,
+          "covered": 1876,
+          "total": 7715
+        },
+        "branches": {
+          "pct": 14.26,
+          "covered": 713,
+          "total": 4997
+        },
+        "functions": {
+          "pct": 24.17,
+          "covered": 359,
+          "total": 1485
+        },
+        "lines": {
+          "pct": 24.73,
+          "covered": 1848,
+          "total": 7470
+        }
+      }
+    },
+    "aggregate": {
+      "statements": {
+        "pct": 33.73,
+        "covered": 14823,
+        "total": 43948
+      },
+      "branches": {
+        "pct": 23.4,
+        "covered": 5817,
+        "total": 24863
+      },
+      "functions": {
+        "pct": 34.07,
+        "covered": 2731,
+        "total": 8017
+      },
+      "lines": {
+        "pct": 34.25,
+        "covered": 14620,
+        "total": 42683
+      }
+    }
+  },
+  {
+    "timestamp": "2025-10-17T13:05:59.365Z",
+    "suites": {
+      "unit": {
+        "statements": {
+          "pct": 37.25,
+          "covered": 11834,
+          "total": 31769
+        },
+        "branches": {
+          "pct": 27.22,
+          "covered": 4743,
+          "total": 17423
+        },
+        "functions": {
+          "pct": 37.76,
+          "covered": 2205,
+          "total": 5839
+        },
+        "lines": {
+          "pct": 37.83,
+          "covered": 11662,
+          "total": 30822
+        }
+      },
+      "backend": {
+        "statements": {
+          "pct": 24.93,
+          "covered": 1113,
+          "total": 4464
+        },
+        "branches": {
+          "pct": 14.81,
+          "covered": 362,
+          "total": 2443
+        },
+        "functions": {
+          "pct": 24.09,
+          "covered": 167,
+          "total": 693
+        },
+        "lines": {
+          "pct": 25.27,
+          "covered": 1110,
+          "total": 4391
+        }
+      },
+      "e2e": {
+        "statements": {
+          "pct": 21.38,
+          "covered": 1101,
+          "total": 5148
+        },
+        "branches": {
+          "pct": 12.17,
+          "covered": 396,
+          "total": 3253
+        },
+        "functions": {
+          "pct": 20.86,
+          "covered": 197,
+          "total": 944
+        },
+        "lines": {
+          "pct": 21.74,
+          "covered": 1079,
+          "total": 4963
+        }
+      }
+    },
+    "aggregate": {
+      "statements": {
+        "pct": 33.95,
+        "covered": 14048,
+        "total": 41381
+      },
+      "branches": {
+        "pct": 23.79,
+        "covered": 5501,
+        "total": 23119
+      },
+      "functions": {
+        "pct": 34.36,
+        "covered": 2569,
+        "total": 7476
+      },
+      "lines": {
+        "pct": 34.48,
+        "covered": 13851,
+        "total": 40176
+      }
+    }
+  },
+  {
+    "timestamp": "2025-10-18T09:17:14.516Z",
+    "suites": {
+      "unit": {
+        "statements": {
+          "pct": 37.76,
+          "covered": 11999,
+          "total": 31769
+        },
+        "branches": {
+          "pct": 27.76,
+          "covered": 4838,
+          "total": 17423
+        },
+        "functions": {
+          "pct": 38.25,
+          "covered": 2234,
+          "total": 5839
+        },
+        "lines": {
+          "pct": 38.35,
+          "covered": 11821,
+          "total": 30822
+        }
+      },
+      "backend": {
+        "statements": {
+          "pct": 24.93,
+          "covered": 1113,
+          "total": 4464
+        },
+        "branches": {
+          "pct": 14.81,
+          "covered": 362,
+          "total": 2443
+        },
+        "functions": {
+          "pct": 24.09,
+          "covered": 167,
+          "total": 693
+        },
+        "lines": {
+          "pct": 25.27,
+          "covered": 1110,
+          "total": 4391
+        }
+      },
+      "e2e": {
+        "statements": {
+          "pct": 83.2,
+          "covered": 109,
+          "total": 131
+        },
+        "branches": {
+          "pct": 58.82,
+          "covered": 20,
+          "total": 34
+        },
+        "functions": {
+          "pct": 92.3,
+          "covered": 24,
+          "total": 26
+        },
+        "lines": {
+          "pct": 83.07,
+          "covered": 108,
+          "total": 130
+        }
+      }
+    },
+    "aggregate": {
+      "statements": {
+        "pct": 36.36,
+        "covered": 13221,
+        "total": 36364
+      },
+      "branches": {
+        "pct": 26.23,
+        "covered": 5220,
+        "total": 19900
+      },
+      "functions": {
+        "pct": 36.98,
+        "covered": 2425,
+        "total": 6558
+      },
+      "lines": {
+        "pct": 36.89,
+        "covered": 13039,
+        "total": 35343
+      }
+    }
   }
 ]

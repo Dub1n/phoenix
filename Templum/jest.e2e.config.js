@@ -10,6 +10,12 @@ module.exports = {
   detectOpenHandles: true,
   forceExit: true,
   collectCoverage: true,
+  collectCoverageFrom: ['<rootDir>/src/testing/**/*.{ts,tsx}'],
+  coveragePathIgnorePatterns: [
+    '/node_modules/',
+    '/dist/',
+    '\\.d\\.ts$'
+  ],
   coverageDirectory: '<rootDir>/coverage/e2e',
   coverageReporters: ['text', 'lcov', 'json-summary'],
   coverageThreshold: {

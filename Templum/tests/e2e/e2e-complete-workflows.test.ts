@@ -62,6 +62,11 @@ import type {
   TemplumSessionState
 } from '../../src/session/universal-session-manager.types';
 import { sleep } from '../../src/utils/async-utils';
+import { SkinVersionManager } from '../../src/skin/skin-version-manager';
+import type {
+  MigrationStrategy,
+  UniversalSkinDefinition
+} from '../../src/types/universal-skin-engine-types';
 
 // Mock Orchestrator for E2E Testing
 class MockE2EOrchestrator extends EventDrivenComponent<GenericEventMap> implements ITemplumOrchestrator {
@@ -1178,5 +1183,212 @@ describe('E2E Integration with Existing Test Infrastructure', () => {
     expect(async () => {
       await mockOrchestrator.registerInterface('vscode', {} as any);
     }).rejects.toThrow('Orchestrator not initialized');
+  });
+});
+
+const createVersionedSkin = (
+  version: string,
+  overrides: Partial<UniversalSkinDefinition> = {}
+): UniversalSkinDefinition => {
+  const baseMetadata = {
+    id: 'cli-integration-skin',
+    name: 'CLI Integration Skin',
+    version,
+    backend: 'haruspex' as const,
+    backendService: 'mock-backend',
+    compatibleInterfaces: ['cli'] as InterfaceType[],
+    supportedInterfaces: ['cli'] as InterfaceType[],
+    description: 'Skin used for integration validation',
+    minimumVersion: '1.0.0',
+    tags: ['theme:default'],
+    features: {
+      cli: { menus: true, commands: true },
+      vscode: {},
+      command: {}
+    }
+  };
+
+  const baseSkin = {
+    id: 'cli-integration-skin',
+    name: 'CLI Integration Skin',
+    version,
+    metadata: baseMetadata,
+    menus: {
+      main: {
+        id: 'main-menu',
+        title: 'Root Operations',
+        items: [
+          { id: 'launch', label: 'Launch Workspace', type: 'command', command: 'workspace.launch' },
+          { id: 'inspect', label: 'Inspect Assets', type: 'submenu', submenu: 'inspect-menu' }
+        ]
+      },
+      submenus: {
+        'inspect-menu': {
+          id: 'inspect-menu',
+          title: 'Inspect Assets',
+          items: [
+            { id: 'open', label: 'Open Asset', type: 'command', command: 'assets.open' }
+          ]
+        }
+      }
+    },
+    commands: {
+      primary: [
+        {
+          id: 'workspace.launch',
+          title: 'Launch Workspace',
+          description: 'Launches the active workspace',
+          parameters: [{ name: 'force', type: 'boolean', required: false }]
+        }
+      ]
+    },
+    rendering: {
+      engine: 'css',
+      output: 'js',
+      mode: 'standard',
+      caching: true,
+      optimizations: {
+        treeshaking: true,
+        minification: true,
+        caching: true,
+        lazyLoading: false
+      }
+    },
+    theme: {
+      primary: '#4caf50',
+      secondary: '#2196f3',
+      accent: '#9c27b0',
+      success: '#4caf50',
+      warning: '#ff9800',
+      error: '#f44336',
+      background: '#101010',
+      foreground: '#fafafa'
+    }
+  };
+
+  const mergedSkin = {
+    ...baseSkin,
+    ...overrides,
+    version,
+    metadata: {
+      ...baseMetadata,
+      ...(overrides.metadata ?? {}),
+      version
+    }
+  };
+
+  return mergedSkin as UniversalSkinDefinition;
+};
+
+describe('Skin version manager integration', () => {
+  test('resolves fallback versions and applies guided migrations', async () => {
+    const manager = new SkinVersionManager('1.5.0');
+    const stableSkin = createVersionedSkin('1.4.0');
+    const prereleaseSkin = createVersionedSkin('1.6.0-beta.1', {
+      metadata: {
+        tags: ['theme:beta'],
+        minimumVersion: '1.4.0'
+      } as any
+    });
+
+    const availableSkins = new Map<string, UniversalSkinDefinition>([
+      [`${stableSkin.id}@${stableSkin.version}`, stableSkin],
+      [`${prereleaseSkin.id}@${prereleaseSkin.version}`, prereleaseSkin]
+    ]);
+
+    manager.registerSkinVersion(stableSkin.id, manager.parseVersion(stableSkin.version));
+    manager.registerSkinVersion(prereleaseSkin.id, manager.parseVersion(prereleaseSkin.version));
+
+    const resolution = await manager.resolveVersion(
+      {
+        skinId: stableSkin.id,
+        exactVersion: '2.0.0',
+        fallbackStrategy: 'latest-stable',
+        includePrerelease: false
+      },
+      availableSkins
+    );
+
+    expect(resolution.resolved).toBe(true);
+    expect(resolution.fallbackUsed).toBe(true);
+    expect(resolution.version).toBe(stableSkin.version);
+
+    const compatibility = await manager.validateCompatibility(prereleaseSkin, '1.5.0');
+    expect(compatibility.recommendations.length).toBeGreaterThan(0);
+
+    const patchConflicts = manager.detectConflicts(stableSkin, createVersionedSkin('1.4.1'));
+    expect(patchConflicts.some(conflict => conflict.conflictType === 'patch')).toBe(true);
+
+    const patchResolution = await manager.resolveConflicts(patchConflicts, 'merge-compatible');
+    expect(patchResolution.overallSuccess).toBe(true);
+
+    const majorConflicts = manager.detectConflicts(stableSkin, createVersionedSkin('2.0.0'));
+    expect(majorConflicts.some(conflict => conflict.conflictType === 'major')).toBe(true);
+
+    const majorResolution = await manager.resolveConflicts(majorConflicts, 'last-writer-wins');
+    expect(majorResolution.overallSuccess).toBe(false);
+
+    const migrationStrategy: MigrationStrategy = {
+      id: 'cli-upgrade',
+      fromVersion: '1.x',
+      toVersion: '2.x',
+      strategy: 'guided',
+      description: 'Upgrade CLI skin to 2.x',
+      riskLevel: 'medium',
+      migrationSteps: [
+        {
+          id: 'bump-version',
+          description: 'Update skin version and append migration tag',
+          type: 'transform',
+          required: true,
+          transformer: async (skin) => ({
+            ...skin,
+            version: '2.0.0',
+            metadata: {
+              ...skin.metadata,
+              tags: [...(skin.metadata?.tags ?? []), 'migrated']
+            }
+          }),
+          validator: async (skin) => ({
+            valid: skin.version === '2.0.0',
+            errors: skin.version === '2.0.0' ? [] : ['Version did not update']
+          })
+        }
+      ]
+    };
+
+    const migration = await manager.applyMigration(stableSkin, migrationStrategy);
+    expect(migration.migrated).toBe(true);
+    expect(migration.result?.version).toBe('2.0.0');
+  });
+
+  test('evaluates advanced compatibility for CLI skins', async () => {
+    const manager = new SkinVersionManager('1.6.0');
+    const cliSkin = createVersionedSkin('1.6.0', {
+      menus: {
+        main: {
+          id: 'main-menu',
+          title: 'Root Operations',
+          items: [
+            { id: 'launch', label: 'Launch Workspace', type: 'command', command: 'workspace.launch' }
+          ]
+        }
+      }
+    });
+
+    const compatibility = await manager.validateCompatibility(cliSkin, '1.6.0');
+    expect(compatibility.compatible).toBe(true);
+
+    const advancedReport = await manager.validateAdvancedCompatibility(cliSkin, 'cli', {
+      includeWarnings: true,
+      validateAssets: false,
+      checkPerformance: true,
+      crossInterfaceValidation: false,
+      strictMode: false
+    });
+
+    expect(advancedReport.overall === 'compatible' || advancedReport.overall === 'partially-compatible').toBe(true);
+    expect(advancedReport.structuralCompatibility.requiredComponents.length).toBeGreaterThan(0);
+    expect(advancedReport.recommendations.length).toBeGreaterThan(0);
   });
 });
