@@ -29,6 +29,7 @@ import { WidthCalculator, WidthCalculationResult, createWidthCalculator } from '
 import { TerminalColorTheme, DefaultColorThemes } from '../terminal-ui-components';
 import { EventDrivenComponent } from '../../utils/event-bus-adapter';
 import { TypedEventMap } from '../../utils/event-utils';
+import { createLogger, normalizeLoggerError } from '../../utils/logger';
 
 // TODO: [TASK-ID-005] Pattern: window-management | Complexity: 4 | Dependencies: session-context
 // Context: Window state persistence and restoration for session continuity
@@ -121,6 +122,7 @@ export class WindowStack extends EventDrivenComponent<WindowStackEvents> {
   private borderRenderer: BorderRenderer;
   private widthCalculator: WidthCalculator;
   private persistedState: any = null;
+  private readonly logger = createLogger('window-stack');
 
   constructor(config: Partial<WindowStackConfig> = {}) {
     super(`window-stack:${WindowStack.instanceCounter++}`, 40);
@@ -595,7 +597,8 @@ export class WindowStack extends EventDrivenComponent<WindowStackEvents> {
       
       return true;
     } catch (error) {
-      console.error('Failed to restore window stack state:', error);
+      const { error: normalizedError, data } = normalizeLoggerError(error);
+      this.logger.error('Failed to restore window stack state', normalizedError, data);
       return false;
     }
   }

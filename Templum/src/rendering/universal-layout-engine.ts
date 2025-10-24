@@ -11,7 +11,7 @@
  */
 
 import { createFormatter, TerminalFormatter } from '../utils/terminal-formatter';
-import { createLogger, LogLevel } from '../utils/logger';
+import { createLogger, LogLevel, normalizeLoggerError } from '../utils/logger';
 import { DisplayUtils } from '../utils/display-utils';
 import { InterfaceType } from '../types/templum-types';
 import { StringUtils, StringWidthUtils } from '../utils/chainable-string-utils';
@@ -853,7 +853,11 @@ export class UniversalLayoutEngine {
       return `${renderedOutput}\n\n${promptBox}`;
       
     } catch (error) {
-      console.warn('Enhanced CLI rendering failed, falling back to original:', error);
+      const normalized = normalizeLoggerError(error);
+      this.logger.warn('Enhanced CLI rendering failed, using original renderer', {
+        error: normalized.error,
+        details: normalized.data
+      });
       // Fallback to original rendering
       return this.renderMenuWithLayout(skinDefinition, layout);
     }
@@ -1740,7 +1744,10 @@ export class UniversalLayoutEngine {
     
     // Warn if performance exceeds baseline
     if (renderTime > 100) {
-      console.warn(`Interface rendering time exceeded 100ms baseline: ${renderTime}ms for ${interfaceType}`);
+      this.logger.warn('Interface rendering time exceeded baseline', {
+        interfaceType,
+        renderTime
+      });
     }
   }
 

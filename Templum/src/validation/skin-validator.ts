@@ -9,6 +9,7 @@
 import Ajv, { ErrorObject, ValidateFunction } from 'ajv';
 import { UniversalSkinDefinition, isTemplumError } from '../types/templum-types';
 import universalSkinSchema from '../../schemas/universal-skin-engine-validation.json';
+import { createLogger } from '../utils/logger';
 
 export interface ValidationResult {
   valid: boolean;
@@ -41,6 +42,7 @@ export interface SkinValidationOptions {
 
 const DEFAULT_SCHEMA: SkinValidationSchema = universalSkinSchema as SkinValidationSchema;
 const validatorCache = new Map<string, ValidateFunction>();
+const logger = createLogger('skin-validator');
 
 function cloneSchema<T extends Record<string, unknown>>(schema: T): T {
   return JSON.parse(JSON.stringify(schema));
@@ -293,7 +295,7 @@ export function validateSkinDefinition(
   const uniqueWarnings = warnings.length > 0 ? Array.from(new Set(warnings)) : undefined;
 
   if (errorMessages.length > 0 && process.env.TEMPLUM_SCHEMA_DEBUG === '1') {
-    console.error('[skin-validator] validation failed', {
+    logger.error('[skin-validator] validation failed', undefined, {
       errors: errorMessages,
       warnings: uniqueWarnings,
       schemaVersion

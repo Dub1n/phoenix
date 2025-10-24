@@ -16,6 +16,7 @@ import {
 import { createInterval, type ManagedInterval } from '../utils/async-utils';
 import { type TypedEventMap } from '../utils/event-utils';
 import { EventDrivenComponent } from '../utils/event-bus-adapter';
+import { createLogger, normalizeLoggerError } from '../utils/logger';
 
 // ============================================================================
 // Resource Management Interfaces
@@ -162,6 +163,7 @@ export class TemplumResourceManager extends EventDrivenComponent<TemplumResource
   private monitoringInterval: ManagedInterval | null = null;
   private usageHistory: ResourceUsage[] = [];
   private maxHistorySize: number = 100;
+  private readonly logger = createLogger('templum-resource-manager');
 
   constructor(policy?: Partial<ResourcePolicy>) {
     super('templum-resource-manager', 100);
@@ -194,12 +196,12 @@ export class TemplumResourceManager extends EventDrivenComponent<TemplumResource
 
   async initialize(): Promise<void> {
     if (this.initialized) {
-      console.warn('TemplumResourceManager: Already initialized');
+      this.logger.warn('Resource manager already initialized');
       return;
     }
 
     try {
-      console.log('TemplumResourceManager: Initializing native resource management system');
+      this.logger.info('Initializing native resource management system');
       
       // Initialize core services monitoring
       await this.initializeServiceDiscovery();
@@ -218,20 +220,49 @@ export class TemplumResourceManager extends EventDrivenComponent<TemplumResource
         policy: this.policy 
       });
       
-      console.log('TemplumResourceManager: Native resource management initialized');
+      this.logger.info('Native resource management initialized', {
+        enableAutoCleanup: this.policy.enableAutoCleanup,
+        resourcePriorities: this.policy.resourcePriorities
+      });
     } catch (error) {
-      const errorPayload: ErrorSignalPayload = {
-        timestamp: Date.now(),
+      const timestamp = Date.now();
+      const templumError = isTemplumError(error)
+        ? error
+        : createTemplumError(
+            error instanceof Error ? error.message : 'Unknown initialization error',
+            'RESOURCE_MANAGER_INIT_ERROR',
+            'configuration'
+          );
+
+      const metadata: Record<string, unknown> = {
+        severity: 'critical',
         source: 'TemplumResourceManager',
-        error: isTemplumError(error) ? error : createTemplumError(
-          error instanceof Error ? error.message : 'Unknown initialization error',
-          'RESOURCE_MANAGER_INIT_ERROR',
-          'configuration'
-        ),
+        timestamp
+      };
+
+      const { error: originalError, data } = normalizeLoggerError(error);
+
+      if (originalError && originalError !== templumError) {
+        metadata.originalError = {
+          name: originalError.name,
+          message: originalError.message,
+          stack: originalError.stack
+        };
+      }
+
+      if (data !== undefined) {
+        metadata.originalData = data;
+      }
+
+      this.logger.error('Initialization failed', templumError, metadata);
+
+      const errorPayload: ErrorSignalPayload = {
+        timestamp,
+        source: 'TemplumResourceManager',
+        error: templumError,
         severity: 'critical'
       };
-      
-      console.error('TemplumResourceManager: Initialization failed:', errorPayload.error);
+
       throw errorPayload.error;
     }
   }
@@ -241,7 +272,7 @@ export class TemplumResourceManager extends EventDrivenComponent<TemplumResource
       return;
     }
 
-    console.log('TemplumResourceManager: Starting graceful shutdown');
+    this.logger.info('Starting graceful shutdown');
 
     try {
       // Stop monitoring and cleanup intervals
@@ -267,11 +298,35 @@ export class TemplumResourceManager extends EventDrivenComponent<TemplumResource
       this.removeAllListeners();
       this.cleanupEvents();
 
-      console.log('TemplumResourceManager: Shutdown complete');
+      this.logger.info('Shutdown complete');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error('TemplumResourceManager: Shutdown failed:', errorMessage);
-      throw createTemplumError(`Resource manager shutdown failed: ${errorMessage}`, 'SHUTDOWN_ERROR', 'runtime');
+      const templumError = createTemplumError(
+        `Resource manager shutdown failed: ${errorMessage}`,
+        'SHUTDOWN_ERROR',
+        'runtime'
+      );
+
+      const metadata: Record<string, unknown> = {
+        originalMessage: errorMessage
+      };
+
+      const { error: originalError, data } = normalizeLoggerError(error);
+
+      if (originalError && originalError !== templumError) {
+        metadata.originalError = {
+          name: originalError.name,
+          message: originalError.message,
+          stack: originalError.stack
+        };
+      }
+
+      if (data !== undefined) {
+        metadata.originalData = data;
+      }
+
+      this.logger.error('Shutdown failed', templumError, metadata);
+      throw templumError;
     }
   }
 
@@ -300,7 +355,7 @@ export class TemplumResourceManager extends EventDrivenComponent<TemplumResource
       metadata: request.metadata || {},
       priority,
       cleanup: request.cleanup || (async () => {
-        console.log(`Default cleanup for resource ${resourceId}`);
+        this.logger.debug('Executing default resource cleanup', { resourceId });
       })
     };
 
@@ -314,14 +369,19 @@ export class TemplumResourceManager extends EventDrivenComponent<TemplumResource
       timestamp: Date.now()
     });
 
-    console.log(`TemplumResourceManager: Allocated ${request.type} resource ${resourceId} for ${request.owner}`);
+    this.logger.info('Resource allocated', {
+      type: request.type,
+      resourceId,
+      owner: request.owner,
+      size: request.size
+    });
     return resourceId;
   }
 
   async deallocateResource(resourceId: string): Promise<void> {
     const resource = this.resources.get(resourceId);
     if (!resource) {
-      console.warn(`TemplumResourceManager: Resource ${resourceId} not found for deallocation`);
+      this.logger.warn('Resource not found for deallocation', { resourceId });
       return;
     }
 
@@ -340,11 +400,40 @@ export class TemplumResourceManager extends EventDrivenComponent<TemplumResource
         timestamp: Date.now()
       });
       
-      console.log(`TemplumResourceManager: Deallocated resource ${resourceId}`);
+      this.logger.info('Resource deallocated', {
+        resourceId,
+        type: resource.type,
+        owner: resource.owner
+      });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error(`TemplumResourceManager: Failed to deallocate resource ${resourceId}:`, errorMessage);
-      throw createTemplumError(`Resource deallocation failed: ${errorMessage}`, 'RESOURCE_CLEANUP_ERROR', 'runtime');
+      const templumError = createTemplumError(
+        `Resource deallocation failed: ${errorMessage}`,
+        'RESOURCE_CLEANUP_ERROR',
+        'runtime'
+      );
+
+      const metadata: Record<string, unknown> = {
+        resourceId,
+        originalMessage: errorMessage
+      };
+
+      const { error: originalError, data } = normalizeLoggerError(error);
+
+      if (originalError && originalError !== templumError) {
+        metadata.originalError = {
+          name: originalError.name,
+          message: originalError.message,
+          stack: originalError.stack
+        };
+      }
+
+      if (data !== undefined) {
+        metadata.originalData = data;
+      }
+
+      this.logger.error('Failed to deallocate resource', templumError, metadata);
+      throw templumError;
     }
   }
 
@@ -434,13 +523,13 @@ export class TemplumResourceManager extends EventDrivenComponent<TemplumResource
       timestamp: Date.now()
     });
     
-    console.log(`TemplumResourceManager: Registered service ${serviceId} (${type})`);
+    this.logger.info('Service registered', { serviceId, type });
   }
 
   async updateServiceHealth(serviceId: string, status: ServiceHealth['status'], responseTime?: number, errorRate?: number): Promise<void> {
     const service = this.services.get(serviceId);
     if (!service) {
-      console.warn(`TemplumResourceManager: Service ${serviceId} not registered for health update`);
+      this.logger.warn('Service not registered for health update', { serviceId });
       return;
     }
 
@@ -476,7 +565,12 @@ export class TemplumResourceManager extends EventDrivenComponent<TemplumResource
       }
     }
 
-    console.log(`TemplumResourceManager: Updated ${serviceId} health: ${status}`);
+    this.logger.info('Service health updated', {
+      serviceId,
+      status,
+      responseTime: service.responseTime,
+      errorRate: service.errorRate
+    });
   }
 
   getServiceHealth(): ServiceHealth[] {
@@ -566,19 +660,36 @@ export class TemplumResourceManager extends EventDrivenComponent<TemplumResource
         await this.deallocateResource(resource.id);
         cleanedCount++;
       } catch (error) {
-        console.error(`Failed to cleanup resource ${resource.id}:`, error);
+        const { error: normalizedError, data } = normalizeLoggerError(error);
+        const metadata: Record<string, unknown> = {
+          resourceId: resource.id,
+          cleanupType: type ?? 'all'
+        };
+
+        if (data !== undefined) {
+          metadata.originalData = data;
+        }
+
+        this.logger.error(
+          'Failed to clean up resource during low-priority sweep',
+          normalizedError ?? undefined,
+          metadata
+        );
       }
     }
 
     if (cleanedCount > 0) {
-      console.log(`TemplumResourceManager: Cleaned up ${cleanedCount} ${type || 'all'} resources`);
+      this.logger.info('Low-priority resource cleanup completed', {
+        cleanedCount,
+        resourceType: type ?? 'all'
+      });
     }
 
     return cleanedCount;
   }
 
   private async cleanupAllResources(): Promise<void> {
-    console.log('TemplumResourceManager: Cleaning up all resources');
+    this.logger.info('Cleaning up all resources');
     
     const resourceIds = Array.from(this.resources.keys());
     let cleanedCount = 0;
@@ -588,11 +699,25 @@ export class TemplumResourceManager extends EventDrivenComponent<TemplumResource
         await this.deallocateResource(resourceId);
         cleanedCount++;
       } catch (error) {
-        console.error(`Failed to cleanup resource ${resourceId}:`, error);
+        const { error: normalizedError, data } = normalizeLoggerError(error);
+        const metadata: Record<string, unknown> = { resourceId };
+
+        if (data !== undefined) {
+          metadata.originalData = data;
+        }
+
+        this.logger.error(
+          'Failed to clean up resource during full cleanup',
+          normalizedError ?? undefined,
+          metadata
+        );
       }
     }
 
-    console.log(`TemplumResourceManager: Cleaned up ${cleanedCount}/${resourceIds.length} resources`);
+    this.logger.info('Resource cleanup summary', {
+      cleanedCount,
+      totalResources: resourceIds.length
+    });
   }
 
   // ============================================================================
@@ -632,11 +757,20 @@ export class TemplumResourceManager extends EventDrivenComponent<TemplumResource
         this.checkPolicyViolations(usage);
         
       } catch (error) {
-        console.error('Resource monitoring error:', error);
+        const { error: normalizedError, data } = normalizeLoggerError(error);
+        const metadata: Record<string, unknown> = {
+          phase: 'resource-monitoring'
+        };
+
+        if (data !== undefined) {
+          metadata.originalData = data;
+        }
+
+        this.logger.error('Resource monitoring error', normalizedError ?? undefined, metadata);
       }
     }, 10000, { unref: true }); // Every 10 seconds
 
-    console.log('TemplumResourceManager: Resource monitoring started');
+    this.logger.info('Resource monitoring started');
   }
 
   private startAutomaticCleanup(): void {
@@ -651,11 +785,22 @@ export class TemplumResourceManager extends EventDrivenComponent<TemplumResource
           });
         }
       } catch (error) {
-        console.error('Automatic cleanup error:', error);
+        const { error: normalizedError, data } = normalizeLoggerError(error);
+        const metadata: Record<string, unknown> = {
+          phase: 'automatic-cleanup'
+        };
+
+        if (data !== undefined) {
+          metadata.originalData = data;
+        }
+
+        this.logger.error('Automatic cleanup error', normalizedError ?? undefined, metadata);
       }
     }, this.policy.cleanupIntervalMs, { unref: true });
 
-    console.log('TemplumResourceManager: Automatic cleanup started');
+    this.logger.info('Automatic cleanup started', {
+      intervalMs: this.policy.cleanupIntervalMs
+    });
   }
 
   private checkPolicyViolations(usage: ResourceUsage): void {
@@ -684,7 +829,7 @@ export class TemplumResourceManager extends EventDrivenComponent<TemplumResource
     }
 
     if (violations > 0) {
-      console.warn(`TemplumResourceManager: ${violations} policy violations detected`);
+      this.logger.warn('Policy violations detected', { violations });
     }
   }
 
@@ -693,7 +838,7 @@ export class TemplumResourceManager extends EventDrivenComponent<TemplumResource
     await this.registerService('templum-core', 'core', { component: 'TemplumCore' });
     await this.registerService('adapter-registry', 'core', { component: 'TemplumAdapterRegistry' });
     
-    console.log('TemplumResourceManager: Service discovery initialized');
+    this.logger.info('Service discovery initialized');
   }
 
   private calculateCacheHitRate(): number {
@@ -746,7 +891,7 @@ export class TemplumResourceManager extends EventDrivenComponent<TemplumResource
       policy: this.policy,
       timestamp: Date.now()
     });
-    console.log('TemplumResourceManager: Resource policy updated');
+    this.logger.info('Resource policy updated', { policy: this.policy });
   }
 
   // ============================================================================
@@ -755,23 +900,42 @@ export class TemplumResourceManager extends EventDrivenComponent<TemplumResource
 
   private setupEventListeners(): void {
     this.on('resourceAllocated', ({ resourceId, type, owner, size }) => {
-      console.log(`Resource allocated: ${type} ${resourceId} (${size}MB) for ${owner}`);
+      this.logger.debug('Resource allocation event received', {
+        resourceId,
+        type,
+        owner,
+        size
+      });
     });
 
     this.on('resourceDeallocated', ({ resourceId, type, owner, lifetime }) => {
-      console.log(`Resource deallocated: ${type} ${resourceId} for ${owner} (lived ${lifetime}ms)`);
+      this.logger.debug('Resource deallocation event received', {
+        resourceId,
+        type,
+        owner,
+        lifetime
+      });
     });
 
     this.on('serviceHealthChanged', ({ serviceId, previousStatus, newStatus }) => {
-      console.log(`Service health changed: ${serviceId} ${previousStatus} → ${newStatus}`);
+      this.logger.debug('Service health change event', {
+        serviceId,
+        previousStatus,
+        newStatus
+      });
     });
 
     this.on('policyViolation', ({ type, severity, current, limit }) => {
-      console.warn(`Policy violation: ${type} usage ${(current * 100).toFixed(1)}% exceeds ${(limit * 100).toFixed(1)}% limit (${severity})`);
+      this.logger.warn('Policy violation detected', {
+        type,
+        severity,
+        currentUsagePercentage: (current * 100).toFixed(1),
+        limitPercentage: (limit * 100).toFixed(1)
+      });
     });
 
     this.on('automaticCleanup', ({ cleanedResources }) => {
-      console.log(`Automatic cleanup completed: ${cleanedResources} resources cleaned`);
+      this.logger.debug('Automatic cleanup event', { cleanedResources });
     });
   }
 }

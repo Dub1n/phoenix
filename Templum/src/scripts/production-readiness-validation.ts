@@ -11,12 +11,13 @@
 import { performance } from 'perf_hooks';
 import { TemplumResourceManager } from '../core/templum-resource-manager';
 import { performanceValidator } from '../validation/performance-validation';
-import { 
-  createProductionReadinessValidator, 
+import {
+  createProductionReadinessValidator,
   ProductionReadinessValidator,
   ProductionReadinessResult,
-  ProductionReadinessConfig 
+  ProductionReadinessConfig
 } from '../validation/production-readiness-validator';
+import { createLogger, normalizeLoggerError } from '../utils/logger';
 
 // Console colors for better output
 const colors = {
@@ -31,6 +32,8 @@ const colors = {
   white: '\x1b[37m'
 };
 
+const cliLogger = createLogger('production-readiness-validation-cli');
+
 /**
  * Production Readiness Validation Script
  * 
@@ -42,10 +45,11 @@ class ProductionReadinessValidationScript {
   private resourceManager: TemplumResourceManager;
   private productionValidator: ProductionReadinessValidator;
   private startTime: number;
+  private readonly logger = createLogger('production-readiness-validation');
 
   constructor() {
-    console.log(`${colors.bright}${colors.cyan}🚀 Templum Production Readiness Validation${colors.reset}`);
-    console.log(`${colors.blue}Purpose: Verify system readiness for production deployment${colors.reset}\n`);
+    this.logger.info(`${colors.bright}${colors.cyan}🚀 Templum Production Readiness Validation${colors.reset}`);
+    this.logger.info(`${colors.blue}Purpose: Verify system readiness for production deployment${colors.reset}\n`);
     
     this.startTime = Date.now();
     
@@ -109,7 +113,7 @@ class ProductionReadinessValidationScript {
 
   async run(): Promise<void> {
     try {
-      console.log(`${colors.bright}📋 Production Readiness Validation - Starting System Verification${colors.reset}\n`);
+      this.logger.info(`${colors.bright}📋 Production Readiness Validation - Starting System Verification${colors.reset}\n`);
       
       // Step 1: Initialize resource manager
       await this.initializeResourceManager();
@@ -127,14 +131,19 @@ class ProductionReadinessValidationScript {
       this.provideRecommendations(result);
       
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      console.error(`${colors.red}❌ Production readiness validation failed:${colors.reset}`, errorMessage);
-      process.exit(1);
+      const { error: normalizedError, data } = normalizeLoggerError(error);
+      const fallbackDetails = data ?? (error instanceof Error ? error.message : String(error));
+      this.logger.error(
+        `${colors.red}❌ Production readiness validation failed:${colors.reset}`,
+        normalizedError ?? undefined,
+        { details: fallbackDetails }
+      );
+      process.exitCode = 1;
     }
   }
 
   private async initializeResourceManager(): Promise<void> {
-    console.log(`${colors.blue}🔧 Initializing Resource Manager with Production Policies...${colors.reset}`);
+    this.logger.info(`${colors.blue}🔧 Initializing Resource Manager with Production Policies...${colors.reset}`);
     
     try {
       await this.resourceManager.initialize();
@@ -154,22 +163,34 @@ class ProductionReadinessValidationScript {
           priority: resource.priority,
           cleanup: async () => { /* Test cleanup */ }
         });
-        console.log(`   ✓ Allocated ${resource.type} resource: ${handle}`);
+        this.logger.info(`   ✓ Allocated ${resource.type} resource: ${handle}`);
       }
 
       const status = await this.resourceManager.getStatus();
-      console.log(`   ✓ Resource Manager initialized: ${status.activeResources} active resources`);
-      console.log(`   ✓ Policy violations: ${status.policyViolations}\n`);
+      this.logger.info(`   ✓ Resource Manager initialized: ${status.activeResources} active resources`);
+      this.logger.info(`   ✓ Policy violations: ${status.policyViolations}\n`);
       
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      console.error(`   ❌ Resource Manager initialization failed: ${errorMessage}\n`);
+      const { error: normalizedError, data } = normalizeLoggerError(error);
+      const metadata: Record<string, unknown> = { stage: 'resource-manager-initialization' };
+      if (data !== undefined) {
+        metadata.details = data;
+      } else if (error instanceof Error) {
+        metadata.details = error.message;
+      } else {
+        metadata.details = String(error);
+      }
+      this.logger.error(
+        '   ❌ Resource Manager initialization failed\n',
+        normalizedError ?? undefined,
+        metadata
+      );
       throw error;
     }
   }
 
   private async demonstrateRealMetrics(): Promise<void> {
-    console.log(`${colors.blue}📊 Demonstrating Real System Metrics (No Hardcoded Values)...${colors.reset}`);
+    this.logger.info(`${colors.blue}📊 Demonstrating Real System Metrics (No Hardcoded Values)...${colors.reset}`);
     
     // Measure real system performance
     const startTime = performance.now();
@@ -186,14 +207,20 @@ class ProductionReadinessValidationScript {
     const memoryUsage = process.memoryUsage();
     const systemLoad = require('os').loadavg();
     
-    console.log(`   📈 Real Response Time: ${responseTime.toFixed(2)}ms (measured)`);
-    console.log(`   💾 Real Memory Usage: ${Math.round(memoryUsage.rss / 1024 / 1024)}MB (process RSS)`);
-    console.log(`   🖥️  Real System Load: ${systemLoad[0].toFixed(2)} (1min average)`);
-    console.log(`   ✅ All metrics collected from actual system measurements\n`);
+    this.logger.info(`   📈 Real Response Time: ${responseTime.toFixed(2)}ms (measured)`, {
+      responseTimeMs: Number(responseTime.toFixed(2))
+    });
+    this.logger.info(`   💾 Real Memory Usage: ${Math.round(memoryUsage.rss / 1024 / 1024)}MB (process RSS)`, {
+      rssMb: Math.round(memoryUsage.rss / 1024 / 1024)
+    });
+    this.logger.info(`   🖥️  Real System Load: ${systemLoad[0].toFixed(2)} (1min average)`, {
+      loadAverage1Min: Number(systemLoad[0].toFixed(2))
+    });
+    this.logger.info(`   ✅ All metrics collected from actual system measurements\n`);
   }
 
   private async runProductionReadinessValidation(): Promise<ProductionReadinessResult> {
-    console.log(`${colors.bright}🔍 Running Comprehensive Production Readiness Validation...${colors.reset}\n`);
+    this.logger.info(`${colors.bright}🔍 Running Comprehensive Production Readiness Validation...${colors.reset}\n`);
     
     const result = await this.productionValidator.validateProductionReadiness();
     
@@ -201,51 +228,79 @@ class ProductionReadinessValidationScript {
   }
 
   private generateDetailedReport(result: ProductionReadinessResult): void {
-    console.log(`${colors.bright}📋 Production Readiness Validation Report${colors.reset}`);
-    console.log(`${colors.blue}Generated: ${new Date(result.timestamp).toLocaleString()}${colors.reset}\n`);
+    this.logger.info(`${colors.bright}📋 Production Readiness Validation Report${colors.reset}`, {
+      generatedAt: result.timestamp
+    });
+    this.logger.info(`${colors.blue}Generated: ${new Date(result.timestamp).toLocaleString()}${colors.reset}\n`, {
+      generatedAtIso: new Date(result.timestamp).toISOString()
+    });
     
-    // Overall Status
     const statusColor = result.overallStatus === 'READY' ? colors.green : 
                        result.overallStatus === 'WARNINGS' ? colors.yellow : colors.red;
-    console.log(`${colors.bright}Overall Status: ${statusColor}${result.overallStatus}${colors.reset}`);
-    console.log(`${colors.bright}Readiness Score: ${this.getScoreColor(result.readinessScore)}${result.readinessScore}/100${colors.reset}\n`);
+    this.logger.info(`${colors.bright}Overall Status: ${statusColor}${result.overallStatus}${colors.reset}`, {
+      overallStatus: result.overallStatus
+    });
+    this.logger.info(`${colors.bright}Readiness Score: ${this.getScoreColor(result.readinessScore)}${result.readinessScore}/100${colors.reset}\n`, {
+      readinessScore: result.readinessScore
+    });
     
-    // Category Results
-    console.log(`${colors.bright}Category Results:${colors.reset}`);
+    this.logger.info(`${colors.bright}Category Results:${colors.reset}`);
     this.printCategoryResult('Performance', result.categories.performance);
     this.printCategoryResult('Resource Management', result.categories.resourceManagement);
     this.printCategoryResult('Error Handling', result.categories.errorHandling);
     this.printCategoryResult('System Health', result.categories.systemHealth);
     
-    // Critical Issues
     if (result.criticalIssues.length > 0) {
-      console.log(`\n${colors.red}${colors.bright}🚨 Critical Issues (${result.criticalIssues.length}):${colors.reset}`);
+      this.logger.error(`\n${colors.red}${colors.bright}🚨 Critical Issues (${result.criticalIssues.length}):${colors.reset}`, undefined, {
+        issueCount: result.criticalIssues.length
+      });
       result.criticalIssues.forEach((issue, index) => {
-        console.log(`${colors.red}${index + 1}. ${issue.title}${colors.reset}`);
-        console.log(`   Description: ${issue.description}`);
-        console.log(`   Impact: ${issue.impact}`);
-        console.log(`   Recommendation: ${issue.recommendation}\n`);
+        this.logger.error(`${colors.red}${index + 1}. ${issue.title}${colors.reset}`, undefined, {
+          issueIndex: index + 1,
+          title: issue.title
+        });
+        this.logger.error(`   Description: ${issue.description}`);
+        this.logger.error(`   Impact: ${issue.impact}`);
+        this.logger.error(`   Recommendation: ${issue.recommendation}\n`);
       });
     }
     
-    // Warnings
     if (result.warnings.length > 0) {
-      console.log(`${colors.yellow}${colors.bright}⚠️  Warnings (${result.warnings.length}):${colors.reset}`);
+      this.logger.warn(`${colors.yellow}${colors.bright}⚠️  Warnings (${result.warnings.length}):${colors.reset}`, {
+        warningCount: result.warnings.length
+      });
       result.warnings.forEach((warning, index) => {
-        console.log(`${colors.yellow}${index + 1}. ${warning.title}${colors.reset}`);
-        console.log(`   Description: ${warning.description}`);
-        console.log(`   Recommendation: ${warning.recommendation}\n`);
+        this.logger.warn(`${colors.yellow}${index + 1}. ${warning.title}${colors.reset}`, {
+          warningIndex: index + 1,
+          title: warning.title
+        });
+        this.logger.warn(`   Description: ${warning.description}`);
+        this.logger.warn(`   Recommendation: ${warning.recommendation}\n`);
       });
     }
     
-    // System Metrics
-    console.log(`${colors.bright}📊 Real System Metrics:${colors.reset}`);
-    console.log(`   Platform: ${result.systemMetrics.system.platform} ${result.systemMetrics.system.arch}`);
-    console.log(`   Node Version: ${result.systemMetrics.system.nodeVersion}`);
-    console.log(`   Uptime: ${result.systemMetrics.system.uptime.toFixed(2)} hours`);
-    console.log(`   Memory Usage: ${result.systemMetrics.memory.usagePercent}% (${result.systemMetrics.memory.usedMB}MB used)`);
-    console.log(`   CPU Load: ${result.systemMetrics.cpu.loadAverage1Min.toFixed(2)} (1min avg)`);
-    console.log(`   Network: ${result.systemMetrics.network.connectivityStatus}${result.systemMetrics.network.latencyMs ? ` (${result.systemMetrics.network.latencyMs}ms)` : ''}\n`);
+    this.logger.info(`${colors.bright}📊 Real System Metrics:${colors.reset}`);
+    this.logger.info(`   Platform: ${result.systemMetrics.system.platform} ${result.systemMetrics.system.arch}`, {
+      platform: result.systemMetrics.system.platform,
+      arch: result.systemMetrics.system.arch
+    });
+    this.logger.info(`   Node Version: ${result.systemMetrics.system.nodeVersion}`, {
+      nodeVersion: result.systemMetrics.system.nodeVersion
+    });
+    this.logger.info(`   Uptime: ${result.systemMetrics.system.uptime.toFixed(2)} hours`, {
+      uptimeHours: Number(result.systemMetrics.system.uptime.toFixed(2))
+    });
+    this.logger.info(`   Memory Usage: ${result.systemMetrics.memory.usagePercent}% (${result.systemMetrics.memory.usedMB}MB used)`, {
+      memoryUsagePercent: result.systemMetrics.memory.usagePercent,
+      memoryUsedMb: result.systemMetrics.memory.usedMB
+    });
+    this.logger.info(`   CPU Load: ${result.systemMetrics.cpu.loadAverage1Min.toFixed(2)} (1min avg)`, {
+      loadAverage1Min: Number(result.systemMetrics.cpu.loadAverage1Min.toFixed(2))
+    });
+    this.logger.info(`   Network: ${result.systemMetrics.network.connectivityStatus}${result.systemMetrics.network.latencyMs ? ` (${result.systemMetrics.network.latencyMs}ms)` : ''}\n`, {
+      connectivityStatus: result.systemMetrics.network.connectivityStatus,
+      latencyMs: result.systemMetrics.network.latencyMs
+    });
   }
 
   private printCategoryResult(name: string, category: import('../validation/production-readiness-validator').ProductionReadinessCategory): void {
@@ -254,12 +309,18 @@ class ProductionReadinessValidationScript {
     const statusIcon = category.status === 'PASS' ? '✅' : 
                       category.status === 'WARNING' ? '⚠️' : '❌';
     
-    console.log(`   ${statusIcon} ${name}: ${statusColor}${category.status}${colors.reset} (${this.getScoreColor(category.score)}${category.score}/100${colors.reset})`);
+    this.logger.info(`   ${statusIcon} ${name}: ${statusColor}${category.status}${colors.reset} (${this.getScoreColor(category.score)}${category.score}/100${colors.reset})`, {
+      category: name,
+      status: category.status,
+      score: category.score
+    });
     
-    // Show failed checks
     const failedChecks = category.checks.filter((check) => check.status === 'FAIL');
     if (failedChecks.length > 0) {
-      console.log(`      Failed: ${failedChecks.map((check) => check.name).join(', ')}`);
+      this.logger.warn(`      Failed: ${failedChecks.map((check) => check.name).join(', ')}`, {
+        category: name,
+        failedChecks: failedChecks.map(check => check.name)
+      });
     }
   }
 
@@ -270,38 +331,48 @@ class ProductionReadinessValidationScript {
   }
 
   private provideRecommendations(result: ProductionReadinessResult): void {
-    console.log(`${colors.bright}💡 Recommendations:${colors.reset}`);
+    this.logger.info(`${colors.bright}💡 Recommendations:${colors.reset}`);
     result.recommendations.forEach((recommendation, index) => {
-      console.log(`   ${index + 1}. ${recommendation}`);
+      this.logger.info(`   ${index + 1}. ${recommendation}`, {
+        recommendationIndex: index + 1
+      });
     });
     
-    // Additional recommendations based on status
     if (result.overallStatus === 'NOT_READY') {
-      console.log(`\n${colors.red}🚫 System is NOT READY for production deployment.${colors.reset}`);
-      console.log(`${colors.red}Address all critical issues before proceeding.${colors.reset}`);
+      this.logger.error(`\n${colors.red}🚫 System is NOT READY for production deployment.${colors.reset}`);
+      this.logger.error(`${colors.red}Address all critical issues before proceeding.${colors.reset}`);
     } else if (result.overallStatus === 'WARNINGS') {
-      console.log(`\n${colors.yellow}⚠️  System has warnings but may be suitable for production.${colors.reset}`);
-      console.log(`${colors.yellow}Monitor warning conditions closely in production.${colors.reset}`);
+      this.logger.warn(`\n${colors.yellow}⚠️  System has warnings but may be suitable for production.${colors.reset}`);
+      this.logger.warn(`${colors.yellow}Monitor warning conditions closely in production.${colors.reset}`);
     } else {
-      console.log(`\n${colors.green}✅ System is READY for production deployment!${colors.reset}`);
-      console.log(`${colors.green}Continue monitoring system health and performance.${colors.reset}`);
+      this.logger.info(`\n${colors.green}✅ System is READY for production deployment!${colors.reset}`);
+      this.logger.info(`${colors.green}Continue monitoring system health and performance.${colors.reset}`);
     }
     
     const totalTime = Date.now() - this.startTime;
-    console.log(`\n${colors.blue}Validation completed in ${totalTime}ms${colors.reset}`);
+    this.logger.info(`\n${colors.blue}Validation completed in ${totalTime}ms${colors.reset}`, {
+      durationMs: totalTime
+    });
   }
 
   private setupEventListeners(): void {
     this.productionValidator.on('validationStarted', (event) => {
-      console.log(`   🔄 Validation started at ${new Date(event.timestamp).toLocaleTimeString()}`);
+      this.logger.info(`   🔄 Validation started at ${new Date(event.timestamp).toLocaleTimeString()}`, {
+        event: 'validationStarted',
+        timestamp: event.timestamp
+      });
     });
 
     this.productionValidator.on('validationCompleted', () => {
-      console.log(`   ✅ Validation completed successfully`);
+      this.logger.info('   ✅ Validation completed successfully', {
+        event: 'validationCompleted'
+      });
     });
 
     this.productionValidator.on('validationFailed', (event) => {
-      console.log(`   ❌ Validation failed: ${event.error}`);
+      this.logger.error(`   ❌ Validation failed: ${event.error}`, undefined, {
+        event: 'validationFailed'
+      });
     });
   }
 }
@@ -311,7 +382,7 @@ async function main() {
   const args = process.argv.slice(2);
   
   if (args.includes('--help') || args.includes('-h')) {
-    console.log(`
+    cliLogger.info(`
 ${colors.bright}Templum Production Readiness Validation${colors.reset}
 
 Usage: node production-readiness-validation.js [options]
@@ -334,28 +405,47 @@ Features:
   ✅ System health and connectivity checks
   ✅ Comprehensive readiness scoring
 `);
-    process.exit(0);
+    return;
   }
 
   try {
     const validator = new ProductionReadinessValidationScript();
     await validator.run();
     
-    console.log(`\n${colors.green}${colors.bright}🎉 Production readiness validation completed successfully!${colors.reset}`);
-    console.log(`${colors.blue}TASK-MOCK-002 implementation verified with real system measurements.${colors.reset}`);
+    cliLogger.info(`
+${colors.green}${colors.bright}🎉 Production readiness validation completed successfully!${colors.reset}`);
+    cliLogger.info(`${colors.blue}TASK-MOCK-002 implementation verified with real system measurements.${colors.reset}`);
     
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error(`\n${colors.red}${colors.bright}💥 Validation failed:${colors.reset}`, errorMessage);
-    process.exit(1);
+    const { error: normalizedError, data } = normalizeLoggerError(error);
+    const metadata: Record<string, unknown> = { stage: 'main-run' };
+    if (data !== undefined) {
+      metadata.details = data;
+    } else if (error instanceof Error) {
+      metadata.details = error.message;
+    } else {
+      metadata.details = String(error);
+    }
+    cliLogger.error(`
+${colors.red}${colors.bright}💥 Validation failed:${colors.reset}`, normalizedError ?? undefined, metadata);
+    process.exitCode = 1;
   }
 }
 
 // Run if called directly
 if (require.main === module) {
   main().catch(error => {
-    console.error('Fatal error:', error);
-    process.exit(1);
+    const { error: normalizedError, data } = normalizeLoggerError(error);
+    const metadata: Record<string, unknown> = { stage: 'entrypoint' };
+    if (data !== undefined) {
+      metadata.details = data;
+    } else if (error instanceof Error) {
+      metadata.details = error.message;
+    } else {
+      metadata.details = String(error);
+    }
+    cliLogger.error('Fatal error during production readiness validation', normalizedError ?? undefined, metadata);
+    process.exitCode = 1;
   });
 }
 

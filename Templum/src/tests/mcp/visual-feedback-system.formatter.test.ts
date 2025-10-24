@@ -38,12 +38,35 @@ const createHealthStatus = (): HealthStatus => ({
 describe('VisualFeedbackSystem — formatter integration', () => {
   beforeEach(() => {
     jest.spyOn(console, 'log').mockImplementation(() => undefined);
+    jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    jest.spyOn(console, 'error').mockImplementation(() => undefined);
+    jest.spyOn(console, 'debug').mockImplementation(() => undefined);
     jest.spyOn(console, 'clear').mockImplementation(() => undefined);
   });
 
   afterEach(() => {
     resetWindowUtilsFormatter();
     jest.restoreAllMocks();
+  });
+
+  test('Stage 4 guardrail: Visual feedback system routes output through consolidated logger helpers', () => {
+    // Guardrail: Stage 4 lane 4l should fail until console.* calls are migrated to the consolidated logger.
+    const system = new VisualFeedbackSystem({
+      enableColors: true,
+      enableProgressBars: false,
+      refreshRate: 1_000,
+    } as any);
+
+    try {
+      system.showValidationFeedback('guardrail check', true, 42);
+
+      expect(console.log).not.toHaveBeenCalled();
+      expect(console.warn).not.toHaveBeenCalled();
+      expect(console.error).not.toHaveBeenCalled();
+      expect(console.debug).not.toHaveBeenCalled();
+    } finally {
+      system.dispose();
+    }
   });
 
   test('status indicators use formatter fallbacks when unicode support is disabled', () => {

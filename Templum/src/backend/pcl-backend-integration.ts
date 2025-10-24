@@ -8,15 +8,21 @@
 
 import { performance } from 'perf_hooks';
 import { createInterval, ManagedInterval, sleep } from '../utils/async-utils';
-import { 
-  Signals, 
+import {
+  Signals,
   // Unused imports removed: TemplumError, IntegrationError
-  isTemplumError, 
+  isTemplumError,
   createTemplumError,
-  MetricsSignalPayload 
+  MetricsSignalPayload
 } from '../types/templum-types';
 import { EventDrivenComponent } from '../utils/event-bus-adapter';
 import type { TypedEventMap } from '../utils/event-utils';
+import { createLogger, normalizeLoggerError } from '../utils/logger';
+
+const backendIntegrationLogger = createLogger('pcl-backend-integration');
+const validationLogger = backendIntegrationLogger.child('validation-framework');
+const fallbackLogger = backendIntegrationLogger.child('fallback-manager');
+const integratorLogger = backendIntegrationLogger.child('integrator');
 
 // Core interfaces for PCL backend communication with component transfer coordination
 export interface PCLBackendCommand {
@@ -756,8 +762,19 @@ export class ValidationFramework extends EventDrivenComponent<ValidationFramewor
       try {
         await this.validateComponentPerformance(componentId, 'periodic-validation');
       } catch (error) {
-        // Log error but don't fail the periodic validation
-        console.error(`Periodic validation failed for ${componentId}:`, error);
+        const { error: normalizedError, data } = normalizeLoggerError(error);
+        const metadata: Record<string, unknown> = {
+          componentId,
+          operation: 'periodic-validation'
+        };
+        if (data !== undefined) {
+          metadata.details = data;
+        }
+        validationLogger.error(
+          'Periodic validation failed during scheduled validation',
+          normalizedError ?? undefined,
+          metadata
+        );
       }
     }
   }
@@ -832,7 +849,19 @@ export class ValidationFramework extends EventDrivenComponent<ValidationFramewor
       try {
         task?.();
       } catch (error) {
-        console.error('ValidationFramework: cleanup task failed', error);
+        const { error: normalizedError, data } = normalizeLoggerError(error);
+        const metadata: Record<string, unknown> = {
+          phase: 'dispose',
+          taskDefined: Boolean(task)
+        };
+        if (data !== undefined) {
+          metadata.details = data;
+        }
+        validationLogger.error(
+          'Cleanup task failed while disposing ValidationFramework',
+          normalizedError ?? undefined,
+          metadata
+        );
       }
     }
     this.cleanupEvents();
@@ -1030,7 +1059,19 @@ export class BackendFallbackManager extends EventDrivenComponent<BackendFallback
       try {
         task?.();
       } catch (error) {
-        console.error('BackendFallbackManager: cleanup task failed', error);
+        const { error: normalizedError, data } = normalizeLoggerError(error);
+        const metadata: Record<string, unknown> = {
+          phase: 'dispose',
+          taskDefined: Boolean(task)
+        };
+        if (data !== undefined) {
+          metadata.details = data;
+        }
+        fallbackLogger.error(
+          'Cleanup task failed while disposing BackendFallbackManager',
+          normalizedError ?? undefined,
+          metadata
+        );
       }
     }
     this.cleanupEvents();
@@ -1525,7 +1566,19 @@ export class PCLBackendIntegrator extends EventDrivenComponent<PCLBackendIntegra
       try {
         task?.();
       } catch (error) {
-        console.error('PCLBackendIntegrator: cleanup task failed', error);
+        const { error: normalizedError, data } = normalizeLoggerError(error);
+        const metadata: Record<string, unknown> = {
+          phase: 'cleanup',
+          taskDefined: Boolean(task)
+        };
+        if (data !== undefined) {
+          metadata.details = data;
+        }
+        integratorLogger.error(
+          'Cleanup task failed while shutting down PCLBackendIntegrator',
+          normalizedError ?? undefined,
+          metadata
+        );
       }
     }
   }

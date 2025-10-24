@@ -28,6 +28,7 @@ import { EventDrivenComponent } from '../../utils/event-bus-adapter';
 import type { TypedEventMap } from '../../utils/event-utils';
 import { cleanupComponentListeners } from './event-listener-manager';
 import { AsyncUtils, type ManagedInterval } from '../../utils/async-utils';
+import { createLogger, type Logger } from '../../utils/logger';
 
 export interface ErrorPattern {
   errorType: string;
@@ -125,9 +126,17 @@ export class ProbabilisticErrorHandler extends EventDrivenComponent<Probabilisti
   private readonly SUCCESS_PROBABILITY_THRESHOLD = 0.7;
   private readonly COST_THRESHOLD = 80;
   private readonly PATTERN_CONFIDENCE_THRESHOLD = 0.8;
+  private readonly logger: Logger;
+  private readonly recoveryLogger: Logger;
+  private readonly analyticsLogger: Logger;
 
   constructor() {
-    super(`probabilistic-error-handler:${ProbabilisticErrorHandler.instanceCounter++}`, 40);
+    const instanceId = `probabilistic-error-handler:${ProbabilisticErrorHandler.instanceCounter++}`;
+    super(instanceId, 40);
+    
+    this.logger = createLogger(`mcp-channel:${instanceId}`);
+    this.recoveryLogger = this.logger.child('recovery');
+    this.analyticsLogger = this.logger.child('analytics');
     
     // TODO: [TASK-MCP-007-PROB-001] Pattern: probabilistic-error-management | Complexity: 8 | Dependencies: statistical-analysis
     // Context: Initialize probabilistic error handling with learning capabilities
@@ -161,8 +170,12 @@ export class ProbabilisticErrorHandler extends EventDrivenComponent<Probabilisti
     // Context: Apply probabilistic recovery strategies based on error analysis
     // Validation-Required: recovery-success-rate, strategy-selection-accuracy, performance-impact
     // Pattern-Info: { approach: "probabilistic-strategy-selection", alternatives: "fixed-retry-logic", trade-offs: "adaptability-vs-predictability" }
-    
-    console.log(`[PROBABILISTIC_ERROR] Handling error: ${error.message}`);
+    this.logger.info('Handling error', {
+      message: error.message,
+      errorType: error.name,
+      operation: context.operation,
+      errorCode: context.errorCode
+    });
     
     try {
       // Record the error for pattern analysis
@@ -174,18 +187,24 @@ export class ProbabilisticErrorHandler extends EventDrivenComponent<Probabilisti
       
       // Calculate recovery probability based on historical data
       const recoveryProbability = this.calculateRecoveryProbability(errorSignature, context);
-      
-      console.log(`[PROBABILISTIC_ERROR] Recovery probability: ${recoveryProbability.toFixed(2)}`);
+      this.logger.debug('Calculated recovery probability', {
+        errorSignature,
+        probability: recoveryProbability
+      });
       
       // Select optimal recovery strategy
       const strategy = this.selectOptimalStrategy(errorSignature, context, recoveryProbability);
       
       if (!strategy) {
-        console.warn(`[PROBABILISTIC_ERROR] No viable recovery strategy found for ${errorSignature}`);
+        this.logger.warn('No viable recovery strategy found', { errorSignature });
         return false;
       }
       
-      console.log(`[PROBABILISTIC_ERROR] Attempting recovery with strategy: ${strategy.name} (probability: ${strategy.probability.toFixed(2)})`);
+      this.recoveryLogger.info('Attempting recovery strategy', {
+        errorSignature,
+        strategy: strategy.name,
+        probability: strategy.probability
+      });
       
       // Execute recovery strategy
       const recoveryStartTime = Date.now();
@@ -213,9 +232,15 @@ export class ProbabilisticErrorHandler extends EventDrivenComponent<Probabilisti
       });
       
       if (recoverySuccess) {
-        console.log(`[PROBABILISTIC_ERROR] Recovery successful with ${strategy.name} in ${recoveryTime}ms`);
+        this.recoveryLogger.info('Recovery succeeded', {
+          strategy: strategy.name,
+          durationMs: recoveryTime
+        });
       } else {
-        console.warn(`[PROBABILISTIC_ERROR] Recovery failed with ${strategy.name} after ${recoveryTime}ms`);
+        this.recoveryLogger.warn('Recovery failed', {
+          strategy: strategy.name,
+          durationMs: recoveryTime
+        });
         
         // Try fallback strategies if available
         return await this.attemptFallbackRecovery(errorSignature, context);
@@ -224,7 +249,11 @@ export class ProbabilisticErrorHandler extends EventDrivenComponent<Probabilisti
       return recoverySuccess;
       
     } catch (handlingError) {
-      console.error('[PROBABILISTIC_ERROR] Error in error handling:', handlingError);
+      this.logger.error(
+        'Error in error handling',
+        handlingError instanceof Error ? handlingError : null,
+        handlingError instanceof Error ? undefined : { details: handlingError }
+      );
       return false;
     }
   }
@@ -382,9 +411,16 @@ export class ProbabilisticErrorHandler extends EventDrivenComponent<Probabilisti
       return Boolean(result);
     } catch (error) {
       if (error instanceof Error && error.message.includes('timed out')) {
-        console.warn(`[PROBABILISTIC_ERROR] Recovery strategy ${strategy.name} timed out`);
+        this.recoveryLogger.warn('Recovery strategy timed out', {
+          strategy: strategy.name,
+          timeoutMs: this.RECOVERY_TIMEOUT
+        });
       } else {
-        console.error(`[PROBABILISTIC_ERROR] Recovery strategy ${strategy.name} failed:`, error);
+        this.recoveryLogger.error(
+          'Recovery strategy failed',
+          error instanceof Error ? error : null,
+          error instanceof Error ? { strategy: strategy.name } : { strategy: strategy.name, details: error }
+        );
       }
       return false;
     }
@@ -400,16 +436,16 @@ export class ProbabilisticErrorHandler extends EventDrivenComponent<Probabilisti
       .sort((a, b) => b.probability - a.probability);
     
     for (const strategy of fallbackStrategies.slice(0, 2)) { // Try up to 2 fallback strategies
-      console.log(`[PROBABILISTIC_ERROR] Attempting fallback strategy: ${strategy.name}`);
+      this.recoveryLogger.info('Attempting fallback strategy', { strategy: strategy.name });
       
       const success = await this.executeRecoveryStrategy(strategy, context);
       if (success) {
-        console.log(`[PROBABILISTIC_ERROR] Fallback recovery successful with ${strategy.name}`);
+        this.recoveryLogger.info('Fallback recovery succeeded', { strategy: strategy.name });
         return true;
       }
     }
     
-    console.warn(`[PROBABILISTIC_ERROR] All recovery strategies failed for ${errorSignature}`);
+    this.logger.warn('All recovery strategies failed', { errorSignature });
     return false;
   }
 
@@ -505,7 +541,7 @@ export class ProbabilisticErrorHandler extends EventDrivenComponent<Probabilisti
       prerequisites: [],
       implementation: async () => {
         // Cleanup resources and retry
-        console.log('[RECOVERY] Performing resource cleanup');
+        this.recoveryLogger.debug('Performing resource cleanup');
         cleanupComponentListeners('probabilistic-error-handler');
         return Math.random() > 0.2; // 80% success rate
       }
@@ -519,7 +555,7 @@ export class ProbabilisticErrorHandler extends EventDrivenComponent<Probabilisti
       prerequisites: [],
       implementation: async () => {
         // Switch to fallback mode
-        console.log('[RECOVERY] Switching to fallback mode');
+        this.recoveryLogger.info('Switching to fallback mode');
         return true; // Fallback mode always succeeds
       }
     });
@@ -532,7 +568,7 @@ export class ProbabilisticErrorHandler extends EventDrivenComponent<Probabilisti
       prerequisites: ['low-resource-usage'],
       implementation: async () => {
         // Restart service components
-        console.log('[RECOVERY] Restarting service components');
+        this.recoveryLogger.info('Restarting service components');
         await AsyncUtils.sleep(5000);
         return Math.random() > 0.4; // 60% success rate
       }
@@ -559,7 +595,7 @@ export class ProbabilisticErrorHandler extends EventDrivenComponent<Probabilisti
    * Analyze error patterns for insights
    */
   private analyzePatterns(): void {
-    console.log('[PROBABILISTIC_ERROR] Analyzing error patterns...');
+    this.analyticsLogger.debug('Analyzing error patterns');
     
     const now = Date.now();
     const recentErrors = this.recentErrors.filter(error => 
@@ -568,7 +604,11 @@ export class ProbabilisticErrorHandler extends EventDrivenComponent<Probabilisti
     // Update pattern analysis
     for (const [signature, pattern] of this.errorPatterns) {
       if (pattern.frequency >= this.MIN_PATTERN_OCCURRENCES) {
-        console.log(`[PROBABILISTIC_ERROR] Pattern detected: ${signature} (frequency: ${pattern.frequency}, success rate: ${pattern.recoverySuccessRate.toFixed(2)})`);
+        this.analyticsLogger.debug('Pattern detected', {
+          signature,
+          frequency: pattern.frequency,
+          successRate: pattern.recoverySuccessRate
+        });
       }
     }
   }

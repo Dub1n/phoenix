@@ -18,6 +18,7 @@ import {
 import { SemanticValidators, TypeGuards } from '../utils/type-guards';
 import { type TypedEventMap } from '../utils/event-utils';
 import { EventDrivenComponent } from '../utils/event-bus-adapter';
+import { createLogger, normalizeLoggerError } from '../utils/logger';
 
 export interface InterfaceSwitchOptions {
   preserveSession?: boolean;
@@ -101,6 +102,7 @@ export class UniversalInterfaceManager extends EventDrivenComponent<UniversalInt
   // Interface switching state preservation
   private preservedStates: Map<InterfaceType, any> = new Map();
   private sessionIntegrationEnabled: boolean = true;
+  private readonly logger = createLogger('universal-interface-manager');
   
   constructor(dependencies: ITemplumCoreDependencies) {
     super('universal-interface-manager', 100);
@@ -183,7 +185,11 @@ export class UniversalInterfaceManager extends EventDrivenComponent<UniversalInt
 
       // Report warnings if any
       if (validationResult.warnings.length > 0) {
-        console.warn('Interface switch warnings:', validationResult.warnings);
+        this.logger.warn('Interface switch warnings detected', {
+          targetInterface,
+          warnings: validationResult.warnings,
+          options
+        });
       }
 
       const compatibilityIssues: string[] = [];
@@ -231,7 +237,13 @@ export class UniversalInterfaceManager extends EventDrivenComponent<UniversalInt
             };
           }
         } catch (error) {
-          console.warn('Failed to preserve state during interface switch preparation:', error);
+          this.logger.warn(
+            'Failed to preserve state during interface switch preparation',
+            this.formatErrorMetadata(error, {
+              targetInterface,
+              activeInterface: this.activeInterface
+            })
+          );
           compatibilityIssues.push('State preservation failed');
         }
       }
@@ -323,7 +335,11 @@ export class UniversalInterfaceManager extends EventDrivenComponent<UniversalInt
             );
             
             if (!switchResult.success) {
-              console.warn('Skin engine interface switch had issues:', switchResult);
+              this.logger.warn('Skin engine interface switch reported issues', {
+                targetInterface,
+                previousInterface,
+                switchResult
+              });
             }
           }
           
@@ -331,7 +347,13 @@ export class UniversalInterfaceManager extends EventDrivenComponent<UniversalInt
           await this.applyInterfaceSpecificRendering(targetInterface, switchResult);
           
         } catch (error) {
-          console.warn('Skin engine coordination failed during interface switch:', error);
+          this.logger.warn(
+            'Skin engine coordination failed during interface switch',
+            this.formatErrorMetadata(error, {
+              targetInterface,
+              previousInterface
+            })
+          );
         }
       }
 
@@ -378,14 +400,27 @@ export class UniversalInterfaceManager extends EventDrivenComponent<UniversalInt
                 await (targetAdapter as any).setSessionContext(sessionContext);
               }
             } catch (sessionError) {
-              console.warn('Session context restoration failed during interface switch:', sessionError);
+              this.logger.warn(
+                'Session context restoration failed during interface switch',
+                this.formatErrorMetadata(sessionError, {
+                  targetInterface,
+                  previousInterface,
+                  sessionId: preservedState.sessionMetadata?.sessionId
+                })
+              );
             }
           }
           
           // Clear preserved state after successful restoration
           this.preservedStates.delete(targetInterface);
         } catch (error) {
-          console.warn('State restoration failed during interface switch:', error);
+          this.logger.warn(
+            'State restoration failed during interface switch',
+            this.formatErrorMetadata(error, {
+              targetInterface,
+              previousInterface
+            })
+          );
         }
       }
 
@@ -681,7 +716,7 @@ export class UniversalInterfaceManager extends EventDrivenComponent<UniversalInt
     };
 
     // Log detailed error information
-    console.error('Interface switch error:', errorContext);
+    this.logger.error('Interface switch error', error, errorContext);
 
     // Emit error event for monitoring
     this.emit('interfaceSwitchError', errorContext);
@@ -796,11 +831,17 @@ export class UniversalInterfaceManager extends EventDrivenComponent<UniversalInt
         }
 
         const renderTime = Date.now() - renderStartTime;
-        console.log(`Interface-specific rendering applied for ${targetInterface} (${renderTime}ms)`);
+        this.logger.info('Interface-specific rendering applied', {
+          targetInterface,
+          renderTime
+        });
       }
 
     } catch (error) {
-      console.warn('Interface-specific rendering failed:', error);
+      this.logger.warn(
+        'Interface-specific rendering failed',
+        this.formatErrorMetadata(error, { targetInterface })
+      );
     }
   }
 
@@ -834,8 +875,33 @@ export class UniversalInterfaceManager extends EventDrivenComponent<UniversalInt
         }
       }
     } catch (error) {
-      console.warn('HTML generation failed for VSCode WebView:', error);
+      this.logger.warn(
+        'HTML generation failed for VSCode WebView',
+        this.formatErrorMetadata(error, { interfaceType: 'vscode' })
+      );
     }
+  }
+
+  private formatErrorMetadata(
+    error: unknown,
+    extra: Record<string, unknown> = {}
+  ): Record<string, unknown> {
+    const { error: normalizedError, data } = normalizeLoggerError(error);
+    const metadata: Record<string, unknown> = { ...extra };
+
+    if (normalizedError) {
+      metadata.error = {
+        name: normalizedError.name,
+        message: normalizedError.message,
+        stack: normalizedError.stack
+      };
+    }
+
+    if (data !== undefined) {
+      metadata.originalData = data;
+    }
+
+    return metadata;
   }
 
   /**

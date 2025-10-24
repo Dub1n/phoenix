@@ -24,6 +24,7 @@ import {
   AccessPattern 
 } from './skin-navigation-parser';
 import { UniversalSkinDefinition } from '../types/universal-skin-definition';
+import { createLogger, normalizeLoggerError } from '../utils/logger';
 
 /**
  * TODO: [TASK-MCP-010-001] Pattern: content-analysis-interface | Complexity: 6 | Dependencies: content-processing,analysis-algorithms
@@ -220,6 +221,7 @@ export class ContentNavigationManager {
     optimizationCount: 0,
     adaptationCount: 0
   };
+  private readonly logger = createLogger('content-navigation-manager');
 
   constructor(router: DynamicCommandRouter) {
     this.router = router;
@@ -244,23 +246,38 @@ export class ContentNavigationManager {
       // Perform compatibility check
       const compatibility = this.checkSkinCompatibility(skinDefinition);
       if (!compatibility.compatible && compatibility.compatibilityScore < 50) {
-        console.warn(`ContentNavigationManager: Low compatibility score (${compatibility.compatibilityScore}) for skin ${skinDefinition.id}`);
+        this.logger.warn('Low compatibility score detected for skin', {
+          skinId: skinDefinition.id,
+          score: compatibility.compatibilityScore,
+          supportedFeatures: compatibility.supportedFeatures.length,
+          missingFeatures: compatibility.missingFeatures
+        });
       }
 
       // Initialize with fallbacks if needed
       if (compatibility.recommendedFallbacks.length > 0) {
-        console.info(`ContentNavigationManager: Applying ${compatibility.recommendedFallbacks.length} recommended fallbacks`);
+        this.logger.info('Applying recommended navigation fallbacks', {
+          skinId: skinDefinition.id,
+          fallbacks: compatibility.recommendedFallbacks
+        });
       }
 
       this.isInitialized = true;
 
       const initTime = Date.now() - startTime;
-      console.log(`ContentNavigationManager: Initialized for ${skinDefinition.id} in ${initTime}ms`);
-      console.log(`  - Compatibility Score: ${compatibility.compatibilityScore}%`);
-      console.log(`  - Supported Features: ${compatibility.supportedFeatures.length}`);
+      this.logger.info('ContentNavigationManager initialized', {
+        skinId: skinDefinition.id,
+        durationMs: initTime,
+        compatibilityScore: compatibility.compatibilityScore,
+        supportedFeatures: compatibility.supportedFeatures.length
+      });
 
     } catch (error) {
-      console.error('ContentNavigationManager: Initialization failed:', error);
+      const normalized = normalizeLoggerError(error);
+      this.logger.error('ContentNavigationManager initialization failed', normalized.error, {
+        skinId: skinDefinition.id,
+        context: normalized.data
+      });
       
       // Set up minimal fallback functionality
       this.isInitialized = false;
@@ -303,7 +320,10 @@ export class ContentNavigationManager {
       return analysis;
 
     } catch (error) {
-      console.warn('ContentNavigationManager: Content analysis failed, using fallback:', error);
+      const normalized = normalizeLoggerError(error);
+      this.logger.warn('Content analysis failed; using fallback', normalized.data ?? {
+        reason: 'unknown-error'
+      });
       return this.getFallbackContentAnalysis();
     }
   }
@@ -343,7 +363,11 @@ export class ContentNavigationManager {
       return optimization;
 
     } catch (error) {
-      console.warn('ContentNavigationManager: Route optimization failed, using fallback:', error);
+      const normalized = normalizeLoggerError(error);
+      this.logger.warn('Route optimization failed; using fallback', {
+        skinId,
+        details: normalized.data
+      });
       return this.getFallbackRouteOptimization();
     }
   }
@@ -379,7 +403,10 @@ export class ContentNavigationManager {
       return adaptation;
 
     } catch (error) {
-      console.warn('ContentNavigationManager: UI adaptation failed, using fallback:', error);
+      const normalized = normalizeLoggerError(error);
+      this.logger.warn('UI adaptation failed; using fallback', {
+        details: normalized.data
+      });
       return this.getFallbackUIAdaptation();
     }
   }
@@ -453,7 +480,8 @@ export class ContentNavigationManager {
       };
 
     } catch (error) {
-      console.warn('ContentNavigationManager: Compatibility check failed:', error);
+      const normalized = normalizeLoggerError(error);
+      this.logger.warn('Content navigation compatibility check failed', normalized.data ?? {});
       
       // Return safe fallback compatibility result
       return {

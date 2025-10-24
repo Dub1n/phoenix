@@ -10,6 +10,7 @@ import { backendIntegrationConfig } from '../backend/backend-integration-config'
 import { DynamicCommandRouter } from '../backend/dynamic-command-router';
 import { EventDrivenComponent } from '../utils/event-bus-adapter';
 import type { TypedEventMap } from '../utils/event-utils';
+import { createLogger } from '../utils/logger';
 
 export interface MenuDefinition {
   id: string;
@@ -142,6 +143,7 @@ export class PCLMenuRegistry extends EventDrivenComponent<PCLMenuRegistryEvents>
   private interfaceAdapters: Map<string, any> = new Map();
   private stats: MenuRegistryStats;
   private commandRouter: DynamicCommandRouter | null = null;
+  private readonly logger = createLogger('pcl-menu-registry');
 
   constructor(commandRouter?: DynamicCommandRouter) {
     super(`pcl-menu-registry:${PCLMenuRegistry.instanceCounter++}`, 120);
@@ -180,7 +182,11 @@ export class PCLMenuRegistry extends EventDrivenComponent<PCLMenuRegistryEvents>
       timestamp: Date.now()
     });
 
-    console.log(`PCL Menu Registry: Registered ${menuDefinition.name} with ${optimizedMenu.pclPatterns.pclReusePercentage}% PCL reuse`);
+    this.logger.info('Registered menu with PCL reuse optimisation', {
+      menuId: menuDefinition.id,
+      menuName: menuDefinition.name,
+      reusePercentage: optimizedMenu.pclPatterns.pclReusePercentage
+    });
   }
 
   /**
@@ -429,15 +435,25 @@ export class PCLMenuRegistry extends EventDrivenComponent<PCLMenuRegistryEvents>
           const commandRoute = this.commandRouter.getCommandRoute(item.command);
           if (commandRoute) {
             // Command is already registered - use as-is
-            console.log(`[PCLMenuRegistry] Using dynamic route for command: ${item.command} -> ${commandRoute.backend.id}`);
+            this.logger.info('Resolved dynamic command route', {
+              commandId: item.command,
+              backendId: commandRoute.backend.id
+            });
           } else {
             // Generic system: Commands should be registered in dynamic router via skin definitions
-            console.warn(`[PCLMenuRegistry] Command ${item.command} not found in dynamic router - backend may not be properly configured`);
+            this.logger.warn('Command not found in dynamic router', {
+              commandId: item.command,
+              context: 'optimizeMenuItemsWithPCL'
+            });
           }
         }
       } else {
         // Generic system failure: Dynamic command routing should always be available
-        console.error('[PCLMenuRegistry] Dynamic command router not available - system configuration error');
+        this.logger.error(
+          'Dynamic command router not available during menu optimisation',
+          undefined,
+          { menuItemId: item.id }
+        );
       }
 
       // Optimize submenu recursively
@@ -876,6 +892,6 @@ export class PCLMenuRegistry extends EventDrivenComponent<PCLMenuRegistryEvents>
 
   private initializePCLMenuPatterns(): void {
     // Initialize with common PCL menu patterns
-    console.log('PCL Menu Registry: Initializing with proven PCL patterns for 80% reuse optimization');
+    this.logger.info('Initializing PCL menu patterns', { reuseTargetPercentage: 80 });
   }
 }

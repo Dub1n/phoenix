@@ -5,6 +5,8 @@ import type {
   MenuItemDefinition as SkinMenuItemDefinition,
   CommandDefinition as SkinCommandDefinition,
   ParameterDefinition as SkinParameterDefinition,
+  RenderingConfiguration,
+  SkinTheme,
 } from '../types/universal-skin-definition';
 import type {
   LoadedSkin,
@@ -576,12 +578,23 @@ function capitalize(value: string): string {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
+type RenderingConfigWithThemePreset = RenderingConfiguration & {
+  themePreset?: string;
+};
+
+type LegacySkinThemeWithName = SkinTheme & {
+  name?: string;
+};
+
 function resolveTheme(skin: UniversalSkinDefinition): TerminalColorTheme | null {
-  const candidate =
-    skin.rendering?.themePreset ??
-    skin.metadata?.tags?.find((tag) => tag.startsWith('theme:'))?.split(':')[1] ??
-    skin.theme?.name ??
-    'default';
+  const renderingThemePreset =
+    (skin.rendering as RenderingConfigWithThemePreset | undefined)?.themePreset;
+  const taggedTheme = skin.metadata?.tags
+    ?.find((tag) => tag.startsWith('theme:'))
+    ?.split(':')[1];
+  const legacyThemeName = (skin.theme as LegacySkinThemeWithName | undefined)?.name;
+
+  const candidate = renderingThemePreset ?? taggedTheme ?? legacyThemeName ?? 'default';
 
   if (typeof candidate === 'string' && candidate in DefaultColorThemes) {
     return DefaultColorThemes[candidate];

@@ -13,6 +13,7 @@
 import { createTimeout, ManagedTimeout, sleep } from '../utils/async-utils';
 import { type TypedEventMap } from '../utils/event-utils';
 import { EventDrivenComponent } from '../utils/event-bus-adapter';
+import { createLogger } from '../utils/logger';
 
 export interface StateUpdate {
   interfaceId: string;
@@ -70,6 +71,7 @@ export class StateSyncFoundation extends EventDrivenComponent<StateSyncFoundatio
   private initialized = false;
   private processingTimeout: ManagedTimeout | null = null;
   private versionCounter = 0;
+  private readonly logger = createLogger('state-sync-foundation');
 
   constructor() {
     super('state-sync-foundation', 50);
@@ -371,13 +373,19 @@ export class StateSyncFoundation extends EventDrivenComponent<StateSyncFoundatio
     // Monitor performance and warn if sync time exceeds baseline
     this.on('stateUpdated', (_key, _value, _interfaceId) => {
       if (this.metrics.averageSyncTime > 150) {
-        console.warn(`State sync average time exceeding 150ms baseline: ${this.metrics.averageSyncTime}ms`);
+        this.logger.warn('State sync average time exceeded baseline', {
+          averageSyncTimeMs: this.metrics.averageSyncTime,
+          baselineMs: 150
+        });
       }
     });
 
     // Log conflict resolutions for debugging
     this.on('conflictResolved', (conflict) => {
-      console.debug(`State conflict resolved for key '${conflict.key}' using ${conflict.resolutionStrategy} strategy`);
+      this.logger.debug('State conflict resolved', {
+        key: conflict.key,
+        strategy: conflict.resolutionStrategy
+      });
     });
   }
 }

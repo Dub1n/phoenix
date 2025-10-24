@@ -52,6 +52,7 @@ import {
 } from './navigation/terminal-compatibility';
 import { EventDrivenComponent } from '../utils/event-bus-adapter';
 import { TypedEventMap } from '../utils/event-utils';
+import { createLogger, normalizeLoggerError } from '../utils/logger';
 
 // TODO: [TASK-ID-001] Pattern: adaptive-integration | Complexity: 6 | Dependencies: mcp-channel-validation
 // Context: MCP Channel compatibility bridge for preserving agent-CLI interaction
@@ -205,6 +206,18 @@ interface AdaptiveCLIIntegrationEvents extends TypedEventMap {
  */
 class MCPCompatibilityBridgeImpl implements MCPCompatibilityBridge {
   private originalAdapter: CLIInterfaceAdapter;
+  private readonly logger = createLogger('mcp-compatibility-bridge');
+
+  private logWarning(message: string, cause: unknown): void {
+    const normalized = normalizeLoggerError(cause);
+    const payload =
+      normalized.error !== undefined
+        ? { error: normalized.error }
+        : normalized.data !== undefined
+          ? { data: normalized.data }
+          : undefined;
+    this.logger.warn(message, payload);
+  }
   
   constructor(originalAdapter: CLIInterfaceAdapter) {
     this.originalAdapter = originalAdapter;
@@ -216,7 +229,7 @@ class MCPCompatibilityBridgeImpl implements MCPCompatibilityBridge {
       // This would integrate with the actual PTY manager
       return true; // Simplified for implementation
     } catch (error) {
-      console.warn('PTY session validation failed:', error);
+      this.logWarning('PTY session validation failed', error);
       return false;
     }
   }
@@ -227,7 +240,7 @@ class MCPCompatibilityBridgeImpl implements MCPCompatibilityBridge {
       // This would validate agent command execution paths
       return true; // Simplified for implementation
     } catch (error) {
-      console.warn('Agent interaction preservation failed:', error);
+      this.logWarning('Agent interaction preservation failed', error);
       return false;
     }
   }
@@ -282,7 +295,7 @@ class MCPCompatibilityBridgeImpl implements MCPCompatibilityBridge {
       // Preserve existing session state during navigation system integration
       return true; // Simplified for implementation
     } catch (error) {
-      console.warn('Session state preservation failed:', error);
+      this.logWarning('Session state preservation failed', error);
       return false;
     }
   }
@@ -292,7 +305,7 @@ class MCPCompatibilityBridgeImpl implements MCPCompatibilityBridge {
       // Restore session context after navigation system integration
       return true; // Simplified for implementation
     } catch (error) {
-      console.warn('Session context restoration failed:', error);
+      this.logWarning('Session context restoration failed', error);
       return false;
     }
   }
@@ -302,7 +315,7 @@ class MCPCompatibilityBridgeImpl implements MCPCompatibilityBridge {
       // Validate that agent communication channels remain functional
       return true; // Simplified for implementation
     } catch (error) {
-      console.warn('Agent communication validation failed:', error);
+      this.logWarning('Agent communication validation failed', error);
       return false;
     }
   }
@@ -310,10 +323,10 @@ class MCPCompatibilityBridgeImpl implements MCPCompatibilityBridge {
   async testKeyboardHandling(): Promise<boolean> {
     try {
       // Test that keyboard input handling remains functional
-      return this.originalAdapter.isInInteractiveMode() || 
+      return this.originalAdapter.isInInteractiveMode() ||
              typeof this.originalAdapter.handleInput === 'function';
     } catch (error) {
-      console.warn('Keyboard handling test failed:', error);
+      this.logWarning('Keyboard handling test failed', error);
       return false;
     }
   }
@@ -323,7 +336,7 @@ class MCPCompatibilityBridgeImpl implements MCPCompatibilityBridge {
       // Test that interactive search interface remains functional
       return true; // Simplified - would test actual search functionality
     } catch (error) {
-      console.warn('Search interface validation failed:', error);
+      this.logWarning('Search interface validation failed', error);
       return false;
     }
   }

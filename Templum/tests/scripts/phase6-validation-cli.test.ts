@@ -9,6 +9,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { Phase6ValidationCLI } from '../../src/scripts/run-phase6-integration-validation';
+import { BACKEND_VALIDATION_LOGGER_GUARDRAIL_MESSAGE } from '../../src/tests/backend/__utils__/logger-guardrail';
 
 const resetEnv = (keys: string[]) => {
   for (const key of keys) {
@@ -91,5 +92,16 @@ describe('Phase6ValidationCLI guardrails — error handler consolidation', () =>
     const directProcessExit = orchestratorSource.includes('process.exit(');
 
     expect(directProcessExit).toBe(false);
+  });
+
+  it('flags console usage in the Phase 6 dual-run orchestrator until logger migration lands', () => {
+    const orchestratorSource = readSource('../../scripts/run-phase6-full.js');
+    const consoleUsageMatches = orchestratorSource.match(/console\.(log|warn|error)/g) ?? [];
+
+    if (consoleUsageMatches.length > 0) {
+      throw new Error(
+        `${BACKEND_VALIDATION_LOGGER_GUARDRAIL_MESSAGE}: scripts/run-phase6-full.js uses console.* (${consoleUsageMatches.join(', ')})`
+      );
+    }
   });
 });

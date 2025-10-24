@@ -20,6 +20,7 @@ import { createTemplumError } from '../types/templum-types';
 import { SemanticValidators, TypeGuards, TypeValidators } from '../utils/type-guards';
 import { createTimeout } from '../utils/async-utils';
 import type { ManagedTimeout } from '../utils/async-utils';
+import { createLogger, normalizeLoggerError } from '../utils/logger';
 
 export interface ServiceValidationResult {
   serviceId: string;
@@ -80,6 +81,7 @@ export class ServiceDiscoveryValidator extends EventDrivenComponent<ServiceDisco
   private validationCache = new Map<string, ServiceValidationResult>();
   private performanceMetrics = new Map<string, number[]>();
   private capabilityProfiles = new Map<string, ServiceCapabilityProfile>();
+  private readonly logger = createLogger('service-discovery-validator');
   
   private validationOptions = {
     enableCaching: true,
@@ -107,14 +109,16 @@ export class ServiceDiscoveryValidator extends EventDrivenComponent<ServiceDisco
    */
   async validateAllServices(): Promise<ValidationMetrics> {
     const startTime = Date.now();
-    console.log('[SERVICE_VALIDATOR] Starting comprehensive service validation');
+    this.logger.info('Starting comprehensive service validation');
     
     this.emit('validationStarted');
 
     try {
       // Get all discovered services
       const discoveredServices = this.serviceDiscovery.getDiscoveredServices();
-      console.log(`[SERVICE_VALIDATOR] Validating ${discoveredServices.length} discovered services`);
+      this.logger.info('Validating discovered services', {
+        serviceCount: discoveredServices.length
+      });
 
       const validationPromises = discoveredServices.map(service => 
         this.validateService(service.id, service.config)
@@ -125,13 +129,26 @@ export class ServiceDiscoveryValidator extends EventDrivenComponent<ServiceDisco
       // Process results and calculate metrics
       const metrics = this.calculateValidationMetrics(validationResults, startTime);
       
-      console.log(`[SERVICE_VALIDATOR] Validation completed: ${metrics.availableServices}/${metrics.totalServices} services available (${metrics.reliabilityRate.toFixed(1)}%)`);
+      this.logger.info('Service validation completed', {
+        availableServices: metrics.availableServices,
+        totalServices: metrics.totalServices,
+        reliabilityRate: metrics.reliabilityRate
+      });
       
       this.emit('validationCompleted', metrics);
       return metrics;
 
     } catch (error) {
-      console.error('[SERVICE_VALIDATOR] Validation failed:', error);
+      const { error: normalizedError, data } = normalizeLoggerError(error);
+      const metadata: Record<string, unknown> = {
+        elapsedMs: Date.now() - startTime
+      };
+
+      if (data !== undefined) {
+        metadata.originalData = data;
+      }
+
+      this.logger.error('Service validation failed', normalizedError ?? undefined, metadata);
       this.emit('validationError', error);
       throw error;
     }
@@ -518,7 +535,25 @@ export class ServiceDiscoveryValidator extends EventDrivenComponent<ServiceDisco
       }
 
     } catch (error) {
-      console.warn(`[SERVICE_VALIDATOR] Capability check failed for ${config.service}:`, error);
+      const { error: normalizedError, data } = normalizeLoggerError(error);
+      const metadata: Record<string, unknown> = {
+        serviceId: config.service,
+        endpoint: config.endpoint
+      };
+
+      if (normalizedError) {
+        metadata.error = {
+          name: normalizedError.name,
+          message: normalizedError.message,
+          stack: normalizedError.stack
+        };
+      }
+
+      if (data !== undefined) {
+        metadata.originalData = data;
+      }
+
+      this.logger.warn('Capability check failed', metadata);
     }
 
     // Remove duplicates
@@ -708,7 +743,10 @@ export class ServiceDiscoveryValidator extends EventDrivenComponent<ServiceDisco
   clearCache(): void {
     this.validationCache.clear();
     this.performanceMetrics.clear();
-    console.log('[SERVICE_VALIDATOR] Validation cache cleared');
+    this.logger.info('Validation cache cleared', {
+      cacheSize: this.validationCache.size,
+      performanceMetricsTracked: this.performanceMetrics.size
+    });
   }
 
   /**

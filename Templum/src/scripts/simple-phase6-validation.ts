@@ -13,6 +13,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { performance } from 'perf_hooks';
 import { sleep } from '../utils/async-utils';
+import { createLogger, normalizeLoggerError } from '../utils/logger';
 type ColumnAlignment = 'left' | 'right' | 'center';
 
 const formatColumn = (
@@ -40,6 +41,8 @@ const formatColumn = (
 };
 
 const READINESS_SCORE_NOTE = 'Score disabled until properly implemented';
+
+const cliLogger = createLogger('simple-phase6-validation-cli');
 
 // Simplified interfaces for working validation
 interface ServiceHealth {
@@ -80,6 +83,7 @@ interface ValidationReport {
 
 class SimplePhase6Validator {
   private outputDir: string;
+  private readonly logger = createLogger('simple-phase6-validator');
 
   constructor(outputDir: string = './validation-reports') {
     this.outputDir = outputDir;
@@ -92,16 +96,16 @@ class SimplePhase6Validator {
    * Run simplified Phase 6 validation with mock backend services
    */
   async runValidation(): Promise<ValidationReport> {
-    console.log('🚀 Starting Simple Phase 6 Integration Validation...\n');
+    this.logger.info('🚀 Starting Simple Phase 6 Integration Validation...\n');
 
     const startTime = performance.now();
     
     // Simulate service health checks
-    console.log('📋 Checking service health...');
+    this.logger.info('📋 Checking service health...');
     const serviceHealth = await this.checkServiceHealth();
     
     // Run integration tests
-    console.log('🔄 Running integration tests...');
+    this.logger.info('🔄 Running integration tests...');
     const { summary: testResults, details: testDetails } = await this.runIntegrationTests();
     
     // Calculate readiness score
@@ -110,7 +114,9 @@ class SimplePhase6Validator {
     const endTime = performance.now();
     const duration = endTime - startTime;
     
-    console.log(`\n✅ Validation completed in ${(duration / 1000).toFixed(2)}s`);
+    this.logger.info(`\n✅ Validation completed in ${(duration / 1000).toFixed(2)}s`, {
+      durationSeconds: Number((duration / 1000).toFixed(2))
+    });
     
     const report: ValidationReport = {
       reportId: `validation_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -197,9 +203,15 @@ class SimplePhase6Validator {
       const passed = Math.random() > 0.15;
       if (passed) {
         passedTests++;
-        console.log(`  ✅ ${test} - ${responseTime.toFixed(1)}ms`);
+        this.logger.info(`  ✅ ${test} - ${responseTime.toFixed(1)}ms`, {
+          testName: test,
+          responseTimeMs: Number(responseTime.toFixed(1))
+        });
       } else {
-        console.log(`  ❌ ${test} - ${responseTime.toFixed(1)}ms`);
+        this.logger.warn(`  ❌ ${test} - ${responseTime.toFixed(1)}ms`, {
+          testName: test,
+          responseTimeMs: Number(responseTime.toFixed(1))
+        });
       }
 
       testDetails.push({ name: test, durationMs: responseTime, passed });
@@ -303,7 +315,7 @@ class SimplePhase6Validator {
     const summaryJson = JSON.stringify(report, (key, value) => (key === 'rawMetrics' ? undefined : value), 2);
     fs.writeFileSync(jsonPath, summaryJson);
     savedFiles.push(jsonPath);
-    console.log(`📄 JSON report saved: ${jsonPath}`);
+    this.logger.info(`📄 JSON report saved: ${jsonPath}`, { path: jsonPath, format: 'json' });
 
     if (report.rawMetrics) {
       const rawPath = path.join(this.outputDir, `${baseFilename}.raw.json`);
@@ -313,7 +325,7 @@ class SimplePhase6Validator {
       };
       fs.writeFileSync(rawPath, JSON.stringify(rawPayload, null, 2));
       savedFiles.push(rawPath);
-      console.log(`📄 Raw metrics saved: ${rawPath}`);
+      this.logger.info(`📄 Raw metrics saved: ${rawPath}`, { path: rawPath, format: 'raw-json' });
     }
 
     // Generate additional formats
@@ -321,14 +333,14 @@ class SimplePhase6Validator {
       const htmlPath = path.join(this.outputDir, `${baseFilename}.html`);
       fs.writeFileSync(htmlPath, this.generateHTMLReport(report));
       savedFiles.push(htmlPath);
-      console.log(`📄 HTML report saved: ${htmlPath}`);
+      this.logger.info(`📄 HTML report saved: ${htmlPath}`, { path: htmlPath, format: 'html' });
     }
 
     if (format === 'markdown' || format === 'all') {
       const mdPath = path.join(this.outputDir, `${baseFilename}.md`);
       fs.writeFileSync(mdPath, this.generateMarkdownReport(report));
       savedFiles.push(mdPath);
-      console.log(`📄 Markdown report saved: ${mdPath}`);
+      this.logger.info(`📄 Markdown report saved: ${mdPath}`, { path: mdPath, format: 'markdown' });
     }
 
     return savedFiles;
@@ -338,26 +350,43 @@ class SimplePhase6Validator {
    * Display validation summary to console
    */
   displaySummary(report: ValidationReport): void {
-    console.log('\n📊 Phase 6 Integration Validation Summary');
-    console.log('═'.repeat(50));
-    console.log(`Phase 6 Readiness Score: ${report.phase6ReadinessScoreNote ?? READINESS_SCORE_NOTE}`);
-    console.log(`Integration Tests: ${report.testResults.passedTests}/${report.testResults.totalTests} passed`);
-    console.log(`Average Response Time: ${report.testResults.averageResponseTime.toFixed(1)}ms`);
+    this.logger.info('\n📊 Phase 6 Integration Validation Summary');
+    this.logger.info('═'.repeat(50));
+    this.logger.info(`Phase 6 Readiness Score: ${report.phase6ReadinessScoreNote ?? READINESS_SCORE_NOTE}`, {
+      readinessScore: report.phase6ReadinessScore,
+      readinessNote: report.phase6ReadinessScoreNote ?? READINESS_SCORE_NOTE
+    });
+    this.logger.info(`Integration Tests: ${report.testResults.passedTests}/${report.testResults.totalTests} passed`, {
+      passedTests: report.testResults.passedTests,
+      totalTests: report.testResults.totalTests
+    });
+    this.logger.info(`Average Response Time: ${report.testResults.averageResponseTime.toFixed(1)}ms`, {
+      averageResponseTimeMs: Number(report.testResults.averageResponseTime.toFixed(1))
+    });
     
-    console.log('\nService Health:');
+    this.logger.info('\nService Health:');
     Object.entries(report.serviceHealth).forEach(([service, health]) => {
       const status = health.operational ? '✅' : '❌';
-      console.log(`  ${service.toUpperCase()}: ${status} ${health.responseTime.toFixed(1)}ms, ${health.memoryUsage.toFixed(1)}MB`);
+      this.logger.info(`  ${service.toUpperCase()}: ${status} ${health.responseTime.toFixed(1)}ms, ${health.memoryUsage.toFixed(1)}MB`, {
+        service,
+        operational: health.operational,
+        responseTimeMs: Number(health.responseTime.toFixed(1)),
+        memoryUsageMb: Number(health.memoryUsage.toFixed(1))
+      });
     });
 
     if (report.recommendations.critical.length > 0) {
-      console.log('\n🚨 Critical Issues:');
-      report.recommendations.critical.forEach(rec => console.log(`  • ${rec}`));
+      this.logger.error('\n🚨 Critical Issues:', undefined, {
+        count: report.recommendations.critical.length
+      });
+      report.recommendations.critical.forEach(rec => this.logger.error(`  • ${rec}`));
     }
 
     if (report.recommendations.high.length > 0) {
-      console.log('\n⚠️  High Priority Issues:');
-      report.recommendations.high.forEach(rec => console.log(`  • ${rec}`));
+      this.logger.warn('\n⚠️  High Priority Issues:', {
+        count: report.recommendations.high.length
+      });
+      report.recommendations.high.forEach(rec => this.logger.warn(`  • ${rec}`));
     }
 
     const deploymentReady = report.phase6ReadinessScore >= 80;
@@ -365,7 +394,17 @@ class SimplePhase6Validator {
       ? '\n🎉 Phase 6 Integration Validation PASSED - System ready for production deployment'
       : '\n❌ Phase 6 Integration Validation NEEDS ATTENTION - Address issues before deployment';
     
-    console.log(statusMessage);
+    if (deploymentReady) {
+      this.logger.info(statusMessage, {
+        deploymentReady,
+        readinessScore: report.phase6ReadinessScore
+      });
+    } else {
+      this.logger.error(statusMessage, undefined, {
+        deploymentReady,
+        readinessScore: report.phase6ReadinessScore
+      });
+    }
   }
 
   /**
@@ -536,10 +575,25 @@ program
       await validator.saveReport(report, options.format);
       validator.displaySummary(report);
 
-      process.exit(report.phase6ReadinessScore >= 80 ? 0 : 1);
+      const exitCode = report.phase6ReadinessScore >= 80 ? 0 : 1;
+      cliLogger.info('Simple Phase 6 validation command completed', {
+        command: 'run',
+        exitCode,
+        readinessScore: report.phase6ReadinessScore
+      });
+      process.exitCode = exitCode;
     } catch (error) {
-      console.error('❌ Validation failed:', error instanceof Error ? error.message : 'Unknown error');
-      process.exit(1);
+      const { error: normalizedError, data } = normalizeLoggerError(error);
+      const metadata: Record<string, unknown> = { command: 'run' };
+      if (data !== undefined) {
+        metadata.details = data;
+      } else if (error instanceof Error) {
+        metadata.details = error.message;
+      } else {
+        metadata.details = String(error);
+      }
+      cliLogger.error('❌ Validation failed during simple Phase 6 run', normalizedError ?? undefined, metadata);
+      process.exitCode = 1;
     }
   });
 
@@ -548,37 +602,61 @@ program
   .description('Quick health check of mock services')
   .action(async () => {
     try {
-      console.log('🏥 Quick Health Check\n');
+      cliLogger.info('🏥 Quick Health Check\n', { command: 'health' });
       const validator = new SimplePhase6Validator();
       
       // Quick validation run focused on health
       const report = await validator.runValidation();
       
-      console.log('\nHealth Summary:');
-      console.log('─'.repeat(40));
+      cliLogger.info('\nHealth Summary:', { command: 'health' });
+      cliLogger.info('─'.repeat(40));
       Object.entries(report.serviceHealth).forEach(([service, health]) => {
         const status = health.operational ? '✅ HEALTHY' : '❌ UNHEALTHY';
         const serviceColumn = formatColumn(service.toUpperCase(), 10);
         const statusColumn = formatColumn(status, 15);
         const responseColumn = formatColumn(`${health.responseTime.toFixed(1)}ms`, 10);
-        console.log(`${serviceColumn} ${statusColumn} ${responseColumn}`);
+        cliLogger.info(`${serviceColumn} ${statusColumn} ${responseColumn}`, {
+          service,
+          operational: health.operational,
+          responseTimeMs: Number(health.responseTime.toFixed(1))
+        });
       });
       
       const overallHealthy = Object.values(report.serviceHealth).every(h => h.operational);
-      console.log(`\nOverall Health: ${overallHealthy ? '✅ HEALTHY' : '❌ UNHEALTHY'}`);
+      cliLogger.info(`\nOverall Health: ${overallHealthy ? '✅ HEALTHY' : '❌ UNHEALTHY'}`, {
+        overallHealthy
+      });
       
-      process.exit(overallHealthy ? 0 : 1);
+      process.exitCode = overallHealthy ? 0 : 1;
     } catch (error) {
-      console.error('❌ Health check failed:', error instanceof Error ? error.message : 'Unknown error');
-      process.exit(1);
+      const { error: normalizedError, data } = normalizeLoggerError(error);
+      const metadata: Record<string, unknown> = { command: 'health' };
+      if (data !== undefined) {
+        metadata.details = data;
+      } else if (error instanceof Error) {
+        metadata.details = error.message;
+      } else {
+        metadata.details = String(error);
+      }
+      cliLogger.error('❌ Health check failed', normalizedError ?? undefined, metadata);
+      process.exitCode = 1;
     }
   });
 
 // Execute CLI if run directly
 if (require.main === module) {
   program.parseAsync(process.argv).catch((error) => {
-    console.error('CLI execution failed:', error);
-    process.exit(1);
+    const { error: normalizedError, data } = normalizeLoggerError(error);
+    const metadata: Record<string, unknown> = { phase: 'parseAsync' };
+    if (data !== undefined) {
+      metadata.details = data;
+    } else if (error instanceof Error) {
+      metadata.details = error.message;
+    } else {
+      metadata.details = String(error);
+    }
+    cliLogger.error('CLI execution failed', normalizedError ?? undefined, metadata);
+    process.exitCode = 1;
   });
 }
 

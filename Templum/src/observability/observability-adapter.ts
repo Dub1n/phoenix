@@ -21,6 +21,7 @@ import {
   createTemplumError
 } from '../types/templum-types';
 import type { ManualOverrideDescriptor } from '../backend/manual-override-manager';
+import { createLogger, normalizeLoggerError } from '../utils/logger';
 
 // TODO: [TASK-NEW-044] Cross-component observability correlation patterns
 // Priority: High | Complexity: 7
@@ -86,6 +87,46 @@ export class ObservabilityAdapter implements IObservabilityService {
   private logger: ObservabilityLogger;
   private metrics: MetricsCollector;
   private alerts: AlertManager;
+  private readonly fallbackLogger = createLogger('observability-adapter');
+
+  private fallbackLog(
+    level: 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal',
+    message: string,
+    source: string,
+    metadata?: Record<string, any>,
+    cause?: unknown
+  ): void {
+    const normalized = cause === undefined ? undefined : normalizeLoggerError(cause);
+    const baseMetadata: Record<string, any> = metadata ? { ...metadata } : {};
+
+    if (normalized?.data !== undefined) {
+      baseMetadata.cause = normalized.data;
+    }
+
+    const payload = Object.keys(baseMetadata).length > 0 ? baseMetadata : undefined;
+    switch (level) {
+      case 'trace':
+        this.fallbackLogger.debug(`[TRACE] [${source}] ${message}`, payload);
+        break;
+      case 'debug':
+        this.fallbackLogger.debug(`[DEBUG] [${source}] ${message}`, payload);
+        break;
+      case 'info':
+        this.fallbackLogger.info(`[INFO] [${source}] ${message}`, payload);
+        break;
+      case 'warn':
+        this.fallbackLogger.warn(`[WARN] [${source}] ${message}`, payload);
+        break;
+      case 'error':
+        this.fallbackLogger.error(`[ERROR] [${source}] ${message}`, normalized?.error, payload);
+        break;
+      case 'fatal':
+        this.fallbackLogger.error(`[FATAL] [${source}] ${message}`, normalized?.error, payload);
+        break;
+      default:
+        this.fallbackLogger.info(`[${source}] ${message}`, payload);
+    }
+  }
   
   constructor(config?: ObservabilityConfig) {
     // Use provided config or create default
@@ -104,7 +145,7 @@ export class ObservabilityAdapter implements IObservabilityService {
   async initialize(): Promise<void> {
     try {
       if (this.initialized) {
-        console.warn('ObservabilityAdapter: Already initialized, skipping');
+        this.fallbackLogger.warn('ObservabilityAdapter already initialized; skipping subsequent initialize call');
         return;
       }
       
@@ -123,14 +164,19 @@ export class ObservabilityAdapter implements IObservabilityService {
       this.incrementCounter('observability_initializations', 1, { status: 'success' }, 'ObservabilityAdapter');
       
     } catch (error) {
-      const templumError = isTemplumError(error) ? error : createTemplumError(
-        `Observability adapter initialization failed: ${error}`, 
-        'OBSERVABILITY_INIT_ERROR', 
-        'configuration'
+      const templumError = isTemplumError(error)
+        ? error
+        : createTemplumError(
+            `Observability adapter initialization failed: ${error}`,
+            'OBSERVABILITY_INIT_ERROR',
+            'configuration'
+          );
+
+      this.fallbackLogger.error(
+        'Observability adapter initialization failed',
+        templumError,
+        { stage: 'initialize' }
       );
-      
-      // Use console for bootstrapping errors since observability might not be ready
-      console.error('ObservabilityAdapter: Initialization failed:', templumError);
       this.recordInitializationCounter('error');
       throw templumError;
     }
@@ -139,7 +185,7 @@ export class ObservabilityAdapter implements IObservabilityService {
   async shutdown(): Promise<void> {
     try {
       if (!this.initialized) {
-        console.warn('ObservabilityAdapter: Not initialized, skipping shutdown');
+        this.fallbackLogger.warn('Observability adapter shutdown skipped because initialization never completed');
         return;
       }
       
@@ -152,7 +198,16 @@ export class ObservabilityAdapter implements IObservabilityService {
       
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error during shutdown';
-      console.error('ObservabilityAdapter: Shutdown error:', errorMessage);
+      const normalized = normalizeLoggerError(error);
+      const metadata = {
+        message: errorMessage,
+        ...(normalized.data !== undefined ? { details: normalized.data } : {})
+      };
+      this.fallbackLogger.error(
+        'Observability adapter shutdown error',
+        normalized.error ?? (error instanceof Error ? error : undefined),
+        metadata
+      );
       // Don't throw during shutdown to prevent cascade failures
       this.initialized = false;
     }
@@ -168,47 +223,47 @@ export class ObservabilityAdapter implements IObservabilityService {
   
   logTrace(message: string, metadata?: Record<string, any>, source = 'unknown'): void {
     if (!this.initialized) {
-      console.log(`[TRACE] [${source}] ${message}`, metadata || '');
+      this.fallbackLog('trace', message, source, metadata);
       return;
     }
     this.logger.trace(message, metadata, source);
   }
-  
+
   logDebug(message: string, metadata?: Record<string, any>, source = 'unknown'): void {
     if (!this.initialized) {
-      console.log(`[DEBUG] [${source}] ${message}`, metadata || '');
+      this.fallbackLog('debug', message, source, metadata);
       return;
     }
     this.logger.debug(message, metadata, source);
   }
-  
+
   logInfo(message: string, metadata?: Record<string, any>, source = 'unknown'): void {
     if (!this.initialized) {
-      console.log(`[INFO] [${source}] ${message}`, metadata || '');
+      this.fallbackLog('info', message, source, metadata);
       return;
     }
     this.logger.info(message, metadata, source);
   }
-  
+
   logWarn(message: string, metadata?: Record<string, any>, source = 'unknown'): void {
     if (!this.initialized) {
-      console.warn(`[WARN] [${source}] ${message}`, metadata || '');
+      this.fallbackLog('warn', message, source, metadata);
       return;
     }
     this.logger.warn(message, metadata, source);
   }
-  
+
   logError(message: string, error?: TemplumError | Error, metadata?: Record<string, any>, source = 'unknown'): void {
     if (!this.initialized) {
-      console.error(`[ERROR] [${source}] ${message}`, error || '', metadata || '');
+      this.fallbackLog('error', message, source, metadata, error);
       return;
     }
     this.logger.error(message, error, metadata, source);
   }
-  
+
   logFatal(message: string, error?: TemplumError | Error, metadata?: Record<string, any>, source = 'unknown'): void {
     if (!this.initialized) {
-      console.error(`[FATAL] [${source}] ${message}`, error || '', metadata || '');
+      this.fallbackLog('fatal', message, source, metadata, error);
       return;
     }
     this.logger.fatal(message, error, metadata, source);
@@ -269,7 +324,10 @@ export class ObservabilityAdapter implements IObservabilityService {
     try {
       this.metrics.incrementCounter('observability_initializations', 1, { status }, 'ObservabilityAdapter');
     } catch (metricsError) {
-      console.warn('ObservabilityAdapter: Failed to record initialization metric', metricsError);
+      this.fallbackLog('warn', 'Failed to record observability initialization metric', 'ObservabilityAdapter', {
+        metric: 'observability_initializations',
+        status: 'error'
+      }, metricsError);
     }
   }
   

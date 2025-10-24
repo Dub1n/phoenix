@@ -9,6 +9,7 @@
 import { withTimeout } from '../utils/async-utils';
 import { EventDrivenComponent } from '../utils/event-bus-adapter';
 import type { TypedEventMap } from '../utils/event-utils';
+import { createLogger, normalizeLoggerError } from '../utils/logger';
 
 export interface FallbackStrategy {
   id: string;
@@ -170,6 +171,7 @@ export class FallbackManager extends EventDrivenComponent<FallbackManagerEvents>
     rollbackTimeout: number;
     historyRetention: number; // days
   };
+  private readonly logger = createLogger('fallback-manager');
 
   constructor() {
     super(FallbackManager.createScope(), 50);
@@ -202,7 +204,12 @@ export class FallbackManager extends EventDrivenComponent<FallbackManagerEvents>
       timestamp: Date.now()
     });
 
-    console.log(`Fallback Manager: Registered strategy for ${strategy.componentId} on ${strategy.interfaceType} (complexity ${strategy.complexity})`);
+    this.logger.info('Registered fallback strategy', {
+      strategyId: strategy.id,
+      componentId: strategy.componentId,
+      interfaceType: strategy.interfaceType,
+      complexity: strategy.complexity
+    });
   }
 
   /**
@@ -270,7 +277,13 @@ export class FallbackManager extends EventDrivenComponent<FallbackManagerEvents>
       }
 
       this.emit('fallbackCompleted', execution);
-      console.log(`Fallback Manager: Successfully executed ${fallbackMethod} fallback for ${componentId}`);
+      this.logger.info('Fallback executed successfully', {
+        componentId,
+        interfaceType,
+        fallbackMethod,
+        executionId: execution.id,
+        triggerType
+      });
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -284,6 +297,23 @@ export class FallbackManager extends EventDrivenComponent<FallbackManagerEvents>
       }
 
       this.emit('fallbackFailed', execution);
+
+      const { error: normalizedError, data } = normalizeLoggerError(error);
+      const metadata: Record<string, unknown> = {
+        componentId,
+        interfaceType,
+        fallbackMethod,
+        triggerType,
+        triggerValue,
+        executionId: execution.id,
+        errorMessage
+      };
+
+      if (data !== undefined) {
+        metadata.originalData = data;
+      }
+
+      this.logger.error('Fallback execution failed', normalizedError ?? undefined, metadata);
       throw new Error(`Fallback execution failed: ${errorMessage}`);
     } finally {
       // Move to history and cleanup
@@ -325,7 +355,20 @@ export class FallbackManager extends EventDrivenComponent<FallbackManagerEvents>
             );
           } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            console.error(`Automatic fallback failed for ${componentId}: ${errorMessage}`);
+            const { error: normalizedError, data } = normalizeLoggerError(error);
+            const metadata: Record<string, unknown> = {
+              componentId,
+              interfaceType,
+              triggerType: 'performance',
+              triggerValue: Math.abs(degradation.degradationPercentage),
+              errorMessage
+            };
+
+            if (data !== undefined) {
+              metadata.originalData = data;
+            }
+
+            this.logger.error('Automatic fallback failed', normalizedError ?? undefined, metadata);
           }
         }
       }
@@ -371,15 +414,23 @@ export class FallbackManager extends EventDrivenComponent<FallbackManagerEvents>
       };
 
       if (recoveryResult.success) {
+        const recoveryTime = Date.now() - execution.execution.startTime;
+
         this.emit('recoveryCompleted', {
           executionId,
           componentId: execution.componentId,
           interfaceType: execution.interfaceType,
-          recoveryTime: Date.now() - execution.execution.startTime,
+          recoveryTime,
           newPerformance: recoveryResult.performance
         });
         
-        console.log(`Fallback Manager: Successfully recovered ${execution.componentId} from fallback`);
+        this.logger.info('Fallback recovery completed', {
+          executionId,
+          componentId: execution.componentId,
+          interfaceType: execution.interfaceType,
+          recoveryTime,
+          newPerformance: recoveryResult.performance
+        });
         return true;
       } else {
         this.emit('recoveryFailed', {
@@ -876,7 +927,9 @@ export class FallbackManager extends EventDrivenComponent<FallbackManagerEvents>
       });
     });
 
-    console.log(`Fallback Manager: Initialized ${this.strategies.size} default fallback strategies`);
+    this.logger.info('Initialized default fallback strategies', {
+      strategyCount: this.strategies.size
+    });
   }
 
   private createFallbackMethods(complexity: number): {

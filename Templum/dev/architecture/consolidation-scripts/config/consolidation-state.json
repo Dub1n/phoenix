@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "updatedAt": "2025-10-19T00:37:12Z",
+  "updatedAt": "2025-10-24T21:57:40Z",
   "patterns": [
     {
       "patternId": 1,
@@ -2802,11 +2802,13 @@
           "elapsedMs": 309000
         },
         "6": {
-          "status": "in_progress",
-          "startedAt": "2025-10-19T00:09:18Z"
+          "status": "complete",
+          "startedAt": "2025-10-19T00:09:18Z",
+          "elapsedMs": 510502000,
+          "completedAt": "2025-10-24T21:57:40Z"
         },
         "7": {
-          "status": "blocked",
+          "status": "pending",
           "plannedFiles": [
             "Templum/"
           ],
@@ -3454,7 +3456,7 @@
           "elapsedMs": 1340000
         },
         "6j": {
-          "status": "in_progress",
+          "status": "complete",
           "scope": "Core command routing & state sync scoped error migration",
           "commands": [
             {
@@ -3467,7 +3469,7 @@
               "command": "rg 'catch \\(' src/core/templum-core.ts"
             }
           ],
-          "updatedAt": "2025-10-19T00:21:57Z",
+          "updatedAt": "2025-10-24T21:57:40Z",
           "plannedFiles": [
             "src/core/templum-core.ts"
           ],
@@ -3483,7 +3485,8 @@
               "gate": "lane-6k"
             }
           ],
-          "startedAt": "2025-10-19T00:21:57Z"
+          "startedAt": "2025-10-19T00:21:57Z",
+          "elapsedMs": 509743000
         },
         "6k": {
           "status": "complete",
@@ -3843,6 +3846,14 @@
           "id": "stage-6-note-20251019T003629",
           "timestamp": "2025-10-19T00:36:29Z",
           "body": "Lane 6l catch review: adapter-registry catch blocks now call createScopedTemplumError or ScopedErrorHandler.handle; sweep still reports 'catch (' hits but no direct createTemplumError usage remains outside the shared helper. Proceeding with forced sweep while tracking residual guard coverage.",
+          "scope": [
+            "stage-6"
+          ]
+        },
+        {
+          "id": "stage-6-note-20251024T215727",
+          "timestamp": "2025-10-24T21:57:27Z",
+          "body": "Created captureAsync/capture helpers for templum-core; if more catch blocks surface elsewhere we will open new Stage 6 lanes to extend the same pattern.",
           "scope": [
             "stage-6"
           ]
@@ -5124,9 +5135,20 @@
             "logs/consolidation/pattern-2/stage6/lane6l/guardrail-pass-20251019T003507Z.log"
           ],
           "durationMs": 1001000
+        },
+        {
+          "stage": "lane-6j",
+          "timestamp": "2025-10-24T21:57:08Z",
+          "summary": "Lane 6j guardrails: captured templum-core root scope via createTemplumCoreErrorHandler, reran npm run test -- --runTestsByPath src/tests/utils/error-handler.test.ts src/tests/core/error-handler-scope.guard.test.ts src/tests/core/templum-core-connection-events.test.ts and node scripts/run-with-timeout.mjs --preset jest-suite -- npx jest backend-suite; sweep clean."
+        },
+        {
+          "stage": "lane-6j",
+          "timestamp": "2025-10-24T21:57:40Z",
+          "summary": "Lane 6j complete: templum-core now on scoped capture helpers, guardrails/tests rerun, sweep clean.",
+          "durationMs": 509743000
         }
       ],
-      "updatedAt": "2025-10-19T00:37:12Z",
+      "updatedAt": "2025-10-24T21:57:40Z",
       "cohorts": [
         "D"
       ]

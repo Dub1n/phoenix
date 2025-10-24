@@ -20,6 +20,7 @@ import {
 import { withTimeout } from '../utils/async-utils';
 import { ErrorHandler } from '../utils/error-handler';
 import type { BackendServiceInfo, BackendStatusSnapshot } from './vscode/backend-service-model';
+import { createLogger, normalizeLoggerError } from '../utils/logger';
 
 /**
  * Universal WebView Provider for Backend Service Integration
@@ -29,6 +30,7 @@ import type { BackendServiceInfo, BackendStatusSnapshot } from './vscode/backend
  */
 export class TemplumUniversalWebViewProvider implements vscode.WebviewViewProvider {
   private view?: vscode.WebviewView;
+  private readonly logger = createLogger('vscode-templum-webview');
 
   constructor(
     private readonly context: vscode.ExtensionContext,
@@ -218,7 +220,7 @@ export class TemplumUniversalWebViewProvider implements vscode.WebviewViewProvid
         await this.updateWebViewWithResult(result);
       } else {
         // ✅ APPLY: Handle unknown actions gracefully
-        console.warn(`Unknown backend action: ${action} for backend: ${backendId}`);
+        this.logger.warn('Unknown backend action received', { action, backendId });
         if (this.view?.webview) {
           await this.view.webview.postMessage({
             type: 'unsupported_action',
@@ -328,7 +330,10 @@ export class TemplumUniversalWebViewProvider implements vscode.WebviewViewProvid
           metrics: { success: true }
         });
         
-        console.log(`Universal Skin Engine: Successfully rendered ${skinDefinition.metadata.name} for VSCode in ${renderResult.performance.renderTime}ms`);
+        this.logger.info('Universal Skin Engine rendered skin for VSCode', {
+          skinName: skinDefinition.metadata.name,
+          renderTimeMs: renderResult.performance.renderTime
+        });
         
       } else {
         throw createTemplumError(
@@ -362,7 +367,10 @@ export class TemplumUniversalWebViewProvider implements vscode.WebviewViewProvid
         });
       }
       
-      console.error(`Universal Skin Engine: Failed to render skin for ${skinDefinition.metadata.backend}:`, errorMessage);
+      this.logger.error('Universal Skin Engine failed to render skin', undefined, {
+        backend: skinDefinition.metadata.backend,
+        error: errorMessage
+      });
     }
   }
   
@@ -1068,7 +1076,7 @@ export class TemplumUniversalWebViewProvider implements vscode.WebviewViewProvid
           root.appendChild(errorDiv);
         } else if (type === 'command_result') {
           // Handle command execution results
-          console.log('Command result:', payload);
+          this.logger.debug('Command execution result received', { payload });
         } else if (type === 'backend_unavailable') {
           // ✅ ENHANCED: Handle backend unavailability feedback
           const unavailableDiv = document.createElement('div');

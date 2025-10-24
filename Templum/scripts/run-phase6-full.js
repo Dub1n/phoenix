@@ -56,13 +56,19 @@ const main = () => {
     run('node', [cliEntry, 'run']);
 
     if (shouldRunReal) {
-      console.log('\n🔁 Running Phase 6 validation against real backend services...');
+      runtime.logger.info('Running Phase 6 validation against real backend services', {
+        context: 'phase6-full-script',
+        action: 'start-real-backend-run'
+      });
       run('node', [cliEntry, 'run', '--use-real-backends'], {
         PHASE6_USE_REAL_BACKENDS: '1',
         PHASE6_SKIP_HARUSPEX: '0',
       });
     } else {
-      console.log('\nℹ️ Skipping real backend run (set PHASE6_RUN_REAL=1 or pass --real to enable).');
+      runtime.logger.info('Skipping real backend run; enable with PHASE6_RUN_REAL=1 or --real', {
+        context: 'phase6-full-script',
+        action: 'skip-real-backend-run'
+      });
     }
 
     runtime.setExitCode(0);

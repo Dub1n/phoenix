@@ -33,62 +33,82 @@ export interface LoggerConfiguration {
   serializer?: (record: LogRecord) => unknown;
 }
 
+type StructuredPayload = Record<string, unknown>;
+
+const STREAM_BY_LEVEL: Record<LogLevel, NodeJS.WritableStream> = {
+  [LogLevel.ERROR]: process.stderr,
+  [LogLevel.WARN]: process.stderr,
+  [LogLevel.INFO]: process.stdout,
+  [LogLevel.DEBUG]: process.stdout
+};
+
+function defaultStructuredSerializer(record: LogRecord): StructuredPayload {
+  const payload: StructuredPayload = {
+    timestamp: record.timestamp.toISOString(),
+    level: LogLevel[record.level],
+    context: record.context,
+    message: record.message
+  };
+
+  if (record.data !== undefined) {
+    payload.data = record.data;
+  }
+
+  if (record.error) {
+    payload.error = formatError(record.error);
+  }
+
+  if (record.durationMs !== undefined) {
+    payload.durationMs = record.durationMs;
+  }
+
+  return payload;
+}
+
+function isStructuredPayload(payload: unknown): payload is StructuredPayload {
+  if (!payload || typeof payload !== 'object') {
+    return false;
+  }
+
+  const candidate = payload as Record<string, unknown>;
+  return (
+    typeof candidate.timestamp === 'string' &&
+    typeof candidate.level === 'string' &&
+    typeof candidate.context === 'string' &&
+    typeof candidate.message === 'string'
+  );
+}
+
+function serializeStructuredPayload(payload: StructuredPayload): string {
+  try {
+    return JSON.stringify(payload);
+  } catch {
+    return inspect(payload, { depth: 4, colors: false, getters: true });
+  }
+}
+
+function resolveStructuredPayload(record: LogRecord): StructuredPayload {
+  if (isStructuredPayload(record.data)) {
+    return record.data;
+  }
+
+  return defaultStructuredSerializer(record);
+}
+
 const DEFAULT_CONFIGURATION: LoggerConfiguration = {
   level: LogLevel.INFO,
-  structured: false,
+  structured: true,
+  serializer: defaultStructuredSerializer,
   transport: {
     log(record: LogRecord): void {
-      const { level, message, context, timestamp, data, error, durationMs } = record;
-      const levelLabel = LogLevel[level];
-      const prefix = `[${timestamp.toISOString()}] [${context}] [${levelLabel}]`;
-
-      if (error) {
-        console.error(prefix, message, formatPayload(data), formatError(error));
-        return;
-      }
-
-      const target = level === LogLevel.ERROR
-        ? console.error
-        : level === LogLevel.WARN
-          ? console.warn
-          : level === LogLevel.DEBUG
-            ? console.debug
-            : console.log;
-
-      if (data !== undefined || durationMs !== undefined) {
-        target(prefix, message, mergePayload(data, durationMs));
-      } else {
-        target(prefix, message);
-      }
+      const stream = STREAM_BY_LEVEL[record.level] ?? process.stdout;
+      const payload = resolveStructuredPayload(record);
+      stream.write(`${serializeStructuredPayload(payload)}\n`);
     }
   }
 };
 
 let activeConfiguration: LoggerConfiguration = { ...DEFAULT_CONFIGURATION };
-
-function mergePayload(data: unknown, durationMs?: number): unknown {
-  if (durationMs === undefined) {
-    return data;
-  }
-  if (data && typeof data === 'object') {
-    return { ...(data as Record<string, unknown>), durationMs };
-  }
-  return { data, durationMs };
-}
-
-function formatPayload(data: unknown): unknown {
-  if (data === undefined) {
-    return undefined;
-  }
-  if (typeof data === 'string') {
-    return data;
-  }
-  try {
-    return inspect(data, { depth: 4, colors: false, getters: true });
-  } catch {
-    return String(data);
-  }
-}
 
 function formatError(error: Error): Record<string, unknown> {
   return {
@@ -221,6 +241,22 @@ export function createLogger(context?: string, options: Partial<LoggerOptions> =
 
 export const log = new Logger();
 
+export function normalizeLoggerError(error: unknown): { error?: Error; data?: unknown } {
+  if (error instanceof Error) {
+    return { error };
+  }
+
+  if (error === undefined || error === null) {
+    return {};
+  }
+
+  if (typeof error === 'object') {
+    return { data: error };
+  }
+
+  return { data: { details: error } };
+}
+
 function detectContext(): string {
   const stack = new Error().stack;
   if (!stack) {
@@ -239,4 +275,3 @@ function detectContext(): string {
 
   return 'unknown';
 }
-

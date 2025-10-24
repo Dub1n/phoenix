@@ -18,6 +18,7 @@ import {
   NavigationRoute, 
   NavigationOptimization 
 } from './skin-navigation-parser';
+import { createLogger, normalizeLoggerError } from '../utils/logger';
 import { UniversalSkinDefinition } from '../types/universal-skin-definition';
 
 /**
@@ -510,6 +511,7 @@ export class DynamicCommandRouter {
   private navigationGraphs = new Map<string, NavigationGraph>();
   private speedHeuristics = new Map<string, SpeedHeuristics>();
   private isInitialized = false;
+  private readonly logger = createLogger('dynamic-command-router');
 
   constructor() {
     this.parser = new SkinNavigationParser({ compatibilityMode: true });
@@ -534,13 +536,25 @@ export class DynamicCommandRouter {
       this.isInitialized = true;
 
       const initTime = Date.now() - startTime;
-      console.log(`DynamicCommandRouter: Initialized for ${skinDefinition.id} in ${initTime}ms`);
-      console.log(`  - Routes: ${navigationGraph.routes.size}`);
-      console.log(`  - Shortcuts: ${navigationGraph.shortcuts.size}`);
-      console.log(`  - Optimized paths: ${navigationGraph.optimizedPaths.size}`);
+      this.logger.info('Dynamic command router initialized', {
+        skinId: skinDefinition.id,
+        initializationTimeMs: initTime,
+        routeCount: navigationGraph.routes.size,
+        shortcutCount: navigationGraph.shortcuts.size,
+        optimizedPathCount: navigationGraph.optimizedPaths.size
+      });
 
     } catch (error) {
-      console.error('DynamicCommandRouter: Initialization failed:', error);
+      const { error: normalizedError, data } = normalizeLoggerError(error);
+      const metadata: Record<string, unknown> = {
+        skinId: skinDefinition.id
+      };
+
+      if (data !== undefined) {
+        metadata.originalData = data;
+      }
+
+      this.logger.error('Dynamic command router initialization failed', normalizedError ?? undefined, metadata);
       this.isInitialized = false;
       throw error;
     }

@@ -29,6 +29,7 @@ import * as os from 'os';
 import * as process from 'process';
 import { eventManager } from './event-listener-manager';
 import { EventUtils, type GenericEventMap } from '../../utils/event-utils';
+import { createLogger } from '../../utils/logger';
 
 export interface CompatibilityResult {
   compatible: boolean;
@@ -72,6 +73,8 @@ export interface RuntimeEnvironment {
     fileSystem: boolean;
   };
 }
+
+const runtimeLogger = createLogger('mcp-channel:runtime-compatibility-verifier');
 
 /**
  * Runtime Compatibility Verifier
@@ -121,12 +124,15 @@ export class RuntimeCompatibilityVerifier {
         (now - this.lastVerificationTime) < this.VERIFICATION_CACHE_TTL) {
       const cached = this.verificationCache.get(cacheKey);
       if (cached) {
-        console.log('[RUNTIME_VERIFIER] Using cached compatibility result');
+        runtimeLogger.debug('Using cached compatibility result', {
+          cacheKey,
+          ageMs: now - this.lastVerificationTime
+        });
         return cached;
       }
     }
 
-    console.log('[RUNTIME_VERIFIER] Performing runtime compatibility verification...');
+    runtimeLogger.info('Performing runtime compatibility verification', { forceRefresh });
     
     try {
       const environment = await this.detectRuntimeEnvironment();
@@ -164,11 +170,19 @@ export class RuntimeCompatibilityVerifier {
       this.verificationCache.set(cacheKey, result);
       this.lastVerificationTime = now;
       
-      console.log(`[RUNTIME_VERIFIER] Compatibility verification complete: ${compatible ? 'COMPATIBLE' : 'INCOMPATIBLE'} (confidence: ${confidence}%)`);
+      runtimeLogger.info('Compatibility verification complete', {
+        compatible,
+        confidence,
+        riskLevel
+      });
       return result;
       
     } catch (error) {
-      console.error('[RUNTIME_VERIFIER] Runtime verification failed:', error);
+      runtimeLogger.error(
+        'Runtime verification failed',
+        error instanceof Error ? error : null,
+        error instanceof Error ? undefined : { details: error }
+      );
       
       // Return pessimistic result with fallback configuration
       return {
@@ -539,13 +553,17 @@ export async function verifyMCPChannelCompatibility(): Promise<CompatibilityResu
  * Apply adapted configuration to event manager
  */
 export function applyAdaptedConfiguration(config: AdaptedConfiguration): void {
-  console.log('[RUNTIME_VERIFIER] Applying adapted configuration:', config);
+  runtimeLogger.info('Applying adapted configuration', {
+    timeoutMultiplier: config.timeoutMultiplier,
+    fallbackMode: config.fallbackMode,
+    maxEventListeners: config.maxEventListeners
+  });
   
   // Apply configuration to event manager if available
   const metrics = eventManager.getMetrics();
-  console.log('[RUNTIME_VERIFIER] Current event manager state:', metrics);
+  runtimeLogger.debug('Current event manager state', metrics);
   
   if (config.fallbackMode) {
-    console.log('[RUNTIME_VERIFIER] Running in fallback mode with reduced features');
+    runtimeLogger.warn('Running in fallback mode with reduced features');
   }
 }

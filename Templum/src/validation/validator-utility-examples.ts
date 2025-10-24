@@ -34,6 +34,9 @@ import {
   ValidationPatterns
 } from './validator';
 import { sleep } from '../utils/async-utils';
+import { createLogger, normalizeLoggerError } from '../utils/logger';
+
+const logger = createLogger('validator-utility-examples');
 
 // Example schemas for validation
 const componentConfigSchema: SchemaDefinition = {
@@ -236,7 +239,11 @@ export async function validatePerformanceMetrics(
     cost: 30,
     timeout: 5000,
     execute: async (error, context) => {
-      console.log(`[RECOVERY] Attempting performance optimization for ${error.code}`);
+      logger.info(`[RECOVERY] Attempting performance optimization for ${error.code}`, {
+        strategy: 'performance-optimization',
+        errorCode: error.code,
+        attempt: context.attempt
+      });
       // Simulate performance optimization
       await sleep(1000);
       return Math.random() > 0.3; // 70% success rate
@@ -268,7 +275,11 @@ export async function validateMCPConnection(config: any): Promise<ValidationResu
       cost: 20,
       timeout: 10000,
       execute: async (error, context) => {
-        console.log('[MCP_RECOVERY] Retrying connection with exponential backoff');
+        logger.info('[MCP_RECOVERY] Retrying connection with exponential backoff', {
+          strategy: 'connection-retry',
+          attempt: context.attempt,
+          errorCode: error.code
+        });
         const delay = Math.min(5000, 1000 * Math.pow(2, context.attempt - 1));
         await sleep(delay);
         return Math.random() > 0.4;
@@ -280,7 +291,11 @@ export async function validateMCPConnection(config: any): Promise<ValidationResu
       cost: 70,
       timeout: 3000,
       execute: async (error, context) => {
-        console.log('[MCP_RECOVERY] Switching to local fallback mode');
+        logger.info('[MCP_RECOVERY] Switching to local fallback mode', {
+          strategy: 'fallback-mode',
+          attempt: context.attempt,
+          errorCode: error.code
+        });
         return true; // Fallback always succeeds
       }
     });
@@ -582,14 +597,26 @@ export class ValidationCodeReductionExamples {
       
       // Manual error recovery
       if (data.errors && data.errors.length > 0) {
-        console.log('Attempting error recovery...');
+        logger.info('Attempting error recovery...', {
+          component: 'legacy-system-health',
+          errorCount: data.errors.length
+        });
         // Complex recovery logic here...
         await sleep(2000);
       }
       
       return true;
     } catch (error) {
-      console.error('Validation failed:', error);
+      const { error: normalizedError, data: normalizedData } = normalizeLoggerError(error);
+      const metadata: Record<string, unknown> = { component: 'legacy-system-health' };
+      if (normalizedData !== undefined) {
+        metadata.details = normalizedData;
+      } else if (error instanceof Error) {
+        metadata.details = error.message;
+      } else {
+        metadata.details = String(error);
+      }
+      logger.error('Validation failed during legacy system health check', normalizedError ?? undefined, metadata);
       return false;
     }
   }

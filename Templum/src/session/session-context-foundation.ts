@@ -18,6 +18,7 @@ import {
   UnsubscribeFn
 } from '../utils/event-utils';
 import { createInterval } from '../utils/async-utils';
+import { createLogger } from '../utils/logger';
 
 export interface SessionContext {
   sessionId: string;
@@ -70,6 +71,7 @@ export class SessionContextFoundation {
   private activeSession: string | null = null;
   private initialized = false;
   private cleanupInterval: ReturnType<typeof createInterval> | null = null;
+  private readonly logger = createLogger('session-context-foundation');
 
   constructor() {
     this.eventScope = `session-context-foundation:${SessionContextFoundation.instanceCounter++}`;
@@ -257,7 +259,11 @@ export class SessionContextFoundation {
     
     const lookupTime = Date.now() - startTime;
     if (lookupTime > 10) {
-      console.warn(`Session lookup exceeded 10ms baseline: ${lookupTime}ms`);
+      this.logger.warn('Session lookup exceeded baseline', {
+        sessionId,
+        lookupTimeMs: lookupTime,
+        baselineMs: 10
+      });
     }
 
     this.emit('activeSessionChanged', sessionId);
@@ -288,7 +294,11 @@ export class SessionContextFoundation {
 
     const lookupTime = Date.now() - startTime;
     if (lookupTime > (options.timeout || 10)) {
-      console.warn(`Session lookup exceeded timeout: ${lookupTime}ms`);
+      this.logger.warn('Session lookup exceeded timeout', {
+        sessionId,
+        lookupTimeMs: lookupTime,
+        timeoutMs: options.timeout || 10
+      });
     }
 
     // Return minimal context unless metadata is requested
@@ -423,7 +433,7 @@ export class SessionContextFoundation {
     this.cleanupInterval = createInterval(() => {
       const cleaned = this.cleanupExpiredSessions();
       if (cleaned > 0) {
-        console.debug(`Cleaned up ${cleaned} expired sessions`);
+        this.logger.debug('Cleaned up expired sessions', { cleaned });
       }
     }, 5 * 60 * 1000, { unref: true });
   }

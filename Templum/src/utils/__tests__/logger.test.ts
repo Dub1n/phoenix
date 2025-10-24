@@ -41,6 +41,7 @@ describe('Logger', () => {
   });
 
   afterEach(() => {
+    jest.restoreAllMocks();
     resetConfiguration();
   });
 
@@ -114,5 +115,35 @@ describe('Logger', () => {
     logger.timeEnd('never-started');
 
     expect(transport.records).toHaveLength(0);
+  });
+});
+
+describe('Guardrail: consolidated sink abstraction', () => {
+  beforeEach(() => {
+    resetConfiguration();
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+    resetConfiguration();
+  });
+
+  it('fails until the default logger transport stops invoking console.* directly', () => {
+    const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const debugSpy = jest.spyOn(console, 'debug').mockImplementation(() => {});
+
+    const logger = createLogger('default-transport');
+
+    logger.info('info guardrail');
+    logger.warn('warn guardrail');
+    logger.error('error guardrail', new Error('guardrail failure'));
+    logger.debug('debug guardrail');
+
+    expect(logSpy).not.toHaveBeenCalled();
+    expect(warnSpy).not.toHaveBeenCalled();
+    expect(errorSpy).not.toHaveBeenCalled();
+    expect(debugSpy).not.toHaveBeenCalled();
   });
 });

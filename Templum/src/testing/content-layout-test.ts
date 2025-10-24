@@ -28,6 +28,7 @@ tags:
  */
 
 import { ContentLayoutSystem, WindowContent, TerminalCapabilities } from '../rendering/content-layout-system';
+import type { Logger } from '../utils/logger';
 
 export interface TestResult {
   testName: string;
@@ -552,21 +553,45 @@ export class ContentLayoutTestSuite {
 }
 
 // Export test runner function
-export async function runContentLayoutTests(): Promise<void> {
+export interface ContentLayoutTestExecution {
+  results: TestSuiteResult;
+  report: string;
+  hasFailures: boolean;
+}
+
+export interface RunContentLayoutTestsOptions {
+  logger?: Logger;
+}
+
+export async function runContentLayoutTests(
+  options: RunContentLayoutTestsOptions = {}
+): Promise<ContentLayoutTestExecution> {
+  const { logger } = options;
   const testSuite = new ContentLayoutTestSuite();
-  console.log('Running Content Layout System tests...\n');
-  
+  logger?.info('Running Content Layout System tests', { suite: 'content-layout-system' });
+
   const results = await testSuite.runAllTests();
   const report = testSuite.generateTestReport(results);
-  
-  console.log(report);
-  
-  if (results.failedTests > 0) {
-    console.error(`\nTest suite failed with ${results.failedTests} failures.`);
-    process.exit(1);
-  } else {
-    console.log('\nAll tests passed successfully!');
+  const hasFailures = results.failedTests > 0;
+
+  logger?.info('Content Layout System tests completed', {
+    total: results.totalTests,
+    passed: results.passedTests,
+    failed: results.failedTests,
+    durationMs: results.duration
+  });
+
+  if (hasFailures) {
+    logger?.error('Content Layout System tests reported failures', undefined, {
+      failedTests: results.failedTests
+    });
   }
+
+  return {
+    results,
+    report,
+    hasFailures
+  };
 }
 
 // Export for use in other test suites

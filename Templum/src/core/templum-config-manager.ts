@@ -23,6 +23,7 @@ import {
 import { createInterval, type ManagedInterval } from '../utils/async-utils';
 import { type TypedEventMap } from '../utils/event-utils';
 import { EventDrivenComponent } from '../utils/event-bus-adapter';
+import { createLogger, normalizeLoggerError } from '../utils/logger';
 
 // Enhanced Templum Configuration Schema
 export const TemplumConfigSchema = z.object({
@@ -324,6 +325,7 @@ export class TemplumConfigManager extends EventDrivenComponent<TemplumConfigMana
   private watchInterval?: ManagedInterval;
   private lastModified?: Date;
   private callbacks: Map<string, (config: TemplumConfig) => void> = new Map();
+  private readonly logger = createLogger('templum-config-manager');
 
   constructor(configPath?: string) {
     super('templum-config-manager', 75);
@@ -413,9 +415,13 @@ export class TemplumConfigManager extends EventDrivenComponent<TemplumConfigMana
       if (!loaded) {
         // Create default configuration
         await this.saveToFile();
-        console.log('⋇ Created default Templum configuration file');
+        this.logger.info('Created default Templum configuration file', {
+          configPath: this.configPath
+        });
       } else {
-        console.log('✓ Loaded existing Templum configuration');
+        this.logger.info('Loaded existing Templum configuration', {
+          configPath: this.configPath
+        });
       }
 
       // Setup file watching
@@ -439,7 +445,17 @@ export class TemplumConfigManager extends EventDrivenComponent<TemplumConfigMana
       };
 
       this.emit('templumConfigError', errorPayload);
-      console.error('✗ Templum configuration manager initialization failed:', error);
+      const { error: normalizedError, data } = normalizeLoggerError(error);
+      const metadata: Record<string, unknown> = {
+        configPath: this.configPath,
+        errorMessage
+      };
+
+      if (data !== undefined) {
+        metadata.originalData = data;
+      }
+
+      this.logger.error('Templum configuration manager initialization failed', normalizedError ?? undefined, metadata);
       return false;
     }
   }
@@ -470,14 +486,19 @@ export class TemplumConfigManager extends EventDrivenComponent<TemplumConfigMana
       // Notify callbacks
       this.notifyCallbacks(validatedConfig);
       
+      const changes = this.getConfigChanges(previousConfig, validatedConfig);
+
       this.emit('templumConfigUpdated', {
         previousConfig: this.sanitizeConfig(previousConfig),
         updatedConfig: this.sanitizeConfig(validatedConfig),
-        changes: this.getConfigChanges(previousConfig, validatedConfig),
+        changes,
         timestamp: Date.now()
       });
 
-      console.log('✓ Templum configuration updated successfully');
+      this.logger.info('Templum configuration updated successfully', {
+        changes,
+        configPath: this.configPath
+      });
       return true;
     } catch (error) {
       const errorMessage = isTemplumError(error) ? error.message : (error instanceof Error ? error.message : 'Unknown error');
@@ -490,7 +511,18 @@ export class TemplumConfigManager extends EventDrivenComponent<TemplumConfigMana
       };
 
       this.emit('templumConfigError', errorPayload);
-      console.error('✗ Templum configuration update failed:', error);
+      const { error: normalizedError, data } = normalizeLoggerError(error);
+      const metadata: Record<string, unknown> = {
+        configPath: this.configPath,
+        errorMessage,
+        updates
+      };
+
+      if (data !== undefined) {
+        metadata.originalData = data;
+      }
+
+      this.logger.error('Templum configuration update failed', normalizedError ?? undefined, metadata);
       return false;
     }
   }
@@ -512,7 +544,10 @@ export class TemplumConfigManager extends EventDrivenComponent<TemplumConfigMana
         timestamp: Date.now()
       });
 
-      console.log(`⋇ Loaded ${templateName} Templum template`);
+      this.logger.info('Loaded Templum template', {
+        templateName,
+        configPath: this.configPath
+      });
       return true;
     } catch (error) {
       const errorMessage = isTemplumError(error) ? error.message : (error instanceof Error ? error.message : 'Unknown error');
@@ -525,7 +560,18 @@ export class TemplumConfigManager extends EventDrivenComponent<TemplumConfigMana
       };
 
       this.emit('templumConfigError', errorPayload);
-      console.error(`✗ Failed to load ${templateName} Templum template:`, error);
+      const { error: normalizedError, data } = normalizeLoggerError(error);
+      const metadata: Record<string, unknown> = {
+        templateName,
+        configPath: this.configPath,
+        errorMessage
+      };
+
+      if (data !== undefined) {
+        metadata.originalData = data;
+      }
+
+      this.logger.error('Failed to load Templum template', normalizedError ?? undefined, metadata);
       return false;
     }
   }
@@ -773,16 +819,23 @@ export class TemplumConfigManager extends EventDrivenComponent<TemplumConfigMana
     };
 
     if (!outcome.ok) {
-      console.error(`✗ ${context} failed`, outcome.error, meta);
+      const { error: normalizedError, data } = normalizeLoggerError(outcome.error);
+      const metadata: Record<string, unknown> = { ...meta };
+
+      if (data !== undefined) {
+        metadata.originalData = data;
+      }
+
+      this.logger.error(`${context} failed`, normalizedError ?? undefined, metadata);
       return null;
     }
 
     if (outcome.status === 'defaults') {
-      console.warn(`⚠️  ${context} applied defaults`, meta);
+      this.logger.warn(`${context} applied defaults`, meta);
     } else if (outcome.status === 'fallback') {
-      console.warn(`⚠️  ${context} used fallback`, meta);
+      this.logger.warn(`${context} used fallback`, meta);
     } else if (outcome.meta.warnings.length > 0) {
-      console.warn(`⚠️  ${context} completed with warnings`, meta);
+      this.logger.warn(`${context} completed with warnings`, meta);
     }
 
     return outcome.value as T;
@@ -798,7 +851,9 @@ export class TemplumConfigManager extends EventDrivenComponent<TemplumConfigMana
         const stats = await fs.stat(this.configPath);
         
         if (this.lastModified && stats.mtime > this.lastModified) {
-          console.log('⇔ Templum configuration file changed, reloading...');
+          this.logger.info('Configuration file changed, reloading', {
+            configPath: this.configPath
+          });
           
           const reloaded = await this.loadFromFile();
           if (reloaded) {
@@ -809,7 +864,9 @@ export class TemplumConfigManager extends EventDrivenComponent<TemplumConfigMana
               config: this.sanitizeConfig(this.config)
             });
             
-            console.log('✓ Templum configuration reloaded');
+            this.logger.info('Templum configuration reloaded', {
+              configPath: this.configPath
+            });
           }
         }
       } catch (_error) {
@@ -912,7 +969,16 @@ export class TemplumConfigManager extends EventDrivenComponent<TemplumConfigMana
       try {
         callback(config);
       } catch (error) {
-        console.error('Templum configuration callback error:', error);
+        const { error: normalizedError, data } = normalizeLoggerError(error);
+        const metadata: Record<string, unknown> = {
+          configPath: this.configPath
+        };
+
+        if (data !== undefined) {
+          metadata.originalData = data;
+        }
+
+        this.logger.error('Templum configuration callback error', normalizedError ?? undefined, metadata);
       }
     }
   }

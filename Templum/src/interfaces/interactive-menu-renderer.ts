@@ -25,6 +25,7 @@ import {
 } from './cli-display-consistency-engine';
 import { ServiceInfo } from './service-ordering-manager';
 import { sleep } from '../utils/async-utils';
+import { createLogger, normalizeLoggerError } from '../utils/logger';
 
 /**
  * Menu item definition for interactive display
@@ -72,6 +73,7 @@ export class InteractiveMenuRenderer {
   private menus: Map<string, InteractiveMenu> = new Map();
   private consistencyEngine: CLIDisplayConsistencyEngine;
   private readonly formatter: TerminalFormatter;
+  private readonly logger = createLogger('interactive-menu-renderer');
   
   constructor(
     orchestrator: ITemplumOrchestrator,
@@ -94,6 +96,39 @@ export class InteractiveMenuRenderer {
     });
   }
 
+  private writeLine(message: string = ''): void {
+    if (typeof process.stdout?.write !== 'function') {
+      return;
+    }
+    const content = message.endsWith('\n') ? message : `${message}\n`;
+    process.stdout.write(content);
+  }
+
+  private clearDisplay(): void {
+    if (typeof process.stdout?.write !== 'function') {
+      return;
+    }
+    process.stdout.write('\u001b[2J\u001b[0f');
+  }
+
+  private logWarning(message: string, cause: unknown): void {
+    const normalized = normalizeLoggerError(cause);
+    const metadata: Record<string, unknown> = {};
+    if (normalized.error) {
+      metadata.error = normalized.error;
+    }
+    if (normalized.data !== undefined) {
+      metadata.data = normalized.data;
+    }
+    this.logger.warn(message, Object.keys(metadata).length === 0 ? undefined : metadata);
+  }
+
+  private logError(message: string, cause: unknown): void {
+    const normalized = normalizeLoggerError(cause);
+    const metadata = normalized.data === undefined ? undefined : normalized.data;
+    this.logger.error(message, normalized.error, metadata);
+  }
+
   /**
    * Display enhanced interactive menu with CLI design specification compliance
    * Integrates new CLI design with existing menu system for pattern-based UX optimization
@@ -113,7 +148,7 @@ export class InteractiveMenuRenderer {
 
     // Apply speed heuristics - if update took > 100ms, show loading indicator next time
     if (updateTime > 100) {
-      console.log(this.formatter.status.warning('Loading menu data...'));
+      this.writeLine(this.formatter.status.warning('Loading menu data...'));
     }
 
     // Build enhanced menu configuration
@@ -131,11 +166,11 @@ export class InteractiveMenuRenderer {
         
         // Log performance for UX optimization
         if (selectionTime > 50) {
-          console.log(this.formatter.status.debug(`Selection processed in ${selectionTime}ms`));
+          this.writeLine(this.formatter.status.debug(`Selection processed in ${selectionTime}ms`));
         }
       },
       onExit: async () => {
-        console.log(this.formatter.status.success('Templum CLI shutting down...'));
+        this.writeLine(this.formatter.status.success('Templum CLI shutting down...'));
         process.exit(0);
       }
     };
@@ -152,7 +187,7 @@ export class InteractiveMenuRenderer {
 
       return this.convertToMenuResult(selectedItem);
     } catch (error) {
-      console.error('Enhanced menu error:', error);
+      this.logError('Enhanced menu error', error);
       // Fallback to original menu system
       return this.displayMenu(menuId);
     }
@@ -193,7 +228,7 @@ export class InteractiveMenuRenderer {
     } catch (error) {
       // Handle Ctrl+C or other interruptions with proper CLI design behavior
       if (error && (error as any).isTtyError === false) {
-        console.log('\nPress Ctrl+C again to shut down Templum CLI');
+        this.writeLine('\nPress Ctrl+C again to shut down Templum CLI');
         return { action: 'quit', data: { confirmRequired: true } };
       }
       throw error;
@@ -543,7 +578,7 @@ export class InteractiveMenuRenderer {
         }
       }
     } catch (error) {
-      console.warn('Failed to update dynamic menu items:', error);
+      this.logWarning('Failed to update dynamic menu items', error);
     }
   }
 
@@ -551,7 +586,7 @@ export class InteractiveMenuRenderer {
    * Display menu using new CLI window design - no separate header
    */
   private displayMenuHeader(menu: InteractiveMenu): void {
-    console.clear();
+    this.clearDisplay();
     // Header is now integrated into the window layout - no separate display needed
   }
 
@@ -687,12 +722,12 @@ export class InteractiveMenuRenderer {
   }
 
   private async displayHelp(): Promise<void> {
-    console.clear();
+    this.clearDisplay();
     for (const line of this.renderHelpLines()) {
       if (line) {
-        console.log(line);
+        this.writeLine(line);
       } else {
-        console.log();
+        this.writeLine();
       }
     }
 
@@ -702,15 +737,15 @@ export class InteractiveMenuRenderer {
   }
 
   private async displayEnhancedHelp(): Promise<void> {
-    console.clear();
+    this.clearDisplay();
     for (const line of this.renderHelpLines()) {
       if (line) {
-        console.log(line);
+        this.writeLine(line);
       } else {
-        console.log();
+        this.writeLine();
       }
     }
-    console.log(this.formatter.palette.muted('Press any key to continue...'));
+    this.writeLine(this.formatter.palette.muted('Press any key to continue...'));
 
     const stdin = process.stdin;
     if (!stdin.isTTY) {

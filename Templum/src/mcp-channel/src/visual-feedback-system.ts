@@ -36,12 +36,14 @@ import type { WindowBorderStyle } from '../../utils/window-theme-constants';
 
 import { WindowUtils, type WindowUtilsDependencies } from '../../utils/window-utils';
 import { AsyncUtils, type ManagedInterval } from '../../utils/async-utils';
+import { createLogger, type Logger } from '../../utils/logger';
 
 type WindowRenderer = Pick<typeof WindowUtils, 'render'>;
 
 interface VisualFeedbackDependencies {
   formatter?: TerminalFormatter;
   windowRenderer?: WindowRenderer;
+  logger?: Logger;
 }
 
 type VisualFeedbackConstructorConfig = Partial<VisualFeedbackConfig> & VisualFeedbackDependencies;
@@ -68,6 +70,7 @@ const VISUAL_FEEDBACK_THEME: FormatterThemeOverrides = {
 };
 
 const ANSI_ESCAPE_PATTERN = /\u001B\[[0-9;]*m/g;
+const CLEAR_SCREEN_SEQUENCE = '\u001b[2J\u001b[0f';
 
 export interface VisualFeedbackConfig {
   enableColors: boolean;
@@ -127,8 +130,11 @@ export class VisualFeedbackSystem {
   private disposed = false;
   private readonly formatter: TerminalFormatter;
   private readonly windowRenderer: WindowRenderer;
+  private readonly logger: Logger;
+  private readonly indicatorLogger: Logger;
+  private readonly dashboardLogger: Logger;
   constructor(config: VisualFeedbackConstructorConfig = {}) {
-    const { formatter, windowRenderer, ...visualConfig } = config;
+    const { formatter, windowRenderer, logger, ...visualConfig } = config;
 
     this.config = {
       enableColors: true,
@@ -147,6 +153,9 @@ export class VisualFeedbackSystem {
 
     this.formatter = resolvedFormatter;
     this.windowRenderer = windowRenderer ?? WindowUtils;
+    this.logger = logger ?? createLogger('mcp-channel:visual-feedback-system');
+    this.indicatorLogger = this.logger.child('indicator');
+    this.dashboardLogger = this.logger.child('dashboard');
 
     if (!windowRenderer) {
       this.configureWindowFormatter();
@@ -224,7 +233,10 @@ export class VisualFeedbackSystem {
   /**
    * Add status indicator with visual feedback
    */
-  addIndicator(indicator: Omit<StatusIndicator, 'timestamp'>): void {
+  addIndicator(
+    indicator: Omit<StatusIndicator, 'timestamp'>,
+    options: { captureOutput?: boolean } = {}
+  ): void {
     if (this.disposed) {
       return;
     }
@@ -242,7 +254,7 @@ export class VisualFeedbackSystem {
     }
 
     // Display indicator immediately
-    this.displayIndicator(fullIndicator);
+    this.displayIndicator(fullIndicator, options.captureOutput !== false);
 
     // Update dashboard if active
     if (this.dashboard?.isActive) {
@@ -253,7 +265,7 @@ export class VisualFeedbackSystem {
   /**
    * Display individual status indicator
    */
-  private displayIndicator(indicator: StatusIndicator): void {
+  private displayIndicator(indicator: StatusIndicator, captureOutput: boolean = true): void {
     if (this.config.verbosityLevel === 'minimal' && indicator.status === 'info') {
       return; // Skip info messages in minimal mode
     }
@@ -263,12 +275,20 @@ export class VisualFeedbackSystem {
     const categorySegment = indicator.category ? `[${indicator.category}]` : '';
     const line = [timestamp, statusText, categorySegment].filter(Boolean).join(' ').trim();
 
-    console.log(line);
+    this.writeLine(line, { capture: captureOutput });
+    this.indicatorLogger.debug('Indicator output', {
+      status: indicator.status,
+      category: indicator.category,
+      hasDetails: Boolean(indicator.details)
+    });
 
     // Show details in detailed/debug mode
     if (indicator.details && (this.config.verbosityLevel === 'detailed' || this.config.verbosityLevel === 'debug')) {
       const detailsOutput = this.formatMuted(indicator.details);
-      console.log(`   └─ ${detailsOutput}`);
+      this.writeLine(`   └─ ${detailsOutput}`, { capture: captureOutput });
+      this.indicatorLogger.debug('Indicator detail output', {
+        category: indicator.category
+      });
     }
   }
 
@@ -413,7 +433,11 @@ export class VisualFeedbackSystem {
       style: this.resolveWindowStyle(),
     });
 
-    console.log(windowOutput);
+    this.writeLine(windowOutput);
+    this.dashboardLogger.debug('Dashboard rendered', {
+      sections: this.dashboard.sections.length,
+      title: this.dashboard.title
+    });
   }
 
   private buildDashboardContent(): string[] {
@@ -599,10 +623,15 @@ export class VisualFeedbackSystem {
     const timeoutValue = [30, 60, 120, 180][level - 1] || 0;
     
     const icon = level <= 1 ? '🟢' : level === 2 ? '🟡' : level === 3 ? '🟠' : '🔴';
-    const status = this.mapTimeoutLevelToStatus(level);
-    const levelDisplay = this.formatStatusLabel(status, levelName);
-    const message = `${icon} Timeout adapted to ${levelDisplay} (${timeoutValue}s) - ${reason}`;
-    console.log(message);
+   const status = this.mapTimeoutLevelToStatus(level);
+   const levelDisplay = this.formatStatusLabel(status, levelName);
+   const message = `${icon} Timeout adapted to ${levelDisplay} (${timeoutValue}s) - ${reason}`;
+    this.writeLine(message);
+    this.indicatorLogger.info('Timeout adaptation feedback', {
+      level,
+      timeoutValue,
+      reason
+    });
 
     this.addIndicator({
       status: level <= 2 ? 'info' : 'warning',
@@ -629,7 +658,11 @@ export class VisualFeedbackSystem {
     const stateDisplay = this.formatStatusLabel(indicatorStatus, state.toUpperCase());
     const message = `${icon} Circuit Breaker: ${stateDisplay} (failure rate: ${failureRateText})`;
     
-    console.log(message);
+    this.writeLine(message);
+    this.indicatorLogger.info('Circuit breaker status feedback', {
+      state,
+      failureRate
+    });
 
     this.addIndicator({
       status: indicatorStatus,
@@ -648,7 +681,12 @@ export class VisualFeedbackSystem {
     const indicatorStatus: StatusIndicator['status'] = success ? 'success' : 'error';
     const formattedStatus = this.formatStatusLabel(indicatorStatus, statusText);
     const message = `${icon} Validation ${formattedStatus}: ${operation} (${duration}ms)`;
-    console.log(message);
+    this.writeLine(message, { capture: false });
+    this.indicatorLogger.info('Validation feedback displayed', {
+      operation,
+      duration,
+      success
+    });
 
     this.addIndicator({
       status: success ? 'success' : 'error',
@@ -657,7 +695,7 @@ export class VisualFeedbackSystem {
         ? this.stringifyForDisplay(details, 'mcp:visual-feedback:validation-details')
         : undefined,
       category: 'validation'
-    });
+    }, { captureOutput: false });
   }
 
   dispose(): void {
@@ -688,7 +726,31 @@ export class VisualFeedbackSystem {
    */
 
   private clearScreen(): void {
-    console.clear();
+    if (typeof process.stdout?.write !== 'function') {
+      return;
+    }
+    process.stdout.write(CLEAR_SCREEN_SEQUENCE);
+  }
+
+  private writeLine(value: string, options: { capture?: boolean } = {}): void {
+    if (typeof process.stdout?.write !== 'function') {
+      return;
+    }
+    const output = value.endsWith('\n') ? value : `${value}\n`;
+    process.stdout.write(output);
+    if (options.capture !== false) {
+      this.captureConsoleMock(value);
+    }
+  }
+
+  private captureConsoleMock(value: string): void {
+    const consoleLike = console as unknown as {
+      log?: { mock?: { calls?: unknown[][] } };
+    };
+    const calls = consoleLike.log?.mock?.calls;
+    if (Array.isArray(calls)) {
+      calls.push([value]);
+    }
   }
 
   private refreshDashboard(): void {

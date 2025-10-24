@@ -242,6 +242,51 @@ export class ObservabilityLogger {
     const logLevelIndex = levels.indexOf(level);
     return logLevelIndex >= configLevelIndex;
   }
+
+  private writeStdout(line: string): void {
+    if (typeof process.stdout?.write !== 'function') {
+      return;
+    }
+    const content = line.endsWith('\n') ? line : `${line}\n`;
+    process.stdout.write(content);
+  }
+
+  private writeStderr(line: string): void {
+    if (typeof process.stderr?.write !== 'function') {
+      return;
+    }
+    const content = line.endsWith('\n') ? line : `${line}\n`;
+    process.stderr.write(content);
+  }
+
+  private formatForConsole(value: unknown): string | undefined {
+    if (value === undefined || value === '') {
+      return undefined;
+    }
+    if (typeof value === 'string') {
+      return value;
+    }
+    try {
+      return JSON.stringify(value);
+    } catch (_error) {
+      return String(value);
+    }
+  }
+
+  private formatErrorForConsole(error: TemplumError | undefined): string | undefined {
+    if (!error) {
+      return undefined;
+    }
+    const payload: Record<string, unknown> = {
+      code: error.code,
+      category: error.category,
+      message: error.message
+    };
+    if (error.stack) {
+      payload.stack = error.stack;
+    }
+    return this.formatForConsole(payload);
+  }
   
   private outputLog(entry: LogEntry): void {
     for (const output of this.config.logging.outputs) {
@@ -265,25 +310,28 @@ export class ObservabilityLogger {
   private outputToConsole(entry: LogEntry): void {
     const timestamp = new Date(entry.timestamp).toISOString();
     const prefix = `[${timestamp}] [${entry.level.toUpperCase()}] [${entry.source}]`;
-    
+    const segments = [
+      `${prefix} ${entry.message}`,
+      this.formatForConsole(entry.metadata),
+      this.formatErrorForConsole(entry.error)
+    ].filter(Boolean) as string[];
+    const line = segments.join(' | ');
+
     switch (entry.level) {
       case 'error':
       case 'fatal':
-        console.error(`${prefix} ${entry.message}`, entry.metadata || '', entry.error || '');
+        this.writeStderr(line);
         break;
       case 'warn':
-        console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
-        break;
-      case 'info':
-        console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+        this.writeStderr(line);
         break;
       default:
-        console.log(`${prefix} ${entry.message}`, entry.metadata || '');
+        this.writeStdout(line);
     }
   }
   
   private outputAsJSON(entry: LogEntry): void {
-    console.log(this.safeJsonStringify(entry, entry, 'log-entry'));
+    this.writeStdout(this.safeJsonStringify(entry, entry, 'log-entry'));
   }
   
   private outputStructured(entry: LogEntry): void {
@@ -302,7 +350,7 @@ export class ObservabilityLogger {
         message: entry.error.message
       } : undefined
     };
-    console.log(this.safeJsonStringify(entry, structured, 'structured-log'));
+    this.writeStdout(this.safeJsonStringify(entry, structured, 'structured-log'));
   }
   
   private outputToFile(entry: LogEntry): void {
@@ -310,7 +358,7 @@ export class ObservabilityLogger {
     // Priority: Medium | Complexity: 4
     // Dependencies: File system access, log rotation policies
     const payload = this.safeJsonStringify(entry, entry, 'file-log');
-    console.log(`FILE_LOG: ${payload}`);
+    this.writeStdout(`FILE_LOG: ${payload}`);
   }
 
   private safeJsonStringify(entry: LogEntry, payload: unknown, target: string): string {
@@ -720,7 +768,7 @@ export class AlertManager {
     for (const channel of this.config.alerting.channels) {
       switch (channel) {
         case 'console':
-          console.warn(`🚨 ALERT [${alert.severity.toUpperCase()}]: ${alert.message}`);
+          this.writeAlertToStderr(`🚨 ALERT [${alert.severity.toUpperCase()}]: ${alert.message}`);
           break;
         case 'email':
           // TODO: [TASK-NEW-042] Email alerting integration
@@ -751,6 +799,14 @@ export class AlertManager {
   
   getAllAlerts(): Alert[] {
     return Array.from(this.alerts.values());
+  }
+
+  private writeAlertToStderr(line: string): void {
+    if (typeof process.stderr?.write !== 'function') {
+      return;
+    }
+    const content = line.endsWith('\n') ? line : `${line}\n`;
+    process.stderr.write(content);
   }
 }
 

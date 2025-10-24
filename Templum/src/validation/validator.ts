@@ -26,6 +26,7 @@ import { performance } from 'perf_hooks';
 import { sleep, withTimeout } from '../utils/async-utils';
 import { EventDrivenComponent } from '../utils/event-bus-adapter';
 import type { TypedEventMap } from '../utils/event-utils';
+import { createLogger, normalizeLoggerError } from '../utils/logger';
 
 // Core validation interfaces
 export interface ValidationResult<T = any> {
@@ -431,6 +432,7 @@ export class ErrorRecoveryManager extends EventDrivenComponent<ErrorRecoveryMana
   private static instanceCounter = 0;
   private strategies: Map<string, RecoveryStrategy> = new Map();
   private recoveryHistory: Map<string, boolean[]> = new Map();
+  private readonly logger = createLogger('error-recovery-manager');
 
   constructor() {
     super(`error-recovery-manager:${ErrorRecoveryManager.instanceCounter++}`, 50);
@@ -448,7 +450,11 @@ export class ErrorRecoveryManager extends EventDrivenComponent<ErrorRecoveryMana
     
     for (const strategy of applicableStrategies) {
       try {
-        console.log(`[VALIDATOR] Attempting recovery with strategy: ${strategy.name}`);
+        this.logger.info(`[VALIDATOR] Attempting recovery with strategy: ${strategy.name}`, {
+          strategy: strategy.name,
+          errorCode: error.code,
+          attempt: context.attempt
+        });
         
         const success = await withTimeout(
           Promise.resolve(strategy.execute(error, context)),
@@ -459,13 +465,31 @@ export class ErrorRecoveryManager extends EventDrivenComponent<ErrorRecoveryMana
         this.recordRecoveryAttempt(strategy.name, success);
         
         if (success) {
-          console.log(`[VALIDATOR] Recovery successful with ${strategy.name}`);
+          this.logger.info(`[VALIDATOR] Recovery successful with ${strategy.name}`, {
+            strategy: strategy.name,
+            errorCode: error.code,
+            attempt: context.attempt
+          });
           this.emit('recoverySuccess', { strategy: strategy.name, error, context });
           return true;
         }
         
       } catch (recoveryError) {
-        console.warn(`[VALIDATOR] Recovery strategy ${strategy.name} failed:`, recoveryError);
+        const { error: normalizedError, data } = normalizeLoggerError(recoveryError);
+        const metadata: Record<string, unknown> = {
+          strategy: strategy.name,
+          errorCode: error.code,
+          attempt: context.attempt
+        };
+        if (data !== undefined) {
+          metadata.details = data;
+        } else if (recoveryError instanceof Error) {
+          metadata.details = recoveryError.message;
+        }
+        this.logger.warn('[VALIDATOR] Recovery strategy failed', {
+          ...metadata,
+          normalizedError
+        });
         this.recordRecoveryAttempt(strategy.name, false);
       }
     }
@@ -535,7 +559,11 @@ export class ErrorRecoveryManager extends EventDrivenComponent<ErrorRecoveryMana
       cost: 30,
       timeout: 3000,
       execute: async (error, context) => {
-        console.log('[VALIDATOR] Applying fallback strategy');
+        this.logger.info('[VALIDATOR] Applying fallback strategy', {
+          strategy: 'fallback',
+          errorCode: error.code,
+          attempt: context.attempt
+        });
         return true; // Fallback always succeeds
       }
     });
@@ -546,7 +574,11 @@ export class ErrorRecoveryManager extends EventDrivenComponent<ErrorRecoveryMana
       cost: 50,
       timeout: 2000,
       execute: async (error, context) => {
-        console.log('[VALIDATOR] Resetting component state');
+        this.logger.info('[VALIDATOR] Resetting component state', {
+          strategy: 'reset',
+          errorCode: error.code,
+          attempt: context.attempt
+        });
         await sleep(500);
         return Math.random() > 0.3; // 70% success rate
       }

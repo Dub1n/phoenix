@@ -13,6 +13,7 @@
 import { SessionContextFoundation, SessionContext } from '../session/session-context-foundation';
 import { EventDrivenComponent } from '../utils/event-bus-adapter';
 import type { TypedEventMap } from '../utils/event-utils';
+import { createLogger, normalizeLoggerError } from '../utils/logger';
 import type {
   ManualOverrideOptions,
   ManualOverrideDescriptor,
@@ -158,6 +159,7 @@ export class UniversalCommandRegistry extends EventDrivenComponent<UniversalComm
   private commonBackendsInitialized = false;
   private manualOverrideController?: ManualOverrideController;
   private manualOverrideCommandsRegistered = false;
+  private readonly logger = createLogger('universal-command-registry');
 
   constructor(sessionContext: SessionContextFoundation) {
     super(`universal-command-registry:${UniversalCommandRegistry.instanceCounter++}`, 80);
@@ -180,13 +182,32 @@ export class UniversalCommandRegistry extends EventDrivenComponent<UniversalComm
       return; // Already initialized
     }
 
+    const defaultBackends = ['pcl', 'test', 'haruspex'];
+
     try {
       // Load common backends that tests and runtime expect to be available
-      await this.loadBackendCommands(['pcl', 'test', 'haruspex']);
+      await this.loadBackendCommands(defaultBackends);
       this.commonBackendsInitialized = true;
     } catch (error) {
       // Log but don't fail execution - some backends might not be available
-      console.warn('Could not initialize some common backends:', error);
+      const { error: normalizedError, data } = normalizeLoggerError(error);
+      const metadata: Record<string, unknown> = {
+        backendIds: defaultBackends
+      };
+
+      if (normalizedError) {
+        metadata.error = {
+          name: normalizedError.name,
+          message: normalizedError.message,
+          stack: normalizedError.stack
+        };
+      }
+
+      if (data !== undefined) {
+        metadata.originalData = data;
+      }
+
+      this.logger.warn('Could not initialize some common backends', metadata);
       this.commonBackendsInitialized = true; // Mark as attempted to avoid repeated failures
     }
   }
@@ -507,7 +528,19 @@ export class UniversalCommandRegistry extends EventDrivenComponent<UniversalComm
         this.updateBackendMetrics(backendId, false, Date.now());
       }
 
-      console.error(`Command execution error for ${handler.id}:`, error);
+      const { error: normalizedError, data } = normalizeLoggerError(error);
+      const metadata: Record<string, unknown> = {
+        handlerId: handler.id,
+        backendId,
+        interfaceType: context.interfaceType,
+        sessionId: context.sessionId
+      };
+
+      if (data !== undefined) {
+        metadata.originalData = data;
+      }
+
+      this.logger.error('Command execution error', normalizedError ?? undefined, metadata);
       
       return {
         success: false,
@@ -666,7 +699,11 @@ export class UniversalCommandRegistry extends EventDrivenComponent<UniversalComm
     
     // Warn if performance exceeds baseline
     if (executionTime > 50) {
-      console.warn(`Command execution time exceeded 50ms baseline: ${executionTime}ms for ${key}`);
+      this.logger.warn('Command execution time exceeded baseline', {
+        commandKey: key,
+        executionTime,
+        baselineMs: 50
+      });
     }
   }
 
@@ -698,7 +735,11 @@ export class UniversalCommandRegistry extends EventDrivenComponent<UniversalComm
     });
 
     this.on('commandFailed', (commandId, result) => {
-      console.warn(`Command failed: ${commandId} - ${result.message}`);
+      this.logger.warn('Command execution failed', {
+        commandId,
+        message: result.message,
+        result
+      });
     });
   }
 

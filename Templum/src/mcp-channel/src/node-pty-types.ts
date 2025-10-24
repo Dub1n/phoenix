@@ -10,6 +10,10 @@
 
 // TODO: [TASK-MCP-001] Replace with real node-pty when C++ build tools are available
 
+import { createLogger } from '../../utils';
+
+const mockPtyLogger = createLogger('mcp-channel:mock-pty');
+
 type AsyncUtilsModule = typeof import('../../utils/async-utils');
 
 let asyncUtilsModule: AsyncUtilsModule | undefined;
@@ -43,21 +47,21 @@ export function spawn(file: string, args: string[], options: SpawnOptions): IPty
   // Mock implementation for development
   const mockPty: IPty = {
     write: (data: string) => {
-      console.log(`[MOCK PTY] Writing: ${data}`);
+      mockPtyLogger.debug('[MOCK PTY] Writing', { data });
     },
     onData: (callback: (data: string) => void) => {
-      console.log('[MOCK PTY] Setting up data handler');
+      mockPtyLogger.debug('[MOCK PTY] Setting up data handler');
       // Mock some initial output
       getAsyncUtils().createTimeout(() => callback('Mock PTY output\n$ '), 100, { unref: true });
     },
     onExit: (callback: (exitCode: number, signal: number) => void) => {
-      console.log('[MOCK PTY] Setting up exit handler');
+      mockPtyLogger.debug('[MOCK PTY] Setting up exit handler');
     },
     onError: (callback: (error: Error) => void) => {
-      console.log('[MOCK PTY] Setting up error handler');
+      mockPtyLogger.debug('[MOCK PTY] Setting up error handler');
     },
     kill: (signal?: string) => {
-      console.log(`[MOCK PTY] Killing process with signal: ${signal || 'SIGTERM'}`);
+      mockPtyLogger.debug('[MOCK PTY] Killing process', { signal: signal ?? 'SIGTERM' });
       mockPty.killed = true;
     },
     killed: false

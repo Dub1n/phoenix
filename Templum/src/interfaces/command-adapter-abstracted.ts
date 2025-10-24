@@ -220,7 +220,7 @@ export class CommandInterfaceAdapter implements IInterfaceAdapter {
     // Initialize command execution components
     await this.initializeCommandComponents();
     
-    console.log('CommandInterfaceAdapter: Initialized with orchestrator abstraction');
+    this.logger.debug('CommandInterfaceAdapter: Initialized with orchestrator abstraction');
   }
 
   getInterfaceType(): InterfaceType {
@@ -237,13 +237,13 @@ export class CommandInterfaceAdapter implements IInterfaceAdapter {
    */
   async applySkin(_skinDefinition: UniversalSkinDefinition): Promise<void> {
     try {
-      console.log('CommandInterfaceAdapter: Applying skin');
+      this.logger.debug('CommandInterfaceAdapter: Applying skin');
       
       // Command interface skin application primarily affects execution behavior
       // Command interface typically uses default skin behavior without special configuration
-      console.log('CommandInterfaceAdapter: Command interface uses default skin rendering');
+      this.logger.debug('CommandInterfaceAdapter: Command interface uses default skin rendering');
       
-      console.log('CommandInterfaceAdapter: Skin applied successfully');
+      this.logger.debug('CommandInterfaceAdapter: Skin applied successfully');
       
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -264,17 +264,21 @@ export class CommandInterfaceAdapter implements IInterfaceAdapter {
   async syncState(stateUpdate: StateUpdate): Promise<void> {
     try {
       this.validateStateUpdate(stateUpdate);
-      console.log(`CommandInterfaceAdapter: Received state update at ${new Date(stateUpdate.timestamp).toISOString()}`);
+      this.logger.debug('CommandInterfaceAdapter: Received state update', {
+        timestamp: new Date(stateUpdate.timestamp).toISOString(),
+        includesSessionState: Boolean(stateUpdate.sessionState),
+        includesGlobalState: Boolean(stateUpdate.globalState)
+      });
       
       // Command interface state synchronization affects execution context
       if (stateUpdate.sessionState) {
         // Update execution context based on session state changes
-        console.log('CommandInterfaceAdapter: Session state synchronized for command execution');
+        this.logger.debug('CommandInterfaceAdapter: Session state synchronized for command execution');
       }
       
       // Handle global state updates that might affect command routing
       if (stateUpdate.globalState) {
-        console.log('CommandInterfaceAdapter: Global state synchronized for command routing');
+        this.logger.debug('CommandInterfaceAdapter: Global state synchronized for command routing');
       }
 
       this.emit('stateUpdated', stateUpdate);
@@ -479,7 +483,7 @@ export class CommandInterfaceAdapter implements IInterfaceAdapter {
    * Dispose of adapter resources
    */
   async dispose(): Promise<void> {
-    console.log('CommandInterfaceAdapter: Disposing resources');
+    this.logger.debug('CommandInterfaceAdapter: Disposing resources');
     
     // Clear execution queue
     this.executionQueue = [];
@@ -490,7 +494,7 @@ export class CommandInterfaceAdapter implements IInterfaceAdapter {
     // Remove all listeners
     this.removeAllListeners();
     
-    console.log('CommandInterfaceAdapter: Disposed');
+    this.logger.debug('CommandInterfaceAdapter: Disposed');
   }
 
   /**
@@ -500,15 +504,15 @@ export class CommandInterfaceAdapter implements IInterfaceAdapter {
   private async initializeCommandComponents(): Promise<void> {
     // Initialize execution queue processing if batch execution is enabled
     if (this.config.enableBatchExecution) {
-      console.log('CommandInterfaceAdapter: Batch execution enabled');
+      this.logger.debug('CommandInterfaceAdapter: Batch execution enabled');
     }
     
     // Initialize execution history storage
     if (this.config.enableExecutionHistory) {
-      console.log('CommandInterfaceAdapter: Execution history enabled');
+      this.logger.debug('CommandInterfaceAdapter: Execution history enabled');
     }
     
-    console.log('CommandInterfaceAdapter: Command components initialized');
+    this.logger.debug('CommandInterfaceAdapter: Command components initialized');
   }
 
   /**

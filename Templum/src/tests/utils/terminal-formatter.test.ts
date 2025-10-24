@@ -11,6 +11,7 @@ import { isTemplumError } from '../../types/templum-types';
 import {
   createFormatterCapabilitiesMock
 } from '../helpers/display-columns-provider';
+import { runContentLayoutTests } from '../../testing/content-layout-test';
 
 const baseCapabilities = () => createFormatterCapabilitiesMock({ width: 120, height: 30 });
 
@@ -364,6 +365,25 @@ describe('TerminalFormatter', () => {
 
       expect(factory).not.toHaveBeenCalled();
       expect(formatter).toBeInstanceOf(TerminalFormatter);
+    });
+  });
+
+  describe('logger consolidation guardrail', () => {
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    test('content layout harness delegates logging to consolidated sinks', async () => {
+      const logSpy = jest.spyOn(console, 'log');
+      const warnSpy = jest.spyOn(console, 'warn');
+      const errorSpy = jest.spyOn(console, 'error');
+      const exitSpy = jest.spyOn(process, 'exit').mockImplementation((() => undefined) as unknown as typeof process.exit);
+
+      await runContentLayoutTests();
+
+      expect(logSpy).not.toHaveBeenCalled();
+      expect(warnSpy).not.toHaveBeenCalled();
+      expect(errorSpy).not.toHaveBeenCalled();
     });
   });
 });

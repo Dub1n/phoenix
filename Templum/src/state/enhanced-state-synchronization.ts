@@ -20,6 +20,7 @@ import {
   ManagedInterval,
   ManagedTimeout
 } from '../utils/async-utils';
+import { createLogger, normalizeLoggerError } from '../utils/logger';
 import { type TypedEventMap } from '../utils/event-utils';
 import { EventDrivenComponent } from '../utils/event-bus-adapter';
 
@@ -829,6 +830,7 @@ export class EnhancedStateManager extends EventDrivenComponent<EnhancedStateMana
   private backendLifecycleSnapshot: Map<string, BackendConnectionLifecycleEvent> = new Map();
   private lifecycleEventCache: Map<string, { state: BackendConnectionLifecycleState; timestamp: number }> = new Map();
   private readonly lifecycleDedupeWindowMs = 500;
+  private readonly logger = createLogger('enhanced-state-manager');
 
   constructor(config: {
     coalescingConfig?: Partial<StateCoalescingConfig>;
@@ -1257,7 +1259,14 @@ export class EnhancedStateManager extends EventDrivenComponent<EnhancedStateMana
       try {
         task?.();
       } catch (error) {
-        console.error('EnhancedStateManager: cleanup task failed', error);
+        const { error: normalizedError, data } = normalizeLoggerError(error);
+        const metadata: Record<string, unknown> = {};
+
+        if (data !== undefined) {
+          metadata.originalData = data;
+        }
+
+        this.logger.error('Cleanup task failed', normalizedError ?? undefined, metadata);
       }
     }
     this.ipcCoordinator.dispose();

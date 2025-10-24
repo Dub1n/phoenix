@@ -27,6 +27,14 @@ import { TerminalCompatibilityDetector, TerminalCapabilities } from './terminal-
 import { WindowLayoutManager } from './window-layout-manager';
 import { UniversalSkinMenuDefinition } from '../rendering/universal-layout-engine';
 
+function writeLine(message: string = ''): void {
+  if (typeof process.stdout?.write !== 'function') {
+    return;
+  }
+  const content = message.endsWith('\n') ? message : `${message}\n`;
+  process.stdout.write(content);
+}
+
 export interface TestScenario {
   name: string;
   description: string;
@@ -68,16 +76,16 @@ export class WindowSystemTestSuite {
     const scenarios = this.getTestScenarios();
     const results: TestResult[] = [];
 
-    console.log('Running Window System Test Suite...\n');
+    writeLine('Running Window System Test Suite...\n');
 
     for (const scenario of scenarios) {
-      console.log(`Testing: ${scenario.name}`);
+      writeLine(`Testing: ${scenario.name}`);
       try {
         const result = await this.runTestScenario(scenario);
         results.push(result);
-        console.log(`  ${result.passed ? 'PASS' : 'FAIL'} - ${result.mode} mode - ${result.renderTime}ms`);
+        writeLine(`  ${result.passed ? 'PASS' : 'FAIL'} - ${result.mode} mode - ${result.renderTime}ms`);
         if (!result.passed && result.error) {
-          console.log(`  Error: ${result.error}`);
+          writeLine(`  Error: ${result.error}`);
         }
       } catch (error) {
         const errorResult: TestResult = {
@@ -89,9 +97,9 @@ export class WindowSystemTestSuite {
           mode: 'fallback'
         };
         results.push(errorResult);
-        console.log(`  FAIL - Exception: ${errorResult.error}`);
+        writeLine(`  FAIL - Exception: ${errorResult.error}`);
       }
-      console.log('');
+      writeLine('');
     }
 
     return results;
@@ -101,37 +109,37 @@ export class WindowSystemTestSuite {
    * Test specific terminal compatibility
    */
   async testTerminalCompatibility(): Promise<void> {
-    console.log('Testing Terminal Compatibility Detection...\n');
+    writeLine('Testing Terminal Compatibility Detection...\n');
 
     // Test current terminal
     const capabilities = await this.compatibilityDetector.detectCapabilities();
-    console.log('Current Terminal Capabilities:');
-    console.log(`  Type: ${capabilities.terminalType}`);
-    console.log(`  Platform: ${capabilities.platform}`);
-    console.log(`  Dimensions: ${capabilities.width}x${capabilities.height}`);
-    console.log(`  ANSI Support: ${capabilities.supportsAnsi}`);
-    console.log(`  Color Support: ${capabilities.supportsColors} (${capabilities.colorDepth}-bit)`);
-    console.log(`  Unicode Support: ${capabilities.supportsUnicode}`);
-    console.log(`  Box Drawing: ${capabilities.supportsBoxDrawing}`);
+    writeLine('Current Terminal Capabilities:');
+    writeLine(`  Type: ${capabilities.terminalType}`);
+    writeLine(`  Platform: ${capabilities.platform}`);
+    writeLine(`  Dimensions: ${capabilities.width}x${capabilities.height}`);
+    writeLine(`  ANSI Support: ${capabilities.supportsAnsi}`);
+    writeLine(`  Color Support: ${capabilities.supportsColors} (${capabilities.colorDepth}-bit)`);
+    writeLine(`  Unicode Support: ${capabilities.supportsUnicode}`);
+    writeLine(`  Box Drawing: ${capabilities.supportsBoxDrawing}`);
 
     // Test border set selection
     const borderSet = await this.compatibilityDetector.getOptimalBorderSet();
-    console.log('\nOptimal Border Set:');
-    console.log(`  Top-left: '${borderSet.topLeft}'`);
-    console.log(`  Horizontal: '${borderSet.horizontal}'`);
-    console.log(`  Vertical: '${borderSet.vertical}'`);
+    writeLine('\nOptimal Border Set:');
+    writeLine(`  Top-left: '${borderSet.topLeft}'`);
+    writeLine(`  Horizontal: '${borderSet.horizontal}'`);
+    writeLine(`  Vertical: '${borderSet.vertical}'`);
 
     // Test compatibility summary
     const summary = await this.compatibilityDetector.getCompatibilitySummary();
-    console.log('\nCompatibility Summary:');
-    console.log(summary);
+    writeLine('\nCompatibility Summary:');
+    writeLine(summary);
   }
 
   /**
    * Test text processing functionality
    */
   async testTextProcessing(): Promise<void> {
-    console.log('\nTesting Text Processing...\n');
+    writeLine('\nTesting Text Processing...\n');
 
     const testTexts = [
       'Connection Status: Active',
@@ -142,8 +150,8 @@ export class WindowSystemTestSuite {
     ];
 
     for (const text of testTexts) {
-      console.log(`Processing: ${text}`);
-      console.log(`Length: ${text.length} characters\n`);
+      writeLine(`Processing: ${text}`);
+      writeLine(`Length: ${text.length} characters\n`);
     }
   }
 
@@ -151,7 +159,7 @@ export class WindowSystemTestSuite {
    * Test border rendering with different character sets
    */
   async testBorderRendering(): Promise<void> {
-    console.log('\nTesting Border Rendering...\n');
+    writeLine('\nTesting Border Rendering...\n');
 
     const testContent = [
       'This is a test of the border rendering system.',
@@ -163,24 +171,24 @@ export class WindowSystemTestSuite {
     const styles = ['simple', 'double', 'rounded'] as const;
     
     for (const style of styles) {
-      console.log(`\n--- ${style.toUpperCase()} Style ---`);
+      writeLine(`\n--- ${style.toUpperCase()} Style ---`);
       try {
         this.borderRenderer.setStyle(style);
         const output = this.borderRenderer.renderWindow(testContent, 'Test Window');
-        console.log(output);
+        writeLine(output);
       } catch (error) {
-        console.log(`Error rendering ${style} style: ${error}`);
+        writeLine(`Error rendering ${style} style: ${error}`);
       }
     }
 
     // Test ASCII fallback mode
-    console.log('\n--- ASCII FALLBACK Mode ---');
+    writeLine('\n--- ASCII FALLBACK Mode ---');
     try {
       this.borderRenderer.enableFallbackMode();
       const output = this.borderRenderer.renderWindow(testContent, 'Fallback Test');
-      console.log(output);
+      writeLine(output);
     } catch (error) {
-      console.log(`Error rendering fallback mode: ${error}`);
+      writeLine(`Error rendering fallback mode: ${error}`);
     }
   }
 
@@ -188,7 +196,7 @@ export class WindowSystemTestSuite {
    * Test layout calculation
    */
   async testLayoutCalculation(): Promise<void> {
-    console.log('\nTesting Layout Calculation...\n');
+    writeLine('\nTesting Layout Calculation...\n');
 
     const testContent = {
       title: 'Layout Test Window',
@@ -204,29 +212,29 @@ export class WindowSystemTestSuite {
     const measurements = this.layoutManager.measureContent(testContent);
     const layout = this.layoutManager.calculateOptimalLayout(testContent, capabilities);
 
-    console.log('Content Measurements:');
-    console.log(`  Max line width: ${measurements.maxLineWidth}`);
-    console.log(`  Total lines: ${measurements.totalLines}`);
-    console.log(`  Average width: ${measurements.avgLineWidth.toFixed(1)}`);
-    console.log(`  Complexity: ${measurements.contentComplexity}`);
+    writeLine('Content Measurements:');
+    writeLine(`  Max line width: ${measurements.maxLineWidth}`);
+    writeLine(`  Total lines: ${measurements.totalLines}`);
+    writeLine(`  Average width: ${measurements.avgLineWidth.toFixed(1)}`);
+    writeLine(`  Complexity: ${measurements.contentComplexity}`);
 
-    console.log('\nOptimal Layout:');
-    console.log(`  Window: ${layout.width}x${layout.height}`);
-    console.log(`  Content: ${layout.contentWidth}x${layout.contentHeight}`);
-    console.log(`  Padding: ${layout.padding}`);
-    console.log(`  Needs wrapping: ${layout.needsWrapping}`);
-    console.log(`  Needs scrolling: ${layout.needsScrolling}`);
+    writeLine('\nOptimal Layout:');
+    writeLine(`  Window: ${layout.width}x${layout.height}`);
+    writeLine(`  Content: ${layout.contentWidth}x${layout.contentHeight}`);
+    writeLine(`  Padding: ${layout.padding}`);
+    writeLine(`  Needs wrapping: ${layout.needsWrapping}`);
+    writeLine(`  Needs scrolling: ${layout.needsScrolling}`);
 
     const summary = this.layoutManager.generateLayoutSummary(testContent, layout, capabilities);
-    console.log('\nLayout Summary:');
-    console.log(summary);
+    writeLine('\nLayout Summary:');
+    writeLine(summary);
   }
 
   /**
    * Demonstrate progressive enhancement
    */
   async demonstrateProgressiveEnhancement(): Promise<void> {
-    console.log('\nDemonstrating Progressive Enhancement...\n');
+    writeLine('\nDemonstrating Progressive Enhancement...\n');
 
     const sampleMenu: UniversalSkinMenuDefinition = {
       interfaces: ['cli'],
@@ -256,21 +264,21 @@ export class WindowSystemTestSuite {
       ]
     };
 
-    console.log('Enhanced Mode (with emoji cleanup and structured windows):');
+    writeLine('Enhanced Mode (with emoji cleanup and structured windows):');
     const enhancedResult = await this.enhancedWindowSystem.renderMenu(sampleMenu, 'cli', {
       enableProgessiveEnhancement: true,
       cleanEmojis: true
     });
-    console.log(enhancedResult.output);
-    console.log(`Mode: ${enhancedResult.mode}, Cleanup: ${enhancedResult.cleanupApplied}, Optimized: ${enhancedResult.layoutOptimized}\n`);
+    writeLine(enhancedResult.output);
+    writeLine(`Mode: ${enhancedResult.mode}, Cleanup: ${enhancedResult.cleanupApplied}, Optimized: ${enhancedResult.layoutOptimized}\n`);
 
-    console.log('Legacy Mode (original layout engine):');
+    writeLine('Legacy Mode (original layout engine):');
     const legacyResult = await this.enhancedWindowSystem.renderMenu(sampleMenu, 'cli', {
       preserveOriginalLayout: true,
       cleanEmojis: true
     });
-    console.log(legacyResult.output);
-    console.log(`Mode: ${legacyResult.mode}, Cleanup: ${legacyResult.cleanupApplied}\n`);
+    writeLine(legacyResult.output);
+    writeLine(`Mode: ${legacyResult.mode}, Cleanup: ${legacyResult.cleanupApplied}\n`);
   }
 
   /**
@@ -415,9 +423,9 @@ export class WindowSystemTestSuite {
 export async function runWindowSystemTests(): Promise<void> {
   const testSuite = new WindowSystemTestSuite();
 
-  console.log('='.repeat(60));
-  console.log('WINDOW SYSTEM TEST SUITE');
-  console.log('='.repeat(60));
+  writeLine('='.repeat(60));
+  writeLine('WINDOW SYSTEM TEST SUITE');
+  writeLine('='.repeat(60));
 
   // Run all tests
   await testSuite.testTerminalCompatibility();
@@ -434,19 +442,19 @@ export async function runWindowSystemTests(): Promise<void> {
   const failed = results.filter(r => !r.passed).length;
   const avgRenderTime = results.reduce((sum, r) => sum + r.renderTime, 0) / results.length;
 
-  console.log('='.repeat(60));
-  console.log('TEST SUMMARY');
-  console.log('='.repeat(60));
-  console.log(`Total Tests: ${results.length}`);
-  console.log(`Passed: ${passed}`);
-  console.log(`Failed: ${failed}`);
-  console.log(`Average Render Time: ${avgRenderTime.toFixed(1)}ms`);
-  console.log(`Success Rate: ${(passed / results.length * 100).toFixed(1)}%`);
+  writeLine('='.repeat(60));
+  writeLine('TEST SUMMARY');
+  writeLine('='.repeat(60));
+  writeLine(`Total Tests: ${results.length}`);
+  writeLine(`Passed: ${passed}`);
+  writeLine(`Failed: ${failed}`);
+  writeLine(`Average Render Time: ${avgRenderTime.toFixed(1)}ms`);
+  writeLine(`Success Rate: ${(passed / results.length * 100).toFixed(1)}%`);
   
   if (failed > 0) {
-    console.log('\nFAILED TESTS:');
+    writeLine('\nFAILED TESTS:');
     results.filter(r => !r.passed).forEach(r => {
-      console.log(`  - ${r.scenario}: ${r.error || 'Unknown error'}`);
+      writeLine(`  - ${r.scenario}: ${r.error || 'Unknown error'}`);
     });
   }
 }

@@ -29,6 +29,7 @@ import { TerminalColorTheme, DefaultColorThemes, InteractivePrompt } from '../te
 import { delay, sleep, withTimeout } from '../../utils/async-utils';
 import { EventDrivenComponent } from '../../utils/event-bus-adapter';
 import { TypedEventMap } from '../../utils/event-utils';
+import { createLogger, normalizeLoggerError } from '../../utils/logger';
 
 type FatalEventType = 'uncaughtException' | 'unhandledRejection';
 
@@ -106,6 +107,7 @@ export interface SessionState {
 export class ExitConfirmationDialog {
   private prompt: InteractivePrompt;
   private config: ExitConfirmationConfig;
+  private readonly logger = createLogger('exit-confirmation-dialog');
 
   constructor(config: ExitConfirmationConfig) {
     this.config = config;
@@ -134,7 +136,8 @@ export class ExitConfirmationDialog {
         return await this.showSingleConfirmation(message);
       }
     } catch (error) {
-      console.error('Error during exit confirmation:', error);
+      const normalized = normalizeLoggerError(error);
+      this.logger.error('Error during exit confirmation', normalized.error, normalized.data);
       return false; // Fail safe - don't exit on error
     }
   }
@@ -327,6 +330,7 @@ export class ExitHandler extends EventDrivenComponent<ExitHandlerEvents> {
   private signalHandlers: Map<string, () => void> = new Map();
   private exitInProgress = false;
   private forceExitHandle: { cancel: () => void } | null = null;
+  private readonly logger = createLogger('exit-handler');
 
   constructor(config: Partial<ExitConfirmationConfig> = {}) {
     super(`exit-handler:${ExitHandler.instanceCounter++}`, 50);
@@ -356,6 +360,14 @@ export class ExitHandler extends EventDrivenComponent<ExitHandlerEvents> {
 
     this.setupSignalHandlers();
     this.registerDefaultCleanupTasks();
+  }
+
+  private writeLine(message: string = ''): void {
+    if (typeof process.stdout?.write !== 'function') {
+      return;
+    }
+    const content = message.endsWith('\n') ? message : `${message}\n`;
+    process.stdout.write(content);
   }
 
   private static dispatchFatalEvent(type: FatalEventType, payload: unknown, promise?: Promise<unknown>): void {
@@ -429,8 +441,13 @@ export class ExitHandler extends EventDrivenComponent<ExitHandlerEvents> {
       this.emit('cleanupCompleted', cleanupResult.success, cleanupResult.errors);
 
       if (!cleanupResult.success && cleanupResult.errors.length > 0) {
-        console.error('Cleanup warnings:');
-        cleanupResult.errors.forEach(error => console.error(`  - ${error}`));
+        this.logger.warn('Cleanup reported warnings during exit', {
+          errors: cleanupResult.errors
+        });
+        this.writeLine('Cleanup warnings:');
+        cleanupResult.errors.forEach(warning => {
+          this.writeLine(`  - ${warning}`);
+        });
       }
 
       // Graceful exit
@@ -439,7 +456,8 @@ export class ExitHandler extends EventDrivenComponent<ExitHandlerEvents> {
       return true;
 
     } catch (error) {
-      console.error('Error during exit process:', error);
+      const normalized = normalizeLoggerError(error);
+      this.logger.error('Error during exit process', normalized.error, normalized.data);
       this.emit('forceExit', 1);
       this.performExit(1);
       return false;
@@ -450,7 +468,7 @@ export class ExitHandler extends EventDrivenComponent<ExitHandlerEvents> {
    * Handle force exit (for emergencies or timeouts)
    */
   forceExit(code = 0, delayMs = 5000): void {
-    console.log(`Force exit in ${delayMs / 1000} seconds...`);
+    this.writeLine(`Force exit in ${delayMs / 1000} seconds...`);
 
     if (this.forceExitHandle) {
       this.forceExitHandle.cancel();
@@ -542,9 +560,16 @@ export class ExitHandler extends EventDrivenComponent<ExitHandlerEvents> {
 
   private handleFatalEvent(type: FatalEventType, payload: unknown, promise?: Promise<unknown>): void {
     if (type === 'uncaughtException') {
-      console.error('Uncaught exception:', payload);
+      const normalized = normalizeLoggerError(payload);
+      this.logger.error('Uncaught exception captured by ExitHandler', normalized.error, normalized.data);
+      this.writeLine('Uncaught exception detected. Initiating forced exit...');
     } else {
-      console.error('Unhandled promise rejection at:', promise, 'reason:', payload);
+      const normalized = normalizeLoggerError(payload);
+      this.logger.error('Unhandled promise rejection captured by ExitHandler', normalized.error, {
+        promise,
+        details: normalized.data
+      });
+      this.writeLine('Unhandled promise rejection detected. Initiating forced exit...');
     }
 
     this.forceExit(1, 1000);

@@ -8,13 +8,16 @@
 
 import { TemplumCore } from './core/templum-core';
 import { TemplumConfiguration } from './types/templum-types';
+import { createLogger, normalizeLoggerError } from './utils/logger';
+
+const templumLogger = createLogger('templum-main');
 
 /**
  * Main entry point for Templum Universal Interface Orchestrator
  */
 export async function main(): Promise<void> {
-  console.log('🌟 Templum Universal Interface Orchestrator v1.0.0');
-  console.log('Universal interface orchestrator for multi-backend services');
+  templumLogger.info('Templum Universal Interface Orchestrator v1.0.0 starting');
+  templumLogger.info('Universal interface orchestrator for multi-backend services');
 
   try {
     // Initialize configuration
@@ -32,44 +35,48 @@ export async function main(): Promise<void> {
     // Create and initialize Templum Core
     const templumCore = new TemplumCore(config);
     
-    console.log('Initializing Templum Core Engine...');
+    templumLogger.info('Initializing Templum Core Engine');
     await templumCore.initialize();
 
     // Display system status
     const systemStatus = templumCore.getSystemStatus();
-    console.log('Templum Core Engine initialized successfully');
-    console.log(`Supported interfaces: ${templumCore.getSupportedInterfaces().join(', ')}`);
-    console.log(`Loaded skins: ${systemStatus.coreEngine.loadedSkins.length}`);
-    console.log(`Active interfaces: ${systemStatus.coreEngine.activeInterfaces.length}`);
+    templumLogger.info('Templum Core Engine initialized successfully', {
+      supportedInterfaces: templumCore.getSupportedInterfaces(),
+      loadedSkinCount: systemStatus.coreEngine.loadedSkins.length,
+      activeInterfaceCount: systemStatus.coreEngine.activeInterfaces.length
+    });
 
     // TASK-CLI-004: Headless Service - CLI interface now runs in separate process
-    console.log('Running in headless service mode...');
-    console.log('Use "templum" command to access CLI interface');
+    templumLogger.info('Running in headless service mode', {
+      accessInstructions: 'Use "templum" command to access CLI interface'
+    });
     
     // Register service for CLI discovery (IPC-based service registration)
     await templumCore.registerForCliDiscovery();
 
     // Setup graceful shutdown
     process.on('SIGINT', async () => {
-      console.log('\n🛑 Shutting down Templum...');
+      templumLogger.warn('Shutting down Templum due to SIGINT');
       await templumCore.shutdown();
       process.exit(0);
     });
 
     process.on('SIGTERM', async () => {
-      console.log('\n🛑 Shutting down Templum...');
+      templumLogger.warn('Shutting down Templum due to SIGTERM');
       await templumCore.shutdown();
       process.exit(0);
     });
 
-    console.log('🚀 Templum headless service is ready! Use "templum" command for CLI access. Press Ctrl+C to exit.');
+    templumLogger.info('Templum headless service is ready', {
+      instructions: 'Use "templum" command for CLI access. Press Ctrl+C to exit.'
+    });
     
     // Keep the process running
     process.stdin.resume();
 
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('❌ Failed to start Templum:', errorMessage);
+    const { error: normalizedError, data } = normalizeLoggerError(error);
+    templumLogger.error('Failed to start Templum', normalizedError, data);
     process.exit(1);
   }
 }
@@ -82,7 +89,8 @@ export * from './types/templum-types';
 // Run if called directly
 if (require.main === module) {
   main().catch(error => {
-    console.error('Fatal error:', error);
+    const { error: normalizedError, data } = normalizeLoggerError(error);
+    templumLogger.error('Fatal error while executing main', normalizedError, data);
     process.exit(1);
   });
 }

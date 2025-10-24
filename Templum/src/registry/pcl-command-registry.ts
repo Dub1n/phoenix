@@ -8,6 +8,7 @@
 
 import { EventDrivenComponent } from '../utils/event-bus-adapter';
 import type { TypedEventMap } from '../utils/event-utils';
+import { createLogger } from '../utils/logger';
 
 export interface CommandDefinition {
   id: string;
@@ -190,6 +191,7 @@ export class PCLCommandRegistry extends EventDrivenComponent<PCLCommandRegistryE
   private routingStrategies: Map<string, any> = new Map();
   private performanceMonitor: any;
   private stats: CommandRegistryStats;
+  private readonly logger = createLogger('pcl-command-registry');
 
   constructor() {
     super(`pcl-command-registry:${PCLCommandRegistry.instanceCounter++}`, 120);
@@ -229,7 +231,11 @@ export class PCLCommandRegistry extends EventDrivenComponent<PCLCommandRegistryE
       timestamp: Date.now()
     });
 
-    console.log(`PCL Command Registry: Registered ${commandDefinition.name} with ${optimizedCommand.pclMapping.reusePercentage}% PCL reuse`);
+    this.logger.info('Registered command with PCL reuse optimisation', {
+      commandId: commandDefinition.id,
+      commandName: commandDefinition.name,
+      reusePercentage: optimizedCommand.pclMapping.reusePercentage
+    });
   }
 
   /**
@@ -797,7 +803,11 @@ export class PCLCommandRegistry extends EventDrivenComponent<PCLCommandRegistryE
 
       // Check performance against expectations
       if (executionTime > command.performance.maxResponseTime) {
-        console.warn(`Command ${command.id} exceeded max response time: ${executionTime}ms > ${command.performance.maxResponseTime}ms`);
+        this.logger.warn('Command exceeded max response time threshold', {
+          commandId: command.id,
+          executionTime,
+          maxAllowedMs: command.performance.maxResponseTime
+        });
       }
 
       return {
@@ -1093,7 +1103,7 @@ export class PCLCommandRegistry extends EventDrivenComponent<PCLCommandRegistryE
 
   private async setupBackendCommandRouting(backendName: string, _backendInstance: any): Promise<void> {
     // Setup command routing patterns for the backend
-    console.log(`PCL Command Registry: Setting up command routing for backend ${backendName}`);
+    this.logger.info('Setting up backend routing patterns', { backendName });
   }
 
   private async validatePCLCommandCompatibility(backendInstance: any): Promise<{
@@ -1172,6 +1182,8 @@ export class PCLCommandRegistry extends EventDrivenComponent<PCLCommandRegistryE
   }
 
   private initializePCLCommandMappings(): void {
-    console.log('PCL Command Registry: Initializing with proven PCL command patterns for 75% reuse optimization');
+    this.logger.info('Initializing PCL command patterns', {
+      reuseTargetPercentage: 75
+    });
   }
 }

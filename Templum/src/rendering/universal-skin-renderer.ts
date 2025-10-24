@@ -14,6 +14,7 @@
 import type { TypedEventMap } from '../utils/event-utils';
 import { EventDrivenComponent } from '../utils/event-bus-adapter';
 import { UniversalLayoutEngine, UniversalSkinMenuDefinition, InterfaceType } from './universal-layout-engine';
+import { createLogger } from '../utils/logger';
 import { buildSkinMenuFromUniversalDefinition, coerceUniversalMenuDefinition } from './menu-definition-adapter';
 import { UniversalMenuRegistry } from '../menus/universal-menu-registry';
 import { SessionContextFoundation, SessionContext } from '../session/session-context-foundation';
@@ -135,6 +136,7 @@ export class UniversalSkinRenderer extends EventDrivenComponent<UniversalSkinRen
   private interfaceCache = new Map<string, SkinCacheEntry>();
   private maxCacheSize = 100;
   private cacheExpiryMs = 300000; // 5 minutes
+  private readonly logger = createLogger('universal-skin-renderer');
 
   constructor(
     menuRegistry: UniversalMenuRegistry,
@@ -721,7 +723,10 @@ export class UniversalSkinRenderer extends EventDrivenComponent<UniversalSkinRen
     
     // Warn if performance exceeds PCL baseline
     if (renderTime > 100) {
-      console.warn(`Skin rendering exceeded 100ms baseline: ${renderTime}ms for ${key}`);
+      this.logger.warn('Skin rendering exceeded baseline', {
+        cacheKey: key,
+        renderTime
+      });
     }
   }
 

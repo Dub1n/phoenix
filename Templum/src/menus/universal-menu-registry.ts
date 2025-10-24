@@ -14,6 +14,7 @@ import type { TypedEventMap } from '../utils/event-utils';
 import { EventDrivenComponent } from '../utils/event-bus-adapter';
 import { SessionContextFoundation } from '../session/session-context-foundation';
 import { StateSyncFoundation } from '../state/state-sync-foundation';
+import { createLogger } from '../utils/logger';
 
 // Extended interfaces for multi-backend and multi-interface support
 export interface UniversalMenuDefinition extends MenuDefinition {
@@ -142,6 +143,7 @@ export class UniversalMenuRegistry extends EventDrivenComponent<UniversalMenuReg
   private backendConfigurations = new Map<string, BackendMenuConfiguration>();
   private menuCache = new Map<string, { menu: UniversalMenuDefinition; timestamp: Date }>();
   private syncInProgress = false;
+  private readonly logger = createLogger('universal-menu-registry');
 
   constructor(
     sessionContext: SessionContextFoundation,
@@ -651,7 +653,11 @@ export class UniversalMenuRegistry extends EventDrivenComponent<UniversalMenuReg
     // Performance monitoring
     this.on('menuStateUpdated', (interfaceType, state) => {
       if (state.syncLatency && state.syncLatency > 150) {
-        console.warn(`Menu state sync exceeded 150ms baseline: ${state.syncLatency}ms for ${interfaceType}`);
+        this.logger.warn('Menu state synchronization exceeded baseline', {
+          interfaceType,
+          syncLatencyMs: state.syncLatency,
+          baselineMs: 150
+        });
       }
     });
   }

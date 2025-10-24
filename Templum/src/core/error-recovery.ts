@@ -12,6 +12,7 @@ import {
   Signals, 
   ErrorSignalPayload 
 } from '../types/templum-types';
+import { createLogger } from '../utils/logger';
 
 export interface ErrorRecoveryConfig {
   /** Number of failures before opening the circuit */
@@ -64,6 +65,7 @@ export class TemplumCircuitBreaker {
   private interfaceSwitchingFailures = 0;
   private backendIntegrationFailures = 0;
   private stateManagementFailures = 0;
+  private readonly logger = createLogger('templum-circuit-breaker');
 
   constructor(private readonly config: ErrorRecoveryConfig) {
     // Validate configuration with Templum-specific defaults
@@ -283,7 +285,11 @@ export class TemplumCircuitBreaker {
       (process as any).emit('backend-integration:error' as Signals, payload);
     } catch (error) {
       // Silently handle telemetry errors to avoid affecting circuit breaker operation
-      console.warn('Failed to emit circuit breaker state change:', isTemplumError(error) ? error.message : error);
+      this.logger.warn('Failed to emit circuit breaker state change', {
+        reason: isTemplumError(error) ? error.message : String(error),
+        newState,
+        previousState: this.state
+      });
     }
   }
 
@@ -303,7 +309,10 @@ export class TemplumCircuitBreaker {
 
       (process as any).emit('backend-integration:error' as Signals, payload);
     } catch (error) {
-      console.warn('Failed to emit circuit open event:', isTemplumError(error) ? error.message : error);
+      this.logger.warn('Failed to emit circuit open event', {
+        reason: isTemplumError(error) ? error.message : String(error),
+        operationType
+      });
     }
   }
 
@@ -327,7 +336,10 @@ export class TemplumCircuitBreaker {
 
       (process as any).emit('backend-integration:error' as Signals, payload);
     } catch (emitError) {
-      console.warn('Failed to emit operation error:', isTemplumError(emitError) ? emitError.message : emitError);
+      this.logger.warn('Failed to emit operation error', {
+        reason: isTemplumError(emitError) ? emitError.message : String(emitError),
+        operationType
+      });
     }
   }
 }

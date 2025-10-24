@@ -9,6 +9,7 @@
 import { createInterval, ManagedInterval } from '../utils/async-utils';
 import { EventDrivenComponent } from '../utils/event-bus-adapter';
 import type { TypedEventMap } from '../utils/event-utils';
+import { createLogger, normalizeLoggerError } from '../utils/logger';
 
 export interface PerformanceMetric {
   componentId: string;
@@ -151,6 +152,7 @@ export class PerformanceMonitor extends EventDrivenComponent<PerformanceMonitorE
     maxMetricsHistory: number;
     samplingInterval: number; // ms
   };
+  private readonly logger = createLogger('performance-monitor');
 
   constructor() {
     super(PerformanceMonitor.createScope(), 100);
@@ -168,7 +170,7 @@ export class PerformanceMonitor extends EventDrivenComponent<PerformanceMonitorE
    */
   startMonitoring(): void {
     if (this.isMonitoring) {
-      console.warn('Performance monitoring is already running');
+      this.logger.warn('Performance monitoring is already running');
       return;
     }
 
@@ -177,8 +179,12 @@ export class PerformanceMonitor extends EventDrivenComponent<PerformanceMonitorE
       this.collectMetrics();
     }, this.config.samplingInterval);
 
-    this.emit('monitoringStarted', { timestamp: Date.now() });
-    console.log('Performance Monitor: Started continuous monitoring');
+    const timestamp = Date.now();
+    this.emit('monitoringStarted', { timestamp });
+    this.logger.info('Performance monitoring started', {
+      timestamp,
+      samplingInterval: this.config.samplingInterval
+    });
   }
 
   /**
@@ -193,8 +199,9 @@ export class PerformanceMonitor extends EventDrivenComponent<PerformanceMonitorE
     this.monitoringInterval?.stop();
     this.monitoringInterval = null;
 
-    this.emit('monitoringStopped', { timestamp: Date.now() });
-    console.log('Performance Monitor: Stopped monitoring');
+    const timestamp = Date.now();
+    this.emit('monitoringStopped', { timestamp });
+    this.logger.info('Performance monitoring stopped', { timestamp });
   }
 
   /**
@@ -210,8 +217,12 @@ export class PerformanceMonitor extends EventDrivenComponent<PerformanceMonitorE
       baselineValue: baseline.baselineValue,
       criticalThreshold: baseline.criticalThreshold
     });
-
-    console.log(`Performance Monitor: Registered baseline for ${baseline.componentId} ${baseline.metricType}: ${baseline.baselineValue}`);
+    this.logger.info('Performance baseline registered', {
+      componentId: baseline.componentId,
+      metricType: baseline.metricType,
+      baselineValue: baseline.baselineValue,
+      criticalThreshold: baseline.criticalThreshold
+    });
   }
 
   /**
@@ -355,8 +366,21 @@ export class PerformanceMonitor extends EventDrivenComponent<PerformanceMonitorE
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error(`Failed to trigger automatic response for ${degradation.componentId}: ${errorMessage}`);
-      
+      const { error: normalizedError, data } = normalizeLoggerError(error);
+
+      const metadata: Record<string, unknown> = {
+        componentId: degradation.componentId,
+        metricType: degradation.metricType,
+        severity: degradation.severity,
+        errorMessage
+      };
+
+      if (data !== undefined) {
+        metadata.originalData = data;
+      }
+
+      this.logger.error('Failed to trigger automatic response', normalizedError ?? undefined, metadata);
+
       this.createAlert({
         type: 'anomaly',
         severity: 'critical',
@@ -632,7 +656,10 @@ export class PerformanceMonitor extends EventDrivenComponent<PerformanceMonitorE
 
   private async triggerEmergencyFallback(degradation: PerformanceDegradation): Promise<void> {
     // Emergency fallback - immediate system protection
-    console.error(`EMERGENCY: Triggering emergency fallback for ${degradation.componentId}`);
+    this.logger.error('Emergency fallback triggered', undefined, {
+      componentId: degradation.componentId,
+      degradation: degradation.degradationPercentage
+    });
     
     // Emit emergency signal for immediate response
     this.emit('emergencyFallback', {
@@ -645,7 +672,10 @@ export class PerformanceMonitor extends EventDrivenComponent<PerformanceMonitorE
 
   private async triggerCriticalFallback(degradation: PerformanceDegradation): Promise<void> {
     // Critical fallback - activate backup systems
-    console.warn(`CRITICAL: Triggering critical fallback for ${degradation.componentId}`);
+    this.logger.warn('Critical fallback triggered', {
+      componentId: degradation.componentId,
+      degradation: degradation.degradationPercentage
+    });
     
     // Emit critical signal for fallback activation
     this.emit('criticalFallback', {
@@ -711,6 +741,9 @@ export class PerformanceMonitor extends EventDrivenComponent<PerformanceMonitorE
       minSampleSize: 10
     });
 
-    console.log('Performance Monitor: Initialized system baselines with 30% degradation threshold');
+    this.logger.info('Initialized system baselines', {
+      baselineCount: this.baselines.size,
+      defaultDegradationThreshold: this.config.defaultDegradationThreshold
+    });
   }
 }

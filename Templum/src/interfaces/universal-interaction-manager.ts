@@ -23,6 +23,7 @@ import type {
   SessionStateUpdate,
   TemplumSessionManagerContract,
 } from '../session/universal-session-manager.types';
+import { createLogger, normalizeLoggerError } from '../utils/logger';
 
 type ManagedInteractionState = {
   commandHistory: string[];
@@ -175,6 +176,7 @@ export class UniversalInteractionManager extends EventDrivenComponent<UniversalI
   private readonly formatter: TerminalFormatter;
   private sessionManager?: TemplumSessionManagerContract;
   private sessionStateListener?: (sessionId: string, updates: Record<string, any>) => void;
+  private readonly logger = createLogger('universal-interaction-manager');
 
   constructor(
     commandRegistry: UniversalCommandRegistry,
@@ -220,6 +222,14 @@ export class UniversalInteractionManager extends EventDrivenComponent<UniversalI
     };
 
     this.setupInitialComponents();
+  }
+
+  private writeLine(message: string = ''): void {
+    if (typeof process.stdout?.write !== 'function') {
+      return;
+    }
+    const content = message.endsWith('\n') ? message : `${message}\n`;
+    process.stdout.write(content);
   }
 
   private getManagedState(interfaceType: InterfaceType = this.activeInterface): ManagedInteractionState {
@@ -280,7 +290,13 @@ export class UniversalInteractionManager extends EventDrivenComponent<UniversalI
           state: updates,
         })
         .catch((error) => {
-          console.warn('UniversalInteractionManager: failed to update session state via manager', error);
+          const normalized = normalizeLoggerError(error);
+          this.logger.warn('Failed to update session state via session manager', {
+            sessionId,
+            interfaceType,
+            error: normalized.error,
+            details: normalized.data
+          });
           this.updateFoundationState(sessionId, interfaceType, updates);
         });
 
@@ -326,10 +342,13 @@ export class UniversalInteractionManager extends EventDrivenComponent<UniversalI
         this.sessionManager!
           .syncInterfaces(sourceInterface, target)
           .catch((error) => {
-            console.warn(
-              `UniversalInteractionManager: failed to sync ${sourceInterface} -> ${target}`,
-              error,
-            );
+            const normalized = normalizeLoggerError(error);
+            this.logger.warn('Failed to sync interfaces', {
+              sourceInterface,
+              targetInterface: target,
+              error: normalized.error,
+              details: normalized.data
+            });
           }),
       ),
     );
@@ -538,7 +557,8 @@ export class UniversalInteractionManager extends EventDrivenComponent<UniversalI
    */
   async switchInterface(newInterface: InterfaceType): Promise<boolean> {
     if (!this.config.enabledInterfaces.includes(newInterface)) {
-      console.warn(`Interface ${newInterface} not enabled`);
+      this.logger.warn('Requested interface not enabled', { requestedInterface: newInterface });
+      this.writeLine(this.formatter.status.warning(`Interface ${newInterface} is not enabled.`));
       return false;
     }
 
@@ -559,10 +579,13 @@ export class UniversalInteractionManager extends EventDrivenComponent<UniversalI
       void this.sessionManager
         .syncInterfaces(oldInterface, newInterface)
         .catch((error) => {
-          console.warn(
-            `UniversalInteractionManager: failed to sync interfaces during switch (${oldInterface} -> ${newInterface})`,
-            error,
-          );
+          const normalized = normalizeLoggerError(error);
+          this.logger.warn('Failed to sync interfaces during mode switch', {
+            from: oldInterface,
+            to: newInterface,
+            error: normalized.error,
+            details: normalized.data
+          });
         });
     }
 
@@ -816,7 +839,7 @@ export class UniversalInteractionManager extends EventDrivenComponent<UniversalI
       };
     }
     
-    console.log(this.formatter.status.error(`Invalid option: ${input}`));
+    this.writeLine(this.formatter.status.error(`Invalid option: ${input}`));
     return await this.handleCLIMenuInput(options, session);
   }
 
@@ -1130,7 +1153,7 @@ export class UniversalInteractionManager extends EventDrivenComponent<UniversalI
    */
   switchMode(): 'menu' | 'command' {
     this.config.currentMode = this.config.currentMode === 'menu' ? 'command' : 'menu';
-    console.log(this.formatter.status.success(`\n═ Switched to ${this.config.currentMode.toUpperCase()} mode`));
+    this.writeLine(this.formatter.status.success(`\n═ Switched to ${this.config.currentMode.toUpperCase()} mode`));
     this.emit('modeChanged', this.config.currentMode);
     this.queueSessionStateUpdate(this.activeInterface, { interactionMode: this.config.currentMode });
     return this.config.currentMode;

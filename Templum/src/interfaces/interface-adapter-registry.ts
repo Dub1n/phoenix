@@ -17,6 +17,7 @@ import {
   RegistryIntelligence,
   ValidationReport
 } from '../utils/registry-utils';
+import { createLogger } from '../utils/logger';
 
 type AdapterFactory = () => IInterfaceAdapter;
 
@@ -54,6 +55,7 @@ export class InterfaceAdapterRegistry
   extends BaseRegistry<IInterfaceAdapter, InterfaceAdapterRegistryInitializeConfig>
   implements IInterfaceAdapterFactory
 {
+  private static readonly staticLogger = createLogger('interface-adapter-registry');
   private orchestrator: ITemplumOrchestrator | null = null;
   private vsCodeContext: any = null;
   private registryReady = false;
@@ -339,12 +341,12 @@ export class InterfaceAdapterRegistry
    */
   static setVSCodeContext(context: any): void {
     (global as any).__templumVSCodeContext = context;
-    console.log('InterfaceAdapterRegistry: VSCode context registered for adapter factory use');
+    this.staticLogger.info('InterfaceAdapterRegistry: VSCode context registered for adapter factory use');
   }
 
   static clearVSCodeContext(): void {
     delete (global as any).__templumVSCodeContext;
-    console.log('InterfaceAdapterRegistry: VSCode context cleared');
+    this.staticLogger.info('InterfaceAdapterRegistry: VSCode context cleared');
   }
 
   // BaseRegistry lifecycle hooks ------------------------------------------------

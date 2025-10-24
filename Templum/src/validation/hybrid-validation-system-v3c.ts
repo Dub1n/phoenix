@@ -26,6 +26,7 @@ import { TemplumCore } from '../core/templum-core';
 import { createInterval, ManagedInterval } from '../utils/async-utils';
 import { EventDrivenComponent } from '../utils/event-bus-adapter';
 import type { TypedEventMap } from '../utils/event-utils';
+import { createLogger, normalizeLoggerError } from '../utils/logger';
 
 // TODO: [TASK-MCP-007-VALIDATION-001] Pattern: hybrid-validation-enhancement | Complexity: 8 | Dependencies: performance-validation,backend-integration
 // Context: Enhanced validation system with comprehensive coverage, reliability metrics, and performance optimization
@@ -929,6 +930,7 @@ export class HybridValidationSystemV3C extends EventDrivenComponent<HybridValida
   private qualityDashboard!: QualityMetricsDashboard;
   private backendRouter?: BackendServiceRouter;
   private templumCore?: TemplumCore;
+  private readonly logger = createLogger('hybrid-validation-system');
   
   private validationCycles: ValidationCycle[] = [];
   private isRunning: boolean = false;
@@ -992,7 +994,22 @@ export class HybridValidationSystemV3C extends EventDrivenComponent<HybridValida
       });
       
       // Continue with default configuration
-      console.warn(`Failed to load validation configuration: ${error}. Using defaults.`);
+      const { error: normalizedError, data } = normalizeLoggerError(error);
+      const metadata: Record<string, unknown> = {
+        fallbackToDefaults: true,
+        configPath: configPath || path.join(process.cwd(), 'templum-valconfig.json')
+      };
+      if (normalizedError) {
+        metadata.normalizedError = normalizedError;
+      }
+      if (data !== undefined) {
+        metadata.details = data;
+      } else if (error instanceof Error) {
+        metadata.details = error.message;
+      } else {
+        metadata.details = String(error);
+      }
+      this.logger.warn('Failed to load validation configuration; using defaults', metadata);
     }
   }
 

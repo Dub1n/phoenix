@@ -17,6 +17,7 @@
 import { PTYManager } from './pty-manager';
 import { CLIMCPServer } from './cli-mcp-server';
 import { MCPLifecycleCoordinator, LifecycleOptions, createMCPLifecycleCoordinator } from './lifecycle-coordinator';
+import { createLogger } from '../../utils';
 
 export { PTYManager, CLIMCPServer };
 export type { 
@@ -79,6 +80,8 @@ export const VERSION = '1.2.0';
 export const PHASE = 'Service Discovery Integration Complete';
 export const DESCRIPTION = 'Agent-CLI Interaction via MCP Channel with Templum Service Discovery Integration';
 
+const channelLogger = createLogger('mcp-channel:entry');
+
 /**
  * Initialize MCP Channel with Service Discovery Integration
  * 
@@ -91,7 +94,7 @@ export const DESCRIPTION = 'Agent-CLI Interaction via MCP Channel with Templum S
 export async function initializeMCPChannelWithServiceDiscovery(
   options?: LifecycleOptions
 ): Promise<MCPLifecycleCoordinator> {
-  console.log(`Initializing MCP Channel v${VERSION} - ${PHASE}`);
+  channelLogger.info(`Initializing MCP Channel v${VERSION} - ${PHASE}`);
   return await createMCPLifecycleCoordinator(options);
 }
 
@@ -104,7 +107,7 @@ export async function initializeMCPChannelWithServiceDiscovery(
  * @returns CLIMCPServer instance ready for agent interaction
  */
 export function initializeMCPChannel(): CLIMCPServer {
-  console.log(`Initializing MCP Channel v${VERSION} - ${PHASE} (Legacy Mode)`);
+  channelLogger.info(`Initializing MCP Channel v${VERSION} - ${PHASE} (Legacy Mode)`);
   return new CLIMCPServer();
 }
 
@@ -114,7 +117,7 @@ export function initializeMCPChannel(): CLIMCPServer {
  * @returns PTYManager instance for direct PTY management
  */
 export function initializePTYOnly(): PTYManager {
-  console.log(`Initializing PTY Manager only - ${VERSION}`);
+  channelLogger.info(`Initializing PTY Manager only - ${VERSION}`);
   return new PTYManager();
 }
 
@@ -124,9 +127,9 @@ export function initializePTYOnly(): PTYManager {
  * @param mcpServer - CLI MCP Server instance to cleanup
  */
 export function shutdownMCPChannel(mcpServer: CLIMCPServer): void {
-  console.log('Shutting down MCP Channel...');
+  channelLogger.info('Shutting down MCP Channel...');
   mcpServer.cleanup();
-  console.log('MCP Channel shutdown complete');
+  channelLogger.info('MCP Channel shutdown complete');
 }
 
 /**
@@ -135,7 +138,7 @@ export function shutdownMCPChannel(mcpServer: CLIMCPServer): void {
  * @param ptyManager - PTY Manager instance to cleanup  
  */
 export function shutdownPTYManager(ptyManager: PTYManager): void {
-  console.log('Shutting down PTY Manager...');
+  channelLogger.info('Shutting down PTY Manager...');
   ptyManager.cleanup();
-  console.log('PTY Manager shutdown complete');
+  channelLogger.info('PTY Manager shutdown complete');
 }

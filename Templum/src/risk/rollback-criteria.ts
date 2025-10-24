@@ -9,6 +9,7 @@
 import { sleep } from '../utils/async-utils';
 import { EventDrivenComponent } from '../utils/event-bus-adapter';
 import type { TypedEventMap } from '../utils/event-utils';
+import { createLogger, normalizeLoggerError } from '../utils/logger';
 
 export interface RollbackCriterion {
   id: string;
@@ -174,6 +175,7 @@ export class RollbackCriteria extends EventDrivenComponent<RollbackCriteriaEvent
     rollbackTimeout: number;        // Max time for rollback execution (ms)
     historyRetention: number;       // Days to retain history
   };
+  private readonly logger = createLogger('rollback-criteria');
 
   constructor() {
     super(RollbackCriteria.createScope(), 100);
@@ -206,7 +208,13 @@ export class RollbackCriteria extends EventDrivenComponent<RollbackCriteriaEvent
       weight: criterion.weight
     });
 
-    console.log(`Rollback Criteria: Registered criterion ${criterion.name} (${criterion.type}, weight: ${criterion.weight})`);
+    this.logger.info('Registered rollback criterion', {
+      criterionId: criterion.id,
+      name: criterion.name,
+      type: criterion.type,
+      severity: criterion.severity,
+      weight: criterion.weight
+    });
   }
 
   /**
@@ -296,7 +304,20 @@ export class RollbackCriteria extends EventDrivenComponent<RollbackCriteriaEvent
       return decision;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error(`Failed to evaluate rollback decision for ${componentId}: ${errorMessage}`);
+      const { error: normalizedError, data } = normalizeLoggerError(error);
+
+      const metadata: Record<string, unknown> = {
+        componentId,
+        interfaceType,
+        decisionId,
+        errorMessage
+      };
+
+      if (data !== undefined) {
+        metadata.originalData = data;
+      }
+
+      this.logger.error('Failed to evaluate rollback decision', normalizedError ?? undefined, metadata);
       
       // Create error decision
       const errorDecision: RollbackDecision = {
@@ -381,7 +402,12 @@ export class RollbackCriteria extends EventDrivenComponent<RollbackCriteriaEvent
         
         if (phase.status === 'failed' && rollbackType === 'emergency') {
           // Continue emergency rollback even if phases fail
-          console.warn(`Emergency rollback phase ${phase.name} failed but continuing: ${phase.error}`);
+          this.logger.warn('Emergency rollback phase failed but continuing', {
+            executionId: execution.id,
+            phaseId: phase.id,
+            phaseName: phase.name,
+            error: phase.error
+          });
         } else if (phase.status === 'failed') {
           throw new Error(`Rollback phase ${phase.name} failed: ${phase.error}`);
         }
@@ -396,7 +422,12 @@ export class RollbackCriteria extends EventDrivenComponent<RollbackCriteriaEvent
       execution.results.success = execution.validation.performanceRecovery >= 80; // 80% recovery threshold
 
       this.emit('rollbackCompleted', execution);
-      console.log(`Rollback executed successfully for ${decision.componentId}: ${execution.validation.performanceRecovery}% performance recovery`);
+      this.logger.info('Rollback executed successfully', {
+        componentId: decision.componentId,
+        executionId: execution.id,
+        performanceRecovery: execution.validation.performanceRecovery,
+        rollbackType
+      });
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -407,7 +438,20 @@ export class RollbackCriteria extends EventDrivenComponent<RollbackCriteriaEvent
       execution.results.nextSteps.push('Manual intervention required');
 
       this.emit('rollbackFailed', execution);
-      console.error(`Rollback execution failed for ${decision.componentId}: ${errorMessage}`);
+
+      const { error: normalizedError, data } = normalizeLoggerError(error);
+      const metadata: Record<string, unknown> = {
+        componentId: decision.componentId,
+        executionId: execution.id,
+        rollbackType,
+        errorMessage
+      };
+
+      if (data !== undefined) {
+        metadata.originalData = data;
+      }
+
+      this.logger.error('Rollback execution failed', normalizedError ?? undefined, metadata);
     } finally {
       this.executionHistory.push(execution);
       this.executions.delete(executionId);
@@ -452,13 +496,18 @@ export class RollbackCriteria extends EventDrivenComponent<RollbackCriteriaEvent
       }
     });
 
+    const timestamp = Date.now();
     this.emit('continuousMonitoringStarted', {
       componentId,
       interfaceType,
-      timestamp: Date.now()
+      timestamp
     });
 
-    console.log(`Rollback Criteria: Started continuous monitoring for ${componentId} on ${interfaceType}`);
+    this.logger.info('Started continuous rollback monitoring', {
+      componentId,
+      interfaceType,
+      timestamp
+    });
   }
 
   /**
@@ -534,7 +583,17 @@ export class RollbackCriteria extends EventDrivenComponent<RollbackCriteriaEvent
       this.emit('rollbackAborted', { executionId, reason, timestamp: Date.now() });
       return true;
     } catch (error) {
-      console.error(`Failed to abort rollback execution ${executionId}: ${error}`);
+      const { error: normalizedError, data } = normalizeLoggerError(error);
+      const metadata: Record<string, unknown> = {
+        executionId,
+        reason
+      };
+
+      if (data !== undefined) {
+        metadata.originalData = data;
+      }
+
+      this.logger.error('Failed to abort rollback execution', normalizedError ?? undefined, metadata);
       return false;
     }
   }
@@ -912,31 +971,50 @@ export class RollbackCriteria extends EventDrivenComponent<RollbackCriteriaEvent
   private async executePreparationPhase(execution: RollbackExecution, phase: RollbackPhase): Promise<void> {
     // Simulate preparation work
     await sleep(Math.min(phase.expectedDuration, 2000));
-    console.log(`Executing preparation phase for ${execution.componentId}`);
+    this.logger.debug('Executing preparation phase', {
+      executionId: execution.id,
+      componentId: execution.componentId,
+      phaseId: phase.id
+    });
   }
 
   private async executeComponentRestorationPhase(execution: RollbackExecution, phase: RollbackPhase): Promise<void> {
     // Simulate component restoration
     await sleep(Math.min(phase.expectedDuration, 5000));
-    console.log(`Executing component restoration phase for ${execution.componentId}`);
+    this.logger.debug('Executing component restoration phase', {
+      executionId: execution.id,
+      componentId: execution.componentId,
+      phaseId: phase.id
+    });
   }
 
   private async executeStateRecoveryPhase(execution: RollbackExecution, phase: RollbackPhase): Promise<void> {
     // Simulate state recovery
     await sleep(Math.min(phase.expectedDuration, 3000));
-    console.log(`Executing state recovery phase for ${execution.componentId}`);
+    this.logger.debug('Executing state recovery phase', {
+      executionId: execution.id,
+      componentId: execution.componentId,
+      phaseId: phase.id
+    });
   }
 
   private async executeValidationPhase(execution: RollbackExecution, phase: RollbackPhase): Promise<void> {
     // Simulate validation
     await sleep(Math.min(phase.expectedDuration, 2000));
-    console.log(`Executing validation phase for ${execution.componentId}`);
+    this.logger.debug('Executing validation phase', {
+      executionId: execution.id,
+      componentId: execution.componentId,
+      phaseId: phase.id
+    });
   }
 
   private async executeCleanupPhase(execution: RollbackExecution, _phase: RollbackPhase): Promise<void> {
     // Simulate cleanup
     await sleep(1000);
-    console.log(`Executing cleanup phase for ${execution.componentId}`);
+    this.logger.debug('Executing cleanup phase', {
+      executionId: execution.id,
+      componentId: execution.componentId
+    });
   }
 
   // Helper methods
@@ -1179,6 +1257,9 @@ export class RollbackCriteria extends EventDrivenComponent<RollbackCriteriaEvent
       }
     });
 
-    console.log(`Rollback Criteria: Initialized ${this.criteria.size} default criteria with 30% performance threshold`);
+    this.logger.info('Initialized default rollback criteria', {
+      criteriaCount: this.criteria.size,
+      rollbackThreshold: this.config.rollbackThreshold
+    });
   }
 }

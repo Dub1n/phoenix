@@ -24,6 +24,7 @@ import { DisplayUtils, type DisplayStandards, type ResponsiveOptions } from '../
 import { WINDOW_SPACING } from '../../utils/window-theme-constants';
 import { StringWidthUtils } from '../../utils/chainable-string-utils';
 import { createFormatter, TerminalFormatter, type TerminalCapabilities as FormatterCapabilities } from '../../utils/terminal-formatter';
+import { createLogger, normalizeLoggerError } from '../../utils/logger';
 
 export interface ContentAnalysisResult {
   maxLineWidth: number;
@@ -450,6 +451,7 @@ export class WidthCalculator {
 
 export class ResponsiveWidthCalculator extends WidthCalculator {
   private resizeListeners: Array<() => void> = [];
+  private readonly logger = createLogger('width-calculator');
   private lastKnownDimensions: { width: number; height: number };
 
   constructor(
@@ -507,7 +509,8 @@ export class ResponsiveWidthCalculator extends WidthCalculator {
       try {
         listener();
       } catch (error) {
-        console.error('Error in resize listener:', error);
+        const normalized = normalizeLoggerError(error);
+        this.logger.error('Error in resize listener', normalized.error, normalized.data);
       }
     }
   }

@@ -8,6 +8,7 @@
 
 import { EventEmitter } from 'events';
 import { sleep } from '../utils/async-utils';
+import { createLogger, normalizeLoggerError } from '../utils/logger';
 
 export interface ComponentComplexity {
   id: string;
@@ -59,6 +60,7 @@ export class ComponentTransferStrategy extends EventEmitter {
   private transferQueue: string[] = [];
   private transferResults: Map<string, TransferResult> = new Map();
   private performanceThreshold: number = 30; // >30% degradation triggers rollback
+  private readonly logger = createLogger('component-transfer-strategy');
   
   constructor() {
     super();
@@ -640,7 +642,22 @@ export class ComponentTransferStrategy extends EventEmitter {
       
     } catch (error) {
       // Log the specific error for debugging
-      console.warn(`Failed to load PCL component from ${componentPath}:`, error);
+      const { error: normalizedError, data } = normalizeLoggerError(error);
+      const metadata: Record<string, unknown> = { componentPath };
+
+      if (normalizedError) {
+        metadata.error = {
+          name: normalizedError.name,
+          message: normalizedError.message,
+          stack: normalizedError.stack
+        };
+      }
+
+      if (data !== undefined) {
+        metadata.originalData = data;
+      }
+
+      this.logger.warn('Failed to load PCL component', metadata);
       return null;
     }
   }

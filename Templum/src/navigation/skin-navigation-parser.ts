@@ -21,6 +21,7 @@ import {
   NavigationDefinition,
 } from '../types/universal-skin-definition';
 import { TypeGuards, TypeValidators } from '../utils/type-guards';
+import { createLogger, normalizeLoggerError } from '../utils/logger';
 
 /**
  * TODO: [TASK-MCP-009-001] Pattern: skin-navigation-parsing | Complexity: 8 | Dependencies: skin-definition,performance-optimization
@@ -272,6 +273,7 @@ export class SkinNavigationParser {
   private metrics: NavigationMetrics;
   private cache: RoutingCache;
   private compatibilityMode: boolean;
+  private readonly logger = createLogger('skin-navigation-parser');
 
   constructor(options: { cacheSize?: number; compatibilityMode?: boolean } = {}) {
     this.metrics = new NavigationMetrics();
@@ -340,7 +342,25 @@ export class SkinNavigationParser {
       return graph;
 
     } catch (error) {
-      console.warn(`SkinNavigationParser: Failed to parse navigation for ${skinDefinition.id}:`, error);
+      const { error: normalizedError, data } = normalizeLoggerError(error);
+      const metadata: Record<string, unknown> = {
+        skinId: skinDefinition.id,
+        skinVersion: skinDefinition.version
+      };
+
+      if (normalizedError) {
+        metadata.error = {
+          name: normalizedError.name,
+          message: normalizedError.message,
+          stack: normalizedError.stack
+        };
+      }
+
+      if (data !== undefined) {
+        metadata.originalData = data;
+      }
+
+      this.logger.warn('Failed to parse skin navigation', metadata);
       
       // Return minimal navigation graph on error
       return this.createFallbackNavigationGraph();

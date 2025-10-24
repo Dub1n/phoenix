@@ -20,6 +20,10 @@ import { EventUtils, type GenericEventMap } from '../../utils/event-utils';
 import * as http from 'http';
 import * as https from 'https';
 import { createTimeout, sleep } from '../../utils/async-utils';
+import {
+  createBackendLoggerGuardrail,
+  type LoggerGuardrailSession
+} from './__utils__/logger-guardrail';
 
 const httpClient = {
   async get(url: string, options?: { timeout?: number }) {
@@ -54,6 +58,7 @@ import {
 } from '../../backend/defaults/serialization-defaults';
 import * as backendSerializationLog from '../../backend/backend-serialization-log';
 import { type SerializationMeta } from '../../utils/serialization-utils';
+import { createLogger } from '../../utils/logger';
 
 // Test Configuration
 const TEST_TIMEOUT = 30000; // 30 seconds for integration tests
@@ -62,6 +67,8 @@ const MINIMAL_BACKEND_PORT = 3001;
 const FULL_BACKEND_PORT = 3002;
 const MIXED_BACKEND_PORT_1 = 3003;
 const MIXED_BACKEND_PORT_2 = 3004;
+
+const testLogger = createLogger('backend-integration-tests');
 
 interface TestBackendInstance {
   process: ChildProcess;
@@ -107,7 +114,7 @@ class TestBackendManager {
     // Load skin definition
     instance.skinDefinition = await this.loadSkinDefinition(port);
 
-    console.log(`✅ Started minimal backend ${id} on port ${port}`);
+    testLogger.info(`✅ Started minimal backend ${id} on port ${port}`);
     return instance;
   }
 
@@ -121,7 +128,7 @@ class TestBackendManager {
     const instance = await this.startMinimalBackend(id, port);
     instance.type = 'full';
     
-    console.log(`✅ Started full backend ${id} on port ${port}`);
+    testLogger.info(`✅ Started full backend ${id} on port ${port}`);
     return instance;
   }
 
@@ -161,7 +168,7 @@ class TestBackendManager {
 
     await Promise.all(promises);
     this.instances.clear();
-    console.log('🛑 All test backends stopped');
+    testLogger.info('🛑 All test backends stopped');
   }
 
   /**
@@ -233,7 +240,9 @@ const registerProcessCleanup = (manager: TestBackendManager): void => {
     try {
       await manager.stopAllBackends();
     } catch (error) {
-      console.warn('Warning: Failed to stop test backends during shutdown:', (error as Error).message);
+      testLogger.warn('Warning: Failed to stop test backends during shutdown', {
+        message: (error as Error).message
+      });
     }
   };
 
@@ -319,7 +328,9 @@ describe('Pattern 11 Phase 0c serialization defaults', () => {
     const circular: Record<string, unknown> = {};
     circular.self = circular;
 
-    const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => { /* silence during test */ });
+    const stdoutSpy = jest
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
     const emitSpy = jest
       .spyOn(backendSerializationLog, 'emitSerializationWarnings')
       .mockImplementation(() => undefined);
@@ -328,7 +339,7 @@ describe('Pattern 11 Phase 0c serialization defaults', () => {
       logger.info('circular payload', circular, 'tests:observability');
     }).not.toThrow();
 
-    const loggedPayload = consoleSpy.mock.calls.at(-1)?.[0];
+    const loggedPayload = stdoutSpy.mock.calls.at(-1)?.[0] as string | undefined;
     expect(typeof loggedPayload).toBe('string');
 
     const serialized = JSON.parse(loggedPayload ?? '{}');
@@ -347,7 +358,7 @@ describe('Pattern 11 Phase 0c serialization defaults', () => {
     expect(contexts).toContain('observability:log-entry:decorated');
     expect(contexts).not.toContain('observability:log-entry:fallback');
 
-    consoleSpy.mockRestore();
+    stdoutSpy.mockRestore();
     emitSpy.mockRestore();
   });
 
@@ -485,43 +496,63 @@ describe('Pattern 11 Phase 2 router serialization contexts', () => {
 });
 
 describe('TASK-SKIN-007: Comprehensive Backend Integration Validation', () => {
+  let backendLoggerGuardrail: LoggerGuardrailSession | undefined;
   let backendManager: TestBackendManager;
   let backendRouter: TemplumBackendServiceRouter | undefined;
   let commandRouter: DynamicCommandRouter;
 
   beforeAll(async () => {
+    backendLoggerGuardrail = createBackendLoggerGuardrail();
     http.globalAgent.keepAlive = false;
     https.globalAgent.keepAlive = false;
     backendManager = new TestBackendManager();
     registerProcessCleanup(backendManager);
-    console.log('🚀 Setting up comprehensive backend integration tests...');
+    testLogger.info('🚀 Setting up comprehensive backend integration tests...');
   }, TEST_TIMEOUT);
 
   afterAll(async () => {
-    if (debugHangLogsEnabled) {
-      const activeHandlesGetter = (process as NodeJS.Process & {
-        _getActiveHandles?: () => unknown[];
-      })._getActiveHandles;
+    let cleanupError: unknown;
 
-      if (activeHandlesGetter) {
-        const handles = activeHandlesGetter();
-        const handleSummaries = handles.map((handle) => {
-          const ctorName = (handle as { constructor?: { name?: string } })?.constructor?.name;
-          return ctorName || typeof handle;
-        });
-        console.log('[DEBUG_BACKEND_HANG] Active handles:', handleSummaries);
+    try {
+      if (debugHangLogsEnabled) {
+        const activeHandlesGetter = (process as NodeJS.Process & {
+          _getActiveHandles?: () => unknown[];
+        })._getActiveHandles;
+
+        if (activeHandlesGetter) {
+          const handles = activeHandlesGetter();
+          const handleSummaries = handles.map((handle) => {
+            const ctorName = (handle as { constructor?: { name?: string } })?.constructor?.name;
+            return ctorName || typeof handle;
+          });
+          testLogger.debug('[DEBUG_BACKEND_HANG] Active handles', { handleSummaries });
+        }
+
+        try {
+          const { default: logWhyIsNodeRunning } = await import('why-is-node-running');
+          logWhyIsNodeRunning();
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          testLogger.warn('[DEBUG_BACKEND_HANG] Unable to load why-is-node-running', { message });
+        }
       }
 
-      try {
-        const { default: logWhyIsNodeRunning } = await import('why-is-node-running');
-        logWhyIsNodeRunning();
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        console.warn('[DEBUG_BACKEND_HANG] Unable to load why-is-node-running:', message);
-      }
+      await backendManager.stopAllBackends();
+    } catch (error) {
+      cleanupError = error;
     }
 
-    await backendManager.stopAllBackends();
+    const guardrail = backendLoggerGuardrail!;
+    const guardrailError = guardrail.evaluate();
+    guardrail.restore();
+
+    if (guardrailError) {
+      throw guardrailError;
+    }
+
+    if (cleanupError) {
+      throw cleanupError;
+    }
   }, TEST_TIMEOUT);
 
 beforeEach(async () => {
@@ -551,7 +582,7 @@ afterEach(async () => {
         await backendRouter.dispose();
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        console.warn('[TEST_CLEANUP] backendRouter.dispose failed:', message);
+        testLogger.warn('[TEST_CLEANUP] backendRouter.dispose failed', { message });
       }
       backendRouter = undefined as unknown as TemplumBackendServiceRouter;
     }
@@ -579,7 +610,7 @@ afterEach(async () => {
       expect(commandResult).toBeDefined();
       expect(commandResult.success).toBe(true);
       
-      console.log('✅ Minimal backend integration validated');
+      testLogger.info('✅ Minimal backend integration validated');
     }, TEST_TIMEOUT);
 
     test('validates minimal backend capability extraction from skin', async () => {
@@ -596,7 +627,7 @@ afterEach(async () => {
       // Note: queryServiceCapabilities is private - capability testing is done internally
       // Test validates that registration completes without errors
       
-      console.log('✅ Minimal backend capability extraction validated');
+      testLogger.info('✅ Minimal backend capability extraction validated');
     }, TEST_TIMEOUT);
   });
 
@@ -621,7 +652,7 @@ afterEach(async () => {
       expect(skinCheck.status).toBe(200);
       expect(skinCheck.data.metadata).toBeDefined();
       
-      console.log('✅ Full backend integration validated');
+      testLogger.info('✅ Full backend integration validated');
     }, TEST_TIMEOUT);
   });
 
@@ -677,7 +708,7 @@ afterEach(async () => {
       const connectionStatus = await backendRouter!.getConnectionStatus();
       expect(connectionStatus.totalConnections).toBe(2);
       
-      console.log('✅ Mixed environment integration validated');
+      testLogger.info('✅ Mixed environment integration validated');
     }, TEST_TIMEOUT);
 
     test('validates backend configuration availability for command routing', async () => {
@@ -720,7 +751,7 @@ afterEach(async () => {
       const configs = backendRouter!.getBackendConfigs();
       expect(Object.keys(configs)).toEqual(expect.arrayContaining(['routing-minimal', 'routing-full']));
 
-      console.log('✅ Backend configurations registered for routing checks');
+      testLogger.info('✅ Backend configurations registered for routing checks');
     }, TEST_TIMEOUT);
   });
 
@@ -745,7 +776,7 @@ afterEach(async () => {
           // Validate skin definition quality assessment
           expect(['complete', 'partial', 'minimal']).toContain(profile.skinDefinitionQuality);
           
-          console.log(`✅ Capability profile validated for ${instance.id}: ${profile.skinDefinitionQuality}`);
+          testLogger.info(`✅ Capability profile validated for ${instance.id}: ${profile.skinDefinitionQuality}`);
         }
       }
     }, TEST_TIMEOUT);
@@ -800,7 +831,7 @@ afterEach(async () => {
           expect(['health-enabled', 'minimal']).toContain(backend.tier);
         });
         
-        console.log(`✅ Two-tier prioritization validated for ${backends.length} backends`);
+        testLogger.info(`✅ Two-tier prioritization validated for ${backends.length} backends`);
       }
     }, TEST_TIMEOUT);
 
@@ -833,7 +864,7 @@ afterEach(async () => {
           expect(backend.score).toBeGreaterThanOrEqual(0);
         });
         
-        console.log('✅ Fair prioritization between backend tiers validated');
+        testLogger.info('✅ Fair prioritization between backend tiers validated');
       }
     }, TEST_TIMEOUT);
   });
@@ -870,7 +901,7 @@ afterEach(async () => {
         const averageTime = totalTime / concurrentCalls;
         expect(averageTime).toBeLessThan(100); // Should average less than 100ms per call
         
-        console.log(`✅ Load testing validated: ${concurrentCalls} calls in ${totalTime}ms (avg: ${averageTime.toFixed(1)}ms)`);
+        testLogger.info(`✅ Load testing validated: ${concurrentCalls} calls in ${totalTime}ms (avg: ${averageTime.toFixed(1)}ms)`);
       }
     }, TEST_TIMEOUT);
 
@@ -903,7 +934,7 @@ afterEach(async () => {
         }
       }
       
-      console.log('✅ Connection stability tracking under load validated');
+      testLogger.info('✅ Connection stability tracking under load validated');
     }, TEST_TIMEOUT);
   });
 
@@ -931,7 +962,7 @@ afterEach(async () => {
         }
       }
       
-      console.log('✅ Skin-definition-only architecture principles validated');
+      testLogger.info('✅ Skin-definition-only architecture principles validated');
     }, TEST_TIMEOUT);
 
     test('validates zero hardcoded backend knowledge requirement', async () => {
@@ -957,7 +988,7 @@ afterEach(async () => {
         }
       }
       
-      console.log('✅ Zero hardcoded backend knowledge requirement validated');
+      testLogger.info('✅ Zero hardcoded backend knowledge requirement validated');
     }, TEST_TIMEOUT);
   });
 });
@@ -982,7 +1013,6 @@ describe('Pattern 11 Phase 3 CLI/core serialization integration', () => {
     const discovery = new TemplumCliDiscovery();
     (discovery as any).servicesDir = servicesDir;
 
-    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
     const processSpy = jest
       .spyOn(discovery as any, 'isProcessRunning')
       .mockReturnValue(true);
@@ -995,9 +1025,7 @@ describe('Pattern 11 Phase 3 CLI/core serialization integration', () => {
         id: 'templum-core-9999',
         protocol: 'ipc'
       });
-      expect(warnSpy).toHaveBeenCalled();
     } finally {
-      warnSpy.mockRestore();
       processSpy.mockRestore();
       fs.rmSync(tempRoot, { recursive: true, force: true });
     }
