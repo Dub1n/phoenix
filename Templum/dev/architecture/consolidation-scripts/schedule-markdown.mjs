@@ -1,4 +1,3 @@
-import prettier from 'prettier';
 import {
   COMPLETED_STATUSES,
   mapStatusToGlyph,
@@ -11,9 +10,9 @@ import {
   collectPatternIdsFromTasks,
   collectPatternNotes,
   getNonDefaultDependencies,
-  deriveNoteScopeLabel,
-  enforceNoteIndentation
+  deriveNoteScopeLabel
 } from './schedule-format-helpers.mjs';
+import { formatMarkdownIfNeeded } from './modules/markdown.mjs';
 
 function escapeCell(value) {
   if (value === null || value === undefined) {
@@ -139,15 +138,11 @@ export async function renderScheduleMarkdown({ schedule, registry, savePath, for
 
   appendNotesSection(lines, registry, uniqueTasks);
 
-  const markdown = enforceNoteIndentation(lines.join('\n'));
-  if (!formatWithPrettier) {
-    return markdown;
-  }
-  try {
-    const config = await prettier.resolveConfig(savePath || '');
-    const formatted = prettier.format(markdown, { ...(config || {}), parser: 'markdown' });
-    return enforceNoteIndentation(formatted);
-  } catch (_) {
-    return markdown;
-  }
+  const targetPath =
+    formatWithPrettier && typeof savePath === 'string' && savePath.endsWith('.md')
+      ? savePath
+      : formatWithPrettier
+        ? 'ConsolidationSchedule.md'
+        : 'ConsolidationSchedule';
+  return formatMarkdownIfNeeded(targetPath, lines.join('\n'));
 }

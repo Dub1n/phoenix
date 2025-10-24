@@ -127,15 +127,29 @@ export function deriveNoteScopeLabel(note) {
 }
 
 export function enforceNoteIndentation(markdown) {
-  if (typeof markdown !== 'string' || !markdown.includes('\n- [')) {
+  if (typeof markdown !== 'string' || !markdown.includes('- [')) {
     return markdown;
   }
-  return markdown.replace(/(- \[[^\n]+\][^\n]*\n)((?: {2}[^\n]*\n?)*)/g, (match, heading, body) => {
+  return markdown.replace(/(- \[[^\n]+\][^\n]*\n)((?:[ \t]+[^\n]*\n?)*)/g, (match, heading, body) => {
     if (!body) {
       return match;
     }
-    const adjustedBody = body.replace(/^ {2}(?![ ])/gm, '    ');
-    return `${heading}${adjustedBody}`;
+    const lines = body.split('\n');
+    const adjustedLines = lines.map((line) => {
+      if (!line) {
+        return line;
+      }
+      if (!line.trim()) {
+        return line;
+      }
+      const normalized = line.replace(/^\t+/g, (tabs) => '  '.repeat(tabs.length));
+      const leadingMatch = normalized.match(/^ +/);
+      if (!leadingMatch || leadingMatch[0].length !== 2) {
+        return `  ${normalized.trimStart()}`;
+      }
+      return normalized;
+    });
+    return `${heading}${adjustedLines.join('\n')}`;
   });
 }
 

@@ -144,7 +144,7 @@ Command parsing is now metadata-driven: descriptor files capture positionals, fl
 - Wave packing ignores plan-file collisions from scopes already in a terminal status (`complete`, `ready`, `ready_for_handoff`, `cancelled`, `deferred`); only active scopes (`pending`, `in_progress`, `blocked`, etc.) reserve keys, preventing historical overlaps from pushing fresh work into later waves.
 - The generator produces the fewest waves possible by packing any dependency-ready tasks (even across different stages) into the same wave while still staggering overlapping planned files. Stage 6 lanes that collide across cohort members remain `[?] blocked` until the shared files clear, and lanes such as `4:6l`, `4:6i`, and `4:6j` now surface that blocked state explicitly instead of appearing runnable. Lanes that still list placeholder plan files (e.g., a literal `"0"`) are auto-blocked until owners supply a real file list, preventing the scheduler from assuming the lane is safe to run.
 - Scopes that share plan files across different patterns now select a primary owner (the earliest ready scope in the wave); trailing peers are auto-blocked so the suite or artefact runs once at a time, while the original owner stays in the front wave as `[ ]` pending.
-- Same-pattern collisions still block peers unless the blocked lane explicitly depends on the other entry; dependency-linked pairs keep the upstream scope runnable so Stage 6 cleanup lanes can close before dependent stabilization sweeps (e.g., `4:6l` feeding `4:6m`).
+- Same-pattern collisions still block peers unless the blocked lane explicitly depends on the other entry; dependency-linked pairs now keep the upstream scope runnable while the overlap stays documented in schedules/notes, preventing mutual-dependency deadlocks (e.g., `4:6l` feeding `4:6m`).
 - Stage dependencies honour completed registry state: once upstream gates are marked `complete`/`ready`, the scheduler treats those dependencies as satisfied and schedules the downstream scope immediately, even if the predecessor is no longer listed in the current wave output.
 - Waves are split so runnable/owned scopes stay in the lead wave; any `[?]` slots created by plan-file collisions slide to a trailing wave, keeping the queue short while making the contention explicit.
 - Stage 4 and Stage 6 gates no longer surface as standalone rows—their lanes are the tracked work, Stage 5A acts as the Stage 4 close-out for the cohort, and Stage 7 captures the Stage 6 completion.
@@ -259,7 +259,8 @@ sequenceDiagram
 - Map the migration search results into paired Stage 4 (guardrail) and Stage 6 (runtime) lanes; Stage 4 plan-files reference the guard assets, Stage 6 plan-files cover runtime surfaces.
 - Record the guardrail/runtime pairing, sequencing, and expected failure signatures in the Stage 3 note so downstream owners inherit the choreography.
 - Apply the combined search-term set to both lane types and the Stage 7 gate (add the project root, e.g., `Templum/`) so sweeps enforce the full contract.
-- When new scope appears, reopen Stage 3, add the guardrail/runtime lane pair, and update dependencies before handing off.
+- When new scope appears reopen Stage 3
+  - Stage 3 then adds new guardrail/runtime lane pairs and update dependencies before handing off.
 - The CLI automatically reopens and blocks only downstream gates (Stage 5 onward), resets every linked cohort Stage 5A segment (dropping it to `blocked` until Stage 4 readiness is restored), and mirrors the Stage 5/6 reopen across cohort peers whenever Stage 3 leaves `complete`/`ready`. Stage 4/6 lanes remain untouched by the cascade and stay closed; replacement lanes are created explicitly when Stage 3 restages the work.
 
 ### Stage 4 expectations
@@ -287,6 +288,7 @@ sequenceDiagram
 - Document the reason for the validation, required reruns, and confirmation that promised documentation/progress trackers were updated (automation pending) in a Stage 7 note.
 - Run the Stage 7 sweep, confirm the repo is clean, and only then mark the stage complete. Reopen Stage 7 if regressions surface later.
 - If any upstream stage (especially Stage 3/5/6) is reopened, the CLI will automatically drop Stage 7 back to `pending` across every affected cohort pattern and block it until prerequisites return to `complete`; treat the printed cascade list as a TODO checklist.
+- Stage 7 planned files intentionally skip the plan-file collision guard while Stage 7 is underway so release sweeps that touch the repo root never auto-block Stage 6 lanes or their cohort peers. Stage-level dependencies still control the hand-off ordering.
 
 ### Guide rendering flow
 
@@ -311,13 +313,13 @@ Each stage’s exit summary should call out required doc/task syncs so the print
 
 ### Lane Status Glyphs
 
-| Status       | Glyph | Auto-Assignable? | Usage                                                                                         |
-| ------------ | ----- | ---------------- | --------------------------------------------------------------------------------------------- |
-| `pending`    | `[ ]` | Yes              | Dependency cleared; scope is the next candidate once the coordinator confirms availability.  |
-| `in_progress`| `[~]` | No               | Claimed and actively underway.                                                               |
-| `blocked`    | `[?]` | No               | Blocked by upstream work; CLI captures blocker notes and propagates dependencies downstream. |
-| `ready`      | `[>]` | No               | Shared prerequisite satisfied (e.g., cohort Stage 5A). Signals downstream gates to re-check. |
-| `complete`   | `[x]` | No               | Fully complete; no further action required.                                                  |
+| Status        | Glyph | Auto-Assignable? | Usage                                                                                        |
+| ------------- | ----- | ---------------- | -------------------------------------------------------------------------------------------- |
+| `pending`     | `[ ]` | Yes              | Dependency cleared; scope is the next candidate once the coordinator confirms availability.  |
+| `in_progress` | `[~]` | No               | Claimed and actively underway.                                                               |
+| `blocked`     | `[?]` | No               | Blocked by upstream work; CLI captures blocker notes and propagates dependencies downstream. |
+| `ready`       | `[>]` | No               | Shared prerequisite satisfied (e.g., cohort Stage 5A). Signals downstream gates to re-check. |
+| `complete`    | `[x]` | No               | Fully complete; no further action required.                                                  |
 
 Stage gates mirror these signals with `[ ] pending`, `[?] blocked`, `[~] in-progress`, `[>] ready`, and `[x] complete`.
 

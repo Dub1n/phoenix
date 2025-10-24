@@ -49,7 +49,44 @@ describe('auto-blocking cascade guardrails', () => {
       expect(pattern.stageGates?.['7']?.status).toBe('pending');
       expect(pattern.stageGates?.['2']?.status).toBe('complete');
     });
-    it.todo('does not reopen Stage 5 peers when the cascade originates from Stage 5');
+    it('preserves Stage 5A cohorts when Stage 5 resets its own downstream gates', async () => {
+      const { reopenDownstreamStageGates } = await loadCliModule();
+      const pattern = {
+        patternId: 'pattern-205',
+        cohorts: ['A'],
+        stageGates: {
+          '5': { status: 'pending' },
+          '6': {
+            status: 'complete',
+            completedAt: '2025-02-02T10:00:00.000Z',
+            startedAt: '2025-02-02T09:00:00.000Z',
+            elapsedMs: 3600000
+          },
+          '7': { status: 'complete', completedAt: '2025-02-05T18:00:00.000Z' }
+        }
+      };
+      const registry = {
+        patterns: [pattern],
+        cohorts: [
+          {
+            id: 'A',
+            stages: {
+              '5a': { segment: '5a', status: 'complete', completedAt: '2025-02-01T12:00:00.000Z' }
+            }
+          }
+        ]
+      };
+
+      const result = reopenDownstreamStageGates(registry as any, pattern as any, '5');
+
+      expect(result.stageIds).toEqual(['6', '7']);
+      expect(result.cohortSegments).toEqual([]);
+      expect(pattern.stageGates?.['6']?.status).toBe('pending');
+      expect(pattern.stageGates?.['6']?.completedAt).toBeUndefined();
+      expect(pattern.stageGates?.['7']?.status).toBe('pending');
+      expect(pattern.stageGates?.['7']?.completedAt).toBeUndefined();
+      expect(registry.cohorts?.[0]?.stages?.['5a']?.status).toBe('complete');
+    });
     it.todo('reopens Stage 5A cohort segments and peer Stage 5/6 gates when stages 1-4 reopen');
   });
 

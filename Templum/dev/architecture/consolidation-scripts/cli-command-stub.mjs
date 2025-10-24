@@ -793,6 +793,19 @@ function findDependentLanes(pattern, laneId) {
   return dependents.sort();
 }
 
+function laneDependsOnTarget(lane, patternId, targetLaneId) {
+  if (!lane || !Array.isArray(lane.dependencies)) {
+    return false;
+  }
+  const targetGate = `lane-${targetLaneId}`.toLowerCase();
+  return lane.dependencies.some((dep) => {
+    if (!dep || dep.patternId !== patternId || !dep.gate) {
+      return false;
+    }
+    return dep.gate.toLowerCase() === targetGate;
+  });
+}
+
 function findDependentStages(pattern, laneId) {
   const targetGate = `lane-${laneId}`;
   const stageDependents = new Set();
@@ -931,7 +944,23 @@ function autoUpdateLaneStatus(registry, pattern, laneId) {
   if (shouldBePending) {
     const planBlockers = findPlanFileBlockingLaneIds(pattern, laneId);
     if (planBlockers.length) {
-      shouldBePending = false;
+      const unresolvedPlanBlockers = planBlockers.filter((blockerId) => {
+        const blockerLane = pattern.lanes?.[blockerId];
+        if (!blockerLane) {
+          return true;
+        }
+        const blockerStatus = (blockerLane.status || '').toLowerCase();
+        if (
+          blockerStatus === 'blocked' &&
+          laneDependsOnTarget(blockerLane, pattern.patternId, laneId)
+        ) {
+          return false;
+        }
+        return true;
+      });
+      if (unresolvedPlanBlockers.length) {
+        shouldBePending = false;
+      }
     }
   }
   if (shouldBePending) {
@@ -1345,9 +1374,9 @@ function reopenDownstreamStageGates(registry, pattern, stageId) {
   const cohortSegments = [];
   const stageIndex = stageOrder.indexOf(stageId);
   const stage5Index = stageOrder.indexOf('5');
-  if (stageIndex !== -1 && stage5Index !== -1 && stageIndex <= stage5Index) {
+  if (stageIndex !== -1 && stage5Index !== -1 && stageIndex < stage5Index) {
     cohortSegments.push(...reopenCohortSegmentsForPattern(registry, pattern, ['5a']));
-  } else if (reopenedStageIds.includes('5')) {
+  } else if (reopenedStageIds.includes('5') && stageId !== '5') {
     cohortSegments.push(...reopenCohortSegmentsForPattern(registry, pattern, ['5a']));
   }
   return { stageIds: reopenedStageIds, cohortSegments };
@@ -2570,6 +2599,44 @@ function printCohortDirectory(registry) {
   });
 }
 
+function ensureStage5AlignmentNote(pattern, alignmentPlanFiles) {
+  if (!Array.isArray(alignmentPlanFiles) || alignmentPlanFiles.length === 0) {
+    return { added: false, updated: false };
+  }
+  const notes = Array.isArray(pattern.notes) ? pattern.notes : [];
+  const stage5Notes = notes.filter(
+    (note) => note && Array.isArray(note.scope) && note.scope.includes('stage-5') && typeof note.body === 'string'
+  );
+  const allFilesReferenced = stage5Notes.some((note) =>
+    alignmentPlanFiles.every((file) => note.body.includes(file))
+  );
+  if (allFilesReferenced) {
+    return { added: false, updated: false };
+  }
+  const descriptor = alignmentPlanFiles.length === 1 ? 'Stage 5B alignment spec reference' : 'Stage 5B alignment spec references';
+  const referenceList = alignmentPlanFiles.join(', ');
+  const body = `${descriptor}: ${referenceList}. Stage 5 plan-files intentionally exclude the shared alignment record.`;
+  const automationNote = stage5Notes.find((note) => note.body.startsWith('Stage 5B alignment spec'));
+  const timestamp = nowIso();
+  if (automationNote) {
+    if (automationNote.body === body) {
+      return { added: false, updated: false };
+    }
+    automationNote.body = body;
+    automationNote.timestamp = timestamp;
+    return { added: false, updated: true };
+  }
+  const targetNotes = Array.isArray(pattern.notes) ? pattern.notes : (pattern.notes = []);
+  const identifier = `stage-5-alignment-${timestamp.replace(/[^0-9T]/g, '')}`;
+  targetNotes.push({
+    id: identifier,
+    timestamp,
+    body,
+    scope: ['stage-5']
+  });
+  return { added: true, updated: false };
+}
+
 function propagateCohortStagePlanFiles(registry, cohort, segment, planFiles) {
   if (!segment || segment.toLowerCase() !== '5a') {
     return [];
@@ -2586,17 +2653,27 @@ function propagateCohortStagePlanFiles(registry, cohort, segment, planFiles) {
     }
     const gate = ensureStageGate(pattern, '5');
     const existing = Array.isArray(gate.plannedFiles) ? normalisePlanFiles(gate.plannedFiles) : [];
-    const merged = normalisePlanFiles([...existing, ...normalized]);
-    const changed =
-      merged.length !== existing.length || merged.some((value, index) => value !== existing[index]);
-    if (changed) {
-      gate.plannedFiles = merged;
+    const removedEntries = existing.filter((value) => normalized.includes(value));
+    const filtered = removedEntries.length ? existing.filter((value) => !normalized.includes(value)) : existing;
+    let planFilesChanged = false;
+    if (removedEntries.length) {
+      if (filtered.length) {
+        gate.plannedFiles = filtered;
+      } else {
+        delete gate.plannedFiles;
+      }
       registerScopeChange(patternId, 'stage-5');
+      planFilesChanged = true;
+    }
+    const noteResult = ensureStage5AlignmentNote(pattern, normalized);
+    const noteChanged = noteResult.added || noteResult.updated;
+    if (planFilesChanged || noteChanged) {
       touchPattern(pattern);
       updates.push({
         patternId,
         name: pattern.name,
-        planFiles: merged
+        removedPlanFiles: removedEntries,
+        noteAction: noteResult.added ? 'added' : noteResult.updated ? 'updated' : null
       });
     }
   });
@@ -3503,8 +3580,9 @@ async function main() {
           clearPlanFiles: stageOptions.clearPlanFiles
         });
         const updatedStageStatus = normaliseStageStatusValue(gate.status || defaultStageStatus(stageId));
+        const cascadeTriggeredByPending = statusChanged && updatedStageStatus === 'pending';
         let peerReopens = [];
-        if (!stageCompletionStatuses.has(updatedStageStatus) && updatedStageStatus !== 'ready') {
+        if (cascadeTriggeredByPending) {
           cascadeResult = reopenDownstreamStageGates(registry, pattern, stageId);
           const stageIndex = stageOrder.indexOf(stageId);
           const stage5Index = stageOrder.indexOf('5');
@@ -3921,15 +3999,25 @@ async function main() {
         }
         if (segmentToken === '5a' && entry.status === 'complete') {
           if (planFilePropagation.length) {
-            const list = planFilePropagation
-              .map((detail) => `${detail.patternId}${detail.name ? ` (${detail.name})` : ''}`)
-              .join(', ');
+            planFilePropagation.forEach((detail) => {
+              const label = detail.name ? `${detail.patternId} (${detail.name})` : detail.patternId;
+              const actions = [];
+              if (detail.removedPlanFiles && detail.removedPlanFiles.length) {
+                actions.push('removed alignment spec from Stage 5 plan-files');
+              }
+              if (detail.noteAction === 'added') {
+                actions.push('recorded alignment spec in Stage 5 note');
+              } else if (detail.noteAction === 'updated') {
+                actions.push('refreshed Stage 5 alignment note');
+              }
+              console.log(`  ${label}: ${actions.join('; ')}.`);
+            });
             console.log(
-              `  Stage 5 planned files updated for patterns: ${list}. Stage 5B guidance now references the shared alignment spec.`
+              '  Stage 5 plan-files now exclude the alignment spec; Stage 5 notes carry the reference for Stage 5B.'
             );
           } else {
             console.log(
-              '  Stage 5 planned files already included the alignment spec. Stage 5B agents will see the shared plan automatically.'
+              '  Stage 5 plan-files already excluded the alignment spec and Stage 5 notes reference the shared record.'
             );
           }
         }
@@ -4988,4 +5076,10 @@ if (invokedDirectly) {
   main();
 }
 
-export { reopenCohortPeerStages, reopenDownstreamStageGates, promoteDependentLanes };
+export {
+  reopenCohortPeerStages,
+  reopenDownstreamStageGates,
+  promoteDependentLanes,
+  propagateCohortStagePlanFiles,
+  autoUpdateAllPatternStatuses
+};

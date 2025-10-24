@@ -151,6 +151,44 @@ function inferStageNumberFromScope(scope) {
   return null;
 }
 
+function isStage7Task(task) {
+  if (!task) {
+    return false;
+  }
+  if (typeof task.stageNumber === 'number') {
+    return task.stageNumber === 7;
+  }
+  if (task.stageNumber !== undefined && task.stageNumber !== null) {
+    const numeric = Number(task.stageNumber);
+    if (!Number.isNaN(numeric)) {
+      return numeric === 7;
+    }
+  }
+  if (task.type === 'stage') {
+    const stageId = task.stageId !== undefined && task.stageId !== null ? String(task.stageId) : '';
+    if (stageId) {
+      return stageId === '7';
+    }
+    const scope = task.scope ? String(task.scope).toLowerCase() : '';
+    return scope === 'stage-7';
+  }
+  if (task.scope) {
+    const scope = String(task.scope).toLowerCase();
+    if (scope.startsWith('stage-')) {
+      return scope === 'stage-7';
+    }
+    if (scope.startsWith('lane-')) {
+      const stageNumber = inferStageNumberFromLaneId(scope.slice(5));
+      return stageNumber === 7;
+    }
+  }
+  return false;
+}
+
+function ignoresPlanCollisionBlocking(task) {
+  return isStage7Task(task);
+}
+
 function dedupeDependencies(dependencies) {
   if (!dependencies || !dependencies.length) {
     return [];
@@ -682,6 +720,9 @@ function participatesInWavePlanConflicts(task) {
   if (!task || !task.plannedFileKeys || !task.plannedFileKeys.length) {
     return false;
   }
+  if (ignoresPlanCollisionBlocking(task)) {
+    return false;
+  }
   return statusBlocksLaterTasks(task);
 }
 
@@ -710,6 +751,9 @@ function shouldRegisterPlanKey(task, patternStage7Complete) {
   if (!task || !task.plannedFileKeys || !task.plannedFileKeys.length) {
     return false;
   }
+  if (ignoresPlanCollisionBlocking(task)) {
+    return false;
+  }
   if (statusBlocksLaterTasks(task)) {
     return true;
   }
@@ -727,6 +771,9 @@ function shouldRegisterPlanKey(task, patternStage7Complete) {
 
 function entryBlocksTask(entry, task, patternStage7Complete) {
   if (!entry) {
+    return false;
+  }
+  if (ignoresPlanCollisionBlocking(entry)) {
     return false;
   }
   if (statusBlocksLaterTasks(entry)) {
@@ -784,6 +831,9 @@ function applyPlanCollisionAutoBlocking(waves, registry) {
       if (!task.plannedFileKeys || !task.plannedFileKeys.length) {
         return;
       }
+      if (ignoresPlanCollisionBlocking(task)) {
+        return;
+      }
       if (!shouldRegisterPlanKey(task, patternStage7Complete)) {
         return;
       }
@@ -822,6 +872,9 @@ function applySymmetricPlanBlocking(waves) {
   waves.forEach((wave) => {
     (wave.tasks || []).forEach((task) => {
       if (!task || !task.plannedFileKeys || !task.plannedFileKeys.length) {
+        return;
+      }
+      if (ignoresPlanCollisionBlocking(task)) {
         return;
       }
       const status = normalizeStatus(task.status);

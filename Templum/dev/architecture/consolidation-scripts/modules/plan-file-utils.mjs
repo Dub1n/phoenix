@@ -1,5 +1,16 @@
 import { throwUsageError } from '../cli-shared-parser.mjs';
 
+// Stage 7 runs release sweeps across the repo; its plan-files should not block other work.
+const planConflictExcludedStageIds = new Set(['7']);
+
+function stageEligibleForPlanConflict(stageId) {
+  if (!stageId) {
+    return true;
+  }
+  const normalized = String(stageId).toLowerCase();
+  return !planConflictExcludedStageIds.has(normalized);
+}
+
 function normalisePlanFiles(files) {
   if (!files || !files.length) {
     return [];
@@ -142,6 +153,9 @@ function collectActivePlanFileMap(pattern, excludeScopeId = null) {
     if (!gate || gate.status !== 'in_progress') {
       return;
     }
+    if (!stageEligibleForPlanConflict(stageId)) {
+      return;
+    }
     const scopeId = `stage-${stageId}`;
     if (excludeScopeId && excludeScopeId === scopeId) {
       return;
@@ -175,6 +189,9 @@ function collectRegistryPlanFileMap(registry, options = {}) {
     const patternScopePrefix = `pattern-${pattern.patternId}`;
     Object.entries(pattern.stageGates || {}).forEach(([stageId, gate]) => {
       if (!gate || gate.status !== 'in_progress') {
+        return;
+      }
+      if (!stageEligibleForPlanConflict(stageId)) {
         return;
       }
       const scopeId = `stage-${stageId}`;
