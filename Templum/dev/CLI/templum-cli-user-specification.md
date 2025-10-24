@@ -36,38 +36,6 @@ If no services are found, the CLI will:
 - Offer to help diagnose connection issues
 - Remember your preferences for next time
 
-## Navigation Patterns
-
-### Menu Mode (Default)
-
-Use arrow keys to highlight options, Enter to select:
-
-```terminal - **OUTDATED**
-Templum CLI v2.0 - Connected to MyApp Service
-══════════════════════════════════════════════
-
-Main Menu:
-1. Project Management
-2. Service Status
-3. Settings & Configuration  
-4. Help & Documentation
-5. Exit
-
-Use ↑↓ to navigate, Enter to select, or type 'c' for command mode
-Current: Menu Mode | Session: abc123 | Service: MyApp (healthy)
-```
-
-### Command Mode
-
-Type commands directly with auto-completion:
-
-```terminal
-templum> project list
-templum> service restart backend
-templum> help navigation
-templum> m    (switches back to menu mode)
-```
-
 ### Universal Navigation
 
 These work anywhere in the CLI:
@@ -75,7 +43,8 @@ These work anywhere in the CLI:
 - **ESC** - Go back to previous menu/cancel current action
 - **Home** - Return to main menu from anywhere
 - **Help** - Get context-sensitive help for current screen
-- **Quit/Exit** - Safely exit the CLI (preserves session data)
+- **Back** - Go back to the previous page (greyed out when N/A)
+- **Exit** - Safely exit the CLI (preserves session data) (greyed out when N/A)
 
 ## User Workflows
 
@@ -191,27 +160,6 @@ When things go wrong, the CLI helps you fix them:
 
 ## Display Standards
 
-### Screen Layout
-
-```terminal **OUTDATED**
-Application Header with Service Status
-══════════════════════════════════════
-Menu Content Area
-(Main interaction space)
-
-Navigation Help | Current Mode | Session Info
-```
-
-### Status Indicators
-
-- **●** Green dot: Service healthy and responsive
-- **●** Yellow dot: Service responding but has warnings
-- **●** Red dot: Service unavailable or errors
-- **⟳** Spinning: Operation in progress
-- **✓** Checkmark: Operation completed successfully
-- **⚠** Warning triangle: Attention needed
-- **✗** X mark: Operation failed
-
 ### Color Usage
 
 - **Cyan/Blue**: Primary interface elements, highlights
@@ -234,7 +182,7 @@ The interface adapts to your terminal:
 ### Universal Shortcuts (work everywhere)
 
 - **ESC**: Go back/cancel current action
-- **Ctrl+C**: Emergency exit (preserves session)
+- **Ctrl+C**: Emergency exit (preserves session) over two iterations with one confirmation the other actuating
 - **Tab**: Auto-complete in command mode
 - **?**: Quick help overlay
 - **H**: Go home to main menu
@@ -256,7 +204,7 @@ The interface adapts to your terminal:
 
 ## Accessibility Features
 
-### Terminal Compatibility
+### Terminal Compatibility *Post-MVP*
 
 - Works with screen readers
 - High contrast mode available

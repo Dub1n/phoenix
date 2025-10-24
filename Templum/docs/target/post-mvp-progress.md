@@ -90,6 +90,12 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` not started · `[!]` broken · 
   Progress 0% — schema/types still omit localisation bundles and `SkinAssetValidator`; backend validation tests skip asset/link checks.
 - [ ] [Universal Skin Engine convergence roadmap](../../dev/tasks/universal-skin-engine-convergence.md) (modularise current engine, absorb Phase 5 validation/caching, retire duplicate impl) — **Post-MVP**
   Progress 10% — both `universal-skin-engine.ts` and `universal-skin-engine-impl.ts` remain in circulation with overlapping logic; no modular extraction or duplicate retirement steps have landed.
+- [ ] [Command template metadata](../../dev/tasks/command-template-metadata.md) — **Post-MVP**
+  Progress 0% — capture optional skin metadata that maps menu inputs to backend command invocations, provide helper tooling, and teach adapters to consume it without impacting minimal command-routing integrations.
+- [ ] [Backend state capability support](../../dev/tasks/backend-state-capability.md) — **Post-MVP**
+  Progress 0% — implement optional state snapshot exposure (endpoint or response payload), wire capability checks through adapters/validation, and backfill tests/docs once the MVP ships.
+- [ ] [Backend streaming support](../../dev/tasks/backend-streaming-support.md) — **Post-MVP**
+  Progress 0% — add streaming command pipelines (chunked responses or WebSocket/SSE) for backends advertising the capability, update adapters/tests, and extend the canonical mock with representative scenarios.
 
 ## Interface Delivery
 

@@ -147,7 +147,7 @@
   │                                                                                                 │
   └─────────────────────────────────────────────────────────────────────────────────────────────────┘
 
-# or
+# or with double space window separation
 
 ┌─────────────────────────────────────────────────────────────────────────────────────────────────┐
 │                                              Templum                                            │
@@ -211,7 +211,7 @@ Naming Convention is not case specific - can be lowerCase or CapitalisedCasing e
 
 - MenuSeparator: The line above the Back, Home, Help, and Exit options that conforms to the three-character padding rule
 
-- [ ] No emojis - just remove them by hand, *don't* write any script or code to do this.
+- [ ] No emojis or special characters except `›` and the border pipes
 - [ ] WindowWidth is set to the minimum width required to display the widest contents of any "Page" with 3 character padding between the contents and the border
 - [ ] The WindowTitle is centred in the WindowTitleBar
 - [ ] The TextBox moves (by adding whitespace before its three lines' contents) to match the x-position of the current Window
@@ -222,7 +222,7 @@ Naming Convention is not case specific - can be lowerCase or CapitalisedCasing e
 - [ ] When navigating through menus, if the page contents are a menu (or contain menu options) the Selector behaves as though items above and below the MenuSeparator are in the same menu
 - [ ] There is no Status/Connection and Health separation: If connected, it will display the health, and if disconnected it will display "Disconnected"
 - [ ] Pressing Exit actually needs to exit and return the user to the terminal, currently it says Interactive session ended \n Session history: _ interactions recorded
-  - The user has to press Ctrl+C to exit again for it to say "Templum CLI shutting down..."
+  - The user has to press Ctrl+C to exit agai n for it to say "Templum CLI shutting down..."
   - If user presses Ctrl+C, the TextBox should change text to say "Press Ctrl+C again to shut down Templum CLI" and it fully shuts down
   - If the user selects Exit from the menu, the text that said "Exit" now says "Press Enter again to shut down Templum CLI" and on pressing enter a second time it fully shuts down
 - [ ] The paths between pages and the menu items that point there cannot be hardcoded - this information is able to be taken indirectly from the skin definition - as such there is no need to say "this button leads to this page when in this page"
