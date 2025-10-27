@@ -45,11 +45,11 @@
 # Execute Command
 
 ┌───────────────────────────────────┐
-│               Templum             │
+│              Templum              │
 │ ┌─────────────────────────────────┴─┐
-│ │           Execute Command       │ │
+│ │          Execute Command        │ │
 │ │ ┌─────────────────────────────────┴─┐
-│ │ │           minimal-example     │ │ │
+│ │ │          minimal-example      │ │ │
 │ │ ├───────────────────────────────────┤
 │ │ │   Run a minimal-example command │ │
 │ │ │                               │ │ │
