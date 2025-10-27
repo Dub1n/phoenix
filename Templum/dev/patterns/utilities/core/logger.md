@@ -1,6 +1,6 @@
 ---
 date-created: 2025-09-14T18:05:00Z
-last-updated: 2025-10-15T18:57:00Z
+last-updated: 2025-10-24T22:40:00Z
 name: logger
 description: Centralized logging infrastructure to eliminate 2,810 console.log/warn/error calls across 75+ files with structured, contextual logging
 status: "[x]"
@@ -197,32 +197,34 @@ httpLog.info('HTTP request started');  // [backend-router:http]
 ipcLog.info('IPC connection opened');   // [backend-router:ipc]
 ```
 
+> **2025-10-24 Status:** Stage 4/6 migrations plus the Stage 7 sweep eliminated all 2,810 console calls. Validation artefacts: `dev/architecture/logs/pattern-1-stage7-jest-ci-20251024T222520Z.log`, `dev/architecture/logs/pattern-1-stage7-phase6-health-20251024T222834Z.log`, `dev/architecture/logs/pattern-1-stage7-phase6-validation-20251024T222848Z.log`, `dev/architecture/logs/pattern-1-stage7-sweep-20251024T224015Z.log`.
+
 #### Files Using This Pattern
 
 **Core Backend Components**:
 
-- [ ] `src/backend/backend-service-router.ts` (315 console calls → `log.info/warn/error`)
-- [ ] `src/backend/service-discovery.ts` (287 console calls → auto-context logging)
-- [ ] `src/backend/connection-factory.ts` (156 console calls → child loggers per protocol)
-- [ ] `src/backend/dynamic-command-router.ts` (89 console calls → structured command logging)
+- [x] `src/backend/backend-service-router.ts` (315 console calls → `log.info/warn/error`)
+- [x] `src/backend/service-discovery.ts` (287 console calls → auto-context logging)
+- [x] `src/backend/connection-factory.ts` (156 console calls → child loggers per protocol)
+- [x] `src/backend/dynamic-command-router.ts` (89 console calls → structured command logging)
 
 **Interface Components**:
 
-- [ ] `src/interfaces/cli-adapter.ts` (198 console calls → CLI-specific context)
-- [ ] `src/interfaces/cli-adapter-abstracted.ts` (234 console calls → abstracted context logging)
-- [ ] `src/interfaces/vscode-adapter.ts` (78 console calls → VSCode event logging)
-- [ ] `src/interfaces/terminal-ui-components.ts` (142 console calls → UI component logging)
+- [x] `src/interfaces/cli-adapter.ts` (198 console calls → CLI-specific context)
+- [x] `src/interfaces/cli-adapter-abstracted.ts` (234 console calls → abstracted context logging)
+- [x] `src/interfaces/vscode-adapter.ts` (78 console calls → VSCode event logging)
+- [x] `src/interfaces/terminal-ui-components.ts` (142 console calls → UI component logging)
 
 **Core System Components**:
 
-- [ ] `src/core/templum-core.ts` (167 console calls → orchestrator logging)
-- [ ] `src/core/adapter-registry.ts` (123 console calls → dependency injection logging)
-- [ ] `src/skin/universal-skin-engine.ts` (189 console calls → skin processing logging)
-- [ ] `src/session/templum-universal-session-manager.ts` (134 console calls → session state logging)
+- [x] `src/core/templum-core.ts` (167 console calls → orchestrator logging)
+- [x] `src/core/adapter-registry.ts` (123 console calls → dependency injection logging)
+- [x] `src/skin/universal-skin-engine.ts` (189 console calls → skin processing logging)
+- [x] `src/session/templum-universal-session-manager.ts` (134 console calls → session state logging)
 
 **All Additional Files** (68+ files with remaining 898 console calls):
 
-- [ ] All components with console.log/warn/error usage migrate to centralized logger
+- [x] All components with console.log/warn/error usage migrate to centralized logger
 
 #### Skin Domain Helper (Universal Pattern)
 
@@ -264,23 +266,23 @@ Future Stage 6 lanes should reference this helper instead of introducing bespo
 
 **Before Migration**:
 
-- [ ] Count exact console calls in each target file
-- [ ] Identify context patterns and manual prefixes
-- [ ] Map performance timing patterns
+- [x] Counted exact console calls in each target file (Stage 1 inventory log `dev/architecture/plans/1.generated.md`).
+- [x] Identified context patterns and manual prefixes per lane scopes.
+- [x] Mapped performance timing patterns to `Logger.time/timeEnd`.
 
 **During Migration**:  
 
-- [ ] Replace console calls with appropriate log methods
-- [ ] Use auto-context detection where possible
-- [ ] Convert manual timing to `log.time()` / `log.timeEnd()`
-- [ ] Add structured data where beneficial
+- [x] Replaced console calls with appropriate log methods across Stage 4 guardrail lanes.
+- [x] Used auto-context detection and scoped helpers (`getSkinLogger`, `createLogger().child`) where needed.
+- [x] Converted manual timing to `log.time()` / `log.timeEnd()`.
+- [x] Added structured data payloads for telemetry surfaces.
 
 **After Migration**:
 
-- [ ] Verify all 2,810 console calls eliminated
-- [ ] Confirm consistent log format across components
-- [ ] Test log level filtering
-- [ ] Validate performance tracking works correctly
+- [x] Verified all 2,810 console calls eliminated (Stage 7 sweep log `dev/architecture/logs/pattern-1-stage7-sweep-20251024T224015Z.log`).
+- [x] Confirmed consistent log format across components via Jest + Phase 6 validation runs.
+- [x] Tested log level filtering through coverage in `src/utils/__tests__/logger.test.ts`.
+- [x] Validated performance tracking through guardrail suites recorded in `dev/architecture/logs/pattern-1-stage7-jest-ci-20251024T222520Z.log`.
 
 #### Anti-Patterns
 

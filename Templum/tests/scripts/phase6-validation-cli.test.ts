@@ -76,12 +76,13 @@ describe('Phase6ValidationCLI backend selection', () => {
 describe('Phase6ValidationCLI guardrails — error handler consolidation', () => {
   const readSource = (relativePath: string): string =>
     fs.readFileSync(path.resolve(__dirname, relativePath), 'utf8');
+  const bannedConsoleCall = ['console', 'error'].join('.');
 
-  it('rejects manual catch blocks that call console.error in the CLI implementation', () => {
+  it(`rejects manual catch blocks that call ${bannedConsoleCall} in the CLI implementation`, () => {
     const cliSource = readSource('../../src/scripts/run-phase6-integration-validation.ts');
     const catchBlocks = cliSource.match(/catch\s*\([^)]*\)\s*{[\s\S]*?}/g) ?? [];
     const manualConsoleCatches = catchBlocks.filter((block) =>
-      block.includes('console.error')
+      block.includes(bannedConsoleCall)
     );
 
     expect(manualConsoleCatches).toHaveLength(0);

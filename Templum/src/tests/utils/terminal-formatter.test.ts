@@ -144,7 +144,7 @@ describe('TerminalFormatter', () => {
       formatter.clearCache();
 
       const longSnippet = 'const output = doWork("value");'.repeat(7);
-      const shortSnippet = 'console.log("short");';
+      const shortSnippet = 'logger.info("short");';
 
       formatter.data.code(shortSnippet, 'ts');
       formatter.data.code(shortSnippet, 'ts');

@@ -3,7 +3,7 @@ doc-type: architecture-spec
 name: Templum Architecture Specification
 tags: [templum, universal_interface, architecture]
 status: current
-last_updated: 2025-10-16
+last_updated: 2025-10-24
 ---
 
 # Templum — Architecture Specification (Current State)
@@ -11,7 +11,7 @@ last_updated: 2025-10-16
 ## 0. Summary
 
 - **Purpose:** Universal interface orchestrator that renders backend-defined skins across CLI, VSCode, and future interfaces without hardcoded knowledge.
-- **Current Status:** In migration—backend discovery works, the shared session manager now spans adapters, and the skin-driven UI still needs implementation/verification.
+- **Current Status:** In migration—backend discovery works, the shared session manager now spans adapters, the logger consolidation finished Stage 7 validation on 2025-10-24 (zero `console.*` sweep hits, evidence under `dev/architecture/logs/pattern-1-stage7-*`), and the skin-driven UI still needs implementation/verification.
 - **Key Dependencies:** Haruspex and Phoenix Code Lite backends; Validation System for runtime checks.
 - **Documentation Links:** [progress](docs/current/progress.md), [testing guide](docs/current/testing-guide.md), [V3C](docs/target/ValidationSystem-V3C-Documentation.md), pattern references under `dev/patterns/`.
 
@@ -55,7 +55,7 @@ last_updated: 2025-10-16
 | Versioned skin contract enforcement | `[x]`  | Ajv-backed validator enforces the canonical schema, emits registration metadata, and contract/adapter suites cover rejection flows. |
 | Unified session/context layer       | `[~]`  | Core now constructs a single `TemplumUniversalSessionManager` shared by adapters; CLI uses the bridge wrapper, VSCode receives the injected manager, follow-up work is tightening interaction-manager syncing. |
 | Skin-driven CLI/VSCode UI           | `[x]`  | Adapters render cached/backend skins via `UniversalSkinEngine`; fallback scaffolds removed pending live payload validation. |
-| Observability instrumentation       | `[?]`  | Blueprint archived; confirm runtime wiring.       |
+| Observability instrumentation       | `[~]`  | Logger/console consolidation release-ready (Pattern 1 Stage 7 sweep 2025-10-24); metrics/export wiring still pending. |
 | Haruspex backend integration        | `[~]`  | Pending skin output + API alignment.              |
 | PCL skin ingestion                  | `[ ]`  | Awaiting PCL exporter prototype.                  |
 
@@ -63,7 +63,7 @@ last_updated: 2025-10-16
 
 ## 4. Operational Considerations
 
-- **Observability:** Centralised logging/metrics planned (`observability/templum-observability-system.ts`); ensure instrumentation before enabling production dashboards. **Status:** Broken.
+- **Observability:** Centralised logging is now live via the Logger utility (Pattern 1 Stage 7 battery + sweep on 2025-10-24); remaining work is wiring metrics/exporters before enabling production dashboards. **Status:** Partial.
 - **Display Stack Management:** Configure CLI/session layout helpers via `configureDisplayStack`/`resetDisplayStack`, which wrap `DisplayUtils.configure`, `WindowUtils.configure`, and `TerminalFormatter.configure` to keep formatter + column providers aligned with `dev/architecture/display-stack-alignment.md`. **Status:** Present.
 - **Deployment:** Supports headless daemon + separate CLI/VSCode interfaces once process separation stabilises. **Status:** Broken.
 - **Compliance:** Must provide traceable logs and health reports for regulated workflows; integrate with Validation System once categories are defined. **Status:** Absent.

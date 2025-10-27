@@ -16,6 +16,9 @@ import { CLIMCPServer } from '../../src/mcp-channel/src/cli-mcp-server';
 import { PTYManager } from '../../src/mcp-channel/src/pty-manager';
 import { MCPLifecycleCoordinator } from '../../src/mcp-channel/src/lifecycle-coordinator';
 import { sleep } from '../../src/utils/async-utils';
+import { createLogger } from '../../src/utils/logger';
+
+const harnessLogger = createLogger('tests:service-discovery:pty-mcp-harness');
 
 describe('Pty-MCP-Server Test Harness', () => {
   let mcpServerProcess: ChildProcess | null = null;
@@ -77,7 +80,12 @@ describe('Pty-MCP-Server Test Harness', () => {
 
       mcpServerProcess.on('error', (error) => {
         if (error.message.includes('ENOENT')) {
-          console.log('pty-mcp-server not installed - skipping test');
+          harnessLogger.warn('pty-mcp-server not installed - skipping test', {
+            error: {
+              message: error.message,
+              code: (error as NodeJS.ErrnoException).code
+            }
+          });
           done();
         } else {
           done(error);
