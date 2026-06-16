@@ -21,7 +21,7 @@ last_updated: 2025-09-22
 > 🧭 **In Progress:** Backend refactor, skin endpoint implementation, CLI debugging tooling.
 
 - Backend entry point (`src/backend-main.ts`) boots listeners but handlers return placeholder data.
-- Skin generation endpoint not yet implemented.
+- Skin payload generation now exists through `provideSkinDefinition()` and conforms to Templum's public JSON schema; live `/getSkinDefinition` endpoint verification remains pending.
 - Analysis pipeline reuses documentation tree providers rather than full code graph.
 - VSCode components still exist—extension decoupling incomplete.
 - Debug CLI/IPC tooling design complete but unimplemented.

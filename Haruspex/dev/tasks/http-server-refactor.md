@@ -22,6 +22,18 @@
 ### Blocked Actions (pending [?] Codebase ingestion pipeline (static analysis modules partially migrated from extension; verify pure backend operation).)
 - [ ] Promote the integration specs to run against real repository fixtures only after ingestion verification lands, and add assertions that diagnostics expose ingestion-derived metrics without referencing `vscode` namespaces.
 
+## Known Legacy Test Failures (2026-06-16)
+
+During the Templum skin contract cleanup, `npx jest --runTestsByPath src/__tests__/backend-service.test.ts --runInBand --forceExit` still failed on pre-existing backend-service expectations outside the skin contract path. Treat these as part of the HTTP/backend-native refactor rather than regressions from the schema rename:
+
+- Initialization failure handling resolves instead of rejecting when mocked analysis-engine startup fails.
+- Cache-hit assertions expect the second analysis request to report `metadata.cacheHit: true`, but current service results report `false`.
+- Invalid analysis/prediction and post-shutdown analysis requests resolve with fallback payloads instead of throwing `HaruspexAPIError`/`ServiceUnavailableError`.
+- API gateway status reports the IPC server port as `3003` where the test expects `3002`.
+- Health degradation mocks leave `diagnostics.analysisEngine.status` as `operational`.
+
+The targeted skin tests in the same suite pass with `--testNamePattern "skin definition|Templum schema-conforming"`. Revisit the broader expectations when backend-native controllers and lifecycle/error semantics are clarified.
+
 ## Definition of Done
 - `npm run build:backend`, `npm run test:unit`, and the new `npx jest Haruspex/src/__tests__/api/http-server-refactor.test.ts` succeed locally without relying on VSCode mocks.
 - `npm run start:backend` serves `/api/v1/analyze`, `/api/v1/predict`, `/api/v1/diagnostics`, and `/health` with backend-native payloads (no `Templum` command wrappers) against a sample repo.
