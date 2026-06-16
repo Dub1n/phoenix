@@ -8,7 +8,7 @@
 
 import Ajv, { ErrorObject, ValidateFunction } from 'ajv';
 import { UniversalSkinDefinition, isTemplumError } from '../types/templum-types';
-import universalSkinSchema from '../../schemas/universal-skin-engine-validation.json';
+import universalSkinSchema from '../../schemas/universal-skin-definition.schema.json';
 import { createLogger } from '../utils/logger';
 
 export interface ValidationResult {

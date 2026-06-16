@@ -1,8 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://haruspex.dev/schemas/universal-skin-engine/v1.0.0",
-  "title": "Universal Skin Engine - Validation Schema v1.0",
-  "description": "JSON Schema for Universal Skin Engine skin definitions with comprehensive validation rules",
+  "$id": "urn:templum:schema:universal-skin-definition:v1.0.0",
+  "title": "Universal Skin Definition Schema v1.0",
+  "description": "Templum-owned JSON Schema for Universal Skin Definition public contract validation",
   "type": "object",
   "required": [
     "metadata",

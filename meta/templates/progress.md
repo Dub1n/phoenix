@@ -1,25 +1,7 @@
----
-doc-type: progress
-name: [Project Name] Progress Tracker
-tags: [project, progress]
-status: draft
-last_updated: TODO-YYYY-MM-DD
----
-
-# [Project Name] Progress Tracker
-
-Legend: `[x]` done · `[~]` in progress · `[ ]` not started · `[!]` broken · `[?]` verify · `[P]` pending investigation
-
-## Requirement Group A
-
-- [ ] Requirement description *(see `dev/tasks/example-task.md`)*
-- [~] Another requirement (notes).
-
-## Requirement Group B
-
-- [x] Completed requirement.
-- [!] Broken requirement (brief note + task log).
-
-## Action Items
-
-- Summarise next steps or coordination needs.
+Black: #524F59 #2F2E33
+White: #C1C7D1 #C3D4D2
+Foreground: #5F6B78
+Background: #F2EFE4
+Cursor Color: 
+Green: #527D48 #99B09D
+Yellow: #C7B67D #E3C773

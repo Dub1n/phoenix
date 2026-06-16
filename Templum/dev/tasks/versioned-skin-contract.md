@@ -15,10 +15,10 @@
 
 - [x] Add contract-focused integration tests in `tests/templum/skin-contract.integration.test.ts` covering `UniversalSkinEngine.registerSkin` rejecting malformed definitions, surfacing `skinValidationWarnings`, and emitting `skinRegistrationFailed` for schema breaches.
 - [x] Extend adapter-facing coverage in `tests/interfaces/interface-adapter-integration.test.ts` to assert CLI/VSCode adapters bubble schema/compatibility failures when orchestrator injects an invalid-version skin.
-- [x] Replace the placeholder validation in `src/skin/universal-skin-engine-impl.ts` with the real JSON schema flow by calling `validateSkinDefinition` (Ajv-backed) against `schemas/universal-skin-engine-validation.json`, enforcing schema-backed enforcement and attaching warnings to emitted events.
+- [x] Replace the placeholder validation in `src/skin/universal-skin-engine-impl.ts` with the real JSON schema flow by calling `validateSkinDefinition` (Ajv-backed) against `schemas/universal-skin-definition.schema.json`, enforcing schema-backed enforcement and attaching warnings to emitted events.
 - [x] Harden `src/validation/skin-validator.ts` to compile/cache the schema with Ajv, normalize warning/error output, and fail when contract versions drift from `SkinVersionManager.getValidatorVersion()`.
 - [x] Update `src/skin/skin-version-manager.ts` to record the validator/schema revision, gate compatibility on `metadata.minimumVersion`, and expose actionable issues consumed by the new integration tests.
-- [x] Swap the temporary schema fallbacks in `schemas/universal-skin-engine-validation.json`/`skin-validator.ts` with the canonical `PerformanceHints`, menu, command, and workflow definitions from `src/types/universal-skin-definition.ts`.
+- [x] Swap the temporary schema fallbacks in `schemas/universal-skin-definition.schema.json`/`skin-validator.ts` with the canonical `PerformanceHints`, menu, command, and workflow definitions from `src/types/universal-skin-definition.ts`.
 
 ### Blocked Actions (if any)
 
@@ -36,7 +36,12 @@
 - Architecture spec: `docs/current/architecture-spec.md` → Section 3 “Ideal Requirements vs. Status”.
 - Code: `src/skin/universal-skin-engine-impl.ts`, `src/validation/skin-validator.ts`, `src/skin/skin-version-manager.ts`
 - Tests: `tests/templum/universal-skin-system.test.ts`, `tests/interfaces/interface-adapter-integration.test.ts`
-- Schema: `schemas/universal-skin-engine-validation.json`
+- Schema: `schemas/universal-skin-definition.schema.json`
+
+## Contract Directory Note (2026-06-15)
+
+- `schemas` is reserved for public JSON contract artifacts owned by Templum. The skin contract now uses `universal-skin-definition.schema.json` with the Templum-owned `$id` `urn:templum:schema:universal-skin-definition:v1.0.0`.
+- `service-manifest.ts` and `serialization-registry.ts` remain source runtime helpers. No JSON schema was added for the service manifest, service registry document, backend handshake payload, or CLI request envelope because the current repo exposes those as TypeScript/Zod implementation boundaries rather than existing public JSON schema artifacts.
 
 ## Current Assessment (2025-10-06)
 

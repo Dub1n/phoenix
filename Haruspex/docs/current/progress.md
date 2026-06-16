@@ -26,7 +26,7 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` not started · `[!]` broken · 
 
 - [~] [HTTP server boots](../../dev/tasks/http-server-refactor.md) (handlers still tied to legacy components; replace with backend-native logic)
 - [ ] [Job scheduling, progress tracking, and cancellation](../../dev/tasks/job-scheduling.md)
-- [ ] [Skin definition emission for dashboards and code navigation](../../dev/tasks/backend-skin-generator.md)
+- [~] [Skin definition emission for dashboards and code navigation](../../dev/tasks/backend-skin-generator.md) (`provideSkinDefinition()` emits a Templum-conforming skin payload; endpoint/runtime verification still pending)
 
 ## Skin-Defined Presentation
 
@@ -44,7 +44,7 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` not started · `[!]` broken · 
 
 - Decouple remaining VSCode dependencies (extension.ts, WebView providers).
 - Replace placeholder analysis responses with real pipeline output.
-- Implement skin generator once backend endpoints stabilise.
+- Keep skin output conforming to Templum's public JSON schema; Haruspex does not own a separate canonical skin definition.
 - Action playbook: `meta/workflows/milestone-01-templum-haruspex-skin-handshake.md` (Templum ↔ Haruspex skin handshake).
 
 ## Step 0 — Playbook Setup

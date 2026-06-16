@@ -9,7 +9,7 @@
 import { UniversalSkinDefinition, InterfaceType, SkinRenderResult } from '../../src/types/universal-skin-engine-types';
 import { UniversalSkinEngine } from '../../src/skin/universal-skin-engine-impl';
 import { validateSkinDefinition } from '../../src/validation/skin-validator';
-import universalSkinEngineValidationSchema from '../../schemas/universal-skin-engine-validation.json';
+import universalSkinEngineValidationSchema from '../../schemas/universal-skin-definition.schema.json';
 
 describe('Phase 5: Universal Skin System Cross-Interface Consistency', () => {
   let skinEngine: UniversalSkinEngine;

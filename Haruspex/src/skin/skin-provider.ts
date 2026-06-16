@@ -7,7 +7,7 @@
  * ---*/
 
 import {
-  UniversalSkinDefinition,
+  HaruspexSkinDefinitionPayload,
   SkinMetadata,
   SkinViews,
   SkinMenus,
@@ -51,7 +51,7 @@ export class SkinProvider {
   /**
    * Generate complete skin definition for Templum consumption
    */
-  async generateSkinDefinition(options: SkinGenerationOptions): Promise<UniversalSkinDefinition> {
+  async generateSkinDefinition(options: SkinGenerationOptions): Promise<HaruspexSkinDefinitionPayload> {
     const metadata = this.generateMetadata(options);
     const views = this.generateViews(options);
     const menus = this.generateMenus(options);
@@ -62,6 +62,10 @@ export class SkinProvider {
     const backendConfig = this.generateBackendConfig(options);
 
     return {
+      id: metadata.id,
+      name: metadata.name,
+      version: metadata.version,
+      description: metadata.description,
       metadata,
       views,
       menus,
@@ -78,8 +82,10 @@ export class SkinProvider {
       id: 'haruspex-analysis',
       name: 'Code Analysis & Prediction',
       backend: 'haruspex',
+      backendService: 'haruspex-service',
       version: options.serviceVersion,
       compatibleInterfaces: ['vscode', 'cli', 'command'],
+      targetInterfaces: ['vscode', 'cli', 'command'],
       description: 'Advanced code analysis and prediction capabilities with machine learning insights',
       author: 'Haruspex Backend Service',
       capabilities: [
@@ -564,13 +570,23 @@ export class SkinProvider {
     const wsPort = process.env.HARUSPEX_WS_PORT || '3004';
     
     return {
-      type: 'http',
-      endpoints: [`http://localhost:${httpPort}`],
-      endpoint: `http://localhost:${httpPort}`,
+      service: 'haruspex-service',
+      version: options.serviceVersion,
       protocol: 'http',
+      endpoint: `http://localhost:${httpPort}`,
       timeout: 30000,
       retries: 3,
-      authentication: false
+      keepAlive: true,
+      authentication: { type: 'none' },
+      capabilities: options.capabilities,
+      healthEndpoint: `http://localhost:${httpPort}/health`,
+      capabilitiesEndpoint: `http://localhost:${httpPort}/capabilities`,
+      versionEndpoint: `http://localhost:${httpPort}/version`,
+      endpoints: {
+        skin: `http://localhost:${httpPort}/getSkinDefinition`,
+        command: `http://localhost:${httpPort}/executeCommand`,
+        websocket: `ws://localhost:${wsPort}`
+      }
     };
   }
 }

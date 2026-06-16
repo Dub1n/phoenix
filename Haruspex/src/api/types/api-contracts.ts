@@ -353,7 +353,11 @@ export interface ServerStatus {
 // Skin Provider API Contracts
 // ================================
 
-export interface UniversalSkinDefinition {
+export interface HaruspexSkinDefinitionPayload {
+  id: string;
+  name: string;
+  version: string;
+  description?: string;
   metadata: SkinMetadata;
   views: SkinViews;
   menus: SkinMenus;
@@ -368,8 +372,10 @@ export interface SkinMetadata {
   id: string;
   name: string;
   backend: string;
+  backendService: string;
   version: string;
   compatibleInterfaces: InterfaceType[];
+  targetInterfaces: InterfaceType[];
   description: string;
   author: string;
   capabilities: string[];
@@ -398,6 +404,7 @@ export interface SkinWorkflows {
 
 export interface TreeViewDefinition {
   id: string;
+  name?: string;
   title: string;
   description: string;
   dataProvider: string;

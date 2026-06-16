@@ -33,7 +33,7 @@ last_updated: 2025-09-22
   - `HTTPGateway` intended for REST/WebSocket skin + analysis endpoints.
 - **Data/Control Flow:** Repository ingestion → analysis jobs → cached results → HTTP API → Templum skin presentation.
 - **Integration Points:**
-  - Templum auto-registration and skin contract.
+  - Templum auto-registration and the Templum-owned skin contract.
   - PCL/Validation System for cross-project traceability.
 
 ## 3. Ideal Requirements vs. Status
@@ -41,7 +41,7 @@ last_updated: 2025-09-22
 | Requirement | Status | Notes |
 |-------------|--------|-------|
 | Deterministic analysis pipeline | `[?]` | Documented but still relies on extension scaffolding.
-| Skin endpoint for Templum | `[ ]` | See `dev/tasks/backend-skin-generator.md`.
+| Skin endpoint for Templum | `[~]` | `provideSkinDefinition()` now emits a Templum-conforming payload; endpoint/runtime verification still required. |
 | Frontmatter enrichment workflow | `[ ]` | Job runner not yet implemented.
 | Backend independent of VSCode APIs | `[!]` | Extension components remain; migration required.
 | Job scheduling/progress tracking | `[ ]` | Pending design implementation.
@@ -61,7 +61,7 @@ last_updated: 2025-09-22
 
 ## 6. Verification & Validation
 - Smoke test backend by running `node dist/src/backend-main.js` and exercising health/analysis endpoints.
-- Validate skin contract via Templum once endpoint exists.
+- Validate skin payloads against Templum's public JSON schema; Haruspex does not own a separate canonical skin definition.
 - Use Validation System to run backend category checks after migration.
 
 ## Appendix

@@ -14,7 +14,6 @@ import {
   PredictionRequest,
   PredictionResult,
   SystemDiagnostics,
-  UniversalSkinDefinition,
   HTTPRequest,
   HTTPResponse,
   WebSocketMessage,

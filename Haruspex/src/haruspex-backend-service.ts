@@ -14,7 +14,7 @@ import {
   PredictionRequest,
   PredictionResult,
   SystemDiagnostics,
-  UniversalSkinDefinition,
+  HaruspexSkinDefinitionPayload,
   ServiceUnavailableError,
   HaruspexAPIError,
   ProjectDependencies
@@ -478,7 +478,7 @@ export class HaruspexBackendService extends EventEmitter {
   /**
    * Provide skin definition for Templum integration using HTTP-compatible Core Engine
    */
-  async provideSkinDefinition(): Promise<UniversalSkinDefinition> {
+  async provideSkinDefinition(): Promise<HaruspexSkinDefinitionPayload> {
     // Delegate to HTTP-compatible Core Engine for Templum skin definition
     return await this.coreEngine.provideSkinDefinition();
   }

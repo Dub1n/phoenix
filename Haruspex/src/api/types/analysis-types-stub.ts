@@ -373,17 +373,29 @@ export interface SkinTheme {
 }
 
 export interface BackendConfig {
-  type: string;
-  endpoints: string[];
-  endpoint?: string;  // Added for compatibility
-  protocol?: string;  // Added for compatibility
-  authentication: boolean;
-  timeout?: number;  // Added for compatibility
-  retries?: number;  // Added for compatibility
+  service: string;
+  version: string;
+  protocol: 'ipc' | 'http' | 'websocket';
+  endpoint: string;
+  authentication?: {
+    type: 'none' | 'basic' | 'bearer' | 'api-key' | 'oauth';
+    credentials?: Record<string, string>;
+    required?: boolean;
+  };
+  timeout?: number;
+  retries?: number;
+  keepAlive?: boolean;
+  capabilities?: string[];
+  healthEndpoint?: string;
+  capabilitiesEndpoint?: string;
+  versionEndpoint?: string;
+  options?: Record<string, unknown>;
+  endpoints?: Record<string, string>;
 }
 
 export interface PanelDefinition {
   id: string;
+  name?: string;
   title: string;
   location: string;
   size: string;

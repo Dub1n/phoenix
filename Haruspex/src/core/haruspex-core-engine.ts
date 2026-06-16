@@ -43,7 +43,7 @@ import {
   PredictionRequest,
   PredictionResult,
   SystemDiagnostics,
-  UniversalSkinDefinition,
+  HaruspexSkinDefinitionPayload,
   HaruspexAPIError,
   ServiceUnavailableError
 } from '../api/types/api-contracts';
@@ -1420,34 +1420,42 @@ export class HaruspexCoreEngine {
    * 
    * @returns Promise resolving to skin definition
    */
-  async provideSkinDefinition(): Promise<UniversalSkinDefinition> {
+  async provideSkinDefinition(): Promise<HaruspexSkinDefinitionPayload> {
     return this.executeWithReliability('provideSkinDefinition', async () => {
       this.ensureInitialized();
 
-      const skinDefinition: UniversalSkinDefinition = {
+      const capabilities = [
+        'code-analysis',
+        'pattern-detection',
+        'security-scanning',
+        'performance-analysis',
+        'architecture-analysis',
+        'bug-prediction',
+        'evolution-prediction'
+      ];
+      const skinDefinition: HaruspexSkinDefinitionPayload = {
+        id: 'haruspex-analysis',
+        name: 'Haruspex Code Analysis',
+        version: '2.1.0',
+        description: 'Advanced code analysis and prediction capabilities for development teams',
         metadata: {
-          id: 'haruspex-analysis-2.1',
+          id: 'haruspex-analysis',
           name: 'Haruspex Code Analysis',
-          backend: 'haruspex-service',
+          backend: 'haruspex',
+          backendService: 'haruspex-service',
           version: '2.1.0',
           compatibleInterfaces: ['vscode', 'cli'],
+          targetInterfaces: ['vscode', 'cli'],
           description: 'Advanced code analysis and prediction capabilities for development teams',
           author: 'Haruspex Team',
-          capabilities: [
-            'code-analysis',
-            'pattern-detection',
-            'security-scanning',
-            'performance-analysis',
-            'architecture-analysis',
-            'bug-prediction',
-            'evolution-prediction'
-          ]
+          capabilities
         },
         
         views: {
           treeViews: [
             {
               id: 'haruspex-insights',
+              name: 'Haruspex Insights',
               title: 'Haruspex Insights',
               description: 'Key analysis findings and recommendations',
               dataProvider: 'haruspex.insightsDataProvider'
@@ -1456,7 +1464,9 @@ export class HaruspexCoreEngine {
           panels: [
             {
               id: 'haruspex-analysis-panel',
+              name: 'Analysis Overview',
               title: 'Analysis Overview',
+              type: 'webview',
               location: 'sidebar',
               size: 'medium'
             }
@@ -1466,7 +1476,7 @@ export class HaruspexCoreEngine {
               id: 'haruspex-status',
               text: 'Haruspex: Ready',
               alignment: 'left',
-              priority: 'high',
+              priority: 100,
               tooltip: 'Haruspex analysis engine status'
             }
           ],
@@ -1556,12 +1566,23 @@ export class HaruspexCoreEngine {
         },
         
         backendConfig: {
-          type: 'http',
-          endpoints: ['http://localhost:3001'],
-          authentication: false,
+          service: 'haruspex-service',
+          version: '2.1.0',
           protocol: 'http',
+          endpoint: 'http://localhost:3001',
+          authentication: { type: 'none' },
           timeout: 30000,
-          retries: 1
+          retries: 1,
+          keepAlive: true,
+          capabilities,
+          healthEndpoint: 'http://localhost:3001/health',
+          capabilitiesEndpoint: 'http://localhost:3001/capabilities',
+          versionEndpoint: 'http://localhost:3001/version',
+          endpoints: {
+            skin: 'http://localhost:3001/getSkinDefinition',
+            command: 'http://localhost:3001/executeCommand',
+            health: 'http://localhost:3001/health'
+          }
         }
       };
 
@@ -2019,14 +2040,20 @@ export class HaruspexCoreEngine {
   /**
    * Create fallback skin definition for error scenarios
    */
-  private createFallbackSkinDefinition(): UniversalSkinDefinition {
+  private createFallbackSkinDefinition(): HaruspexSkinDefinitionPayload {
     return {
+      id: 'haruspex-fallback',
+      name: 'Haruspex (Service Unavailable)',
+      version: '2.1.0',
+      description: 'Minimal skin emitted when Haruspex services are offline.',
       metadata: {
         id: 'haruspex-fallback',
         name: 'Haruspex (Service Unavailable)',
-        backend: 'haruspex-service',
+        backend: 'haruspex',
+        backendService: 'haruspex-service',
         version: '2.1.0',
         compatibleInterfaces: ['vscode', 'cli'],
+        targetInterfaces: ['vscode', 'cli'],
         description: 'Minimal skin emitted when Haruspex services are offline.',
         author: 'Haruspex Team',
         capabilities: ['status-check']
@@ -2039,7 +2066,7 @@ export class HaruspexCoreEngine {
             id: 'haruspex-status',
             text: 'Haruspex Unavailable',
             alignment: 'left',
-            priority: 'high'
+            priority: 100
           }
         ],
         explorer: []
@@ -2080,12 +2107,21 @@ export class HaruspexCoreEngine {
         foreground: '#e5e7eb'
       },
       backendConfig: {
-        type: 'http',
-        endpoints: ['http://localhost:3001'],
-        authentication: false,
+        service: 'haruspex-service',
+        version: '2.1.0',
         protocol: 'http',
+        endpoint: 'http://localhost:3001',
+        authentication: { type: 'none' },
         timeout: 30000,
-        retries: 0
+        retries: 0,
+        keepAlive: false,
+        capabilities: ['status-check'],
+        healthEndpoint: 'http://localhost:3001/health',
+        endpoints: {
+          skin: 'http://localhost:3001/getSkinDefinition',
+          command: 'http://localhost:3001/executeCommand',
+          health: 'http://localhost:3001/health'
+        }
       }
     };
   }

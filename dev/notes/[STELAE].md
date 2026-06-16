@@ -1,3 +1,27 @@
+  > Please read dev/intended-catalog-plan.md and determine which of the
+  > “Recommended Next Steps” (Section 8) has not yet been implemented in the
+  > repository. Pick the earliest uncompleted step and start implementing it.
+  >
+  > While doing so:
+  >
+  > - Keep the corresponding “Pitfalls / Open Questions” entries (Section 7) in
+  >   mind—many already have action items; treat those as acceptance criteria for
+  >   your work.
+  > - If the task you’re starting depends on a Pitfall item that is still
+  >   unresolved, note the dependency and either address it concurrently (if
+  >   feasible) or document the blocker and move to the next actionable step.
+  > - When you make changes, update the doc to reflect any Pitfall that is now
+  >   resolved or any new considerations discovered during implementation.
+  >
+  > Deliverables for each step:
+  >
+  > 1. Code/config updates plus any new artifacts mentioned in the plan (e.g.,
+  >    intended_catalog.json, proxy snapshots, CLI flags).
+  > 2. Tests or validation commands demonstrating the new behavior.
+  > 3. Documentation updates (README/docs) whenever the user-facing flow changes.
+  > 4. Brief summary explaining how the relevant Pitfalls were addressed or why
+  >    they remain open.
+
 # stelae
 
 **Status:** Final proposal • **Scope:** Local, open‑source, URL‑based MCP stack for agentic dev on the *Phoenix* repo • **Owner:** You • **Audience:** Engineers/Operators
@@ -10,18 +34,18 @@ This document specifies a production‑quality, *WSL‑native* MCP stack that ex
 
 *Core goals*:
 
-* One URL for ChatGPT; typed, low‑latency tools
-* Progressive expansion (avoid tool overload), but keep *everything available* on request
-* Agent can promote tools into **`mcp-proxy`** (core) *or* under **Strata** (peripheral) at runtime
-* WSL‑native first; Docker only when unavoidable
-* Secure by default; auditable; deterministic
+- One URL for ChatGPT; typed, low‑latency tools
+- Progressive expansion (avoid tool overload), but keep *everything available* on request
+- Agent can promote tools into **`mcp-proxy`** (core) *or* under **Strata** (peripheral) at runtime
+- WSL‑native first; Docker only when unavoidable
+- Secure by default; auditable; deterministic
 
 *Primary components*:
 
-* Orchestrator: **TBXark/**`mcp-proxy` — single HTTP/SSE endpoint, merges tools/prompts/resources; supports upstream **stdio / SSE / streamable HTTP**
-* Progressive discovery: **Klavis Strata** — open‑source MCP that scales beyond 40–50 tools via *discover → details → execute*
-* Discovery/Install engine: **particlefuture/**`1mcpserver` — off‑path helper that searches, selects, and outputs config needed to add servers to the proxy
-* Essentials (initial): Filesystem, ripgrep/Everything search, **mcp-shell** (command exec) *or* **terminal-controller-mcp**, docs fetch (Docy), sequential thinking, tasks/memory
+- Orchestrator: **TBXark/**`mcp-proxy` — single HTTP/SSE endpoint, merges tools/prompts/resources; supports upstream **stdio / SSE / streamable HTTP**
+- Progressive discovery: **Klavis Strata** — open‑source MCP that scales beyond 40–50 tools via *discover → details → execute*
+- Discovery/Install engine: **particlefuture/**`1mcpserver` — off‑path helper that searches, selects, and outputs config needed to add servers to the proxy
+- Essentials (initial): Filesystem, ripgrep/Everything search, **mcp-shell** (command exec) *or* **terminal-controller-mcp**, docs fetch (Docy), sequential thinking, tasks/memory
 
 ---
 
@@ -58,35 +82,35 @@ flowchart LR
 
 > All links are to public GitHub or official docs.
 
-* **Orchestrator:** TBXark/**mcp-proxy** — Go proxy that aggregates *tools/prompts/resources* from many MCP servers, serving one HTTP/SSE endpoint. Supports upstream **stdio**, **SSE**, and **streamable HTTP**. Remote config URL supported.
+- **Orchestrator:** TBXark/**mcp-proxy** — Go proxy that aggregates *tools/prompts/resources* from many MCP servers, serving one HTTP/SSE endpoint. Supports upstream **stdio**, **SSE**, and **streamable HTTP**. Remote config URL supported.
   [https://github.com/TBXark/mcp-proxy](https://github.com/TBXark/mcp-proxy)
 
-* **Progressive discovery router:** Klavis‑AI/**klavis** (Strata) — open‑source MCP; “intent → details → execute” to avoid tool overload and scale beyond 40–50 tools.
+- **Progressive discovery router:** Klavis‑AI/**klavis** (Strata) — open‑source MCP; “intent → details → execute” to avoid tool overload and scale beyond 40–50 tools.
   [https://github.com/Klavis-AI/klavis](https://github.com/Klavis-AI/klavis)
 
-* **Discovery & install (off‑path):** particlefuture/**1mcpserver** — “MCP of MCPs”; auto‑discovers and outputs config info to add/connect MCP servers locally or remotely.
+- **Discovery & install (off‑path):** particlefuture/**1mcpserver** — “MCP of MCPs”; auto‑discovers and outputs config info to add/connect MCP servers locally or remotely.
   [https://github.com/particlefuture/1mcpserver](https://github.com/particlefuture/1mcpserver)
 
-* **Command execution (pick one):**
+- **Command execution (pick one):**
   • sonirico/**mcp-shell** — shell actuator MCP with allow/deny control; Go backend.
   [https://github.com/sonirico/mcp-shell](https://github.com/sonirico/mcp-shell)
   • GongRzhe/**terminal-controller-mcp** — secure terminal exec + FS ops; Python backend.
   [https://github.com/GongRzhe/terminal-controller-mcp](https://github.com/GongRzhe/terminal-controller-mcp)
 
-* **Filesystem & search:**
+- **Filesystem & search:**
   • Filesystem MCP (choose a conservative, path‑scoped server; TS or Rust variants exist)
   • erniebrodeur/**mcp-grep** (ripgrep‑like) — content search in repos.
   [https://github.com/erniebrodeur/mcp-grep](https://github.com/erniebrodeur/mcp-grep)
   • mamertofabian/**mcp-everything-search** (Windows Everything) — filename search.
   [https://github.com/mamertofabian/mcp-everything-search](https://github.com/mamertofabian/mcp-everything-search)
 
-* **Docs fetch:** oborchers/**mcp-server-docy** — fetch/scrape docs to Markdown.
+- **Docs fetch:** oborchers/**mcp-server-docy** — fetch/scrape docs to Markdown.
   [https://github.com/oborchers/mcp-server-docy](https://github.com/oborchers/mcp-server-docy)
 
-* **Reasoning:** modelcontextprotocol/**servers** → `src/sequentialthinking` — “plan/think” tools.
+- **Reasoning:** modelcontextprotocol/**servers** → `src/sequentialthinking` — “plan/think” tools.
   [https://github.com/modelcontextprotocol/servers/tree/main/src/sequentialthinking](https://github.com/modelcontextprotocol/servers/tree/main/src/sequentialthinking)
 
-* **Memory/Tasks:**
+- **Memory/Tasks:**
   • basicmachines‑co/**basic-memory** — markdown/graph memory.
   [https://github.com/basicmachines-co/basic-memory](https://github.com/basicmachines-co/basic-memory)
   • hungryrobot1/**MCP-PIF** — prompt‑indexed files.
@@ -94,18 +118,18 @@ flowchart LR
   • flesler/**mcp-tasks** — local tasks list.
   [https://github.com/flesler/mcp-tasks](https://github.com/flesler/mcp-tasks)
 
-* **Public URL (for ChatGPT):** Cloudflare Tunnel (free) — `cloudflared tunnel --url http://localhost:9090`
+- **Public URL (for ChatGPT):** Cloudflare Tunnel (free) — `cloudflared tunnel --url http://localhost:9090`
   [https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/trycloudflare/](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/trycloudflare/)
 
 ---
 
 ## 3. Security & Guardrails (baseline)
 
-* **Least privilege**: Filesystem root path allowlist; deny writes outside repo; `.mcpignore` or equivalent for secrets.
-* **Command exec**: allowlist commands; working‑dir scoping; timeouts; non‑root user; optional containerized **code‑sandbox** MCP for untrusted code.
+- **Least privilege**: Filesystem root path allowlist; deny writes outside repo; `.mcpignore` or equivalent for secrets.
+- **Command exec**: allowlist commands; working‑dir scoping; timeouts; non‑root user; optional containerized **code‑sandbox** MCP for untrusted code.
   [https://github.com/Automata-Labs-team/code-sandbox-mcp](https://github.com/Automata-Labs-team/code-sandbox-mcp)
-* **Auditability**: proxy & servers log all tool calls (timestamped); MCP Inspector optional for live tracing.
-* **Approvals**: human‑in‑the‑loop prompts for destructive ops (diff previews; confirm flags) or integrate a HITL MCP if desired.
+- **Auditability**: proxy & servers log all tool calls (timestamped); MCP Inspector optional for live tracing.
+- **Approvals**: human‑in‑the‑loop prompts for destructive ops (diff previews; confirm flags) or integrate a HITL MCP if desired.
   [https://github.com/GongRzhe/Human-In-the-Loop-MCP-Server](https://github.com/GongRzhe/Human-In-the-Loop-MCP-Server)
 
 ---
@@ -114,9 +138,9 @@ flowchart LR
 
 ### 4.1 Prereqs
 
-* Windows 11 + **WSL2** (Ubuntu)
-* Latest **Node.js** & **npm**; **Go** (for `mcp-proxy`); **Python 3.11+** (for some MCPs); **uv** or **pipx**; **ripgrep**
-* **cloudflared** (for the public URL)
+- Windows 11 + **WSL2** (Ubuntu)
+- Latest **Node.js** & **npm**; **Go** (for `mcp-proxy`); **Python 3.11+** (for some MCPs); **uv** or **pipx**; **ripgrep**
+- **cloudflared** (for the public URL)
 
 ### 4.2 Build & run `mcp-proxy` (native)
 
@@ -172,8 +196,8 @@ cloudflared tunnel --url http://localhost:9090
 
 ### 4.5 Add the connector in ChatGPT
 
-* ChatGPT → Settings → Connectors → **Add** → paste the **cloudflared URL** for `mcp-proxy`.
-* In a new chat, enable that connector.
+- ChatGPT → Settings → Connectors → **Add** → paste the **cloudflared URL** for `mcp-proxy`.
+- In a new chat, enable that connector.
 
 ---
 
@@ -253,7 +277,7 @@ Create `~/apps/mcp-proxy/config.json`:
 
 ### 6.2 Approvals & safety
 
-* Destructive actions (multi‑file writes, shell exec) must carry a `confirm: true` flag or a text confirmation in the chat. You can enforce this by exposing only `*_confirmed` wrapper tools or by using HITL dialogs.
+- Destructive actions (multi‑file writes, shell exec) must carry a `confirm: true` flag or a text confirmation in the chat. You can enforce this by exposing only `*_confirmed` wrapper tools or by using HITL dialogs.
 
 ---
 
@@ -263,13 +287,13 @@ Create `~/apps/mcp-proxy/config.json`:
 
 *Design options*:
 
-* **A. Quick reload** — write config JSON and restart `mcp-proxy` (fast; minimal downtime).
-* **B. Blue/Green** — run two proxies (`:9090` / `:9191`), update the inactive one, then swap Cloudflare ingress or a local Nginx to flip traffic.
+- **A. Quick reload** — write config JSON and restart `mcp-proxy` (fast; minimal downtime).
+- **B. Blue/Green** — run two proxies (`:9090` / `:9191`), update the inactive one, then swap Cloudflare ingress or a local Nginx to flip traffic.
 
 *Client stanza patterns*:
 
-* `type: "stdio"` → `command`, `args[]`
-* `type: "sse"` or `"streamable-http"` → `url`
+- `type: "stdio"` → `command`, `args[]`
+- `type: "sse"` or `"streamable-http"` → `url`
 
 > *Tip:* Keep a local whitelist of *core* vs *peripheral* tags. The Reconciler decides where to promote (directly into `mcp-proxy` for core, or under **Strata** for peripheral).
 
@@ -309,10 +333,10 @@ You have two good WSL‑friendly options:
 
 ### 9.1 **pm2** (recommended for ease)
 
-* Install: `npm i -g pm2`
-* Create `ecosystem.config.js` with apps (mcp-proxy, strata, 1mcpserver, key MCPs)
-* `pm2 start ecosystem.config.js && pm2 save`
-* `pm2 startup systemd` (WSL supports systemd; this auto‑starts PM2 on distro boot)
+- Install: `npm i -g pm2`
+- Create `ecosystem.config.js` with apps (mcp-proxy, strata, 1mcpserver, key MCPs)
+- `pm2 start ecosystem.config.js && pm2 save`
+- `pm2 startup systemd` (WSL supports systemd; this auto‑starts PM2 on distro boot)
 
 *Example `ecosystem.config.js`*
 
@@ -332,9 +356,9 @@ module.exports = {
 
 ### 9.2 **systemd** (native, most robust)
 
-* Enable systemd in WSL (`/etc/wsl.conf` → `[boot]\nsystemd=true` → `wsl --shutdown`)
-* Create unit files in `/etc/systemd/system/` (one per service)
-* `systemctl daemon-reload && systemctl enable --now mcp-proxy.service`
+- Enable systemd in WSL (`/etc/wsl.conf` → `[boot]\nsystemd=true` → `wsl --shutdown`)
+- Create unit files in `/etc/systemd/system/` (one per service)
+- `systemctl daemon-reload && systemctl enable --now mcp-proxy.service`
 
 *Example `mcp-proxy.service`*
 
@@ -367,17 +391,17 @@ WantedBy=multi-user.target
 
 *Policy*:
 
-* *Core/essential*: add to **`mcp-proxy`** directly (typed tools visible up front)
-* *Peripheral/rare*: add under **Strata** and let the agent expand progressively
+- *Core/essential*: add to **`mcp-proxy`** directly (typed tools visible up front)
+- *Peripheral/rare*: add under **Strata** and let the agent expand progressively
 
 ---
 
 ## 11. Phoenix repo integration
 
-* Set Filesystem/grep working roots to the Phoenix repo path
-* Provide task seeds in `./.ai/tasks.json` and knowledge seeds in `./.ai/memory/` (patterns, decisions)
-* Expose `npm`, `pytest`, `make`, `git` via shell allowlist
-* Document any Phoenix‑specific MCPs (e.g., custom build or generators) as promotion candidates
+- Set Filesystem/grep working roots to the Phoenix repo path
+- Provide task seeds in `./.ai/tasks.json` and knowledge seeds in `./.ai/memory/` (patterns, decisions)
+- Expose `npm`, `pytest`, `make`, `git` via shell allowlist
+- Document any Phoenix‑specific MCPs (e.g., custom build or generators) as promotion candidates
 
 ---
 
@@ -385,27 +409,27 @@ WantedBy=multi-user.target
 
 *Benefits*:
 
-* One URL; typed schemas; fast tool calls
-* Progressive discovery without overload (Strata)
-* Local, open‑source; no paid services
-* Deterministic, auditable; approvals for destructive ops
-* Clear promotion path for new capabilities
+- One URL; typed schemas; fast tool calls
+- Progressive discovery without overload (Strata)
+- Local, open‑source; no paid services
+- Deterministic, auditable; approvals for destructive ops
+- Clear promotion path for new capabilities
 
 *Limitations*:
 
-* `mcp-proxy` catalog updates require a quick reload (or blue/green swap) unless you implement live `listChanged`
-* Some community MCPs are immature; vet before promotion
-* WSL/systemd and Windows/Everything bridging needs care if you mix sides
+- `mcp-proxy` catalog updates require a quick reload (or blue/green swap) unless you implement live `listChanged`
+- Some community MCPs are immature; vet before promotion
+- WSL/systemd and Windows/Everything bridging needs care if you mix sides
 
 ---
 
 ## 13. Maintenance & Evolution
 
-* **Updates**: track upstream repos (proxy, strata, 1mcpserver, essentials)
-* **Profiles**: maintain multiple proxy configs (dev/docs/ops) for experimentation
-* **Observability**: centralize logs; optionally run MCP Inspector for traces
-* **Security reviews**: re‑audit allowlists, FS roots, and any new MCPs quarterly
-* **Optional live promotion**: implement MCP `notifications/tools/list_changed` in a controller if clients you use fully support it
+- **Updates**: track upstream repos (proxy, strata, 1mcpserver, essentials)
+- **Profiles**: maintain multiple proxy configs (dev/docs/ops) for experimentation
+- **Observability**: centralize logs; optionally run MCP Inspector for traces
+- **Security reviews**: re‑audit allowlists, FS roots, and any new MCPs quarterly
+- **Optional live promotion**: implement MCP `notifications/tools/list_changed` in a controller if clients you use fully support it
 
 ---
 

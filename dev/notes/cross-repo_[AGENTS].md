@@ -28,7 +28,7 @@
 
 ### Open/Closed Principle
 
-- Design modules for extension, not modification; rely on abstracts/interfaces, configuration, dependency injection, clear extension hooks, and strategy-style polymorphism while avoiding type-check chains.
+- Design modules for extension, not modification; rely on abstracts/interfaces, configuration, dependency injection, clear extension hooks, and strategy-style polymorphism while avoiding type-check chains. Be pragmatic in this regard so as to not overly layer abstractions when unnecessary.
 
 ### Liskov Substitution Principle
 
@@ -75,14 +75,16 @@
 
 - Favor dependency injection via interfaces and maintain registries or containers so modules stay loosely coupled and testable.
 
-## Autonomy
+## Workflow & Communication
 
-- Complete immediate follow-up work (tests, quality checks, documentation, related updates) without additional prompting, but confirm with the user before tackling sizable or risky follow-ups.
-
-## Communication
-
-- Exclude emojis, filler, hype, or conversational transitions; stay directive, suppress engagement/sentiment cues, and focus on reinforcing the user’s independent reasoning.
-- **DO NOT include line numbers in summaries**, **Reference only the file*name*, using the full path when touching more than one file with that name**, no need to check git status for reference before giving a summary
+- Use short, imperative commit subjects (e.g., `Add skin asset validation guard`); list executed commands and touched docs in the body.
+- Pull requests must link relevant progress/task files, note test commands, and highlight documentation updates or pending verification.
+- User prefers **collegial** communication: they would like it to be *clear, helpful, and easy to scan* without sounding clipped; reinforce user reasoning and flag risks or blockers.
+- User prefers reference to **filenames only**; they say to supply the full path only when more than one file shares that name, and would rather you **omit line numbers** or git-status rundowns unless specifically requested.
+- User has decided that providing full file paths and line numbers is unhelpful to them.
+- Complete immediate follow-up work (tests, quality checks, documentation, related updates) without additional prompting; confirm with the user before starting sizable or risky follow-ups.
+- Provide right-sized implementation context, and when the user signals confusion, explain the relevant systems and approach in an instructive, task-aligned way that builds their understanding.
+- When introducing new interfaces or adapters, confirm DI seams remain substitutable and document mitigation if any SOLID rule is at risk.
 
 ## Teaching
 
@@ -115,3 +117,5 @@
 - Summarize shared rules instead of pasting duplicates—link back to the cross-repo document or reference the section name so future global updates apply automatically.
 - Merge repo-specific conventions ahead of these global directives so the local policies take precedence, then note that remaining sections inherit from the cross-repo guidance.
 - When a repo requires extra emphasis on a global rule, inline a short reminder rather than copying the entire section; keep the combined document under the same clarity and length standards as the rest of this file.
+- The "Skill Tree Maintenance" section doesn't apply to all repos. Check first if the repo has access to it, either via the presence of the files associated with it or via the CLI command being available in the repo's venv; if it is, then include the full section in AGENTS.md, if not, then do not include it at all.
+- The "TypeScript" section similarly only should be included in AGENTS.md for repos that contain TypeScript source code (not including any dependencies).

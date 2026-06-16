@@ -21,7 +21,7 @@
   - `Templum` repo builds and baseline tests pass (`npm run build`, `npm test`).
   - Haruspex HTTP server boots without VSCode dependencies (`npm run build && node dist/src/backend-main.js --dry-run`).
 - **Exit criteria:**
-  - Generated Haruspex skin JSON validated against Templum contract (AJV tests green).
+  - Generated Haruspex skin JSON validated against `Templum/schemas/universal-skin-definition.schema.json` (AJV tests green).
   - Templum CLI renders Haruspex workflows purely from skin data (no hardcoded fallbacks).
   - Evidence ledger updated with artifacts + Validation System backend category run against Haruspex.
 
@@ -30,7 +30,7 @@
 | Stream                     | Intent                                                                                          | Key tasks                                                                                               | Owners                             |
 | -------------------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- | ---------------------------------- |
 | Backend Discovery & Health | Ensure Templum auto-registers Haruspex over IPC/HTTP with correct health metadata.              | `Templum/dev/tasks/multi-protocol-auto-registration.md`, `Templum/dev/tasks/zero-knowledge-registry.md` | Agent rotation (Templum platform)  |
-| Skin Export Pipeline       | Produce deterministic Haruspex skin payload and endpoint.                                       | `Haruspex/dev/tasks/backend-skin-generator.md`                                                          | Agent rotation (Haruspex backend)  |
+| Skin Export Pipeline       | Produce deterministic Haruspex skin payload and endpoint that conform to Templum's public schema. | `Haruspex/dev/tasks/backend-skin-generator.md`                                                          | Agent rotation (Haruspex backend)  |
 | Skin-Driven Rendering      | Consume skin in Templum CLI/VSCode, retire hardcoded menus, ensure CLI generator uses metadata. | `Templum/dev/tasks/skin-payload-consumption.md`, `Templum/dev/tasks/cli-skin-generator.md`              | Agent rotation (Templum interface) |
 | Validation & Evidence      | Run Validation System backend category + targeted tests; capture outputs.                       | Validation System backlog (no specific task file yet)                                                   | Assigned once automation drafted   |
 
@@ -51,12 +51,13 @@
   - `Templum/docs/current/progress.md` and `Haruspex/docs/current/progress.md` status markers.
   - `Templum/docs/current/1.2-Backend-Integration-Guide.md` Haruspex section.
   - `Haruspex/docs/current/architecture-spec.md` snapshot notes once skin endpoint live.
+  - `meta/ARCHITECTURE.md` when contract ownership or handshake status changes.
 
 ## 5. Evidence Ledger
 
 | Artifact | Location | Produced by | Notes |
 | --- | --- | --- | --- |
-| Haruspex skin payload (`haruspex-skin.json`) | `reports/integration/haruspex/<YYYYMMDD>/skin.json` | Haruspex stream | Ensure Ajv validation output stored alongside payload |
+| Haruspex skin payload (`haruspex-skin.json`) | `reports/integration/haruspex/<YYYYMMDD>/skin.json` | Haruspex stream | Ensure Ajv validation output against `universal-skin-definition.schema.json` is stored alongside payload |
 | Templum discovery log | `reports/integration/haruspex/<YYYYMMDD>/templum-discovery.log` | Backend discovery stream | Capture run of `npm run phase6-services` with Haruspex online |
 | CLI render snapshot | `reports/integration/haruspex/<YYYYMMDD>/cli-render.md` | Skin rendering stream | Include screenshots or text transcripts |
 | Validation System backend report | `reports/validation/haruspex/<YYYYMMDD>/backend.json` | Validation stream | Run `node src/core/enhanced-orchestrator.js --project haruspex --category backend` |

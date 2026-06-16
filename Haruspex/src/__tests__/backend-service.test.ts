@@ -7,11 +7,13 @@
  * ---*/
 
 import { HaruspexBackendService } from '../haruspex-backend-service';
+import Ajv from 'ajv';
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
 import { 
   HaruspexServiceConfig,
   AnalysisRequest,
   PredictionRequest,
-  UniversalSkinDefinition,
   ServiceUnavailableError,
   HaruspexAPIError
 } from '../api/types/api-contracts';
@@ -93,13 +95,17 @@ describe('Haruspex Backend Service - Phase 4 TDD Validation', () => {
       
       const skinDef = await service.provideSkinDefinition();
       
+      expect(skinDef.id).toBe('haruspex-analysis');
+      expect(skinDef.name).toBe('Haruspex Code Analysis');
+      expect(skinDef.version).toBe('2.1.0');
       expect(skinDef.metadata.id).toBe('haruspex-analysis');
       expect(skinDef.metadata.backend).toBe('haruspex');
-      expect(skinDef.metadata.version).toBe('2.0.0');
-      expect(skinDef.views.treeViews).toHaveLength(2);
-      expect(skinDef.commands).toHaveProperty('haruspex.analyzeCode');
-      expect(skinDef.commands).toHaveProperty('haruspex.predictEvolution');
-      expect(skinDef.backendConfig.protocol).toBe('ipc');
+      expect(skinDef.metadata.backendService).toBe('haruspex-service');
+      expect(skinDef.metadata.version).toBe('2.1.0');
+      expect(skinDef.views.treeViews).toHaveLength(1);
+      expect(skinDef.commands).toHaveProperty(['haruspex.analyzeCode']);
+      expect(skinDef.commands).toHaveProperty(['haruspex.predictEvolution']);
+      expect(skinDef.backendConfig.protocol).toBe('http');
     });
 
     test('exposes all original Haruspex functionality through APIs', async () => {
@@ -359,9 +365,10 @@ describe('Haruspex Backend Service - Phase 4 TDD Validation', () => {
       // Verify metadata
       expect(skinDef.metadata).toMatchObject({
         id: 'haruspex-analysis',
-        name: 'Code Analysis & Prediction',
+        name: 'Haruspex Code Analysis',
         backend: 'haruspex',
-        version: '2.0.0'
+        backendService: 'haruspex-service',
+        version: '2.1.0'
       });
       
       // Verify views
@@ -371,7 +378,7 @@ describe('Haruspex Backend Service - Phase 4 TDD Validation', () => {
       
       // Verify menus
       expect(skinDef.menus.main).toBeDefined();
-      expect(skinDef.menus.main.items).toHaveLength(3);
+      expect(skinDef.menus.main.items).toHaveLength(2);
       
       // Verify commands
       expect(skinDef.commands['haruspex.analyzeCode']).toBeDefined();
@@ -379,8 +386,9 @@ describe('Haruspex Backend Service - Phase 4 TDD Validation', () => {
       expect(skinDef.commands['haruspex.getDiagnostics']).toBeDefined();
       
       // Verify backend configuration
-      expect(skinDef.backendConfig.endpoint).toBe('ipc://haruspex-backend');
-      expect(skinDef.backendConfig.protocol).toBe('ipc');
+      expect(skinDef.backendConfig.service).toBe('haruspex-service');
+      expect(skinDef.backendConfig.endpoint).toBe('http://localhost:3001');
+      expect(skinDef.backendConfig.protocol).toBe('http');
     });
 
     test('skin definition supports all interface types', async () => {
@@ -390,7 +398,33 @@ describe('Haruspex Backend Service - Phase 4 TDD Validation', () => {
       
       expect(skinDef.metadata.compatibleInterfaces).toContain('vscode');
       expect(skinDef.metadata.compatibleInterfaces).toContain('cli');
-      expect(skinDef.metadata.compatibleInterfaces).toContain('command');
+    });
+
+    test('emits a Templum schema-conforming skin definition', async () => {
+      await service.initialize();
+
+      const skinDef = await service.provideSkinDefinition();
+      const schemaPath = resolve(__dirname, '../../../Templum/schemas/universal-skin-definition.schema.json');
+      const schema = JSON.parse(readFileSync(schemaPath, 'utf8'));
+      const ajv = new Ajv({ allErrors: true });
+      const validate = ajv.compile(schema);
+
+      expect(skinDef).toMatchObject({
+        id: 'haruspex-analysis',
+        name: 'Haruspex Code Analysis',
+        version: '2.1.0',
+        metadata: {
+          backend: 'haruspex',
+          backendService: 'haruspex-service'
+        },
+        backendConfig: {
+          service: 'haruspex-service',
+          version: '2.1.0',
+          protocol: 'http',
+          endpoint: 'http://localhost:3001'
+        }
+      });
+      expect(validate(skinDef)).toBe(true);
     });
   });
 
