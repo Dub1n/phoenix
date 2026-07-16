@@ -1,9 +1,9 @@
 ---
 doc-type: operations-guide
-title: Templum Testing Guide
+id: templum-testing-guide
 tags: [templum, testing, qa]
 status: current
-last_updated: 2025-10-15
+last_updated: 2026-07-16
 ---
 
 # Templum — Testing Guide
@@ -96,6 +96,8 @@ last_updated: 2025-10-15
 - **Behaviour:** Drive the mock orchestrator (`src/testing/e2e-test-framework.ts`) through end-to-end scenarios without launching real interfaces. Useful for validating contract shape and workflow sequencing.
 - **Runtime:** Seconds. Safe to include in watch mode.
 - **Command:** `npm run test -- --runTestsByPath tests/e2e/e2e-complete-workflows.test.ts` now exercises the CLI procedural window pipeline, asserting skin-driven output and the absence of legacy fallback banners.
+- **CLI renderer baseline:** Existing content-layout and adapter tests assert string/border presence but do not prove the live interactive CLI frame. Treat them as migration baselines, not character-grid acceptance evidence.
+- **Character-grid validation target:** `dev/tasks/cli-character-grid-renderer.md` defines the pending golden-frame, keyboard-event, integration, and PTY suites. Add exact commands here only after those suites exist; until then the renderer remains an unverified MVP blocker.
 
 ### 3.5 Scripted Health Checks
 

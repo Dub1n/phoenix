@@ -2,8 +2,11 @@
 
 ## Requirement Summary
 
-- Status: [x]
+- Status: `Superseded 2026-07-16`
 - Requirement text: "Procedural windowed TUI layout from skin descriptors."
+- Replacement: `dev/tasks/cli-character-grid-renderer.md`
+
+> The procedural renderer produced bordered strings but never became the sole live interactive renderer. Its implementation and tests are retained as migration evidence; completion claims are superseded by the character-grid renderer task.
 
 ## Prerequisites
 
@@ -44,3 +47,9 @@
 - Tests: `tests/e2e/e2e-complete-workflows.test.ts` verifies procedural window rendering and the absence of fallback output; adapter integration tests continue to cover nested menu rendering. Command executed: `npm run test -- --runTestsByPath tests/e2e/e2e-complete-workflows.test.ts`.
 - Coverage: Global coverage gating still hinges on the `babel-plugin-istanbul` fix in `dev/tasks/test-architecture-governance.md`; targeted rendering and adapter suites pass with the new e2e assertions.
 - Next steps: Re-run the full coverage harness once the instrumentation fix lands; keep the warning copy aligned with skin-driven behaviour while live backend payload validation remains pending.
+
+## Supersession Assessment (2026-07-16)
+
+- `EnhancedWindowSystem.renderWindowSet` and `ContentLayoutSystem` can generate procedural windows, but `startInteractiveSession()` continues through `InteractiveMenuRenderer.displayMenu()` and its hardcoded default menu graph.
+- The focused tests pass while captured output remains visually non-compliant because assertions check token presence rather than complete frames.
+- No further work should be added here. Migrate reusable findings and evidence to `cli-character-grid-renderer.md`.

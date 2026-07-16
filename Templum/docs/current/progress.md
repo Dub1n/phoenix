@@ -1,9 +1,9 @@
 ---
 doc-type: progress
-name: Templum MVP Progress Tracker
+id: templum-mvp-progress-tracker
 tags: [templum, progress, mvp]
 status: current
-last_updated: 2025-10-24
+last_updated: 2026-07-16
 ---
 
 # Templum — MVP Route Tracker
@@ -13,7 +13,7 @@ last_updated: 2025-10-24
 > Scope lock: anything outside this list is frozen until the MVP ships.
 
 1. **Stabilise discovery & sessions** — multi-protocol auto-registration, zero-knowledge registry verification, shared session/context manager, minimal helper extractions.
-2. **Lock skin enforcement & rendering** — Ajv-backed skin validation, skin-driven rendering + CLI generator + procedural TUI, reuse Phoenix assets, fail-first tests.
+2. **Lock skin enforcement & rendering** — Ajv-backed skin validation, skin-driven rendering + CLI generator + character-grid CLI runtime, reuse Phoenix assets, fail-first tests.
 3. **Harden runtime signals & coverage** — central process-signal manager, repaired coverage tooling, lifecycle broadcasts, manual overrides, lint/test sanity script.
 4. **Integrate partners & observability** — Haruspex + PCL ingestion with real skins, baseline logging/metric wiring, minimal command matrix documentation.
 
@@ -52,12 +52,12 @@ last_updated: 2025-10-24
 
 - [x] [Timer & Event cleanup for test harness](../../dev/architecture/safe-consolidation-candidates.md)
   Progress 100% — Stage 6 lanes 6e–6o finished migrating backend/state/core adapters, integration harnesses, and CLI helper scripts onto `AsyncUtils`-managed timers (`scripts/run-with-timeout.mjs`, backend/state timer sweeps), cleared the outstanding sweeps, and Stage 7 reran the consolidated CI + Phase 6 gating battery with fresh artefacts (`tmp/consolidation/pattern-3-stage7/test-ci.log`, `tmp/consolidation/pattern-3-stage7/phase6-validation.log`, `tmp/consolidation/pattern-3-stage7/phase6-health.log`) to confirm the harness exits without leaked handles.
-- [x] [Skin payload consumption powering full UI without hardcoding](../../dev/tasks/skin-payload-consumption.md)
-  Progress 100% — Orchestrator now caches backend skins and immediately replays them to active adapters, CLI/VSCode load flows render directly from `UniversalSkinDefinition` payloads, and integration coverage proves skins surface without fallback scaffolds (`npm test -- --runTestsByPath tests/rendering/skin-payload-consumption.integration.test.ts`).
-- [x] [Procedural windowed TUI layout from skin descriptors](../../dev/tasks/procedural-windowed-tui.md)
-  Progress 100% — CLI adapters now render bordered procedural windows exclusively from `EnhancedWindowSystem.renderWindowSet`, the fallback ASCII scaffold has been removed, and the new `CLI Procedural Windows` e2e coverage (`npm run test -- --runTestsByPath tests/e2e/e2e-complete-workflows.test.ts`) asserts both rendered output and the absence of legacy banners. Full coverage remains gated on the `babel-plugin-istanbul` tooling fix tracked under test architecture governance.
-- [x] [CLI generator uses skin metadata](../../dev/tasks/cli-skin-generator.md)
-  Progress 100% — Added `src/interfaces/cli-generator.ts` to transform `UniversalSkinDefinition` payloads into CLI menu graphs, shortcuts, and command bindings. `CLIInterfaceAdapter.applySkin`, `TemplumAdapterRegistry`, and `TemplumCore.loadSkin` now invoke the generator, hydrate the menu registry, and inject metadata-driven shortcuts, while the CLI entry point passes the generator through dependency injection. Regression coverage lives in `tests/cli/cli-generator.integration.test.ts` and the refreshed metadata scenario inside `tests/e2e/e2e-complete-workflows.test.ts` (`npm test -- --runTestsByPath tests/cli/cli-generator.integration.test.ts tests/e2e/e2e-complete-workflows.test.ts`).
+- [~] [Skin payload consumption powering full UI without hardcoding](../../dev/tasks/skin-payload-consumption.md)
+  Progress 70% — Validated payloads reach the skin engine and adapters, but the live CLI interactive loop still presents hardcoded default menus independently of the procedural skin output. Payload plumbing is retained for the character-grid rewrite; full-UI completion requires the new runtime and live partner verification.
+- [!] [Character-grid CLI presentation runtime](../../dev/tasks/cli-character-grid-renderer.md)
+  Progress 0% — Accepted 2026-07-16 as the replacement for the split procedural/Inquirer renderer. Product behaviour is defined in `dev/CLI/CLI-product-spec.md`; target architecture is defined in `dev/CLI/CLI-character-grid-architecture.md`. This is the sole active CLI renderer task.
+- [~] [CLI generator uses skin metadata](../../dev/tasks/cli-skin-generator.md)
+  Progress 70% — `src/interfaces/cli-generator.ts` produces reusable menu graphs, shortcuts, and command bindings from skin metadata, but its output does not yet drive the sole live interactive view. The character-grid view-model builder will reuse or narrow this generator and remove the parallel hardcoded menu graph.
 - [x] [Minimal MCP terminal bridge for agent CLI validation](../../dev/tasks/minimal-mcp-terminal-bridge.md)
   Progress 100% — Restored the Jest harness by adding an explicit CommonJS export shim in `src/mcp-channel/src/node-pty-types.ts` and covering it with `src/mcp-channel/src/__tests__/node-pty-types.cjs.test.ts`. `npm test -- --runTestsByPath src/mcp-channel/src/__tests__/node-pty-types.cjs.test.ts tests/service-discovery/pty-mcp-server-test-harness.test.ts` now runs without the previous ESM import failure; coverage thresholds remain tracked through the broader suite.
 

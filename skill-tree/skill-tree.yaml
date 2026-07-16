@@ -1,5 +1,5 @@
 version: 0.1
-updated: 2025-10-07
+updated: 2026-07-16
 roles:
   ladder:
     - id: learner
@@ -244,14 +244,22 @@ nodes:
     title: Documentation & Specs
     parent: knowledge_flow
     level: learner
-    readiness: 0.1
+    readiness: 0.25
     test_cooldown: 0
-    confidence: low
-    evidence: []
+    confidence: medium
+    evidence:
+      - "2026-07-16: Reviewed the Templum CLI renderer, chose a full
+        character-grid rewrite, separated product and target-architecture
+        contracts, archived superseded CLI 2.1 material, defined renderer
+        pre-implementation gates, and implemented frontmatter
+        schema/template/validator hygiene."
     last_test: null
-    next_test_hint: null
+    next_test_hint: Apply the H1 and doc-type contract consistently while keeping
+      current-state, target, task, decision, index, and archive ownership
+      distinct.
     achievements: {}
     priority: false
+    check_ins: 1
   - id: facilitation_comms
     title: Facilitation & Communication
     parent: knowledge_flow
@@ -264,3 +272,20 @@ nodes:
     next_test_hint: null
     achievements: {}
     priority: false
+  - id: cli_rendering
+    title: CLI & Terminal Rendering
+    parent: frontend_integration
+    level: learner
+    readiness: 0.15
+    test_cooldown: 0
+    confidence: medium
+    evidence:
+      - "2026-07-16: Reviewed the Templum CLI renderer and selected a full
+        retained character-grid rewrite with neutral presentation models,
+        explicit layout and clipping, diff-based terminal painting, golden-frame
+        acceptance cases, test seams, and migration gates."
+    achievements: {}
+    priority: false
+    check_ins: 1
+    next_test_hint: Connect reviewed golden frames to renderer tests and explain why
+      terminal painting must remain separate from grid composition.

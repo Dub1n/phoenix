@@ -13,12 +13,12 @@
 
 ### Unblocked Actions
 
-- [ ] Audit existing developer-facing material (`docs/archive/*.md`, `dev/templum-roadmap.md`, `dev/patterns/`) and outline the post-migration handbook structure in `docs/current/developer-handbook/README.md`, capturing required sections for API surface, adapter guides, and onboarding flows.
+- [ ] Audit existing developer-facing material (`docs/archive/*.md`, archived legacy trackers, and `dev/patterns/`) and outline the post-migration handbook structure in `docs/current/developer-handbook/README.md`, capturing required sections for API surface, adapter guides, and onboarding flows.
 - [ ] Document the API surface by extracting entry points and exported types from `src/core/templum-core.ts`, `src/interfaces/templum-orchestrator-interface.ts`, `src/backend/backend-service-router.ts`, and related `src/types/*.ts`, producing `docs/current/developer-handbook/api-surface.md` with links back to the source.
 - [ ] Produce adapter implementation guides in `docs/current/developer-handbook/adapter-guides.md` summarising CLI (`src/interfaces/cli-adapter.ts`, `examples/minimal-cli.ts`), VSCode (`src/interfaces/vscode-adapter.ts`, `src/extension.ts`), and command adapters, including expected skin payload hooks and lifecycle notes from `docs/current/1.2-Backend-Integration-Guide.md`.
 - [ ] Create an onboarding playbook `docs/current/developer-handbook/onboarding.md` that covers environment setup, required tooling, and “first day” workflows (build/test commands from `package.json`, validation scripts under `scripts/`, and test directories under `tests/`).
 - [ ] Cross-link the new handbook from `docs/current/architecture-spec.md` (Summary and Verification & Validation sections) and retire outdated duplicates by updating `docs/archive/ARCHIVE_INDEX.md` with pointers to the consolidated docs.
-- [ ] Update developer task indexes (`dev/templum-active-tasks.md`, `dev/tasks/`) if needed to reference the handbook, and prepare change notes for `docs/current/progress.md` once ready to mark progress.
+- [ ] Update `dev/README.md` and relevant focused task logs to reference the handbook, and prepare change notes for `docs/current/progress.md` once ready to mark progress.
 
 ### Blocked Actions (if any)
 

@@ -1,3 +1,11 @@
+---
+doc-type: operations-guide
+id: documentation-change-checklist
+status: current
+tags: [documentation, governance, checklist]
+last_updated: 2026-07-16
+---
+
 # Documentation Change Checklist
 
 Use this list before finalising any change. Mark items as you go and link the checklist from your task log if helpful.
@@ -42,5 +50,6 @@ Legend: `[ ]` pending · `[x]` complete
 - [ ] Alert owners of dependent docs if follow-up needed.
 - [ ] If pattern categories change, sync `docs/current/pattern-taxonomy.md`, the schema enum, and `meta/templates/pattern-taxonomy-template.md`.
 - [ ] Validate affected docs with `meta/scripts/validate_frontmatter.py` (override `--schema` if a project-specific variant is required).
+- [ ] Confirm each governed Markdown document has exactly one H1 and does not duplicate it through new `title`/`name` metadata.
 
 Keep this checklist lean—add project-specific items adjacent to the relevant requirement task logs if needed.

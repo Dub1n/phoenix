@@ -1,3 +1,11 @@
+---
+doc-type: task-log
+id: task-id
+tags: [project, task]
+status: planned
+last_updated: TODO-YYYY-MM-DD
+---
+
 # Task: [Task Title]
 
 Related requirement: `docs/current/progress.md` → [Requirement Group] → "Requirement text".

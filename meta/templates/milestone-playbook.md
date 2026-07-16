@@ -1,3 +1,11 @@
+---
+doc-type: playbook
+id: milestone-id
+tags: [project, milestone, coordination]
+status: draft
+last_updated: TODO-YYYY-MM-DD
+---
+
 # Milestone Playbook — Template
 
 ## 1. Summary

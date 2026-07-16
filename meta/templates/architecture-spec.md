@@ -1,6 +1,6 @@
 ---
 doc-type: architecture-spec
-name: [Project Name] Architecture Specification
+id: project-architecture-specification
 tags: [project, architecture, current-state]
 status: current
 last_updated: TODO-YYYY-MM-DD
@@ -19,9 +19,9 @@ last_updated: TODO-YYYY-MM-DD
 >
 > Use callouts for reality checks. Example:
 >
-> ⚠️ **Needs Verification:** Describe assumptions requiring validation.
+> **Needs Verification:** Describe assumptions requiring validation.
 >
-> 🧭 **In Progress:** Mention active work streams.
+> **In Progress:** Mention active work streams.
 
 Outline what currently works, what’s partially done, and known gaps.
 

@@ -2,7 +2,7 @@
 
 ## Requirement Summary
 
-- Status: [x]
+- Status: `[~]`
 - Requirement text: "CLI generator uses skin metadata (partially wired, needs full migration)."
 
 ## Prerequisites
@@ -41,6 +41,13 @@
 - Implementation: Metadata-driven CLI generator now feeds `CLIInterfaceAdapter`, `AdaptiveCLIIntegration`, and the display consistency engine with menu graphs, command bindings, and shortcuts; `TemplumCore`/adapter registry invoke the generator during skin loads and expose observability warnings on malformed payloads. CLI bootstrap wires the generator through DI, and the CLI adapter hydrates the universal menu registry instead of emitting fallback scaffolds.
 - Tests: New coverage in `tests/cli/cli-generator.integration.test.ts` and the updated CLI scenario inside `tests/e2e/e2e-complete-workflows.test.ts` confirm shortcut hydration and metadata alignment. Follow-up full suite (`npm run test` / `npm run test:ci`) still pending to capture regressions under the broader harness.
 - Required work: Remove IPC-era fallback templates once real-backend validation is rerun, and extend `TemplumUniversalSessionManager` wiring so session snapshots carry generator-derived menu context across interface boundaries.
+
+## Reassessment (2026-07-16)
+
+- The generator and injection seams are reusable and remain implemented.
+- Completion is reduced to partial because the generated model does not own the live interactive menu; `InteractiveMenuRenderer` still constructs hardcoded defaults.
+- The character-grid view-model stage must either adopt the generator's pure transformations or replace them with a narrower renderer-neutral model. It must not preserve a second navigation graph.
+- Renderer integration work is owned by `cli-character-grid-renderer.md`; generator-specific cleanup remains here.
 
 ### Follow-up Actions
 

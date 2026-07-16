@@ -14,12 +14,12 @@
 
 ## Ecosystem Summary Snapshot
 
-| Project                 | Role                                                                  | Target State                                                                               | Current Reality                                                                                                                                           |
-| ----------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Templum                 | Universal skin-driven interface layer for VSCode/CLI/command tooling. | Backend router ready, CLI/UI generated from skins, multiple backends attach seamlessly.    | Backend routing reportedly working; Templum now owns the public Universal Skin Definition JSON schema and keeps runtime schema helpers in source.          |
-| Phoenix Code Lite (PCL) | Internal QMS workflow engine translating regulations into actionable development data and automating compliance workflows for VDL2 teams. | Provides QMS tooling, emits skin definitions for Templum, no legacy code-gen surface left. | Still contains large portions of original agent-oriented code-gen stack; QMS rework docs exist but code status uncertain; front-end not adapted to skins. |
-| Haruspex                | Analysis ~~+ prediction~~ backend to support agent/dev workflows.     | Pure HTTP backend with auto-registration + skin export for Templum.                        | Migration from VSCode extension partially designed; `provideSkinDefinition()` now emits a Templum-schema-conforming skin, while live endpoint verification remains pending. |
-| Validation System       | Category-driven validation orchestrator for agents and humans.        | Acts as shared quality gate for repo projects.                                             | Appears operational; used to coordinate per-project commands; needs confirmation it still runs end-to-end.                                                |
+| Project                 | Role                                                                                                                                      | Target State                                                                               | Current Reality                                                                                                                                                             |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Templum                 | Universal skin-driven interface layer for VSCode/CLI/command tooling.                                                                     | Backend router ready, CLI/UI generated from skins, multiple backends attach seamlessly.    | Backend routing reportedly working; Templum now owns the public Universal Skin Definition JSON schema and keeps runtime schema helpers in source.                           |
+| Phoenix Code Lite (PCL) | Internal QMS workflow engine translating regulations into actionable development data and automating compliance workflows for VDL2 teams. | Provides QMS tooling, emits skin definitions for Templum, no legacy code-gen surface left. | Still contains large portions of original agent-oriented code-gen stack; QMS rework docs exist but code status uncertain; front-end not adapted to skins.                   |
+| Haruspex                | Analysis ~~+ prediction~~ backend to support agent/dev workflows.                                                                         | Pure HTTP backend with auto-registration + skin export for Templum.                        | Migration from VSCode extension partially designed; `provideSkinDefinition()` now emits a Templum-schema-conforming skin, while live endpoint verification remains pending. |
+| Validation System       | Category-driven validation orchestrator for agents and humans.                                                                            | Acts as shared quality gate for repo projects.                                             | Appears operational; used to coordinate per-project commands; needs confirmation it still runs end-to-end.                                                                  |
 
 ## Integration Overview
 
@@ -32,17 +32,17 @@
 
 ---
 
-## Project Dossiers (To Be Expanded)
+## Project Dossiers
 
 ### 1. Templum
 
 - **Mission Snapshot:** Extracted universal-interface layer intended to stop rewriting bespoke CLIs across projects, acting as backend router + renderer.
 - **Current Implementation Notes:**
   - Backend discovery/service router documented as functional; relies on priority-based scanning and chokidar observers.
-  - CLI/skin rendering layer mid-refactor; the public skin contract is `Templum/schemas/universal-skin-definition.schema.json` and source TypeScript/Zod schema helpers remain runtime implementation code, not public schema artifacts.
+  - CLI/skin rendering layer is being replaced with a single character-grid presentation runtime; payload/generator plumbing exists, but the live interactive CLI still has competing hardcoded and procedural paths. The public skin contract is `Templum/schemas/universal-skin-definition.schema.json` and source TypeScript/Zod schema helpers remain runtime implementation code, not public schema artifacts.
   - Utilities consolidation and logging/error handling refactors planned but not executed.
   - [Pattern taxonomy reference](Templum/docs/current/pattern-taxonomy.md): Canonical category enum and maintenance process.
-- **MVP Focus (must-land before first release):** zero-knowledge discovery + multi-protocol registration, schema-backed skin validation, shared session/context, skin-driven rendering (including CLI generator & procedural TUI), Practical Developer Guide prompts/notifications that auto-complete deterministic checks, backlog tooling visibility aligned with the final YouTrack decision, manual overrides & lifecycle broadcasts, observability instrumentation with clean shutdown, Haruspex/PCL skin ingestion, and stable coverage/CI tooling.
+- **MVP Focus (must-land before first release):** zero-knowledge discovery + multi-protocol registration, schema-backed skin validation, shared session/context, skin-driven rendering (including the character-grid CLI runtime), Practical Developer Guide prompts/notifications that auto-complete deterministic checks, backlog tooling visibility aligned with the final YouTrack decision, manual overrides & lifecycle broadcasts, observability instrumentation with clean shutdown, Haruspex/PCL skin ingestion, and stable coverage/CI tooling.
 - **Post-MVP Opportunities (Deferred):**
   - Universal Skin Engine convergence refactor.
   - Asset/localisation validator suite.
@@ -62,7 +62,7 @@
   - **Skin-Driven Rendering Pipeline**
     - Consumes skin payloads describing views, menus, workflows, commands, theming, accessibility metadata.
     - Generates interface structures exclusively from skin data—no hardcoded navigation, prompts, or command wiring.
-    - Supports procedural windowed TUI layout (panels, dialogs, forms, tables) with keyboard navigation derived from skin descriptors.
+    - Supports a character-grid CLI presentation runtime (windows, dialogs, forms, tables, input, and terminal lifecycle) with keyboard navigation derived from skin descriptors.
     - Validates skin assets (media, localization, command bindings) before exposing them to interfaces.
   - **Interface Delivery**
     - Provides CLI experience with dynamic windowed TUI, menu navigation, command execution, and contextual help sourced from skin.

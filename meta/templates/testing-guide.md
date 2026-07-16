@@ -1,6 +1,6 @@
 ---
 doc-type: operations-guide
-name: [Project Name] Testing Guide
+id: project-testing-guide
 tags: [project, testing, qa]
 status: draft
 last_updated: TODO-YYYY-MM-DD

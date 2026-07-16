@@ -2,7 +2,7 @@
 
 ## Requirement Summary
 
-- Status: [x]
+- Status: `[~]`
 - Requirement text: "Skin payload consumption powering full UI without hardcoding."
 
 ## Prerequisites
@@ -44,3 +44,9 @@
 - Coverage: Global coverage gating is still blocked on the `babel-plugin-istanbul` tooling regressions (tracked in `dev/tasks/test-architecture-governance.md`).
 - Next actions: Extend renderer contract cases in `tests/templum/universal-skin-system.test.ts` once the layout snapshot strategy is agreed; complete doc refresh for architecture/progress sections (pending above).
 - TODO (2025-10-06): Add renderer contract assertions in `tests/templum/universal-skin-system.test.ts` to cover missing payload fields and error paths after snapshot baselines settle.
+
+## Reassessment (2026-07-16)
+
+- Validated payload ingestion, caching, and adapter delivery are present and are preserved by the CLI rewrite.
+- The "full UI without hardcoding" requirement is not complete for CLI because the live interactive menu still originates from hardcoded defaults.
+- CLI completion is delegated to `cli-character-grid-renderer.md`; live partner payload verification remains pending separately.

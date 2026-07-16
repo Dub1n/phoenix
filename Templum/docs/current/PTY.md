@@ -1,9 +1,9 @@
 ---
-doc-type: architecture-spec
-title: MCP ↔ PTY Bridge Blueprint
+doc-type: target-architecture
+id: minimal-mcp-terminal-bridge
 tags: [templum, cli, mcp, pty, automation]
 status: draft
-last_updated: 2025-10-15
+last_updated: 2026-07-16
 ---
 
 # Minimal MCP Terminal Bridge — Blueprint & Stage 2 Implementation
@@ -113,7 +113,7 @@ No changes required in `TemplumCore` or the CLI adapter—this bridge is a sidec
 - **TTY Layout Drift:** Without a virtual screen emulator the bridge might miss cursor positioning. Future enhancement: integrate `pyte` so `get_state` can return a reconstructed screen when diffs are insufficient.
 - **Long-Running Output:** For commands that stream (e.g., service logs), ensure buffer caps (default 128 KB) with truncation notice.
 - **Signal Handling:** Catch CLI exits and notify agents; do not auto-restart to avoid masking crashes.
-- **Legacy MCP Artefacts:** Stage 4 work item enumerates and deletes unused directories/spec references (`dev/CLI/CLI-design-2.1-architecture-data-flow.md` §4, `dev/auto/agent-cli-interaction-analysis.md`) to prevent accidental rescope.
+- **Legacy MCP Artefacts:** Stage 4 removed unused enterprise MCP directions; the superseded CLI architecture is preserved at `docs/archive/cli/CLI-design-2.1-architecture-data-flow.md` to prevent accidental rescope while retaining history.
 
 ## 7. Evidence & Next Steps
 
@@ -138,7 +138,7 @@ No changes required in `TemplumCore` or the CLI adapter—this bridge is a sidec
 
 ## 9. Stage 4 Cleanup (completed)
 
-- Removed the enterprise MCP architecture section from `dev/CLI/CLI-design-2.1-architecture-data-flow.md` (health monitor, response cache, tool registry diagrams). Current direction now points directly to this blueprint.
+- Removed the enterprise MCP architecture direction from the active CLI design set. The historical document now lives at `docs/archive/cli/CLI-design-2.1-architecture-data-flow.md`; current direction points directly to this blueprint.
 - Added a historical disclaimer to `dev/auto/agent-cli-interaction-analysis.md` so future work recognises the minimal bridge as the active solution.
 - Confirmed no runtime dependencies remain on the deprecated health/caching scaffolding; the bridge relies solely on FastMCP + PTY helpers.
 - Captured a sanity run using `/bin/sh`: `.venv/bin/python` harness (`create_session` → `send_input` "echo hello" → `get_state` diff → `destroy_session`) verifying raw/clean buffer updates and diff packaging.

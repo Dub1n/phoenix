@@ -1,19 +1,20 @@
 #!/usr/bin/env python3
-"""Validate documentation frontmatter against the shared schema.
+"""Validate documentation metadata and H1 structure.
 
 Usage:
     meta/scripts/validate_frontmatter.py path/to/doc.md [more docs]
 
 The script extracts the first YAML frontmatter block (between leading '---' markers),
-normalises date/datetime types emitted by PyYAML, and validates the result against
-`meta/templates/schema/frontmatter.json` by default. Use `--schema` to point at a
-project-specific override.
+normalises date/datetime types emitted by PyYAML, validates the result against
+`meta/templates/schema/frontmatter.json`, and requires exactly one Markdown H1
+outside fenced code blocks. Use `--schema` to point at a project-specific override.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import re
 from datetime import date, datetime
 from pathlib import Path
 from typing import Any, Dict
@@ -40,7 +41,7 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def extract_frontmatter(path: Path) -> Dict[str, Any]:
+def extract_document(path: Path) -> tuple[Dict[str, Any], str]:
     text = path.read_text(encoding="utf-8")
     if not text.startswith("---"):
         raise ValueError(f"{path}: missing leading YAML frontmatter block")
@@ -54,7 +55,51 @@ def extract_frontmatter(path: Path) -> Dict[str, Any]:
     loaded = yaml.safe_load(frontmatter_raw) or {}
     if not isinstance(loaded, dict):
         raise ValueError(f"{path}: frontmatter must deserialize to a mapping")
-    return loaded
+    return loaded, parts[2]
+
+
+def extract_h1s(markdown: str) -> list[str]:
+    headings: list[str] = []
+    fence: str | None = None
+
+    for line in markdown.splitlines():
+        stripped = line.lstrip()
+        fence_match = re.match(r"^(```+|~~~+)", stripped)
+        if fence_match:
+            marker = fence_match.group(1)
+            marker_kind = marker[0]
+            if fence is None:
+                fence = marker_kind
+            elif fence == marker_kind:
+                fence = None
+            continue
+
+        if fence is not None:
+            continue
+
+        heading_match = re.match(r"^#\s+(.+?)\s*$", line)
+        if heading_match:
+            headings.append(heading_match.group(1))
+
+    return headings
+
+
+def validate_heading(markdown: str, path: Path) -> None:
+    headings = extract_h1s(markdown)
+    if len(headings) != 1:
+        raise ValueError(
+            f"{path}: expected exactly one Markdown H1 outside fenced code blocks; found {len(headings)}"
+        )
+
+
+def warn_deprecated_fields(data: Dict[str, Any], path: Path) -> None:
+    replacements = {
+        "title": "the document H1",
+        "name": "id",
+    }
+    for field, replacement in replacements.items():
+        if field in data:
+            print(f"! {path}: deprecated frontmatter field '{field}'; use {replacement}")
 
 
 def normalise_types(value: Any) -> Any:
@@ -91,9 +136,11 @@ def main() -> None:
     for raw_path in args.paths:
         path = Path(raw_path)
         try:
-            frontmatter = extract_frontmatter(path)
+            frontmatter, markdown = extract_document(path)
             normalised = normalise_types(frontmatter)
+            warn_deprecated_fields(normalised, path)
             validate_frontmatter(normalised, schema_data, path)
+            validate_heading(markdown, path)
             print(f"✓ {path}")
         except Exception as exc:  # noqa: BLE001 - surface full failure context
             failures.append((path, exc))

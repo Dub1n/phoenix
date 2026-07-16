@@ -51,3 +51,29 @@ areas:
         last_covered: 2025-09-30
         note: Co-authored template; still refining example bank.
         priority: false
+      - id: document_frontmatter_governance
+        status: learning
+        note: Established H1 as canonical title with doc-type lifecycle metadata
+          optional stable id and deprecated aliases
+        label: Frontmatter schema governance
+        last_covered: 2026-07-16
+      - id: document_lifecycle_archiving
+        status: learning
+        note: Distinguished canonical current target task decision index and archived
+          documentation ownership
+        label: Documentation lifecycle and archiving
+        last_covered: 2026-07-16
+  - node: cli_rendering
+    topics:
+      - id: cli_character_grid_renderer
+        label: Character-grid renderer architecture
+        status: learning
+        note: Defined retained-mode grid pipeline with layout composition clipping
+          diffing and terminal painting boundaries
+        last_covered: 2026-07-16
+      - id: cli_product_contracts
+        label: CLI product and rendering contracts
+        status: learning
+        note: Separated observable CLI behaviour from target renderer architecture and
+          captured golden-frame decisions
+        last_covered: 2026-07-16

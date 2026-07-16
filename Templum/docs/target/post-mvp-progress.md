@@ -1,9 +1,9 @@
 ---
 doc-type: progress
-name: Templum Progress Tracker
+id: templum-post-mvp-progress-tracker
 tags: [templum, progress]
 status: current
-last_updated: 2025-10-03
+last_updated: 2026-07-16
 ---
 
 # Templum Progress Tracker
@@ -25,7 +25,7 @@ MVP priority legend: **Must-have** (required for MVP) · **Post-MVP** (valuable 
 2. **Lock skin enforcement & rendering**
    - Replace the handwritten validator with the Ajv-backed schema (`dev/tasks/versioned-skin-contract.md`) and wire warnings/errors into adapters.
    - Reuse Phoenix Code Lite rendering/menu assets wherever possible to avoid reinventing the CLI/UI pipeline; drop borrowed fixtures into `tests/fixtures/skins`.
-   - Implement skin-driven rendering/CLI generator/procedural TUI (`dev/tasks/skin-payload-consumption.md`, `dev/tasks/cli-skin-generator.md`, `dev/tasks/procedural-windowed-tui.md`) using those shared utilities.
+   - Implement skin-driven rendering, CLI generator integration, and the character-grid CLI runtime (`dev/tasks/skin-payload-consumption.md`, `dev/tasks/cli-skin-generator.md`, `dev/tasks/cli-character-grid-renderer.md`) using those shared utilities.
    - Build failing tests first (adapter integration, CLI snapshots) so code work is always guided by fixtures.
 
 3. **Harden runtime signals & coverage**
@@ -84,8 +84,8 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` not started · `[!]` broken · 
 
 - [ ] [Skin payload consumption powering full UI without hardcoding](../../dev/tasks/skin-payload-consumption.md) — **Must-have**
   Progress 25% — renderer/layout scaffolding exists, yet CLI/VSCode adapters still fall back to `generateFallbackCLIOutput` and rely on baked-in menus; no integration tests assert skin-driven rendering.
-- [ ] [Procedural windowed TUI layout from skin descriptors](../../dev/tasks/procedural-windowed-tui.md) — **Must-have**
-  Progress 20% — `ContentLayoutSystem` provides bordered-window helpers, but CLI flows never request them and no procedural layout specs have been added.
+- [!] [Character-grid CLI presentation runtime](../../dev/tasks/cli-character-grid-renderer.md) — **Must-have**
+  Progress 0% — Accepted as the replacement for the split procedural/Inquirer presentation paths. Existing bordered-window helpers are migration evidence, not the target renderer.
 - [ ] [Asset validation](../../dev/tasks/skin-asset-validation.md) (media/localisation/command bindings) — **Post-MVP**
   Progress 0% — schema/types still omit localisation bundles and `SkinAssetValidator`; backend validation tests skip asset/link checks.
 - [ ] [Universal Skin Engine convergence roadmap](../../dev/tasks/universal-skin-engine-convergence.md) (modularise current engine, absorb Phase 5 validation/caching, retire duplicate impl) — **Post-MVP**
@@ -184,7 +184,7 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` not started · `[!]` broken · 
 ### Workstream Lanes
 
 - **Core Platform**: connection lifecycle events, unified session layer, manual override flow, feature flags; align with multi-protocol and zero-knowledge deliverables to keep interface and backend streams decoupled.
-- **Skin & Interface**: versioned skin contract → skin payload consumption → CLI generator and procedural TUI; ensure Haruspex/PCL ingestion test assets reuse the shared schema to avoid duplicate fixes.
+- **Skin & Interface**: versioned skin contract → skin payload consumption → CLI generator integration and character-grid runtime; ensure Haruspex/PCL ingestion test assets reuse the shared schema to avoid duplicate fixes.
 - **Operations & Compliance**: observability → audit hooks → security/compliance validation → release pipeline hardening → production runbooks → go/no-go → final UAT; reuse governance tooling to reduce retest time.
 - **Partner & Enablement**: Haruspex integration, PCL ingestion, backend contract fixtures, support/training, change management; treat support/training and change management as a joint programme with alternating deliverables to resolve their mutual dependency.
 

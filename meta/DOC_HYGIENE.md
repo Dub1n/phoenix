@@ -1,3 +1,11 @@
+---
+doc-type: operations-guide
+id: documentation-hygiene-protocol
+status: current
+tags: [documentation, governance, metadata]
+last_updated: 2026-07-16
+---
+
 # Documentation Hygiene Protocol
 
 > Purpose: keep canonical references accurate, future plans visible, and outdated material quarantined so development can move quickly without losing context.
@@ -10,6 +18,33 @@
   - Haruspex → `Haruspex/docs/current/architecture-spec.md`
   - Validation System → `scripts/validation/docs/current/architecture-spec.md`
 - Keep future/ideal plans in separate locations (e.g., `dev/architecture/`, `docs/03-PCL-QMS/`) and mark them as *Target State*.
+
+### Frontmatter Contract
+
+Every maintained Markdown document that participates in documentation governance must have:
+
+- exactly one Markdown H1, which is the canonical human-readable title;
+- a `doc-type` selected from the supported types below;
+- `status`, `tags`, and `last_updated` lifecycle metadata;
+- an optional kebab-case `id` only when a stable machine identifier is useful across renames or moves.
+
+Do not duplicate the H1 in frontmatter. The legacy `title` field is accepted only while existing documents migrate. The legacy `name` field is accepted only as a temporary alias for `id`, primarily for pattern documents. New or substantively refreshed documents must use the H1 and `id` convention.
+
+| Document type | Purpose | Typical location |
+| --- | --- | --- |
+| `architecture-spec` | Canonical implemented architecture and current-state claims | `docs/current/` |
+| `target-architecture` | Accepted but not yet fully implemented architecture | `dev/architecture/`, area-specific `dev/` folders, or `docs/target/` |
+| `product-spec` | Observable user behaviour and acceptance contract | Area-specific `dev/` folder until verified |
+| `progress` | Canonical requirement status and prioritisation | `docs/current/progress.md` |
+| `operations-guide` | Testing, deployment, support, or runtime procedures | `docs/current/` |
+| `task-log` | Focused implementation checklist, validation, and evidence | `dev/tasks/` |
+| `decision-record` | Accepted decision and rationale that should not be rewritten as current state | Area-specific `dev/` folder or architecture decision collection |
+| `documentation-index` | Navigation and ownership map without duplicated status claims | `README.md` files in governed documentation folders |
+| `playbook` | Time-bounded milestone or cross-project execution coordination | `meta/workflows/` |
+| `appendix` | Supporting detail that is not an authority for current status | Adjacent to the owning canonical document |
+| `pattern` | Reusable engineering solution with governed discovery metadata | `dev/patterns/` |
+
+Use `meta/templates/document.md` for a generic governed document and the specialised templates alongside it where available. The machine-enforced type list lives in `meta/templates/schema/frontmatter.json`; update this table, the schema, and affected templates together when types change.
 
 ### Recommended Layout
 
@@ -46,7 +81,7 @@ Promote docs from `dev/` into `docs/current/` only after implementation matches 
 Use the templates in `meta/templates/` (`architecture-spec.md`, `progress.md`, `task-log.md`, `testing-guide.md`) when creating or refreshing documents to keep structure consistent.
 Projects with automated validation suites must keep `docs/current/testing-guide.md` accurate—update it alongside spec changes whenever test commands, timeouts, or orchestration scripts shift.
 Keep each project's `pattern-taxonomy.md` in sync with its frontmatter schema and consult it before adding or updating pattern documentation.
-Validate frontmatter using `meta/scripts/validate_frontmatter.py` (points to `meta/templates/schema/frontmatter.json` by default) before committing significant documentation changes.
+Validate frontmatter and the single-H1 rule using `meta/scripts/validate_frontmatter.py` (points to `meta/templates/schema/frontmatter.json` by default) before committing significant documentation changes.
 
 ### Progress Tracking
 

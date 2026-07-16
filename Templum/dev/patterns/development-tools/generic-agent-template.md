@@ -257,9 +257,10 @@ export const TEMPLUM_AGENT_CONFIG = {
   ...AGENT_DEFAULTS,
   RESEARCH_TIMEOUT: 240000,      // 4 minutes (faster for Templum)
   PATTERN_DIRECTORIES: [
-    'dev/templum-patterns.md',
-    'dev/templum-active-tasks.md'
+    'dev/patterns',
+    'dev/tasks'
   ],
+  PROGRESS_FILE: 'docs/current/progress.md',
   PROJECT_CONVENTIONS: {
     typeSystem: 'typescript',
     errorHandling: 'try-catch-finally',
@@ -298,8 +299,8 @@ export const TEMPLUM_AGENT_CONFIG = {
 // Cross-project compatibility matrix
 const PROJECT_INTEGRATIONS = {
   'Templum': {
-    patternFile: 'dev/templum-patterns.md',
-    activeTasksFile: 'dev/templum-active-tasks.md',
+    patternFile: 'dev/patterns',
+    activeTasksFile: 'docs/current/progress.md',
     conventions: TEMPLUM_CONVENTIONS
   },
   'Haruspex': {

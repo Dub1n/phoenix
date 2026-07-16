@@ -8,7 +8,6 @@
   "required": [
     "date-created",
     "last-updated",
-    "name",
     "description",
     "status",
     "category",
@@ -18,6 +17,10 @@
     "related-patterns"
   ],
   "properties": {
+    "doc-type": {
+      "type": "string",
+      "const": "pattern"
+    },
     "date-created": {
       "type": "string",
       "description": "Timestamp indicating when the pattern was first authored.",
@@ -28,9 +31,14 @@
       "description": "Timestamp capturing the most recent substantive update.",
       "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
     },
+    "id": {
+      "type": "string",
+      "description": "Stable kebab-case pattern identifier.",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
     "name": {
       "type": "string",
-      "description": "Kebab-case pattern identifier.",
+      "description": "Deprecated migration alias for id.",
       "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
     },
     "description": {
@@ -120,5 +128,9 @@
       },
       "minItems": 1
     }
-  }
+  },
+  "anyOf": [
+    { "required": ["id"] },
+    { "required": ["name"] }
+  ]
 }
