@@ -218,6 +218,7 @@
 - **Mission Snapshot:** Agent-usable validation orchestrator providing repeatable category checks across projects.
 - **Current Implementation Notes:**
   - Documentation indicates name-based project configs, automatic fallback to package scripts, and extension workflows for new validators.
+  - Validation artifacts are centralized under `scripts/validation/results/` rather than stored in the repository-level `dev/` folder or individual project trees.
   - Requires confirmation that orchestrator runs with current dependencies and project configurations.
 - **Ideal Requirements (target architecture):**
   - **Validation Orchestrator Core**

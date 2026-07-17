@@ -366,7 +366,7 @@ class EvidenceCollector {
           
         recentFiles.forEach(file => {
           this.evidence.files.created.push({
-            path: path.join('dev/validation-results', file),
+            path: path.join('scripts/validation/results', file),
             description: 'Generated validation results',
             changeType: 'created'
           });

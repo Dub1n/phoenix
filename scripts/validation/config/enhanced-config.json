@@ -21,7 +21,7 @@
       "parallelValidations": 1
     },
     "projectDefaults": {
-      "report_location": "dev/validation-results",
+      "report_location": "../scripts/validation/results",
       "timeout_overrides": {
         "quality": 120000,
         "architecture": 180000,

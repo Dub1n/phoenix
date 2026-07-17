@@ -113,8 +113,9 @@ Templum/tmp/
 TODO.md
 
 # Excluded files
-docs/00-QMS/Docs/
-docs/05-QMS-Realignment/
+meta/docs/00-QMS/Docs/
+meta/docs/05-QMS-Realignment/05-QMS-Realignment.pdf
+
 # .NET tooling and packages
 .vs/
 *.user

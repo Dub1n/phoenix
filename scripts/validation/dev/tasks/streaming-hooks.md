@@ -23,7 +23,7 @@
 
 ## Definition of Done
 - Tests to run: `node tests/unit/streaming/progress-stream-service.test.js`, `node tests/integration/streaming/orchestrator-progress-stream.test.js`, regression suite `node tests/validation-system-enhancement-test.js`.
-- Validation/commands: `node src/core/enhanced-orchestrator.js --project <project> --category <category> --task-id TEST --progress-stream=jsonl:dev/validation-results/progress.log` to confirm streamed events.
+- Validation/commands: `node src/core/enhanced-orchestrator.js --project <project> --category <category> --task-id TEST --progress-stream=jsonl:results/progress.log` to confirm streamed events.
 - Documentation to update: `docs/current/architecture-spec.md`, `docs/current/progress.md`, CLI usage docs if maintained, release/changelog entry.
 
 ## References

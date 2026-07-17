@@ -88,7 +88,7 @@ config/
       "parallelValidations": 1
     },
     "projectDefaults": {
-      "report_location": "dev/validation-results",
+      "report_location": "../scripts/validation/results",
       "timeout_overrides": {
         "quality": 120000,
         "architecture": 180000,
@@ -127,7 +127,7 @@ config/
     "description": "Validation configuration for PROJECT_DISPLAY_NAME_PLACEHOLDER"
   },
   "validation": {
-    "report_location": "dev/validation-results",
+    "report_location": "../scripts/validation/results",
     "timeout_overrides": {
       "_comment": "Override default timeouts for specific categories (milliseconds)",
       "_examples": {
@@ -164,7 +164,7 @@ config/
     "description": "Multi-interface backend orchestration system"
   },
   "validation": {
-    "report_location": "dev/validation-results",
+    "report_location": "../scripts/validation/results",
     "timeout_overrides": {
       "backend": 180000,
       "quality": 120000
@@ -483,7 +483,7 @@ async createDefaultProjectTemplate(templatePath) {
       "description": "Validation configuration for PROJECT_DISPLAY_NAME_PLACEHOLDER"
     },
     "validation": {
-      "report_location": "dev/validation-results",
+      "report_location": "../scripts/validation/results",
       "timeout_overrides": {
         "_comment": "Override default timeouts for specific categories (milliseconds)",
         "_examples": {
@@ -549,7 +549,7 @@ async migrateProjectConfigs(oldConfig) {
         description: `Migrated configuration for ${projectName}`
       },
       validation: {
-        report_location: projectSettings.report_location || "dev/validation-results",
+        report_location: projectSettings.report_location || "../scripts/validation/results",
         timeout_overrides: projectSettings.timeout_overrides || {},
         resource_thresholds: projectSettings.resource_thresholds || {}
       },

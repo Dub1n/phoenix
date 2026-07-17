@@ -68,7 +68,7 @@ async function testConfigValidation() {
         display_name: "Test Project"
       },
       validation: {
-        report_location: "dev/validation-results",
+        report_location: "../scripts/validation/results",
         timeout_overrides: {
           quality: 120000
         }
@@ -116,7 +116,7 @@ async function testReportPathResolution() {
     };
     
     const projectConfig = {
-      report_location: 'dev/validation-results'
+      report_location: '../scripts/validation/results'
     };
     
     const reportPath = orchestrator.resolveReportPath(projectInfo, 'quality', projectConfig, 'TEST-001');

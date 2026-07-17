@@ -3,7 +3,7 @@ doc-type: architecture-spec
 title: Validation System Architecture Specification
 tags: [validation-system, architecture]
 status: current
-last_updated: 2025-09-22
+last_updated: 2026-07-17
 ---
 ---
 
@@ -29,7 +29,7 @@ last_updated: 2025-09-22
   - Orchestrator (`src/core/enhanced-orchestrator.js`) coordinates validator execution with safety checks.
   - Validator modules under `src/validators/` implement category-specific logic.
   - Configuration layer (`config/projects/*.json`) maps projects to commands, timeouts, report locations.
-- **Data/Control Flow:** CLI invocation → project config resolution → validator pipeline execution → report output (`dev/validation-results/`).
+- **Data/Control Flow:** CLI invocation → project config resolution → validator pipeline execution → shared report output (`scripts/validation/results/`).
 - **Integration Points:**
   - Phoenix Code Lite QMS workflow (future automated gating).
   - Templum UI (planned skin integration for monitoring results).
@@ -49,7 +49,7 @@ last_updated: 2025-09-22
 ## 4. Operational Considerations
 - Ensure Node.js/runtime versions align with project requirements (Node 18+).
 - Validators may execute project build/test commands—enforce project-level safety.
-- Reports stored under project-specific paths; integrate with QMS reporting once stable.
+- Reports are stored centrally under `scripts/validation/results/`; integrate with QMS reporting once stable.
 
 ## 5. Outstanding Work & Risks
 - Validate existing categories for each project to avoid silent drift.

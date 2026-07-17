@@ -88,7 +88,7 @@ export class ProjectDetector {
       ...this.findSubdirectoriesWithSrc(PROJECT_ROOT)
     ].filter(dir => fs.existsSync(dir));
     
-    const VALIDATION_RESULTS_DIR = path.join(PROJECT_ROOT, 'dev/validation-results');
+    const VALIDATION_RESULTS_DIR = path.join(PROJECT_ROOT, 'scripts/validation/results');
     
     return {
       PROJECT_ROOT,

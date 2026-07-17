@@ -401,7 +401,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   validator.validate().then(results => {
     if (options.save) {
       const { reportName, report } = validator.generateReport();
-      const reportPath = path.resolve('dev/validation-results', reportName);
+      const reportPath = path.resolve('scripts/validation/results', reportName);
       
       import('fs').then(fs => {
         fs.writeFileSync(reportPath, report, 'utf8');

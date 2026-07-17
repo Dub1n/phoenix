@@ -1299,7 +1299,7 @@ export class EnhancedValidationOrchestrator {
         "project_directory": "../../PROJECT_NAME_PLACEHOLDER"
       },
       "validation": {
-        "report_location": "dev/validation-results",
+        "report_location": "../scripts/validation/results",
         "timeout_overrides": {
           "_comment": "Override default timeouts for specific categories (milliseconds)",
           "_examples": {

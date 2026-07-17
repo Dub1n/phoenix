@@ -3,7 +3,7 @@ doc-type: progress
 title: Validation System Progress Tracker
 tags: [validation-system, progress]
 status: current
-last_updated: 2025-09-22
+last_updated: 2026-07-17
 ---
 
 # Validation System Progress Tracker
@@ -12,6 +12,7 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` not started · `[!]` broken · 
 
 ## Orchestrator Core
 
+- [x] Centralized shared report output under `scripts/validation/results/`; active configs, templates, tests, and executable legacy helpers now resolve the new location.
 - [?] [Core execution loop deterministic across projects](../../dev/tasks/core-execution-determinism.md) (requires recent smoke tests)
 - [ ] [Validator dependency graph support](../../dev/tasks/validator-dependency-graph.md) (pre/post checks, shared resources)
 - [ ] [Configuration discovery with schema validation](../../dev/tasks/config-discovery.md) (ensure configs align with new structure)

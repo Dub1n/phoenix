@@ -14,7 +14,7 @@
   - `node scripts/validation/tests/integration/test-enhanced-system.js`
 
 ## 3. Execution Notes
-- Follow playbook workstream instructions and update evidence ledger entries (e.g., reports under `scripts/validation/dev/validation-results/`).
+- Follow playbook workstream instructions and update evidence ledger entries (e.g., reports under `scripts/validation/results/`).
 - Coordinate schema/policy changes with Phoenix Code Lite owners; capture decisions in coordination log.
 - Keep smoke/automation scripts referenced in the playbook up to date.
 

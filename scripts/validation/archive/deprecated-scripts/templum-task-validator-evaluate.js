@@ -643,7 +643,7 @@ class ValidationOrchestrator {
   async saveResults(results, projectInfo, scopeConfig) {
     const timestamp = new Date().toISOString().replace(/:/g, '-').slice(0, 19);
     const filename = `${timestamp}-${this.options.taskId || 'validation'}-${this.category}.md`;
-    const filepath = path.join(projectInfo.path, 'dev', 'validation-results', filename);
+    const filepath = path.resolve(projectInfo.path, '../scripts/validation/results', filename);
     
     // Ensure directory exists
     const dir = path.dirname(filepath);

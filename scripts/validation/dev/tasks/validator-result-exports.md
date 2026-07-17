@@ -21,7 +21,7 @@
 
 ## Definition of Done
 - Tests to run: `node tests/unit/reporting/validation-report-service.test.js`, `node tests/validation-system-enhancement-test.js`.
-- Validation/commands: `node src/core/enhanced-orchestrator.js --project <project> --category quality --dry-run` to confirm JSON/JUnit artefacts land in `dev/validation-results/`.
+- Validation/commands: `node src/core/enhanced-orchestrator.js --project <project> --category quality --dry-run` to confirm JSON/JUnit artefacts land in `scripts/validation/results/`.
 - Documentation to update: `docs/current/architecture-spec.md`, `docs/current/progress.md` (status notes), changelog or release notes if maintained.
 
 ## References
