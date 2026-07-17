@@ -1,0 +1,55 @@
+
+> templum@1.0.0 test
+> jest --runTestsByPath src/tests/utils/async-utils.test.ts --runInBand --no-cache --forceExit
+
+  console.warn
+    [2025-10-12T18:03:55.813Z] [async-utils] [WARN] Retrying async operation { attempt: 1, maxAttempts: 3, delayMs: 5, error: 'attempt-1' }
+
+      57 |
+      58 |       if (data !== undefined || durationMs !== undefined) {
+    > 59 |         target(prefix, message, mergePayload(data, durationMs));
+         |         ^
+      60 |       } else {
+      61 |         target(prefix, message);
+      62 |       }
+
+      at Object.log (src/utils/logger.ts:59:9)
+      at Logger.dispatch (src/utils/logger.ts:181:35)
+      at Logger.warn (src/utils/logger.ts:116:10)
+      at retry (src/utils/async-utils.ts:94:27)
+      at Object.<anonymous> (src/tests/utils/async-utils.test.ts:46:20)
+
+  console.warn
+    [2025-10-12T18:03:55.835Z] [async-utils] [WARN] Retrying async operation { attempt: 2, maxAttempts: 3, delayMs: 10, error: 'attempt-2' }
+
+      57 |
+      58 |       if (data !== undefined || durationMs !== undefined) {
+    > 59 |         target(prefix, message, mergePayload(data, durationMs));
+         |         ^
+      60 |       } else {
+      61 |         target(prefix, message);
+      62 |       }
+
+      at Object.log (src/utils/logger.ts:59:9)
+      at Logger.dispatch (src/utils/logger.ts:181:35)
+      at Logger.warn (src/utils/logger.ts:116:10)
+      at retry (src/utils/async-utils.ts:94:27)
+      at Object.<anonymous> (src/tests/utils/async-utils.test.ts:46:20)
+
+  console.warn
+    [2025-10-12T18:03:55.847Z] [async-utils] [WARN] Retrying async operation { attempt: 1, maxAttempts: 2, delayMs: 5, error: 'persistent' }
+
+      57 |
+      58 |       if (data !== undefined || durationMs !== undefined) {
+    > 59 |         target(prefix, message, mergePayload(data, durationMs));
+         |         ^
+      60 |       } else {
+      61 |         target(prefix, message);
+      62 |       }
+
+      at Object.log (src/utils/logger.ts:59:9)
+      at Logger.dispatch (src/utils/logger.ts:181:35)
+      at Logger.warn (src/utils/logger.ts:116:10)
+      at retry (src/utils/async-utils.ts:94:27)
+      at Object.<anonymous> (src/tests/utils/async-utils.test.ts:60:5)
+

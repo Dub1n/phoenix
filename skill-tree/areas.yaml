@@ -77,3 +77,16 @@ areas:
         note: Separated observable CLI behaviour from target renderer architecture and
           captured golden-frame decisions
         last_covered: 2026-07-16
+  - node: migration
+    topics:
+      - id: artifact_location_governance
+        status: learning
+        note: Traced generated artifacts and established project archive boundaries
+        title: Artifact location governance
+        label: Artifact location governance
+      - id: safe_path_validation
+        status: learning
+        note: Generalized containment to any real archive directory within the monorepo
+          while rejecting lookalike names and external paths
+        title: Safe path validation
+        label: Safe path validation

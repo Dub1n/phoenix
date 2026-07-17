@@ -1,0 +1,169 @@
+[run-with-timeout] [2025-10-13T13:22:32.803Z] +    8ms Spawned PID 522936 with timeout 60000ms (kill-after 5000ms).
+
+> templum@1.0.0 test
+> jest --runTestsByPath tests/core/adapter-registry.test.ts --runInBand --no-cache --forceExit
+
+  console.warn
+    Invalid testField (5), must be between 10 and 100. Using default: 25
+
+      1315 |     } catch (_error) {
+      1316 |       if (value !== undefined) {
+    > 1317 |         console.warn(`Invalid ${fieldName} (${value}), must be between ${min} and ${max}. Using default: ${defaultValue}`);
+           |                 ^
+      1318 |       }
+      1319 |       return defaultValue;
+      1320 |     }
+
+      at TemplumAdapterRegistry.validateNumericRange (src/core/adapter-registry.ts:1317:17)
+      at Object.<anonymous> (tests/core/adapter-registry.test.ts:306:23)
+
+  console.warn
+    Invalid testField (150), must be between 10 and 100. Using default: 25
+
+      1315 |     } catch (_error) {
+      1316 |       if (value !== undefined) {
+    > 1317 |         console.warn(`Invalid ${fieldName} (${value}), must be between ${min} and ${max}. Using default: ${defaultValue}`);
+           |                 ^
+      1318 |       }
+      1319 |       return defaultValue;
+      1320 |     }
+
+      at TemplumAdapterRegistry.validateNumericRange (src/core/adapter-registry.ts:1317:17)
+      at Object.<anonymous> (tests/core/adapter-registry.test.ts:309:23)
+
+  console.warn
+    Invalid testField (invalid), must be between 10 and 100. Using default: 25
+
+      1315 |     } catch (_error) {
+      1316 |       if (value !== undefined) {
+    > 1317 |         console.warn(`Invalid ${fieldName} (${value}), must be between ${min} and ${max}. Using default: ${defaultValue}`);
+           |                 ^
+      1318 |       }
+      1319 |       return defaultValue;
+      1320 |     }
+
+      at TemplumAdapterRegistry.validateNumericRange (src/core/adapter-registry.ts:1317:17)
+      at Object.<anonymous> (tests/core/adapter-registry.test.ts:312:23)
+
+  console.warn
+    Invalid testEnum (invalid), must be one of: merge, replace, queue. Using default: merge
+
+      1324 |     if (!allowedValues.includes(value)) {
+      1325 |       if (value !== undefined) {
+    > 1326 |         console.warn(`Invalid ${fieldName} (${value}), must be one of: ${allowedValues.join(', ')}. Using default: ${defaultValue}`);
+           |                 ^
+      1327 |       }
+      1328 |       return defaultValue;
+      1329 |     }
+
+      at TemplumAdapterRegistry.validateEnumValue (src/core/adapter-registry.ts:1326:17)
+      at Object.<anonymous> (tests/core/adapter-registry.test.ts:322:23)
+
+  console.warn
+    Invalid resourceManager.memoryLimitMB, removing from configuration {
+      value: 32,
+      bounds: { fieldName: 'resourceManager.memoryLimitMB', min: 64 }
+    }
+
+      1269 |     } catch (error) {
+      1270 |       if (value !== undefined) {
+    > 1271 |         console.warn(`Invalid ${options.fieldName}, removing from configuration`, { value, bounds: options });
+           |                 ^
+      1272 |       }
+      1273 |       delete target[key];
+      1274 |     }
+
+      at TemplumAdapterRegistry.sanitizeNumericOption (src/core/adapter-registry.ts:1271:17)
+      at TemplumAdapterRegistry.validateResourceManagerConfig (src/core/adapter-registry.ts:1342:10)
+      at Object.<anonymous> (tests/core/adapter-registry.test.ts:326:40)
+
+  console.warn
+    Dependency injection validation issues detected: {
+      missingComponents: [ 'stateManager' ],
+      circularDependencies: [],
+      validationIssues: 0
+    }
+
+      1183 |
+      1184 |         if (!this.validationReport.overallValid) {
+    > 1185 |           console.warn('Dependency injection validation issues detected:', {
+           |                   ^
+      1186 |             missingComponents: missing,
+      1187 |             circularDependencies: circularDepPaths,
+      1188 |             validationIssues: issues.length
+
+      at TemplumAdapterRegistry.validateDependencyIntegrity (src/core/adapter-registry.ts:1185:19)
+      at TemplumAdapterRegistry.initialize (src/core/adapter-registry.ts:1400:12)
+      at Object.<anonymous> (tests/core/adapter-registry.test.ts:402:7)
+
+  console.warn
+    Dependency injection validation warnings (non-strict mode): { issues: [], totalIssues: 0 }
+
+      1205 |           );
+      1206 |         } else {
+    > 1207 |           console.warn('Dependency injection validation warnings (non-strict mode):', {
+           |                   ^
+      1208 |             issues: issues.slice(0, 5), // Limit console output
+      1209 |             totalIssues: issues.length
+      1210 |           });
+
+      at TemplumAdapterRegistry.validateDependencyIntegrity (src/core/adapter-registry.ts:1207:19)
+      at TemplumAdapterRegistry.initialize (src/core/adapter-registry.ts:1400:12)
+      at Object.<anonymous> (tests/core/adapter-registry.test.ts:402:7)
+
+PASS tests/core/adapter-registry.test.ts
+  TemplumAdapterRegistry
+    Initialization
+      ✓ initializes with default configuration (2 ms)
+      ✓ initializes with custom configuration (1 ms)
+      ✓ successfully initializes all components (8 ms)
+      ✓ prevents double initialization (3 ms)
+      ✓ emits initialized event on successful initialization (2 ms)
+      ✓ handles initialization errors gracefully (18 ms)
+    Component Creation
+      ✓ creates skin engine component with configuration (2 ms)
+      ✓ creates state manager with validated configuration (2 ms)
+      ✓ creates backend router with circuit breaker configuration (1 ms)
+      ✓ creates resource manager with policy validation (1 ms)
+      ✓ creates observability service with environment configuration (2 ms)
+    Component Validation
+      ✓ validates component interfaces in standard mode (3 ms)
+      ✓ validates dependency wiring between components (1 ms)
+      ✓ detects circular dependencies in dependency graph (2 ms)
+      ✓ validates initialization order requirements (2 ms)
+    Guarded configuration helpers
+      ✓ validateStateManagerConfig rejects non-plain objects (1 ms)
+      ✓ validateStateManagerConfig preserves known numeric options
+    Configuration Validation
+      ✓ validates state manager configuration with defaults (1 ms)
+      ✓ validates numeric ranges with bounds checking (39 ms)
+      ✓ validates enum values with fallback defaults (1 ms)
+      ✓ validates resource manager configuration with constraints (2 ms)
+    Component Access
+      ✓ retrieves specific component by name (1 ms)
+      ✓ throws error when accessing component before initialization
+      ✓ throws error when accessing non-existent component (2 ms)
+      ✓ registers custom component instances
+    Error Handling
+      ✓ handles missing required dependencies gracefully (4 ms)
+      ✓ handles component creation failures in strict mode
+    Lifecycle Management
+      ✓ disposes all components in reverse order (2 ms)
+      ✓ handles disposal errors gracefully (1 ms)
+      ✓ shuts down session manager and observability service during disposal (2 ms)
+      ✓ returns comprehensive status information (1 ms)
+  TemplumComponentFactory
+    Component Factory Methods
+      ✓ creates skin engine with default configuration (1 ms)
+      ✓ creates state manager with validated configuration
+      ✓ creates backend router with circuit breaker configuration (1 ms)
+      ✓ creates resource manager with policy setup
+      ✓ creates observability service with environment configuration
+
+Test Suites: 1 passed, 1 total
+Tests:       36 passed, 36 total
+Snapshots:   0 total
+Time:        1.651 s
+Ran all test suites within paths "tests/core/adapter-registry.test.ts".
+Force exiting Jest: Have you considered using `--detectOpenHandles` to detect async operations that kept running after all tests finished?
+[run-with-timeout] [2025-10-13T13:22:35.157Z] + 2360ms Process exited with code 0.

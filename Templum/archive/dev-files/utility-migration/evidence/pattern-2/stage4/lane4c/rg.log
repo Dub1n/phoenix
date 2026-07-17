@@ -1,0 +1,27 @@
+[run-with-timeout] [2025-10-14T12:30:06.785Z] +  349ms Spawned PID undefined with timeout 30000ms (kill-after 5000ms).
+[run-with-timeout] [2025-10-14T12:30:06.793Z] +  357ms Failed to start command: spawn -- EACCES
+[run-with-timeout] [2025-10-14T12:30:12.539Z] +    5ms Spawned PID 660350 with timeout 30000ms (kill-after 5000ms).
+rg: regex parse error:
+    (?:catch ()
+    ^
+error: unclosed group
+[run-with-timeout] [2025-10-14T12:30:12.543Z] +    9ms Process exited with code 2.
+[run-with-timeout] [2025-10-14T12:30:21.065Z] +    3ms Spawned PID 660478 with timeout 30000ms (kill-after 5000ms).
+    } catch (error) {
+    } catch (error) {
+    } catch (error) {
+    } catch (error) {
+    } catch (error) {
+      } catch (error) {
+    } catch (error) {
+    } catch (error) {
+        } catch (error) {
+    } catch (error) {
+        } catch (preloadedError) {
+        } catch (error) {
+    } catch (error) {
+    } catch (error) {
+    } catch (error) {
+    } catch (error) {
+    } catch (_error) {
+[run-with-timeout] [2025-10-14T12:30:21.069Z] +    7ms Process exited with code 0.

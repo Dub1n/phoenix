@@ -1,0 +1,60 @@
+[run-with-timeout] [2025-10-24T22:15:58.410Z] +    5ms Spawned PID 29576 with timeout 600000ms (kill-after 15000ms).
+
+> templum@1.0.0 phase6-validation
+> npm run build && node dist/src/scripts/run-phase6-integration-validation.js run
+
+
+> templum@1.0.0 build
+> node scripts/clean-build-artifacts.js && tsc
+
+Component interaction tests initialized
+{"timestamp":"2025-10-24T22:16:05.268Z","level":"INFO","context":"phase6-integration-validation","message":"🚀 Phase 6 Integration Validation Starting...\n"}
+🚀 Phase 6 Integration Validation Starting...
+{"timestamp":"2025-10-24T22:16:05.269Z","level":"INFO","context":"phase6-integration-validation","message":"📋 Initializing Phase 6 validation suite..."}
+📋 Initializing Phase 6 validation suite...
+PerformanceRegressionMonitor: Loaded baselines from /home/gabri/dev/VDL_VAULT/Templum/validation-reports/phase6-baselines/phase5-stage6-baseline.json
+{"timestamp":"2025-10-24T22:16:05.274Z","level":"INFO","context":"phase6-integration-validation","message":"📦 Performance baselines: /home/gabri/dev/VDL_VAULT/Templum/validation-reports/phase6-baselines/phase5-stage6-baseline.json"}
+📦 Performance baselines: /home/gabri/dev/VDL_VAULT/Templum/validation-reports/phase6-baselines/phase5-stage6-baseline.json
+Phase6IntegrationValidationSuite: Initializing...
+{"timestamp":"2025-10-24T22:16:05.274Z","level":"INFO","context":"phase6-integration-validation","message":"✅ All backend services ready"}
+✅ All backend services ready
+PerformanceRegressionMonitor: Starting continuous monitoring (30000ms interval)
+Phase6IntegrationValidationSuite: Initialization complete
+{"timestamp":"2025-10-24T22:16:05.275Z","level":"INFO","context":"phase6-integration-validation","message":"✅ Validation suite initialized\n"}
+✅ Validation suite initialized
+{"timestamp":"2025-10-24T22:16:05.275Z","level":"INFO","context":"phase6-integration-validation","message":"🔄 Running comprehensive integration validation..."}
+🔄 Running comprehensive integration validation...
+{"timestamp":"2025-10-24T22:16:05.275Z","level":"INFO","context":"phase6-integration-validation","message":"   • Multi-system workflow testing (PCL ↔ Haruspex ↔ Templum)"}
+   • Multi-system workflow testing (PCL ↔ Haruspex ↔ Templum)
+{"timestamp":"2025-10-24T22:16:05.275Z","level":"INFO","context":"phase6-integration-validation","message":"   • Cross-interface consistency validation (VSCode, CLI, Command)"}
+   • Cross-interface consistency validation (VSCode, CLI, Command)
+{"timestamp":"2025-10-24T22:16:05.275Z","level":"INFO","context":"phase6-integration-validation","message":"   • Performance regression monitoring (Phase 5 baselines)"}
+   • Performance regression monitoring (Phase 5 baselines)
+{"timestamp":"2025-10-24T22:16:05.275Z","level":"INFO","context":"phase6-integration-validation","message":"   • Production readiness verification"}
+   • Production readiness verification
+{"timestamp":"2025-10-24T22:16:05.275Z","level":"INFO","context":"phase6-integration-validation","message":"   • System reliability and failover testing\n"}
+   • System reliability and failover testing
+Phase6IntegrationValidationSuite: Starting comprehensive Phase 6 validation...
+MultiSystemWorkflowOrchestrator: Starting workflow pcl-to-haruspex (workflow_1761344165275_2)
+PerformanceRegressionMonitor: Starting regression testing against Phase 5 baselines...
+CrossInterfaceValidator: Starting cross-interface validation...
+ProductionReadinessValidator: Starting production readiness validation...
+CrossInterfaceValidator: Validation complete. Overall consistency: 100%
+{"timestamp":"2025-10-24T22:16:05.279Z","level":"INFO","context":"phase6-integration-validation","message":"✅ Cross-interface validation: 100.0% consistency"}
+✅ Cross-interface validation: 100.0% consistency
+MultiSystemWorkflowOrchestrator: Workflow workflow_1761344165275_2 completed in 5ms
+{"timestamp":"2025-10-24T22:16:05.280Z","level":"INFO","context":"phase6-integration-validation","message":"✅ Workflow completed: pcl-to-haruspex (5ms)"}
+✅ Workflow completed: pcl-to-haruspex (5ms)
+MultiSystemWorkflowOrchestrator: Starting workflow haruspex-to-templum (workflow_1761344165280_3)
+MultiSystemWorkflowOrchestrator: Workflow workflow_1761344165280_3 completed in 1ms
+{"timestamp":"2025-10-24T22:16:05.281Z","level":"INFO","context":"phase6-integration-validation","message":"✅ Workflow completed: haruspex-to-templum (1ms)"}
+✅ Workflow completed: haruspex-to-templum (1ms)
+MultiSystemWorkflowOrchestrator: Starting workflow end-to-end-tdd (workflow_1761344165281_4)
+MultiSystemWorkflowOrchestrator: Workflow workflow_1761344165281_4 completed in 0ms
+{"timestamp":"2025-10-24T22:16:05.282Z","level":"INFO","context":"phase6-integration-validation","message":"✅ Workflow completed: end-to-end-tdd (0ms)"}
+✅ Workflow completed: end-to-end-tdd (0ms)
+MultiSystemWorkflowOrchestrator: Starting workflow cross-interface-sync (workflow_1761344165282_5)
+MultiSystemWorkflowOrchestrator: Workflow workflow_1761344165282_5 completed in 1ms
+{"timestamp":"2025-10-24T22:16:05.283Z","level":"INFO","context":"phase6-integration-validation","message":"✅ Workflow completed: cross-interface-sync (1ms)"}
+✅ Workflow completed: cross-interface-sync (1ms)
+[run-with-timeout] [2025-10-24T22:16:05.290Z] + 6885ms Process exited with code 0.

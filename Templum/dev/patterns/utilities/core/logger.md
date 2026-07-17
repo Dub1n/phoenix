@@ -197,7 +197,7 @@ httpLog.info('HTTP request started');  // [backend-router:http]
 ipcLog.info('IPC connection opened');   // [backend-router:ipc]
 ```
 
-> **2025-10-24 Status:** Stage 4/6 migrations plus the Stage 7 sweep eliminated all 2,810 console calls. Validation artefacts: `dev/architecture/logs/pattern-1-stage7-jest-ci-20251024T222520Z.log`, `dev/architecture/logs/pattern-1-stage7-phase6-health-20251024T222834Z.log`, `dev/architecture/logs/pattern-1-stage7-phase6-validation-20251024T222848Z.log`, `dev/architecture/logs/pattern-1-stage7-sweep-20251024T224015Z.log`.
+> **2025-10-24 Status:** Stage 4/6 migrations plus the Stage 7 sweep eliminated all 2,810 console calls. Validation artefacts: `Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage7/jest-ci-20251024T222520Z.log`, `Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage7/phase6-health-20251024T222834Z.log`, `Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage7/phase6-validation-20251024T222848Z.log`, `Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage7/sweep-20251024T224015Z.log`.
 
 #### Files Using This Pattern
 
@@ -279,10 +279,10 @@ Future Stage 6 lanes should reference this helper instead of introducing bespo
 
 **After Migration**:
 
-- [x] Verified all 2,810 console calls eliminated (Stage 7 sweep log `dev/architecture/logs/pattern-1-stage7-sweep-20251024T224015Z.log`).
+- [x] Verified all 2,810 console calls eliminated (Stage 7 sweep log `Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage7/sweep-20251024T224015Z.log`).
 - [x] Confirmed consistent log format across components via Jest + Phase 6 validation runs.
 - [x] Tested log level filtering through coverage in `src/utils/__tests__/logger.test.ts`.
-- [x] Validated performance tracking through guardrail suites recorded in `dev/architecture/logs/pattern-1-stage7-jest-ci-20251024T222520Z.log`.
+- [x] Validated performance tracking through guardrail suites recorded in `Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage7/jest-ci-20251024T222520Z.log`.
 
 #### Anti-Patterns
 

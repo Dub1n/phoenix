@@ -1,0 +1,1 @@
+      logWarning(`Jest output parsing failed for detailed analysis: ${error.message}`);

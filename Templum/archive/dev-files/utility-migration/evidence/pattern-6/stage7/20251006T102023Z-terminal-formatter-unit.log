@@ -1,0 +1,4 @@
+
+> templum@1.0.0 test:ci
+> node scripts/run-jest-ci.mjs --runTestsByPath src/tests/utils/terminal-formatter.test.ts
+

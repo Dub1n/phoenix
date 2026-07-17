@@ -1,0 +1,37 @@
+[run-with-timeout] [2025-10-24T22:16:10.319Z] +    4ms Spawned PID 29745 with timeout 600000ms (kill-after 15000ms).
+
+> templum@1.0.0 phase6-health
+> npm run build && node dist/src/scripts/run-phase6-integration-validation.js health
+
+
+> templum@1.0.0 build
+> node scripts/clean-build-artifacts.js && tsc
+
+Component interaction tests initialized
+{"timestamp":"2025-10-24T22:16:17.057Z","level":"INFO","context":"phase6-integration-validation","message":"🏥 Phase 6 System Health Check\n"}
+🏥 Phase 6 System Health Check
+PerformanceRegressionMonitor: Loaded baselines from /home/gabri/dev/VDL_VAULT/Templum/validation-reports/phase6-baselines/phase5-stage6-baseline.json
+Phase6IntegrationValidationSuite: Initializing...
+PerformanceRegressionMonitor: Starting continuous monitoring (30000ms interval)
+Phase6IntegrationValidationSuite: Initialization complete
+Phase6IntegrationValidationSuite: Checking system health...
+{"timestamp":"2025-10-24T22:16:17.060Z","level":"INFO","context":"phase6-integration-validation","message":"Service Health Status:"}
+Service Health Status:
+{"timestamp":"2025-10-24T22:16:17.061Z","level":"INFO","context":"phase6-integration-validation","message":"──────────────────────────────────────────────────"}
+──────────────────────────────────────────────────
+{"timestamp":"2025-10-24T22:16:17.061Z","level":"INFO","context":"phase6-integration-validation","message":"  HARUSPEX       ✅ HEALTHY Response:      0.0ms Memory:      8.4MB Errors: 0.0%"}
+  HARUSPEX       ✅ HEALTHY Response:      0.0ms Memory:      8.4MB Errors: 0.0%
+{"timestamp":"2025-10-24T22:16:17.061Z","level":"INFO","context":"phase6-integration-validation","message":"       PCL       ✅ HEALTHY Response:      0.0ms Memory:      8.4MB Errors: 0.0%"}
+       PCL       ✅ HEALTHY Response:      0.0ms Memory:      8.4MB Errors: 0.0%
+{"timestamp":"2025-10-24T22:16:17.061Z","level":"INFO","context":"phase6-integration-validation","message":"   TEMPLUM       ✅ HEALTHY Response:      0.0ms Memory:      8.4MB Errors: 0.0%"}
+   TEMPLUM       ✅ HEALTHY Response:      0.0ms Memory:      8.4MB Errors: 0.0%
+{"timestamp":"2025-10-24T22:16:17.061Z","level":"INFO","context":"phase6-integration-validation","message":"──────────────────────────────────────────────────"}
+──────────────────────────────────────────────────
+{"timestamp":"2025-10-24T22:16:17.061Z","level":"INFO","context":"phase6-integration-validation","message":"Overall System Health: ✅ HEALTHY"}
+[run-with-timeout] [2025-10-24T22:16:17.061Z] + 6746ms Pattern "Overall System Health: ✅ HEALTHY" detected on stdout. Sending SIGTERM to PID 29745.
+Overall System Health: ✅ HEALTHY
+{"timestamp":"2025-10-24T22:16:17.061Z","level":"INFO","context":"phase6-integration-validation","message":"Phase 6 Note: Phase 6 readiness score disabled—use report.status for outcome."}
+Phase 6 Note: Phase 6 readiness score disabled—use report.status for outcome.
+Phase6IntegrationValidationSuite: Shutting down...
+PerformanceRegressionMonitor: Continuous monitoring stopped
+[run-with-timeout] [2025-10-24T22:16:17.065Z] + 6750ms Process exited due to signal SIGTERM.

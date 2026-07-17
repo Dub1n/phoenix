@@ -1,0 +1,1 @@
+  logError(`Unhandled promise rejection detected: ${reason.message}`);

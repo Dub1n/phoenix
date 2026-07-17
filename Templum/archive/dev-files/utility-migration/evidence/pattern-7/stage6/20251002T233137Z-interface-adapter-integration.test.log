@@ -1,0 +1,88 @@
+[run-with-timeout] [2025-10-02T23:31:37.617Z] +    6ms Spawned PID 461436 with timeout 600000ms (kill-after 5000ms).
+  console.warn
+    VSCodeInterfaceAdapter: Cannot apply skin - adapter or orchestrator not ready
+
+      103 |   async applySkin(skinDefinition: UniversalSkinDefinition): Promise<void> {
+      104 |     if (!this.view || !this.orchestrator.isInitialized()) {
+    > 105 |       console.warn('VSCodeInterfaceAdapter: Cannot apply skin - adapter or orchestrator not ready');
+          |               ^
+      106 |       return;
+      107 |     }
+      108 |
+
+      at VSCodeInterfaceAdapter.applySkin (src/interfaces/vscode-adapter-abstracted.ts:105:15)
+      at Object.<anonymous> (tests/interfaces/interface-adapter-integration.test.ts:298:34)
+
+  console.warn
+    VSCodeInterfaceAdapter: Cannot apply skin - adapter or orchestrator not ready
+
+      103 |   async applySkin(skinDefinition: UniversalSkinDefinition): Promise<void> {
+      104 |     if (!this.view || !this.orchestrator.isInitialized()) {
+    > 105 |       console.warn('VSCodeInterfaceAdapter: Cannot apply skin - adapter or orchestrator not ready');
+          |               ^
+      106 |       return;
+      107 |     }
+      108 |
+
+      at VSCodeInterfaceAdapter.applySkin (src/interfaces/vscode-adapter-abstracted.ts:105:15)
+      at Object.<anonymous> (tests/interfaces/interface-adapter-integration.test.ts:826:25)
+
+  console.error
+    CommandInterfaceAdapter: State sync failed: Cannot read properties of null (reading 'timestamp')
+
+      156 |     } catch (error) {
+      157 |       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    > 158 |       console.error('CommandInterfaceAdapter: State sync failed:', errorMessage);
+          |               ^
+      159 |       
+      160 |       this.emit('error', {
+      161 |         timestamp: Date.now(),
+
+      at CommandInterfaceAdapter.syncState (src/interfaces/command-adapter-abstracted.ts:158:15)
+      at Object.<anonymous> (tests/interfaces/interface-adapter-integration.test.ts:872:28)
+
+PASS tests/interfaces/interface-adapter-integration.test.ts (8.07 s)
+  Interface Adapter Integration Tests
+    VSCode Interface Adapter Integration
+      ✓ initializes with orchestrator and registers interface (10 ms)
+      ✓ returns correct interface type (2 ms)
+      ✓ applies skin through orchestrator integration (48 ms)
+      ✓ synchronizes state updates from orchestrator (1 ms)
+      ✓ reports accurate adapter status (2 ms)
+      ✓ supports skin compatibility validation (2 ms)
+      ✓ executes commands through orchestrator (2 ms)
+    CLI Interface Adapter Integration
+      ✓ initializes with orchestrator and registers interface (39 ms)
+      ✓ returns correct interface type (5 ms)
+      ✓ synchronizes state updates from orchestrator (10 ms)
+      ✓ reports accurate adapter status (4 ms)
+      ✓ applies skin through orchestrator integration (7 ms)
+    Terminal UI Theme Integrity
+      ✓ ensureThemeIntegrity falls back on invalid theme definitions (2 ms)
+      ✓ ensureThemeIntegrity preserves valid themes (1 ms)
+    CLI Window and Theme Baselines
+      ✓ captures default theme responsive baseline snapshot (3 ms)
+      ✓ captures monochrome fallback baseline snapshot (2 ms)
+    Command Interface Adapter Integration
+      ✓ initializes with orchestrator and registers interface (2 ms)
+      ✓ returns correct interface type (3 ms)
+      ✓ synchronizes state updates from orchestrator (1 ms)
+      ✓ reports accurate adapter status with queue metrics (1 ms)
+      ✓ executes commands through orchestrator with proper context (1 ms)
+    Cross-Interface Integration Scenarios
+      ✓ multiple interface adapters register successfully (3 ms)
+      ✓ orchestrator reports all active interfaces in system status (8 ms)
+      ✓ state synchronization broadcasts to all registered interfaces (4 ms)
+      ✓ interface switching maintains orchestrator connection (8 ms)
+      ✓ backend skin loading works across all interface types (12 ms)
+    Error Handling and Resilience
+      ✓ adapter handles orchestrator initialization failure gracefully (10 ms)
+      ✓ adapter status reflects orchestrator connection state (6 ms)
+      ✓ interface adapters handle state sync errors appropriately (11 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       29 passed, 29 total
+Snapshots:   2 passed, 2 total
+Time:        9.461 s, estimated 13 s
+Ran all test suites within paths "tests/interfaces/interface-adapter-integration.test.ts".
+[run-with-timeout] [2025-10-02T23:31:55.288Z] +17677ms Process exited with code 0.

@@ -1,0 +1,1501 @@
+[run-with-timeout] [2025-10-14T21:27:38.891Z] +    4ms Spawned PID 802067 with timeout 600000ms (kill-after 5000ms).
+FAIL src/tests/backend/manual-override-flow.test.ts
+  ● Console
+
+    console.warn
+      [TEMPLUM_CORE] No orchestrator available - skin loaded into command router only
+
+      2899 |             console.log(`[TEMPLUM_CORE] Successfully loaded skin from ${backendId} into Templum Core`);
+      2900 |           } else {
+    > 2901 |             console.warn(`[TEMPLUM_CORE] No orchestrator available - skin loaded into command router only`);
+           |                     ^
+      2902 |           }
+      2903 |         } catch (coreError) {
+      2904 |           console.warn(`[TEMPLUM_CORE] Failed to load skin into Templum Core for ${backendId}:`, coreError);
+
+      at TemplumBackendServiceRouter.warn [as loadBackendSkin] (src/backend/backend-service-router.ts:2901:21)
+      at TemplumBackendServiceRouter.getServiceVersion (src/backend/backend-service-router.ts:1559:32)
+      at TemplumBackendServiceRouter.connectToService (src/backend/backend-service-router.ts:3523:73)
+      at TemplumBackendServiceRouter.registerBackendFromSkin (src/backend/backend-service-router.ts:938:32)
+      at Object.<anonymous> (src/tests/backend/manual-override-flow.test.ts:100:5)
+
+    console.warn
+      [TEMPLUM_CORE] No orchestrator available - skin loaded into command router only
+
+      2899 |             console.log(`[TEMPLUM_CORE] Successfully loaded skin from ${backendId} into Templum Core`);
+      2900 |           } else {
+    > 2901 |             console.warn(`[TEMPLUM_CORE] No orchestrator available - skin loaded into command router only`);
+           |                     ^
+      2902 |           }
+      2903 |         } catch (coreError) {
+      2904 |           console.warn(`[TEMPLUM_CORE] Failed to load skin into Templum Core for ${backendId}:`, coreError);
+
+      at TemplumBackendServiceRouter.warn [as loadBackendSkin] (src/backend/backend-service-router.ts:2901:21)
+      at TemplumBackendServiceRouter.getServiceVersion (src/backend/backend-service-router.ts:1559:32)
+      at TemplumBackendServiceRouter.connectToService (src/backend/backend-service-router.ts:3523:73)
+      at TemplumBackendServiceRouter.registerBackendFromSkin (src/backend/backend-service-router.ts:938:32)
+      at Object.<anonymous> (src/tests/backend/manual-override-flow.test.ts:100:5)
+
+    console.warn
+      [TEMPLUM_CORE] No orchestrator available - skin loaded into command router only
+
+      2899 |             console.log(`[TEMPLUM_CORE] Successfully loaded skin from ${backendId} into Templum Core`);
+      2900 |           } else {
+    > 2901 |             console.warn(`[TEMPLUM_CORE] No orchestrator available - skin loaded into command router only`);
+           |                     ^
+      2902 |           }
+      2903 |         } catch (coreError) {
+      2904 |           console.warn(`[TEMPLUM_CORE] Failed to load skin into Templum Core for ${backendId}:`, coreError);
+
+      at TemplumBackendServiceRouter.warn [as loadBackendSkin] (src/backend/backend-service-router.ts:2901:21)
+      at TemplumBackendServiceRouter.getServiceVersion (src/backend/backend-service-router.ts:1559:32)
+      at TemplumBackendServiceRouter.connectToService (src/backend/backend-service-router.ts:3523:73)
+      at TemplumBackendServiceRouter.registerBackendFromSkin (src/backend/backend-service-router.ts:938:32)
+      at Object.<anonymous> (src/tests/backend/manual-override-flow.test.ts:100:5)
+
+  ● Manual Override Flow › applies manual override and emits sanitized descriptor
+
+    Logger guardrail violation (manual override suites): console.log called 29 times; console.debug called 1 time
+
+      36 |         .map(({ label, calls }) => `${label} called ${calls} time${calls === 1 ? '' : 's'}`)
+      37 |         .join('; ');
+    > 38 |       throw new Error(`${MANUAL_OVERRIDE_LOGGER_GUARDRAIL_MESSAGE}: ${details}`);
+         |             ^
+      39 |     }
+      40 |
+      41 |     return result;
+
+      at withManualOverrideLoggerGuardrail (src/tests/backend/__utils__/logger-guardrail.ts:38:13)
+      at Object.<anonymous> (src/tests/backend/manual-override-flow.test.ts:132:5)
+
+  ● Manual Override Flow › clears manual override and resets snapshot
+
+    Logger guardrail violation (manual override suites): console.log called 30 times; console.debug called 1 time
+
+      36 |         .map(({ label, calls }) => `${label} called ${calls} time${calls === 1 ? '' : 's'}`)
+      37 |         .join('; ');
+    > 38 |       throw new Error(`${MANUAL_OVERRIDE_LOGGER_GUARDRAIL_MESSAGE}: ${details}`);
+         |             ^
+      39 |     }
+      40 |
+      41 |     return result;
+
+      at withManualOverrideLoggerGuardrail (src/tests/backend/__utils__/logger-guardrail.ts:38:13)
+      at Object.<anonymous> (src/tests/backend/manual-override-flow.test.ts:153:5)
+
+  ● Manual Override Flow › auto-clears override when service is removed
+
+    Logger guardrail violation (manual override suites): console.log called 29 times; console.debug called 1 time
+
+      36 |         .map(({ label, calls }) => `${label} called ${calls} time${calls === 1 ? '' : 's'}`)
+      37 |         .join('; ');
+    > 38 |       throw new Error(`${MANUAL_OVERRIDE_LOGGER_GUARDRAIL_MESSAGE}: ${details}`);
+         |             ^
+      39 |     }
+      40 |
+      41 |     return result;
+
+      at withManualOverrideLoggerGuardrail (src/tests/backend/__utils__/logger-guardrail.ts:38:13)
+      at Object.<anonymous> (src/tests/backend/manual-override-flow.test.ts:163:5)
+
+FAIL src/tests/backend/manual-override-watcher.integration.test.ts
+  ● Console
+
+    console.warn
+      [SERVICE_DISCOVERY] No services connected - system running in standalone mode
+
+      1114 |
+      1115 |     if (discoveredServices.length === 0) {
+    > 1116 |       console.warn('[SERVICE_DISCOVERY] No services connected - system running in standalone mode');
+           |               ^
+      1117 |     } else {
+      1118 |       console.log(`[SERVICE_DISCOVERY] Successfully connected to ${discoveredServices.length} backend services`);
+      1119 |       if (this.healthMonitoringEnabled) {
+
+      at TemplumBackendServiceRouter.warn [as discoverAndConnectGeneric] (src/backend/backend-service-router.ts:1116:15)
+      at TemplumBackendServiceRouter.discoverAndConnect (src/backend/backend-service-router.ts:1012:5)
+      at Object.<anonymous> (src/tests/backend/manual-override-watcher.integration.test.ts:80:5)
+
+  ● Manual override watcher integration › applies override from watcher manifest and auto-clears when manifest is removed
+
+    Logger guardrail violation (manual override suites): console.log called 32 times
+
+      36 |         .map(({ label, calls }) => `${label} called ${calls} time${calls === 1 ? '' : 's'}`)
+      37 |         .join('; ');
+    > 38 |       throw new Error(`${MANUAL_OVERRIDE_LOGGER_GUARDRAIL_MESSAGE}: ${details}`);
+         |             ^
+      39 |     }
+      40 |
+      41 |     return result;
+
+      at withManualOverrideLoggerGuardrail (src/tests/backend/__utils__/logger-guardrail.ts:38:13)
+      at Object.<anonymous> (src/tests/backend/manual-override-watcher.integration.test.ts:127:5)
+
+PASS src/tests/backend/comprehensive-backend-validation.test.ts (8.167 s)
+  ● Console
+
+    console.warn
+      [HTTP] Failed minimal-example endpoint: http://localhost:3001/api/skins/default - Error: HTTP 404 Not Found
+
+      2493 |         
+      2494 |       } catch (error) {
+    > 2495 |         console.warn(`[HTTP] Failed ${connection.id} endpoint: ${attempt.endpoint} - ${error}`);
+           |                 ^
+      2496 |         lastError = error as Error;
+      2497 |         continue;
+      2498 |       }
+
+      at TemplumBackendServiceRouter.warn [as tryHTTPEndpointsWithFallback] (src/backend/backend-service-router.ts:2495:17)
+      at TemplumBackendServiceRouter.callHTTPService (src/backend/backend-service-router.ts:2414:14)
+      at TemplumBackendServiceRouter.callBackendServiceAPI (src/backend/backend-service-router.ts:2286:18)
+      at TemplumBackendServiceRouter.loadBackendSkin (src/backend/backend-service-router.ts:2855:24)
+      at TemplumBackendServiceRouter.getServiceVersion (src/backend/backend-service-router.ts:1559:32)
+      at TemplumBackendServiceRouter.connectToService (src/backend/backend-service-router.ts:3523:73)
+      at TemplumBackendServiceRouter.registerBackendFromSkin (src/backend/backend-service-router.ts:938:32)
+      at Object.<anonymous> (src/tests/backend/comprehensive-backend-validation.test.ts:568:7)
+
+    console.warn
+      [TEMPLUM_CORE] Failed to load skin into Templum Core for minimal-example: TypeError: this.orchestrator.loadSkin is not a function
+          at TemplumBackendServiceRouter.loadSkin [as loadBackendSkin] (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:2898:37)
+          at processTicksAndRejections (node:internal/process/task_queues:105:5)
+          at TemplumBackendServiceRouter.getServiceVersion (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:1559:32)
+          at TemplumBackendServiceRouter.connectToService (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:3523:73)
+          at TemplumBackendServiceRouter.registerBackendFromSkin (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:938:32)
+          at Object.<anonymous> (/home/gabri/dev/VDL_VAULT/Templum/src/tests/backend/comprehensive-backend-validation.test.ts:568:7)
+
+      2902 |           }
+      2903 |         } catch (coreError) {
+    > 2904 |           console.warn(`[TEMPLUM_CORE] Failed to load skin into Templum Core for ${backendId}:`, coreError);
+           |                   ^
+      2905 |           // Don't fail the entire skin loading process due to core loading issues
+      2906 |         }
+      2907 |
+
+      at TemplumBackendServiceRouter.warn [as loadBackendSkin] (src/backend/backend-service-router.ts:2904:19)
+      at TemplumBackendServiceRouter.getServiceVersion (src/backend/backend-service-router.ts:1559:32)
+      at TemplumBackendServiceRouter.connectToService (src/backend/backend-service-router.ts:3523:73)
+      at TemplumBackendServiceRouter.registerBackendFromSkin (src/backend/backend-service-router.ts:938:32)
+      at Object.<anonymous> (src/tests/backend/comprehensive-backend-validation.test.ts:568:7)
+
+    console.warn
+      [HTTP] Failed minimal-example endpoint: http://localhost:3001/api/skins/default - Error: HTTP 404 Not Found
+
+      2493 |         
+      2494 |       } catch (error) {
+    > 2495 |         console.warn(`[HTTP] Failed ${connection.id} endpoint: ${attempt.endpoint} - ${error}`);
+           |                 ^
+      2496 |         lastError = error as Error;
+      2497 |         continue;
+      2498 |       }
+
+      at TemplumBackendServiceRouter.warn [as tryHTTPEndpointsWithFallback] (src/backend/backend-service-router.ts:2495:17)
+      at TemplumBackendServiceRouter.callHTTPService (src/backend/backend-service-router.ts:2414:14)
+      at TemplumBackendServiceRouter.callBackendServiceAPI (src/backend/backend-service-router.ts:2286:18)
+      at TemplumBackendServiceRouter.loadBackendSkin (src/backend/backend-service-router.ts:2855:24)
+      at TemplumBackendServiceRouter.connectToService (src/backend/backend-service-router.ts:3528:36)
+      at TemplumBackendServiceRouter.registerBackendFromSkin (src/backend/backend-service-router.ts:938:32)
+      at Object.<anonymous> (src/tests/backend/comprehensive-backend-validation.test.ts:568:7)
+
+    console.warn
+      [2025-10-14T21:27:41.763Z] [serialization-utils:backend:dynamic-command-router:registration] [WARN] Duplicate command registration detected {
+        commandId: 'example.hello',
+        existingBackendId: 'minimal-example',
+        backendId: 'minimal-example'
+      }
+
+      57 |
+      58 |       if (data !== undefined || durationMs !== undefined) {
+    > 59 |         target(prefix, message, mergePayload(data, durationMs));
+         |         ^
+      60 |       } else {
+      61 |         target(prefix, message);
+      62 |       }
+
+      at Object.target [as log] (src/utils/logger.ts:59:9)
+      at Logger.log [as dispatch] (src/utils/logger.ts:181:35)
+      at Logger.dispatch [as warn] (src/utils/logger.ts:116:10)
+      at DynamicCommandRouter.warn [as registerBackend] (src/backend/dynamic-command-router.ts:109:35)
+      at TemplumBackendServiceRouter.registerBackend (src/backend/backend-service-router.ts:2888:30)
+      at TemplumBackendServiceRouter.connectToService (src/backend/backend-service-router.ts:3528:36)
+      at TemplumBackendServiceRouter.registerBackendFromSkin (src/backend/backend-service-router.ts:938:32)
+      at Object.<anonymous> (src/tests/backend/comprehensive-backend-validation.test.ts:568:7)
+
+    console.warn
+      [2025-10-14T21:27:41.768Z] [serialization-utils:backend:dynamic-command-router:registration] [WARN] Duplicate command registration detected {
+        commandId: 'example.status',
+        existingBackendId: 'minimal-example',
+        backendId: 'minimal-example'
+      }
+
+      57 |
+      58 |       if (data !== undefined || durationMs !== undefined) {
+    > 59 |         target(prefix, message, mergePayload(data, durationMs));
+         |         ^
+      60 |       } else {
+      61 |         target(prefix, message);
+      62 |       }
+
+      at Object.target [as log] (src/utils/logger.ts:59:9)
+      at Logger.log [as dispatch] (src/utils/logger.ts:181:35)
+      at Logger.dispatch [as warn] (src/utils/logger.ts:116:10)
+      at DynamicCommandRouter.warn [as registerBackend] (src/backend/dynamic-command-router.ts:109:35)
+      at TemplumBackendServiceRouter.registerBackend (src/backend/backend-service-router.ts:2888:30)
+      at TemplumBackendServiceRouter.connectToService (src/backend/backend-service-router.ts:3528:36)
+      at TemplumBackendServiceRouter.registerBackendFromSkin (src/backend/backend-service-router.ts:938:32)
+      at Object.<anonymous> (src/tests/backend/comprehensive-backend-validation.test.ts:568:7)
+
+    console.warn
+      [TEMPLUM_CORE] Failed to load skin into Templum Core for minimal-example: TypeError: this.orchestrator.loadSkin is not a function
+          at TemplumBackendServiceRouter.loadSkin [as loadBackendSkin] (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:2898:37)
+          at processTicksAndRejections (node:internal/process/task_queues:105:5)
+          at TemplumBackendServiceRouter.connectToService (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:3528:36)
+          at TemplumBackendServiceRouter.registerBackendFromSkin (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:938:32)
+          at Object.<anonymous> (/home/gabri/dev/VDL_VAULT/Templum/src/tests/backend/comprehensive-backend-validation.test.ts:568:7)
+
+      2902 |           }
+      2903 |         } catch (coreError) {
+    > 2904 |           console.warn(`[TEMPLUM_CORE] Failed to load skin into Templum Core for ${backendId}:`, coreError);
+           |                   ^
+      2905 |           // Don't fail the entire skin loading process due to core loading issues
+      2906 |         }
+      2907 |
+
+      at TemplumBackendServiceRouter.warn [as loadBackendSkin] (src/backend/backend-service-router.ts:2904:19)
+      at TemplumBackendServiceRouter.connectToService (src/backend/backend-service-router.ts:3528:36)
+      at TemplumBackendServiceRouter.registerBackendFromSkin (src/backend/backend-service-router.ts:938:32)
+      at Object.<anonymous> (src/tests/backend/comprehensive-backend-validation.test.ts:568:7)
+
+    console.warn
+      [SERVICE_CONNECTION] Skin loading failed for minimal-example: TypeError: this.orchestrator.loadSkin is not a function
+          at TemplumBackendServiceRouter.loadSkin [as connectToService] (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:3530:39)
+          at processTicksAndRejections (node:internal/process/task_queues:105:5)
+          at TemplumBackendServiceRouter.registerBackendFromSkin (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:938:32)
+          at Object.<anonymous> (/home/gabri/dev/VDL_VAULT/Templum/src/tests/backend/comprehensive-backend-validation.test.ts:568:7)
+
+      3531 |             }
+      3532 |           } catch (skinError) {
+    > 3533 |             console.warn(`[SERVICE_CONNECTION] Skin loading failed for ${serviceId}:`, skinError);
+           |                     ^
+      3534 |             // Continue - connection successful even if skin loading failed
+      3535 |           }
+      3536 |         }
+
+      at TemplumBackendServiceRouter.warn [as connectToService] (src/backend/backend-service-router.ts:3533:21)
+      at TemplumBackendServiceRouter.registerBackendFromSkin (src/backend/backend-service-router.ts:938:32)
+      at Object.<anonymous> (src/tests/backend/comprehensive-backend-validation.test.ts:568:7)
+
+    console.warn
+      [HTTP] Failed minimal-example endpoint: http://localhost:3001/api/commands/execute - Error: HTTP 404 Not Found
+
+      2493 |         
+      2494 |       } catch (error) {
+    > 2495 |         console.warn(`[HTTP] Failed ${connection.id} endpoint: ${attempt.endpoint} - ${error}`);
+           |                 ^
+      2496 |         lastError = error as Error;
+      2497 |         continue;
+      2498 |       }
+
+      at TemplumBackendServiceRouter.warn [as tryHTTPEndpointsWithFallback] (src/backend/backend-service-router.ts:2495:17)
+      at TemplumBackendServiceRouter.callHTTPService (src/backend/backend-service-router.ts:2414:14)
+      at TemplumBackendServiceRouter.callBackendServiceAPI (src/backend/backend-service-router.ts:2286:18)
+      at TemplumBackendServiceRouter.executeCommand (src/backend/backend-service-router.ts:3467:24)
+      at Object.<anonymous> (src/tests/backend/comprehensive-backend-validation.test.ts:578:29)
+
+    console.warn
+      [HTTP] Failed minimal-example endpoint: http://localhost:3011/api/skins/default - Error: HTTP 404 Not Found
+
+      2493 |         
+      2494 |       } catch (error) {
+    > 2495 |         console.warn(`[HTTP] Failed ${connection.id} endpoint: ${attempt.endpoint} - ${error}`);
+           |                 ^
+      2496 |         lastError = error as Error;
+      2497 |         continue;
+      2498 |       }
+
+      at TemplumBackendServiceRouter.warn [as tryHTTPEndpointsWithFallback] (src/backend/backend-service-router.ts:2495:17)
+      at TemplumBackendServiceRouter.callHTTPService (src/backend/backend-service-router.ts:2414:14)
+      at TemplumBackendServiceRouter.callBackendServiceAPI (src/backend/backend-service-router.ts:2286:18)
+      at TemplumBackendServiceRouter.loadBackendSkin (src/backend/backend-service-router.ts:2855:24)
+      at TemplumBackendServiceRouter.getServiceVersion (src/backend/backend-service-router.ts:1559:32)
+      at TemplumBackendServiceRouter.connectToService (src/backend/backend-service-router.ts:3523:73)
+      at TemplumBackendServiceRouter.registerBackendFromSkin (src/backend/backend-service-router.ts:938:32)
+      at Object.<anonymous> (src/tests/backend/comprehensive-backend-validation.test.ts:594:7)
+
+    console.warn
+      [TEMPLUM_CORE] Failed to load skin into Templum Core for minimal-example: TypeError: this.orchestrator.loadSkin is not a function
+          at TemplumBackendServiceRouter.loadSkin [as loadBackendSkin] (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:2898:37)
+          at processTicksAndRejections (node:internal/process/task_queues:105:5)
+          at TemplumBackendServiceRouter.getServiceVersion (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:1559:32)
+          at TemplumBackendServiceRouter.connectToService (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:3523:73)
+          at TemplumBackendServiceRouter.registerBackendFromSkin (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:938:32)
+          at Object.<anonymous> (/home/gabri/dev/VDL_VAULT/Templum/src/tests/backend/comprehensive-backend-validation.test.ts:594:7)
+
+      2902 |           }
+      2903 |         } catch (coreError) {
+    > 2904 |           console.warn(`[TEMPLUM_CORE] Failed to load skin into Templum Core for ${backendId}:`, coreError);
+           |                   ^
+      2905 |           // Don't fail the entire skin loading process due to core loading issues
+      2906 |         }
+      2907 |
+
+      at TemplumBackendServiceRouter.warn [as loadBackendSkin] (src/backend/backend-service-router.ts:2904:19)
+      at TemplumBackendServiceRouter.getServiceVersion (src/backend/backend-service-router.ts:1559:32)
+      at TemplumBackendServiceRouter.connectToService (src/backend/backend-service-router.ts:3523:73)
+      at TemplumBackendServiceRouter.registerBackendFromSkin (src/backend/backend-service-router.ts:938:32)
+      at Object.<anonymous> (src/tests/backend/comprehensive-backend-validation.test.ts:594:7)
+
+    console.warn
+      [HTTP] Failed minimal-example endpoint: http://localhost:3011/api/skins/default - Error: HTTP 404 Not Found
+
+      2493 |         
+      2494 |       } catch (error) {
+    > 2495 |         console.warn(`[HTTP] Failed ${connection.id} endpoint: ${attempt.endpoint} - ${error}`);
+           |                 ^
+      2496 |         lastError = error as Error;
+      2497 |         continue;
+      2498 |       }
+
+      at TemplumBackendServiceRouter.warn [as tryHTTPEndpointsWithFallback] (src/backend/backend-service-router.ts:2495:17)
+      at TemplumBackendServiceRouter.callHTTPService (src/backend/backend-service-router.ts:2414:14)
+      at TemplumBackendServiceRouter.callBackendServiceAPI (src/backend/backend-service-router.ts:2286:18)
+      at TemplumBackendServiceRouter.loadBackendSkin (src/backend/backend-service-router.ts:2855:24)
+      at TemplumBackendServiceRouter.connectToService (src/backend/backend-service-router.ts:3528:36)
+      at TemplumBackendServiceRouter.registerBackendFromSkin (src/backend/backend-service-router.ts:938:32)
+      at Object.<anonymous> (src/tests/backend/comprehensive-backend-validation.test.ts:594:7)
+
+    console.warn
+      [2025-10-14T21:27:42.827Z] [serialization-utils:backend:dynamic-command-router:registration] [WARN] Duplicate command registration detected {
+        commandId: 'example.hello',
+        existingBackendId: 'minimal-example',
+        backendId: 'minimal-example'
+      }
+
+      57 |
+      58 |       if (data !== undefined || durationMs !== undefined) {
+    > 59 |         target(prefix, message, mergePayload(data, durationMs));
+         |         ^
+      60 |       } else {
+      61 |         target(prefix, message);
+      62 |       }
+
+      at Object.target [as log] (src/utils/logger.ts:59:9)
+      at Logger.log [as dispatch] (src/utils/logger.ts:181:35)
+      at Logger.dispatch [as warn] (src/utils/logger.ts:116:10)
+      at DynamicCommandRouter.warn [as registerBackend] (src/backend/dynamic-command-router.ts:109:35)
+      at TemplumBackendServiceRouter.registerBackend (src/backend/backend-service-router.ts:2888:30)
+      at TemplumBackendServiceRouter.connectToService (src/backend/backend-service-router.ts:3528:36)
+      at TemplumBackendServiceRouter.registerBackendFromSkin (src/backend/backend-service-router.ts:938:32)
+      at Object.<anonymous> (src/tests/backend/comprehensive-backend-validation.test.ts:594:7)
+
+    console.warn
+      [2025-10-14T21:27:42.827Z] [serialization-utils:backend:dynamic-command-router:registration] [WARN] Duplicate command registration detected {
+        commandId: 'example.status',
+        existingBackendId: 'minimal-example',
+        backendId: 'minimal-example'
+      }
+
+      57 |
+      58 |       if (data !== undefined || durationMs !== undefined) {
+    > 59 |         target(prefix, message, mergePayload(data, durationMs));
+         |         ^
+      60 |       } else {
+      61 |         target(prefix, message);
+      62 |       }
+
+      at Object.target [as log] (src/utils/logger.ts:59:9)
+      at Logger.log [as dispatch] (src/utils/logger.ts:181:35)
+      at Logger.dispatch [as warn] (src/utils/logger.ts:116:10)
+      at DynamicCommandRouter.warn [as registerBackend] (src/backend/dynamic-command-router.ts:109:35)
+      at TemplumBackendServiceRouter.registerBackend (src/backend/backend-service-router.ts:2888:30)
+      at TemplumBackendServiceRouter.connectToService (src/backend/backend-service-router.ts:3528:36)
+      at TemplumBackendServiceRouter.registerBackendFromSkin (src/backend/backend-service-router.ts:938:32)
+      at Object.<anonymous> (src/tests/backend/comprehensive-backend-validation.test.ts:594:7)
+
+    console.warn
+      [TEMPLUM_CORE] Failed to load skin into Templum Core for minimal-example: TypeError: this.orchestrator.loadSkin is not a function
+          at TemplumBackendServiceRouter.loadSkin [as loadBackendSkin] (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:2898:37)
+          at processTicksAndRejections (node:internal/process/task_queues:105:5)
+          at TemplumBackendServiceRouter.connectToService (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:3528:36)
+          at TemplumBackendServiceRouter.registerBackendFromSkin (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:938:32)
+          at Object.<anonymous> (/home/gabri/dev/VDL_VAULT/Templum/src/tests/backend/comprehensive-backend-validation.test.ts:594:7)
+
+      2902 |           }
+      2903 |         } catch (coreError) {
+    > 2904 |           console.warn(`[TEMPLUM_CORE] Failed to load skin into Templum Core for ${backendId}:`, coreError);
+           |                   ^
+      2905 |           // Don't fail the entire skin loading process due to core loading issues
+      2906 |         }
+      2907 |
+
+      at TemplumBackendServiceRouter.warn [as loadBackendSkin] (src/backend/backend-service-router.ts:2904:19)
+      at TemplumBackendServiceRouter.connectToService (src/backend/backend-service-router.ts:3528:36)
+      at TemplumBackendServiceRouter.registerBackendFromSkin (src/backend/backend-service-router.ts:938:32)
+      at Object.<anonymous> (src/tests/backend/comprehensive-backend-validation.test.ts:594:7)
+
+    console.warn
+      [SERVICE_CONNECTION] Skin loading failed for minimal-example: TypeError: this.orchestrator.loadSkin is not a function
+          at TemplumBackendServiceRouter.loadSkin [as connectToService] (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:3530:39)
+          at processTicksAndRejections (node:internal/process/task_queues:105:5)
+          at TemplumBackendServiceRouter.registerBackendFromSkin (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:938:32)
+          at Object.<anonymous> (/home/gabri/dev/VDL_VAULT/Templum/src/tests/backend/comprehensive-backend-validation.test.ts:594:7)
+
+      3531 |             }
+      3532 |           } catch (skinError) {
+    > 3533 |             console.warn(`[SERVICE_CONNECTION] Skin loading failed for ${serviceId}:`, skinError);
+           |                     ^
+      3534 |             // Continue - connection successful even if skin loading failed
+      3535 |           }
+      3536 |         }
+
+      at TemplumBackendServiceRouter.warn [as connectToService] (src/backend/backend-service-router.ts:3533:21)
+      at TemplumBackendServiceRouter.registerBackendFromSkin (src/backend/backend-service-router.ts:938:32)
+      at Object.<anonymous> (src/tests/backend/comprehensive-backend-validation.test.ts:594:7)
+
+    console.warn
+      [HTTP] Failed minimal-example endpoint: http://localhost:3002/api/skins/default - Error: HTTP 404 Not Found
+
+      2493 |         
+      2494 |       } catch (error) {
+    > 2495 |         console.warn(`[HTTP] Failed ${connection.id} endpoint: ${attempt.endpoint} - ${error}`);
+           |                 ^
+      2496 |         lastError = error as Error;
+      2497 |         continue;
+      2498 |       }
+
+      at TemplumBackendServiceRouter.warn [as tryHTTPEndpointsWithFallback] (src/backend/backend-service-router.ts:2495:17)
+      at TemplumBackendServiceRouter.callHTTPService (src/backend/backend-service-router.ts:2414:14)
+      at TemplumBackendServiceRouter.callBackendServiceAPI (src/backend/backend-service-router.ts:2286:18)
+      at TemplumBackendServiceRouter.loadBackendSkin (src/backend/backend-service-router.ts:2855:24)
+      at TemplumBackendServiceRouter.getServiceVersion (src/backend/backend-service-router.ts:1559:32)
+      at TemplumBackendServiceRouter.connectToService (src/backend/backend-service-router.ts:3523:73)
+      at TemplumBackendServiceRouter.registerBackendFromSkin (src/backend/backend-service-router.ts:938:32)
+      at Object.<anonymous> (src/tests/backend/comprehensive-backend-validation.test.ts:608:7)
+
+    console.warn
+      [TEMPLUM_CORE] Failed to load skin into Templum Core for minimal-example: TypeError: this.orchestrator.loadSkin is not a function
+          at TemplumBackendServiceRouter.loadSkin [as loadBackendSkin] (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:2898:37)
+          at processTicksAndRejections (node:internal/process/task_queues:105:5)
+          at TemplumBackendServiceRouter.getServiceVersion (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:1559:32)
+          at TemplumBackendServiceRouter.connectToService (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:3523:73)
+          at TemplumBackendServiceRouter.registerBackendFromSkin (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:938:32)
+          at Object.<anonymous> (/home/gabri/dev/VDL_VAULT/Templum/src/tests/backend/comprehensive-backend-validation.test.ts:608:7)
+
+      2902 |           }
+      2903 |         } catch (coreError) {
+    > 2904 |           console.warn(`[TEMPLUM_CORE] Failed to load skin into Templum Core for ${backendId}:`, coreError);
+           |                   ^
+      2905 |           // Don't fail the entire skin loading process due to core loading issues
+      2906 |         }
+      2907 |
+
+      at TemplumBackendServiceRouter.warn [as loadBackendSkin] (src/backend/backend-service-router.ts:2904:19)
+      at TemplumBackendServiceRouter.getServiceVersion (src/backend/backend-service-router.ts:1559:32)
+      at TemplumBackendServiceRouter.connectToService (src/backend/backend-service-router.ts:3523:73)
+      at TemplumBackendServiceRouter.registerBackendFromSkin (src/backend/backend-service-router.ts:938:32)
+      at Object.<anonymous> (src/tests/backend/comprehensive-backend-validation.test.ts:608:7)
+
+    console.warn
+      [HTTP] Failed minimal-example endpoint: http://localhost:3002/api/skins/default - Error: HTTP 404 Not Found
+
+      2493 |         
+      2494 |       } catch (error) {
+    > 2495 |         console.warn(`[HTTP] Failed ${connection.id} endpoint: ${attempt.endpoint} - ${error}`);
+           |                 ^
+      2496 |         lastError = error as Error;
+      2497 |         continue;
+      2498 |       }
+
+      at TemplumBackendServiceRouter.warn [as tryHTTPEndpointsWithFallback] (src/backend/backend-service-router.ts:2495:17)
+      at TemplumBackendServiceRouter.callHTTPService (src/backend/backend-service-router.ts:2414:14)
+      at TemplumBackendServiceRouter.callBackendServiceAPI (src/backend/backend-service-router.ts:2286:18)
+      at TemplumBackendServiceRouter.loadBackendSkin (src/backend/backend-service-router.ts:2855:24)
+      at TemplumBackendServiceRouter.connectToService (src/backend/backend-service-router.ts:3528:36)
+      at TemplumBackendServiceRouter.registerBackendFromSkin (src/backend/backend-service-router.ts:938:32)
+      at Object.<anonymous> (src/tests/backend/comprehensive-backend-validation.test.ts:608:7)
+
+    console.warn
+      [2025-10-14T21:27:43.858Z] [serialization-utils:backend:dynamic-command-router:registration] [WARN] Duplicate command registration detected {
+        commandId: 'example.hello',
+        existingBackendId: 'minimal-example',
+        backendId: 'minimal-example'
+      }
+
+      57 |
+      58 |       if (data !== undefined || durationMs !== undefined) {
+    > 59 |         target(prefix, message, mergePayload(data, durationMs));
+         |         ^
+      60 |       } else {
+      61 |         target(prefix, message);
+      62 |       }
+
+      at Object.target [as log] (src/utils/logger.ts:59:9)
+      at Logger.log [as dispatch] (src/utils/logger.ts:181:35)
+      at Logger.dispatch [as warn] (src/utils/logger.ts:116:10)
+      at DynamicCommandRouter.warn [as registerBackend] (src/backend/dynamic-command-router.ts:109:35)
+      at TemplumBackendServiceRouter.registerBackend (src/backend/backend-service-router.ts:2888:30)
+      at TemplumBackendServiceRouter.connectToService (src/backend/backend-service-router.ts:3528:36)
+      at TemplumBackendServiceRouter.registerBackendFromSkin (src/backend/backend-service-router.ts:938:32)
+      at Object.<anonymous> (src/tests/backend/comprehensive-backend-validation.test.ts:608:7)
+
+    console.warn
+      [2025-10-14T21:27:43.858Z] [serialization-utils:backend:dynamic-command-router:registration] [WARN] Duplicate command registration detected {
+        commandId: 'example.status',
+        existingBackendId: 'minimal-example',
+        backendId: 'minimal-example'
+      }
+
+      57 |
+      58 |       if (data !== undefined || durationMs !== undefined) {
+    > 59 |         target(prefix, message, mergePayload(data, durationMs));
+         |         ^
+      60 |       } else {
+      61 |         target(prefix, message);
+      62 |       }
+
+      at Object.target [as log] (src/utils/logger.ts:59:9)
+      at Logger.log [as dispatch] (src/utils/logger.ts:181:35)
+      at Logger.dispatch [as warn] (src/utils/logger.ts:116:10)
+      at DynamicCommandRouter.warn [as registerBackend] (src/backend/dynamic-command-router.ts:109:35)
+      at TemplumBackendServiceRouter.registerBackend (src/backend/backend-service-router.ts:2888:30)
+      at TemplumBackendServiceRouter.connectToService (src/backend/backend-service-router.ts:3528:36)
+      at TemplumBackendServiceRouter.registerBackendFromSkin (src/backend/backend-service-router.ts:938:32)
+      at Object.<anonymous> (src/tests/backend/comprehensive-backend-validation.test.ts:608:7)
+
+    console.warn
+      [TEMPLUM_CORE] Failed to load skin into Templum Core for minimal-example: TypeError: this.orchestrator.loadSkin is not a function
+          at TemplumBackendServiceRouter.loadSkin [as loadBackendSkin] (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:2898:37)
+          at processTicksAndRejections (node:internal/process/task_queues:105:5)
+          at TemplumBackendServiceRouter.connectToService (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:3528:36)
+          at TemplumBackendServiceRouter.registerBackendFromSkin (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:938:32)
+          at Object.<anonymous> (/home/gabri/dev/VDL_VAULT/Templum/src/tests/backend/comprehensive-backend-validation.test.ts:608:7)
+
+      2902 |           }
+      2903 |         } catch (coreError) {
+    > 2904 |           console.warn(`[TEMPLUM_CORE] Failed to load skin into Templum Core for ${backendId}:`, coreError);
+           |                   ^
+      2905 |           // Don't fail the entire skin loading process due to core loading issues
+      2906 |         }
+      2907 |
+
+      at TemplumBackendServiceRouter.warn [as loadBackendSkin] (src/backend/backend-service-router.ts:2904:19)
+      at TemplumBackendServiceRouter.connectToService (src/backend/backend-service-router.ts:3528:36)
+      at TemplumBackendServiceRouter.registerBackendFromSkin (src/backend/backend-service-router.ts:938:32)
+      at Object.<anonymous> (src/tests/backend/comprehensive-backend-validation.test.ts:608:7)
+
+    console.warn
+      [SERVICE_CONNECTION] Skin loading failed for minimal-example: TypeError: this.orchestrator.loadSkin is not a function
+          at TemplumBackendServiceRouter.loadSkin [as connectToService] (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:3530:39)
+          at processTicksAndRejections (node:internal/process/task_queues:105:5)
+          at TemplumBackendServiceRouter.registerBackendFromSkin (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:938:32)
+          at Object.<anonymous> (/home/gabri/dev/VDL_VAULT/Templum/src/tests/backend/comprehensive-backend-validation.test.ts:608:7)
+
+      3531 |             }
+      3532 |           } catch (skinError) {
+    > 3533 |             console.warn(`[SERVICE_CONNECTION] Skin loading failed for ${serviceId}:`, skinError);
+           |                     ^
+      3534 |             // Continue - connection successful even if skin loading failed
+      3535 |           }
+      3536 |         }
+
+      at TemplumBackendServiceRouter.warn [as connectToService] (src/backend/backend-service-router.ts:3533:21)
+      at TemplumBackendServiceRouter.registerBackendFromSkin (src/backend/backend-service-router.ts:938:32)
+      at Object.<anonymous> (src/tests/backend/comprehensive-backend-validation.test.ts:608:7)
+
+    console.warn
+      [HTTP] Failed mixed-minimal endpoint: http://localhost:3003/api/skins/default - Error: HTTP 404 Not Found
+
+      2493 |         
+      2494 |       } catch (error) {
+    > 2495 |         console.warn(`[HTTP] Failed ${connection.id} endpoint: ${attempt.endpoint} - ${error}`);
+           |                 ^
+      2496 |         lastError = error as Error;
+      2497 |         continue;
+      2498 |       }
+
+      at TemplumBackendServiceRouter.warn [as tryHTTPEndpointsWithFallback] (src/backend/backend-service-router.ts:2495:17)
+      at TemplumBackendServiceRouter.callHTTPService (src/backend/backend-service-router.ts:2414:14)
+      at TemplumBackendServiceRouter.callBackendServiceAPI (src/backend/backend-service-router.ts:2286:18)
+      at TemplumBackendServiceRouter.loadBackendSkin (src/backend/backend-service-router.ts:2855:24)
+      at TemplumBackendServiceRouter.getServiceVersion (src/backend/backend-service-router.ts:1559:32)
+      at TemplumBackendServiceRouter.connectToService (src/backend/backend-service-router.ts:3523:73)
+      at TemplumBackendServiceRouter.registerBackendFromSkin (src/backend/backend-service-router.ts:938:32)
+      at Object.<anonymous> (src/tests/backend/comprehensive-backend-validation.test.ts:666:7)
+
+    console.warn
+      [TEMPLUM_CORE] Failed to load skin into Templum Core for mixed-minimal: TypeError: this.orchestrator.loadSkin is not a function
+          at TemplumBackendServiceRouter.loadSkin [as loadBackendSkin] (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:2898:37)
+          at processTicksAndRejections (node:internal/process/task_queues:105:5)
+          at TemplumBackendServiceRouter.getServiceVersion (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:1559:32)
+          at TemplumBackendServiceRouter.connectToService (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:3523:73)
+          at TemplumBackendServiceRouter.registerBackendFromSkin (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:938:32)
+          at Object.<anonymous> (/home/gabri/dev/VDL_VAULT/Templum/src/tests/backend/comprehensive-backend-validation.test.ts:666:7)
+
+      2902 |           }
+      2903 |         } catch (coreError) {
+    > 2904 |           console.warn(`[TEMPLUM_CORE] Failed to load skin into Templum Core for ${backendId}:`, coreError);
+           |                   ^
+      2905 |           // Don't fail the entire skin loading process due to core loading issues
+      2906 |         }
+      2907 |
+
+      at TemplumBackendServiceRouter.warn [as loadBackendSkin] (src/backend/backend-service-router.ts:2904:19)
+      at TemplumBackendServiceRouter.getServiceVersion (src/backend/backend-service-router.ts:1559:32)
+      at TemplumBackendServiceRouter.connectToService (src/backend/backend-service-router.ts:3523:73)
+      at TemplumBackendServiceRouter.registerBackendFromSkin (src/backend/backend-service-router.ts:938:32)
+      at Object.<anonymous> (src/tests/backend/comprehensive-backend-validation.test.ts:666:7)
+
+    console.warn
+      [HTTP] Failed mixed-minimal endpoint: http://localhost:3003/api/skins/default - Error: HTTP 404 Not Found
+
+      2493 |         
+      2494 |       } catch (error) {
+    > 2495 |         console.warn(`[HTTP] Failed ${connection.id} endpoint: ${attempt.endpoint} - ${error}`);
+           |                 ^
+      2496 |         lastError = error as Error;
+      2497 |         continue;
+      2498 |       }
+
+      at TemplumBackendServiceRouter.warn [as tryHTTPEndpointsWithFallback] (src/backend/backend-service-router.ts:2495:17)
+      at TemplumBackendServiceRouter.callHTTPService (src/backend/backend-service-router.ts:2414:14)
+      at TemplumBackendServiceRouter.callBackendServiceAPI (src/backend/backend-service-router.ts:2286:18)
+      at TemplumBackendServiceRouter.loadBackendSkin (src/backend/backend-service-router.ts:2855:24)
+      at TemplumBackendServiceRouter.connectToService (src/backend/backend-service-router.ts:3528:36)
+      at TemplumBackendServiceRouter.registerBackendFromSkin (src/backend/backend-service-router.ts:938:32)
+      at Object.<anonymous> (src/tests/backend/comprehensive-backend-validation.test.ts:666:7)
+
+    console.warn
+      [2025-10-14T21:27:45.893Z] [serialization-utils:backend:dynamic-command-router:registration] [WARN] Duplicate command registration detected {
+        commandId: 'example.hello',
+        existingBackendId: 'mixed-minimal',
+        backendId: 'mixed-minimal'
+      }
+
+      57 |
+      58 |       if (data !== undefined || durationMs !== undefined) {
+    > 59 |         target(prefix, message, mergePayload(data, durationMs));
+         |         ^
+      60 |       } else {
+      61 |         target(prefix, message);
+      62 |       }
+
+      at Object.target [as log] (src/utils/logger.ts:59:9)
+      at Logger.log [as dispatch] (src/utils/logger.ts:181:35)
+      at Logger.dispatch [as warn] (src/utils/logger.ts:116:10)
+      at DynamicCommandRouter.warn [as registerBackend] (src/backend/dynamic-command-router.ts:109:35)
+      at TemplumBackendServiceRouter.registerBackend (src/backend/backend-service-router.ts:2888:30)
+      at TemplumBackendServiceRouter.connectToService (src/backend/backend-service-router.ts:3528:36)
+      at TemplumBackendServiceRouter.registerBackendFromSkin (src/backend/backend-service-router.ts:938:32)
+      at Object.<anonymous> (src/tests/backend/comprehensive-backend-validation.test.ts:666:7)
+
+    console.warn
+      [2025-10-14T21:27:45.893Z] [serialization-utils:backend:dynamic-command-router:registration] [WARN] Duplicate command registration detected {
+        commandId: 'example.status',
+        existingBackendId: 'mixed-minimal',
+        backendId: 'mixed-minimal'
+      }
+
+      57 |
+      58 |       if (data !== undefined || durationMs !== undefined) {
+    > 59 |         target(prefix, message, mergePayload(data, durationMs));
+         |         ^
+      60 |       } else {
+      61 |         target(prefix, message);
+      62 |       }
+
+      at Object.target [as log] (src/utils/logger.ts:59:9)
+      at Logger.log [as dispatch] (src/utils/logger.ts:181:35)
+      at Logger.dispatch [as warn] (src/utils/logger.ts:116:10)
+      at DynamicCommandRouter.warn [as registerBackend] (src/backend/dynamic-command-router.ts:109:35)
+      at TemplumBackendServiceRouter.registerBackend (src/backend/backend-service-router.ts:2888:30)
+      at TemplumBackendServiceRouter.connectToService (src/backend/backend-service-router.ts:3528:36)
+      at TemplumBackendServiceRouter.registerBackendFromSkin (src/backend/backend-service-router.ts:938:32)
+      at Object.<anonymous> (src/tests/backend/comprehensive-backend-validation.test.ts:666:7)
+
+    console.warn
+      [TEMPLUM_CORE] Failed to load skin into Templum Core for mixed-minimal: TypeError: this.orchestrator.loadSkin is not a function
+          at TemplumBackendServiceRouter.loadSkin [as loadBackendSkin] (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:2898:37)
+          at processTicksAndRejections (node:internal/process/task_queues:105:5)
+          at TemplumBackendServiceRouter.connectToService (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:3528:36)
+          at TemplumBackendServiceRouter.registerBackendFromSkin (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:938:32)
+          at Object.<anonymous> (/home/gabri/dev/VDL_VAULT/Templum/src/tests/backend/comprehensive-backend-validation.test.ts:666:7)
+
+      2902 |           }
+      2903 |         } catch (coreError) {
+    > 2904 |           console.warn(`[TEMPLUM_CORE] Failed to load skin into Templum Core for ${backendId}:`, coreError);
+           |                   ^
+      2905 |           // Don't fail the entire skin loading process due to core loading issues
+      2906 |         }
+      2907 |
+
+      at TemplumBackendServiceRouter.warn [as loadBackendSkin] (src/backend/backend-service-router.ts:2904:19)
+      at TemplumBackendServiceRouter.connectToService (src/backend/backend-service-router.ts:3528:36)
+      at TemplumBackendServiceRouter.registerBackendFromSkin (src/backend/backend-service-router.ts:938:32)
+      at Object.<anonymous> (src/tests/backend/comprehensive-backend-validation.test.ts:666:7)
+
+    console.warn
+      [SERVICE_CONNECTION] Skin loading failed for mixed-minimal: TypeError: this.orchestrator.loadSkin is not a function
+          at TemplumBackendServiceRouter.loadSkin [as connectToService] (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:3530:39)
+          at processTicksAndRejections (node:internal/process/task_queues:105:5)
+          at TemplumBackendServiceRouter.registerBackendFromSkin (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:938:32)
+          at Object.<anonymous> (/home/gabri/dev/VDL_VAULT/Templum/src/tests/backend/comprehensive-backend-validation.test.ts:666:7)
+
+      3531 |             }
+      3532 |           } catch (skinError) {
+    > 3533 |             console.warn(`[SERVICE_CONNECTION] Skin loading failed for ${serviceId}:`, skinError);
+           |                     ^
+      3534 |             // Continue - connection successful even if skin loading failed
+      3535 |           }
+      3536 |         }
+
+      at TemplumBackendServiceRouter.warn [as connectToService] (src/backend/backend-service-router.ts:3533:21)
+      at TemplumBackendServiceRouter.registerBackendFromSkin (src/backend/backend-service-router.ts:938:32)
+      at Object.<anonymous> (src/tests/backend/comprehensive-backend-validation.test.ts:666:7)
+
+    console.warn
+      [HTTP] Failed mixed-full endpoint: http://localhost:3004/api/skins/default - Error: HTTP 404 Not Found
+
+      2493 |         
+      2494 |       } catch (error) {
+    > 2495 |         console.warn(`[HTTP] Failed ${connection.id} endpoint: ${attempt.endpoint} - ${error}`);
+           |                 ^
+      2496 |         lastError = error as Error;
+      2497 |         continue;
+      2498 |       }
+
+      at TemplumBackendServiceRouter.warn [as tryHTTPEndpointsWithFallback] (src/backend/backend-service-router.ts:2495:17)
+      at TemplumBackendServiceRouter.callHTTPService (src/backend/backend-service-router.ts:2414:14)
+      at TemplumBackendServiceRouter.callBackendServiceAPI (src/backend/backend-service-router.ts:2286:18)
+      at TemplumBackendServiceRouter.loadBackendSkin (src/backend/backend-service-router.ts:2855:24)
+      at TemplumBackendServiceRouter.getServiceVersion (src/backend/backend-service-router.ts:1559:32)
+      at TemplumBackendServiceRouter.connectToService (src/backend/backend-service-router.ts:3523:73)
+      at TemplumBackendServiceRouter.registerBackendFromSkin (src/backend/backend-service-router.ts:938:32)
+      at Object.<anonymous> (src/tests/backend/comprehensive-backend-validation.test.ts:667:7)
+
+    console.warn
+      [2025-10-14T21:27:45.897Z] [serialization-utils:backend:dynamic-command-router:registration] [WARN] Duplicate command registration detected {
+        commandId: 'example.hello',
+        existingBackendId: 'mixed-minimal',
+        backendId: 'mixed-full'
+      }
+
+      57 |
+      58 |       if (data !== undefined || durationMs !== undefined) {
+    > 59 |         target(prefix, message, mergePayload(data, durationMs));
+         |         ^
+      60 |       } else {
+      61 |         target(prefix, message);
+      62 |       }
+
+      at Object.target [as log] (src/utils/logger.ts:59:9)
+      at Logger.log [as dispatch] (src/utils/logger.ts:181:35)
+      at Logger.dispatch [as warn] (src/utils/logger.ts:116:10)
+      at DynamicCommandRouter.warn [as registerBackend] (src/backend/dynamic-command-router.ts:109:35)
+      at TemplumBackendServiceRouter.registerBackend (src/backend/backend-service-router.ts:2888:30)
+      at TemplumBackendServiceRouter.getServiceVersion (src/backend/backend-service-router.ts:1559:32)
+      at TemplumBackendServiceRouter.connectToService (src/backend/backend-service-router.ts:3523:73)
+      at TemplumBackendServiceRouter.registerBackendFromSkin (src/backend/backend-service-router.ts:938:32)
+      at Object.<anonymous> (src/tests/backend/comprehensive-backend-validation.test.ts:667:7)
+
+    console.warn
+      [2025-10-14T21:27:45.897Z] [serialization-utils:backend:dynamic-command-router:registration] [WARN] Duplicate command registration detected {
+        commandId: 'example.status',
+        existingBackendId: 'mixed-minimal',
+        backendId: 'mixed-full'
+      }
+
+      57 |
+      58 |       if (data !== undefined || durationMs !== undefined) {
+    > 59 |         target(prefix, message, mergePayload(data, durationMs));
+         |         ^
+      60 |       } else {
+      61 |         target(prefix, message);
+      62 |       }
+
+      at Object.target [as log] (src/utils/logger.ts:59:9)
+      at Logger.log [as dispatch] (src/utils/logger.ts:181:35)
+      at Logger.dispatch [as warn] (src/utils/logger.ts:116:10)
+      at DynamicCommandRouter.warn [as registerBackend] (src/backend/dynamic-command-router.ts:109:35)
+      at TemplumBackendServiceRouter.registerBackend (src/backend/backend-service-router.ts:2888:30)
+      at TemplumBackendServiceRouter.getServiceVersion (src/backend/backend-service-router.ts:1559:32)
+      at TemplumBackendServiceRouter.connectToService (src/backend/backend-service-router.ts:3523:73)
+      at TemplumBackendServiceRouter.registerBackendFromSkin (src/backend/backend-service-router.ts:938:32)
+      at Object.<anonymous> (src/tests/backend/comprehensive-backend-validation.test.ts:667:7)
+
+    console.warn
+      [TEMPLUM_CORE] Failed to load skin into Templum Core for mixed-full: TypeError: this.orchestrator.loadSkin is not a function
+          at TemplumBackendServiceRouter.loadSkin [as loadBackendSkin] (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:2898:37)
+          at processTicksAndRejections (node:internal/process/task_queues:105:5)
+          at TemplumBackendServiceRouter.getServiceVersion (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:1559:32)
+          at TemplumBackendServiceRouter.connectToService (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:3523:73)
+          at TemplumBackendServiceRouter.registerBackendFromSkin (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:938:32)
+          at Object.<anonymous> (/home/gabri/dev/VDL_VAULT/Templum/src/tests/backend/comprehensive-backend-validation.test.ts:667:7)
+
+      2902 |           }
+      2903 |         } catch (coreError) {
+    > 2904 |           console.warn(`[TEMPLUM_CORE] Failed to load skin into Templum Core for ${backendId}:`, coreError);
+           |                   ^
+      2905 |           // Don't fail the entire skin loading process due to core loading issues
+      2906 |         }
+      2907 |
+
+      at TemplumBackendServiceRouter.warn [as loadBackendSkin] (src/backend/backend-service-router.ts:2904:19)
+      at TemplumBackendServiceRouter.getServiceVersion (src/backend/backend-service-router.ts:1559:32)
+      at TemplumBackendServiceRouter.connectToService (src/backend/backend-service-router.ts:3523:73)
+      at TemplumBackendServiceRouter.registerBackendFromSkin (src/backend/backend-service-router.ts:938:32)
+      at Object.<anonymous> (src/tests/backend/comprehensive-backend-validation.test.ts:667:7)
+
+    console.warn
+      [HTTP] Failed mixed-full endpoint: http://localhost:3004/api/skins/default - Error: HTTP 404 Not Found
+
+      2493 |         
+      2494 |       } catch (error) {
+    > 2495 |         console.warn(`[HTTP] Failed ${connection.id} endpoint: ${attempt.endpoint} - ${error}`);
+           |                 ^
+      2496 |         lastError = error as Error;
+      2497 |         continue;
+      2498 |       }
+
+      at TemplumBackendServiceRouter.warn [as tryHTTPEndpointsWithFallback] (src/backend/backend-service-router.ts:2495:17)
+      at TemplumBackendServiceRouter.callHTTPService (src/backend/backend-service-router.ts:2414:14)
+      at TemplumBackendServiceRouter.callBackendServiceAPI (src/backend/backend-service-router.ts:2286:18)
+      at TemplumBackendServiceRouter.loadBackendSkin (src/backend/backend-service-router.ts:2855:24)
+      at TemplumBackendServiceRouter.connectToService (src/backend/backend-service-router.ts:3528:36)
+      at TemplumBackendServiceRouter.registerBackendFromSkin (src/backend/backend-service-router.ts:938:32)
+      at Object.<anonymous> (src/tests/backend/comprehensive-backend-validation.test.ts:667:7)
+
+    console.warn
+      [2025-10-14T21:27:45.900Z] [serialization-utils:backend:dynamic-command-router:registration] [WARN] Duplicate command registration detected {
+        commandId: 'example.hello',
+        existingBackendId: 'mixed-full',
+        backendId: 'mixed-full'
+      }
+
+      57 |
+      58 |       if (data !== undefined || durationMs !== undefined) {
+    > 59 |         target(prefix, message, mergePayload(data, durationMs));
+         |         ^
+      60 |       } else {
+      61 |         target(prefix, message);
+      62 |       }
+
+      at Object.target [as log] (src/utils/logger.ts:59:9)
+      at Logger.log [as dispatch] (src/utils/logger.ts:181:35)
+      at Logger.dispatch [as warn] (src/utils/logger.ts:116:10)
+      at DynamicCommandRouter.warn [as registerBackend] (src/backend/dynamic-command-router.ts:109:35)
+      at TemplumBackendServiceRouter.registerBackend (src/backend/backend-service-router.ts:2888:30)
+      at TemplumBackendServiceRouter.connectToService (src/backend/backend-service-router.ts:3528:36)
+      at TemplumBackendServiceRouter.registerBackendFromSkin (src/backend/backend-service-router.ts:938:32)
+      at Object.<anonymous> (src/tests/backend/comprehensive-backend-validation.test.ts:667:7)
+
+    console.warn
+      [2025-10-14T21:27:45.900Z] [serialization-utils:backend:dynamic-command-router:registration] [WARN] Duplicate command registration detected {
+        commandId: 'example.status',
+        existingBackendId: 'mixed-full',
+        backendId: 'mixed-full'
+      }
+
+      57 |
+      58 |       if (data !== undefined || durationMs !== undefined) {
+    > 59 |         target(prefix, message, mergePayload(data, durationMs));
+         |         ^
+      60 |       } else {
+      61 |         target(prefix, message);
+      62 |       }
+
+      at Object.target [as log] (src/utils/logger.ts:59:9)
+      at Logger.log [as dispatch] (src/utils/logger.ts:181:35)
+      at Logger.dispatch [as warn] (src/utils/logger.ts:116:10)
+      at DynamicCommandRouter.warn [as registerBackend] (src/backend/dynamic-command-router.ts:109:35)
+      at TemplumBackendServiceRouter.registerBackend (src/backend/backend-service-router.ts:2888:30)
+      at TemplumBackendServiceRouter.connectToService (src/backend/backend-service-router.ts:3528:36)
+      at TemplumBackendServiceRouter.registerBackendFromSkin (src/backend/backend-service-router.ts:938:32)
+      at Object.<anonymous> (src/tests/backend/comprehensive-backend-validation.test.ts:667:7)
+
+    console.warn
+      [TEMPLUM_CORE] Failed to load skin into Templum Core for mixed-full: TypeError: this.orchestrator.loadSkin is not a function
+          at TemplumBackendServiceRouter.loadSkin [as loadBackendSkin] (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:2898:37)
+          at processTicksAndRejections (node:internal/process/task_queues:105:5)
+          at TemplumBackendServiceRouter.connectToService (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:3528:36)
+          at TemplumBackendServiceRouter.registerBackendFromSkin (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:938:32)
+          at Object.<anonymous> (/home/gabri/dev/VDL_VAULT/Templum/src/tests/backend/comprehensive-backend-validation.test.ts:667:7)
+
+      2902 |           }
+      2903 |         } catch (coreError) {
+    > 2904 |           console.warn(`[TEMPLUM_CORE] Failed to load skin into Templum Core for ${backendId}:`, coreError);
+           |                   ^
+      2905 |           // Don't fail the entire skin loading process due to core loading issues
+      2906 |         }
+      2907 |
+
+      at TemplumBackendServiceRouter.warn [as loadBackendSkin] (src/backend/backend-service-router.ts:2904:19)
+      at TemplumBackendServiceRouter.connectToService (src/backend/backend-service-router.ts:3528:36)
+      at TemplumBackendServiceRouter.registerBackendFromSkin (src/backend/backend-service-router.ts:938:32)
+      at Object.<anonymous> (src/tests/backend/comprehensive-backend-validation.test.ts:667:7)
+
+    console.warn
+      [SERVICE_CONNECTION] Skin loading failed for mixed-full: TypeError: this.orchestrator.loadSkin is not a function
+          at TemplumBackendServiceRouter.loadSkin [as connectToService] (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:3530:39)
+          at processTicksAndRejections (node:internal/process/task_queues:105:5)
+          at TemplumBackendServiceRouter.registerBackendFromSkin (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:938:32)
+          at Object.<anonymous> (/home/gabri/dev/VDL_VAULT/Templum/src/tests/backend/comprehensive-backend-validation.test.ts:667:7)
+
+      3531 |             }
+      3532 |           } catch (skinError) {
+    > 3533 |             console.warn(`[SERVICE_CONNECTION] Skin loading failed for ${serviceId}:`, skinError);
+           |                     ^
+      3534 |             // Continue - connection successful even if skin loading failed
+      3535 |           }
+      3536 |         }
+
+      at TemplumBackendServiceRouter.warn [as connectToService] (src/backend/backend-service-router.ts:3533:21)
+      at TemplumBackendServiceRouter.registerBackendFromSkin (src/backend/backend-service-router.ts:938:32)
+      at Object.<anonymous> (src/tests/backend/comprehensive-backend-validation.test.ts:667:7)
+
+    console.warn
+      [HTTP] Failed routing-minimal endpoint: http://localhost:3013/api/skins/default - Error: HTTP 404 Not Found
+
+      2493 |         
+      2494 |       } catch (error) {
+    > 2495 |         console.warn(`[HTTP] Failed ${connection.id} endpoint: ${attempt.endpoint} - ${error}`);
+           |                 ^
+      2496 |         lastError = error as Error;
+      2497 |         continue;
+      2498 |       }
+
+      at TemplumBackendServiceRouter.warn [as tryHTTPEndpointsWithFallback] (src/backend/backend-service-router.ts:2495:17)
+      at TemplumBackendServiceRouter.callHTTPService (src/backend/backend-service-router.ts:2414:14)
+      at TemplumBackendServiceRouter.callBackendServiceAPI (src/backend/backend-service-router.ts:2286:18)
+      at TemplumBackendServiceRouter.loadBackendSkin (src/backend/backend-service-router.ts:2855:24)
+      at TemplumBackendServiceRouter.getServiceVersion (src/backend/backend-service-router.ts:1559:32)
+      at TemplumBackendServiceRouter.connectToService (src/backend/backend-service-router.ts:3523:73)
+      at TemplumBackendServiceRouter.registerBackendFromSkin (src/backend/backend-service-router.ts:938:32)
+      at Object.<anonymous> (src/tests/backend/comprehensive-backend-validation.test.ts:717:7)
+
+    console.warn
+      [TEMPLUM_CORE] Failed to load skin into Templum Core for routing-minimal: TypeError: this.orchestrator.loadSkin is not a function
+          at TemplumBackendServiceRouter.loadSkin [as loadBackendSkin] (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:2898:37)
+          at processTicksAndRejections (node:internal/process/task_queues:105:5)
+          at TemplumBackendServiceRouter.getServiceVersion (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:1559:32)
+          at TemplumBackendServiceRouter.connectToService (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:3523:73)
+          at TemplumBackendServiceRouter.registerBackendFromSkin (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:938:32)
+          at Object.<anonymous> (/home/gabri/dev/VDL_VAULT/Templum/src/tests/backend/comprehensive-backend-validation.test.ts:717:7)
+
+      2902 |           }
+      2903 |         } catch (coreError) {
+    > 2904 |           console.warn(`[TEMPLUM_CORE] Failed to load skin into Templum Core for ${backendId}:`, coreError);
+           |                   ^
+      2905 |           // Don't fail the entire skin loading process due to core loading issues
+      2906 |         }
+      2907 |
+
+      at TemplumBackendServiceRouter.warn [as loadBackendSkin] (src/backend/backend-service-router.ts:2904:19)
+      at TemplumBackendServiceRouter.getServiceVersion (src/backend/backend-service-router.ts:1559:32)
+      at TemplumBackendServiceRouter.connectToService (src/backend/backend-service-router.ts:3523:73)
+      at TemplumBackendServiceRouter.registerBackendFromSkin (src/backend/backend-service-router.ts:938:32)
+      at Object.<anonymous> (src/tests/backend/comprehensive-backend-validation.test.ts:717:7)
+
+    console.warn
+      [HTTP] Failed routing-minimal endpoint: http://localhost:3013/api/skins/default - Error: HTTP 404 Not Found
+
+      2493 |         
+      2494 |       } catch (error) {
+    > 2495 |         console.warn(`[HTTP] Failed ${connection.id} endpoint: ${attempt.endpoint} - ${error}`);
+           |                 ^
+      2496 |         lastError = error as Error;
+      2497 |         continue;
+      2498 |       }
+
+      at TemplumBackendServiceRouter.warn [as tryHTTPEndpointsWithFallback] (src/backend/backend-service-router.ts:2495:17)
+      at TemplumBackendServiceRouter.callHTTPService (src/backend/backend-service-router.ts:2414:14)
+      at TemplumBackendServiceRouter.callBackendServiceAPI (src/backend/backend-service-router.ts:2286:18)
+      at TemplumBackendServiceRouter.loadBackendSkin (src/backend/backend-service-router.ts:2855:24)
+      at TemplumBackendServiceRouter.connectToService (src/backend/backend-service-router.ts:3528:36)
+      at TemplumBackendServiceRouter.registerBackendFromSkin (src/backend/backend-service-router.ts:938:32)
+      at Object.<anonymous> (src/tests/backend/comprehensive-backend-validation.test.ts:717:7)
+
+    console.warn
+      [2025-10-14T21:27:47.936Z] [serialization-utils:backend:dynamic-command-router:registration] [WARN] Duplicate command registration detected {
+        commandId: 'example.hello',
+        existingBackendId: 'routing-minimal',
+        backendId: 'routing-minimal'
+      }
+
+      57 |
+      58 |       if (data !== undefined || durationMs !== undefined) {
+    > 59 |         target(prefix, message, mergePayload(data, durationMs));
+         |         ^
+      60 |       } else {
+      61 |         target(prefix, message);
+      62 |       }
+
+      at Object.target [as log] (src/utils/logger.ts:59:9)
+      at Logger.log [as dispatch] (src/utils/logger.ts:181:35)
+      at Logger.dispatch [as warn] (src/utils/logger.ts:116:10)
+      at DynamicCommandRouter.warn [as registerBackend] (src/backend/dynamic-command-router.ts:109:35)
+      at TemplumBackendServiceRouter.registerBackend (src/backend/backend-service-router.ts:2888:30)
+      at TemplumBackendServiceRouter.connectToService (src/backend/backend-service-router.ts:3528:36)
+      at TemplumBackendServiceRouter.registerBackendFromSkin (src/backend/backend-service-router.ts:938:32)
+      at Object.<anonymous> (src/tests/backend/comprehensive-backend-validation.test.ts:717:7)
+
+    console.warn
+      [2025-10-14T21:27:47.936Z] [serialization-utils:backend:dynamic-command-router:registration] [WARN] Duplicate command registration detected {
+        commandId: 'example.status',
+        existingBackendId: 'routing-minimal',
+        backendId: 'routing-minimal'
+      }
+
+      57 |
+      58 |       if (data !== undefined || durationMs !== undefined) {
+    > 59 |         target(prefix, message, mergePayload(data, durationMs));
+         |         ^
+      60 |       } else {
+      61 |         target(prefix, message);
+      62 |       }
+
+      at Object.target [as log] (src/utils/logger.ts:59:9)
+      at Logger.log [as dispatch] (src/utils/logger.ts:181:35)
+      at Logger.dispatch [as warn] (src/utils/logger.ts:116:10)
+      at DynamicCommandRouter.warn [as registerBackend] (src/backend/dynamic-command-router.ts:109:35)
+      at TemplumBackendServiceRouter.registerBackend (src/backend/backend-service-router.ts:2888:30)
+      at TemplumBackendServiceRouter.connectToService (src/backend/backend-service-router.ts:3528:36)
+      at TemplumBackendServiceRouter.registerBackendFromSkin (src/backend/backend-service-router.ts:938:32)
+      at Object.<anonymous> (src/tests/backend/comprehensive-backend-validation.test.ts:717:7)
+
+    console.warn
+      [TEMPLUM_CORE] Failed to load skin into Templum Core for routing-minimal: TypeError: this.orchestrator.loadSkin is not a function
+          at TemplumBackendServiceRouter.loadSkin [as loadBackendSkin] (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:2898:37)
+          at processTicksAndRejections (node:internal/process/task_queues:105:5)
+          at TemplumBackendServiceRouter.connectToService (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:3528:36)
+          at TemplumBackendServiceRouter.registerBackendFromSkin (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:938:32)
+          at Object.<anonymous> (/home/gabri/dev/VDL_VAULT/Templum/src/tests/backend/comprehensive-backend-validation.test.ts:717:7)
+
+      2902 |           }
+      2903 |         } catch (coreError) {
+    > 2904 |           console.warn(`[TEMPLUM_CORE] Failed to load skin into Templum Core for ${backendId}:`, coreError);
+           |                   ^
+      2905 |           // Don't fail the entire skin loading process due to core loading issues
+      2906 |         }
+      2907 |
+
+      at TemplumBackendServiceRouter.warn [as loadBackendSkin] (src/backend/backend-service-router.ts:2904:19)
+      at TemplumBackendServiceRouter.connectToService (src/backend/backend-service-router.ts:3528:36)
+      at TemplumBackendServiceRouter.registerBackendFromSkin (src/backend/backend-service-router.ts:938:32)
+      at Object.<anonymous> (src/tests/backend/comprehensive-backend-validation.test.ts:717:7)
+
+    console.warn
+      [SERVICE_CONNECTION] Skin loading failed for routing-minimal: TypeError: this.orchestrator.loadSkin is not a function
+          at TemplumBackendServiceRouter.loadSkin [as connectToService] (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:3530:39)
+          at processTicksAndRejections (node:internal/process/task_queues:105:5)
+          at TemplumBackendServiceRouter.registerBackendFromSkin (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:938:32)
+          at Object.<anonymous> (/home/gabri/dev/VDL_VAULT/Templum/src/tests/backend/comprehensive-backend-validation.test.ts:717:7)
+
+      3531 |             }
+      3532 |           } catch (skinError) {
+    > 3533 |             console.warn(`[SERVICE_CONNECTION] Skin loading failed for ${serviceId}:`, skinError);
+           |                     ^
+      3534 |             // Continue - connection successful even if skin loading failed
+      3535 |           }
+      3536 |         }
+
+      at TemplumBackendServiceRouter.warn [as connectToService] (src/backend/backend-service-router.ts:3533:21)
+      at TemplumBackendServiceRouter.registerBackendFromSkin (src/backend/backend-service-router.ts:938:32)
+      at Object.<anonymous> (src/tests/backend/comprehensive-backend-validation.test.ts:717:7)
+
+    console.warn
+      [HTTP] Failed routing-full endpoint: http://localhost:3014/api/skins/default - Error: HTTP 404 Not Found
+
+      2493 |         
+      2494 |       } catch (error) {
+    > 2495 |         console.warn(`[HTTP] Failed ${connection.id} endpoint: ${attempt.endpoint} - ${error}`);
+           |                 ^
+      2496 |         lastError = error as Error;
+      2497 |         continue;
+      2498 |       }
+
+      at TemplumBackendServiceRouter.warn [as tryHTTPEndpointsWithFallback] (src/backend/backend-service-router.ts:2495:17)
+      at TemplumBackendServiceRouter.callHTTPService (src/backend/backend-service-router.ts:2414:14)
+      at TemplumBackendServiceRouter.callBackendServiceAPI (src/backend/backend-service-router.ts:2286:18)
+      at TemplumBackendServiceRouter.loadBackendSkin (src/backend/backend-service-router.ts:2855:24)
+      at TemplumBackendServiceRouter.getServiceVersion (src/backend/backend-service-router.ts:1559:32)
+      at TemplumBackendServiceRouter.connectToService (src/backend/backend-service-router.ts:3523:73)
+      at TemplumBackendServiceRouter.registerBackendFromSkin (src/backend/backend-service-router.ts:938:32)
+      at Object.<anonymous> (src/tests/backend/comprehensive-backend-validation.test.ts:718:7)
+
+    console.warn
+      [2025-10-14T21:27:47.940Z] [serialization-utils:backend:dynamic-command-router:registration] [WARN] Duplicate command registration detected {
+        commandId: 'example.hello',
+        existingBackendId: 'routing-minimal',
+        backendId: 'routing-full'
+      }
+
+      57 |
+      58 |       if (data !== undefined || durationMs !== undefined) {
+    > 59 |         target(prefix, message, mergePayload(data, durationMs));
+         |         ^
+      60 |       } else {
+      61 |         target(prefix, message);
+      62 |       }
+
+      at Object.target [as log] (src/utils/logger.ts:59:9)
+      at Logger.log [as dispatch] (src/utils/logger.ts:181:35)
+      at Logger.dispatch [as warn] (src/utils/logger.ts:116:10)
+      at DynamicCommandRouter.warn [as registerBackend] (src/backend/dynamic-command-router.ts:109:35)
+      at TemplumBackendServiceRouter.registerBackend (src/backend/backend-service-router.ts:2888:30)
+      at TemplumBackendServiceRouter.getServiceVersion (src/backend/backend-service-router.ts:1559:32)
+      at TemplumBackendServiceRouter.connectToService (src/backend/backend-service-router.ts:3523:73)
+      at TemplumBackendServiceRouter.registerBackendFromSkin (src/backend/backend-service-router.ts:938:32)
+      at Object.<anonymous> (src/tests/backend/comprehensive-backend-validation.test.ts:718:7)
+
+    console.warn
+      [2025-10-14T21:27:47.941Z] [serialization-utils:backend:dynamic-command-router:registration] [WARN] Duplicate command registration detected {
+        commandId: 'example.status',
+        existingBackendId: 'routing-minimal',
+        backendId: 'routing-full'
+      }
+
+      57 |
+      58 |       if (data !== undefined || durationMs !== undefined) {
+    > 59 |         target(prefix, message, mergePayload(data, durationMs));
+         |         ^
+      60 |       } else {
+      61 |         target(prefix, message);
+      62 |       }
+
+      at Object.target [as log] (src/utils/logger.ts:59:9)
+      at Logger.log [as dispatch] (src/utils/logger.ts:181:35)
+      at Logger.dispatch [as warn] (src/utils/logger.ts:116:10)
+      at DynamicCommandRouter.warn [as registerBackend] (src/backend/dynamic-command-router.ts:109:35)
+      at TemplumBackendServiceRouter.registerBackend (src/backend/backend-service-router.ts:2888:30)
+      at TemplumBackendServiceRouter.getServiceVersion (src/backend/backend-service-router.ts:1559:32)
+      at TemplumBackendServiceRouter.connectToService (src/backend/backend-service-router.ts:3523:73)
+      at TemplumBackendServiceRouter.registerBackendFromSkin (src/backend/backend-service-router.ts:938:32)
+      at Object.<anonymous> (src/tests/backend/comprehensive-backend-validation.test.ts:718:7)
+
+    console.warn
+      [TEMPLUM_CORE] Failed to load skin into Templum Core for routing-full: TypeError: this.orchestrator.loadSkin is not a function
+          at TemplumBackendServiceRouter.loadSkin [as loadBackendSkin] (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:2898:37)
+          at processTicksAndRejections (node:internal/process/task_queues:105:5)
+          at TemplumBackendServiceRouter.getServiceVersion (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:1559:32)
+          at TemplumBackendServiceRouter.connectToService (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:3523:73)
+          at TemplumBackendServiceRouter.registerBackendFromSkin (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:938:32)
+          at Object.<anonymous> (/home/gabri/dev/VDL_VAULT/Templum/src/tests/backend/comprehensive-backend-validation.test.ts:718:7)
+
+      2902 |           }
+      2903 |         } catch (coreError) {
+    > 2904 |           console.warn(`[TEMPLUM_CORE] Failed to load skin into Templum Core for ${backendId}:`, coreError);
+           |                   ^
+      2905 |           // Don't fail the entire skin loading process due to core loading issues
+      2906 |         }
+      2907 |
+
+      at TemplumBackendServiceRouter.warn [as loadBackendSkin] (src/backend/backend-service-router.ts:2904:19)
+      at TemplumBackendServiceRouter.getServiceVersion (src/backend/backend-service-router.ts:1559:32)
+      at TemplumBackendServiceRouter.connectToService (src/backend/backend-service-router.ts:3523:73)
+      at TemplumBackendServiceRouter.registerBackendFromSkin (src/backend/backend-service-router.ts:938:32)
+      at Object.<anonymous> (src/tests/backend/comprehensive-backend-validation.test.ts:718:7)
+
+    console.warn
+      [HTTP] Failed routing-full endpoint: http://localhost:3014/api/skins/default - Error: HTTP 404 Not Found
+
+      2493 |         
+      2494 |       } catch (error) {
+    > 2495 |         console.warn(`[HTTP] Failed ${connection.id} endpoint: ${attempt.endpoint} - ${error}`);
+           |                 ^
+      2496 |         lastError = error as Error;
+      2497 |         continue;
+      2498 |       }
+
+      at TemplumBackendServiceRouter.warn [as tryHTTPEndpointsWithFallback] (src/backend/backend-service-router.ts:2495:17)
+      at TemplumBackendServiceRouter.callHTTPService (src/backend/backend-service-router.ts:2414:14)
+      at TemplumBackendServiceRouter.callBackendServiceAPI (src/backend/backend-service-router.ts:2286:18)
+      at TemplumBackendServiceRouter.loadBackendSkin (src/backend/backend-service-router.ts:2855:24)
+      at TemplumBackendServiceRouter.connectToService (src/backend/backend-service-router.ts:3528:36)
+      at TemplumBackendServiceRouter.registerBackendFromSkin (src/backend/backend-service-router.ts:938:32)
+      at Object.<anonymous> (src/tests/backend/comprehensive-backend-validation.test.ts:718:7)
+
+    console.warn
+      [2025-10-14T21:27:47.943Z] [serialization-utils:backend:dynamic-command-router:registration] [WARN] Duplicate command registration detected {
+        commandId: 'example.hello',
+        existingBackendId: 'routing-full',
+        backendId: 'routing-full'
+      }
+
+      57 |
+      58 |       if (data !== undefined || durationMs !== undefined) {
+    > 59 |         target(prefix, message, mergePayload(data, durationMs));
+         |         ^
+      60 |       } else {
+      61 |         target(prefix, message);
+      62 |       }
+
+      at Object.target [as log] (src/utils/logger.ts:59:9)
+      at Logger.log [as dispatch] (src/utils/logger.ts:181:35)
+      at Logger.dispatch [as warn] (src/utils/logger.ts:116:10)
+      at DynamicCommandRouter.warn [as registerBackend] (src/backend/dynamic-command-router.ts:109:35)
+      at TemplumBackendServiceRouter.registerBackend (src/backend/backend-service-router.ts:2888:30)
+      at TemplumBackendServiceRouter.connectToService (src/backend/backend-service-router.ts:3528:36)
+      at TemplumBackendServiceRouter.registerBackendFromSkin (src/backend/backend-service-router.ts:938:32)
+      at Object.<anonymous> (src/tests/backend/comprehensive-backend-validation.test.ts:718:7)
+
+    console.warn
+      [2025-10-14T21:27:47.944Z] [serialization-utils:backend:dynamic-command-router:registration] [WARN] Duplicate command registration detected {
+        commandId: 'example.status',
+        existingBackendId: 'routing-full',
+        backendId: 'routing-full'
+      }
+
+      57 |
+      58 |       if (data !== undefined || durationMs !== undefined) {
+    > 59 |         target(prefix, message, mergePayload(data, durationMs));
+         |         ^
+      60 |       } else {
+      61 |         target(prefix, message);
+      62 |       }
+
+      at Object.target [as log] (src/utils/logger.ts:59:9)
+      at Logger.log [as dispatch] (src/utils/logger.ts:181:35)
+      at Logger.dispatch [as warn] (src/utils/logger.ts:116:10)
+      at DynamicCommandRouter.warn [as registerBackend] (src/backend/dynamic-command-router.ts:109:35)
+      at TemplumBackendServiceRouter.registerBackend (src/backend/backend-service-router.ts:2888:30)
+      at TemplumBackendServiceRouter.connectToService (src/backend/backend-service-router.ts:3528:36)
+      at TemplumBackendServiceRouter.registerBackendFromSkin (src/backend/backend-service-router.ts:938:32)
+      at Object.<anonymous> (src/tests/backend/comprehensive-backend-validation.test.ts:718:7)
+
+    console.warn
+      [TEMPLUM_CORE] Failed to load skin into Templum Core for routing-full: TypeError: this.orchestrator.loadSkin is not a function
+          at TemplumBackendServiceRouter.loadSkin [as loadBackendSkin] (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:2898:37)
+          at processTicksAndRejections (node:internal/process/task_queues:105:5)
+          at TemplumBackendServiceRouter.connectToService (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:3528:36)
+          at TemplumBackendServiceRouter.registerBackendFromSkin (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:938:32)
+          at Object.<anonymous> (/home/gabri/dev/VDL_VAULT/Templum/src/tests/backend/comprehensive-backend-validation.test.ts:718:7)
+
+      2902 |           }
+      2903 |         } catch (coreError) {
+    > 2904 |           console.warn(`[TEMPLUM_CORE] Failed to load skin into Templum Core for ${backendId}:`, coreError);
+           |                   ^
+      2905 |           // Don't fail the entire skin loading process due to core loading issues
+      2906 |         }
+      2907 |
+
+      at TemplumBackendServiceRouter.warn [as loadBackendSkin] (src/backend/backend-service-router.ts:2904:19)
+      at TemplumBackendServiceRouter.connectToService (src/backend/backend-service-router.ts:3528:36)
+      at TemplumBackendServiceRouter.registerBackendFromSkin (src/backend/backend-service-router.ts:938:32)
+      at Object.<anonymous> (src/tests/backend/comprehensive-backend-validation.test.ts:718:7)
+
+    console.warn
+      [SERVICE_CONNECTION] Skin loading failed for routing-full: TypeError: this.orchestrator.loadSkin is not a function
+          at TemplumBackendServiceRouter.loadSkin [as connectToService] (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:3530:39)
+          at processTicksAndRejections (node:internal/process/task_queues:105:5)
+          at TemplumBackendServiceRouter.registerBackendFromSkin (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:938:32)
+          at Object.<anonymous> (/home/gabri/dev/VDL_VAULT/Templum/src/tests/backend/comprehensive-backend-validation.test.ts:718:7)
+
+      3531 |             }
+      3532 |           } catch (skinError) {
+    > 3533 |             console.warn(`[SERVICE_CONNECTION] Skin loading failed for ${serviceId}:`, skinError);
+           |                     ^
+      3534 |             // Continue - connection successful even if skin loading failed
+      3535 |           }
+      3536 |         }
+
+      at TemplumBackendServiceRouter.warn [as connectToService] (src/backend/backend-service-router.ts:3533:21)
+      at TemplumBackendServiceRouter.registerBackendFromSkin (src/backend/backend-service-router.ts:938:32)
+      at Object.<anonymous> (src/tests/backend/comprehensive-backend-validation.test.ts:718:7)
+
+---------------------------------------|---------|----------|---------|---------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+File                                   | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
+---------------------------------------|---------|----------|---------|---------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+All files                              |    6.74 |     3.72 |    5.98 |    6.86 |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+ src                                   |     5.3 |     2.82 |    5.26 |    5.16 |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+  cli-entry.ts                         |   16.66 |     9.27 |   13.04 |   16.25 | 36-37,39-43,53-54,58,66-67,122,135,162-163,172-176,183-954,960-961,965-966,971                                                                                                                                                                                                                                                                                                                                                                                                                                    
+  extension.ts                         |       0 |        0 |       0 |       0 | 9-1953                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+  index.ts                             |       0 |        0 |       0 |       0 | 9-86                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              
+ src/backend                           |   27.15 |    19.02 |   24.81 |   27.61 |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+  backend-dependency-resolver.ts       |       0 |        0 |       0 |       0 | 16-778                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+  backend-integration-config.ts        |    17.5 |        0 |   14.28 |    17.5 | 161-328                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
+  backend-serialization-log.ts         |   63.15 |    41.66 |     100 |   63.15 | 38-39,43-44,48-49,53                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              
+  backend-service-router.ts            |   32.77 |    25.95 |    29.1 |   33.46 | 319,322,325,328,331,339,344,347,350,353,532,542-543,582-583,661,667,674-810,835-836,850,855-856,865-874,890,899-900,944-949,987,1042-1051,1061-1082,1092-1094,1118-1120,1137-1156,1205-1465,1476,1491,1517-1533,1554,1565,1572-1581,1594-1610,1650,1655-1673,1684,1733,1747-1809,1834-2269,2284,2288-2388,2406,2417-2424,2461,2502-2506,2536-2556,2577-2799,2834-2835,2843-2844,2881-2882,2891,2899,2911-2955,2969-3446,3454,3472-3484,3501,3511,3547-3621,3633,3647-3651,3656,3677,3693,3708,3735,3749,3778-3997 
+  connection-factory.ts                |   19.62 |    14.38 |   17.64 |    19.8 | 32-57,80,87,90,93,127,131-133,146,150,168-222,250-251,269,284-293,302-305,311-312,336-764                                                                                                                                                                                                                                                                                                                                                                                                                         
+  dynamic-command-router.ts            |   37.89 |    15.62 |   21.42 |   37.89 | 130-143,170-342                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+  index.ts                             |       0 |      100 |     100 |       0 | 1                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
+  manual-override-manager.ts           |    74.5 |    54.54 |    90.9 |    74.5 | 88-89,99,116-117,122-123,141-143,148-149,158                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
+  pcl-backend-integration.ts           |   16.24 |     2.15 |   14.63 |   16.78 | 223-390,397-444,468-613,637-718,728,735,744-838,866-979,989-1040,1097-1359,1365,1369-1370,1375-1376,1381-1390,1401,1408,1417-1515,1523-1528                                                                                                                                                                                                                                                                                                                                                                       
+  service-discovery-validator.ts       |       0 |        0 |       0 |       0 | 14-719                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+  service-discovery.ts                 |      50 |    29.58 |   51.38 |    50.1 | 140,160-247,258-259,263-272,279-291,350-351,397-408,422-433,452,474-482,494-531,552-554,574,585-586,590,610-615,658-672,739-807,823-825,837-849,865-866,874-916,926-936,965-1079,1128,1145,1156-1157,1165,1170-1217,1243-1244,1254-1255,1259,1263-1274,1278-1322,1351,1357,1361-1372,1377-1422                                                                                                                                                                                                                    
+  service-health-check.ts              |    7.07 |        0 |       0 |    7.07 | 18-19,32-270                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
+ src/backend/defaults                  |   68.33 |       39 |   69.23 |   68.96 |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+  serialization-defaults.ts            |   68.33 |       39 |   69.23 |   68.96 | 34,40,75-90,96-112,118-134,240-244,274,278,282                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
+ src/backend/lifecycle                 |   46.66 |       24 |    37.5 |   46.66 |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+  backend-lifecycle-channel.ts         |   46.66 |       24 |    37.5 |   46.66 | 14-38,60-72,87                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
+ src/backend/schemas                   |   60.65 |    18.51 |   66.66 |   60.65 |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+  serialization-registry.ts            |     100 |      100 |     100 |     100 |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+  service-manifest.ts                  |   52.94 |    18.51 |   66.66 |   52.94 | 26,80,87-105,112,148-155,203-220                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
+ src/backend/service-discovery         |    45.9 |    35.71 |   38.46 |    45.9 |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+  file-watcher.ts                      |    45.9 |    35.71 |   38.46 |    45.9 | 22-35,54,60-61,77-80,85,100,106-114,125-149                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
+ src/commands                          |       0 |        0 |       0 |       0 |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+  universal-command-registry.ts        |       0 |        0 |       0 |       0 | 14-935                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+ src/core                              |    5.66 |      1.4 |    3.14 |    5.74 |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+  adapter-registry.ts                  |    6.92 |        0 |    3.03 |    7.04 | 70-160,168-298,304-443,449-539,546-628,649-769,819-2002                                                                                                                                                                                                                                                                                                                                                                                                                                                           
+  error-recovery.ts                    |       0 |        0 |       0 |       0 | 9-368                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
+  templum-config-manager.ts            |       0 |        0 |       0 |       0 | 9-934                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
+  templum-core.ts                      |    8.03 |     3.28 |    6.36 |    8.11 | 170-1512,1519,1525,1532,1539,1546-1680,1708-2246,2264-2265,2269,2271,2273,2288,2295-2451,2484,2496,2519-2549,2584-2616,2626-2627                                                                                                                                                                                                                                                                                                                                                                                  
+  templum-resource-manager.ts          |    3.79 |        0 |       0 |    3.89 | 157-774,787,796-805,809-813,817-822                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
+  universal-interface-manager.ts       |     1.7 |        0 |       0 |    1.72 | 90-855                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+ src/interfaces                        |    1.85 |        0 |    0.31 |    1.82 |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+  adaptive-cli-integration.ts          |       0 |        0 |       0 |       0 | 27-1005                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
+  border-renderer.ts                   |       0 |        0 |       0 |       0 | 20-466                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+  cli-adapter-abstracted.ts            |    2.01 |        0 |       0 |    2.02 | 136-2127,2159                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     
+  cli-adapter.ts                       |       0 |        0 |       0 |       0 | 14-1651                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
+  cli-display-consistency-engine.ts    |       6 |        0 |       0 |    6.18 | 119-576,594,601-609                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
+  cli-integration-demo.ts              |       0 |        0 |       0 |       0 | 27-602                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+  cli-session-bridge.ts                |    3.03 |        0 |       0 |    3.03 | 23-171                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+  command-adapter-abstracted.ts        |       0 |        0 |       0 |       0 | 9-594                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
+  display-standards-calculator.ts      |       3 |        0 |       0 |    3.06 | 123-473,482                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
+  display-utils-layout.ts              |   16.66 |        0 |       0 |   16.66 | 22-45                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
+  enhanced-window-system.ts            |       0 |        0 |       0 |       0 | 23-497                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+  fallback-interface-adapter.ts        |      10 |      100 |       0 |      10 | 23-46                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
+  interactive-menu-renderer.ts         |     3.1 |        0 |       0 |    3.15 | 69-749                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+  interface-adapter-registry.legacy.ts |       0 |        0 |       0 |       0 | 11-408                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+  interface-adapter-registry.ts        |       0 |        0 |       0 |       0 | 11-539                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+  layout-normalizer.ts                 |    1.49 |        0 |       0 |    1.61 | 105-645,666                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
+  service-ordering-manager.ts          |    2.64 |        0 |       0 |    2.85 | 92-450,469,476-477                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
+  terminal-compatibility-detector.ts   |       0 |        0 |       0 |       0 | 23-364                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+  terminal-ui-components.ts            |    4.01 |        0 |       0 |    4.17 | 47,53-66,98-216,246-325,346-538,584-759,795-1143,1172-1416,1444-1641,1690-2177,2208-2211,2224                                                                                                                                                                                                                                                                                                                                                                                                                     
+  terminal-ui-theme.ts                 |   43.75 |        0 |   42.85 |   37.93 | 90-93,97,101,124-164                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              
+  test-window-system.ts                |       0 |        0 |       0 |       0 | 23-455                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+  universal-interaction-manager.ts     |       0 |        0 |       0 |       0 | 15-1164                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
+  vscode-adapter-abstracted.ts         |    2.85 |        0 |       0 |    2.92 | 35-622,638                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
+  vscode-adapter.ts                    |       0 |        0 |       0 |       0 | 14-739                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+  vscode-templum-webview.ts            |       0 |        0 |       0 |       0 | 13-1137                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
+  window-layout-manager.ts             |       0 |        0 |       0 |       0 | 22-297                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+ src/interfaces/cli                    |    7.14 |        0 |       0 |       8 |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+  cli-skin-presenter.ts                |    7.14 |        0 |       0 |       8 | 22-66                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
+ src/interfaces/navigation             |       0 |        0 |       0 |       0 |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+  accessibility-enhancements.ts        |       0 |        0 |       0 |       0 | 27-1019                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
+  border-renderer.ts                   |       0 |        0 |       0 |       0 | 27-549                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+  breadcrumb-manager.ts                |       0 |        0 |       0 |       0 | 27-728                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+  exit-handler.ts                      |       0 |        0 |       0 |       0 | 28-777                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+  index.ts                             |       0 |        0 |       0 |       0 | 31-494                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+  selector-updater.ts                  |       0 |        0 |       0 |       0 | 27-806                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+  terminal-compatibility.ts            |       0 |        0 |       0 |       0 | 30-1065                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
+  width-calculator.ts                  |       0 |        0 |       0 |       0 | 23-527                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+  window-stack.ts                      |       0 |        0 |       0 |       0 | 27-738                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+ src/mcp-channel/src                   |       0 |        0 |       0 |       0 |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+  cli-mcp-server.ts                    |       0 |        0 |       0 |       0 | 14-686                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+  enhanced-mcp-integration.ts          |       0 |        0 |       0 |       0 | 24-1024                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
+  event-listener-manager.ts            |       0 |        0 |       0 |       0 | 32-428                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+  health-monitor.ts                    |       0 |        0 |       0 |       0 | 14-685                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+  index.ts                             |       0 |      100 |       0 |       0 | 17-140                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+  lifecycle-coordinator.ts             |       0 |        0 |       0 |       0 | 12-484                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+  node-pty-types.ts                    |       0 |        0 |       0 |       0 | 18-66                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
+  probabilistic-error-handler.ts       |       0 |        0 |       0 |       0 | 27-723                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+  progressive-timeout-manager.ts       |       0 |        0 |       0 |       0 | 27-913                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+  pty-manager.ts                       |       0 |        0 |       0 |       0 | 15-299                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+  real-time-monitor.ts                 |       0 |        0 |       0 |       0 | 25-772                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+  runtime-compatibility-verifier.ts    |       0 |        0 |       0 |       0 | 28-549                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+  service-registration.ts              |       0 |        0 |       0 |       0 | 12-598                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+  types.ts                             |       0 |        0 |       0 |       0 | 116-131                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
+  visual-feedback-system.ts            |       0 |        0 |       0 |       0 | 26-1019                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
+ src/mcp-channel/tests                 |       0 |        0 |       0 |       0 |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+  setup.ts                             |       0 |        0 |       0 |       0 | 12-28                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
+ src/menus                             |       0 |        0 |       0 |       0 |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+  universal-menu-registry.ts           |       0 |        0 |       0 |       0 | 14-803                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+ src/monitoring                        |       0 |        0 |       0 |       0 |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+  cli-performance-monitor.ts           |       0 |        0 |       0 |       0 | 17-651                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+ src/navigation                        |    1.22 |        0 |       0 |    1.28 |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+  content-driven-navigation.ts         |    0.85 |        0 |       0 |    0.93 | 127-200,212-790                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+  dynamic-command-router.ts            |    1.56 |        0 |       0 |    1.63 | 78-162,173-496,508-767                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+  skin-navigation-parser.ts            |    1.21 |        0 |       0 |    1.25 | 81-183,194-260,272-1001                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
+ src/observability                     |   12.95 |     5.76 |    7.75 |    13.5 |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+  index.ts                             |       0 |        0 |       0 |       0 | 10-237                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+  observability-adapter.ts             |    7.14 |        0 |       0 |    7.37 | 84-354,366,373,380-390,397-406                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
+  templum-observability-system.ts      |   17.02 |     9.39 |    12.5 |   17.91 | 161-165,173-196,220-227,235,250-251,256-281,290-313,328,342,379-453,462-600,609-753,765-934                                                                                                                                                                                                                                                                                                                                                                                                                       
+ src/registry                          |       0 |        0 |       0 |       0 |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+  pcl-command-registry.ts              |       0 |        0 |       0 |       0 | 9-1175                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+  pcl-menu-registry.ts                 |       0 |        0 |       0 |       0 | 9-879                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
+ src/rendering                         |       0 |        0 |       0 |       0 |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+  content-layout-system.ts             |       0 |        0 |       0 |       0 | 43-948                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+  menu-definition-adapter.ts           |       0 |        0 |       0 |       0 | 1-289                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
+  universal-layout-engine.ts           |       0 |        0 |       0 |       0 | 13-1644                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
+  universal-skin-renderer.ts           |       0 |        0 |       0 |       0 | 15-760                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+ src/risk                              |       0 |        0 |       0 |       0 |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+  fallback-manager.ts                  |       0 |        0 |       0 |       0 | 9-962                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
+  performance-monitor.ts               |       0 |        0 |       0 |       0 | 9-714                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
+  rollback-criteria.ts                 |       0 |        0 |       0 |       0 | 9-1182                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+ src/scripts                           |       0 |        0 |       0 |       0 |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+  production-readiness-validation.ts   |       0 |        0 |       0 |       0 | 11-362                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+  run-phase6-integration-validation.ts |       0 |        0 |       0 |       0 | 11-781                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+  simple-phase6-validation.ts          |       0 |        0 |       0 |       0 | 11-554                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+ src/session                           |    1.24 |        0 |       0 |    1.25 |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+  session-context-foundation.ts        |    2.83 |        0 |       0 |    2.96 | 66-426                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+  templum-universal-session-manager.ts |    0.99 |        0 |       0 |       1 | 268-3034                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
+ src/skin                              |    4.96 |     1.04 |    4.34 |     5.2 |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+  pcl-rendering-adapter.ts             |    3.88 |        0 |    4.34 |    4.04 | 112-594                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
+  skin-version-manager.ts              |    7.12 |     0.43 |    6.66 |    7.57 | 67-821,895-953                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
+  universal-skin-engine-impl.ts        |       0 |        0 |       0 |       0 | 10-378                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+  universal-skin-engine.ts             |    4.79 |     1.73 |    4.08 |       5 | 233-2290                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
+ src/skin/versioning                   |    5.26 |        0 |    9.09 |    5.39 |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+  advanced-compatibility-service.ts    |    5.26 |        0 |    9.09 |    5.39 | 34-566                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+ src/state                             |   13.35 |     1.78 |   10.85 |   13.83 |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+  enhanced-state-synchronization.ts    |    16.9 |     2.17 |   13.33 |   17.54 | 104-150,157-158,169-200,228-402,440-553,560,570-593,621-691,698,708-758,853-1122,1128,1135-1136,1145-1148,1160-1247,1255-1265                                                                                                                                                                                                                                                                                                                                                                                     
+  state-sync-foundation.ts             |       0 |        0 |       0 |       0 | 13-380                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+ src/testing                           |       0 |        0 |       0 |       0 |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+  content-layout-test.ts               |       0 |        0 |       0 |       0 | 30-568                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+  e2e-test-framework.ts                |       0 |        0 |       0 |       0 | 9-464                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
+ src/tests                             |       0 |        0 |       0 |       0 |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+  integration-validation-framework.ts  |       0 |        0 |       0 |       0 | 9-5229                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+ src/tests/backend/__utils__           |   86.48 |     37.5 |   73.33 |   85.71 |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+  logger-guardrail.ts                  |      95 |       75 |     100 |   94.44 | 41                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
+  mock-backend-connection.ts           |   76.47 |       25 |      50 |   76.47 | 34-46                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
+ src/tests/e2e                         |       0 |      100 |       0 |       0 |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+  e2e-scenarios.ts                     |       0 |      100 |       0 |       0 | 14-978                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+ src/tests/helpers                     |   28.88 |        0 |       0 |   26.47 |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+  display-columns-provider.ts          |       0 |        0 |       0 |       0 | 1-24                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              
+  terminal-capabilities.ts             |   83.33 |        0 |       0 |      80 | 20                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
+  terminal-formatter-fixtures.ts       |   61.53 |        0 |       0 |      50 | 11,16-19,23                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
+  window-utils-fixtures.ts             |       0 |        0 |       0 |       0 | 1-13                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              
+ src/transfer                          |       0 |        0 |       0 |       0 |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+  component-transfer-strategy.ts       |       0 |        0 |       0 |       0 | 9-779                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
+ src/types                             |    90.9 |    66.66 |   66.66 |    90.9 |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+  templum-types.ts                     |    90.9 |    66.66 |   66.66 |    90.9 | 424                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
+ src/utils                             |   19.36 |    13.61 |   19.71 |   19.37 |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+  async-utils.ts                       |   33.33 |    21.27 |   24.24 |   33.85 | 36-105,122-173,184-187,196,200,215-218,232-233,242-247,259,266-284                                                                                                                                                                                                                                                                                                                                                                                                                                                
+  chainable-string-utils.ts            |    3.86 |        0 |    3.12 |    3.88 | 57-422,430-450,456-467                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+  debug-utils.ts                       |       0 |        0 |       0 |       0 | 1-359                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
+  display-stack.ts                     |   33.33 |        0 |      50 |   28.57 | 21-56                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
+  display-utils.ts                     |   12.79 |     7.14 |   15.38 |   13.41 | 63-91,114-123,132-163,189-264                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     
+  error-handler.ts                     |   28.35 |      9.3 |      25 |   28.78 | 49-164,169,181                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
+  event-bus-adapter.ts                 |   75.75 |    63.15 |   66.66 |   77.77 | 104-110,121,163,181-198                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
+  event-utils.ts                       |   52.67 |    45.71 |   32.55 |   54.62 | 128-133,154,159,185-190,202-262,269,279-293,333-347                                                                                                                                                                                                                                                                                                                                                                                                                                                               
+  index.ts                             |       0 |      100 |       0 |       0 | 1-42                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              
+  logger.ts                            |   67.07 |       60 |   60.86 |   67.07 | 73-76,81,84,89,128-138,147,166-178,187-214,227,240                                                                                                                                                                                                                                                                                                                                                                                                                                                                
+  path-utils.ts                        |       0 |        0 |       0 |       0 | 1-395                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
+  protocol-utils.ts                    |       0 |        0 |       0 |       0 | 1-847                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
+  registry-utils.ts                    |       0 |        0 |       0 |       0 | 1-655                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
+  resilience-utils.ts                  |       0 |        0 |       0 |       0 | 1-661                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
+  serialization-utils.ts               |   60.89 |       60 |   65.51 |   61.29 | 69-83,92-93,117-123,133-155,167,170,192-193,213-234,250-256,266-270,300,315-322,331-332,354,360-363,369,378-384,405                                                                                                                                                                                                                                                                                                                                                                                               
+  service-utils.ts                     |     3.8 |        0 |       0 |     4.1 | 108,113-388,392-559                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
+  terminal-formatter.ts                |   33.62 |    20.64 |   26.21 |   32.12 | 179-224,233,244,253,269,298-299,301-302,306-314,318-321,325-327,331-334,339-343,347-393,408-611,630,640,649,658,674,678-685,699,708,759,782-786,791-792,798-799,806,818-847,871-894,911,926,933,940,944-952,960-969                                                                                                                                                                                                                                                                                               
+  type-guards.ts                       |   34.35 |     30.7 |   38.46 |   33.84 | 20-23,30,40-43,52-55,68-80,116-117,128-129,133-136,147-148,152-153,157-158,162-163,178-208,217-227,270-314,326-370,390-427                                                                                                                                                                                                                                                                                                                                                                                        
+  window-theme-constants.ts            |     100 |      100 |     100 |     100 |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+  window-utils.ts                      |    10.1 |        0 |       8 |   10.41 | 27-35,56-90,105-110,119-276                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
+ src/validation                        |    0.42 |        0 |       0 |    0.44 |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+  hybrid-validation-system-v3c.ts      |       0 |        0 |       0 |       0 | 20-1389                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
+  mock-backend-contracts.ts            |       0 |        0 |       0 |       0 | 9-412                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
+  performance-validation.ts            |       0 |        0 |       0 |       0 | 9-1260                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+  phase6-harness.ts                    |       0 |      100 |       0 |       0 | 1                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
+  production-readiness-validator.ts    |       0 |        0 |       0 |       0 | 9-1172                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+  skin-validator.ts                    |    4.72 |        0 |       0 |    4.76 | 46-244,251-303,313-340                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+  validator-utility-examples.ts        |       0 |        0 |       0 |       0 | 25-653                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+  validator.ts                         |       0 |        0 |       0 |       0 | 25-881                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+---------------------------------------|---------|----------|---------|---------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Jest: "global" coverage threshold for statements (30%) not met: 6.74%
+Jest: "global" coverage threshold for branches (22%) not met: 3.72%
+Jest: "global" coverage threshold for lines (30%) not met: 6.86%
+Jest: "global" coverage threshold for functions (30%) not met: 5.98%
+
+Test Suites: 2 failed, 1 passed, 3 total
+Tests:       4 failed, 22 passed, 26 total
+Snapshots:   0 total
+Time:        11.829 s
+Ran all test suites matching src/tests/backend/manual-override-flow.test.ts|src/tests/backend/manual-override-watcher.integration.test.ts|src/tests/backend/comprehensive-backend-validation.test.ts.
+[run-with-timeout] [2025-10-14T21:27:51.298Z] +12410ms Process exited with code 0.

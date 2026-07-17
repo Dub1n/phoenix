@@ -1,0 +1,1 @@
+      console.error(`[MCP_REGISTRATION] Registration failed (attempt ${this.registrationAttempts}):`, error);

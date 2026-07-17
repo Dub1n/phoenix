@@ -1,0 +1,1 @@
+  logError(`Uncaught exception detected: ${error.message}`);

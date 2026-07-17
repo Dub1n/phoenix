@@ -1,0 +1,4 @@
+2025-10-12T13:19Z Phase6 real run attempt
+- Haruspex backend: started successfully after diagnostic initialization fix.
+- PCL mock (real mode) failed readiness: initial run awaited 20s with skip flag disabled, subsequent run hit EADDRINUSE for port 3012.
+- Directive: proceed without real partner verification; recording failure context for follow-up.

@@ -1,0 +1,38 @@
+[run-with-timeout] [2025-10-14T21:58:58.655Z] +    9ms Spawned PID 811703 with timeout 30000ms (kill-after 5000ms).
+
+> @templum/mcp-channel@1.0.0 test
+> jest --runTestsByPath tests/pty-manager.test.ts
+
+PASS tests/pty-manager.test.ts
+  PTYManager
+    createSession
+      ✓ should create new session successfully (4 ms)
+      ✓ should create session with default shell when no command provided (1 ms)
+      ✓ should throw error when session already exists (2 ms)
+      ✓ should handle PTY spawn failure (1 ms)
+    getSession
+      ✓ should return session when it exists (1 ms)
+      ✓ should return undefined when session does not exist
+    destroySession
+      ✓ should destroy existing session successfully (1 ms)
+      ✓ should return false when session does not exist
+      ✓ should handle process kill error gracefully (1 ms)
+    sendText
+      ✓ should send text to existing session (1 ms)
+      ✓ should throw error when session not found (1 ms)
+      ✓ should handle write error
+    sendKeystroke
+      ✓ should send keystroke to existing session (1 ms)
+      ✓ should throw error when session not found
+    getActiveSessions
+      ✓ should return empty array when no sessions exist
+      ✓ should return all active session IDs (1 ms)
+    cleanup
+      ✓ should cleanup all sessions
+
+Test Suites: 1 passed, 1 total
+Tests:       17 passed, 17 total
+Snapshots:   0 total
+Time:        0.62 s
+Ran all test suites within paths "tests/pty-manager.test.ts".
+[run-with-timeout] [2025-10-14T21:59:01.719Z] + 3073ms Process exited with code 0.

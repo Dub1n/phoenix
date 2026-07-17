@@ -1,0 +1,1 @@
+        throw new Error('Invalid --timeout value; provide a positive number of milliseconds.');

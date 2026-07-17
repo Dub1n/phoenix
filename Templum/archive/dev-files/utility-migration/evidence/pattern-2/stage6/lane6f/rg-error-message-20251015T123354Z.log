@@ -1,0 +1,12 @@
+src/mcp-channel/src/enhanced-mcp-integration.ts:          details: error instanceof Error ? error.message : String(error),
+src/mcp-channel/src/enhanced-mcp-integration.ts:          details: error instanceof Error ? error.message : String(error),
+src/mcp-channel/src/enhanced-mcp-integration.ts:        error: error instanceof Error ? error.message : String(error)
+src/mcp-channel/src/enhanced-mcp-integration.ts:        error: error instanceof Error ? error.message : String(error)
+src/mcp-channel/src/enhanced-mcp-integration.ts:        error: error instanceof Error ? error.message : String(error)
+src/mcp-channel/src/enhanced-mcp-integration.ts:        error: error instanceof Error ? error.message : String(error)
+src/mcp-channel/src/enhanced-mcp-integration.ts:        error: error instanceof Error ? error.message : String(error)
+src/mcp-channel/src/enhanced-mcp-integration.ts:          { error: error instanceof Error ? error.message : String(error) }
+src/mcp-channel/src/enhanced-mcp-integration.ts:      details: error instanceof Error ? error.message : String(error),
+src/mcp-channel/src/cli-mcp-server.ts:          message: error instanceof Error ? error.message : String(error),
+src/mcp-channel/src/lifecycle-coordinator.ts:      this.updateState('error', error instanceof Error ? error.message : String(error));
+src/mcp-channel/src/lifecycle-coordinator.ts:      this.updateState('error', error instanceof Error ? error.message : String(error));

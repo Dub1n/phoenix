@@ -1,0 +1,23 @@
+
+> templum@1.0.0 build
+> tsc
+
+src/backend/backend-service-router.ts(1550,37): error TS2339: Property 'capabilities' does not exist on type 'never'.
+src/backend/service-discovery.ts(320,7): error TS2322: Type 'string[] | undefined' is not assignable to type 'string[]'.
+  Type 'undefined' is not assignable to type 'string[]'.
+src/core/adapter-registry.ts(1784,13): error TS2552: Cannot find name 'InterfaceType'. Did you mean 'InstanceType'?
+src/core/adapter-registry.ts(1793,36): error TS2552: Cannot find name 'InterfaceType'. Did you mean 'InstanceType'?
+src/core/adapter-registry.ts(1795,63): error TS2353: Object literal may only specify known properties, and 'sessionManager' does not exist in type 'CLIAdapterInitializationOptions'.
+src/core/adapter-registry.ts(1809,31): error TS2552: Cannot find name 'InterfaceType'. Did you mean 'InstanceType'?
+src/interfaces/vscode-adapter-abstracted.ts(244,95): error TS2554: Expected 1-2 arguments, but got 3.
+src/session/templum-universal-session-manager.ts(419,3): error TS2416: Property 'off' in type 'TemplumUniversalSessionManager' is not assignable to the same property in base type 'EventEmitter<DefaultEventMap>'.
+  Type '(event: string, listener: (...args: any[]) => void) => void' is not assignable to type '<K>(eventName: string | symbol, listener: (...args: any[]) => void) => this'.
+    Type 'void' is not assignable to type 'this'.
+      'this' could be instantiated with an arbitrary type which could be unrelated to 'void'.
+src/skin/versioning/advanced-compatibility-service.ts(301,7): error TS2322: Type '{ asset: string; format: string; }[]' is not assignable to type '{ asset: string; format: string; supportedFormats: string[]; }[]'.
+  Property 'supportedFormats' is missing in type '{ asset: string; format: string; }' but required in type '{ asset: string; format: string; supportedFormats: string[]; }'.
+src/utils/async-utils.ts(175,11): error TS2353: Object literal may only specify known properties, and 'error' does not exist in type 'Error'.
+src/validation/hybrid-validation-system-v3c.ts(516,14): error TS2367: This comparison appears to be unintentional because the types '"minor" | "moderate"' and '"severe"' have no overlap.
+src/validation/skin-validator.ts(65,56): error TS2638: Type '{}' may represent a primitive value, which is not permitted as the right operand of the 'in' operator.
+src/validation/skin-validator.ts(83,5): error TS18046: 'schema.definitions' is of type 'unknown'.
+src/validation/skin-validator.ts(83,42): error TS18046: 'schema.definitions' is of type 'unknown'.

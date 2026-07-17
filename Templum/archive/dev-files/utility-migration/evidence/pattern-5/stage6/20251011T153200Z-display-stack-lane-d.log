@@ -1,0 +1,15 @@
+
+> templum@1.0.0 test
+> jest --runTestsByPath src/tests/utils/display-stack.integration.test.ts --runInBand --no-cache --forceExit
+
+PASS src/tests/utils/display-stack.integration.test.ts (5.255 s)
+  Display stack configuration
+    ✓ applies shared formatter and columns provider to display and window utilities (12 ms)
+    ✓ resetDisplayStack restores default column calculations (1 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       2 passed, 2 total
+Snapshots:   0 total
+Time:        7.312 s
+Ran all test suites within paths "src/tests/utils/display-stack.integration.test.ts".
+Force exiting Jest: Have you considered using `--detectOpenHandles` to detect async operations that kept running after all tests finished?

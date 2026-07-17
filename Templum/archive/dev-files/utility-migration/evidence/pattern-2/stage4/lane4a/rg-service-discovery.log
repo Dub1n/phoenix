@@ -1,0 +1,19 @@
+[run-with-timeout] [2025-10-14T12:36:03.381Z] +    2ms Spawned PID 662875 with timeout 60000ms (kill-after 5000ms).
+rg: regex parse error:
+    (?:catch \\()
+    ^
+error: unclosed group
+[run-with-timeout] [2025-10-14T12:36:03.384Z] +    5ms Process exited with code 2.
+[run-with-timeout] [2025-10-14T12:36:11.377Z] +    3ms Spawned PID 662976 with timeout 60000ms (kill-after 5000ms).
+  } catch (error) {
+  } catch (_error) {
+      } catch (error) {
+    } catch (error) {
+    } catch (error) {
+    } catch (error) {
+    } catch (error) {
+    } catch (error) {
+      } catch (_error) {
+        } catch (_error) {
+          } catch (_error) {
+[run-with-timeout] [2025-10-14T12:36:11.381Z] +    7ms Process exited with code 0.

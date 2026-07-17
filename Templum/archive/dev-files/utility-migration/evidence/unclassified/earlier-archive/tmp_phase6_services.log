@@ -1,0 +1,23 @@
+[run-with-timeout] [2025-10-02T12:30:19.898Z] +    4ms Spawned PID 367986 with timeout 180000ms (kill-after 5000ms).
+
+> templum@1.0.0 phase6-services
+> npm run build && node dist/src/scripts/run-phase6-integration-validation.js services
+
+
+> templum@1.0.0 build
+> tsc
+
+Component interaction tests initialized
+Usage: phase6-validation services [options] [command]
+
+Manage backend services
+
+Options:
+  -h, --help        display help for command
+
+Commands:
+  start [options]   Start all backend services
+  stop [options]    Stop all backend services
+  status [options]  Check service status
+  help [command]    display help for command
+[run-with-timeout] [2025-10-02T12:30:50.219Z] +30324ms Process exited with code 1.

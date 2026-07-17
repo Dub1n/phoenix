@@ -1,0 +1,7 @@
+[run-with-timeout] [2025-10-10T00:02:01.436Z] +    3ms Spawned PID 827602 with timeout 60000ms (kill-after 5000ms).
+
+> templum@1.0.0 test
+> jest --runTestsByPath src/tests/validation/hybrid-validation-system-v3c.test.ts --runInBand --no-cache --forceExit
+
+[run-with-timeout] [2025-10-10T00:03:05.311Z] +63878ms Timeout reached (60000ms). Sending SIGTERM to PID 827602.
+[run-with-timeout] [2025-10-10T00:03:05.314Z] +63881ms Process exited due to signal SIGTERM.

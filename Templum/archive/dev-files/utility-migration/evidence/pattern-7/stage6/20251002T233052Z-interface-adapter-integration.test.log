@@ -1,0 +1,63 @@
+[run-with-timeout] [2025-10-02T23:30:52.640Z] +   13ms Spawned PID 461320 with timeout 600000ms (kill-after 5000ms).
+FAIL Templum/tests/interfaces/interface-adapter-integration.test.ts
+  ● Test suite failed to run
+
+    SyntaxError: /mnt/c/Users/gabri/Documents/Infotopology/VDL_Vault/Templum/tests/interfaces/interface-adapter-integration.test.ts: Unexpected token, expected "," (32:36)
+
+      30 | const ansiPattern = /\u001b\[[0-9;]*m/g;
+      31 |
+    > 32 | const overrideStdoutColumns = (width: number): (() => void) => {
+         |                                     ^
+      33 |   const original = process.stdout.columns;
+      34 |   Object.defineProperty(process.stdout, "columns", {
+      35 |     configurable: true,
+
+      at constructor (../../../../../../../home/gabri/.npm/_npx/b8d86e6551a4f492/node_modules/@babel/parser/src/parse-error.ts:95:45)
+      at Parser.toParseError [as raise] (../../../../../../../home/gabri/.npm/_npx/b8d86e6551a4f492/node_modules/@babel/parser/src/tokenizer/index.ts:1503:19)
+      at Parser.raise [as unexpected] (../../../../../../../home/gabri/.npm/_npx/b8d86e6551a4f492/node_modules/@babel/parser/src/tokenizer/index.ts:1543:16)
+      at Parser.unexpected [as expect] (../../../../../../../home/gabri/.npm/_npx/b8d86e6551a4f492/node_modules/@babel/parser/src/parser/util.ts:157:12)
+      at Parser.expect [as parseParenAndDistinguishExpression] (../../../../../../../home/gabri/.npm/_npx/b8d86e6551a4f492/node_modules/@babel/parser/src/parser/expression.ts:1789:14)
+      at Parser.parseParenAndDistinguishExpression [as parseExprAtom] (../../../../../../../home/gabri/.npm/_npx/b8d86e6551a4f492/node_modules/@babel/parser/src/parser/expression.ts:1162:21)
+      at Parser.parseExprAtom [as parseExprSubscripts] (../../../../../../../home/gabri/.npm/_npx/b8d86e6551a4f492/node_modules/@babel/parser/src/parser/expression.ts:734:23)
+      at Parser.parseExprSubscripts [as parseUpdate] (../../../../../../../home/gabri/.npm/_npx/b8d86e6551a4f492/node_modules/@babel/parser/src/parser/expression.ts:713:21)
+      at Parser.parseUpdate [as parseMaybeUnary] (../../../../../../../home/gabri/.npm/_npx/b8d86e6551a4f492/node_modules/@babel/parser/src/parser/expression.ts:675:23)
+      at Parser.parseMaybeUnary [as parseMaybeUnaryOrPrivate] (../../../../../../../home/gabri/.npm/_npx/b8d86e6551a4f492/node_modules/@babel/parser/src/parser/expression.ts:409:14)
+      at Parser.parseMaybeUnaryOrPrivate [as parseExprOps] (../../../../../../../home/gabri/.npm/_npx/b8d86e6551a4f492/node_modules/@babel/parser/src/parser/expression.ts:421:23)
+      at Parser.parseExprOps [as parseMaybeConditional] (../../../../../../../home/gabri/.npm/_npx/b8d86e6551a4f492/node_modules/@babel/parser/src/parser/expression.ts:376:23)
+      at Parser.parseMaybeConditional [as parseMaybeAssign] (../../../../../../../home/gabri/.npm/_npx/b8d86e6551a4f492/node_modules/@babel/parser/src/parser/expression.ts:301:21)
+      at parseMaybeAssign (../../../../../../../home/gabri/.npm/_npx/b8d86e6551a4f492/node_modules/@babel/parser/src/parser/expression.ts:257:12)
+      at Parser.callback [as allowInAnd] (../../../../../../../home/gabri/.npm/_npx/b8d86e6551a4f492/node_modules/@babel/parser/src/parser/expression.ts:3187:16)
+      at Parser.allowInAnd [as parseMaybeAssignAllowIn] (../../../../../../../home/gabri/.npm/_npx/b8d86e6551a4f492/node_modules/@babel/parser/src/parser/expression.ts:256:17)
+      at Parser.parseMaybeAssignAllowIn [as parseVar] (../../../../../../../home/gabri/.npm/_npx/b8d86e6551a4f492/node_modules/@babel/parser/src/parser/statement.ts:1582:18)
+      at Parser.parseVar [as parseVarStatement] (../../../../../../../home/gabri/.npm/_npx/b8d86e6551a4f492/node_modules/@babel/parser/src/parser/statement.ts:1246:10)
+      at Parser.parseVarStatement [as parseStatementContent] (../../../../../../../home/gabri/.npm/_npx/b8d86e6551a4f492/node_modules/@babel/parser/src/parser/statement.ts:607:21)
+      at Parser.parseStatementContent [as parseStatementLike] (../../../../../../../home/gabri/.npm/_npx/b8d86e6551a4f492/node_modules/@babel/parser/src/parser/statement.ts:477:17)
+      at Parser.parseStatementLike [as parseModuleItem] (../../../../../../../home/gabri/.npm/_npx/b8d86e6551a4f492/node_modules/@babel/parser/src/parser/statement.ts:414:17)
+      at Parser.parseModuleItem [as parseBlockOrModuleBlockBody] (../../../../../../../home/gabri/.npm/_npx/b8d86e6551a4f492/node_modules/@babel/parser/src/parser/statement.ts:1438:16)
+      at Parser.parseBlockOrModuleBlockBody [as parseBlockBody] (../../../../../../../home/gabri/.npm/_npx/b8d86e6551a4f492/node_modules/@babel/parser/src/parser/statement.ts:1412:10)
+      at Parser.parseBlockBody [as parseProgram] (../../../../../../../home/gabri/.npm/_npx/b8d86e6551a4f492/node_modules/@babel/parser/src/parser/statement.ts:229:10)
+      at Parser.parseProgram [as parseTopLevel] (../../../../../../../home/gabri/.npm/_npx/b8d86e6551a4f492/node_modules/@babel/parser/src/parser/statement.ts:203:25)
+      at Parser.parseTopLevel [as parse] (../../../../../../../home/gabri/.npm/_npx/b8d86e6551a4f492/node_modules/@babel/parser/src/parser/index.ts:93:10)
+      at parse (../../../../../../../home/gabri/.npm/_npx/b8d86e6551a4f492/node_modules/@babel/parser/src/index.ts:92:38)
+      at parser (../../../../../../../home/gabri/.npm/_npx/b8d86e6551a4f492/node_modules/@babel/core/src/parser/index.ts:28:19)
+          at parser.next (<anonymous>)
+      at normalizeFile (../../../../../../../home/gabri/.npm/_npx/b8d86e6551a4f492/node_modules/@babel/core/src/transformation/normalize-file.ts:49:24)
+          at normalizeFile.next (<anonymous>)
+      at run (../../../../../../../home/gabri/.npm/_npx/b8d86e6551a4f492/node_modules/@babel/core/src/transformation/index.ts:40:36)
+          at run.next (<anonymous>)
+      at transform (../../../../../../../home/gabri/.npm/_npx/b8d86e6551a4f492/node_modules/@babel/core/src/transform.ts:29:20)
+          at transform.next (<anonymous>)
+      at evaluateSync (../../../../../../../home/gabri/.npm/_npx/b8d86e6551a4f492/node_modules/gensync/index.js:251:28)
+      at sync (../../../../../../../home/gabri/.npm/_npx/b8d86e6551a4f492/node_modules/gensync/index.js:89:14)
+      at fn (../../../../../../../home/gabri/.npm/_npx/b8d86e6551a4f492/node_modules/@babel/core/src/errors/rewrite-stack-trace.ts:99:14)
+      at transformSync (../../../../../../../home/gabri/.npm/_npx/b8d86e6551a4f492/node_modules/@babel/core/src/transform.ts:66:52)
+      at ScriptTransformer.transformSource (../../../../../../../home/gabri/.npm/_npx/b8d86e6551a4f492/node_modules/@jest/transform/build/index.js:422:31)
+      at ScriptTransformer._transformAndBuildScript (../../../../../../../home/gabri/.npm/_npx/b8d86e6551a4f492/node_modules/@jest/transform/build/index.js:519:40)
+      at ScriptTransformer.transform (../../../../../../../home/gabri/.npm/_npx/b8d86e6551a4f492/node_modules/@jest/transform/build/index.js:558:19)
+
+Test Suites: 1 failed, 1 total
+Tests:       0 total
+Snapshots:   0 total
+Time:        0.503 s
+Ran all test suites within paths "Templum/tests/interfaces/interface-adapter-integration.test.ts".
+[run-with-timeout] [2025-10-02T23:31:00.574Z] + 7947ms Process exited with code 1.

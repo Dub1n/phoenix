@@ -1,0 +1,21 @@
+[run-with-timeout] [2025-10-09T23:50:56.756Z] +    7ms Spawned PID 825880 with timeout 180000ms (kill-after 5000ms).
+
+> templum@1.0.0 test
+> jest --runTestsByPath src/tests/validation/hybrid-validation-system-v3c.test.ts --runInBand --no-cache
+
+  console.warn
+    Failed to load validation configuration: Error: ENOENT: no such file or directory, open './nonexistent-config.json'. Using defaults.
+
+      1531 |       
+      1532 |       // Continue with default configuration
+    > 1533 |       console.warn(`Failed to load validation configuration: ${error}. Using defaults.`);
+           |               ^
+      1534 |     }
+      1535 |   }
+      1536 |
+
+      at HybridValidationSystemV3C.loadConfiguration (src/validation/hybrid-validation-system-v3c.ts:1533:15)
+      at Object.<anonymous> (src/tests/validation/hybrid-validation-system-v3c.test.ts:929:7)
+
+[run-with-timeout] [2025-10-09T23:54:06.171Z] +189422ms Timeout reached (180000ms). Sending SIGTERM to PID 825880.
+[run-with-timeout] [2025-10-09T23:54:06.177Z] +189427ms Process exited due to signal SIGTERM.

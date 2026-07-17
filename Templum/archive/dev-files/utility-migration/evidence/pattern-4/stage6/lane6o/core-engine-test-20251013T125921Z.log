@@ -1,0 +1,2584 @@
+
+> templum@1.0.0 test
+> jest --runTestsByPath tests/core/core-engine.test.ts --runInBand --no-cache --forceExit
+
+  console.warn
+    Failed to initialize cli adapter during bootstrap: Templum Core Engine must be initialized before registering interfaces
+
+      957 |       } catch (error) {
+      958 |         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    > 959 |         console.warn(`Failed to initialize ${interfaceType} adapter during bootstrap:`, errorMessage);
+          |                 ^
+      960 |       }
+      961 |     }
+      962 |
+
+      at TemplumCore.initializeInterfaceAdapters (src/core/templum-core.ts:959:17)
+      at TemplumCore.initialize (src/core/templum-core.ts:176:7)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:31:7)
+
+  console.warn
+    [SERVICE_DISCOVERY] No services connected - system running in standalone mode
+
+      1114 |
+      1115 |     if (discoveredServices.length === 0) {
+    > 1116 |       console.warn('[SERVICE_DISCOVERY] No services connected - system running in standalone mode');
+           |               ^
+      1117 |     } else {
+      1118 |       console.log(`[SERVICE_DISCOVERY] Successfully connected to ${discoveredServices.length} backend services`);
+      1119 |       if (this.healthMonitoringEnabled) {
+
+      at TemplumBackendServiceRouter.discoverAndConnectGeneric (src/backend/backend-service-router.ts:1116:15)
+      at TemplumBackendServiceRouter.discoverAndConnect (src/backend/backend-service-router.ts:1012:5)
+      at BackendServiceRouterAdapter.discoverAndConnect (src/core/adapter-registry.ts:445:5)
+      at TemplumCore.initialize (src/core/templum-core.ts:207:9)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:31:7)
+
+  console.warn
+    [2025-10-13T12:59:23.697Z] [WARN] [TemplumCore] No healthy backend connections established {
+      totalAttempted: 0,
+      backendStates: {
+        haruspex: {
+          connected: false,
+          health: 'unhealthy',
+          lastCheck: 0,
+          capabilities: [Array]
+        },
+        pcl: {
+          connected: false,
+          health: 'unhealthy',
+          lastCheck: 0,
+          capabilities: [Array]
+        },
+        litany: {
+          connected: false,
+          health: 'unhealthy',
+          lastCheck: 0,
+          capabilities: [Array]
+        }
+      }
+    }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at TemplumCore.initialize (src/core/templum-core.ts:218:16)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:31:7)
+
+  console.warn
+    [2025-10-13T12:59:23.701Z] [WARN] [TemplumCore] Backend haruspex connection unhealthy { responseTime: undefined }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at src/core/templum-core.ts:237:18
+          at Array.forEach (<anonymous>)
+      at TemplumCore.initialize (src/core/templum-core.ts:232:51)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:31:7)
+
+  console.warn
+    [2025-10-13T12:59:23.702Z] [WARN] [TemplumCore] Backend pcl connection unhealthy { responseTime: undefined }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at src/core/templum-core.ts:237:18
+          at Array.forEach (<anonymous>)
+      at TemplumCore.initialize (src/core/templum-core.ts:232:51)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:31:7)
+
+  console.warn
+    [2025-10-13T12:59:23.703Z] [WARN] [TemplumCore] Backend litany connection unhealthy { responseTime: undefined }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at src/core/templum-core.ts:237:18
+          at Array.forEach (<anonymous>)
+      at TemplumCore.initialize (src/core/templum-core.ts:232:51)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:31:7)
+
+  console.warn
+    No active session to stop
+
+      1249 |   async stopSession(): Promise<void> {
+      1250 |     if (!this.currentSessionId) {
+    > 1251 |       console.warn('No active session to stop');
+           |               ^
+      1252 |       return;
+      1253 |     }
+      1254 |
+
+      at TemplumUniversalSessionManager.stopSession (src/session/templum-universal-session-manager.ts:1251:15)
+      at TemplumAdapterRegistry.dispose (src/core/adapter-registry.ts:1831:59)
+      at TemplumCore.shutdown (src/core/templum-core.ts:911:34)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:21:7)
+
+  console.warn
+    Failed to initialize cli adapter during bootstrap: Templum Core Engine must be initialized before registering interfaces
+
+      957 |       } catch (error) {
+      958 |         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    > 959 |         console.warn(`Failed to initialize ${interfaceType} adapter during bootstrap:`, errorMessage);
+          |                 ^
+      960 |       }
+      961 |     }
+      962 |
+
+      at TemplumCore.initializeInterfaceAdapters (src/core/templum-core.ts:959:17)
+      at TemplumCore.initialize (src/core/templum-core.ts:176:7)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:46:7)
+
+  console.warn
+    [SERVICE_DISCOVERY] No services connected - system running in standalone mode
+
+      1114 |
+      1115 |     if (discoveredServices.length === 0) {
+    > 1116 |       console.warn('[SERVICE_DISCOVERY] No services connected - system running in standalone mode');
+           |               ^
+      1117 |     } else {
+      1118 |       console.log(`[SERVICE_DISCOVERY] Successfully connected to ${discoveredServices.length} backend services`);
+      1119 |       if (this.healthMonitoringEnabled) {
+
+      at TemplumBackendServiceRouter.discoverAndConnectGeneric (src/backend/backend-service-router.ts:1116:15)
+      at TemplumBackendServiceRouter.discoverAndConnect (src/backend/backend-service-router.ts:1012:5)
+      at BackendServiceRouterAdapter.discoverAndConnect (src/core/adapter-registry.ts:445:5)
+      at TemplumCore.initialize (src/core/templum-core.ts:207:9)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:46:7)
+
+  console.warn
+    [2025-10-13T12:59:23.728Z] [WARN] [TemplumCore] No healthy backend connections established {
+      totalAttempted: 0,
+      backendStates: {
+        haruspex: {
+          connected: false,
+          health: 'unhealthy',
+          lastCheck: 0,
+          capabilities: [Array]
+        },
+        pcl: {
+          connected: false,
+          health: 'unhealthy',
+          lastCheck: 0,
+          capabilities: [Array]
+        },
+        litany: {
+          connected: false,
+          health: 'unhealthy',
+          lastCheck: 0,
+          capabilities: [Array]
+        }
+      }
+    }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at TemplumCore.initialize (src/core/templum-core.ts:218:16)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:46:7)
+
+  console.warn
+    [2025-10-13T12:59:23.729Z] [WARN] [TemplumCore] Backend haruspex connection unhealthy { responseTime: undefined }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at src/core/templum-core.ts:237:18
+          at Array.forEach (<anonymous>)
+      at TemplumCore.initialize (src/core/templum-core.ts:232:51)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:46:7)
+
+  console.warn
+    [2025-10-13T12:59:23.730Z] [WARN] [TemplumCore] Backend pcl connection unhealthy { responseTime: undefined }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at src/core/templum-core.ts:237:18
+          at Array.forEach (<anonymous>)
+      at TemplumCore.initialize (src/core/templum-core.ts:232:51)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:46:7)
+
+  console.warn
+    [2025-10-13T12:59:23.731Z] [WARN] [TemplumCore] Backend litany connection unhealthy { responseTime: undefined }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at src/core/templum-core.ts:237:18
+          at Array.forEach (<anonymous>)
+      at TemplumCore.initialize (src/core/templum-core.ts:232:51)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:46:7)
+
+  console.warn
+    No active session to stop
+
+      1249 |   async stopSession(): Promise<void> {
+      1250 |     if (!this.currentSessionId) {
+    > 1251 |       console.warn('No active session to stop');
+           |               ^
+      1252 |       return;
+      1253 |     }
+      1254 |
+
+      at TemplumUniversalSessionManager.stopSession (src/session/templum-universal-session-manager.ts:1251:15)
+      at TemplumAdapterRegistry.dispose (src/core/adapter-registry.ts:1831:59)
+      at TemplumCore.shutdown (src/core/templum-core.ts:911:34)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:21:7)
+
+  console.warn
+    Failed to initialize cli adapter during bootstrap: Templum Core Engine must be initialized before registering interfaces
+
+      957 |       } catch (error) {
+      958 |         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    > 959 |         console.warn(`Failed to initialize ${interfaceType} adapter during bootstrap:`, errorMessage);
+          |                 ^
+      960 |       }
+      961 |     }
+      962 |
+
+      at TemplumCore.initializeInterfaceAdapters (src/core/templum-core.ts:959:17)
+      at TemplumCore.initialize (src/core/templum-core.ts:176:7)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:57:7)
+
+  console.warn
+    [SERVICE_DISCOVERY] No services connected - system running in standalone mode
+
+      1114 |
+      1115 |     if (discoveredServices.length === 0) {
+    > 1116 |       console.warn('[SERVICE_DISCOVERY] No services connected - system running in standalone mode');
+           |               ^
+      1117 |     } else {
+      1118 |       console.log(`[SERVICE_DISCOVERY] Successfully connected to ${discoveredServices.length} backend services`);
+      1119 |       if (this.healthMonitoringEnabled) {
+
+      at TemplumBackendServiceRouter.discoverAndConnectGeneric (src/backend/backend-service-router.ts:1116:15)
+      at TemplumBackendServiceRouter.discoverAndConnect (src/backend/backend-service-router.ts:1012:5)
+      at BackendServiceRouterAdapter.discoverAndConnect (src/core/adapter-registry.ts:445:5)
+      at TemplumCore.initialize (src/core/templum-core.ts:207:9)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:57:7)
+
+  console.warn
+    [2025-10-13T12:59:23.747Z] [WARN] [TemplumCore] No healthy backend connections established {
+      totalAttempted: 0,
+      backendStates: {
+        haruspex: {
+          connected: false,
+          health: 'unhealthy',
+          lastCheck: 0,
+          capabilities: [Array]
+        },
+        pcl: {
+          connected: false,
+          health: 'unhealthy',
+          lastCheck: 0,
+          capabilities: [Array]
+        },
+        litany: {
+          connected: false,
+          health: 'unhealthy',
+          lastCheck: 0,
+          capabilities: [Array]
+        }
+      }
+    }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at TemplumCore.initialize (src/core/templum-core.ts:218:16)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:57:7)
+
+  console.warn
+    [2025-10-13T12:59:23.748Z] [WARN] [TemplumCore] Backend haruspex connection unhealthy { responseTime: undefined }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at src/core/templum-core.ts:237:18
+          at Array.forEach (<anonymous>)
+      at TemplumCore.initialize (src/core/templum-core.ts:232:51)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:57:7)
+
+  console.warn
+    [2025-10-13T12:59:23.750Z] [WARN] [TemplumCore] Backend pcl connection unhealthy { responseTime: undefined }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at src/core/templum-core.ts:237:18
+          at Array.forEach (<anonymous>)
+      at TemplumCore.initialize (src/core/templum-core.ts:232:51)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:57:7)
+
+  console.warn
+    [2025-10-13T12:59:23.751Z] [WARN] [TemplumCore] Backend litany connection unhealthy { responseTime: undefined }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at src/core/templum-core.ts:237:18
+          at Array.forEach (<anonymous>)
+      at TemplumCore.initialize (src/core/templum-core.ts:232:51)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:57:7)
+
+  console.warn
+    No active session to stop
+
+      1249 |   async stopSession(): Promise<void> {
+      1250 |     if (!this.currentSessionId) {
+    > 1251 |       console.warn('No active session to stop');
+           |               ^
+      1252 |       return;
+      1253 |     }
+      1254 |
+
+      at TemplumUniversalSessionManager.stopSession (src/session/templum-universal-session-manager.ts:1251:15)
+      at TemplumAdapterRegistry.dispose (src/core/adapter-registry.ts:1831:59)
+      at TemplumCore.shutdown (src/core/templum-core.ts:911:34)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:21:7)
+
+  console.warn
+    Failed to initialize cli adapter during bootstrap: Templum Core Engine must be initialized before registering interfaces
+
+      957 |       } catch (error) {
+      958 |         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    > 959 |         console.warn(`Failed to initialize ${interfaceType} adapter during bootstrap:`, errorMessage);
+          |                 ^
+      960 |       }
+      961 |     }
+      962 |
+
+      at TemplumCore.initializeInterfaceAdapters (src/core/templum-core.ts:959:17)
+      at TemplumCore.initialize (src/core/templum-core.ts:176:7)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:68:7)
+
+  console.warn
+    [SERVICE_DISCOVERY] No services connected - system running in standalone mode
+
+      1114 |
+      1115 |     if (discoveredServices.length === 0) {
+    > 1116 |       console.warn('[SERVICE_DISCOVERY] No services connected - system running in standalone mode');
+           |               ^
+      1117 |     } else {
+      1118 |       console.log(`[SERVICE_DISCOVERY] Successfully connected to ${discoveredServices.length} backend services`);
+      1119 |       if (this.healthMonitoringEnabled) {
+
+      at TemplumBackendServiceRouter.discoverAndConnectGeneric (src/backend/backend-service-router.ts:1116:15)
+      at TemplumBackendServiceRouter.discoverAndConnect (src/backend/backend-service-router.ts:1012:5)
+      at BackendServiceRouterAdapter.discoverAndConnect (src/core/adapter-registry.ts:445:5)
+      at TemplumCore.initialize (src/core/templum-core.ts:207:9)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:68:7)
+
+  console.warn
+    [2025-10-13T12:59:23.764Z] [WARN] [TemplumCore] No healthy backend connections established {
+      totalAttempted: 0,
+      backendStates: {
+        haruspex: {
+          connected: false,
+          health: 'unhealthy',
+          lastCheck: 0,
+          capabilities: [Array]
+        },
+        pcl: {
+          connected: false,
+          health: 'unhealthy',
+          lastCheck: 0,
+          capabilities: [Array]
+        },
+        litany: {
+          connected: false,
+          health: 'unhealthy',
+          lastCheck: 0,
+          capabilities: [Array]
+        }
+      }
+    }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at TemplumCore.initialize (src/core/templum-core.ts:218:16)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:68:7)
+
+  console.warn
+    [2025-10-13T12:59:23.765Z] [WARN] [TemplumCore] Backend haruspex connection unhealthy { responseTime: undefined }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at src/core/templum-core.ts:237:18
+          at Array.forEach (<anonymous>)
+      at TemplumCore.initialize (src/core/templum-core.ts:232:51)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:68:7)
+
+  console.warn
+    [2025-10-13T12:59:23.766Z] [WARN] [TemplumCore] Backend pcl connection unhealthy { responseTime: undefined }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at src/core/templum-core.ts:237:18
+          at Array.forEach (<anonymous>)
+      at TemplumCore.initialize (src/core/templum-core.ts:232:51)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:68:7)
+
+  console.warn
+    [2025-10-13T12:59:23.767Z] [WARN] [TemplumCore] Backend litany connection unhealthy { responseTime: undefined }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at src/core/templum-core.ts:237:18
+          at Array.forEach (<anonymous>)
+      at TemplumCore.initialize (src/core/templum-core.ts:232:51)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:68:7)
+
+  console.warn
+    No active session to stop
+
+      1249 |   async stopSession(): Promise<void> {
+      1250 |     if (!this.currentSessionId) {
+    > 1251 |       console.warn('No active session to stop');
+           |               ^
+      1252 |       return;
+      1253 |     }
+      1254 |
+
+      at TemplumUniversalSessionManager.stopSession (src/session/templum-universal-session-manager.ts:1251:15)
+      at TemplumAdapterRegistry.dispose (src/core/adapter-registry.ts:1831:59)
+      at TemplumCore.shutdown (src/core/templum-core.ts:911:34)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:21:7)
+
+  console.warn
+    Failed to initialize cli adapter during bootstrap: Templum Core Engine must be initialized before registering interfaces
+
+      957 |       } catch (error) {
+      958 |         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    > 959 |         console.warn(`Failed to initialize ${interfaceType} adapter during bootstrap:`, errorMessage);
+          |                 ^
+      960 |       }
+      961 |     }
+      962 |
+
+      at TemplumCore.initializeInterfaceAdapters (src/core/templum-core.ts:959:17)
+      at TemplumCore.initialize (src/core/templum-core.ts:176:7)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:81:7)
+
+  console.warn
+    [SERVICE_DISCOVERY] No services connected - system running in standalone mode
+
+      1114 |
+      1115 |     if (discoveredServices.length === 0) {
+    > 1116 |       console.warn('[SERVICE_DISCOVERY] No services connected - system running in standalone mode');
+           |               ^
+      1117 |     } else {
+      1118 |       console.log(`[SERVICE_DISCOVERY] Successfully connected to ${discoveredServices.length} backend services`);
+      1119 |       if (this.healthMonitoringEnabled) {
+
+      at TemplumBackendServiceRouter.discoverAndConnectGeneric (src/backend/backend-service-router.ts:1116:15)
+      at TemplumBackendServiceRouter.discoverAndConnect (src/backend/backend-service-router.ts:1012:5)
+      at BackendServiceRouterAdapter.discoverAndConnect (src/core/adapter-registry.ts:445:5)
+      at TemplumCore.initialize (src/core/templum-core.ts:207:9)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:81:7)
+
+  console.warn
+    [2025-10-13T12:59:23.784Z] [WARN] [TemplumCore] No healthy backend connections established {
+      totalAttempted: 0,
+      backendStates: {
+        haruspex: {
+          connected: false,
+          health: 'unhealthy',
+          lastCheck: 0,
+          capabilities: [Array]
+        },
+        pcl: {
+          connected: false,
+          health: 'unhealthy',
+          lastCheck: 0,
+          capabilities: [Array]
+        },
+        litany: {
+          connected: false,
+          health: 'unhealthy',
+          lastCheck: 0,
+          capabilities: [Array]
+        }
+      }
+    }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at TemplumCore.initialize (src/core/templum-core.ts:218:16)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:81:7)
+
+  console.warn
+    [2025-10-13T12:59:23.785Z] [WARN] [TemplumCore] Backend haruspex connection unhealthy { responseTime: undefined }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at src/core/templum-core.ts:237:18
+          at Array.forEach (<anonymous>)
+      at TemplumCore.initialize (src/core/templum-core.ts:232:51)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:81:7)
+
+  console.warn
+    [2025-10-13T12:59:23.786Z] [WARN] [TemplumCore] Backend pcl connection unhealthy { responseTime: undefined }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at src/core/templum-core.ts:237:18
+          at Array.forEach (<anonymous>)
+      at TemplumCore.initialize (src/core/templum-core.ts:232:51)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:81:7)
+
+  console.warn
+    [2025-10-13T12:59:23.787Z] [WARN] [TemplumCore] Backend litany connection unhealthy { responseTime: undefined }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at src/core/templum-core.ts:237:18
+          at Array.forEach (<anonymous>)
+      at TemplumCore.initialize (src/core/templum-core.ts:232:51)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:81:7)
+
+  console.warn
+    No active session to stop
+
+      1249 |   async stopSession(): Promise<void> {
+      1250 |     if (!this.currentSessionId) {
+    > 1251 |       console.warn('No active session to stop');
+           |               ^
+      1252 |       return;
+      1253 |     }
+      1254 |
+
+      at TemplumUniversalSessionManager.stopSession (src/session/templum-universal-session-manager.ts:1251:15)
+      at TemplumAdapterRegistry.dispose (src/core/adapter-registry.ts:1831:59)
+      at TemplumCore.shutdown (src/core/templum-core.ts:911:34)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:21:7)
+
+  console.warn
+    Failed to initialize cli adapter during bootstrap: Templum Core Engine must be initialized before registering interfaces
+
+      957 |       } catch (error) {
+      958 |         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    > 959 |         console.warn(`Failed to initialize ${interfaceType} adapter during bootstrap:`, errorMessage);
+          |                 ^
+      960 |       }
+      961 |     }
+      962 |
+
+      at TemplumCore.initializeInterfaceAdapters (src/core/templum-core.ts:959:17)
+      at TemplumCore.initialize (src/core/templum-core.ts:176:7)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:94:7)
+
+  console.warn
+    [SERVICE_DISCOVERY] No services connected - system running in standalone mode
+
+      1114 |
+      1115 |     if (discoveredServices.length === 0) {
+    > 1116 |       console.warn('[SERVICE_DISCOVERY] No services connected - system running in standalone mode');
+           |               ^
+      1117 |     } else {
+      1118 |       console.log(`[SERVICE_DISCOVERY] Successfully connected to ${discoveredServices.length} backend services`);
+      1119 |       if (this.healthMonitoringEnabled) {
+
+      at TemplumBackendServiceRouter.discoverAndConnectGeneric (src/backend/backend-service-router.ts:1116:15)
+      at TemplumBackendServiceRouter.discoverAndConnect (src/backend/backend-service-router.ts:1012:5)
+      at BackendServiceRouterAdapter.discoverAndConnect (src/core/adapter-registry.ts:445:5)
+      at TemplumCore.initialize (src/core/templum-core.ts:207:9)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:94:7)
+
+  console.warn
+    [2025-10-13T12:59:23.803Z] [WARN] [TemplumCore] No healthy backend connections established {
+      totalAttempted: 0,
+      backendStates: {
+        haruspex: {
+          connected: false,
+          health: 'unhealthy',
+          lastCheck: 0,
+          capabilities: [Array]
+        },
+        pcl: {
+          connected: false,
+          health: 'unhealthy',
+          lastCheck: 0,
+          capabilities: [Array]
+        },
+        litany: {
+          connected: false,
+          health: 'unhealthy',
+          lastCheck: 0,
+          capabilities: [Array]
+        }
+      }
+    }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at TemplumCore.initialize (src/core/templum-core.ts:218:16)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:94:7)
+
+  console.warn
+    [2025-10-13T12:59:23.803Z] [WARN] [TemplumCore] Backend haruspex connection unhealthy { responseTime: undefined }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at src/core/templum-core.ts:237:18
+          at Array.forEach (<anonymous>)
+      at TemplumCore.initialize (src/core/templum-core.ts:232:51)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:94:7)
+
+  console.warn
+    [2025-10-13T12:59:23.804Z] [WARN] [TemplumCore] Backend pcl connection unhealthy { responseTime: undefined }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at src/core/templum-core.ts:237:18
+          at Array.forEach (<anonymous>)
+      at TemplumCore.initialize (src/core/templum-core.ts:232:51)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:94:7)
+
+  console.warn
+    [2025-10-13T12:59:23.805Z] [WARN] [TemplumCore] Backend litany connection unhealthy { responseTime: undefined }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at src/core/templum-core.ts:237:18
+          at Array.forEach (<anonymous>)
+      at TemplumCore.initialize (src/core/templum-core.ts:232:51)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:94:7)
+
+  console.warn
+    No active session to stop
+
+      1249 |   async stopSession(): Promise<void> {
+      1250 |     if (!this.currentSessionId) {
+    > 1251 |       console.warn('No active session to stop');
+           |               ^
+      1252 |       return;
+      1253 |     }
+      1254 |
+
+      at TemplumUniversalSessionManager.stopSession (src/session/templum-universal-session-manager.ts:1251:15)
+      at TemplumAdapterRegistry.dispose (src/core/adapter-registry.ts:1831:59)
+      at TemplumCore.shutdown (src/core/templum-core.ts:911:34)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:21:7)
+
+  console.warn
+    Failed to initialize cli adapter during bootstrap: Templum Core Engine must be initialized before registering interfaces
+
+      957 |       } catch (error) {
+      958 |         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    > 959 |         console.warn(`Failed to initialize ${interfaceType} adapter during bootstrap:`, errorMessage);
+          |                 ^
+      960 |       }
+      961 |     }
+      962 |
+
+      at TemplumCore.initializeInterfaceAdapters (src/core/templum-core.ts:959:17)
+      at TemplumCore.initialize (src/core/templum-core.ts:176:7)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:107:7)
+
+  console.warn
+    [SERVICE_DISCOVERY] No services connected - system running in standalone mode
+
+      1114 |
+      1115 |     if (discoveredServices.length === 0) {
+    > 1116 |       console.warn('[SERVICE_DISCOVERY] No services connected - system running in standalone mode');
+           |               ^
+      1117 |     } else {
+      1118 |       console.log(`[SERVICE_DISCOVERY] Successfully connected to ${discoveredServices.length} backend services`);
+      1119 |       if (this.healthMonitoringEnabled) {
+
+      at TemplumBackendServiceRouter.discoverAndConnectGeneric (src/backend/backend-service-router.ts:1116:15)
+      at TemplumBackendServiceRouter.discoverAndConnect (src/backend/backend-service-router.ts:1012:5)
+      at BackendServiceRouterAdapter.discoverAndConnect (src/core/adapter-registry.ts:445:5)
+      at TemplumCore.initialize (src/core/templum-core.ts:207:9)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:107:7)
+
+  console.warn
+    [2025-10-13T12:59:23.823Z] [WARN] [TemplumCore] No healthy backend connections established {
+      totalAttempted: 0,
+      backendStates: {
+        haruspex: {
+          connected: false,
+          health: 'unhealthy',
+          lastCheck: 0,
+          capabilities: [Array]
+        },
+        pcl: {
+          connected: false,
+          health: 'unhealthy',
+          lastCheck: 0,
+          capabilities: [Array]
+        },
+        litany: {
+          connected: false,
+          health: 'unhealthy',
+          lastCheck: 0,
+          capabilities: [Array]
+        }
+      }
+    }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at TemplumCore.initialize (src/core/templum-core.ts:218:16)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:107:7)
+
+  console.warn
+    [2025-10-13T12:59:23.824Z] [WARN] [TemplumCore] Backend haruspex connection unhealthy { responseTime: undefined }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at src/core/templum-core.ts:237:18
+          at Array.forEach (<anonymous>)
+      at TemplumCore.initialize (src/core/templum-core.ts:232:51)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:107:7)
+
+  console.warn
+    [2025-10-13T12:59:23.825Z] [WARN] [TemplumCore] Backend pcl connection unhealthy { responseTime: undefined }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at src/core/templum-core.ts:237:18
+          at Array.forEach (<anonymous>)
+      at TemplumCore.initialize (src/core/templum-core.ts:232:51)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:107:7)
+
+  console.warn
+    [2025-10-13T12:59:23.825Z] [WARN] [TemplumCore] Backend litany connection unhealthy { responseTime: undefined }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at src/core/templum-core.ts:237:18
+          at Array.forEach (<anonymous>)
+      at TemplumCore.initialize (src/core/templum-core.ts:232:51)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:107:7)
+
+  console.warn
+    No active session to stop
+
+      1249 |   async stopSession(): Promise<void> {
+      1250 |     if (!this.currentSessionId) {
+    > 1251 |       console.warn('No active session to stop');
+           |               ^
+      1252 |       return;
+      1253 |     }
+      1254 |
+
+      at TemplumUniversalSessionManager.stopSession (src/session/templum-universal-session-manager.ts:1251:15)
+      at TemplumAdapterRegistry.dispose (src/core/adapter-registry.ts:1831:59)
+      at TemplumCore.shutdown (src/core/templum-core.ts:911:34)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:21:7)
+
+  console.warn
+    Failed to initialize cli adapter during bootstrap: Templum Core Engine must be initialized before registering interfaces
+
+      957 |       } catch (error) {
+      958 |         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    > 959 |         console.warn(`Failed to initialize ${interfaceType} adapter during bootstrap:`, errorMessage);
+          |                 ^
+      960 |       }
+      961 |     }
+      962 |
+
+      at TemplumCore.initializeInterfaceAdapters (src/core/templum-core.ts:959:17)
+      at TemplumCore.initialize (src/core/templum-core.ts:176:7)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:121:7)
+
+  console.warn
+    [SERVICE_DISCOVERY] No services connected - system running in standalone mode
+
+      1114 |
+      1115 |     if (discoveredServices.length === 0) {
+    > 1116 |       console.warn('[SERVICE_DISCOVERY] No services connected - system running in standalone mode');
+           |               ^
+      1117 |     } else {
+      1118 |       console.log(`[SERVICE_DISCOVERY] Successfully connected to ${discoveredServices.length} backend services`);
+      1119 |       if (this.healthMonitoringEnabled) {
+
+      at TemplumBackendServiceRouter.discoverAndConnectGeneric (src/backend/backend-service-router.ts:1116:15)
+      at TemplumBackendServiceRouter.discoverAndConnect (src/backend/backend-service-router.ts:1012:5)
+      at BackendServiceRouterAdapter.discoverAndConnect (src/core/adapter-registry.ts:445:5)
+      at TemplumCore.initialize (src/core/templum-core.ts:207:9)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:121:7)
+
+  console.warn
+    [2025-10-13T12:59:23.843Z] [WARN] [TemplumCore] No healthy backend connections established {
+      totalAttempted: 0,
+      backendStates: {
+        haruspex: {
+          connected: false,
+          health: 'unhealthy',
+          lastCheck: 0,
+          capabilities: [Array]
+        },
+        pcl: {
+          connected: false,
+          health: 'unhealthy',
+          lastCheck: 0,
+          capabilities: [Array]
+        },
+        litany: {
+          connected: false,
+          health: 'unhealthy',
+          lastCheck: 0,
+          capabilities: [Array]
+        }
+      }
+    }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at TemplumCore.initialize (src/core/templum-core.ts:218:16)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:121:7)
+
+  console.warn
+    [2025-10-13T12:59:23.844Z] [WARN] [TemplumCore] Backend haruspex connection unhealthy { responseTime: undefined }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at src/core/templum-core.ts:237:18
+          at Array.forEach (<anonymous>)
+      at TemplumCore.initialize (src/core/templum-core.ts:232:51)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:121:7)
+
+  console.warn
+    [2025-10-13T12:59:23.845Z] [WARN] [TemplumCore] Backend pcl connection unhealthy { responseTime: undefined }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at src/core/templum-core.ts:237:18
+          at Array.forEach (<anonymous>)
+      at TemplumCore.initialize (src/core/templum-core.ts:232:51)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:121:7)
+
+  console.warn
+    [2025-10-13T12:59:23.845Z] [WARN] [TemplumCore] Backend litany connection unhealthy { responseTime: undefined }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at src/core/templum-core.ts:237:18
+          at Array.forEach (<anonymous>)
+      at TemplumCore.initialize (src/core/templum-core.ts:232:51)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:121:7)
+
+  console.warn
+    TemplumCore: No healthy backends available for command execution, creating local result
+
+      441 |             
+      442 |           } else {
+    > 443 |             console.warn('TemplumCore: No healthy backends available for command execution, creating local result');
+          |                     ^
+      444 |             throw new Error('No healthy backends available');
+      445 |           }
+      446 |           
+
+      at TemplumCore.executeCommand (src/core/templum-core.ts:443:21)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:129:40)
+
+  console.warn
+    TemplumCore: Backend command execution failed (Error: No healthy backends available), creating fallback result
+
+      446 |           
+      447 |         } catch (backendError) {
+    > 448 |           console.warn(`TemplumCore: Backend command execution failed (${backendError}), creating fallback result`);
+          |                   ^
+      449 |           
+      450 |           // Fallback to local execution result
+      451 |           executionResult = { 
+
+      at TemplumCore.executeCommand (src/core/templum-core.ts:448:19)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:129:40)
+
+  console.warn
+    No active session to stop
+
+      1249 |   async stopSession(): Promise<void> {
+      1250 |     if (!this.currentSessionId) {
+    > 1251 |       console.warn('No active session to stop');
+           |               ^
+      1252 |       return;
+      1253 |     }
+      1254 |
+
+      at TemplumUniversalSessionManager.stopSession (src/session/templum-universal-session-manager.ts:1251:15)
+      at TemplumAdapterRegistry.dispose (src/core/adapter-registry.ts:1831:59)
+      at TemplumCore.shutdown (src/core/templum-core.ts:911:34)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:21:7)
+
+  console.warn
+    Failed to initialize cli adapter during bootstrap: Templum Core Engine must be initialized before registering interfaces
+
+      957 |       } catch (error) {
+      958 |         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    > 959 |         console.warn(`Failed to initialize ${interfaceType} adapter during bootstrap:`, errorMessage);
+          |                 ^
+      960 |       }
+      961 |     }
+      962 |
+
+      at TemplumCore.initializeInterfaceAdapters (src/core/templum-core.ts:959:17)
+      at TemplumCore.initialize (src/core/templum-core.ts:176:7)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:142:7)
+
+  console.warn
+    [SERVICE_DISCOVERY] No services connected - system running in standalone mode
+
+      1114 |
+      1115 |     if (discoveredServices.length === 0) {
+    > 1116 |       console.warn('[SERVICE_DISCOVERY] No services connected - system running in standalone mode');
+           |               ^
+      1117 |     } else {
+      1118 |       console.log(`[SERVICE_DISCOVERY] Successfully connected to ${discoveredServices.length} backend services`);
+      1119 |       if (this.healthMonitoringEnabled) {
+
+      at TemplumBackendServiceRouter.discoverAndConnectGeneric (src/backend/backend-service-router.ts:1116:15)
+      at TemplumBackendServiceRouter.discoverAndConnect (src/backend/backend-service-router.ts:1012:5)
+      at BackendServiceRouterAdapter.discoverAndConnect (src/core/adapter-registry.ts:445:5)
+      at TemplumCore.initialize (src/core/templum-core.ts:207:9)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:142:7)
+
+  console.warn
+    [2025-10-13T12:59:23.862Z] [WARN] [TemplumCore] No healthy backend connections established {
+      totalAttempted: 0,
+      backendStates: {
+        haruspex: {
+          connected: false,
+          health: 'unhealthy',
+          lastCheck: 0,
+          capabilities: [Array]
+        },
+        pcl: {
+          connected: false,
+          health: 'unhealthy',
+          lastCheck: 0,
+          capabilities: [Array]
+        },
+        litany: {
+          connected: false,
+          health: 'unhealthy',
+          lastCheck: 0,
+          capabilities: [Array]
+        }
+      }
+    }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at TemplumCore.initialize (src/core/templum-core.ts:218:16)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:142:7)
+
+  console.warn
+    [2025-10-13T12:59:23.863Z] [WARN] [TemplumCore] Backend haruspex connection unhealthy { responseTime: undefined }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at src/core/templum-core.ts:237:18
+          at Array.forEach (<anonymous>)
+      at TemplumCore.initialize (src/core/templum-core.ts:232:51)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:142:7)
+
+  console.warn
+    [2025-10-13T12:59:23.864Z] [WARN] [TemplumCore] Backend pcl connection unhealthy { responseTime: undefined }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at src/core/templum-core.ts:237:18
+          at Array.forEach (<anonymous>)
+      at TemplumCore.initialize (src/core/templum-core.ts:232:51)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:142:7)
+
+  console.warn
+    [2025-10-13T12:59:23.865Z] [WARN] [TemplumCore] Backend litany connection unhealthy { responseTime: undefined }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at src/core/templum-core.ts:237:18
+          at Array.forEach (<anonymous>)
+      at TemplumCore.initialize (src/core/templum-core.ts:232:51)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:142:7)
+
+  console.warn
+    TemplumCore: No healthy backends available for command execution, creating local result
+
+      441 |             
+      442 |           } else {
+    > 443 |             console.warn('TemplumCore: No healthy backends available for command execution, creating local result');
+          |                     ^
+      444 |             throw new Error('No healthy backends available');
+      445 |           }
+      446 |           
+
+      at TemplumCore.executeCommand (src/core/templum-core.ts:443:21)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:146:40)
+
+  console.warn
+    TemplumCore: Backend command execution failed (Error: No healthy backends available), creating fallback result
+
+      446 |           
+      447 |         } catch (backendError) {
+    > 448 |           console.warn(`TemplumCore: Backend command execution failed (${backendError}), creating fallback result`);
+          |                   ^
+      449 |           
+      450 |           // Fallback to local execution result
+      451 |           executionResult = { 
+
+      at TemplumCore.executeCommand (src/core/templum-core.ts:448:19)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:146:40)
+
+  console.warn
+    No active session to stop
+
+      1249 |   async stopSession(): Promise<void> {
+      1250 |     if (!this.currentSessionId) {
+    > 1251 |       console.warn('No active session to stop');
+           |               ^
+      1252 |       return;
+      1253 |     }
+      1254 |
+
+      at TemplumUniversalSessionManager.stopSession (src/session/templum-universal-session-manager.ts:1251:15)
+      at TemplumAdapterRegistry.dispose (src/core/adapter-registry.ts:1831:59)
+      at TemplumCore.shutdown (src/core/templum-core.ts:911:34)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:21:7)
+
+  console.warn
+    Failed to initialize cli adapter during bootstrap: Templum Core Engine must be initialized before registering interfaces
+
+      957 |       } catch (error) {
+      958 |         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    > 959 |         console.warn(`Failed to initialize ${interfaceType} adapter during bootstrap:`, errorMessage);
+          |                 ^
+      960 |       }
+      961 |     }
+      962 |
+
+      at TemplumCore.initializeInterfaceAdapters (src/core/templum-core.ts:959:17)
+      at TemplumCore.initialize (src/core/templum-core.ts:176:7)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:156:7)
+
+  console.warn
+    [SERVICE_DISCOVERY] No services connected - system running in standalone mode
+
+      1114 |
+      1115 |     if (discoveredServices.length === 0) {
+    > 1116 |       console.warn('[SERVICE_DISCOVERY] No services connected - system running in standalone mode');
+           |               ^
+      1117 |     } else {
+      1118 |       console.log(`[SERVICE_DISCOVERY] Successfully connected to ${discoveredServices.length} backend services`);
+      1119 |       if (this.healthMonitoringEnabled) {
+
+      at TemplumBackendServiceRouter.discoverAndConnectGeneric (src/backend/backend-service-router.ts:1116:15)
+      at TemplumBackendServiceRouter.discoverAndConnect (src/backend/backend-service-router.ts:1012:5)
+      at BackendServiceRouterAdapter.discoverAndConnect (src/core/adapter-registry.ts:445:5)
+      at TemplumCore.initialize (src/core/templum-core.ts:207:9)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:156:7)
+
+  console.warn
+    [2025-10-13T12:59:23.883Z] [WARN] [TemplumCore] No healthy backend connections established {
+      totalAttempted: 0,
+      backendStates: {
+        haruspex: {
+          connected: false,
+          health: 'unhealthy',
+          lastCheck: 0,
+          capabilities: [Array]
+        },
+        pcl: {
+          connected: false,
+          health: 'unhealthy',
+          lastCheck: 0,
+          capabilities: [Array]
+        },
+        litany: {
+          connected: false,
+          health: 'unhealthy',
+          lastCheck: 0,
+          capabilities: [Array]
+        }
+      }
+    }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at TemplumCore.initialize (src/core/templum-core.ts:218:16)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:156:7)
+
+  console.warn
+    [2025-10-13T12:59:23.884Z] [WARN] [TemplumCore] Backend haruspex connection unhealthy { responseTime: undefined }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at src/core/templum-core.ts:237:18
+          at Array.forEach (<anonymous>)
+      at TemplumCore.initialize (src/core/templum-core.ts:232:51)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:156:7)
+
+  console.warn
+    [2025-10-13T12:59:23.885Z] [WARN] [TemplumCore] Backend pcl connection unhealthy { responseTime: undefined }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at src/core/templum-core.ts:237:18
+          at Array.forEach (<anonymous>)
+      at TemplumCore.initialize (src/core/templum-core.ts:232:51)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:156:7)
+
+  console.warn
+    [2025-10-13T12:59:23.886Z] [WARN] [TemplumCore] Backend litany connection unhealthy { responseTime: undefined }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at src/core/templum-core.ts:237:18
+          at Array.forEach (<anonymous>)
+      at TemplumCore.initialize (src/core/templum-core.ts:232:51)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:156:7)
+
+  console.warn
+    TemplumCore: No healthy backends available for command execution, creating local result
+
+      441 |             
+      442 |           } else {
+    > 443 |             console.warn('TemplumCore: No healthy backends available for command execution, creating local result');
+          |                     ^
+      444 |             throw new Error('No healthy backends available');
+      445 |           }
+      446 |           
+
+      at TemplumCore.executeCommand (src/core/templum-core.ts:443:21)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:163:40)
+
+  console.warn
+    TemplumCore: Backend command execution failed (Error: No healthy backends available), creating fallback result
+
+      446 |           
+      447 |         } catch (backendError) {
+    > 448 |           console.warn(`TemplumCore: Backend command execution failed (${backendError}), creating fallback result`);
+          |                   ^
+      449 |           
+      450 |           // Fallback to local execution result
+      451 |           executionResult = { 
+
+      at TemplumCore.executeCommand (src/core/templum-core.ts:448:19)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:163:40)
+
+  console.warn
+    No active session to stop
+
+      1249 |   async stopSession(): Promise<void> {
+      1250 |     if (!this.currentSessionId) {
+    > 1251 |       console.warn('No active session to stop');
+           |               ^
+      1252 |       return;
+      1253 |     }
+      1254 |
+
+      at TemplumUniversalSessionManager.stopSession (src/session/templum-universal-session-manager.ts:1251:15)
+      at TemplumAdapterRegistry.dispose (src/core/adapter-registry.ts:1831:59)
+      at TemplumCore.shutdown (src/core/templum-core.ts:911:34)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:21:7)
+
+  console.warn
+    Failed to initialize cli adapter during bootstrap: Templum Core Engine must be initialized before registering interfaces
+
+      957 |       } catch (error) {
+      958 |         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    > 959 |         console.warn(`Failed to initialize ${interfaceType} adapter during bootstrap:`, errorMessage);
+          |                 ^
+      960 |       }
+      961 |     }
+      962 |
+
+      at TemplumCore.initializeInterfaceAdapters (src/core/templum-core.ts:959:17)
+      at TemplumCore.initialize (src/core/templum-core.ts:176:7)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:175:7)
+
+  console.warn
+    [SERVICE_DISCOVERY] No services connected - system running in standalone mode
+
+      1114 |
+      1115 |     if (discoveredServices.length === 0) {
+    > 1116 |       console.warn('[SERVICE_DISCOVERY] No services connected - system running in standalone mode');
+           |               ^
+      1117 |     } else {
+      1118 |       console.log(`[SERVICE_DISCOVERY] Successfully connected to ${discoveredServices.length} backend services`);
+      1119 |       if (this.healthMonitoringEnabled) {
+
+      at TemplumBackendServiceRouter.discoverAndConnectGeneric (src/backend/backend-service-router.ts:1116:15)
+      at TemplumBackendServiceRouter.discoverAndConnect (src/backend/backend-service-router.ts:1012:5)
+      at BackendServiceRouterAdapter.discoverAndConnect (src/core/adapter-registry.ts:445:5)
+      at TemplumCore.initialize (src/core/templum-core.ts:207:9)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:175:7)
+
+  console.warn
+    [2025-10-13T12:59:23.898Z] [WARN] [TemplumCore] No healthy backend connections established {
+      totalAttempted: 0,
+      backendStates: {
+        haruspex: {
+          connected: false,
+          health: 'unhealthy',
+          lastCheck: 0,
+          capabilities: [Array]
+        },
+        pcl: {
+          connected: false,
+          health: 'unhealthy',
+          lastCheck: 0,
+          capabilities: [Array]
+        },
+        litany: {
+          connected: false,
+          health: 'unhealthy',
+          lastCheck: 0,
+          capabilities: [Array]
+        }
+      }
+    }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at TemplumCore.initialize (src/core/templum-core.ts:218:16)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:175:7)
+
+  console.warn
+    [2025-10-13T12:59:23.898Z] [WARN] [TemplumCore] Backend haruspex connection unhealthy { responseTime: undefined }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at src/core/templum-core.ts:237:18
+          at Array.forEach (<anonymous>)
+      at TemplumCore.initialize (src/core/templum-core.ts:232:51)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:175:7)
+
+  console.warn
+    [2025-10-13T12:59:23.899Z] [WARN] [TemplumCore] Backend pcl connection unhealthy { responseTime: undefined }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at src/core/templum-core.ts:237:18
+          at Array.forEach (<anonymous>)
+      at TemplumCore.initialize (src/core/templum-core.ts:232:51)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:175:7)
+
+  console.warn
+    [2025-10-13T12:59:23.900Z] [WARN] [TemplumCore] Backend litany connection unhealthy { responseTime: undefined }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at src/core/templum-core.ts:237:18
+          at Array.forEach (<anonymous>)
+      at TemplumCore.initialize (src/core/templum-core.ts:232:51)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:175:7)
+
+  console.warn
+    No active session to stop
+
+      1249 |   async stopSession(): Promise<void> {
+      1250 |     if (!this.currentSessionId) {
+    > 1251 |       console.warn('No active session to stop');
+           |               ^
+      1252 |       return;
+      1253 |     }
+      1254 |
+
+      at TemplumUniversalSessionManager.stopSession (src/session/templum-universal-session-manager.ts:1251:15)
+      at TemplumAdapterRegistry.dispose (src/core/adapter-registry.ts:1831:59)
+      at TemplumCore.shutdown (src/core/templum-core.ts:911:34)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:21:7)
+
+  console.warn
+    Failed to initialize cli adapter during bootstrap: Templum Core Engine must be initialized before registering interfaces
+
+      957 |       } catch (error) {
+      958 |         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    > 959 |         console.warn(`Failed to initialize ${interfaceType} adapter during bootstrap:`, errorMessage);
+          |                 ^
+      960 |       }
+      961 |     }
+      962 |
+
+      at TemplumCore.initializeInterfaceAdapters (src/core/templum-core.ts:959:17)
+      at TemplumCore.initialize (src/core/templum-core.ts:176:7)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:188:7)
+
+  console.warn
+    [SERVICE_DISCOVERY] No services connected - system running in standalone mode
+
+      1114 |
+      1115 |     if (discoveredServices.length === 0) {
+    > 1116 |       console.warn('[SERVICE_DISCOVERY] No services connected - system running in standalone mode');
+           |               ^
+      1117 |     } else {
+      1118 |       console.log(`[SERVICE_DISCOVERY] Successfully connected to ${discoveredServices.length} backend services`);
+      1119 |       if (this.healthMonitoringEnabled) {
+
+      at TemplumBackendServiceRouter.discoverAndConnectGeneric (src/backend/backend-service-router.ts:1116:15)
+      at TemplumBackendServiceRouter.discoverAndConnect (src/backend/backend-service-router.ts:1012:5)
+      at BackendServiceRouterAdapter.discoverAndConnect (src/core/adapter-registry.ts:445:5)
+      at TemplumCore.initialize (src/core/templum-core.ts:207:9)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:188:7)
+
+  console.warn
+    [2025-10-13T12:59:23.915Z] [WARN] [TemplumCore] No healthy backend connections established {
+      totalAttempted: 0,
+      backendStates: {
+        haruspex: {
+          connected: false,
+          health: 'unhealthy',
+          lastCheck: 0,
+          capabilities: [Array]
+        },
+        pcl: {
+          connected: false,
+          health: 'unhealthy',
+          lastCheck: 0,
+          capabilities: [Array]
+        },
+        litany: {
+          connected: false,
+          health: 'unhealthy',
+          lastCheck: 0,
+          capabilities: [Array]
+        }
+      }
+    }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at TemplumCore.initialize (src/core/templum-core.ts:218:16)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:188:7)
+
+  console.warn
+    [2025-10-13T12:59:23.916Z] [WARN] [TemplumCore] Backend haruspex connection unhealthy { responseTime: undefined }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at src/core/templum-core.ts:237:18
+          at Array.forEach (<anonymous>)
+      at TemplumCore.initialize (src/core/templum-core.ts:232:51)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:188:7)
+
+  console.warn
+    [2025-10-13T12:59:23.917Z] [WARN] [TemplumCore] Backend pcl connection unhealthy { responseTime: undefined }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at src/core/templum-core.ts:237:18
+          at Array.forEach (<anonymous>)
+      at TemplumCore.initialize (src/core/templum-core.ts:232:51)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:188:7)
+
+  console.warn
+    [2025-10-13T12:59:23.918Z] [WARN] [TemplumCore] Backend litany connection unhealthy { responseTime: undefined }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at src/core/templum-core.ts:237:18
+          at Array.forEach (<anonymous>)
+      at TemplumCore.initialize (src/core/templum-core.ts:232:51)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:188:7)
+
+  console.warn
+    No active session to stop
+
+      1249 |   async stopSession(): Promise<void> {
+      1250 |     if (!this.currentSessionId) {
+    > 1251 |       console.warn('No active session to stop');
+           |               ^
+      1252 |       return;
+      1253 |     }
+      1254 |
+
+      at TemplumUniversalSessionManager.stopSession (src/session/templum-universal-session-manager.ts:1251:15)
+      at TemplumAdapterRegistry.dispose (src/core/adapter-registry.ts:1831:59)
+      at TemplumCore.shutdown (src/core/templum-core.ts:911:34)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:21:7)
+
+  console.warn
+    Failed to initialize cli adapter during bootstrap: Templum Core Engine must be initialized before registering interfaces
+
+      957 |       } catch (error) {
+      958 |         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    > 959 |         console.warn(`Failed to initialize ${interfaceType} adapter during bootstrap:`, errorMessage);
+          |                 ^
+      960 |       }
+      961 |     }
+      962 |
+
+      at TemplumCore.initializeInterfaceAdapters (src/core/templum-core.ts:959:17)
+      at TemplumCore.initialize (src/core/templum-core.ts:176:7)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:197:7)
+
+  console.warn
+    [SERVICE_DISCOVERY] No services connected - system running in standalone mode
+
+      1114 |
+      1115 |     if (discoveredServices.length === 0) {
+    > 1116 |       console.warn('[SERVICE_DISCOVERY] No services connected - system running in standalone mode');
+           |               ^
+      1117 |     } else {
+      1118 |       console.log(`[SERVICE_DISCOVERY] Successfully connected to ${discoveredServices.length} backend services`);
+      1119 |       if (this.healthMonitoringEnabled) {
+
+      at TemplumBackendServiceRouter.discoverAndConnectGeneric (src/backend/backend-service-router.ts:1116:15)
+      at TemplumBackendServiceRouter.discoverAndConnect (src/backend/backend-service-router.ts:1012:5)
+      at BackendServiceRouterAdapter.discoverAndConnect (src/core/adapter-registry.ts:445:5)
+      at TemplumCore.initialize (src/core/templum-core.ts:207:9)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:197:7)
+
+  console.warn
+    [2025-10-13T12:59:23.945Z] [WARN] [TemplumCore] No healthy backend connections established {
+      totalAttempted: 0,
+      backendStates: {
+        haruspex: {
+          connected: false,
+          health: 'unhealthy',
+          lastCheck: 0,
+          capabilities: [Array]
+        },
+        pcl: {
+          connected: false,
+          health: 'unhealthy',
+          lastCheck: 0,
+          capabilities: [Array]
+        },
+        litany: {
+          connected: false,
+          health: 'unhealthy',
+          lastCheck: 0,
+          capabilities: [Array]
+        }
+      }
+    }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at TemplumCore.initialize (src/core/templum-core.ts:218:16)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:197:7)
+
+  console.warn
+    [2025-10-13T12:59:23.946Z] [WARN] [TemplumCore] Backend haruspex connection unhealthy { responseTime: undefined }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at src/core/templum-core.ts:237:18
+          at Array.forEach (<anonymous>)
+      at TemplumCore.initialize (src/core/templum-core.ts:232:51)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:197:7)
+
+  console.warn
+    [2025-10-13T12:59:23.947Z] [WARN] [TemplumCore] Backend pcl connection unhealthy { responseTime: undefined }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at src/core/templum-core.ts:237:18
+          at Array.forEach (<anonymous>)
+      at TemplumCore.initialize (src/core/templum-core.ts:232:51)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:197:7)
+
+  console.warn
+    [2025-10-13T12:59:23.947Z] [WARN] [TemplumCore] Backend litany connection unhealthy { responseTime: undefined }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at src/core/templum-core.ts:237:18
+          at Array.forEach (<anonymous>)
+      at TemplumCore.initialize (src/core/templum-core.ts:232:51)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:197:7)
+
+  console.warn
+    No active session to stop
+
+      1249 |   async stopSession(): Promise<void> {
+      1250 |     if (!this.currentSessionId) {
+    > 1251 |       console.warn('No active session to stop');
+           |               ^
+      1252 |       return;
+      1253 |     }
+      1254 |
+
+      at TemplumUniversalSessionManager.stopSession (src/session/templum-universal-session-manager.ts:1251:15)
+      at TemplumAdapterRegistry.dispose (src/core/adapter-registry.ts:1831:59)
+      at TemplumCore.shutdown (src/core/templum-core.ts:911:34)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:21:7)
+
+  console.warn
+    Failed to initialize cli adapter during bootstrap: Templum Core Engine must be initialized before registering interfaces
+
+      957 |       } catch (error) {
+      958 |         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    > 959 |         console.warn(`Failed to initialize ${interfaceType} adapter during bootstrap:`, errorMessage);
+          |                 ^
+      960 |       }
+      961 |     }
+      962 |
+
+      at TemplumCore.initializeInterfaceAdapters (src/core/templum-core.ts:959:17)
+      at TemplumCore.initialize (src/core/templum-core.ts:176:7)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:218:7)
+
+  console.warn
+    [SERVICE_DISCOVERY] No services connected - system running in standalone mode
+
+      1114 |
+      1115 |     if (discoveredServices.length === 0) {
+    > 1116 |       console.warn('[SERVICE_DISCOVERY] No services connected - system running in standalone mode');
+           |               ^
+      1117 |     } else {
+      1118 |       console.log(`[SERVICE_DISCOVERY] Successfully connected to ${discoveredServices.length} backend services`);
+      1119 |       if (this.healthMonitoringEnabled) {
+
+      at TemplumBackendServiceRouter.discoverAndConnectGeneric (src/backend/backend-service-router.ts:1116:15)
+      at TemplumBackendServiceRouter.discoverAndConnect (src/backend/backend-service-router.ts:1012:5)
+      at BackendServiceRouterAdapter.discoverAndConnect (src/core/adapter-registry.ts:445:5)
+      at TemplumCore.initialize (src/core/templum-core.ts:207:9)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:218:7)
+
+  console.warn
+    [2025-10-13T12:59:23.959Z] [WARN] [TemplumCore] No healthy backend connections established {
+      totalAttempted: 0,
+      backendStates: {
+        haruspex: {
+          connected: false,
+          health: 'unhealthy',
+          lastCheck: 0,
+          capabilities: [Array]
+        },
+        pcl: {
+          connected: false,
+          health: 'unhealthy',
+          lastCheck: 0,
+          capabilities: [Array]
+        },
+        litany: {
+          connected: false,
+          health: 'unhealthy',
+          lastCheck: 0,
+          capabilities: [Array]
+        }
+      }
+    }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at TemplumCore.initialize (src/core/templum-core.ts:218:16)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:218:7)
+
+  console.warn
+    [2025-10-13T12:59:23.960Z] [WARN] [TemplumCore] Backend haruspex connection unhealthy { responseTime: undefined }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at src/core/templum-core.ts:237:18
+          at Array.forEach (<anonymous>)
+      at TemplumCore.initialize (src/core/templum-core.ts:232:51)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:218:7)
+
+  console.warn
+    [2025-10-13T12:59:23.961Z] [WARN] [TemplumCore] Backend pcl connection unhealthy { responseTime: undefined }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at src/core/templum-core.ts:237:18
+          at Array.forEach (<anonymous>)
+      at TemplumCore.initialize (src/core/templum-core.ts:232:51)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:218:7)
+
+  console.warn
+    [2025-10-13T12:59:23.961Z] [WARN] [TemplumCore] Backend litany connection unhealthy { responseTime: undefined }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at src/core/templum-core.ts:237:18
+          at Array.forEach (<anonymous>)
+      at TemplumCore.initialize (src/core/templum-core.ts:232:51)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:218:7)
+
+  console.warn
+    No active session to stop
+
+      1249 |   async stopSession(): Promise<void> {
+      1250 |     if (!this.currentSessionId) {
+    > 1251 |       console.warn('No active session to stop');
+           |               ^
+      1252 |       return;
+      1253 |     }
+      1254 |
+
+      at TemplumUniversalSessionManager.stopSession (src/session/templum-universal-session-manager.ts:1251:15)
+      at TemplumAdapterRegistry.dispose (src/core/adapter-registry.ts:1831:59)
+      at TemplumCore.shutdown (src/core/templum-core.ts:911:34)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:21:7)
+
+  console.warn
+    Failed to initialize cli adapter during bootstrap: Templum Core Engine must be initialized before registering interfaces
+
+      957 |       } catch (error) {
+      958 |         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    > 959 |         console.warn(`Failed to initialize ${interfaceType} adapter during bootstrap:`, errorMessage);
+          |                 ^
+      960 |       }
+      961 |     }
+      962 |
+
+      at TemplumCore.initializeInterfaceAdapters (src/core/templum-core.ts:959:17)
+      at TemplumCore.initialize (src/core/templum-core.ts:176:7)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:239:7)
+
+  console.warn
+    [SERVICE_DISCOVERY] No services connected - system running in standalone mode
+
+      1114 |
+      1115 |     if (discoveredServices.length === 0) {
+    > 1116 |       console.warn('[SERVICE_DISCOVERY] No services connected - system running in standalone mode');
+           |               ^
+      1117 |     } else {
+      1118 |       console.log(`[SERVICE_DISCOVERY] Successfully connected to ${discoveredServices.length} backend services`);
+      1119 |       if (this.healthMonitoringEnabled) {
+
+      at TemplumBackendServiceRouter.discoverAndConnectGeneric (src/backend/backend-service-router.ts:1116:15)
+      at TemplumBackendServiceRouter.discoverAndConnect (src/backend/backend-service-router.ts:1012:5)
+      at BackendServiceRouterAdapter.discoverAndConnect (src/core/adapter-registry.ts:445:5)
+      at TemplumCore.initialize (src/core/templum-core.ts:207:9)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:239:7)
+
+  console.warn
+    [2025-10-13T12:59:23.974Z] [WARN] [TemplumCore] No healthy backend connections established {
+      totalAttempted: 0,
+      backendStates: {
+        haruspex: {
+          connected: false,
+          health: 'unhealthy',
+          lastCheck: 0,
+          capabilities: [Array]
+        },
+        pcl: {
+          connected: false,
+          health: 'unhealthy',
+          lastCheck: 0,
+          capabilities: [Array]
+        },
+        litany: {
+          connected: false,
+          health: 'unhealthy',
+          lastCheck: 0,
+          capabilities: [Array]
+        }
+      }
+    }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at TemplumCore.initialize (src/core/templum-core.ts:218:16)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:239:7)
+
+  console.warn
+    [2025-10-13T12:59:23.975Z] [WARN] [TemplumCore] Backend haruspex connection unhealthy { responseTime: undefined }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at src/core/templum-core.ts:237:18
+          at Array.forEach (<anonymous>)
+      at TemplumCore.initialize (src/core/templum-core.ts:232:51)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:239:7)
+
+  console.warn
+    [2025-10-13T12:59:23.975Z] [WARN] [TemplumCore] Backend pcl connection unhealthy { responseTime: undefined }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at src/core/templum-core.ts:237:18
+          at Array.forEach (<anonymous>)
+      at TemplumCore.initialize (src/core/templum-core.ts:232:51)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:239:7)
+
+  console.warn
+    [2025-10-13T12:59:23.976Z] [WARN] [TemplumCore] Backend litany connection unhealthy { responseTime: undefined }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at src/core/templum-core.ts:237:18
+          at Array.forEach (<anonymous>)
+      at TemplumCore.initialize (src/core/templum-core.ts:232:51)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:239:7)
+
+  console.warn
+    No active session to stop
+
+      1249 |   async stopSession(): Promise<void> {
+      1250 |     if (!this.currentSessionId) {
+    > 1251 |       console.warn('No active session to stop');
+           |               ^
+      1252 |       return;
+      1253 |     }
+      1254 |
+
+      at TemplumUniversalSessionManager.stopSession (src/session/templum-universal-session-manager.ts:1251:15)
+      at TemplumAdapterRegistry.dispose (src/core/adapter-registry.ts:1831:59)
+      at TemplumCore.shutdown (src/core/templum-core.ts:911:34)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:21:7)
+
+  console.warn
+    Failed to initialize cli adapter during bootstrap: Templum Core Engine must be initialized before registering interfaces
+
+      957 |       } catch (error) {
+      958 |         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    > 959 |         console.warn(`Failed to initialize ${interfaceType} adapter during bootstrap:`, errorMessage);
+          |                 ^
+      960 |       }
+      961 |     }
+      962 |
+
+      at TemplumCore.initializeInterfaceAdapters (src/core/templum-core.ts:959:17)
+      at TemplumCore.initialize (src/core/templum-core.ts:176:7)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:253:7)
+
+  console.warn
+    [SERVICE_DISCOVERY] No services connected - system running in standalone mode
+
+      1114 |
+      1115 |     if (discoveredServices.length === 0) {
+    > 1116 |       console.warn('[SERVICE_DISCOVERY] No services connected - system running in standalone mode');
+           |               ^
+      1117 |     } else {
+      1118 |       console.log(`[SERVICE_DISCOVERY] Successfully connected to ${discoveredServices.length} backend services`);
+      1119 |       if (this.healthMonitoringEnabled) {
+
+      at TemplumBackendServiceRouter.discoverAndConnectGeneric (src/backend/backend-service-router.ts:1116:15)
+      at TemplumBackendServiceRouter.discoverAndConnect (src/backend/backend-service-router.ts:1012:5)
+      at BackendServiceRouterAdapter.discoverAndConnect (src/core/adapter-registry.ts:445:5)
+      at TemplumCore.initialize (src/core/templum-core.ts:207:9)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:253:7)
+
+  console.warn
+    [2025-10-13T12:59:23.987Z] [WARN] [TemplumCore] No healthy backend connections established {
+      totalAttempted: 0,
+      backendStates: {
+        haruspex: {
+          connected: false,
+          health: 'unhealthy',
+          lastCheck: 0,
+          capabilities: [Array]
+        },
+        pcl: {
+          connected: false,
+          health: 'unhealthy',
+          lastCheck: 0,
+          capabilities: [Array]
+        },
+        litany: {
+          connected: false,
+          health: 'unhealthy',
+          lastCheck: 0,
+          capabilities: [Array]
+        }
+      }
+    }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at TemplumCore.initialize (src/core/templum-core.ts:218:16)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:253:7)
+
+  console.warn
+    [2025-10-13T12:59:23.987Z] [WARN] [TemplumCore] Backend haruspex connection unhealthy { responseTime: undefined }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at src/core/templum-core.ts:237:18
+          at Array.forEach (<anonymous>)
+      at TemplumCore.initialize (src/core/templum-core.ts:232:51)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:253:7)
+
+  console.warn
+    [2025-10-13T12:59:23.988Z] [WARN] [TemplumCore] Backend pcl connection unhealthy { responseTime: undefined }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at src/core/templum-core.ts:237:18
+          at Array.forEach (<anonymous>)
+      at TemplumCore.initialize (src/core/templum-core.ts:232:51)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:253:7)
+
+  console.warn
+    [2025-10-13T12:59:23.989Z] [WARN] [TemplumCore] Backend litany connection unhealthy { responseTime: undefined }
+
+      277 |         break;
+      278 |       case 'warn':
+    > 279 |         console.warn(`${prefix} ${entry.message}`, entry.metadata || '');
+          |                 ^
+      280 |         break;
+      281 |       case 'info':
+      282 |         console.info(`${prefix} ${entry.message}`, entry.metadata || '');
+
+      at ObservabilityLogger.outputToConsole (src/observability/templum-observability-system.ts:279:17)
+      at ObservabilityLogger.outputLog (src/observability/templum-observability-system.ts:254:16)
+      at ObservabilityLogger.log (src/observability/templum-observability-system.ts:235:10)
+      at ObservabilityLogger.warn (src/observability/templum-observability-system.ts:177:10)
+      at ObservabilityAdapter.logWarn (src/observability/observability-adapter.ts:197:17)
+      at TemplumCore.logWarn (src/core/templum-core.ts:1883:46)
+      at src/core/templum-core.ts:237:18
+          at Array.forEach (<anonymous>)
+      at TemplumCore.initialize (src/core/templum-core.ts:232:51)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:253:7)
+
+  console.warn
+    No active session to stop
+
+      1249 |   async stopSession(): Promise<void> {
+      1250 |     if (!this.currentSessionId) {
+    > 1251 |       console.warn('No active session to stop');
+           |               ^
+      1252 |       return;
+      1253 |     }
+      1254 |
+
+      at TemplumUniversalSessionManager.stopSession (src/session/templum-universal-session-manager.ts:1251:15)
+      at TemplumAdapterRegistry.dispose (src/core/adapter-registry.ts:1831:59)
+      at TemplumCore.shutdown (src/core/templum-core.ts:911:34)
+      at Object.<anonymous> (tests/core/core-engine.test.ts:21:7)
+

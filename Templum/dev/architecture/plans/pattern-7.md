@@ -102,8 +102,8 @@
   - Baselines now assert sanitized output + color segment counts to detect theme drift during Stage 6 migrations.
   - `node scripts/run-with-timeout.mjs` guards both suites (heartbeat + log files) per testing-guide hang mitigation.
 - Tests/commands (all green):
-  - `node scripts/run-with-timeout.mjs --timeout 45000 --heartbeat 5000 --log-file tmp/stage4c-adaptive.log -- node scripts/run-jest-ci.mjs --runTestsByPath src/interfaces/__tests__/adaptive-cli-integration.test.ts`
-  - `node scripts/run-with-timeout.mjs --timeout 45000 --heartbeat 5000 --log-file tmp/stage4c-interface-adapter.log -- node scripts/run-jest-ci.mjs --runTestsByPath tests/interfaces/interface-adapter-integration.test.ts`
+  - `node scripts/run-with-timeout.mjs --timeout 45000 --heartbeat 5000 --log-file archive/dev-files/utility-migration/evidence/pattern-7/stage4/lane4c/stage4c-adaptive.log -- node scripts/run-jest-ci.mjs --runTestsByPath src/interfaces/__tests__/adaptive-cli-integration.test.ts`
+  - `node scripts/run-with-timeout.mjs --timeout 45000 --heartbeat 5000 --log-file archive/dev-files/utility-migration/evidence/pattern-7/stage4/lane4c/stage4c-interface-adapter.log -- node scripts/run-jest-ci.mjs --runTestsByPath tests/interfaces/interface-adapter-integration.test.ts`
 
 ### Stage 4 Handoff Block
 
@@ -143,10 +143,10 @@
 ### Stage 5B — Pattern Preparation
 
 - **Stage 6 lane readiness (current)**:
-  - Lane 6a — Ready — evidence: `tmp/stage6/pattern-7/20251002T214624Z-display-utils.test.log`, `tmp/stage6/pattern-7/20251002T214803Z-navigation-system.test.log`.
-  - Lane 6b — Ready — evidence: `tmp/stage6/pattern-7/20251002T214655Z-window-utils.test.log`, `tmp/stage6/pattern-7/20251002T220152Z-service-utils.test.log`, `tmp/stage6/pattern-7/20251002T220235Z-templum-universal-session-manager.test.log`.
-  - Lane 6c — Ready — evidence: `tmp/stage6/pattern-7/20251002T214729Z-adaptive-cli-integration.test.log`, `tmp/stage6/pattern-7/20251002T214841Z-interface-adapter-integration.test.log`, `tmp/stage6/pattern-7/20251002T220350Z-cli-leak-guard.log`, `tmp/stage6/pattern-7/20251002T220350Z-cli-leak-guard.stdout.log`.
-  - Lane 6d — Ready — evidence: `tmp/stage6/pattern-7/20251002T215250Z-visual-feedback-system.formatter.test.log`, `tmp/stage6/pattern-7/20251002T220725Z-phase6-health.log`.
+  - Lane 6a — Ready — evidence: `Templum/archive/dev-files/utility-migration/evidence/pattern-7/stage6/20251002T214624Z-display-utils.test.log`, `Templum/archive/dev-files/utility-migration/evidence/pattern-7/stage6/20251002T214803Z-navigation-system.test.log`.
+  - Lane 6b — Ready — evidence: `Templum/archive/dev-files/utility-migration/evidence/pattern-7/stage6/20251002T214655Z-window-utils.test.log`, `Templum/archive/dev-files/utility-migration/evidence/pattern-7/stage6/20251002T220152Z-service-utils.test.log`, `Templum/archive/dev-files/utility-migration/evidence/pattern-7/stage6/20251002T220235Z-templum-universal-session-manager.test.log`.
+  - Lane 6c — Ready — evidence: `Templum/archive/dev-files/utility-migration/evidence/pattern-7/stage6/20251002T214729Z-adaptive-cli-integration.test.log`, `Templum/archive/dev-files/utility-migration/evidence/pattern-7/stage6/20251002T214841Z-interface-adapter-integration.test.log`, `Templum/archive/dev-files/utility-migration/evidence/pattern-7/stage6/20251002T220350Z-cli-leak-guard.log`, `Templum/archive/dev-files/utility-migration/evidence/pattern-7/stage6/20251002T220350Z-cli-leak-guard.stdout.log`.
+  - Lane 6d — Ready — evidence: `Templum/archive/dev-files/utility-migration/evidence/pattern-7/stage6/20251002T215250Z-visual-feedback-system.formatter.test.log`, `Templum/archive/dev-files/utility-migration/evidence/pattern-7/stage6/20251002T220725Z-phase6-health.log`.
 - **Stage 6 readiness notes**:
   - Anchor every migration to the Stage 5A alignment spec (`Templum/dev/architecture/display-stack-alignment.md`, 2025-10-10). Stage 6 lanes must keep dependency seams aligned with the Stage 4 handoff block: `TerminalFormatter.configure`, `DisplayUtils.configure`, and `WindowUtils.configureWindowUtilsFormatter` receive shared formatter + columns providers, and teardown paths call `resetFormatterConfiguration`, `DisplayUtils.reset`, and `WindowUtils.reset` to clear cached state between suites.
   - Maintain the shared fixtures catalog (`display-columns-provider`, `terminal-formatter-fixtures`, `window-utils-fixtures`). Any new mock or helper introduced during Stage 6 requires a Stage 3 revisit before merge.
@@ -157,10 +157,10 @@
   - Coordinate CLI snapshot approvals with the CLI QA owner ahead of lane 6c to avoid blocking final validation.
   - MCP visual feedback + terminal UI components now depend on injected formatter instances; retain configure/reset sequences when migrating lanes 6b–6d.
 - **Executed gating evidence (2025-10-02)**:
-  - Formatter + window core: `tmp/stage6/pattern-7/20251002T214549Z-terminal-formatter.test.log`, `tmp/stage6/pattern-7/20251002T214624Z-display-utils.test.log`, `tmp/stage6/pattern-7/20251002T214655Z-window-utils.test.log`.
-  - CLI/navigation harness: `tmp/stage6/pattern-7/20251002T214729Z-adaptive-cli-integration.test.log`, `tmp/stage6/pattern-7/20251002T214803Z-navigation-system.test.log`, `tmp/stage6/pattern-7/20251002T214841Z-interface-adapter-integration.test.log`, `tmp/stage6/pattern-7/20251002T220350Z-cli-leak-guard.log`, `tmp/stage6/pattern-7/20251002T220350Z-cli-leak-guard.stdout.log`.
-  - Theme/session readiness: `tmp/stage6/pattern-7/20251002T220152Z-service-utils.test.log`, `tmp/stage6/pattern-7/20251002T220235Z-templum-universal-session-manager.test.log`.
-  - MCP + health coverage: `tmp/stage6/pattern-7/20251002T215250Z-visual-feedback-system.formatter.test.log`, `tmp/stage6/pattern-7/20251002T220725Z-phase6-health.log`.
+  - Formatter + window core: `Templum/archive/dev-files/utility-migration/evidence/pattern-7/stage6/20251002T214549Z-terminal-formatter.test.log`, `Templum/archive/dev-files/utility-migration/evidence/pattern-7/stage6/20251002T214624Z-display-utils.test.log`, `Templum/archive/dev-files/utility-migration/evidence/pattern-7/stage6/20251002T214655Z-window-utils.test.log`.
+  - CLI/navigation harness: `Templum/archive/dev-files/utility-migration/evidence/pattern-7/stage6/20251002T214729Z-adaptive-cli-integration.test.log`, `Templum/archive/dev-files/utility-migration/evidence/pattern-7/stage6/20251002T214803Z-navigation-system.test.log`, `Templum/archive/dev-files/utility-migration/evidence/pattern-7/stage6/20251002T214841Z-interface-adapter-integration.test.log`, `Templum/archive/dev-files/utility-migration/evidence/pattern-7/stage6/20251002T220350Z-cli-leak-guard.log`, `Templum/archive/dev-files/utility-migration/evidence/pattern-7/stage6/20251002T220350Z-cli-leak-guard.stdout.log`.
+  - Theme/session readiness: `Templum/archive/dev-files/utility-migration/evidence/pattern-7/stage6/20251002T220152Z-service-utils.test.log`, `Templum/archive/dev-files/utility-migration/evidence/pattern-7/stage6/20251002T220235Z-templum-universal-session-manager.test.log`.
+  - MCP + health coverage: `Templum/archive/dev-files/utility-migration/evidence/pattern-7/stage6/20251002T215250Z-visual-feedback-system.formatter.test.log`, `Templum/archive/dev-files/utility-migration/evidence/pattern-7/stage6/20251002T220725Z-phase6-health.log`.
 - **Stage 5B completion gate**: ✅ Met 2025-10-02 — tracker updated to `[x]`; revisit if Theme Utils delivery forces new prerequisites.
 - **Activity log entry**: 2025-10-10 Stage 5 pattern prep logged with Stage 6 readiness notes — see `utility-consolidation-activity-log.md` (Cohort B Display Stack — Stage 5). 2025-10-10T18:00:00Z update appended to capture the expanded gating checklist and teardown expectations.
 
@@ -199,9 +199,9 @@
   - Refactored `src/interfaces/terminal-ui-components.ts`, `src/interfaces/interactive-menu-renderer.ts`, and CLI adapter factories to consume formatter/theme utilities and Window/Display seams.
   - Replaced ad-hoc chalk usage with formatter palettes and exported theme helpers; refreshed terminal window rendering to use `WindowUtils.render`.
 - Tests/commands:
-  - `node scripts/run-with-timeout.mjs --timeout 900000 --heartbeat 30000 --log-file ../tmp/stage6/pattern-7/20251002T233503Z-adaptive-cli-integration.test.log -- npx jest --runTestsByPath src/interfaces/__tests__/adaptive-cli-integration.test.ts --runInBand --detectOpenHandles --forceExit`.
-  - `node scripts/run-with-timeout.mjs --timeout 600000 --heartbeat 30000 --log-file ../tmp/stage6/pattern-7/20251002T233137Z-interface-adapter-integration.test.log -- npx jest --runTestsByPath tests/interfaces/interface-adapter-integration.test.ts --runInBand --detectOpenHandles --forceExit` (pass; captures handler-run evidence per Testing Guide).
-  - Prior failed attempt (logged at `tmp/stage6/pattern-7/20251002T233052Z-interface-adapter-integration.test.log`) documents ts-jest mismatch when invoked from repo root; resolved by rerunning the handler inside `Templum/` with explicit config.
+  - `node scripts/run-with-timeout.mjs --timeout 900000 --heartbeat 30000 --log-file archive/dev-files/utility-migration/evidence/pattern-7/stage6/20251002T233503Z-adaptive-cli-integration.test.log -- npx jest --runTestsByPath src/interfaces/__tests__/adaptive-cli-integration.test.ts --runInBand --detectOpenHandles --forceExit`.
+  - `node scripts/run-with-timeout.mjs --timeout 600000 --heartbeat 30000 --log-file archive/dev-files/utility-migration/evidence/pattern-7/stage6/20251002T233137Z-interface-adapter-integration.test.log -- npx jest --runTestsByPath tests/interfaces/interface-adapter-integration.test.ts --runInBand --detectOpenHandles --forceExit` (pass; captures handler-run evidence per Testing Guide).
+  - Prior failed attempt (logged at `Templum/archive/dev-files/utility-migration/evidence/pattern-7/stage6/20251002T233052Z-interface-adapter-integration.test.log`) documents ts-jest mismatch when invoked from repo root; resolved by rerunning the handler inside `Templum/` with explicit config.
 - Notes:
   - Terminal UI constructor now configures `DisplayUtils` and `WindowUtils` with shared formatter + column providers and resets dependencies during cleanup.
   - Interactive menu renderer injects formatter dependencies so menu choices, prompts, and help output reuse formatter palettes.

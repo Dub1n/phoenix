@@ -1,0 +1,46 @@
+
+> templum@1.0.0 test
+> jest --runTestsByPath tests/interfaces/interface-adapter-integration.test.ts --runInBand --detectOpenHandles --forceExit
+
+  console.warn
+    VSCodeInterfaceAdapter: Cannot apply skin - adapter or orchestrator not ready
+
+      103 |   async applySkin(skinDefinition: UniversalSkinDefinition): Promise<void> {
+      104 |     if (!this.view || !this.orchestrator.isInitialized()) {
+    > 105 |       console.warn('VSCodeInterfaceAdapter: Cannot apply skin - adapter or orchestrator not ready');
+          |               ^
+      106 |       return;
+      107 |     }
+      108 |
+
+      at VSCodeInterfaceAdapter.applySkin (src/interfaces/vscode-adapter-abstracted.ts:105:15)
+      at Object.<anonymous> (tests/interfaces/interface-adapter-integration.test.ts:298:34)
+
+  console.warn
+    VSCodeInterfaceAdapter: Cannot apply skin - adapter or orchestrator not ready
+
+      103 |   async applySkin(skinDefinition: UniversalSkinDefinition): Promise<void> {
+      104 |     if (!this.view || !this.orchestrator.isInitialized()) {
+    > 105 |       console.warn('VSCodeInterfaceAdapter: Cannot apply skin - adapter or orchestrator not ready');
+          |               ^
+      106 |       return;
+      107 |     }
+      108 |
+
+      at VSCodeInterfaceAdapter.applySkin (src/interfaces/vscode-adapter-abstracted.ts:105:15)
+      at Object.<anonymous> (tests/interfaces/interface-adapter-integration.test.ts:826:25)
+
+  console.error
+    CommandInterfaceAdapter: State sync failed: Cannot read properties of null (reading 'timestamp')
+
+      156 |     } catch (error) {
+      157 |       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    > 158 |       console.error('CommandInterfaceAdapter: State sync failed:', errorMessage);
+          |               ^
+      159 |       
+      160 |       this.emit('error', {
+      161 |         timestamp: Date.now(),
+
+      at CommandInterfaceAdapter.syncState (src/interfaces/command-adapter-abstracted.ts:158:15)
+      at Object.<anonymous> (tests/interfaces/interface-adapter-integration.test.ts:872:28)
+

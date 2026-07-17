@@ -1,0 +1,16 @@
+[run-with-timeout] [2025-10-17T12:53:03.250Z] +    4ms Spawned PID 70500 with timeout 600000ms (kill-after 5000ms).
+
+> templum@1.0.0 phase6-validation
+> npm run build && node dist/src/scripts/run-phase6-integration-validation.js run
+
+
+> templum@1.0.0 build
+> node scripts/clean-build-artifacts.js && tsc
+
+src/interfaces/cli-adapter-abstracted.ts(455,95): error TS2554: Expected 1-2 arguments, but got 3.
+src/interfaces/cli-adapter-abstracted.ts(482,99): error TS2554: Expected 1-2 arguments, but got 3.
+src/interfaces/cli-generator.ts(581,21): error TS2339: Property 'themePreset' does not exist on type 'RenderingConfiguration'.
+src/interfaces/cli-generator.ts(583,17): error TS2339: Property 'name' does not exist on type 'SkinTheme'.
+src/skin/skin-version-manager.ts(36,15): error TS2300: Duplicate identifier 'Logger'.
+src/skin/skin-version-manager.ts(43,29): error TS2300: Duplicate identifier 'Logger'.
+[run-with-timeout] [2025-10-17T12:53:09.145Z] + 5899ms Process exited with code 2.

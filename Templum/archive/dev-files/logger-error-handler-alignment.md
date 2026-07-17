@@ -32,26 +32,26 @@ Stage 4 prerequisites for Pattern 1 (Logger Consolidation) and Pattern 2 (Er
 ### Pattern 1 — Logger Consolidation
 
 - **Lanes 4a–4h** all `[x]`:
-  - Backend router + dynamic command router consolidated onto scoped logger shims (`tmp/consolidation-pattern1-stage4-lane4a-20251014T125623Z.log`, `logs/consolidation/pattern-1/lane-4b-20251014T125351Z.log`).
-  - CLI adapters + abstractions redirected through injected logger emitters while preserving stdout UX (`logs/pattern-1-lane-4c-jest.txt`, `logs/pattern-1-lane-4d-jest.log`, `artifacts/consolidation/pattern-1/lane-4e-20251014T130215Z.log`).
-  - Terminal UI, session manager, adapter registry, and templum core migrated to logger helpers with scoped channels (`logs/consolidation/pattern-1/lane-4f-20251014T130558Z.log`, `logs/consolidation/pattern-1/lane-4g-20251014T130541Z.log`, `logs/consolidation/pattern-1/lane-4h-20251014T130237Z.log`).
+  - Backend router + dynamic command router consolidated onto scoped logger shims (`Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4a/20251014T125623Z.log`, `Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4b/lane-4b-20251014T125351Z.log`).
+  - CLI adapters + abstractions redirected through injected logger emitters while preserving stdout UX (`Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4c/pattern-1-lane-4c-jest.log`, `Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4d/pattern-1-lane-4d-jest.log`, `Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4e/20251014T130215Z.log`).
+  - Terminal UI, session manager, adapter registry, and templum core migrated to logger helpers with scoped channels (`Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4f/lane-4f-20251014T130558Z.log`, `Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4g/lane-4g-20251014T130541Z.log`, `Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4h/lane-4h-20251014T130237Z.log`).
 - **Guardrails reaffirmed**: zero-knowledge backend registry preserved; CLI skin-only rendering flows untouched; DI remains injectable via `configureDisplayStack`.
 - **Residuals**: Global coverage threshold warnings acknowledged for targeted jest-suite runs; to be rechecked during Stage 6 gating.
 
 ### Pattern 2 — Error Handler Consolidation
 
 - **Lanes 4a–4c** `[x]` with evidence:
-  - `src/backend/service-discovery.ts` + router fallbacks migrated to `ErrorHandler.handle` with scope metadata (`logs/consolidation/pattern-2/stage4a/rg-service-discovery.log`, `logs/consolidation/pattern-2/stage4a/jest-service-discovery.log`).
-  - `src/backend/connection-factory.ts` wrapped IPC fallbacks via Error Handler (`logs/consolidation/pattern-2/stage4b/rg-connection-factory.log`, `logs/consolidation/pattern-2/stage4b/jest-connection-factory.log`).
-  - `src/interfaces/cli-adapter-abstracted.ts` + adapter integration suite verified under Error Handler (`tmp/consolidation-pattern2-lane4c-rg.log`, `tmp/consolidation-pattern2-lane4c-tests.log`).
+  - `src/backend/service-discovery.ts` + router fallbacks migrated to `ErrorHandler.handle` with scope metadata (`Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage4/lane4a/rg-service-discovery.log`, `Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage4/lane4a/jest-service-discovery.log`).
+  - `src/backend/connection-factory.ts` wrapped IPC fallbacks via Error Handler (`Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage4/lane4b/rg-connection-factory.log`, `Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage4/lane4b/jest-connection-factory.log`).
+  - `src/interfaces/cli-adapter-abstracted.ts` + adapter integration suite verified under Error Handler (`Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage4/lane4c/rg.log`, `Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage4/lane4c/tests.log`).
 - **Guardrails reaffirmed**: zero-knowledge registry, existing timeout semantics, and logger DI remain intact; Haruspex/Phoenix contracts left untouched.
 - **Residuals**: `tests/service-discovery/discovery-cache.integration.test.ts` absent — command logged, failure captured, and carried as Stage 5B follow-up to restore coverage.
 
 ## 2025-10-15 Alignment Refresh
 
 - **Stage 4 guardrail validation**: Re-checked the guardrail artefacts from 2025-10-14 to ensure expected failures remain intact for Stage 5 rehearsals:
-  - Pattern 1: `logs/consolidation/pattern-1/lane-4i-20251014T212738Z.log`, `logs/consolidation/pattern-1/lane-4j-20251014T212228Z.log`, `logs/consolidation/pattern-1/lane-4k-20251014T212716Z.log`.
-  - Pattern 2: `tmp/consolidation-pattern2-lane4d-backend-connection-lifecycle.log`, `tmp/consolidation-pattern2-lane4e-guardrail.log`, `tmp/consolidation-pattern2-lane4f-guardrail-phase6-validation-cli.log`, `tmp/consolidation-pattern2-lane4g-guardrail.log`.
+  - Pattern 1: `Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4i/lane-4i-20251014T212738Z.log`, `Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4j/lane-4j-20251014T212228Z.log`, `Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4k/lane-4k-20251014T212716Z.log`.
+  - Pattern 2: `Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage4/lane4d/backend-connection-lifecycle.log`, `Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage4/lane4e/guardrail.log`, `Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage4/lane4f/guardrail-phase6-validation-cli.log`, `Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage4/lane4g/guardrail.log`.
 - **Stage 5B rehearsal commands** (execute with `node scripts/run-with-timeout.mjs --preset jest-suite -- …` unless otherwise noted):
   - Pattern 1:
     - Backend manual override guardrail: `npx jest src/tests/backend/manual-override-flow.test.ts src/tests/backend/manual-override-watcher.integration.test.ts src/tests/backend/comprehensive-backend-validation.test.ts`.
@@ -83,14 +83,14 @@ Stage 4 prerequisites for Pattern 1 (Logger Consolidation) and Pattern 2 (Er
 | `src/session/templum-universal-session-manager.ts` | Pattern 1 | 1,2 | 4f Logger | Session lifecycle events emit through logger + Error Handler; uphold unified-session-layer guardrails. |
 | `src/core/adapter-registry.ts` / `src/core/templum-core.ts` | Pattern 1 | 1,2 | 4g/4h Logger, 4a Error Handler | Registry + core orchestration rely on Error Handler outcomes; keep telemetry ingestion aligned with `observability-instrumentation.md`. |
 | `src/utils/logger.ts` & `src/utils/error-handler.ts` | Shared | 1,2 | Stage 2 suites | Must remain DI-first, no global singletons; Stage 5B to verify combined usage in shared modules. |
-| `node scripts/run-with-timeout.mjs` presets | Shared | 1,2 | Stage 4 evidence, Stage 6 lanes | Continue using `jest-suite`, `jest-ci`, `phase6-validation` presets for reproducible logs; capture artefacts under `logs/consolidation/`. |
+| `node scripts/run-with-timeout.mjs` presets | Shared | 1,2 | Stage 4 evidence, Stage 6 lanes | Continue using `jest-suite`, `jest-ci`, `phase6-validation` presets for reproducible logs; capture artefacts under `archive/dev-files/utility-migration/evidence/pattern-<id>/stage<id>/[lane<id>/]`. |
 | `Templum/docs/current/progress.md`, `dev/tasks/unified-session-layer.md` | Shared | 1,2 | Stage 5 updates | Update once Stage 5B readiness recorded to broadcast cross-utility impacts. |
 
 ## Stage 6 Gating Checklist (for Stage 5B)
 
 ### Pattern 1 — Logger Consolidation
 
-- **Lane 6a (Backend connectivity)**: `node scripts/run-with-timeout.mjs --preset jest-ci -- npm run test:ci` with log archived as `logs/consolidation/pattern-1/lane-6a-<timestamp>.log`; verify backend router + service discovery diagnostics remain structured.
+- **Lane 6a (Backend connectivity)**: `node scripts/run-with-timeout.mjs --preset jest-ci -- npm run test:ci` with log archived as `Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage6/lane6a/<timestamp>.log`; verify backend router + service discovery diagnostics remain structured.
 - **Lane 6b (Interface delivery)**: same `jest-ci` wrapper with CLI focus notes; capture diffs in CLI adapter snapshots to ensure skin outputs unchanged.
 - **Lane 6c (Session/core)**: `jest-ci` wrapper plus targeted `src/tests/session/templum-universal-session-manager.test.ts` if diagnostics regress; ensure adapter registry telemetry channels stay green.
 - **Extras**: rerun targeted jest-suite commands per Stage 4 lanes when hotfixing to keep log baselines fresh.
@@ -103,7 +103,7 @@ Stage 4 prerequisites for Pattern 1 (Logger Consolidation) and Pattern 2 (Er
   - `node scripts/run-with-timeout.mjs --preset jest-ci -- npm run test:ci`
 - **Lane 6b (Phase 6 connectivity)**:
   - `node scripts/run-with-timeout.mjs --preset phase6-validation -- npm run phase6-validation`
-  - Ensure `.templum/services/` cleaned pre/post run; document log under `logs/consolidation/pattern-2/lane-6b-<timestamp>.log`.
+  - Ensure `.templum/services/` cleaned pre/post run; document log under `Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage6/lane6b/<timestamp>.log`.
 - **Coverage gap**: recreate `tests/service-discovery/discovery-cache.integration.test.ts` (or equivalent) before marking Lane 6a ready; track evidence in plan + activity log.
 
 ## Follow-ups & Risks
@@ -115,8 +115,8 @@ Stage 4 prerequisites for Pattern 1 (Logger Consolidation) and Pattern 2 (Er
 
 ## Activity & References
 
-- Pattern 1 Stage 4 logs: `tmp/consolidation-pattern1-stage4-lane4a-20251014T125623Z.log`, `logs/consolidation/pattern-1/lane-4b-20251014T125351Z.log`, `logs/pattern-1-lane-4d-jest.log`, `logs/consolidation/pattern-1/lane-4f-20251014T130558Z.log`, `logs/consolidation/pattern-1/lane-4g-20251014T130541Z.log`, `logs/consolidation/pattern-1/lane-4h-20251014T130237Z.log`.
-- Pattern 2 Stage 4 logs: `logs/consolidation/pattern-2/stage4a/rg-service-discovery.log`, `logs/consolidation/pattern-2/stage4a/jest-service-discovery.log`, `logs/consolidation/pattern-2/stage4b/rg-connection-factory.log`, `logs/consolidation/pattern-2/stage4b/jest-connection-factory.log`, `tmp/consolidation-pattern2-lane4c-rg.log`, `tmp/consolidation-pattern2-lane4c-tests.log`.
+- Pattern 1 Stage 4 logs: `Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4a/20251014T125623Z.log`, `Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4b/lane-4b-20251014T125351Z.log`, `Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4d/pattern-1-lane-4d-jest.log`, `Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4f/lane-4f-20251014T130558Z.log`, `Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4g/lane-4g-20251014T130541Z.log`, `Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4h/lane-4h-20251014T130237Z.log`.
+- Pattern 2 Stage 4 logs: `Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage4/lane4a/rg-service-discovery.log`, `Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage4/lane4a/jest-service-discovery.log`, `Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage4/lane4b/rg-connection-factory.log`, `Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage4/lane4b/jest-connection-factory.log`, `Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage4/lane4c/rg.log`, `Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage4/lane4c/tests.log`.
 
 ## Approvals
 

@@ -1,0 +1,244 @@
+Script started on 2025-10-18 22:05:32+01:00 [COMMAND="npm run test -- --runTestsByPath src/tests/core/error-handler-scope.guard.test.ts" <not executed on terminal>]
+
+> templum@1.0.0 test
+> jest --runTestsByPath src/tests/core/error-handler-scope.guard.test.ts
+
+[1m[2mDetermining test suites to run...[22m[22m[999D[K
+[K[1A[999D[K
+[?2026h[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [1m...[22m
+[?2026l[K[1A[K[1A[0m[7m[1m[31m FAIL [39m[22m[27m[0m [2msrc/tests/core/[22m[1merror-handler-scope.guard.test.ts[22m
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [1m...[22m
+[K[1A[K[1A  [1m● [22mTest suite failed to run
+
+    Terminal capability width must be a positive number
+
+    [0m [90m 416 |[39m   context[33m?[39m[33m:[39m [33mRecord[39m[33m<[39m[33mstring[39m[33m,[39m any[33m>[39m
+     [90m 417 |[39m )[33m:[39m [33mTemplumError[39m {
+    [31m[1m>[22m[39m[90m 418 |[39m   [36mconst[39m error [33m=[39m [36mnew[39m [33mError[39m(message) [36mas[39m [33mTemplumError[39m[33m;[39m
+     [90m     |[39m                 [31m[1m^[22m[39m
+     [90m 419 |[39m   error[33m.[39mcode [33m=[39m code[33m;[39m
+     [90m 420 |[39m   error[33m.[39mcategory [33m=[39m category[33m;[39m
+     [90m 421 |[39m   error[33m.[39mtimestamp [33m=[39m [33mDate[39m[33m.[39mnow()[33m;[39m[0m
+
+      [2mat createTemplumError ([22msrc/types/templum-types.ts[2m:418:17)[22m
+      [2mat Function.validateCapabilities ([22msrc/utils/terminal-formatter.ts[2m:640:31)[22m
+      [2mat new validateCapabilities ([22msrc/utils/terminal-formatter.ts[2m:293:43)[22m
+      [2mat createFormatter ([22msrc/utils/terminal-formatter.ts[2m:917:10)[22m
+      [2mat Function.createDefaultDependencies ([22msrc/utils/display-utils.ts[2m:106:33)[22m
+      [2mat Object.createDefaultDependencies ([22msrc/utils/display-utils.ts[2m:111:80)[22m
+      [2mat Object.require ([22msrc/utils/display-stack.ts[2m:1:1)[22m
+      [2mat Object.<anonymous> ([22mtests/setup.ts[2m:6:1)[22m
+
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [1m...[22m
+[?2026h[K[1A[K[1A[?2026l[999D[K[1m[2mRunning coverage on untested files...[22m[22m[?2026h[?2026l[999D[K---------------------------------------|---------|----------|---------|---------|-------------------
+File                                   | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+---------------------------------------|---------|----------|---------|---------|-------------------
+[31;1mAll files                             [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m                 [0m 
+[31;1m src                                  [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m                 [0m 
+[31;1m  cli-entry.ts                        [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m11-1101          [0m 
+[31;1m  extension.ts                        [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m9-1991           [0m 
+[31;1m  index.ts                            [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m9-94             [0m 
+[31;1m src/backend                          [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m                 [0m 
+[31;1m  backend-dependency-resolver.ts      [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m16-810           [0m 
+[31;1m  backend-integration-config.ts       [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m10-351           [0m 
+[31;1m  backend-logger.ts                   [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m1-96             [0m 
+[31;1m  backend-serialization-log.ts        [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m1-53             [0m 
+[31;1m  backend-service-router.ts           [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m12-4049          [0m 
+[31;1m  connection-factory.ts               [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m11-764           [0m 
+[31;1m  dynamic-command-router.ts           [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m12-347           [0m 
+[31;1m  index.ts                            [0m | [31;1m      0[0m | [32;1m     100[0m | [32;1m    100[0m | [31;1m      0[0m | [31;1m1                [0m 
+[31;1m  manual-override-manager.ts          [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m2-160            [0m 
+[31;1m  pcl-backend-integration.ts          [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m9-1588           [0m 
+[31;1m  service-discovery-validator.ts      [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m14-757           [0m 
+[31;1m  service-discovery.ts                [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m15-1441          [0m 
+[31;1m  service-health-check.ts             [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m1-270            [0m 
+[31;1m src/backend/defaults                 [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m                 [0m 
+[31;1m  serialization-defaults.ts           [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m1-285            [0m 
+[31;1m src/backend/lifecycle                [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m                 [0m 
+[31;1m  backend-lifecycle-channel.ts        [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m11-99            [0m 
+[31;1m src/backend/schemas                  [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m                 [0m 
+[31;1m  serialization-registry.ts           [0m | [31;1m      0[0m | [32;1m     100[0m | [32;1m    100[0m | [31;1m      0[0m | [31;1m1-66             [0m 
+[31;1m  service-manifest.ts                 [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m1-229            [0m 
+[31;1m src/backend/service-discovery        [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m                 [0m 
+[31;1m  file-watcher.ts                     [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m1-149            [0m 
+[31;1m src/commands                         [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m                 [0m 
+[31;1m  universal-command-registry.ts       [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m14-976           [0m 
+[31;1m src/core                             [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m                 [0m 
+[31;1m  adapter-registry.ts                 [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m23-2099          [0m 
+[31;1m  error-recovery.ts                   [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m9-380            [0m 
+[31;1m  templum-config-manager.ts           [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m9-1000           [0m 
+[31;1m  templum-core.ts                     [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m9-2763           [0m 
+[31;1m  templum-resource-manager.ts         [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m9-986            [0m 
+[31;1m  universal-interface-manager.ts      [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m9-921            [0m 
+[31;1m src/interfaces                       [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m                 [0m 
+[31;1m  adaptive-cli-integration.ts         [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m27-1046          [0m 
+[31;1m  border-renderer.ts                  [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m20-466           [0m 
+[31;1m  cli-adapter-abstracted.ts           [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m11-2499          [0m 
+[31;1m  cli-adapter.ts                      [0m | [31;1m      0[0m | [32;1m     100[0m | [32;1m    100[0m | [31;1m      0[0m | [31;1m1                [0m 
+[31;1m  cli-display-consistency-engine.ts   [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m22-616           [0m 
+[31;1m  cli-generator.ts                    [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m1-603            [0m 
+[31;1m  cli-integration-demo.ts             [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m27-605           [0m 
+[31;1m  cli-session-bridge.ts               [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m3-172            [0m 
+[31;1m  command-adapter-abstracted.ts       [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m9-598            [0m 
+[31;1m  display-standards-calculator.ts     [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m15-482           [0m 
+[31;1m  display-utils-layout.ts             [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m1-45             [0m 
+[31;1m  enhanced-window-system.ts           [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m23-546           [0m 
+[31;1m  fallback-interface-adapter.ts       [0m | [31;1m      0[0m | [32;1m     100[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m22-46            [0m 
+[31;1m  interactive-menu-renderer.ts        [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m11-784           [0m 
+[31;1m  interface-adapter-registry.legacy.ts[0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m11-429           [0m 
+[31;1m  interface-adapter-registry.ts       [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m11-541           [0m 
+[31;1m  layout-normalizer.ts                [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m29-666           [0m 
+[31;1m  service-ordering-manager.ts         [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m15-477           [0m 
+[31;1m  terminal-compatibility-detector.ts  [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m23-364           [0m 
+[31;1m  terminal-ui-components.ts           [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m11-2224          [0m 
+[31;1m  terminal-ui-theme.ts                [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m1-164            [0m 
+[31;1m  test-window-system.ts               [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m23-463           [0m 
+[31;1m  universal-interaction-manager.ts    [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m15-1187          [0m 
+[31;1m  vscode-adapter-abstracted.ts        [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m10-699           [0m 
+[31;1m  vscode-adapter.ts                   [0m | [31;1m      0[0m | [32;1m     100[0m | [32;1m    100[0m | [31;1m      0[0m | [31;1m1                [0m 
+[31;1m  vscode-templum-webview.ts           [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m13-1192          [0m 
+[31;1m  window-layout-manager.ts            [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m22-297           [0m 
+[31;1m src/interfaces/cli                   [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m                 [0m 
+[31;1m  cli-skin-presenter.ts               [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m15-66            [0m 
+[31;1m src/interfaces/navigation            [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m                 [0m 
+[31;1m  accessibility-enhancements.ts       [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m27-1019          [0m 
+[31;1m  border-renderer.ts                  [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m27-549           [0m 
+[31;1m  breadcrumb-manager.ts               [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m27-728           [0m 
+[31;1m  exit-handler.ts                     [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m28-802           [0m 
+[31;1m  index.ts                            [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m31-510           [0m 
+[31;1m  selector-updater.ts                 [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m27-806           [0m 
+[31;1m  terminal-compatibility.ts           [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m30-1065          [0m 
+[31;1m  width-calculator.ts                 [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m23-530           [0m 
+[31;1m  window-stack.ts                     [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m27-741           [0m 
+[31;1m src/interfaces/vscode                [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m                 [0m 
+[31;1m  webview-placeholders.ts             [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m1-118            [0m 
+[31;1m  webview-registry.ts                 [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m1-93             [0m 
+[31;1m src/mcp-channel/src                  [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m                 [0m 
+[31;1m  cli-mcp-server.ts                   [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m14-720           [0m 
+[31;1m  enhanced-mcp-integration.ts         [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m24-1063          [0m 
+[31;1m  event-listener-manager.ts           [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m29-466           [0m 
+[31;1m  health-monitor.ts                   [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m14-690           [0m 
+[31;1m  index.ts                            [0m | [31;1m      0[0m | [32;1m     100[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m17-143           [0m 
+[31;1m  lifecycle-coordinator.ts            [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m12-526           [0m 
+[31;1m  mcp-diagnostics.ts                  [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m1-86             [0m 
+[31;1m  node-pty-types.ts                   [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m13-78            [0m 
+[31;1m  probabilistic-error-handler.ts      [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m27-763           [0m 
+[31;1m  progressive-timeout-manager.ts      [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m27-946           [0m 
+[31;1m  pty-manager.ts                      [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m15-309           [0m 
+[31;1m  real-time-monitor.ts                [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m25-772           [0m 
+[31;1m  runtime-compatibility-verifier.ts   [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m28-567           [0m 
+[31;1m  service-registration.ts             [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m12-625           [0m 
+[31;1m  types.ts                            [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m116-131          [0m 
+[31;1m  visual-feedback-system.ts           [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m26-1081          [0m 
+[31;1m src/mcp-channel/tests                [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m                 [0m 
+[31;1m  setup.ts                            [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m12-28            [0m 
+[31;1m src/menus                            [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m                 [0m 
+[31;1m  universal-menu-registry.ts          [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m14-809           [0m 
+[31;1m src/monitoring                       [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m                 [0m 
+[31;1m  cli-performance-monitor.ts          [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m17-653           [0m 
+[31;1m src/navigation                       [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m                 [0m 
+[31;1m  content-driven-navigation.ts        [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m20-818           [0m 
+[31;1m  dynamic-command-router.ts           [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m15-781           [0m 
+[31;1m  skin-navigation-parser.ts           [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m23-1021          [0m 
+[31;1m src/observability                    [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m                 [0m 
+[31;1m  index.ts                            [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m10-237           [0m 
+[31;1m  observability-adapter.ts            [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m10-467           [0m 
+[31;1m  templum-observability-system.ts     [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m9-1048           [0m 
+[31;1m src/registry                         [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m                 [0m 
+[31;1m  pcl-command-registry.ts             [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m9-1185           [0m 
+[31;1m  pcl-menu-registry.ts                [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m9-895            [0m 
+[31;1m src/rendering                        [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m                 [0m 
+[31;1m  content-layout-system.ts            [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m43-1221          [0m 
+[31;1m  menu-definition-adapter.ts          [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m1-289            [0m 
+[31;1m  universal-layout-engine.ts          [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m13-1994          [0m 
+[31;1m  universal-skin-renderer.ts          [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m15-765           [0m 
+[31;1m src/risk                             [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m                 [0m 
+[31;1m  fallback-manager.ts                 [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m9-1015           [0m 
+[31;1m  performance-monitor.ts              [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m9-744            [0m 
+[31;1m  rollback-criteria.ts                [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m9-1260           [0m 
+[31;1m src/scripts                          [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m                 [0m 
+[31;1m  production-readiness-validation.ts  [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m11-452           [0m 
+[31;1m  run-phase6-integration-validation.ts[0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m11-903           [0m 
+[31;1m  simple-phase6-validation.ts         [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m11-663           [0m 
+[31;1m src/session                          [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m                 [0m 
+[31;1m  session-context-foundation.ts       [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m13-436           [0m 
+[31;1m  templum-universal-session-manager.ts[0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m9-3119           [0m 
+[31;1m src/skin                             [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m                 [0m 
+[31;1m  pcl-rendering-adapter.ts            [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m17-594           [0m 
+[31;1m  skin-logger.ts                      [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m1-34             [0m 
+[31;1m  skin-version-manager.ts             [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m26-971           [0m 
+[31;1m  universal-skin-engine-impl.ts       [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m10-378           [0m 
+[31;1m  universal-skin-engine.ts            [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m10-2488          [0m 
+[31;1m src/skin/versioning                  [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m                 [0m 
+[31;1m  advanced-compatibility-service.ts   [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m15-648           [0m 
+[31;1m src/state                            [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m                 [0m 
+[31;1m  enhanced-state-synchronization.ts   [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m9-1279           [0m 
+[31;1m  state-sync-foundation.ts            [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m13-385           [0m 
+[31;1m src/testing                          [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m                 [0m 
+[31;1m  content-layout-test.ts              [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m30-590           [0m 
+[31;1m  e2e-test-framework.ts               [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m9-464            [0m 
+[31;1m src/tests                            [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m                 [0m 
+[31;1m  integration-validation-framework.ts [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m9-5450           [0m 
+[31;1m src/tests/backend/__utils__          [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m                 [0m 
+[31;1m  error-handler-guardrail.ts          [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m1-43             [0m 
+[31;1m  logger-guardrail.ts                 [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m1-109            [0m 
+[31;1m  mock-backend-connection.ts          [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m3-46             [0m 
+[31;1m src/tests/e2e                        [0m | [31;1m      0[0m | [32;1m     100[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m                 [0m 
+[31;1m  e2e-scenarios.ts                    [0m | [31;1m      0[0m | [32;1m     100[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m14-978           [0m 
+[31;1m src/tests/helpers                    [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m                 [0m 
+[31;1m  display-columns-provider.ts         [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m1-24             [0m 
+[31;1m  terminal-capabilities.ts            [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m3-20             [0m 
+[31;1m  terminal-formatter-fixtures.ts      [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m1-23             [0m 
+[31;1m  window-utils-fixtures.ts            [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m1-13             [0m 
+[31;1m src/tests/phase6                     [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m                 [0m 
+[31;1m  performance-baseline-loader.ts      [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m1-56             [0m 
+[31;1m src/transfer                         [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m                 [0m 
+[31;1m  component-transfer-strategy.ts      [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m9-796            [0m 
+[31;1m src/types                            [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m                 [0m 
+[31;1m  templum-types.ts                    [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m405-426          [0m 
+[31;1m src/utils                            [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m                 [0m 
+[31;1m  async-utils.ts                      [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m1-322            [0m 
+[31;1m  chainable-string-utils.ts           [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m1-472            [0m 
+[31;1m  cli-runtime-output.ts               [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m1-153            [0m 
+[31;1m  debug-utils.ts                      [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m1-359            [0m 
+[31;1m  display-stack.ts                    [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m1-63             [0m 
+[31;1m  display-utils.ts                    [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m1-269            [0m 
+[31;1m  error-handler.ts                    [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m1-359            [0m 
+[31;1m  event-bus-adapter.ts                [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m1-202            [0m 
+[31;1m  event-utils.ts                      [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m1-359            [0m 
+[31;1m  index.ts                            [0m | [31;1m      0[0m | [32;1m     100[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m1-42             [0m 
+[31;1m  logger.ts                           [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m1-276            [0m 
+[31;1m  path-utils.ts                       [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m1-395            [0m 
+[31;1m  protocol-utils.ts                   [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m1-847            [0m 
+[31;1m  registry-utils.ts                   [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m1-655            [0m 
+[31;1m  resilience-utils.ts                 [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m1-661            [0m 
+[31;1m  serialization-utils.ts              [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m1-422            [0m 
+[31;1m  service-utils.ts                    [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m1-559            [0m 
+[31;1m  terminal-formatter.ts               [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m1-969            [0m 
+[31;1m  type-guards.ts                      [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m1-427            [0m 
+[31;1m  window-theme-constants.ts           [0m | [31;1m      0[0m | [32;1m     100[0m | [32;1m    100[0m | [31;1m      0[0m | [31;1m1-135            [0m 
+[31;1m  window-utils.ts                     [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m1-276            [0m 
+[31;1m src/validation                       [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m                 [0m 
+[31;1m  hybrid-validation-system-v3c.ts     [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m20-1406          [0m 
+[31;1m  mock-backend-contracts.ts           [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m9-412            [0m 
+[31;1m  performance-validation.ts           [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m9-1260           [0m 
+[31;1m  phase6-harness.ts                   [0m | [31;1m      0[0m | [32;1m     100[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m1                [0m 
+[31;1m  production-readiness-validator.ts   [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m9-1172           [0m 
+[31;1m  skin-validator.ts                   [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m9-342            [0m 
+[31;1m  validator-utility-examples.ts       [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m25-680           [0m 
+[31;1m  validator.ts                        [0m | [31;1m      0[0m | [31;1m       0[0m | [31;1m      0[0m | [31;1m      0[0m | [31;1m25-913           [0m 
+---------------------------------------|---------|----------|---------|---------|-------------------
+[1m[31mJest: "global" coverage threshold for statements (30%) not met: 0%[39m[22m
+[1m[31mJest: "global" coverage threshold for branches (22%) not met: 0%[39m[22m
+[1m[31mJest: "global" coverage threshold for lines (30%) not met: 0%[39m[22m
+[1m[31mJest: "global" coverage threshold for functions (30%) not met: 0%[39m[22m
+[1mTest Suites: [22m[1m[31m1 failed[39m[22m, 1 total
+[1mTests:       [22m0 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        [1m[33m4.054 s[39m[22m
+[2mRan all test suites[22m[2m within paths[22m "src/tests/core/error-handler-scope.guard.test.ts"[2m.[22m
+⠙[1G[0K
+Script done on 2025-10-18 22:05:36+01:00 [COMMAND_EXIT_CODE="0"]

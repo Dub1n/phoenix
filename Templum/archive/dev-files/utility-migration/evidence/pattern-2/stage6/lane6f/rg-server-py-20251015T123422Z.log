@@ -1,0 +1,1 @@
+                LOG.exception("Unexpected error reading PTY %s: %s", self.session_id, exc)

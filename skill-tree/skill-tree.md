@@ -1,14 +1,14 @@
 # Skill Tree
 
-**Overall level:** Learner (avg index 0.25)
-**Tracked domains:** 20
+**Overall level:** Learner (avg index 0.24)
+**Tracked domains:** 21
 **Average readiness:** 17%
-**Recorded check-ins:** 4
-**Last check-in:** 2026-07-16 (2026-07-16--templum-cli-renderer-and-doc-governance.md)
-**Areas logged:** 10
+**Recorded check-ins:** 5
+**Last check-in:** 2026-07-17 (2026-07-17--migration-artifact-archive-governance.md)
+**Areas logged:** 12
 
-> **Recent highlight** — Documentation & Specs (2026-07-16)
-> Reviewed the Templum CLI renderer, chose a full character-grid rewrite, separated product and target-architecture contracts, archived superseded CLI 2.1 material, defined renderer pre-implementation gates, and implemented frontmatter schema/template/validator hygiene.
+> **Recent highlight** — Repository Migration & Artifact Governance (2026-07-17)
+> Traced validation and utility-migration outputs, relocated historical logs into owned archives, normalized evidence references, and revised run-with-timeout path validation to require destinations below Templum/archive while allowing workflow-specific layouts.
 
 - **DevOps & Platform Health** — Level: Learner • Readiness: █░░░░░░░░░ 10% • Confidence: Low
   - **CI/CD Pipeline Stewardship** — Level: Learner • Readiness: ██░░░░░░░░ 15% • Confidence: Low
@@ -47,6 +47,16 @@
     - Areas:
       - [Learning] WSL filesystem migration & backups — last: 2025-10-05 — note: Covered repo move safeguards, tar snapshots, and pv-based progress tracking.
       - [Learning] undefined — note: CLI now surfaces handoff data and safe lane claims.
+    - **Repository Migration & Artifact Governance** — Level: Learner • Readiness: ██░░░░░░░░ 20% • Confidence: Medium
+      - Next test hint: Explain how containment validation differs from enforcing one workflow-specific directory schema.
+      - Evidence:
+        - 2026-07-17: Traced validation and utility-migration outputs, relocated historical logs into owned archives, normalized evidence references, and revised run-with-timeout path validation to require destinations below Templum/archive while allowing workflow-specific layouts.
+        - 2026-07-17: Refined the run-with-timeout boundary after reviewing its cross-project use: any monorepo path beneath an actual archive directory is accepted, while archive-like names, non-archive destinations, and paths outside the repository are rejected.
+      - Achievements:
+        - [◆] archive_boundary (Established and tested Templum archive containment for generated command logs)
+      - Areas:
+        - [Learning] Artifact location governance — note: Traced generated artifacts and established project archive boundaries
+        - [Learning] Safe path validation — note: Generalized containment to any real archive directory within the monorepo while rejecting lookalike names and external paths
 
 - **Knowledge Flow & Communication** — Level: Learner • Readiness: █░░░░░░░░░ 10% • Confidence: Low
   - **Documentation & Specs** — Level: Learner • Readiness: ███░░░░░░░ 25% • Confidence: Medium

@@ -1,0 +1,33 @@
+[run-with-timeout] [2025-10-15T12:24:01.239Z] +    6ms Spawned PID 884331 with timeout 30000ms (kill-after 5000ms).
+
+> templum@1.0.0 phase6-validation
+> npm run build && node dist/src/scripts/run-phase6-integration-validation.js run
+
+
+> templum@1.0.0 build
+> node scripts/clean-build-artifacts.js && tsc
+
+src/backend/backend-service-router.ts(961,9): error TS2322: Type '"auto-connect"' is not assignable to type '"discovery" | "manual" | "health-monitor" | "recovery" | undefined'.
+src/interfaces/adaptive-cli-integration.ts(929,5): error TS2561: Object literal may only specify known properties, but 'enableInteractiveSearch' does not exist in type 'CLIAdapterInitializationOptions'. Did you mean to write 'enableInteractiveMode'?
+src/interfaces/adaptive-cli-integration.ts(975,5): error TS2561: Object literal may only specify known properties, but 'enableInteractiveSearch' does not exist in type 'CLIAdapterInitializationOptions'. Did you mean to write 'enableInteractiveMode'?
+src/interfaces/cli-integration-demo.ts(600,7): error TS2345: Argument of type 'ITemplumOrchestrator | undefined' is not assignable to parameter of type 'ITemplumOrchestrator'.
+  Type 'undefined' is not assignable to type 'ITemplumOrchestrator'.
+src/rendering/universal-layout-engine.ts(308,63): error TS2345: Argument of type 'UniversalSkinDefinition | UniversalSkinMenuDefinition | PCLSkinMenuDefinition' is not assignable to parameter of type 'UniversalSkinMenuDefinition | PCLSkinMenuDefinition'.
+  Type 'UniversalSkinDefinition' is not assignable to type 'UniversalSkinMenuDefinition | PCLSkinMenuDefinition'.
+    Type 'UniversalSkinDefinition' is missing the following properties from type 'PCLSkinMenuDefinition': title, items
+src/rendering/universal-layout-engine.ts(311,37): error TS2345: Argument of type 'UniversalSkinDefinition | UniversalSkinMenuDefinition | PCLSkinMenuDefinition' is not assignable to parameter of type 'UniversalSkinMenuDefinition | PCLSkinMenuDefinition'.
+  Type 'UniversalSkinDefinition' is not assignable to type 'UniversalSkinMenuDefinition | PCLSkinMenuDefinition'.
+    Type 'UniversalSkinDefinition' is missing the following properties from type 'PCLSkinMenuDefinition': title, items
+src/rendering/universal-layout-engine.ts(324,65): error TS2345: Argument of type 'UniversalSkinDefinition | PCLSkinMenuDefinition' is not assignable to parameter of type 'UniversalSkinMenuDefinition | PCLSkinMenuDefinition'.
+  Type 'UniversalSkinDefinition' is not assignable to type 'UniversalSkinMenuDefinition | PCLSkinMenuDefinition'.
+    Type 'UniversalSkinDefinition' is missing the following properties from type 'PCLSkinMenuDefinition': title, items
+src/rendering/universal-layout-engine.ts(328,9): error TS2345: Argument of type 'UniversalSkinDefinition | PCLSkinMenuDefinition' is not assignable to parameter of type 'UniversalSkinMenuDefinition | PCLSkinMenuDefinition'.
+  Type 'UniversalSkinDefinition' is not assignable to type 'UniversalSkinMenuDefinition | PCLSkinMenuDefinition'.
+    Type 'UniversalSkinDefinition' is missing the following properties from type 'PCLSkinMenuDefinition': title, items
+src/rendering/universal-layout-engine.ts(335,9): error TS2345: Argument of type 'UniversalSkinDefinition | PCLSkinMenuDefinition' is not assignable to parameter of type 'UniversalSkinMenuDefinition | PCLSkinMenuDefinition'.
+  Type 'UniversalSkinDefinition' is not assignable to type 'UniversalSkinMenuDefinition | PCLSkinMenuDefinition'.
+    Type 'UniversalSkinDefinition' is missing the following properties from type 'PCLSkinMenuDefinition': title, items
+src/rendering/universal-layout-engine.ts(341,9): error TS2345: Argument of type 'UniversalSkinDefinition | PCLSkinMenuDefinition' is not assignable to parameter of type 'UniversalSkinMenuDefinition | PCLSkinMenuDefinition'.
+  Type 'UniversalSkinDefinition' is not assignable to type 'UniversalSkinMenuDefinition | PCLSkinMenuDefinition'.
+    Type 'UniversalSkinDefinition' is missing the following properties from type 'PCLSkinMenuDefinition': title, items
+[run-with-timeout] [2025-10-15T12:24:08.629Z] + 7396ms Process exited with code 2.

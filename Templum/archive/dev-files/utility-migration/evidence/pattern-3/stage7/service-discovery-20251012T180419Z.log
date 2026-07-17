@@ -1,0 +1,4 @@
+
+> templum@1.0.0 test
+> jest --runTestsByPath src/tests/backend/service-discovery.test.ts src/tests/backend/generic-backend-integration.test.ts src/tests/backend/backend-dependency-integration.test.ts --runInBand --detectOpenHandles --forceExit --no-cache
+

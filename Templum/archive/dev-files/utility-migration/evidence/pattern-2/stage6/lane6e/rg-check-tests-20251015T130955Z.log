@@ -1,0 +1,1 @@
+    logger.warn('Please fix test compilation errors before committing.');

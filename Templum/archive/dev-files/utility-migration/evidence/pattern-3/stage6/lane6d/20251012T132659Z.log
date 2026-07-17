@@ -1,0 +1,240 @@
+[run-with-timeout] [2025-10-12T13:26:59.240Z] +    6ms Spawned PID 223821 with timeout 180000ms (kill-after 10000ms).
+
+> templum@1.0.0 test
+> jest --runTestsByPath tests/interfaces/interface-adapter-integration.test.ts tests/interfaces/universal-interaction-manager.session.test.ts --runInBand --no-cache --detectOpenHandles --forceExit
+
+FAIL tests/interfaces/interface-adapter-integration.test.ts
+  ● Console
+
+    console.error
+      [2025-10-12T13:27:02.882Z] [event-utils] [ERROR] Event emission failed {
+        event: 'error',
+        error: Error: Unhandled error. ({
+          timestamp: 1760275622879,
+          source: 'command',
+          error: Error: State synchronization failed: Cannot read properties of null (reading 'timestamp')
+              at createTemplumError (/home/gabri/dev/VDL_VAULT/Templum/src/types/templum-types.ts:418:17)
+              at CommandInterfaceAdapter.syncState (/home/gabri/dev/VDL_VAULT/Templum/src/interfaces/command-adapter-abstracted.ts:288:34)
+              at Object.<anonymous> (/home/gabri/dev/VDL_VAULT/Templum/tests/interfaces/interface-adapter-integration.test.ts:1000:28) {
+            code: 'STATE_SYNC_FAILED',
+            category: 'runtime',
+            timestamp: 1760275622879,
+            context: undefined
+          },
+          severity: 'medium'
+        })
+            at EventEmitter.emit (node:events:508:17)
+            at EventEmitter.typedEmitter.emit (/home/gabri/dev/VDL_VAULT/Templum/src/utils/event-utils.ts:78:16)
+            at Function.emit (/home/gabri/dev/VDL_VAULT/Templum/src/utils/event-utils.ts:135:22)
+            at Object.emit (/home/gabri/dev/VDL_VAULT/Templum/src/utils/event-utils.ts:160:44)
+            at CommandInterfaceAdapter.emit (/home/gabri/dev/VDL_VAULT/Templum/src/interfaces/command-adapter-abstracted.ts:118:24)
+            at CommandInterfaceAdapter.syncState (/home/gabri/dev/VDL_VAULT/Templum/src/interfaces/command-adapter-abstracted.ts:285:12)
+            at Object.<anonymous> (/home/gabri/dev/VDL_VAULT/Templum/tests/interfaces/interface-adapter-integration.test.ts:1000:28) {
+          code: 'ERR_UNHANDLED_ERROR',
+          context: {
+            timestamp: 1760275622879,
+            source: 'command',
+            error: [Error],
+            severity: 'medium'
+          }
+        }
+      }
+
+      57 |
+      58 |       if (data !== undefined || durationMs !== undefined) {
+    > 59 |         target(prefix, message, mergePayload(data, durationMs));
+         |         ^
+      60 |       } else {
+      61 |         target(prefix, message);
+      62 |       }
+
+      at Object.log (src/utils/logger.ts:59:9)
+      at Logger.dispatch (src/utils/logger.ts:181:35)
+      at Logger.error (src/utils/logger.ts:120:10)
+      at EventEmitter.typedEmitter.emit (src/utils/event-utils.ts:80:27)
+      at Function.emit (src/utils/event-utils.ts:135:22)
+      at Object.emit (src/utils/event-utils.ts:160:44)
+      at CommandInterfaceAdapter.emit (src/interfaces/command-adapter-abstracted.ts:118:24)
+      at CommandInterfaceAdapter.syncState (src/interfaces/command-adapter-abstracted.ts:285:12)
+      at Object.<anonymous> (tests/interfaces/interface-adapter-integration.test.ts:1000:28)
+
+    console.error
+      [2025-10-12T13:27:02.885Z] [error-handler] [ERROR] Error in event-emission:error {
+        originalError: Error: Unhandled error. ({
+          timestamp: 1760275622879,
+          source: 'command',
+          error: Error: State synchronization failed: Cannot read properties of null (reading 'timestamp')
+              at createTemplumError (/home/gabri/dev/VDL_VAULT/Templum/src/types/templum-types.ts:418:17)
+              at CommandInterfaceAdapter.syncState (/home/gabri/dev/VDL_VAULT/Templum/src/interfaces/command-adapter-abstracted.ts:288:34)
+              at Object.<anonymous> (/home/gabri/dev/VDL_VAULT/Templum/tests/interfaces/interface-adapter-integration.test.ts:1000:28) {
+            code: 'STATE_SYNC_FAILED',
+            category: 'runtime',
+            timestamp: 1760275622879,
+            context: undefined
+          },
+          severity: 'medium'
+        })
+            at EventEmitter.emit (node:events:508:17)
+            at EventEmitter.typedEmitter.emit (/home/gabri/dev/VDL_VAULT/Templum/src/utils/event-utils.ts:78:16)
+            at Function.emit (/home/gabri/dev/VDL_VAULT/Templum/src/utils/event-utils.ts:135:22)
+            at Object.emit (/home/gabri/dev/VDL_VAULT/Templum/src/utils/event-utils.ts:160:44)
+            at CommandInterfaceAdapter.emit (/home/gabri/dev/VDL_VAULT/Templum/src/interfaces/command-adapter-abstracted.ts:118:24)
+            at CommandInterfaceAdapter.syncState (/home/gabri/dev/VDL_VAULT/Templum/src/interfaces/command-adapter-abstracted.ts:285:12)
+            at Object.<anonymous> (/home/gabri/dev/VDL_VAULT/Templum/tests/interfaces/interface-adapter-integration.test.ts:1000:28) {
+          code: 'ERR_UNHANDLED_ERROR',
+          context: {
+            timestamp: 1760275622879,
+            source: 'command',
+            error: Error: State synchronization failed: Cannot read properties of null (reading 'timestamp')
+                at createTemplumError (/home/gabri/dev/VDL_VAULT/Templum/src/types/templum-types.ts:418:17)
+                at CommandInterfaceAdapter.syncState (/home/gabri/dev/VDL_VAULT/Templum/src/interfaces/command-adapter-abstracted.ts:288:34)
+                at Object.<anonymous> (/home/gabri/dev/VDL_VAULT/Templum/tests/interfaces/interface-adapter-integration.test.ts:1000:28) {
+              code: 'STATE_SYNC_FAILED',
+              category: 'runtime',
+              timestamp: 1760275622879,
+              context: undefined
+            },
+            severity: 'medium'
+          }
+        }
+      } {
+        name: 'Error',
+        message: 'event-emission:error: Error [ERR_UNHANDLED_ERROR]: Unhandled error. ({\n' +
+          '  timestamp: 1760275622879,\n' +
+          "  source: 'command',\n" +
+          "  error: Error: State synchronization failed: Cannot read properties of null (reading 'timestamp')\n" +
+          '      at createTemplumError (/home/gabri/dev/VDL_VAULT/Templum/src/types/templum-types.ts:418:17)\n' +
+          '      at CommandInterfaceAdapter.syncState (/home/gabri/dev/VDL_VAULT/Templum/src/interfaces/command-adapter-abstracted.ts:288:34)\n' +
+          '      at Object.<anonymous> (/home/gabri/dev/VDL_VAULT/Templum/tests/interfaces/interface-adapter-integration.test.ts:1000:28) {\n' +
+          "    code: 'STATE_SYNC_FAILED',\n" +
+          "    category: 'runtime',\n" +
+          '    timestamp: 1760275622879,\n' +
+          '    context: undefined\n' +
+          '  },\n' +
+          "  severity: 'medium'\n" +
+          '})',
+        stack: 'Error: event-emission:error: Error [ERR_UNHANDLED_ERROR]: Unhandled error. ({\n' +
+          '  timestamp: 1760275622879,\n' +
+          "  source: 'command',\n" +
+          "  error: Error: State synchronization failed: Cannot read properties of null (reading 'timestamp')\n" +
+          '      at createTemplumError (/home/gabri/dev/VDL_VAULT/Templum/src/types/templum-types.ts:418:17)\n' +
+          '      at CommandInterfaceAdapter.syncState (/home/gabri/dev/VDL_VAULT/Templum/src/interfaces/command-adapter-abstracted.ts:288:34)\n' +
+          '      at Object.<anonymous> (/home/gabri/dev/VDL_VAULT/Templum/tests/interfaces/interface-adapter-integration.test.ts:1000:28) {\n' +
+          "    code: 'STATE_SYNC_FAILED',\n" +
+          "    category: 'runtime',\n" +
+          '    timestamp: 1760275622879,\n' +
+          '    context: undefined\n' +
+          '  },\n' +
+          "  severity: 'medium'\n" +
+          '})\n' +
+          '    at createTemplumError (/home/gabri/dev/VDL_VAULT/Templum/src/types/templum-types.ts:418:17)\n' +
+          '    at Function.normalizeError (/home/gabri/dev/VDL_VAULT/Templum/src/utils/error-handler.ts:181:30)\n' +
+          '    at Function.handle (/home/gabri/dev/VDL_VAULT/Templum/src/utils/error-handler.ts:32:31)\n' +
+          '    at EventEmitter.typedEmitter.emit (/home/gabri/dev/VDL_VAULT/Templum/src/utils/event-utils.ts:84:20)\n' +
+          '    at Function.emit (/home/gabri/dev/VDL_VAULT/Templum/src/utils/event-utils.ts:135:22)\n' +
+          '    at Object.emit (/home/gabri/dev/VDL_VAULT/Templum/src/utils/event-utils.ts:160:44)\n' +
+          '    at CommandInterfaceAdapter.emit (/home/gabri/dev/VDL_VAULT/Templum/src/interfaces/command-adapter-abstracted.ts:118:24)\n' +
+          '    at CommandInterfaceAdapter.syncState (/home/gabri/dev/VDL_VAULT/Templum/src/interfaces/command-adapter-abstracted.ts:285:12)\n' +
+          '    at Object.<anonymous> (/home/gabri/dev/VDL_VAULT/Templum/tests/interfaces/interface-adapter-integration.test.ts:1000:28)'
+      }
+
+      44 |
+      45 |       if (error) {
+    > 46 |         console.error(prefix, message, formatPayload(data), formatError(error));
+         |                 ^
+      47 |         return;
+      48 |       }
+      49 |
+
+      at Object.log (src/utils/logger.ts:46:17)
+      at Logger.dispatch (src/utils/logger.ts:181:35)
+      at Logger.error (src/utils/logger.ts:120:10)
+      at Function.handle (src/utils/error-handler.ts:33:17)
+      at EventEmitter.typedEmitter.emit (src/utils/event-utils.ts:84:20)
+      at Function.emit (src/utils/event-utils.ts:135:22)
+      at Object.emit (src/utils/event-utils.ts:160:44)
+      at CommandInterfaceAdapter.emit (src/interfaces/command-adapter-abstracted.ts:118:24)
+      at CommandInterfaceAdapter.syncState (src/interfaces/command-adapter-abstracted.ts:285:12)
+      at Object.<anonymous> (tests/interfaces/interface-adapter-integration.test.ts:1000:28)
+
+    console.error
+      [2025-10-12T13:27:02.894Z] [vscode-interface-adapter] [ERROR] VSCodeInterfaceAdapter: Failed to apply skin {
+        errorMessage: 'Skin validation failed: metadata.backendService is required'
+      }
+
+      57 |
+      58 |       if (data !== undefined || durationMs !== undefined) {
+    > 59 |         target(prefix, message, mergePayload(data, durationMs));
+         |         ^
+      60 |       } else {
+      61 |         target(prefix, message);
+      62 |       }
+
+      at Object.log (src/utils/logger.ts:59:9)
+      at Logger.dispatch (src/utils/logger.ts:181:35)
+      at Logger.error (src/utils/logger.ts:120:10)
+      at VSCodeInterfaceAdapter.applySkin (src/interfaces/vscode-adapter-abstracted.ts:161:19)
+      at Object.<anonymous> (tests/interfaces/interface-adapter-integration.test.ts:1053:7)
+
+  ● Interface Adapter Integration Tests › Error Handling and Resilience › interface adapters handle state sync errors appropriately
+
+    expect(received).rejects.toThrow()
+
+    Received promise resolved instead of rejected
+    Resolved to value: undefined
+
+       998 |
+       999 |       // Act & Assert
+    > 1000 |       await expect(adapter.syncState(invalidStateUpdate)).rejects.toThrow();
+           |             ^
+      1001 |     });
+      1002 |
+      1003 |     test("CLI adapter logs schema validation failures from the skin engine", async () => {
+
+      at expect (node_modules/expect/build/index.js:2116:15)
+      at Object.<anonymous> (tests/interfaces/interface-adapter-integration.test.ts:1000:13)
+
+PASS tests/interfaces/universal-interaction-manager.session.test.ts
+
+Test Suites: 1 failed, 1 passed, 2 total
+Tests:       1 failed, 45 passed, 46 total
+Snapshots:   2 passed, 2 total
+Time:        3.069 s
+Ran all test suites within paths "tests/interfaces/interface-adapter-integration.test.ts", "tests/interfaces/universal-interaction-manager.session.test.ts".
+
+Jest has detected the following 2 open handles potentially keeping Jest from exiting:
+
+  ●  Timeout
+
+      420 |   private setupCleanupInterval(): void {
+      421 |     // Clean up expired sessions every 5 minutes
+    > 422 |     this.cleanupInterval = setInterval(() => {
+          |                            ^
+      423 |       const cleaned = this.cleanupExpiredSessions();
+      424 |       if (cleaned > 0) {
+      425 |         console.debug(`Cleaned up ${cleaned} expired sessions`);
+
+      at SessionContextFoundation.setupCleanupInterval (src/session/session-context-foundation.ts:422:28)
+      at SessionContextFoundation.initialize (src/session/session-context-foundation.ts:200:10)
+      at TemplumUniversalSessionManager.initialize (src/session/templum-universal-session-manager.ts:508:36)
+      at MockTemplumOrchestrator.initialize (tests/interfaces/interface-adapter-integration.test.ts:131:44)
+      at Object.<anonymous> (tests/interfaces/interface-adapter-integration.test.ts:1072:26)
+
+
+  ●  Timeout
+
+      420 |   private setupCleanupInterval(): void {
+      421 |     // Clean up expired sessions every 5 minutes
+    > 422 |     this.cleanupInterval = setInterval(() => {
+          |                            ^
+      423 |       const cleaned = this.cleanupExpiredSessions();
+      424 |       if (cleaned > 0) {
+      425 |         console.debug(`Cleaned up ${cleaned} expired sessions`);
+
+      at SessionContextFoundation.setupCleanupInterval (src/session/session-context-foundation.ts:422:28)
+      at SessionContextFoundation.initialize (src/session/session-context-foundation.ts:200:10)
+      at TemplumUniversalSessionManager.initialize (src/session/templum-universal-session-manager.ts:508:36)
+      at MockTemplumOrchestrator.initialize (tests/interfaces/interface-adapter-integration.test.ts:131:44)
+      at Object.<anonymous> (tests/interfaces/interface-adapter-integration.test.ts:1112:26)
+
+[run-with-timeout] [2025-10-12T13:27:03.147Z] + 3913ms Process exited with code 1.

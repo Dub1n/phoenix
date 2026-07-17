@@ -1,0 +1,1 @@
+      console.error(`[PROGRESSIVE_TIMEOUT] Error updating timeout metrics for level ${level}:`, error);

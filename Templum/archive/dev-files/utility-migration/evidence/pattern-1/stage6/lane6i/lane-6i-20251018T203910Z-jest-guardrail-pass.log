@@ -1,0 +1,502 @@
+[run-with-timeout] [2025-10-18T20:39:10.447Z] +    3ms Spawned PID 246879 with timeout 30000ms (kill-after 5000ms).
+PASS src/tests/utils/terminal-formatter.test.ts
+FAIL tests/interfaces/interface-session-error-handler.guardrail.test.ts
+  ● Interface/session error handler guardrail › flags catch clauses without ErrorHandler.handle
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  -   1
+    + Received  + 272
+
+    - Array []
+    + Array [
+    +   Object {
+    +     "file": "src/session/templum-universal-session-manager.ts",
+    +     "line": 474,
+    +     "snippet": "catch (error) {         handleSessionScopedError(error, ['cleanup-forwarders']);         // ignore cleanup errors",
+    +   },
+    +   Object {
+    +     "file": "src/session/templum-universal-session-manager.ts",
+    +     "line": 491,
+    +     "snippet": "catch (error) {         handleSessionScopedError(error, ['cleanup-backend-router']);         // swallow cleanup errors",
+    +   },
+    +   Object {
+    +     "file": "src/session/templum-universal-session-manager.ts",
+    +     "line": 601,
+    +     "snippet": "catch (error) {         handleSessionError(error);         const errorMessage = isTemplumError(error) ? error.message : (error instanceof Error ? error.message : 'Unknown error');",
+    +   },
+    +   Object {
+    +     "file": "src/session/templum-universal-session-manager.ts",
+    +     "line": 618,
+    +     "snippet": "catch (error) {       handleSessionError(error);       const errorPayload: ErrorSignalPayload = {",
+    +   },
+    +   Object {
+    +     "file": "src/session/templum-universal-session-manager.ts",
+    +     "line": 735,
+    +     "snippet": "catch (error) {       handleSessionError(error);       const errorMessage = isTemplumError(error) ? error.message : (error instanceof Error ? error.message : 'Unknown error');",
+    +   },
+    +   Object {
+    +     "file": "src/session/templum-universal-session-manager.ts",
+    +     "line": 954,
+    +     "snippet": "catch (error) {         handleSessionError(error);         const errorMessage = isTemplumError(error) ? error.message : (error instanceof Error ? error.message : 'Unknown error');",
+    +   },
+    +   Object {
+    +     "file": "src/session/templum-universal-session-manager.ts",
+    +     "line": 1061,
+    +     "snippet": "catch (error) {       handleSessionError(error);       const errorMessage = isTemplumError(error) ? error.message : (error instanceof Error ? error.message : 'Unknown error');",
+    +   },
+    +   Object {
+    +     "file": "src/session/templum-universal-session-manager.ts",
+    +     "line": 1134,
+    +     "snippet": "catch (error) {             handleSessionError(error);             const errorMessage = error instanceof Error ? error.message : 'Unknown error';",
+    +   },
+    +   Object {
+    +     "file": "src/session/templum-universal-session-manager.ts",
+    +     "line": 1171,
+    +     "snippet": "catch (error) {       handleSessionError(error);       const errorMessage = isTemplumError(error) ? error.message : (error instanceof Error ? error.message : 'Unknown error');",
+    +   },
+    +   Object {
+    +     "file": "src/session/templum-universal-session-manager.ts",
+    +     "line": 1325,
+    +     "snippet": "catch (backendError) {         handleSessionError(backendError);         // Fallback to local command execution if backend routing fails",
+    +   },
+    +   Object {
+    +     "file": "src/session/templum-universal-session-manager.ts",
+    +     "line": 1369,
+    +     "snippet": "catch (error) {       handleSessionError(error);       const errorMessage = isTemplumError(error) ? error.message : (error instanceof Error ? error.message : 'Unknown error');",
+    +   },
+    +   Object {
+    +     "file": "src/session/templum-universal-session-manager.ts",
+    +     "line": 1437,
+    +     "snippet": "catch (error) {           handleSessionError(error);           const errorMessage = error instanceof Error ? error.message : 'Unknown error';",
+    +   },
+    +   Object {
+    +     "file": "src/session/templum-universal-session-manager.ts",
+    +     "line": 1495,
+    +     "snippet": "catch (error) {       handleSessionError(error);       const errorMessage = error instanceof Error ? error.message : 'Unknown error';",
+    +   },
+    +   Object {
+    +     "file": "src/session/templum-universal-session-manager.ts",
+    +     "line": 1706,
+    +     "snippet": "catch (error) {       handleSessionError(error);       const errorMessage = error instanceof Error ? error.message : 'Unknown error';",
+    +   },
+    +   Object {
+    +     "file": "src/session/templum-universal-session-manager.ts",
+    +     "line": 1751,
+    +     "snippet": "catch (validationError) {               handleSessionScopedError(                 validationError,",
+    +   },
+    +   Object {
+    +     "file": "src/session/templum-universal-session-manager.ts",
+    +     "line": 1773,
+    +     "snippet": "catch (error) {           handleSessionError(error);           if (isTemplumError(error) && error.code === 'SESSION_STATE_INVALID') {",
+    +   },
+    +   Object {
+    +     "file": "src/session/templum-universal-session-manager.ts",
+    +     "line": 1806,
+    +     "snippet": "catch (error) {         handleSessionError(error);         const reason = error instanceof Error ? error.message : 'Invalid transfer payload';",
+    +   },
+    +   Object {
+    +     "file": "src/session/templum-universal-session-manager.ts",
+    +     "line": 1825,
+    +     "snippet": "catch (error) {           handleSessionError(error);           const errorMessage = error instanceof Error ? error.message : 'Unknown error';",
+    +   },
+    +   Object {
+    +     "file": "src/session/templum-universal-session-manager.ts",
+    +     "line": 1833,
+    +     "snippet": "catch (fallbackError) {             handleSessionError(fallbackError);             this.logError(this.logger, 'Fallback state synchronization also failed:', fallbackError);",
+    +   },
+    +   Object {
+    +     "file": "src/session/templum-universal-session-manager.ts",
+    +     "line": 1854,
+    +     "snippet": "catch (error) {       handleSessionError(error);       const templumError = isTemplumError(error)",
+    +   },
+    +   Object {
+    +     "file": "src/session/templum-universal-session-manager.ts",
+    +     "line": 1887,
+    +     "snippet": "catch (recoveryError) {         handleSessionError(recoveryError);         this.logError(this.logger, 'Comprehensive state synchronization recovery failed:', recoveryError);",
+    +   },
+    +   Object {
+    +     "file": "src/session/templum-universal-session-manager.ts",
+    +     "line": 1913,
+    +     "snippet": "catch (error) {           handleSessionError(error);           const errorMessage = error instanceof Error ? error.message : 'Unknown error';",
+    +   },
+    +   Object {
+    +     "file": "src/session/templum-universal-session-manager.ts",
+    +     "line": 1925,
+    +     "snippet": "catch (error) {       handleSessionError(error);       const errorMessage = error instanceof Error ? error.message : 'Unknown error';",
+    +   },
+    +   Object {
+    +     "file": "src/session/templum-universal-session-manager.ts",
+    +     "line": 1950,
+    +     "snippet": "catch (error) {         handleSessionError(error);         const errorMessage = error instanceof Error ? error.message : 'Unknown error';",
+    +   },
+    +   Object {
+    +     "file": "src/session/templum-universal-session-manager.ts",
+    +     "line": 2040,
+    +     "snippet": "catch (skinError) {               handleSessionError(skinError);               this.logWarn(this.logger, `Failed to load skin from backend ${serviceId}:`, skinError);",
+    +   },
+    +   Object {
+    +     "file": "src/session/templum-universal-session-manager.ts",
+    +     "line": 2045,
+    +     "snippet": "catch (serviceError) {           handleSessionError(serviceError);           this.logWarn(this.logger, `Failed to establish coordination with backend service ${serviceId}:`, serviceError);",
+    +   },
+    +   Object {
+    +     "file": "src/session/templum-universal-session-manager.ts",
+    +     "line": 2054,
+    +     "snippet": "catch (error) {       handleSessionError(error);       const errorMessage = error instanceof Error ? error.message : 'Unknown error';",
+    +   },
+    +   Object {
+    +     "file": "src/session/templum-universal-session-manager.ts",
+    +     "line": 2126,
+    +     "snippet": "catch (skinError) {                       handleSessionError(skinError);                       this.logWarn(this.logger, `Failed to apply skin to ${interfaceType}:`, skinError);",
+    +   },
+    +   Object {
+    +     "file": "src/session/templum-universal-session-manager.ts",
+    +     "line": 2133,
+    +     "snippet": "catch (skinError) {               handleSessionError(skinError);               this.logWarn(this.logger, `Failed to load skin from reconnected backend ${serviceId}:`, skinError);",
+    +   },
+    +   Object {
+    +     "file": "src/session/templum-universal-session-manager.ts",
+    +     "line": 2155,
+    +     "snippet": "catch (error) {           handleSessionError(error);           this.logWarn(this.logger, `Failed to establish coordination with reconnected service ${serviceId}:`, error);",
+    +   },
+    +   Object {
+    +     "file": "src/session/templum-universal-session-manager.ts",
+    +     "line": 2233,
+    +     "snippet": "catch (fallbackError) {       handleSessionError(fallbackError);       this.logError(this.logger, 'All fallback state synchronization methods failed:', fallbackError);",
+    +   },
+    +   Object {
+    +     "file": "src/session/templum-universal-session-manager.ts",
+    +     "line": 2253,
+    +     "snippet": "catch (resetError) {         handleSessionError(resetError);         this.logError(this.logger, 'Interface reset also failed:', resetError);",
+    +   },
+    +   Object {
+    +     "file": "src/session/templum-universal-session-manager.ts",
+    +     "line": 2290,
+    +     "snippet": "catch (skinError) {           handleSessionError(skinError);           this.logWarn(this.logger, `Fallback: Failed to re-apply skin ${skinId}:`, skinError);",
+    +   },
+    +   Object {
+    +     "file": "src/session/templum-universal-session-manager.ts",
+    +     "line": 2305,
+    +     "snippet": "catch (navError) {           handleSessionError(navError);           this.logWarn(this.logger, `Fallback: Failed to restore navigation:`, navError);",
+    +   },
+    +   Object {
+    +     "file": "src/session/templum-universal-session-manager.ts",
+    +     "line": 2319,
+    +     "snippet": "catch (prefError) {         handleSessionError(prefError);         this.logWarn(this.logger, `Fallback: Failed to restore preferences:`, prefError);",
+    +   },
+    +   Object {
+    +     "file": "src/session/templum-universal-session-manager.ts",
+    +     "line": 2360,
+    +     "snippet": "catch (skinError) {           handleSessionError(skinError);           this.logWarn(this.logger, `Failed to apply default skin ${skinId} during reset:`, skinError);",
+    +   },
+    +   Object {
+    +     "file": "src/session/templum-universal-session-manager.ts",
+    +     "line": 2378,
+    +     "snippet": "catch (contextError) {         handleSessionError(contextError);         this.logWarn(this.logger, `Failed to set session context during reset:`, contextError);",
+    +   },
+    +   Object {
+    +     "file": "src/session/templum-universal-session-manager.ts",
+    +     "line": 2416,
+    +     "snippet": "catch (retryError) {       handleSessionError(retryError);       this.logWarn(this.logger, 'Simplified synchronization retry failed:', retryError);",
+    +   },
+    +   Object {
+    +     "file": "src/session/templum-universal-session-manager.ts",
+    +     "line": 2436,
+    +     "snippet": "catch (progressiveError) {         handleSessionError(progressiveError);         this.logWarn(this.logger, 'Progressive state restoration failed:', progressiveError);",
+    +   },
+    +   Object {
+    +     "file": "src/session/templum-universal-session-manager.ts",
+    +     "line": 2456,
+    +     "snippet": "catch (emergencyError) {           handleSessionError(emergencyError);           this.logError(this.logger, 'All comprehensive recovery strategies failed:', emergencyError);",
+    +   },
+    +   Object {
+    +     "file": "src/session/templum-universal-session-manager.ts",
+    +     "line": 2577,
+    +     "snippet": "catch (stepError) {         handleSessionError(stepError);         const errorMessage = stepError instanceof Error ? stepError.message : String(stepError);",
+    +   },
+    +   Object {
+    +     "file": "src/session/templum-universal-session-manager.ts",
+    +     "line": 2655,
+    +     "snippet": "catch (setupError) {         handleSessionError(setupError);         this.logWarn(this.logger, `Emergency interface setup failed:`, setupError);",
+    +   },
+    +   Object {
+    +     "file": "src/session/templum-universal-session-manager.ts",
+    +     "line": 2729,
+    +     "snippet": "catch (skinError) {               handleSessionError(skinError);               this.logWarn(this.logger, `Failed to apply fallback skin in isolation mode:`, skinError);",
+    +   },
+    +   Object {
+    +     "file": "src/session/templum-universal-session-manager.ts",
+    +     "line": 2735,
+    +     "snippet": "catch (isolationError) {         handleSessionError(isolationError);         this.logWarn(this.logger, `Failed to configure isolation mode:`, isolationError);",
+    +   },
+    +   Object {
+    +     "file": "src/session/templum-universal-session-manager.ts",
+    +     "line": 2819,
+    +     "snippet": "catch (backendError) {           handleSessionError(backendError);           const errorMessage = backendError instanceof Error ? backendError.message : String(backendError);",
+    +   },
+    +   Object {
+    +     "file": "src/session/templum-universal-session-manager.ts",
+    +     "line": 2870,
+    +     "snippet": "catch (error) {       handleSessionError(error);       const errorMessage = error instanceof Error ? error.message : 'Unknown error';",
+    +   },
+    +   Object {
+    +     "file": "src/session/templum-universal-session-manager.ts",
+    +     "line": 2922,
+    +     "snippet": "catch (_dedicatedError) {         handleSessionError(_dedicatedError);         this.logInfo(this.logger, `Backend ${backendId} doesn't support dedicated session sync, trying state persistence`);",
+    +   },
+    +   Object {
+    +     "file": "src/session/templum-universal-session-manager.ts",
+    +     "line": 2936,
+    +     "snippet": "catch (_persistError) {           handleSessionError(_persistError);           this.logInfo(this.logger, `Backend ${backendId} state persistence failed, trying basic sync`);",
+    +   },
+    +   Object {
+    +     "file": "src/session/templum-universal-session-manager.ts",
+    +     "line": 2950,
+    +     "snippet": "catch (basicError) {             handleSessionError(basicError);             this.logWarn(this.logger, `All synchronization methods failed for backend ${backendId}`);",
+    +   },
+    +   Object {
+    +     "file": "src/session/templum-universal-session-manager.ts",
+    +     "line": 2964,
+    +     "snippet": "catch (error) {       handleSessionError(error);       const errorMessage = error instanceof Error ? error.message : String(error);",
+    +   },
+    +   Object {
+    +     "file": "src/session/templum-universal-session-manager.ts",
+    +     "line": 3013,
+    +     "snippet": "catch (persistError) {       handleSessionError(persistError);       this.logWarn(this.logger, `Session state persistence failed for backend ${backendId}:`, persistError);",
+    +   },
+    +   Object {
+    +     "file": "src/session/templum-universal-session-manager.ts",
+    +     "line": 3035,
+    +     "snippet": "catch (fallbackError) {         handleSessionError(fallbackError);         this.logError(this.logger, `Both persistence and fallback storage failed for backend ${backendId}:`, fallbackError);",
+    +   },
+    +   Object {
+    +     "file": "src/session/templum-universal-session-manager.ts",
+    +     "line": 3081,
+    +     "snippet": "catch (_sessionIdError) {         handleSessionError(_sessionIdError);         this.logInfo(this.logger, `Backend ${backendId} doesn't support active session sync - continuing with basic sync`);",
+    +   },
+    +   Object {
+    +     "file": "src/session/templum-universal-session-manager.ts",
+    +     "line": 3086,
+    +     "snippet": "catch (error) {       handleSessionError(error);       const errorMessage = error instanceof Error ? error.message : String(error);",
+    +   },
+    + ]
+
+      79 |     }
+      80 |
+    > 81 |     expect(offenders).toEqual([]);
+         |                       ^
+      82 |   });
+      83 | });
+      84 |
+
+      at Object.<anonymous> (tests/interfaces/interface-session-error-handler.guardrail.test.ts:81:23)
+
+---------------------------------------|---------|----------|---------|---------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+File                                   | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s                                                                                                                                                                           
+---------------------------------------|---------|----------|---------|---------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+All files                              |    2.75 |     2.11 |    3.13 |    2.75 |                                                                                                                                                                                             
+ src                                   |       0 |        0 |       0 |       0 |                                                                                                                                                                                             
+  cli-entry.ts                         |       0 |        0 |       0 |       0 | 11-1101                                                                                                                                                                                     
+  extension.ts                         |       0 |        0 |       0 |       0 | 9-1991                                                                                                                                                                                      
+  index.ts                             |       0 |        0 |       0 |       0 | 9-94                                                                                                                                                                                        
+ src/backend                           |       0 |        0 |       0 |       0 |                                                                                                                                                                                             
+  backend-dependency-resolver.ts       |       0 |        0 |       0 |       0 | 16-810                                                                                                                                                                                      
+  backend-integration-config.ts        |       0 |        0 |       0 |       0 | 10-351                                                                                                                                                                                      
+  backend-logger.ts                    |       0 |        0 |       0 |       0 | 1-96                                                                                                                                                                                        
+  backend-serialization-log.ts         |       0 |        0 |       0 |       0 | 1-53                                                                                                                                                                                        
+  backend-service-router.ts            |       0 |        0 |       0 |       0 | 12-4049                                                                                                                                                                                     
+  connection-factory.ts                |       0 |        0 |       0 |       0 | 11-764                                                                                                                                                                                      
+  dynamic-command-router.ts            |       0 |        0 |       0 |       0 | 12-347                                                                                                                                                                                      
+  index.ts                             |       0 |      100 |     100 |       0 | 1                                                                                                                                                                                           
+  manual-override-manager.ts           |       0 |        0 |       0 |       0 | 2-160                                                                                                                                                                                       
+  pcl-backend-integration.ts           |       0 |        0 |       0 |       0 | 9-1588                                                                                                                                                                                      
+  service-discovery-validator.ts       |       0 |        0 |       0 |       0 | 14-757                                                                                                                                                                                      
+  service-discovery.ts                 |       0 |        0 |       0 |       0 | 15-1441                                                                                                                                                                                     
+  service-health-check.ts              |       0 |        0 |       0 |       0 | 1-270                                                                                                                                                                                       
+ src/backend/defaults                  |       0 |        0 |       0 |       0 |                                                                                                                                                                                             
+  serialization-defaults.ts            |       0 |        0 |       0 |       0 | 1-285                                                                                                                                                                                       
+ src/backend/lifecycle                 |       0 |        0 |       0 |       0 |                                                                                                                                                                                             
+  backend-lifecycle-channel.ts         |       0 |        0 |       0 |       0 | 11-99                                                                                                                                                                                       
+ src/backend/schemas                   |       0 |        0 |       0 |       0 |                                                                                                                                                                                             
+  serialization-registry.ts            |       0 |      100 |     100 |       0 | 1-66                                                                                                                                                                                        
+  service-manifest.ts                  |       0 |        0 |       0 |       0 | 1-229                                                                                                                                                                                       
+ src/backend/service-discovery         |       0 |        0 |       0 |       0 |                                                                                                                                                                                             
+  file-watcher.ts                      |       0 |        0 |       0 |       0 | 1-149                                                                                                                                                                                       
+ src/commands                          |       0 |        0 |       0 |       0 |                                                                                                                                                                                             
+  universal-command-registry.ts        |       0 |        0 |       0 |       0 | 14-976                                                                                                                                                                                      
+ src/core                              |       0 |        0 |       0 |       0 |                                                                                                                                                                                             
+  adapter-registry.ts                  |       0 |        0 |       0 |       0 | 23-2099                                                                                                                                                                                     
+  error-recovery.ts                    |       0 |        0 |       0 |       0 | 9-380                                                                                                                                                                                       
+  templum-config-manager.ts            |       0 |        0 |       0 |       0 | 9-1000                                                                                                                                                                                      
+  templum-core.ts                      |       0 |        0 |       0 |       0 | 9-2763                                                                                                                                                                                      
+  templum-resource-manager.ts          |       0 |        0 |       0 |       0 | 9-986                                                                                                                                                                                       
+  universal-interface-manager.ts       |       0 |        0 |       0 |       0 | 9-921                                                                                                                                                                                       
+ src/interfaces                        |       0 |        0 |       0 |       0 |                                                                                                                                                                                             
+  adaptive-cli-integration.ts          |       0 |        0 |       0 |       0 | 27-1046                                                                                                                                                                                     
+  border-renderer.ts                   |       0 |        0 |       0 |       0 | 20-466                                                                                                                                                                                      
+  cli-adapter-abstracted.ts            |       0 |        0 |       0 |       0 | 11-2499                                                                                                                                                                                     
+  cli-adapter.ts                       |       0 |      100 |     100 |       0 | 1                                                                                                                                                                                           
+  cli-display-consistency-engine.ts    |       0 |        0 |       0 |       0 | 22-616                                                                                                                                                                                      
+  cli-generator.ts                     |       0 |        0 |       0 |       0 | 1-603                                                                                                                                                                                       
+  cli-integration-demo.ts              |       0 |        0 |       0 |       0 | 27-605                                                                                                                                                                                      
+  cli-session-bridge.ts                |       0 |        0 |       0 |       0 | 3-172                                                                                                                                                                                       
+  command-adapter-abstracted.ts        |       0 |        0 |       0 |       0 | 9-598                                                                                                                                                                                       
+  display-standards-calculator.ts      |       0 |        0 |       0 |       0 | 15-482                                                                                                                                                                                      
+  display-utils-layout.ts              |       0 |        0 |       0 |       0 | 1-45                                                                                                                                                                                        
+  enhanced-window-system.ts            |       0 |        0 |       0 |       0 | 23-546                                                                                                                                                                                      
+  fallback-interface-adapter.ts        |       0 |      100 |       0 |       0 | 22-46                                                                                                                                                                                       
+  interactive-menu-renderer.ts         |       0 |        0 |       0 |       0 | 11-784                                                                                                                                                                                      
+  interface-adapter-registry.legacy.ts |       0 |        0 |       0 |       0 | 11-429                                                                                                                                                                                      
+  interface-adapter-registry.ts        |       0 |        0 |       0 |       0 | 11-541                                                                                                                                                                                      
+  layout-normalizer.ts                 |       0 |        0 |       0 |       0 | 29-666                                                                                                                                                                                      
+  service-ordering-manager.ts          |       0 |        0 |       0 |       0 | 15-477                                                                                                                                                                                      
+  terminal-compatibility-detector.ts   |       0 |        0 |       0 |       0 | 23-364                                                                                                                                                                                      
+  terminal-ui-components.ts            |       0 |        0 |       0 |       0 | 11-2224                                                                                                                                                                                     
+  terminal-ui-theme.ts                 |       0 |        0 |       0 |       0 | 1-164                                                                                                                                                                                       
+  test-window-system.ts                |       0 |        0 |       0 |       0 | 23-463                                                                                                                                                                                      
+  universal-interaction-manager.ts     |       0 |        0 |       0 |       0 | 15-1187                                                                                                                                                                                     
+  vscode-adapter-abstracted.ts         |       0 |        0 |       0 |       0 | 10-699                                                                                                                                                                                      
+  vscode-adapter.ts                    |       0 |      100 |     100 |       0 | 1                                                                                                                                                                                           
+  vscode-templum-webview.ts            |       0 |        0 |       0 |       0 | 13-1192                                                                                                                                                                                     
+  window-layout-manager.ts             |       0 |        0 |       0 |       0 | 22-297                                                                                                                                                                                      
+ src/interfaces/cli                    |       0 |        0 |       0 |       0 |                                                                                                                                                                                             
+  cli-skin-presenter.ts                |       0 |        0 |       0 |       0 | 15-66                                                                                                                                                                                       
+ src/interfaces/navigation             |       0 |        0 |       0 |       0 |                                                                                                                                                                                             
+  accessibility-enhancements.ts        |       0 |        0 |       0 |       0 | 27-1019                                                                                                                                                                                     
+  border-renderer.ts                   |       0 |        0 |       0 |       0 | 27-549                                                                                                                                                                                      
+  breadcrumb-manager.ts                |       0 |        0 |       0 |       0 | 27-728                                                                                                                                                                                      
+  exit-handler.ts                      |       0 |        0 |       0 |       0 | 28-802                                                                                                                                                                                      
+  index.ts                             |       0 |        0 |       0 |       0 | 31-510                                                                                                                                                                                      
+  selector-updater.ts                  |       0 |        0 |       0 |       0 | 27-806                                                                                                                                                                                      
+  terminal-compatibility.ts            |       0 |        0 |       0 |       0 | 30-1065                                                                                                                                                                                     
+  width-calculator.ts                  |       0 |        0 |       0 |       0 | 23-530                                                                                                                                                                                      
+  window-stack.ts                      |       0 |        0 |       0 |       0 | 27-741                                                                                                                                                                                      
+ src/interfaces/vscode                 |       0 |        0 |       0 |       0 |                                                                                                                                                                                             
+  webview-placeholders.ts              |       0 |        0 |       0 |       0 | 1-118                                                                                                                                                                                       
+  webview-registry.ts                  |       0 |        0 |       0 |       0 | 1-93                                                                                                                                                                                        
+ src/mcp-channel/src                   |       0 |        0 |       0 |       0 |                                                                                                                                                                                             
+  cli-mcp-server.ts                    |       0 |        0 |       0 |       0 | 14-720                                                                                                                                                                                      
+  enhanced-mcp-integration.ts          |       0 |        0 |       0 |       0 | 24-1063                                                                                                                                                                                     
+  event-listener-manager.ts            |       0 |        0 |       0 |       0 | 29-466                                                                                                                                                                                      
+  health-monitor.ts                    |       0 |        0 |       0 |       0 | 14-690                                                                                                                                                                                      
+  index.ts                             |       0 |      100 |       0 |       0 | 17-143                                                                                                                                                                                      
+  lifecycle-coordinator.ts             |       0 |        0 |       0 |       0 | 12-526                                                                                                                                                                                      
+  mcp-diagnostics.ts                   |       0 |        0 |       0 |       0 | 1-86                                                                                                                                                                                        
+  node-pty-types.ts                    |       0 |        0 |       0 |       0 | 13-78                                                                                                                                                                                       
+  probabilistic-error-handler.ts       |       0 |        0 |       0 |       0 | 27-763                                                                                                                                                                                      
+  progressive-timeout-manager.ts       |       0 |        0 |       0 |       0 | 27-946                                                                                                                                                                                      
+  pty-manager.ts                       |       0 |        0 |       0 |       0 | 15-309                                                                                                                                                                                      
+  real-time-monitor.ts                 |       0 |        0 |       0 |       0 | 25-772                                                                                                                                                                                      
+  runtime-compatibility-verifier.ts    |       0 |        0 |       0 |       0 | 28-567                                                                                                                                                                                      
+  service-registration.ts              |       0 |        0 |       0 |       0 | 12-625                                                                                                                                                                                      
+  types.ts                             |       0 |        0 |       0 |       0 | 116-131                                                                                                                                                                                     
+  visual-feedback-system.ts            |       0 |        0 |       0 |       0 | 26-1081                                                                                                                                                                                     
+ src/mcp-channel/tests                 |       0 |        0 |       0 |       0 |                                                                                                                                                                                             
+  setup.ts                             |       0 |        0 |       0 |       0 | 12-28                                                                                                                                                                                       
+ src/menus                             |       0 |        0 |       0 |       0 |                                                                                                                                                                                             
+  universal-menu-registry.ts           |       0 |        0 |       0 |       0 | 14-809                                                                                                                                                                                      
+ src/monitoring                        |       0 |        0 |       0 |       0 |                                                                                                                                                                                             
+  cli-performance-monitor.ts           |       0 |        0 |       0 |       0 | 17-653                                                                                                                                                                                      
+ src/navigation                        |       0 |        0 |       0 |       0 |                                                                                                                                                                                             
+  content-driven-navigation.ts         |       0 |        0 |       0 |       0 | 20-818                                                                                                                                                                                      
+  dynamic-command-router.ts            |       0 |        0 |       0 |       0 | 15-781                                                                                                                                                                                      
+  skin-navigation-parser.ts            |       0 |        0 |       0 |       0 | 23-1021                                                                                                                                                                                     
+ src/observability                     |       0 |        0 |       0 |       0 |                                                                                                                                                                                             
+  index.ts                             |       0 |        0 |       0 |       0 | 10-237                                                                                                                                                                                      
+  observability-adapter.ts             |       0 |        0 |       0 |       0 | 10-467                                                                                                                                                                                      
+  templum-observability-system.ts      |       0 |        0 |       0 |       0 | 9-1048                                                                                                                                                                                      
+ src/registry                          |       0 |        0 |       0 |       0 |                                                                                                                                                                                             
+  pcl-command-registry.ts              |       0 |        0 |       0 |       0 | 9-1185                                                                                                                                                                                      
+  pcl-menu-registry.ts                 |       0 |        0 |       0 |       0 | 9-895                                                                                                                                                                                       
+ src/rendering                         |   17.84 |    11.91 |   17.07 |   17.97 |                                                                                                                                                                                             
+  content-layout-system.ts             |   56.76 |    38.31 |   55.55 |   56.72 | 221,227-241,246,251,265,307,467,477-478,483,494,511,558-562,577,586,610,616-622,634,671-681,709,719,734,744-790,800,810-828,882-1116,1211                                                   
+  menu-definition-adapter.ts           |       0 |        0 |       0 |       0 | 1-289                                                                                                                                                                                       
+  universal-layout-engine.ts           |       0 |        0 |       0 |       0 | 13-1994                                                                                                                                                                                     
+  universal-skin-renderer.ts           |       0 |        0 |       0 |       0 | 15-765                                                                                                                                                                                      
+ src/risk                              |       0 |        0 |       0 |       0 |                                                                                                                                                                                             
+  fallback-manager.ts                  |       0 |        0 |       0 |       0 | 9-1015                                                                                                                                                                                      
+  performance-monitor.ts               |       0 |        0 |       0 |       0 | 9-744                                                                                                                                                                                       
+  rollback-criteria.ts                 |       0 |        0 |       0 |       0 | 9-1260                                                                                                                                                                                      
+ src/scripts                           |       0 |        0 |       0 |       0 |                                                                                                                                                                                             
+  production-readiness-validation.ts   |       0 |        0 |       0 |       0 | 11-452                                                                                                                                                                                      
+  run-phase6-integration-validation.ts |       0 |        0 |       0 |       0 | 11-903                                                                                                                                                                                      
+  simple-phase6-validation.ts          |       0 |        0 |       0 |       0 | 11-663                                                                                                                                                                                      
+ src/session                           |       0 |        0 |       0 |       0 |                                                                                                                                                                                             
+  session-context-foundation.ts        |       0 |        0 |       0 |       0 | 13-436                                                                                                                                                                                      
+  templum-universal-session-manager.ts |       0 |        0 |       0 |       0 | 9-3119                                                                                                                                                                                      
+ src/skin                              |       0 |        0 |       0 |       0 |                                                                                                                                                                                             
+  pcl-rendering-adapter.ts             |       0 |        0 |       0 |       0 | 17-594                                                                                                                                                                                      
+  skin-logger.ts                       |       0 |        0 |       0 |       0 | 1-34                                                                                                                                                                                        
+  skin-version-manager.ts              |       0 |        0 |       0 |       0 | 26-971                                                                                                                                                                                      
+  universal-skin-engine-impl.ts        |       0 |        0 |       0 |       0 | 10-378                                                                                                                                                                                      
+  universal-skin-engine.ts             |       0 |        0 |       0 |       0 | 10-2488                                                                                                                                                                                     
+ src/skin/versioning                   |       0 |        0 |       0 |       0 |                                                                                                                                                                                             
+  advanced-compatibility-service.ts    |       0 |        0 |       0 |       0 | 15-648                                                                                                                                                                                      
+ src/state                             |       0 |        0 |       0 |       0 |                                                                                                                                                                                             
+  enhanced-state-synchronization.ts    |       0 |        0 |       0 |       0 | 9-1279                                                                                                                                                                                      
+  state-sync-foundation.ts             |       0 |        0 |       0 |       0 | 13-385                                                                                                                                                                                      
+ src/testing                           |   46.86 |    44.16 |   36.58 |   46.64 |                                                                                                                                                                                             
+  content-layout-test.ts               |   90.71 |    61.62 |     100 |   90.57 | 131,183,239,311,383,438,483-489,510                                                                                                                                                         
+  e2e-test-framework.ts                |       0 |        0 |       0 |       0 | 9-464                                                                                                                                                                                       
+ src/tests                             |       0 |        0 |       0 |       0 |                                                                                                                                                                                             
+  integration-validation-framework.ts  |       0 |        0 |       0 |       0 | 9-5450                                                                                                                                                                                      
+ src/tests/backend/__utils__           |       0 |        0 |       0 |       0 |                                                                                                                                                                                             
+  error-handler-guardrail.ts           |       0 |        0 |       0 |       0 | 1-43                                                                                                                                                                                        
+  logger-guardrail.ts                  |       0 |        0 |       0 |       0 | 1-109                                                                                                                                                                                       
+  mock-backend-connection.ts           |       0 |        0 |       0 |       0 | 3-46                                                                                                                                                                                        
+ src/tests/e2e                         |       0 |      100 |       0 |       0 |                                                                                                                                                                                             
+  e2e-scenarios.ts                     |       0 |      100 |       0 |       0 | 14-978                                                                                                                                                                                      
+ src/tests/helpers                     |   55.55 |    35.29 |      20 |   52.94 |                                                                                                                                                                                             
+  display-columns-provider.ts          |   68.75 |        0 |      25 |   72.72 | 17-19                                                                                                                                                                                       
+  terminal-capabilities.ts             |     100 |    66.66 |     100 |     100 | 19-24                                                                                                                                                                                       
+  terminal-formatter-fixtures.ts       |   61.53 |        0 |       0 |      50 | 11,16-19,23                                                                                                                                                                                 
+  window-utils-fixtures.ts             |       0 |        0 |       0 |       0 | 1-13                                                                                                                                                                                        
+ src/tests/phase6                      |       0 |        0 |       0 |       0 |                                                                                                                                                                                             
+  performance-baseline-loader.ts       |       0 |        0 |       0 |       0 | 1-56                                                                                                                                                                                        
+ src/transfer                          |       0 |        0 |       0 |       0 |                                                                                                                                                                                             
+  component-transfer-strategy.ts       |       0 |        0 |       0 |       0 | 9-796                                                                                                                                                                                       
+ src/types                             |    90.9 |      100 |   66.66 |    90.9 |                                                                                                                                                                                             
+  templum-types.ts                     |    90.9 |      100 |   66.66 |    90.9 | 424                                                                                                                                                                                         
+ src/utils                             |   17.91 |    12.85 |   19.49 |   17.86 |                                                                                                                                                                                             
+  async-utils.ts                       |   10.07 |        0 |    3.03 |   10.23 | 36-284,289,294                                                                                                                                                                              
+  chainable-string-utils.ts            |   34.78 |    33.54 |   59.37 |   34.46 | 58,67,107,110,113,120,141,153-251,257-261,300-309,333-400,408,439-450,459-467                                                                                                               
+  cli-runtime-output.ts                |       0 |        0 |       0 |       0 | 1-153                                                                                                                                                                                       
+  debug-utils.ts                       |       0 |        0 |       0 |       0 | 1-359                                                                                                                                                                                       
+  display-stack.ts                     |   33.33 |        0 |      50 |   28.57 | 21-56                                                                                                                                                                                       
+  display-utils.ts                     |   12.79 |     7.14 |   15.38 |   13.41 | 63-91,114-123,132-163,189-264                                                                                                                                                               
+  error-handler.ts                     |    12.5 |        0 |       0 |    12.6 | 59-341                                                                                                                                                                                      
+  event-bus-adapter.ts                 |   31.81 |        0 |   14.81 |   33.33 | 46-49,58-65,78,86,90-97,103-117,121,126,158-202                                                                                                                                             
+  event-utils.ts                       |   30.35 |     8.57 |   16.27 |   31.48 | 128-133,146-170,185-190,202-293,317-321,329-350                                                                                                                                             
+  index.ts                             |       0 |      100 |       0 |       0 | 1-42                                                                                                                                                                                        
+  logger.ts                            |   35.55 |    22.03 |   23.07 |   35.55 | 46-95,104-106,114,132-140,148-167,175-201,207-234,245-257,263,276                                                                                                                           
+  path-utils.ts                        |       0 |        0 |       0 |       0 | 1-395                                                                                                                                                                                       
+  protocol-utils.ts                    |       0 |        0 |       0 |       0 | 1-847                                                                                                                                                                                       
+  registry-utils.ts                    |       0 |        0 |       0 |       0 | 1-655                                                                                                                                                                                       
+  resilience-utils.ts                  |       0 |        0 |       0 |       0 | 1-661                                                                                                                                                                                       
+  serialization-utils.ts               |       0 |        0 |       0 |       0 | 1-422                                                                                                                                                                                       
+  service-utils.ts                     |       0 |        0 |       0 |       0 | 1-559                                                                                                                                                                                       
+  terminal-formatter.ts                |   78.94 |    57.33 |   73.78 |   78.78 | 188,205,212,217,220-222,233,244,253,299-300,302,306,319-320,326-327,331-334,348-349,390,408-412,538-556,582-611,630,649,658,674,681,699,708,759,838-840,872,879-881,926,933,940,961,966-969 
+  type-guards.ts                       |   17.55 |    14.91 |    28.2 |   16.92 | 17-23,40-43,52-55,68-80,109-208,217-314,340-370,390-427                                                                                                                                     
+  window-theme-constants.ts            |     100 |      100 |     100 |     100 |                                                                                                                                                                                             
+  window-utils.ts                      |    10.1 |        0 |       8 |   10.41 | 27-35,56-90,105-110,119-276                                                                                                                                                                 
+ src/validation                        |       0 |        0 |       0 |       0 |                                                                                                                                                                                             
+  hybrid-validation-system-v3c.ts      |       0 |        0 |       0 |       0 | 20-1406                                                                                                                                                                                     
+  mock-backend-contracts.ts            |       0 |        0 |       0 |       0 | 9-412                                                                                                                                                                                       
+  performance-validation.ts            |       0 |        0 |       0 |       0 | 9-1260                                                                                                                                                                                      
+  phase6-harness.ts                    |       0 |      100 |       0 |       0 | 1                                                                                                                                                                                           
+  production-readiness-validator.ts    |       0 |        0 |       0 |       0 | 9-1172                                                                                                                                                                                      
+  skin-validator.ts                    |       0 |        0 |       0 |       0 | 9-342                                                                                                                                                                                       
+  validator-utility-examples.ts        |       0 |        0 |       0 |       0 | 25-680                                                                                                                                                                                      
+  validator.ts                         |       0 |        0 |       0 |       0 | 25-913                                                                                                                                                                                      
+---------------------------------------|---------|----------|---------|---------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Jest: "global" coverage threshold for statements (30%) not met: 2.75%
+Jest: "global" coverage threshold for branches (22%) not met: 2.11%
+Jest: "global" coverage threshold for lines (30%) not met: 2.75%
+Jest: "global" coverage threshold for functions (30%) not met: 3.13%
+Test Suites: 1 failed, 1 passed, 2 total
+Tests:       1 failed, 22 passed, 23 total
+Snapshots:   0 total
+Time:        5.331 s
+Ran all test suites matching src/tests/utils/terminal-formatter.test.ts|tests/interfaces/interface-session-error-handler.guardrail.test.ts.
+[run-with-timeout] [2025-10-18T20:39:16.412Z] + 5968ms Process exited with code 0.

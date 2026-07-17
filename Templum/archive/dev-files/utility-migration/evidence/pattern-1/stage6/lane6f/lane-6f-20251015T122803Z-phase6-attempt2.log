@@ -1,0 +1,14 @@
+[run-with-timeout] [2025-10-15T13:53:28.120Z] +    3ms Spawned PID 917480 with timeout 30000ms (kill-after 5000ms).
+
+> templum@1.0.0 phase6-validation
+> npm run build && node dist/src/scripts/run-phase6-integration-validation.js run
+
+
+> templum@1.0.0 build
+> node scripts/clean-build-artifacts.js && tsc
+
+src/interfaces/cli-integration-demo.ts(599,7): error TS2345: Argument of type 'ITemplumOrchestrator | undefined' is not assignable to parameter of type 'ITemplumOrchestrator'.
+  Type 'undefined' is not assignable to type 'ITemplumOrchestrator'.
+src/rendering/universal-layout-engine.ts(251,7): error TS2322: Type 'import("/home/gabri/dev/VDL_VAULT/Templum/src/types/universal-skin-definition").SkinTheme | undefined' is not assignable to type 'import("/home/gabri/dev/VDL_VAULT/Templum/src/rendering/universal-layout-engine").SkinTheme | undefined'.
+  Type 'SkinTheme' is missing the following properties from type 'SkinTheme': primaryColor, accentColor, separatorChar, useIcons
+[run-with-timeout] [2025-10-15T13:53:34.742Z] + 6625ms Process exited with code 2.

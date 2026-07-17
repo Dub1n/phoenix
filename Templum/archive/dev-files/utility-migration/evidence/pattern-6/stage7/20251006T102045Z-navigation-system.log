@@ -1,0 +1,5 @@
+
+> templum@1.0.0 test
+> jest --runTestsByPath src/interfaces/navigation/__tests__/navigation-system.test.ts --runInBand --detectOpenHandles --forceExit
+
+[?25h[0m

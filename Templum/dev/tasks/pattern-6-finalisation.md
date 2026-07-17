@@ -22,7 +22,7 @@ Tags: `#infra`
 ## Notes
 
 - Coordinate with the process-signal listener consolidation task to ensure any listener cleanup changes do not drift.
-- Capture updated log paths under `tmp/stage7/pattern-6/` and link them in the activity log for audit.
+- Capture updated log paths under `Templum/archive/dev-files/utility-migration/evidence/pattern-6/stage7/` and link them in the activity log for audit.
 - If this task changes prerequisites or dependency relationships, regenerate the project’s dependency map JSON (see `dev/tasks/*_task_dependencies.json`) and attach the updated file in the related progress planner.
 
 ## Checklist (Copy into PR or issue if needed)

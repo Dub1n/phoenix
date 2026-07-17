@@ -1,0 +1,566 @@
+[run-with-timeout] [2025-10-09T23:54:14.108Z] +    4ms Spawned PID 826419 with timeout 420000ms (kill-after 10000ms).
+
+> templum@1.0.0 test
+> jest --runTestsByPath src/tests/validation/hybrid-validation-system-v3c.test.ts --runInBand --no-cache
+
+  console.warn
+    Failed to load validation configuration: Error: ENOENT: no such file or directory, open './nonexistent-config.json'. Using defaults.
+
+      1531 |       
+      1532 |       // Continue with default configuration
+    > 1533 |       console.warn(`Failed to load validation configuration: ${error}. Using defaults.`);
+           |               ^
+      1534 |     }
+      1535 |   }
+      1536 |
+
+      at HybridValidationSystemV3C.loadConfiguration (src/validation/hybrid-validation-system-v3c.ts:1533:15)
+      at Object.<anonymous> (src/tests/validation/hybrid-validation-system-v3c.test.ts:929:7)
+
+FAIL src/tests/validation/hybrid-validation-system-v3c.test.ts (261.566 s)
+  HYBRID-VALIDATION-SYSTEM-003C: Enhanced Validation Infrastructure
+    System Initialization and Startup
+      ✓ initializes all components successfully (4 ms)
+      ✓ starts system with proper configuration (5 ms)
+      ✓ prevents double initialization (23 ms)
+      ✓ emits systemStarted event on successful startup (1 ms)
+    Validation Coverage Enhancement (>95% Target)
+      ✕ achieves target validation coverage (11486 ms)
+      ✓ validates all critical components (7139 ms)
+      ✓ generates comprehensive coverage report (2 ms)
+      ✕ tracks component-specific coverage (5828 ms)
+      ✓ provides coverage improvement recommendations (7606 ms)
+    Reliability Metrics and Monitoring
+      ✕ tracks system uptime accurately (2 ms)
+      ✓ records and tracks component failures (1 ms)
+      ✓ calculates MTTF and MTTR correctly
+      ✓ tracks error rate over time (1 ms)
+      ✓ emits reliability events (1 ms)
+      ✕ calculates availability score
+    Performance Optimization (<2s Cycles)
+      ✓ tracks validation cycle performance (1 ms)
+      ✓ identifies when optimization is needed (1 ms)
+      ✓ maintains performance under load (51 ms)
+      ✓ emits optimization events (1 ms)
+      ✕ calculates accurate performance statistics (11885 ms)
+    Graceful Degradation Capability
+      ✓ handles component failure gracefully (102 ms)
+      ✓ determines appropriate degradation level (201 ms)
+      ✓ tracks degraded components (101 ms)
+      ✓ assesses system continuation capability (200 ms)
+      ✓ recovers degraded components (600 ms)
+      ✓ emits degradation events (101 ms)
+    Quality Metrics Dashboard
+      ✓ initializes dashboard with default metrics (1 ms)
+      ✓ updates metrics and triggers threshold checks
+      ✓ generates threshold alerts (1 ms)
+      ✓ tracks performance trends (1 ms)
+      ✓ provides JSON serialization for external systems
+      ✓ starts and stops monitoring
+    Integrated Validation Cycles
+      ✕ executes complete validation cycle within time limit (8217 ms)
+      ✕ maintains validation quality under concurrent load (10000 ms)
+      ✕ handles validation cycle failures gracefully (1 ms)
+      ✓ updates dashboard with cycle results (8681 ms)
+      ✕ stores and retrieves recent cycles (10003 ms)
+      ✓ emits cycle completion events (5411 ms)
+    Stress Testing and Edge Cases
+      ✕ handles rapid successive validation cycles (10003 ms)
+      ✓ recovers from multiple simultaneous component failures (102 ms)
+      ✕ maintains performance under memory pressure (7832 ms)
+      ✕ handles dashboard updates during high activity (8117 ms)
+    System Integration and Compatibility
+      ✓ integrates with backend router successfully (1 ms)
+      ✓ integrates with Templum core successfully
+      ✕ validates system status consistency (1 ms)
+    Coverage and Quality Metrics Verification
+      ✕ achieves >95% validation coverage consistently (10001 ms)
+      ✕ maintains reliability scores above thresholds (5901 ms)
+      ✕ verifies performance optimization effectiveness (11891 ms)
+  Performance Benchmark Tests
+    ✓ validation system startup time < 1s (3 ms)
+    ✕ single validation cycle completes < 2s (5701 ms)
+    ✕ concurrent validation cycles maintain performance (10000 ms)
+  Legacy Integration Tests
+    ✓ integrates with existing PerformanceValidator (6156 ms)
+    ✓ maintains backward compatibility with existing interfaces (1 ms)
+  MCP Integration Tests - TASK-MCP-009 Enhancement
+    MCP Configuration Loading
+      ✓ loads templum-valconfig.json successfully (1 ms)
+      ✓ handles missing configuration file gracefully (35 ms)
+      ✓ validates configuration structure
+    MCP Timeout Handling
+      ✓ executes validation with timeout success (3234 ms)
+      ✓ handles timeout scenario with fallback (10854 ms)
+      ✓ adaptive timeout increases after failures (8236 ms)
+    Circuit Breaker Pattern
+      ✕ opens circuit after consecutive failures (10001 ms)
+      ✕ uses fallback when circuit is open (2623 ms)
+      ✕ transitions to half-open after recovery timeout (11893 ms)
+    Adaptive Fallback Mechanisms
+      ✕ uses cached validation when MCP unavailable (10001 ms)
+      ✕ executes local validation fallback (3360 ms)
+      ✓ handles degraded validation for timeouts (8923 ms)
+    Health Check Integration
+      ✕ performs health checks when enabled (11896 ms)
+      ✓ updates health status based on check results
+    Integration with ValidationSystem
+      ✓ validates CLI with MCP integration when enabled (1 ms)
+      ✓ includes MCP validation in cycle when configured (1 ms)
+      ✓ reports MCP status in system status
+    Performance and Reliability
+      ✓ MCP validation completes within acceptable timeframes (949 ms)
+      ✕ handles concurrent MCP validations (10001 ms)
+      ✓ maintains connection state consistency (996 ms)
+  TASK-MCP-009 CLI REDESIGN 2 Validation
+    ✓ templum-valconfig.json structure validation (4 ms)
+    ✕ adaptive resilience mechanisms functioning
+    ✓ timeout issues fixed and working (4680 ms)
+    ✓ enhanced testing capabilities validation (2 ms)
+
+  ● HYBRID-VALIDATION-SYSTEM-003C: Enhanced Validation Infrastructure › Validation Coverage Enhancement (>95% Target) › achieves target validation coverage
+
+    expect(received).toBeGreaterThanOrEqual(expected)
+
+    Expected: >= 95
+    Received:    0
+
+      129 |       const cycle = await validationSystem.executeValidationCycle();
+      130 |       
+    > 131 |       expect(cycle.qualityMetrics.validationCoverage).toBeGreaterThanOrEqual(95);
+          |                                                       ^
+      132 |       expect(cycle.componentsValidated.length).toBeGreaterThan(0);
+      133 |     });
+      134 |
+
+      at Object.<anonymous> (src/tests/validation/hybrid-validation-system-v3c.test.ts:131:55)
+
+  ● HYBRID-VALIDATION-SYSTEM-003C: Enhanced Validation Infrastructure › Validation Coverage Enhancement (>95% Target) › tracks component-specific coverage
+
+    expect(received).toBeGreaterThan(expected)
+
+    Expected: > 0
+    Received:   0
+
+      165 |       const componentCoverage = coverageReport.componentCoverage;
+      166 |       
+    > 167 |       expect(componentCoverage.size).toBeGreaterThan(0);
+          |                                      ^
+      168 |       expect(componentCoverage.get('performance-validation')).toBe(true);
+      169 |     });
+      170 |
+
+      at Object.<anonymous> (src/tests/validation/hybrid-validation-system-v3c.test.ts:167:38)
+
+  ● HYBRID-VALIDATION-SYSTEM-003C: Enhanced Validation Infrastructure › Reliability Metrics and Monitoring › tracks system uptime accurately
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 100
+    Received: NaN
+
+      185 |       const metrics = reliabilityTracker.getReliabilityMetrics();
+      186 |       
+    > 187 |       expect(metrics.systemUptime).toBe(100); // New system should be 100%
+          |                                    ^
+      188 |       expect(typeof metrics.systemUptime).toBe('number');
+      189 |     });
+      190 |
+
+      at Object.<anonymous> (src/tests/validation/hybrid-validation-system-v3c.test.ts:187:36)
+
+  ● HYBRID-VALIDATION-SYSTEM-003C: Enhanced Validation Infrastructure › Reliability Metrics and Monitoring › calculates availability score
+
+    expect(received).toBeGreaterThanOrEqual(expected)
+
+    Expected: >= 0
+    Received:    NaN
+
+      240 |       const metrics = reliabilityTracker.getReliabilityMetrics();
+      241 |       
+    > 242 |       expect(metrics.availabilityScore).toBeGreaterThanOrEqual(0);
+          |                                         ^
+      243 |       expect(metrics.availabilityScore).toBeLessThanOrEqual(100);
+      244 |       expect(typeof metrics.availabilityScore).toBe('number');
+      245 |     });
+
+      at Object.<anonymous> (src/tests/validation/hybrid-validation-system-v3c.test.ts:242:41)
+
+  ● HYBRID-VALIDATION-SYSTEM-003C: Enhanced Validation Infrastructure › Performance Optimization (<2s Cycles) › calculates accurate performance statistics
+
+    thrown: "Exceeded timeout of 10000 ms for a test.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+      309 |     });
+      310 |
+    > 311 |     test('calculates accurate performance statistics', async () => {
+          |     ^
+      312 |       await validationSystem.start();
+      313 |       
+      314 |       // Execute multiple cycles
+
+      at src/tests/validation/hybrid-validation-system-v3c.test.ts:311:5
+      at src/tests/validation/hybrid-validation-system-v3c.test.ts:248:3
+      at Object.<anonymous> (src/tests/validation/hybrid-validation-system-v3c.test.ts:39:1)
+
+  ● HYBRID-VALIDATION-SYSTEM-003C: Enhanced Validation Infrastructure › Integrated Validation Cycles › executes complete validation cycle within time limit
+
+    expect(received).toBeLessThan(expected)
+
+    Expected: < 2000
+    Received:   8214.620809
+
+      506 |       const duration = performance.now() - startTime;
+      507 |       
+    > 508 |       expect(duration).toBeLessThan(2000); // Must complete within 2 seconds
+          |                        ^
+      509 |       expect(cycle.duration).toBeLessThan(2000);
+      510 |       expect(cycle).toHaveProperty('cycleId');
+      511 |       expect(cycle.componentsValidated.length).toBeGreaterThan(0);
+
+      at Object.<anonymous> (src/tests/validation/hybrid-validation-system-v3c.test.ts:508:24)
+
+  ● HYBRID-VALIDATION-SYSTEM-003C: Enhanced Validation Infrastructure › Integrated Validation Cycles › maintains validation quality under concurrent load
+
+    thrown: "Exceeded timeout of 10000 ms for a test.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+      512 |     });
+      513 |
+    > 514 |     test('maintains validation quality under concurrent load', async () => {
+          |     ^
+      515 |       const concurrentCycles = 5;
+      516 |       const startTime = performance.now();
+      517 |       
+
+      at src/tests/validation/hybrid-validation-system-v3c.test.ts:514:5
+      at src/tests/validation/hybrid-validation-system-v3c.test.ts:498:3
+      at Object.<anonymous> (src/tests/validation/hybrid-validation-system-v3c.test.ts:39:1)
+
+  ● HYBRID-VALIDATION-SYSTEM-003C: Enhanced Validation Infrastructure › Integrated Validation Cycles › handles validation cycle failures gracefully
+
+    Simulated component failure
+
+      538 |       (validationSystem as any).validateComponent = jest.fn().mockImplementation((component: string) => {
+      539 |         if (component === 'performance-validation') {
+    > 540 |           throw new Error('Simulated component failure');
+          |                 ^
+      541 |         }
+      542 |         return originalValidateComponent.call(validationSystem, component);
+      543 |       });
+
+      at HybridValidationSystemV3C.<anonymous> (src/tests/validation/hybrid-validation-system-v3c.test.ts:540:17)
+      at src/validation/hybrid-validation-system-v3c.ts:1717:40
+          at Array.map (<anonymous>)
+      at HybridValidationSystemV3C.executeValidationComponents (src/validation/hybrid-validation-system-v3c.ts:1717:18)
+      at HybridValidationSystemV3C.executeValidationCycle (src/validation/hybrid-validation-system-v3c.ts:1668:18)
+      at Object.<anonymous> (src/tests/validation/hybrid-validation-system-v3c.test.ts:545:21)
+
+  ● HYBRID-VALIDATION-SYSTEM-003C: Enhanced Validation Infrastructure › Integrated Validation Cycles › stores and retrieves recent cycles
+
+    thrown: "Exceeded timeout of 10000 ms for a test.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+      560 |     });
+      561 |
+    > 562 |     test('stores and retrieves recent cycles', async () => {
+          |     ^
+      563 |       // Execute multiple cycles
+      564 |       for (let i = 0; i < 3; i++) {
+      565 |         await validationSystem.executeValidationCycle();
+
+      at src/tests/validation/hybrid-validation-system-v3c.test.ts:562:5
+      at src/tests/validation/hybrid-validation-system-v3c.test.ts:498:3
+      at Object.<anonymous> (src/tests/validation/hybrid-validation-system-v3c.test.ts:39:1)
+
+  ● HYBRID-VALIDATION-SYSTEM-003C: Enhanced Validation Infrastructure › Stress Testing and Edge Cases › handles rapid successive validation cycles
+
+    thrown: "Exceeded timeout of 10000 ms for a test.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+      588 |     });
+      589 |
+    > 590 |     test('handles rapid successive validation cycles', async () => {
+          |     ^
+      591 |       const rapidCycles = 10;
+      592 |       const startTime = performance.now();
+      593 |       
+
+      at src/tests/validation/hybrid-validation-system-v3c.test.ts:590:5
+      at src/tests/validation/hybrid-validation-system-v3c.test.ts:585:3
+      at Object.<anonymous> (src/tests/validation/hybrid-validation-system-v3c.test.ts:39:1)
+
+  ● HYBRID-VALIDATION-SYSTEM-003C: Enhanced Validation Infrastructure › Stress Testing and Edge Cases › maintains performance under memory pressure
+
+    expect(received).toBeLessThan(expected)
+
+    Expected: < 2000
+    Received:   5935.6348940000025
+
+      636 |       const cycle = await validationSystem.executeValidationCycle();
+      637 |       
+    > 638 |       expect(cycle.duration).toBeLessThan(2000);
+          |                              ^
+      639 |       expect(cycle.qualityMetrics.validationCoverage).toBeGreaterThan(90);
+      640 |       
+      641 |       // Cleanup
+
+      at Object.<anonymous> (src/tests/validation/hybrid-validation-system-v3c.test.ts:638:30)
+
+  ● HYBRID-VALIDATION-SYSTEM-003C: Enhanced Validation Infrastructure › Stress Testing and Edge Cases › handles dashboard updates during high activity
+
+    expect(received).toBeGreaterThan(expected)
+
+    Expected: > 0
+    Received:   0
+
+      656 |       
+      657 |       const dashboard = qualityDashboard.getDashboard();
+    > 658 |       expect(dashboard.performanceTrends.samples.length).toBeGreaterThan(0);
+          |                                                          ^
+      659 |       expect(dashboard.lastUpdated).toBeGreaterThan(Date.now() - 5000);
+      660 |     });
+      661 |   });
+
+      at Object.<anonymous> (src/tests/validation/hybrid-validation-system-v3c.test.ts:658:58)
+
+  ● HYBRID-VALIDATION-SYSTEM-003C: Enhanced Validation Infrastructure › System Integration and Compatibility › validates system status consistency
+
+    Validation system is not running
+
+      1637 |   async executeValidationCycle(): Promise<ValidationCycle> {
+      1638 |     if (!this.isRunning) {
+    > 1639 |       throw new Error('Validation system is not running');
+           |             ^
+      1640 |     }
+      1641 |
+      1642 |     const cycleTracker = this.performanceOptimizer.startCycle();
+
+      at HybridValidationSystemV3C.executeValidationCycle (src/validation/hybrid-validation-system-v3c.ts:1639:13)
+      at Object.<anonymous> (src/tests/validation/hybrid-validation-system-v3c.test.ts:694:30)
+
+  ● HYBRID-VALIDATION-SYSTEM-003C: Enhanced Validation Infrastructure › Coverage and Quality Metrics Verification › achieves >95% validation coverage consistently
+
+    thrown: "Exceeded timeout of 10000 ms for a test.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+      708 |
+      709 |   describe('Coverage and Quality Metrics Verification', () => {
+    > 710 |     test('achieves >95% validation coverage consistently', async () => {
+          |     ^
+      711 |       await validationSystem.start();
+      712 |       
+      713 |       const cycles = [];
+
+      at src/tests/validation/hybrid-validation-system-v3c.test.ts:710:5
+      at src/tests/validation/hybrid-validation-system-v3c.test.ts:709:3
+      at Object.<anonymous> (src/tests/validation/hybrid-validation-system-v3c.test.ts:39:1)
+
+  ● HYBRID-VALIDATION-SYSTEM-003C: Enhanced Validation Infrastructure › Coverage and Quality Metrics Verification › maintains reliability scores above thresholds
+
+    expect(received).toBeGreaterThanOrEqual(expected)
+
+    Expected: >= 99
+    Received:    NaN
+
+      728 |       const cycle = await validationSystem.executeValidationCycle();
+      729 |       
+    > 730 |       expect(cycle.reliabilityMetrics.availabilityScore).toBeGreaterThanOrEqual(TEST_CONFIG.reliabilityThresholds.minUptime);
+          |                                                          ^
+      731 |       expect(cycle.reliabilityMetrics.errorRate).toBeLessThanOrEqual(TEST_CONFIG.reliabilityThresholds.maxErrorRate);
+      732 |     });
+      733 |
+
+      at Object.<anonymous> (src/tests/validation/hybrid-validation-system-v3c.test.ts:730:58)
+
+  ● HYBRID-VALIDATION-SYSTEM-003C: Enhanced Validation Infrastructure › Coverage and Quality Metrics Verification › verifies performance optimization effectiveness
+
+    thrown: "Exceeded timeout of 10000 ms for a test.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+      732 |     });
+      733 |
+    > 734 |     test('verifies performance optimization effectiveness', async () => {
+          |     ^
+      735 |       await validationSystem.start();
+      736 |       
+      737 |       // Execute multiple cycles to establish baseline
+
+      at src/tests/validation/hybrid-validation-system-v3c.test.ts:734:5
+      at src/tests/validation/hybrid-validation-system-v3c.test.ts:709:3
+      at Object.<anonymous> (src/tests/validation/hybrid-validation-system-v3c.test.ts:39:1)
+
+  ● Performance Benchmark Tests › single validation cycle completes < 2s
+
+    expect(received).toBeLessThan(expected)
+
+    Expected: < 2000
+    Received:   5698.284754000022
+
+      777 |     const cycleTime = performance.now() - cycleStartTime;
+      778 |     
+    > 779 |     expect(cycleTime).toBeLessThan(2000); // Less than 2 seconds
+          |                       ^
+      780 |     expect(cycle.duration).toBeLessThan(2000);
+      781 |     
+      782 |     await validationSystem.stop();
+
+      at Object.<anonymous> (src/tests/validation/hybrid-validation-system-v3c.test.ts:779:23)
+
+  ● Performance Benchmark Tests › concurrent validation cycles maintain performance
+
+    thrown: "Exceeded timeout of 10000 ms for a test.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+      783 |   });
+      784 |
+    > 785 |   test('concurrent validation cycles maintain performance', async () => {
+          |   ^
+      786 |     const validationSystem = new HybridValidationSystemV3C();
+      787 |     await validationSystem.start();
+      788 |     
+
+      at src/tests/validation/hybrid-validation-system-v3c.test.ts:785:3
+      at Object.<anonymous> (src/tests/validation/hybrid-validation-system-v3c.test.ts:758:1)
+
+  ● MCP Integration Tests - TASK-MCP-009 Enhancement › Circuit Breaker Pattern › opens circuit after consecutive failures
+
+    thrown: "Exceeded timeout of 10000 ms for a test.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+      993 |
+      994 |   describe('Circuit Breaker Pattern', () => {
+    > 995 |     test('opens circuit after consecutive failures', async () => {
+          |     ^
+      996 |       // Mock failures
+      997 |       const originalPerformMCP = (mcpIntegrationManager as any).performMCPValidation;
+      998 |       (mcpIntegrationManager as any).performMCPValidation = jest.fn().mockRejectedValue(new Error('CONNECTION_ERROR'));
+
+      at src/tests/validation/hybrid-validation-system-v3c.test.ts:995:5
+      at src/tests/validation/hybrid-validation-system-v3c.test.ts:994:3
+      at Object.<anonymous> (src/tests/validation/hybrid-validation-system-v3c.test.ts:839:1)
+
+  ● MCP Integration Tests - TASK-MCP-009 Enhancement › Circuit Breaker Pattern › uses fallback when circuit is open
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      1017 |       const result = await mcpIntegrationManager.executeMCPValidation('cliStartup', {});
+      1018 |       
+    > 1019 |       expect(result.fallbackUsed).toBe(true);
+           |                                   ^
+      1020 |       expect(result).toBeDefined();
+      1021 |     });
+      1022 |
+
+      at Object.<anonymous> (src/tests/validation/hybrid-validation-system-v3c.test.ts:1019:35)
+
+  ● MCP Integration Tests - TASK-MCP-009 Enhancement › Circuit Breaker Pattern › transitions to half-open after recovery timeout
+
+    thrown: "Exceeded timeout of 10000 ms for a test.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+      1021 |     });
+      1022 |
+    > 1023 |     test('transitions to half-open after recovery timeout', async () => {
+           |     ^
+      1024 |       const circuitOpenedPromise = new Promise((resolve) => {
+      1025 |         mcpIntegrationManager.once('circuitOpened', resolve);
+      1026 |       });
+
+      at src/tests/validation/hybrid-validation-system-v3c.test.ts:1023:5
+      at src/tests/validation/hybrid-validation-system-v3c.test.ts:994:3
+      at Object.<anonymous> (src/tests/validation/hybrid-validation-system-v3c.test.ts:839:1)
+
+  ● MCP Integration Tests - TASK-MCP-009 Enhancement › Adaptive Fallback Mechanisms › uses cached validation when MCP unavailable
+
+    thrown: "Exceeded timeout of 10000 ms for a test.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+      1055 |
+      1056 |   describe('Adaptive Fallback Mechanisms', () => {
+    > 1057 |     test('uses cached validation when MCP unavailable', async () => {
+           |     ^
+      1058 |       // First, get a successful result to cache
+      1059 |       const successResult = await mcpIntegrationManager.executeMCPValidation('cliStartup', {});
+      1060 |       
+
+      at src/tests/validation/hybrid-validation-system-v3c.test.ts:1057:5
+      at src/tests/validation/hybrid-validation-system-v3c.test.ts:1056:3
+      at Object.<anonymous> (src/tests/validation/hybrid-validation-system-v3c.test.ts:839:1)
+
+  ● MCP Integration Tests - TASK-MCP-009 Enhancement › Adaptive Fallback Mechanisms › executes local validation fallback
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      1081 |       const result = await mcpIntegrationManager.executeMCPValidation('localTest', {});
+      1082 |       
+    > 1083 |       expect(result.fallbackUsed).toBe(true);
+           |                                   ^
+      1084 |       expect(result.metrics).toBeDefined();
+      1085 |       
+      1086 |       // Restore original method
+
+      at Object.<anonymous> (src/tests/validation/hybrid-validation-system-v3c.test.ts:1083:35)
+
+  ● MCP Integration Tests - TASK-MCP-009 Enhancement › Health Check Integration › performs health checks when enabled
+
+    thrown: "Exceeded timeout of 10000 ms for a test while waiting for `done()` to be called.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+      1106 |
+      1107 |   describe('Health Check Integration', () => {
+    > 1108 |     test('performs health checks when enabled', (done) => {
+           |     ^
+      1109 |       mcpIntegrationManager.on('healthCheckSuccess', (data) => {
+      1110 |         expect(data).toHaveProperty('duration');
+      1111 |         expect(data).toHaveProperty('status');
+
+      at src/tests/validation/hybrid-validation-system-v3c.test.ts:1108:5
+      at src/tests/validation/hybrid-validation-system-v3c.test.ts:1107:3
+      at Object.<anonymous> (src/tests/validation/hybrid-validation-system-v3c.test.ts:839:1)
+
+  ● MCP Integration Tests - TASK-MCP-009 Enhancement › Performance and Reliability › handles concurrent MCP validations
+
+    thrown: "Exceeded timeout of 10000 ms for a test.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+      1197 |     });
+      1198 |
+    > 1199 |     test('handles concurrent MCP validations', async () => {
+           |     ^
+      1200 |       const concurrentValidations = 5;
+      1201 |       const validationPromises = [];
+      1202 |
+
+      at src/tests/validation/hybrid-validation-system-v3c.test.ts:1199:5
+      at src/tests/validation/hybrid-validation-system-v3c.test.ts:1185:3
+      at Object.<anonymous> (src/tests/validation/hybrid-validation-system-v3c.test.ts:839:1)
+
+  ● TASK-MCP-009 CLI REDESIGN 2 Validation › adaptive resilience mechanisms functioning
+
+    ReferenceError: MCP_CONFIG is not defined
+
+      1263 |
+      1264 |   test('adaptive resilience mechanisms functioning', async () => {
+    > 1265 |     const mcpManager = new MCPIntegrationManager(MCP_CONFIG, RESILIENCE_CONFIG);
+           |                                                  ^
+      1266 |     
+      1267 |     // Test that fallback mechanisms are available
+      1268 |     const connectionState = mcpManager.getConnectionState();
+
+      at Object.<anonymous> (src/tests/validation/hybrid-validation-system-v3c.test.ts:1265:50)
+
+Test Suites: 1 failed, 1 total
+Tests:       26 failed, 51 passed, 77 total
+Snapshots:   0 total
+Time:        261.715 s
+Ran all test suites within paths "src/tests/validation/hybrid-validation-system-v3c.test.ts".
+Jest did not exit one second after the test run has completed.
+
+'This usually means that there are asynchronous operations that weren't stopped in your tests. Consider running Jest with `--detectOpenHandles` to troubleshoot this issue.

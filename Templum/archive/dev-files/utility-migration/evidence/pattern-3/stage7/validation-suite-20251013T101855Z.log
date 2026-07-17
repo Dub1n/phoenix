@@ -1,0 +1,14 @@
+[run-with-timeout] [2025-10-13T10:18:55.873Z] +    3ms Spawned PID 470354 with timeout 180000ms (kill-after 5000ms).
+
+> templum@1.0.0 test
+> jest --runTestsByPath src/tests/validation/hybrid-validation-system-v3c.test.ts tests/session/unified-session-manager.integration.test.ts --runInBand --no-cache --detectOpenHandles
+
+PASS src/tests/validation/hybrid-validation-system-v3c.test.ts
+PASS tests/session/unified-session-manager.integration.test.ts
+
+Test Suites: 2 passed, 2 total
+Tests:       54 passed, 54 total
+Snapshots:   0 total
+Time:        2.786 s
+Ran all test suites within paths "src/tests/validation/hybrid-validation-system-v3c.test.ts", "tests/session/unified-session-manager.integration.test.ts".
+[run-with-timeout] [2025-10-13T10:18:59.805Z] + 3935ms Process exited with code 0.

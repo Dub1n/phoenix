@@ -1,0 +1,46 @@
+[run-with-timeout] [2025-10-14T16:42:49.078Z] +    7ms Spawned PID 746275 with timeout 30000ms (kill-after 5000ms).
+
+> templum@1.0.0 phase6-validation
+> npm run build && node dist/src/scripts/run-phase6-integration-validation.js run
+
+
+> templum@1.0.0 build
+> node scripts/clean-build-artifacts.js && tsc
+
+Component interaction tests initialized
+🚀 Phase 6 Integration Validation Starting...
+
+📋 Initializing Phase 6 validation suite...
+PerformanceRegressionMonitor: Phase 5 baselines initialized
+Phase6IntegrationValidationSuite: Initializing...
+✅ All backend services ready
+PerformanceRegressionMonitor: Starting continuous monitoring (30000ms interval)
+Phase6IntegrationValidationSuite: Initialization complete
+✅ Validation suite initialized
+
+🔄 Running comprehensive integration validation...
+   • Multi-system workflow testing (PCL ↔ Haruspex ↔ Templum)
+   • Cross-interface consistency validation (VSCode, CLI, Command)
+   • Performance regression monitoring (Phase 5 baselines)
+   • Production readiness verification
+   • System reliability and failover testing
+
+Phase6IntegrationValidationSuite: Starting comprehensive Phase 6 validation...
+MultiSystemWorkflowOrchestrator: Starting workflow pcl-to-haruspex (workflow_1760460176213_2)
+PerformanceRegressionMonitor: Starting regression testing against Phase 5 baselines...
+CrossInterfaceValidator: Starting cross-interface validation...
+ProductionReadinessValidator: Starting production readiness validation...
+CrossInterfaceValidator: Validation complete. Overall consistency: 100%
+✅ Cross-interface validation: 100.0% consistency
+MultiSystemWorkflowOrchestrator: Workflow workflow_1760460176213_2 completed in 3ms
+✅ Workflow completed: pcl-to-haruspex (3ms)
+MultiSystemWorkflowOrchestrator: Starting workflow haruspex-to-templum (workflow_1760460176216_3)
+MultiSystemWorkflowOrchestrator: Workflow workflow_1760460176216_3 completed in 0ms
+✅ Workflow completed: haruspex-to-templum (0ms)
+MultiSystemWorkflowOrchestrator: Starting workflow end-to-end-tdd (workflow_1760460176217_4)
+MultiSystemWorkflowOrchestrator: Workflow workflow_1760460176217_4 completed in 0ms
+✅ Workflow completed: end-to-end-tdd (0ms)
+MultiSystemWorkflowOrchestrator: Starting workflow cross-interface-sync (workflow_1760460176217_5)
+MultiSystemWorkflowOrchestrator: Workflow workflow_1760460176217_5 completed in 0ms
+✅ Workflow completed: cross-interface-sync (0ms)
+[run-with-timeout] [2025-10-14T16:42:56.227Z] + 7155ms Process exited with code 0.

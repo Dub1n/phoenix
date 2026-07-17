@@ -1,0 +1,7 @@
+[run-with-timeout] [2025-10-18T20:02:40.552Z] +    5ms Spawned PID 228992 with timeout 30000ms (kill-after 5000ms).
+npm error Missing script: "phase6-validation"
+npm error
+npm error To see a list of scripts, run:
+npm error   npm run
+npm error A complete log of this run can be found in: /home/gabri/.npm/_logs/2025-10-18T20_02_40_599Z-debug-0.log
+[run-with-timeout] [2025-10-18T20:02:40.649Z] +  102ms Process exited with code 1.

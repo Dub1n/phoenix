@@ -1,0 +1,6 @@
+[run-with-timeout] [2025-10-12T10:55:47.001Z] +   17ms Spawned PID 164511 with timeout 180000ms (kill-after 10000ms).
+
+> templum@1.0.0 test
+> jest --runTestsByPath src/tests/backend/backend-connection-lifecycle.test.ts src/tests/backend/manual-override-flow.test.ts src/tests/backend/comprehensive-backend-validation.test.ts --runInBand --no-cache --detectOpenHandles
+
+[run-with-timeout] [2025-10-12T10:55:52.006Z] + 5021ms Heartbeat: child 164511 still running.

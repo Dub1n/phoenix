@@ -1,0 +1,180 @@
+
+> templum@1.0.0 test
+> jest --runTestsByPath src/tests/backend/backend-connection-lifecycle.test.ts src/tests/backend/manual-override-flow.test.ts src/tests/backend/comprehensive-backend-validation.test.ts --runInBand --no-cache
+
+FAIL src/tests/backend/comprehensive-backend-validation.test.ts (8.986 s)
+  ● Console
+
+    console.error
+      Failed to execute command "example.hello" on backend minimal-example: Error: Backend minimal-example is not available
+          at createTemplumError (/home/gabri/dev/VDL_VAULT/Templum/src/types/templum-types.ts:418:17)
+          at TemplumBackendServiceRouter.executeCommand (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:3308:33)
+          at Object.<anonymous> (/home/gabri/dev/VDL_VAULT/Templum/src/tests/backend/comprehensive-backend-validation.test.ts:557:50)
+          at processTicksAndRejections (node:internal/process/task_queues:105:5) {
+        code: 'BACKEND_UNAVAILABLE',
+        category: 'integration',
+        timestamp: 1760265270870,
+        context: undefined
+      }
+
+      3324 |       return response;
+      3325 |     } catch (error) {
+    > 3326 |       console.error(`Failed to execute command "${command}" on backend ${backendId}:`, error);
+           |               ^
+      3327 |       throw error;
+      3328 |     }
+      3329 |   }
+
+      at TemplumBackendServiceRouter.executeCommand (src/backend/backend-service-router.ts:3326:15)
+      at Object.<anonymous> (src/tests/backend/comprehensive-backend-validation.test.ts:557:50)
+
+  ● TASK-SKIN-007: Comprehensive Backend Integration Validation › Minimal Backend Testing (Skin Definition Only) › validates minimal backend integration with skin-only architecture
+
+    Backend minimal-example is not available
+
+      416 |   context?: Record<string, any>
+      417 | ): TemplumError {
+    > 418 |   const error = new Error(message) as TemplumError;
+          |                 ^
+      419 |   error.code = code;
+      420 |   error.category = category;
+      421 |   error.timestamp = Date.now();
+
+      at createTemplumError (src/types/templum-types.ts:418:17)
+      at TemplumBackendServiceRouter.executeCommand (src/backend/backend-service-router.ts:3308:33)
+      at Object.<anonymous> (src/tests/backend/comprehensive-backend-validation.test.ts:557:50)
+
+  ● TASK-SKIN-007: Comprehensive Backend Integration Validation › Full Backend Testing (All Endpoints Available) › validates full backend integration with complete endpoint suite
+
+    expect(received).toBeDefined()
+
+    Received: undefined
+
+      599 |       const skinCheck: any = await httpClient.get(`http://localhost:${FULL_BACKEND_PORT}/getSkinDefinition`);
+      600 |       expect(skinCheck.status).toBe(200);
+    > 601 |       expect(skinCheck.data.metadata).toBeDefined();
+          |                                       ^
+      602 |       
+      603 |       console.log('✅ Full backend integration validated');
+      604 |     }, TEST_TIMEOUT);
+
+      at Object.<anonymous> (src/tests/backend/comprehensive-backend-validation.test.ts:601:39)
+
+  ● TASK-SKIN-007: Comprehensive Backend Integration Validation › Mixed Environment Testing (Minimal + Full Backends) › validates mixed backend environment with fair prioritization
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 2
+    Received: 0
+
+      655 |       // Test two-tier prioritization with mixed backends
+      656 |       const connectionStatus = await backendRouter!.getConnectionStatus();
+    > 657 |       expect(connectionStatus.totalConnections).toBe(2);
+          |                                                 ^
+      658 |       
+      659 |       console.log('✅ Mixed environment integration validated');
+      660 |     }, TEST_TIMEOUT);
+
+      at Object.<anonymous> (src/tests/backend/comprehensive-backend-validation.test.ts:657:49)
+
+PASS src/tests/backend/backend-connection-lifecycle.test.ts
+  ● Console
+
+    console.warn
+      Backend Service Router: [GENERIC] Connection attempt 1 failed for faulty-backend: Error: connection refused
+          at Object.<anonymous> (/home/gabri/dev/VDL_VAULT/Templum/src/tests/backend/backend-connection-lifecycle.test.ts:148:13)
+          at /home/gabri/dev/VDL_VAULT/Templum/node_modules/jest-mock/build/index.js:305:39
+          at Object.<anonymous> (/home/gabri/dev/VDL_VAULT/Templum/node_modules/jest-mock/build/index.js:312:13)
+          at Object.mockConstructor [as connect] (/home/gabri/dev/VDL_VAULT/Templum/node_modules/jest-mock/build/index.js:102:19)
+          at TemplumBackendServiceRouter.connectToServiceGeneric (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:1129:28)
+          at /home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:1009:29
+          at async Promise.allSettled (index 0)
+          at TemplumBackendServiceRouter.discoverAndConnectGeneric (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:1031:7)
+          at TemplumBackendServiceRouter.discoverAndConnect (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:956:5)
+          at Object.<anonymous> (/home/gabri/dev/VDL_VAULT/Templum/src/tests/backend/backend-connection-lifecycle.test.ts:160:5)
+
+      1155 |         
+      1156 |       } catch (error) {
+    > 1157 |         console.warn(`Backend Service Router: [GENERIC] Connection attempt ${attempt + 1} failed for ${serviceId}:`, error);
+           |                 ^
+      1158 |         metrics.retryAttempts++;
+      1159 |         
+      1160 |         if (attempt === maxRetries - 1) {
+
+      at TemplumBackendServiceRouter.connectToServiceGeneric (src/backend/backend-service-router.ts:1157:17)
+      at src/backend/backend-service-router.ts:1009:29
+          at async Promise.allSettled (index 0)
+      at TemplumBackendServiceRouter.discoverAndConnectGeneric (src/backend/backend-service-router.ts:1031:7)
+      at TemplumBackendServiceRouter.discoverAndConnect (src/backend/backend-service-router.ts:956:5)
+      at Object.<anonymous> (src/tests/backend/backend-connection-lifecycle.test.ts:160:5)
+
+    console.warn
+      Backend Service Router: [GENERIC] Connection attempt 2 failed for faulty-backend: Error: connection refused
+          at Object.<anonymous> (/home/gabri/dev/VDL_VAULT/Templum/src/tests/backend/backend-connection-lifecycle.test.ts:148:13)
+          at /home/gabri/dev/VDL_VAULT/Templum/node_modules/jest-mock/build/index.js:305:39
+          at Object.<anonymous> (/home/gabri/dev/VDL_VAULT/Templum/node_modules/jest-mock/build/index.js:312:13)
+          at Object.mockConstructor [as connect] (/home/gabri/dev/VDL_VAULT/Templum/node_modules/jest-mock/build/index.js:102:19)
+          at TemplumBackendServiceRouter.connectToServiceGeneric (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:1129:28)
+          at /home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:1009:29
+          at async Promise.allSettled (index 0)
+          at TemplumBackendServiceRouter.discoverAndConnectGeneric (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:1031:7)
+          at TemplumBackendServiceRouter.discoverAndConnect (/home/gabri/dev/VDL_VAULT/Templum/src/backend/backend-service-router.ts:956:5)
+          at Object.<anonymous> (/home/gabri/dev/VDL_VAULT/Templum/src/tests/backend/backend-connection-lifecycle.test.ts:160:5)
+
+      1155 |         
+      1156 |       } catch (error) {
+    > 1157 |         console.warn(`Backend Service Router: [GENERIC] Connection attempt ${attempt + 1} failed for ${serviceId}:`, error);
+           |                 ^
+      1158 |         metrics.retryAttempts++;
+      1159 |         
+      1160 |         if (attempt === maxRetries - 1) {
+
+      at TemplumBackendServiceRouter.connectToServiceGeneric (src/backend/backend-service-router.ts:1157:17)
+      at src/backend/backend-service-router.ts:1009:29
+          at async Promise.allSettled (index 0)
+      at TemplumBackendServiceRouter.discoverAndConnectGeneric (src/backend/backend-service-router.ts:1031:7)
+      at TemplumBackendServiceRouter.discoverAndConnect (src/backend/backend-service-router.ts:956:5)
+      at Object.<anonymous> (src/tests/backend/backend-connection-lifecycle.test.ts:160:5)
+
+    console.warn
+      [SERVICE_DISCOVERY] Connection error for faulty-backend: connection refused
+
+      1024 |           const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      1025 |           this.updateServiceHealth(serviceId, false, 'error', errorMessage);
+    > 1026 |           console.warn(`[SERVICE_DISCOVERY] Connection error for ${serviceId}: ${errorMessage}`);
+           |                   ^
+      1027 |         }
+      1028 |       });
+      1029 |
+
+      at src/backend/backend-service-router.ts:1026:19
+          at async Promise.allSettled (index 0)
+      at TemplumBackendServiceRouter.discoverAndConnectGeneric (src/backend/backend-service-router.ts:1031:7)
+      at TemplumBackendServiceRouter.discoverAndConnect (src/backend/backend-service-router.ts:956:5)
+      at Object.<anonymous> (src/tests/backend/backend-connection-lifecycle.test.ts:160:5)
+
+    console.warn
+      [SERVICE_DISCOVERY] No services connected - system running in standalone mode
+
+      1058 |
+      1059 |     if (discoveredServices.length === 0) {
+    > 1060 |       console.warn('[SERVICE_DISCOVERY] No services connected - system running in standalone mode');
+           |               ^
+      1061 |     } else {
+      1062 |       console.log(`[SERVICE_DISCOVERY] Successfully connected to ${discoveredServices.length} backend services`);
+      1063 |       if (this.healthMonitoringEnabled) {
+
+      at TemplumBackendServiceRouter.discoverAndConnectGeneric (src/backend/backend-service-router.ts:1060:15)
+      at TemplumBackendServiceRouter.discoverAndConnect (src/backend/backend-service-router.ts:956:5)
+      at Object.<anonymous> (src/tests/backend/backend-connection-lifecycle.test.ts:160:5)
+
+PASS src/tests/backend/manual-override-flow.test.ts
+
+Test Suites: 1 failed, 2 passed, 3 total
+Tests:       3 failed, 25 passed, 28 total
+Snapshots:   0 total
+Time:        9.402 s
+Ran all test suites within paths "src/tests/backend/backend-connection-lifecycle.test.ts", "src/tests/backend/manual-override-flow.test.ts", "src/tests/backend/comprehensive-backend-validation.test.ts".
+Jest did not exit one second after the test run has completed.
+
+'This usually means that there are asynchronous operations that weren't stopped in your tests. Consider running Jest with `--detectOpenHandles` to troubleshoot this issue.

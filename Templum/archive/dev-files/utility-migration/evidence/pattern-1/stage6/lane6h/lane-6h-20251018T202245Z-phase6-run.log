@@ -1,0 +1,21 @@
+[run-with-timeout] [2025-10-18T20:22:45.293Z] +    4ms Spawned PID 240617 with timeout 30000ms (kill-after 5000ms).
+
+> templum@1.0.0 phase6-validation
+> npm run build && node dist/src/scripts/run-phase6-integration-validation.js run
+
+
+> templum@1.0.0 build
+> node scripts/clean-build-artifacts.js && tsc
+
+src/cli-entry.ts(505,18): error TS2552: Cannot find name 'requestId'. Did you mean 'Request'?
+src/interfaces/command-adapter-abstracted.ts(269,27): error TS2339: Property 'type' does not exist on type 'StateUpdate'.
+src/interfaces/interface-adapter-registry.ts(342,10): error TS2339: Property 'logger' does not exist on type 'typeof InterfaceAdapterRegistry'.
+src/interfaces/interface-adapter-registry.ts(347,10): error TS2339: Property 'logger' does not exist on type 'typeof InterfaceAdapterRegistry'.
+src/mcp-channel/src/visual-feedback-system.ts(747,24): error TS2352: Conversion of type 'Console' to type 'Record<string, unknown>' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Index signature for type 'string' is missing in type 'Console'.
+src/observability/templum-observability-system.ts(771,16): error TS2339: Property 'writeStderr' does not exist on type 'AlertManager'.
+src/scripts/production-readiness-validation.ts(255,9): error TS2353: Object literal may only specify known properties, and 'issueCount' does not exist in type 'Error'.
+src/scripts/production-readiness-validation.ts(259,11): error TS2353: Object literal may only specify known properties, and 'issueIndex' does not exist in type 'Error'.
+src/scripts/simple-phase6-validation.ts(380,9): error TS2353: Object literal may only specify known properties, and 'count' does not exist in type 'Error'.
+src/scripts/simple-phase6-validation.ts(404,9): error TS2353: Object literal may only specify known properties, and 'deploymentReady' does not exist in type 'Error'.
+src/tests/backend/__utils__/logger-guardrail.ts(34,43): error TS2694: Namespace 'jest' has no exported member 'SpyInstance'.

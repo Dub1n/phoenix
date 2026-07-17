@@ -3,6 +3,7 @@ import { spawn } from 'node:child_process';
 import { createWriteStream, mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
+import { resolveArchiveLogPath } from './utils/archive-log-path.mjs';
 
 const require = createRequire(import.meta.url);
 const { createScriptRuntime } = require('./utils/script-runtime.js');
@@ -39,7 +40,7 @@ const presetPatternMap = new Map([
   ['phase6-health', ['Overall System Health: ✅ HEALTHY']]
 ]);
 
-const usage = `Usage:\n  node scripts/run-with-timeout.mjs [options] -- <command> [args...]\n\nOptions:\n  --timeout <ms>        Maximum runtime before sending SIGTERM (default 30000).\n  --kill-after <ms>     Grace period after SIGTERM before SIGKILL (default 5000).\n  --signal <name>       Signal to send at timeout (default SIGTERM).\n  --cwd <path>          Working directory for the spawned process.\n  --log-file <path>     Append diagnostic output to the given file.\n  --heartbeat <ms>      Log a heartbeat every N ms (requires --log-file for file output).\n  --exit-on-pattern <p> Terminate early once stdout/stderr contains the pattern.\n  --preset <name>       Shorthand for predefined exit pattern sets (e.g. jest-ci).\n`;
+const usage = `Usage:\n  node scripts/run-with-timeout.mjs [options] -- <command> [args...]\n\nOptions:\n  --timeout <ms>        Maximum runtime before sending SIGTERM (default 30000).\n  --kill-after <ms>     Grace period after SIGTERM before SIGKILL (default 5000).\n  --signal <name>       Signal to send at timeout (default SIGTERM).\n  --cwd <path>          Working directory for the spawned process.\n  --log-file <path>     Append output below any archive/ directory in this monorepo.\n  --heartbeat <ms>      Log a heartbeat every N ms (requires --log-file for file output).\n  --exit-on-pattern <p> Terminate early once stdout/stderr contains the pattern.\n  --preset <name>       Shorthand for predefined exit pattern sets (e.g. jest-ci).\n`;
 
 if (args.length === 0) {
   throw new Error(usage);
@@ -144,6 +145,7 @@ const startTime = Date.now();
 let logStream;
 if (logFilePath) {
   try {
+    logFilePath = resolveArchiveLogPath(logFilePath);
     mkdirSync(path.dirname(logFilePath), { recursive: true });
     logStream = createWriteStream(logFilePath, { flags: 'a' });
   } catch (error) {

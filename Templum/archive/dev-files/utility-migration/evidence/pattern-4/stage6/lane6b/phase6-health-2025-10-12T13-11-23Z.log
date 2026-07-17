@@ -1,0 +1,27 @@
+
+> templum@1.0.0 phase6-health
+> npm run build && node dist/src/scripts/run-phase6-integration-validation.js health
+
+
+> templum@1.0.0 build
+> tsc
+
+Component interaction tests initialized
+🏥 Phase 6 System Health Check
+
+PerformanceRegressionMonitor: Phase 5 baselines initialized
+Phase6IntegrationValidationSuite: Initializing...
+PerformanceRegressionMonitor: Starting continuous monitoring (30000ms interval)
+Phase6IntegrationValidationSuite: Initialization complete
+Phase6IntegrationValidationSuite: Checking system health...
+Service Health Status:
+──────────────────────────────────────────────────
+  HARUSPEX       ✅ HEALTHY Response:      0.0ms Memory:      7.8MB Errors: 0.0%
+       PCL       ✅ HEALTHY Response:      0.0ms Memory:      7.9MB Errors: 0.0%
+   TEMPLUM       ✅ HEALTHY Response:      0.0ms Memory:      7.9MB Errors: 0.0%
+──────────────────────────────────────────────────
+Overall System Health: ✅ HEALTHY
+Phase 6 Note: Phase 6 readiness score disabled—use report.status for outcome.
+Phase6IntegrationValidationSuite: Shutting down...
+PerformanceRegressionMonitor: Continuous monitoring stopped
+Phase6IntegrationValidationSuite: Shutdown complete

@@ -8,7 +8,7 @@
 ## Stage 4 Guardrail Snapshot (Revalidated 2025-10-18)
 | Surface | Pattern 1 Guardrail | Pattern 2 Guardrail | Evidence Reviewed | Stage 6 Mirror |
 | --- | --- | --- | --- | --- |
-| Backend routers + manual override flows | Lane 4m baseline (`logs/consolidation/pattern-1/lane-4m-20251018T192907Z.log`) | Lane 4d baseline (`logs/consolidation/pattern-2/stage5b/backend-guardrail-20251015T120254Z.log`; rerun `logs/consolidation/pattern-2/stage5b/guardrail-20251018T195433Z.log`) | Logs confirm expected console/error handler violations remain; presets untouched | 6h (runtime backend consolidation) |
+| Backend routers + manual override flows | Lane 4m baseline (`Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4m/lane-4m-20251018T192907Z.log`) | Lane 4d baseline (`Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage5b/backend-guardrail-20251015T120254Z.log`; rerun `Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage5b/guardrail-20251018T195433Z.log`) | Logs confirm expected console/error handler violations remain; presets untouched | 6h (runtime backend consolidation) |
 | Session & interface adapters | Lane 4n baseline (console guardrail) | Lane 4i baseline (ErrorHandler scope guardrail) | Guardrail failure strings still match Stage 4 capture | 6i (interface/session runtime) |
 | CLI / Phase6 entrypoints | Lane 4m command preset (`run-with-timeout` + phase6 CLI Jest) | Lane 4f command preset (CLI parser + phase6 CLI) | Commands remain valid; no new skips detected | 6e (CLI runtime) |
 | MCP channel | Lane 4l guardrail (`visual-feedback-system.formatter.test.ts`) | Lane 4g guardrail (`pty-mcp-server-test-harness.test.ts`) | Shared MCP harness logs still present in registry snapshot | 6g (MCP runtime) |
@@ -42,7 +42,7 @@
 - Any deviation from helpers (new wrappers, alternative transports) should be logged as a Stage 5 blocker before implementation.
 
 ## Evidence Commands (reviewed, not re-run)
-- 2025-10-18: `node scripts/run-with-timeout.mjs --preset jest-suite -- npx jest src/tests/backend/backend-connection-lifecycle.test.ts src/tests/backend/comprehensive-backend-validation.test.ts src/tests/backend/generic-backend-integration.test.ts src/tests/backend/manual-override-flow.test.ts src/tests/backend/manual-override-watcher.integration.test.ts` → `logs/consolidation/pattern-2/stage5b/guardrail-20251018T195433Z.log`
+- 2025-10-18: `node scripts/run-with-timeout.mjs --preset jest-suite -- npx jest src/tests/backend/backend-connection-lifecycle.test.ts src/tests/backend/comprehensive-backend-validation.test.ts src/tests/backend/generic-backend-integration.test.ts src/tests/backend/manual-override-flow.test.ts src/tests/backend/manual-override-watcher.integration.test.ts` → `Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage5b/guardrail-20251018T195433Z.log`
 - `node scripts/run-with-timeout.mjs --preset jest-suite -- npx jest src/tests/backend/comprehensive-backend-validation.test.ts tests/scripts/phase6-validation-cli.test.ts`
 - `node scripts/run-with-timeout.mjs --preset jest-suite -- npx jest tests/service-discovery/pty-mcp-server-test-harness.test.ts`
 - `node scripts/run-with-timeout.mjs --preset jest-suite -- npx jest src/utils/__tests__/logger.test.ts`

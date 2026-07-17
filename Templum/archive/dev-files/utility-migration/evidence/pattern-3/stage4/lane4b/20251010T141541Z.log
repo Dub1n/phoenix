@@ -1,0 +1,4 @@
+
+> templum@1.0.0 test
+> jest --runTestsByPath src/tests/validation/hybrid-validation-system-v3c.test.ts --runInBand --no-cache
+

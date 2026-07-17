@@ -136,8 +136,8 @@
 
 - **Stage 6 lane readiness**:
   - Lane 6a — Ready (backend scope remains N/A; no suites required).
-  - Lane 6b — Ready — evidence: `tmp/stage6/pattern-5/20251002T214624Z-display-utils.test.log`, `tmp/stage6/pattern-5/20251002T220103Z-service-ordering-manager.test.log`, `tmp/stage6/pattern-5/20251002T220152Z-service-utils.test.log`.
-  - Lane 6c — Ready — evidence: `tmp/stage6/pattern-5/20251002T214729Z-adaptive-cli-integration.test.log`, `tmp/stage6/pattern-5/20251002T214803Z-navigation-system.test.log`, `tmp/stage6/pattern-5/20251002T214841Z-interface-adapter-integration.test.log`, `tmp/stage6/pattern-5/20251002T220350Z-cli-leak-guard.log`, `tmp/stage6/pattern-5/20251002T220350Z-cli-leak-guard.stdout.log`.
+  - Lane 6b — Ready — evidence: `Templum/archive/dev-files/utility-migration/evidence/pattern-5/stage6/20251002T214624Z-display-utils.test.log`, `Templum/archive/dev-files/utility-migration/evidence/pattern-5/stage6/20251002T220103Z-service-ordering-manager.test.log`, `Templum/archive/dev-files/utility-migration/evidence/pattern-5/stage6/20251002T220152Z-service-utils.test.log`.
+  - Lane 6c — Ready — evidence: `Templum/archive/dev-files/utility-migration/evidence/pattern-5/stage6/20251002T214729Z-adaptive-cli-integration.test.log`, `Templum/archive/dev-files/utility-migration/evidence/pattern-5/stage6/20251002T214803Z-navigation-system.test.log`, `Templum/archive/dev-files/utility-migration/evidence/pattern-5/stage6/20251002T214841Z-interface-adapter-integration.test.log`, `Templum/archive/dev-files/utility-migration/evidence/pattern-5/stage6/20251002T220350Z-cli-leak-guard.log`, `Templum/archive/dev-files/utility-migration/evidence/pattern-5/stage6/20251002T220350Z-cli-leak-guard.stdout.log`.
 - **Stage 6 gating suites / commands (execute before flipping lane status to `Ready`)**:
   - `npm run test -- --runTestsByPath src/tests/utils/display-utils.test.ts --runInBand --no-cache --forceExit`
   - `npm run test -- --runTestsByPath src/tests/utils/terminal-formatter.test.ts --runInBand --no-cache --forceExit`
@@ -152,17 +152,17 @@
 - **Coordination owners & touchpoints**:
   - Pattern 6 (Terminal Formatter) — Codex to co-review formatter config diffs touching `terminal-formatter-fixtures` and CLI capability providers.
   - Pattern 7 (Window Utils) — Codex to confirm window glyph constants and `window-utils-fixtures` remain unmodified before merging Stage 6 lane 6c updates.
-  - CLI QA liaison — Codex to share leak-guard logs for adaptive CLI and navigation suites via `tmp/stage6-display-utils/*.log` attachments per lane.
+  - CLI QA liaison — Codex to share leak-guard logs for adaptive CLI and navigation suites via `Templum/archive/dev-files/utility-migration/evidence/pattern-5/stage6/*.log` attachments per lane.
 - **Evidence expectations**:
-  - Store raw Jest/log outputs under `tmp/stage6/pattern-5/<timestamp>.log`; reference the file paths in Stage 6 activity-log entries.
+  - Store raw Jest/log outputs under `Templum/archive/dev-files/utility-migration/evidence/pattern-5/stage6/<timestamp>.log`; reference the file paths in Stage 6 activity-log entries.
   - Update the plan lane checkboxes only after attaching log evidence links and confirming DI configure/reset calls in diff reviews.
   - Note any deviations from the alignment spec inside the Stage 6 lane notes and escalate back to Stage 3 if DI seams cannot be satisfied.
 - **Executed gating evidence (2025-10-02)**:
-  - Unit suites: `tmp/stage6/pattern-5/20251002T214549Z-terminal-formatter.test.log`, `tmp/stage6/pattern-5/20251002T214624Z-display-utils.test.log`, `tmp/stage6/pattern-5/20251002T214655Z-window-utils.test.log`.
-  - Interface/CLI suites: `tmp/stage6/pattern-5/20251002T214729Z-adaptive-cli-integration.test.log`, `tmp/stage6/pattern-5/20251002T214803Z-navigation-system.test.log`, `tmp/stage6/pattern-5/20251002T214841Z-interface-adapter-integration.test.log`.
-  - Leak-guard harness: `tmp/stage6/pattern-5/20251002T220350Z-cli-leak-guard.log`, `tmp/stage6/pattern-5/20251002T220350Z-cli-leak-guard.stdout.log`.
-  - Session/service readiness: `tmp/stage6/pattern-5/20251002T220103Z-service-ordering-manager.test.log`, `tmp/stage6/pattern-5/20251002T220152Z-service-utils.test.log`, `tmp/stage6/pattern-5/20251002T220235Z-templum-universal-session-manager.test.log`.
-  - Health validation: `tmp/stage6/pattern-5/20251002T220725Z-phase6-health.log`.
+  - Unit suites: `Templum/archive/dev-files/utility-migration/evidence/pattern-5/stage6/20251002T214549Z-terminal-formatter.test.log`, `Templum/archive/dev-files/utility-migration/evidence/pattern-5/stage6/20251002T214624Z-display-utils.test.log`, `Templum/archive/dev-files/utility-migration/evidence/pattern-5/stage6/20251002T214655Z-window-utils.test.log`.
+  - Interface/CLI suites: `Templum/archive/dev-files/utility-migration/evidence/pattern-5/stage6/20251002T214729Z-adaptive-cli-integration.test.log`, `Templum/archive/dev-files/utility-migration/evidence/pattern-5/stage6/20251002T214803Z-navigation-system.test.log`, `Templum/archive/dev-files/utility-migration/evidence/pattern-5/stage6/20251002T214841Z-interface-adapter-integration.test.log`.
+  - Leak-guard harness: `Templum/archive/dev-files/utility-migration/evidence/pattern-5/stage6/20251002T220350Z-cli-leak-guard.log`, `Templum/archive/dev-files/utility-migration/evidence/pattern-5/stage6/20251002T220350Z-cli-leak-guard.stdout.log`.
+  - Session/service readiness: `Templum/archive/dev-files/utility-migration/evidence/pattern-5/stage6/20251002T220103Z-service-ordering-manager.test.log`, `Templum/archive/dev-files/utility-migration/evidence/pattern-5/stage6/20251002T220152Z-service-utils.test.log`, `Templum/archive/dev-files/utility-migration/evidence/pattern-5/stage6/20251002T220235Z-templum-universal-session-manager.test.log`.
+  - Health validation: `Templum/archive/dev-files/utility-migration/evidence/pattern-5/stage6/20251002T220725Z-phase6-health.log`.
 - **Risks / TODOs before Stage 6**:
   - Run `rg "chalk" src/interfaces/` prior to each migration pass and halt if residual imports surface; trigger Stage 3 replanning before continuing.
   - Maintain formatter/window coordination when editing shared interface files to avoid drift from the Stage 5 constants (separator clamp, padding).
@@ -207,9 +207,9 @@
   - Update `src/interfaces/navigation/{border-renderer.ts,breadcrumb-manager.ts}` to consume shared separators/standards constants.
 - Tests/commands:
   - `npm run test -- --runTestsByPath src/interfaces/__tests__/adaptive-cli-integration.test.ts --runInBand --no-cache --forceExit`
-    - Evidence: `tmp/stage6/pattern-5/20251003T001813Z-adaptive-cli-integration.test.log`
+    - Evidence: `Templum/archive/dev-files/utility-migration/evidence/pattern-5/stage6/20251003T001813Z-adaptive-cli-integration.test.log`
   - `npm run test -- --runTestsByPath src/interfaces/navigation/__tests__/navigation-system.test.ts --runInBand --no-cache --forceExit`
-    - Evidence: `tmp/stage6/pattern-5/20251003T001852Z-navigation-system.test.log`
+    - Evidence: `Templum/archive/dev-files/utility-migration/evidence/pattern-5/stage6/20251003T001852Z-navigation-system.test.log`
   - (Regression) `npm run test -- --runTestsByPath src/tests/utils/display-utils.test.ts --runInBand --no-cache --forceExit`
 - Contingencies / notes:
   - If chalk/formatter conflicts arise, sync with Pattern 6 owner before committing; adjust shared DI config as needed.
@@ -250,14 +250,14 @@
 
 - **Date**: 2025-10-03T19:38:10Z
 - Final validation summary:
-  - `npm run test -- --runTestsByPath src/tests/utils/display-utils.test.ts src/tests/utils/display-stack.integration.test.ts --runInBand --no-cache --forceExit` → PASS (`tmp/stage7/pattern-5/20251003T193949Z-display-utils-and-stack.log`).
-  - `npm run test -- --runTestsByPath src/interfaces/__tests__/adaptive-cli-integration.test.ts --runInBand --no-cache --forceExit` → PASS (`tmp/stage7/pattern-5/20251003T194016Z-adaptive-cli-integration.log`).
-  - `npm run test -- --runTestsByPath src/interfaces/navigation/__tests__/navigation-system.test.ts --runInBand --no-cache --forceExit` → PASS (`tmp/stage7/pattern-5/20251003T194049Z-navigation-system.log`).
-  - `npm run phase6-health` → PASS after TypeScript cleanup (`tmp/stage7/pattern-5/20251003T193648Z-phase6-health.log`).
-  - `npm run phase6-validation` → PASS (Readiness 92%; readiness score output disabled until properly implemented, logs appended in `tmp/stage7/pattern-5/20251003T193723Z-phase6-validation.log`; formal reports in `validation-reports/phase6-validation-2025-10-03T19-37-52-796Z.{json,md,html}`).
+  - `npm run test -- --runTestsByPath src/tests/utils/display-utils.test.ts src/tests/utils/display-stack.integration.test.ts --runInBand --no-cache --forceExit` → PASS (`Templum/archive/dev-files/utility-migration/evidence/pattern-5/stage7/20251003T193949Z-display-utils-and-stack.log`).
+  - `npm run test -- --runTestsByPath src/interfaces/__tests__/adaptive-cli-integration.test.ts --runInBand --no-cache --forceExit` → PASS (`Templum/archive/dev-files/utility-migration/evidence/pattern-5/stage7/20251003T194016Z-adaptive-cli-integration.log`).
+  - `npm run test -- --runTestsByPath src/interfaces/navigation/__tests__/navigation-system.test.ts --runInBand --no-cache --forceExit` → PASS (`Templum/archive/dev-files/utility-migration/evidence/pattern-5/stage7/20251003T194049Z-navigation-system.log`).
+  - `npm run phase6-health` → PASS after TypeScript cleanup (`Templum/archive/dev-files/utility-migration/evidence/pattern-5/stage7/20251003T193648Z-phase6-health.log`).
+  - `npm run phase6-validation` → PASS (Readiness 92%; readiness score output disabled until properly implemented, logs appended in `Templum/archive/dev-files/utility-migration/evidence/pattern-5/stage7/20251003T193723Z-phase6-validation.log`; formal reports in `validation-reports/phase6-validation-2025-10-03T19-37-52-796Z.{json,md,html}`).
 - Remaining follow-ups or TODOs:
   - Note: Phase 6 readiness score output is currently disabled (prior hard-coded 67/100 can be ignored); no immediate action required beyond monitoring future implementation.
   - Coordinate enhanced menu UX so `show:help` interactions can re-render without closing the enhanced session (post-Stage 7 comfort item).
 - Evidence links:
   - Activity log entry `Templum/dev/architecture/utility-consolidation-activity-log.md` (2025-10-03 Stage 7 — Display Utils).
-  - Validation artefacts under `tmp/stage7/pattern-5/` and `validation-reports/phase6-validation-2025-10-03T19-37-52-796Z.*`.
+  - Validation artefacts under `Templum/archive/dev-files/utility-migration/evidence/pattern-5/stage7/` and `validation-reports/phase6-validation-2025-10-03T19-37-52-796Z.*`.

@@ -1,0 +1,81 @@
+
+> templum@1.0.0 phase6-validation
+> npm run build && node dist/src/scripts/run-phase6-integration-validation.js run
+
+
+> templum@1.0.0 build
+> tsc
+
+Component interaction tests initialized
+🚀 Phase 6 Integration Validation Starting...
+
+📋 Initializing Phase 6 validation suite...
+PerformanceRegressionMonitor: Phase 5 baselines initialized
+Phase6IntegrationValidationSuite: Initializing...
+✅ All backend services ready
+PerformanceRegressionMonitor: Starting continuous monitoring (30000ms interval)
+Phase6IntegrationValidationSuite: Initialization complete
+✅ Validation suite initialized
+
+🔄 Running comprehensive integration validation...
+   • Multi-system workflow testing (PCL ↔ Haruspex ↔ Templum)
+   • Cross-interface consistency validation (VSCode, CLI, Command)
+   • Performance regression monitoring (Phase 5 baselines)
+   • Production readiness verification
+   • System reliability and failover testing
+
+Phase6IntegrationValidationSuite: Starting comprehensive Phase 6 validation...
+MultiSystemWorkflowOrchestrator: Starting workflow pcl-to-haruspex (workflow_1760265172900_2)
+PerformanceRegressionMonitor: Starting regression testing against Phase 5 baselines...
+CrossInterfaceValidator: Starting cross-interface validation...
+ProductionReadinessValidator: Starting production readiness validation...
+MultiSystemWorkflowOrchestrator: Workflow workflow_1760265172900_2 completed in 3ms
+✅ Workflow completed: pcl-to-haruspex (3ms)
+MultiSystemWorkflowOrchestrator: Starting workflow haruspex-to-templum (workflow_1760265172903_3)
+MultiSystemWorkflowOrchestrator: Workflow workflow_1760265172903_3 completed in 0ms
+✅ Workflow completed: haruspex-to-templum (0ms)
+MultiSystemWorkflowOrchestrator: Starting workflow end-to-end-tdd (workflow_1760265172903_4)
+MultiSystemWorkflowOrchestrator: Workflow workflow_1760265172903_4 completed in 1ms
+✅ Workflow completed: end-to-end-tdd (1ms)
+MultiSystemWorkflowOrchestrator: Starting workflow cross-interface-sync (workflow_1760265172904_5)
+MultiSystemWorkflowOrchestrator: Workflow workflow_1760265172904_5 completed in 1ms
+✅ Workflow completed: cross-interface-sync (1ms)
+CrossInterfaceValidator: Validation complete. Overall consistency: 66%
+✅ Cross-interface validation: 66.0% consistency
+PerformanceRegressionMonitor: Starting regression testing against Phase 5 baselines...
+PerformanceRegressionMonitor: Testing complete. Average improvement: -741.35%, Score: 114/100
+PerformanceRegressionMonitor: Testing complete. Average improvement: -762.65%, Score: 115/100
+✅ Production readiness: 80.0% ready
+
+✅ Validation completed in 0.01s
+
+📄 JSON report saved: validation-reports/phase6-validation-2025-10-12T10-32-52-914Z.json
+📄 HTML report saved: validation-reports/phase6-validation-2025-10-12T10-32-52-914Z.html
+📄 Markdown report saved: validation-reports/phase6-validation-2025-10-12T10-32-52-914Z.md
+
+📊 Phase 6 Integration Validation Summary
+══════════════════════════════════════════════════
+Phase 6 Status: SKIPPED
+Reason: Mocks in use; run with --use-real-backends for full validation.
+Phase 6 Note: Phase 6 readiness score disabled—use report.status for outcome.
+Multi-System Workflows: 4/4 successful
+Cross-Interface Consistency: 66.0%
+Average Workflow Time: 1.0ms
+
+Service Health:
+  HARUSPEX: ✅ 0.0ms, 8.4MB
+  PCL: ✅ 0.0ms, 8.4MB
+  TEMPLUM: ✅ 0.0ms, 8.4MB
+
+⚠️  Performance Regressions Detected:
+
+🚨 Critical Issues:
+  • Performance regressions detected - investigate and resolve before proceeding
+
+⚠️  High Priority Issues:
+  • Cross-interface consistency below 90% - improve interface standardization
+Phase6IntegrationValidationSuite: Shutting down...
+PerformanceRegressionMonitor: Continuous monitoring stopped
+Phase6IntegrationValidationSuite: Shutdown complete
+
+⚠️ Phase 6 Integration Validation SKIPPED - Mocks in use; run with --use-real-backends for full validation.

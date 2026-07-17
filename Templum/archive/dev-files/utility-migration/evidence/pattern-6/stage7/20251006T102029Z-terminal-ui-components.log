@@ -1,0 +1,4 @@
+
+> templum@1.0.0 test
+> jest --runTestsByPath src/tests/rendering/terminal-ui-components.formatter.test.ts --runInBand --detectOpenHandles --forceExit
+

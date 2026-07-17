@@ -1,0 +1,1041 @@
+[run-with-timeout] [2025-10-12T13:26:30.518Z] +    9ms Spawned PID 222721 with timeout 180000ms (kill-after 10000ms).
+
+> templum@1.0.0 test
+> jest --runTestsByPath tests/interfaces/interface-adapter-integration.test.ts tests/interfaces/universal-interaction-manager.session.test.ts --runInBand --no-cache --detectOpenHandles --forceExit
+
+FAIL tests/interfaces/interface-adapter-integration.test.ts
+  ● Test suite failed to run
+
+    [96msrc/backend/backend-service-router.ts[0m:[93m2707[0m:[93m17[0m - [91merror[0m[90m TS1005: [0m';' expected.
+
+    [7m2707[0m               )));
+    [7m    [0m [91m                ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2708[0m:[93m15[0m - [91merror[0m[90m TS1472: [0m'catch' or 'finally' expected.
+
+    [7m2708[0m             } else {
+    [7m    [0m [91m              ~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2745[0m:[93m7[0m - [91merror[0m[90m TS1128: [0mDeclaration or statement expected.
+
+    [7m2745[0m       });
+    [7m    [0m [91m      ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2745[0m:[93m8[0m - [91merror[0m[90m TS1128: [0mDeclaration or statement expected.
+
+    [7m2745[0m       });
+    [7m    [0m [91m       ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2747[0m:[93m5[0m - [91merror[0m[90m TS1128: [0mDeclaration or statement expected.
+
+    [7m2747[0m     } catch (error) {
+    [7m    [0m [91m    ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2747[0m:[93m7[0m - [91merror[0m[90m TS1005: [0m'try' expected.
+
+    [7m2747[0m     } catch (error) {
+    [7m    [0m [91m      ~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2762[0m:[93m3[0m - [91merror[0m[90m TS1128: [0mDeclaration or statement expected.
+
+    [7m2762[0m   }
+    [7m    [0m [91m  ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2764[0m:[93m24[0m - [91merror[0m[90m TS1005: [0m';' expected.
+
+    [7m2764[0m   getConnectionStatus(): BackendConnectionStatus {
+    [7m    [0m [91m                       ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2764[0m:[93m26[0m - [91merror[0m[90m TS1434: [0mUnexpected keyword or identifier.
+
+    [7m2764[0m   getConnectionStatus(): BackendConnectionStatus {
+    [7m    [0m [91m                         ~~~~~~~~~~~~~~~~~~~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2782[0m:[93m3[0m - [91merror[0m[90m TS1434: [0mUnexpected keyword or identifier.
+
+    [7m2782[0m   async loadBackendSkin(backendId: string): Promise<UniversalSkinDefinition | null> {
+    [7m    [0m [91m  ~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2782[0m:[93m34[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m2782[0m   async loadBackendSkin(backendId: string): Promise<UniversalSkinDefinition | null> {
+    [7m    [0m [91m                                 ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2782[0m:[93m43[0m - [91merror[0m[90m TS1005: [0m';' expected.
+
+    [7m2782[0m   async loadBackendSkin(backendId: string): Promise<UniversalSkinDefinition | null> {
+    [7m    [0m [91m                                          ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2783[0m:[93m9[0m - [91merror[0m[90m TS1005: [0m':' expected.
+
+    [7m2783[0m     try {
+    [7m    [0m [91m        ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2784[0m:[93m13[0m - [91merror[0m[90m TS1005: [0m':' expected.
+
+    [7m2784[0m       const connection = this.connections.get(backendId);
+    [7m    [0m [91m            ~~~~~~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2784[0m:[93m57[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m2784[0m       const connection = this.connections.get(backendId);
+    [7m    [0m [91m                                                        ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2785[0m:[93m11[0m - [91merror[0m[90m TS1003: [0mIdentifier expected.
+
+    [7m2785[0m       if (!connection || !connection.isConnected()) {
+    [7m    [0m [91m          ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2785[0m:[93m23[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m2785[0m       if (!connection || !connection.isConnected()) {
+    [7m    [0m [91m                      ~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2785[0m:[93m51[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m2785[0m       if (!connection || !connection.isConnected()) {
+    [7m    [0m [91m                                                  ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2785[0m:[93m53[0m - [91merror[0m[90m TS1136: [0mProperty assignment expected.
+
+    [7m2785[0m       if (!connection || !connection.isConnected()) {
+    [7m    [0m [91m                                                    ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2878[0m:[93m5[0m - [91merror[0m[90m TS1128: [0mDeclaration or statement expected.
+
+    [7m2878[0m     } catch (error) {
+    [7m    [0m [91m    ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2878[0m:[93m7[0m - [91merror[0m[90m TS1005: [0m'try' expected.
+
+    [7m2878[0m     } catch (error) {
+    [7m    [0m [91m      ~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2896[0m:[93m3[0m - [91merror[0m[90m TS1128: [0mDeclaration or statement expected.
+
+    [7m2896[0m   }
+    [7m    [0m [91m  ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2902[0m:[93m3[0m - [91merror[0m[90m TS1128: [0mDeclaration or statement expected.
+
+    [7m2902[0m   private async getUniversalSkinEngineFallback(backendId: string): Promise<UniversalSkinDefinition | null> {
+    [7m    [0m [91m  ~~~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2902[0m:[93m11[0m - [91merror[0m[90m TS1434: [0mUnexpected keyword or identifier.
+
+    [7m2902[0m   private async getUniversalSkinEngineFallback(backendId: string): Promise<UniversalSkinDefinition | null> {
+    [7m    [0m [91m          ~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2902[0m:[93m57[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m2902[0m   private async getUniversalSkinEngineFallback(backendId: string): Promise<UniversalSkinDefinition | null> {
+    [7m    [0m [91m                                                        ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2902[0m:[93m66[0m - [91merror[0m[90m TS1005: [0m';' expected.
+
+    [7m2902[0m   private async getUniversalSkinEngineFallback(backendId: string): Promise<UniversalSkinDefinition | null> {
+    [7m    [0m [91m                                                                 ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2903[0m:[93m9[0m - [91merror[0m[90m TS1005: [0m':' expected.
+
+    [7m2903[0m     try {
+    [7m    [0m [91m        ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2904[0m:[93m14[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m2904[0m       console.log(`[ENHANCED_FALLBACK_COORDINATION] Coordinating fallback skin generation with Universal Skin Engine for: ${backendId}`);
+    [7m    [0m [91m             ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2904[0m:[93m137[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m2904[0m       console.log(`[ENHANCED_FALLBACK_COORDINATION] Coordinating fallback skin generation with Universal Skin Engine for: ${backendId}`);
+    [7m    [0m [91m                                                                                                                                        ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2907[0m:[93m13[0m - [91merror[0m[90m TS1005: [0m':' expected.
+
+    [7m2907[0m       const fallbackSkin = await this.generateFallbackThroughEngine(backendId);
+    [7m    [0m [91m            ~~~~~~~~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2907[0m:[93m79[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m2907[0m       const fallbackSkin = await this.generateFallbackThroughEngine(backendId);
+    [7m    [0m [91m                                                                              ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2912[0m:[93m9[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m2912[0m       } else {
+    [7m    [0m [91m        ~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2912[0m:[93m14[0m - [91merror[0m[90m TS1005: [0m':' expected.
+
+    [7m2912[0m       } else {
+    [7m    [0m [91m             ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2913[0m:[93m16[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m2913[0m         console.warn(`[ENHANCED_FALLBACK_COORDINATION] Universal Skin Engine coordination failed, falling back to simple theme for ${backendId}`);
+    [7m    [0m [91m               ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2913[0m:[93m146[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m2913[0m         console.warn(`[ENHANCED_FALLBACK_COORDINATION] Universal Skin Engine coordination failed, falling back to simple theme for ${backendId}`);
+    [7m    [0m [91m                                                                                                                                                 ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2914[0m:[93m16[0m - [91merror[0m[90m TS1005: [0m':' expected.
+
+    [7m2914[0m         return await this.createSimpleFallbackSkin(backendId);
+    [7m    [0m [91m               ~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2914[0m:[93m62[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m2914[0m         return await this.createSimpleFallbackSkin(backendId);
+    [7m    [0m [91m                                                             ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2917[0m:[93m7[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m2917[0m     } catch (error) {
+    [7m    [0m [91m      ~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2938[0m:[93m3[0m - [91merror[0m[90m TS1128: [0mDeclaration or statement expected.
+
+    [7m2938[0m   private async generateFallbackThroughEngine(backendId: string): Promise<UniversalSkinDefinition | null> {
+    [7m    [0m [91m  ~~~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2938[0m:[93m11[0m - [91merror[0m[90m TS1434: [0mUnexpected keyword or identifier.
+
+    [7m2938[0m   private async generateFallbackThroughEngine(backendId: string): Promise<UniversalSkinDefinition | null> {
+    [7m    [0m [91m          ~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2938[0m:[93m56[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m2938[0m   private async generateFallbackThroughEngine(backendId: string): Promise<UniversalSkinDefinition | null> {
+    [7m    [0m [91m                                                       ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2938[0m:[93m65[0m - [91merror[0m[90m TS1005: [0m';' expected.
+
+    [7m2938[0m   private async generateFallbackThroughEngine(backendId: string): Promise<UniversalSkinDefinition | null> {
+    [7m    [0m [91m                                                                ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2939[0m:[93m9[0m - [91merror[0m[90m TS1005: [0m':' expected.
+
+    [7m2939[0m     try {
+    [7m    [0m [91m        ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2940[0m:[93m13[0m - [91merror[0m[90m TS1005: [0m':' expected.
+
+    [7m2940[0m       const fallbackSkinId = `enhanced-fallback-${backendId}-${Date.now()}`;
+    [7m    [0m [91m            ~~~~~~~~~~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2940[0m:[93m76[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m2940[0m       const fallbackSkinId = `enhanced-fallback-${backendId}-${Date.now()}`;
+    [7m    [0m [91m                                                                           ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2942[0m:[93m14[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m2942[0m       console.log(`[ENHANCED_COORDINATION] Universal Skin Engine generating intelligent fallback for ${backendId}`);
+    [7m    [0m [91m             ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2942[0m:[93m116[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m2942[0m       console.log(`[ENHANCED_COORDINATION] Universal Skin Engine generating intelligent fallback for ${backendId}`);
+    [7m    [0m [91m                                                                                                                   ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2945[0m:[93m13[0m - [91merror[0m[90m TS1005: [0m':' expected.
+
+    [7m2945[0m       const availableBackends = Array.from(this.connections.keys());
+    [7m    [0m [91m            ~~~~~~~~~~~~~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2945[0m:[93m68[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m2945[0m       const availableBackends = Array.from(this.connections.keys());
+    [7m    [0m [91m                                                                   ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2946[0m:[93m11[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m2946[0m       let templateSkin: UniversalSkinDefinition | null = null;
+    [7m    [0m [91m          ~~~~~~~~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2946[0m:[93m56[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m2946[0m       let templateSkin: UniversalSkinDefinition | null = null;
+    [7m    [0m [91m                                                       ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2946[0m:[93m62[0m - [91merror[0m[90m TS1005: [0m':' expected.
+
+    [7m2946[0m       let templateSkin: UniversalSkinDefinition | null = null;
+    [7m    [0m [91m                                                             ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2949[0m:[93m12[0m - [91merror[0m[90m TS1359: [0mIdentifier expected. 'const' is a reserved word that cannot be used here.
+
+    [7m2949[0m       for (const availableBackend of availableBackends) {
+    [7m    [0m [91m           ~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2949[0m:[93m18[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m2949[0m       for (const availableBackend of availableBackends) {
+    [7m    [0m [91m                 ~~~~~~~~~~~~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2949[0m:[93m35[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m2949[0m       for (const availableBackend of availableBackends) {
+    [7m    [0m [91m                                  ~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2949[0m:[93m38[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m2949[0m       for (const availableBackend of availableBackends) {
+    [7m    [0m [91m                                     ~~~~~~~~~~~~~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2966[0m:[93m7[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m2966[0m       if (templateSkin) {
+    [7m    [0m [91m      ~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2988[0m:[93m9[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m2988[0m       } else {
+    [7m    [0m [91m        ~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2988[0m:[93m14[0m - [91merror[0m[90m TS1005: [0m':' expected.
+
+    [7m2988[0m       } else {
+    [7m    [0m [91m             ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2990[0m:[93m16[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m2990[0m         console.log(`[ENHANCED_COORDINATION] No template available, creating minimal fallback for ${backendId}`);
+    [7m    [0m [91m               ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2990[0m:[93m113[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m2990[0m         console.log(`[ENHANCED_COORDINATION] No template available, creating minimal fallback for ${backendId}`);
+    [7m    [0m [91m                                                                                                                ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2991[0m:[93m16[0m - [91merror[0m[90m TS1005: [0m':' expected.
+
+    [7m2991[0m         return await this.createSimpleFallbackSkin(backendId);
+    [7m    [0m [91m               ~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2991[0m:[93m62[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m2991[0m         return await this.createSimpleFallbackSkin(backendId);
+    [7m    [0m [91m                                                             ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m2994[0m:[93m7[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m2994[0m     } catch (error) {
+    [7m    [0m [91m      ~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3005[0m:[93m3[0m - [91merror[0m[90m TS1128: [0mDeclaration or statement expected.
+
+    [7m3005[0m   private async createSimpleFallbackSkin(backendId: string): Promise<UniversalSkinDefinition | null> {
+    [7m    [0m [91m  ~~~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3005[0m:[93m11[0m - [91merror[0m[90m TS1434: [0mUnexpected keyword or identifier.
+
+    [7m3005[0m   private async createSimpleFallbackSkin(backendId: string): Promise<UniversalSkinDefinition | null> {
+    [7m    [0m [91m          ~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3005[0m:[93m51[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3005[0m   private async createSimpleFallbackSkin(backendId: string): Promise<UniversalSkinDefinition | null> {
+    [7m    [0m [91m                                                  ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3005[0m:[93m60[0m - [91merror[0m[90m TS1005: [0m';' expected.
+
+    [7m3005[0m   private async createSimpleFallbackSkin(backendId: string): Promise<UniversalSkinDefinition | null> {
+    [7m    [0m [91m                                                           ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3006[0m:[93m9[0m - [91merror[0m[90m TS1005: [0m':' expected.
+
+    [7m3006[0m     try {
+    [7m    [0m [91m        ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3008[0m:[93m13[0m - [91merror[0m[90m TS1005: [0m':' expected.
+
+    [7m3008[0m       const interfaceType = this.mapBackendToInterfaceType(backendId);
+    [7m    [0m [91m            ~~~~~~~~~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3008[0m:[93m70[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3008[0m       const interfaceType = this.mapBackendToInterfaceType(backendId);
+    [7m    [0m [91m                                                                     ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3011[0m:[93m13[0m - [91merror[0m[90m TS1005: [0m':' expected.
+
+    [7m3011[0m       const skinId = `simple-fallback-${backendId}-${Date.now()}`;
+    [7m    [0m [91m            ~~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3011[0m:[93m66[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3011[0m       const skinId = `simple-fallback-${backendId}-${Date.now()}`;
+    [7m    [0m [91m                                                                 ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3012[0m:[93m13[0m - [91merror[0m[90m TS1005: [0m':' expected.
+
+    [7m3012[0m       const skinName = `Simple Fallback Theme for ${backendId}`;
+    [7m    [0m [91m            ~~~~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3012[0m:[93m64[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3012[0m       const skinName = `Simple Fallback Theme for ${backendId}`;
+    [7m    [0m [91m                                                               ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3013[0m:[93m13[0m - [91merror[0m[90m TS1005: [0m':' expected.
+
+    [7m3013[0m       const skinVersion = '1.0.0';
+    [7m    [0m [91m            ~~~~~~~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3013[0m:[93m34[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3013[0m       const skinVersion = '1.0.0';
+    [7m    [0m [91m                                 ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3016[0m:[93m13[0m - [91merror[0m[90m TS1005: [0m':' expected.
+
+    [7m3016[0m       const simpleFallbackSkin: UniversalSkinDefinition = {
+    [7m    [0m [91m            ~~~~~~~~~~~~~~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3016[0m:[93m31[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3016[0m       const simpleFallbackSkin: UniversalSkinDefinition = {
+    [7m    [0m [91m                              ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3049[0m:[93m8[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3049[0m       };
+    [7m    [0m [91m       ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3051[0m:[93m14[0m - [91merror[0m[90m TS1005: [0m':' expected.
+
+    [7m3051[0m       return simpleFallbackSkin;
+    [7m    [0m [91m             ~~~~~~~~~~~~~~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3051[0m:[93m32[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3051[0m       return simpleFallbackSkin;
+    [7m    [0m [91m                               ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3053[0m:[93m7[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3053[0m     } catch (error) {
+    [7m    [0m [91m      ~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3062[0m:[93m3[0m - [91merror[0m[90m TS1128: [0mDeclaration or statement expected.
+
+    [7m3062[0m   private createSimpleFallbackTheme(type: 'light' | 'dark'): SkinTheme {
+    [7m    [0m [91m  ~~~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3062[0m:[93m41[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3062[0m   private createSimpleFallbackTheme(type: 'light' | 'dark'): SkinTheme {
+    [7m    [0m [91m                                        ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3062[0m:[93m60[0m - [91merror[0m[90m TS1005: [0m';' expected.
+
+    [7m3062[0m   private createSimpleFallbackTheme(type: 'light' | 'dark'): SkinTheme {
+    [7m    [0m [91m                                                           ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3062[0m:[93m62[0m - [91merror[0m[90m TS1434: [0mUnexpected keyword or identifier.
+
+    [7m3062[0m   private createSimpleFallbackTheme(type: 'light' | 'dark'): SkinTheme {
+    [7m    [0m [91m                                                             ~~~~~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3091[0m:[93m3[0m - [91merror[0m[90m TS1128: [0mDeclaration or statement expected.
+
+    [7m3091[0m   private convertSkinThemeToThemeDefinition(skinTheme: SkinTheme, themeType: 'light' | 'dark'): ThemeDefinition {
+    [7m    [0m [91m  ~~~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3091[0m:[93m54[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3091[0m   private convertSkinThemeToThemeDefinition(skinTheme: SkinTheme, themeType: 'light' | 'dark'): ThemeDefinition {
+    [7m    [0m [91m                                                     ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3091[0m:[93m76[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3091[0m   private convertSkinThemeToThemeDefinition(skinTheme: SkinTheme, themeType: 'light' | 'dark'): ThemeDefinition {
+    [7m    [0m [91m                                                                           ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3091[0m:[93m95[0m - [91merror[0m[90m TS1005: [0m';' expected.
+
+    [7m3091[0m   private convertSkinThemeToThemeDefinition(skinTheme: SkinTheme, themeType: 'light' | 'dark'): ThemeDefinition {
+    [7m    [0m [91m                                                                                              ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3091[0m:[93m97[0m - [91merror[0m[90m TS1434: [0mUnexpected keyword or identifier.
+
+    [7m3091[0m   private convertSkinThemeToThemeDefinition(skinTheme: SkinTheme, themeType: 'light' | 'dark'): ThemeDefinition {
+    [7m    [0m [91m                                                                                                ~~~~~~~~~~~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3192[0m:[93m3[0m - [91merror[0m[90m TS1128: [0mDeclaration or statement expected.
+
+    [7m3192[0m   private createDefaultComponents(): Record<string, ComponentSkin> {
+    [7m    [0m [91m  ~~~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3192[0m:[93m36[0m - [91merror[0m[90m TS1005: [0m';' expected.
+
+    [7m3192[0m   private createDefaultComponents(): Record<string, ComponentSkin> {
+    [7m    [0m [91m                                   ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3193[0m:[93m12[0m - [91merror[0m[90m TS1005: [0m':' expected.
+
+    [7m3193[0m     return {
+    [7m    [0m [91m           ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3223[0m:[93m6[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3223[0m     };
+    [7m    [0m [91m     ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3229[0m:[93m3[0m - [91merror[0m[90m TS1128: [0mDeclaration or statement expected.
+
+    [7m3229[0m   private createDefaultAssets(): SkinAssets {
+    [7m    [0m [91m  ~~~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3229[0m:[93m32[0m - [91merror[0m[90m TS1005: [0m';' expected.
+
+    [7m3229[0m   private createDefaultAssets(): SkinAssets {
+    [7m    [0m [91m                               ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3229[0m:[93m34[0m - [91merror[0m[90m TS1434: [0mUnexpected keyword or identifier.
+
+    [7m3229[0m   private createDefaultAssets(): SkinAssets {
+    [7m    [0m [91m                                 ~~~~~~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3248[0m:[93m3[0m - [91merror[0m[90m TS1128: [0mDeclaration or statement expected.
+
+    [7m3248[0m   private createDefaultInheritance(): SkinInheritance {
+    [7m    [0m [91m  ~~~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3248[0m:[93m37[0m - [91merror[0m[90m TS1005: [0m';' expected.
+
+    [7m3248[0m   private createDefaultInheritance(): SkinInheritance {
+    [7m    [0m [91m                                    ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3248[0m:[93m39[0m - [91merror[0m[90m TS1434: [0mUnexpected keyword or identifier.
+
+    [7m3248[0m   private createDefaultInheritance(): SkinInheritance {
+    [7m    [0m [91m                                      ~~~~~~~~~~~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3259[0m:[93m3[0m - [91merror[0m[90m TS1128: [0mDeclaration or statement expected.
+
+    [7m3259[0m   private createDefaultRendering(): RenderingConfiguration {
+    [7m    [0m [91m  ~~~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3259[0m:[93m35[0m - [91merror[0m[90m TS1005: [0m';' expected.
+
+    [7m3259[0m   private createDefaultRendering(): RenderingConfiguration {
+    [7m    [0m [91m                                  ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3259[0m:[93m37[0m - [91merror[0m[90m TS1434: [0mUnexpected keyword or identifier.
+
+    [7m3259[0m   private createDefaultRendering(): RenderingConfiguration {
+    [7m    [0m [91m                                    ~~~~~~~~~~~~~~~~~~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3297[0m:[93m3[0m - [91merror[0m[90m TS1128: [0mDeclaration or statement expected.
+
+    [7m3297[0m   private createDefaultPerformance(): SkinPerformanceConfig {
+    [7m    [0m [91m  ~~~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3297[0m:[93m37[0m - [91merror[0m[90m TS1005: [0m';' expected.
+
+    [7m3297[0m   private createDefaultPerformance(): SkinPerformanceConfig {
+    [7m    [0m [91m                                    ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3297[0m:[93m39[0m - [91merror[0m[90m TS1434: [0mUnexpected keyword or identifier.
+
+    [7m3297[0m   private createDefaultPerformance(): SkinPerformanceConfig {
+    [7m    [0m [91m                                      ~~~~~~~~~~~~~~~~~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3314[0m:[93m3[0m - [91merror[0m[90m TS1128: [0mDeclaration or statement expected.
+
+    [7m3314[0m   private lightenColor(color: string, factor: number): string {
+    [7m    [0m [91m  ~~~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3314[0m:[93m29[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3314[0m   private lightenColor(color: string, factor: number): string {
+    [7m    [0m [91m                            ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3314[0m:[93m45[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3314[0m   private lightenColor(color: string, factor: number): string {
+    [7m    [0m [91m                                            ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3314[0m:[93m54[0m - [91merror[0m[90m TS1005: [0m';' expected.
+
+    [7m3314[0m   private lightenColor(color: string, factor: number): string {
+    [7m    [0m [91m                                                     ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3314[0m:[93m56[0m - [91merror[0m[90m TS1434: [0mUnexpected keyword or identifier.
+
+    [7m3314[0m   private lightenColor(color: string, factor: number): string {
+    [7m    [0m [91m                                                       ~~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3331[0m:[93m3[0m - [91merror[0m[90m TS1128: [0mDeclaration or statement expected.
+
+    [7m3331[0m   private darkenColor(color: string, factor: number): string {
+    [7m    [0m [91m  ~~~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3331[0m:[93m28[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3331[0m   private darkenColor(color: string, factor: number): string {
+    [7m    [0m [91m                           ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3331[0m:[93m44[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3331[0m   private darkenColor(color: string, factor: number): string {
+    [7m    [0m [91m                                           ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3331[0m:[93m53[0m - [91merror[0m[90m TS1005: [0m';' expected.
+
+    [7m3331[0m   private darkenColor(color: string, factor: number): string {
+    [7m    [0m [91m                                                    ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3331[0m:[93m55[0m - [91merror[0m[90m TS1434: [0mUnexpected keyword or identifier.
+
+    [7m3331[0m   private darkenColor(color: string, factor: number): string {
+    [7m    [0m [91m                                                      ~~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3348[0m:[93m3[0m - [91merror[0m[90m TS1128: [0mDeclaration or statement expected.
+
+    [7m3348[0m   private adjustOpacity(color: string, opacity: number): string {
+    [7m    [0m [91m  ~~~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3348[0m:[93m30[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3348[0m   private adjustOpacity(color: string, opacity: number): string {
+    [7m    [0m [91m                             ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3348[0m:[93m47[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3348[0m   private adjustOpacity(color: string, opacity: number): string {
+    [7m    [0m [91m                                              ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3348[0m:[93m56[0m - [91merror[0m[90m TS1005: [0m';' expected.
+
+    [7m3348[0m   private adjustOpacity(color: string, opacity: number): string {
+    [7m    [0m [91m                                                       ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3348[0m:[93m58[0m - [91merror[0m[90m TS1434: [0mUnexpected keyword or identifier.
+
+    [7m3348[0m   private adjustOpacity(color: string, opacity: number): string {
+    [7m    [0m [91m                                                         ~~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3362[0m:[93m3[0m - [91merror[0m[90m TS1128: [0mDeclaration or statement expected.
+
+    [7m3362[0m   private mapBackendToInterfaceType(backendId: string): string {
+    [7m    [0m [91m  ~~~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3362[0m:[93m46[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3362[0m   private mapBackendToInterfaceType(backendId: string): string {
+    [7m    [0m [91m                                             ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3362[0m:[93m55[0m - [91merror[0m[90m TS1005: [0m';' expected.
+
+    [7m3362[0m   private mapBackendToInterfaceType(backendId: string): string {
+    [7m    [0m [91m                                                      ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3362[0m:[93m57[0m - [91merror[0m[90m TS1434: [0mUnexpected keyword or identifier.
+
+    [7m3362[0m   private mapBackendToInterfaceType(backendId: string): string {
+    [7m    [0m [91m                                                        ~~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3376[0m:[93m3[0m - [91merror[0m[90m TS1434: [0mUnexpected keyword or identifier.
+
+    [7m3376[0m   async executeCommand(backendId: string, command: string, args?: unknown[]): Promise<BackendServicePayload> {
+    [7m    [0m [91m  ~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3376[0m:[93m33[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3376[0m   async executeCommand(backendId: string, command: string, args?: unknown[]): Promise<BackendServicePayload> {
+    [7m    [0m [91m                                ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3376[0m:[93m50[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3376[0m   async executeCommand(backendId: string, command: string, args?: unknown[]): Promise<BackendServicePayload> {
+    [7m    [0m [91m                                                 ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3376[0m:[93m65[0m - [91merror[0m[90m TS1109: [0mExpression expected.
+
+    [7m3376[0m   async executeCommand(backendId: string, command: string, args?: unknown[]): Promise<BackendServicePayload> {
+    [7m    [0m [91m                                                                ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3376[0m:[93m75[0m - [91merror[0m[90m TS1011: [0mAn element access expression should take an argument.
+
+    [7m3376[0m   async executeCommand(backendId: string, command: string, args?: unknown[]): Promise<BackendServicePayload> {
+    [7m    [0m [91m                                                                          [0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3376[0m:[93m77[0m - [91merror[0m[90m TS1005: [0m';' expected.
+
+    [7m3376[0m   async executeCommand(backendId: string, command: string, args?: unknown[]): Promise<BackendServicePayload> {
+    [7m    [0m [91m                                                                            ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3377[0m:[93m9[0m - [91merror[0m[90m TS1005: [0m':' expected.
+
+    [7m3377[0m     try {
+    [7m    [0m [91m        ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3378[0m:[93m13[0m - [91merror[0m[90m TS1005: [0m':' expected.
+
+    [7m3378[0m       const connection = this.connections.get(backendId);
+    [7m    [0m [91m            ~~~~~~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3378[0m:[93m57[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3378[0m       const connection = this.connections.get(backendId);
+    [7m    [0m [91m                                                        ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3379[0m:[93m11[0m - [91merror[0m[90m TS1003: [0mIdentifier expected.
+
+    [7m3379[0m       if (!connection || !connection.isConnected()) {
+    [7m    [0m [91m          ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3379[0m:[93m23[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3379[0m       if (!connection || !connection.isConnected()) {
+    [7m    [0m [91m                      ~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3379[0m:[93m51[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3379[0m       if (!connection || !connection.isConnected()) {
+    [7m    [0m [91m                                                  ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3379[0m:[93m53[0m - [91merror[0m[90m TS1136: [0mProperty assignment expected.
+
+    [7m3379[0m       if (!connection || !connection.isConnected()) {
+    [7m    [0m [91m                                                    ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3397[0m:[93m5[0m - [91merror[0m[90m TS1128: [0mDeclaration or statement expected.
+
+    [7m3397[0m     } catch (error) {
+    [7m    [0m [91m    ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3397[0m:[93m7[0m - [91merror[0m[90m TS1005: [0m'try' expected.
+
+    [7m3397[0m     } catch (error) {
+    [7m    [0m [91m      ~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3401[0m:[93m3[0m - [91merror[0m[90m TS1128: [0mDeclaration or statement expected.
+
+    [7m3401[0m   }
+    [7m    [0m [91m  ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3403[0m:[93m3[0m - [91merror[0m[90m TS1434: [0mUnexpected keyword or identifier.
+
+    [7m3403[0m   async isServiceAvailable(backendId: string): Promise<boolean> {
+    [7m    [0m [91m  ~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3403[0m:[93m37[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3403[0m   async isServiceAvailable(backendId: string): Promise<boolean> {
+    [7m    [0m [91m                                    ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3403[0m:[93m46[0m - [91merror[0m[90m TS1005: [0m';' expected.
+
+    [7m3403[0m   async isServiceAvailable(backendId: string): Promise<boolean> {
+    [7m    [0m [91m                                             ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3404[0m:[93m11[0m - [91merror[0m[90m TS1005: [0m':' expected.
+
+    [7m3404[0m     const status = this.serviceHealth.get(backendId);
+    [7m    [0m [91m          ~~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3404[0m:[93m53[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3404[0m     const status = this.serviceHealth.get(backendId);
+    [7m    [0m [91m                                                    ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3405[0m:[93m12[0m - [91merror[0m[90m TS1005: [0m':' expected.
+
+    [7m3405[0m     return status?.connected === true && status?.health === 'healthy';
+    [7m    [0m [91m           ~~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3405[0m:[93m70[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3405[0m     return status?.connected === true && status?.health === 'healthy';
+    [7m    [0m [91m                                                                     ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3408[0m:[93m28[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3408[0m   onLifecycleEvent(listener: (event: BackendConnectionLifecycleEvent) => void): () => void {
+    [7m    [0m [91m                           ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3408[0m:[93m78[0m - [91merror[0m[90m TS1109: [0mExpression expected.
+
+    [7m3408[0m   onLifecycleEvent(listener: (event: BackendConnectionLifecycleEvent) => void): () => void {
+    [7m    [0m [91m                                                                             ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3408[0m:[93m79[0m - [91merror[0m[90m TS1005: [0m';' expected.
+
+    [7m3408[0m   onLifecycleEvent(listener: (event: BackendConnectionLifecycleEvent) => void): () => void {
+    [7m    [0m [91m                                                                              ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3409[0m:[93m9[0m - [91merror[0m[90m TS1005: [0m':' expected.
+
+    [7m3409[0m     this.on('connection:lifecycle', listener);
+    [7m    [0m [91m        ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3409[0m:[93m46[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3409[0m     this.on('connection:lifecycle', listener);
+    [7m    [0m [91m                                             ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3410[0m:[93m15[0m - [91merror[0m[90m TS1005: [0m'{' expected.
+
+    [7m3410[0m     return () => this.off('connection:lifecycle', listener);
+    [7m    [0m [91m              ~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3410[0m:[93m22[0m - [91merror[0m[90m TS1005: [0m':' expected.
+
+    [7m3410[0m     return () => this.off('connection:lifecycle', listener);
+    [7m    [0m [91m                     ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3410[0m:[93m60[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3410[0m     return () => this.off('connection:lifecycle', listener);
+    [7m    [0m [91m                                                           ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3418[0m:[93m3[0m - [91merror[0m[90m TS1434: [0mUnexpected keyword or identifier.
+
+    [7m3418[0m   async connectToService(serviceId: string): Promise<{ success: boolean; message: string; responseTime?: number }> {
+    [7m    [0m [91m  ~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3418[0m:[93m35[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3418[0m   async connectToService(serviceId: string): Promise<{ success: boolean; message: string; responseTime?: number }> {
+    [7m    [0m [91m                                  ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3418[0m:[93m44[0m - [91merror[0m[90m TS1005: [0m';' expected.
+
+    [7m3418[0m   async connectToService(serviceId: string): Promise<{ success: boolean; message: string; responseTime?: number }> {
+    [7m    [0m [91m                                           ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3418[0m:[93m72[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3418[0m   async connectToService(serviceId: string): Promise<{ success: boolean; message: string; responseTime?: number }> {
+    [7m    [0m [91m                                                                       ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3418[0m:[93m89[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3418[0m   async connectToService(serviceId: string): Promise<{ success: boolean; message: string; responseTime?: number }> {
+    [7m    [0m [91m                                                                                        ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3419[0m:[93m11[0m - [91merror[0m[90m TS1005: [0m':' expected.
+
+    [7m3419[0m     const startTime = Date.now();
+    [7m    [0m [91m          ~~~~~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3419[0m:[93m33[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3419[0m     const startTime = Date.now();
+    [7m    [0m [91m                                ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3421[0m:[93m9[0m - [91merror[0m[90m TS1005: [0m':' expected.
+
+    [7m3421[0m     try {
+    [7m    [0m [91m        ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3422[0m:[93m14[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3422[0m       console.log(`[SERVICE_CONNECTION] Attempting to connect to service: ${serviceId}`);
+    [7m    [0m [91m             ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3422[0m:[93m89[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3422[0m       console.log(`[SERVICE_CONNECTION] Attempting to connect to service: ${serviceId}`);
+    [7m    [0m [91m                                                                                        ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3425[0m:[93m13[0m - [91merror[0m[90m TS1005: [0m':' expected.
+
+    [7m3425[0m       const currentStatus = this.serviceHealth.get(serviceId);
+    [7m    [0m [91m            ~~~~~~~~~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3425[0m:[93m62[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3425[0m       const currentStatus = this.serviceHealth.get(serviceId);
+    [7m    [0m [91m                                                             ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3426[0m:[93m24[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3426[0m       if (currentStatus?.connected && currentStatus?.health === 'healthy') {
+    [7m    [0m [91m                       ~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3426[0m:[93m36[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3426[0m       if (currentStatus?.connected && currentStatus?.health === 'healthy') {
+    [7m    [0m [91m                                   ~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3426[0m:[93m74[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3426[0m       if (currentStatus?.connected && currentStatus?.health === 'healthy') {
+    [7m    [0m [91m                                                                         ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3426[0m:[93m76[0m - [91merror[0m[90m TS1136: [0mProperty assignment expected.
+
+    [7m3426[0m       if (currentStatus?.connected && currentStatus?.health === 'healthy') {
+    [7m    [0m [91m                                                                           ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3480[0m:[93m5[0m - [91merror[0m[90m TS1128: [0mDeclaration or statement expected.
+
+    [7m3480[0m     } catch (error) {
+    [7m    [0m [91m    ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3480[0m:[93m7[0m - [91merror[0m[90m TS1005: [0m'try' expected.
+
+    [7m3480[0m     } catch (error) {
+    [7m    [0m [91m      ~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3490[0m:[93m3[0m - [91merror[0m[90m TS1128: [0mDeclaration or statement expected.
+
+    [7m3490[0m   }
+    [7m    [0m [91m  ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3497[0m:[93m3[0m - [91merror[0m[90m TS1434: [0mUnexpected keyword or identifier.
+
+    [7m3497[0m   async disconnectFromService(serviceId: string): Promise<{ success: boolean; message: string }> {
+    [7m    [0m [91m  ~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3497[0m:[93m40[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3497[0m   async disconnectFromService(serviceId: string): Promise<{ success: boolean; message: string }> {
+    [7m    [0m [91m                                       ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3497[0m:[93m49[0m - [91merror[0m[90m TS1005: [0m';' expected.
+
+    [7m3497[0m   async disconnectFromService(serviceId: string): Promise<{ success: boolean; message: string }> {
+    [7m    [0m [91m                                                ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3497[0m:[93m77[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3497[0m   async disconnectFromService(serviceId: string): Promise<{ success: boolean; message: string }> {
+    [7m    [0m [91m                                                                            ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3498[0m:[93m9[0m - [91merror[0m[90m TS1005: [0m':' expected.
+
+    [7m3498[0m     try {
+    [7m    [0m [91m        ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3499[0m:[93m14[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3499[0m       console.log(`[SERVICE_DISCONNECTION] Attempting to disconnect from service: ${serviceId}`);
+    [7m    [0m [91m             ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3499[0m:[93m97[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3499[0m       console.log(`[SERVICE_DISCONNECTION] Attempting to disconnect from service: ${serviceId}`);
+    [7m    [0m [91m                                                                                                ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3502[0m:[93m13[0m - [91merror[0m[90m TS1005: [0m':' expected.
+
+    [7m3502[0m       const connection = this.connections.get(serviceId);
+    [7m    [0m [91m            ~~~~~~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3502[0m:[93m57[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3502[0m       const connection = this.connections.get(serviceId);
+    [7m    [0m [91m                                                        ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3503[0m:[93m11[0m - [91merror[0m[90m TS1003: [0mIdentifier expected.
+
+    [7m3503[0m       if (!connection) {
+    [7m    [0m [91m          ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3511[0m:[93m7[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3511[0m       try {
+    [7m    [0m [91m      ~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3511[0m:[93m11[0m - [91merror[0m[90m TS1005: [0m':' expected.
+
+    [7m3511[0m       try {
+    [7m    [0m [91m          ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3512[0m:[93m15[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3512[0m         await connection.disconnect();
+    [7m    [0m [91m              ~~~~~~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3512[0m:[93m25[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3512[0m         await connection.disconnect();
+    [7m    [0m [91m                        ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3512[0m:[93m38[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3512[0m         await connection.disconnect();
+    [7m    [0m [91m                                     ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3513[0m:[93m16[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3513[0m         console.log(`[SERVICE_DISCONNECTION] Successfully disconnected from ${serviceId}`);
+    [7m    [0m [91m               ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3513[0m:[93m91[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3513[0m         console.log(`[SERVICE_DISCONNECTION] Successfully disconnected from ${serviceId}`);
+    [7m    [0m [91m                                                                                          ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3514[0m:[93m9[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3514[0m       } catch (disconnectionError) {
+    [7m    [0m [91m        ~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3520[0m:[93m7[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3520[0m       this.connections.delete(serviceId);
+    [7m    [0m [91m      ~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3520[0m:[93m11[0m - [91merror[0m[90m TS1005: [0m':' expected.
+
+    [7m3520[0m       this.connections.delete(serviceId);
+    [7m    [0m [91m          ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3520[0m:[93m41[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3520[0m       this.connections.delete(serviceId);
+    [7m    [0m [91m                                        ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3521[0m:[93m11[0m - [91merror[0m[90m TS1005: [0m':' expected.
+
+    [7m3521[0m       this.updateServiceHealth(serviceId, false, 'unhealthy', `Disconnected from ${serviceId}`);
+    [7m    [0m [91m          ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3521[0m:[93m96[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3521[0m       this.updateServiceHealth(serviceId, false, 'unhealthy', `Disconnected from ${serviceId}`);
+    [7m    [0m [91m                                                                                               ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3522[0m:[93m11[0m - [91merror[0m[90m TS1005: [0m':' expected.
+
+    [7m3522[0m       this.recoveryAttempts.delete(serviceId);
+    [7m    [0m [91m          ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3522[0m:[93m46[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3522[0m       this.recoveryAttempts.delete(serviceId);
+    [7m    [0m [91m                                             ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3524[0m:[93m14[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3524[0m       console.log(`[SERVICE_DISCONNECTION] Successfully disconnected and cleaned up ${serviceId}`);
+    [7m    [0m [91m             ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3524[0m:[93m99[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3524[0m       console.log(`[SERVICE_DISCONNECTION] Successfully disconnected and cleaned up ${serviceId}`);
+    [7m    [0m [91m                                                                                                  ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3525[0m:[93m11[0m - [91merror[0m[90m TS1005: [0m':' expected.
+
+    [7m3525[0m       this.lifecycleChannel.emitDisconnected(serviceId, {
+    [7m    [0m [91m          ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3530[0m:[93m9[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3530[0m       });
+    [7m    [0m [91m        ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3532[0m:[93m14[0m - [91merror[0m[90m TS1005: [0m':' expected.
+
+    [7m3532[0m       return {
+    [7m    [0m [91m             ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3535[0m:[93m8[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3535[0m       };
+    [7m    [0m [91m       ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3537[0m:[93m7[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3537[0m     } catch (error) {
+    [7m    [0m [91m      ~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3554[0m:[93m3[0m - [91merror[0m[90m TS1434: [0mUnexpected keyword or identifier.
+
+    [7m3554[0m   async applyManualOverride(
+    [7m    [0m [91m  ~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3555[0m:[93m14[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3555[0m     serviceId: string,
+    [7m    [0m [91m             ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3556[0m:[93m12[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3556[0m     options: ManualOverrideOptions = {}
+    [7m    [0m [91m           ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3557[0m:[93m4[0m - [91merror[0m[90m TS1005: [0m';' expected.
+
+    [7m3557[0m   ): Promise<ManualOverrideDescriptor> {
+    [7m    [0m [91m   ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3558[0m:[93m9[0m - [91merror[0m[90m TS1003: [0mIdentifier expected.
+
+    [7m3558[0m     if (!serviceId || !serviceId.trim()) {
+    [7m    [0m [91m        ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3558[0m:[93m20[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3558[0m     if (!serviceId || !serviceId.trim()) {
+    [7m    [0m [91m                   ~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3558[0m:[93m40[0m - [91merror[0m[90m TS1005: [0m';' expected.
+
+    [7m3558[0m     if (!serviceId || !serviceId.trim()) {
+    [7m    [0m [91m                                       ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3613[0m:[93m3[0m - [91merror[0m[90m TS1128: [0mDeclaration or statement expected.
+
+    [7m3613[0m   }
+    [7m    [0m [91m  ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3615[0m:[93m3[0m - [91merror[0m[90m TS1434: [0mUnexpected keyword or identifier.
+
+    [7m3615[0m   async clearManualOverride(serviceId?: string): Promise<ManualOverrideClearResult> {
+    [7m    [0m [91m  ~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3615[0m:[93m39[0m - [91merror[0m[90m TS1109: [0mExpression expected.
+
+    [7m3615[0m   async clearManualOverride(serviceId?: string): Promise<ManualOverrideClearResult> {
+    [7m    [0m [91m                                      ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3615[0m:[93m48[0m - [91merror[0m[90m TS1005: [0m';' expected.
+
+    [7m3615[0m   async clearManualOverride(serviceId?: string): Promise<ManualOverrideClearResult> {
+    [7m    [0m [91m                                               ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3616[0m:[93m9[0m - [91merror[0m[90m TS1005: [0m':' expected.
+
+    [7m3616[0m     this.manualOverrideManager.pruneExpired();
+    [7m    [0m [91m        ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3616[0m:[93m46[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3616[0m     this.manualOverrideManager.pruneExpired();
+    [7m    [0m [91m                                             ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3618[0m:[93m19[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3618[0m     if (serviceId && !serviceId.trim()) {
+    [7m    [0m [91m                  ~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3618[0m:[93m39[0m - [91merror[0m[90m TS1005: [0m';' expected.
+
+    [7m3618[0m     if (serviceId && !serviceId.trim()) {
+    [7m    [0m [91m                                      ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3638[0m:[93m3[0m - [91merror[0m[90m TS1128: [0mDeclaration or statement expected.
+
+    [7m3638[0m   }
+    [7m    [0m [91m  ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3640[0m:[93m30[0m - [91merror[0m[90m TS1005: [0m';' expected.
+
+    [7m3640[0m   getManualOverrideSnapshot(): ManualOverrideSnapshot {
+    [7m    [0m [91m                             ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3640[0m:[93m32[0m - [91merror[0m[90m TS1434: [0mUnexpected keyword or identifier.
+
+    [7m3640[0m   getManualOverrideSnapshot(): ManualOverrideSnapshot {
+    [7m    [0m [91m                               ~~~~~~~~~~~~~~~~~~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3648[0m:[93m3[0m - [91merror[0m[90m TS1434: [0mUnexpected keyword or identifier.
+
+    [7m3648[0m   async dispose(): Promise<void> {
+    [7m    [0m [91m  ~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3648[0m:[93m18[0m - [91merror[0m[90m TS1005: [0m';' expected.
+
+    [7m3648[0m   async dispose(): Promise<void> {
+    [7m    [0m [91m                 ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3648[0m:[93m32[0m - [91merror[0m[90m TS1109: [0mExpression expected.
+
+    [7m3648[0m   async dispose(): Promise<void> {
+    [7m    [0m [91m                               ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3649[0m:[93m12[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3649[0m     console.log('[BACKEND_SERVICE_ROUTER] Disposing backend service router');
+    [7m    [0m [91m           ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3649[0m:[93m77[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3649[0m     console.log('[BACKEND_SERVICE_ROUTER] Disposing backend service router');
+    [7m    [0m [91m                                                                            ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3652[0m:[93m9[0m - [91merror[0m[90m TS1005: [0m':' expected.
+
+    [7m3652[0m     this.stopHealthMonitoring();
+    [7m    [0m [91m        ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3652[0m:[93m32[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3652[0m     this.stopHealthMonitoring();
+    [7m    [0m [91m                               ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3655[0m:[93m11[0m - [91merror[0m[90m TS1005: [0m':' expected.
+
+    [7m3655[0m     const disconnectionPromises: Promise<void>[] = [];
+    [7m    [0m [91m          ~~~~~~~~~~~~~~~~~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3655[0m:[93m32[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3655[0m     const disconnectionPromises: Promise<void>[] = [];
+    [7m    [0m [91m                               ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3655[0m:[93m42[0m - [91merror[0m[90m TS1139: [0mType parameter declaration expected.
+
+    [7m3655[0m     const disconnectionPromises: Promise<void>[] = [];
+    [7m    [0m [91m                                         ~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3655[0m:[93m46[0m - [91merror[0m[90m TS1005: [0m':' expected.
+
+    [7m3655[0m     const disconnectionPromises: Promise<void>[] = [];
+    [7m    [0m [91m                                             ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3655[0m:[93m50[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3655[0m     const disconnectionPromises: Promise<void>[] = [];
+    [7m    [0m [91m                                                 ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3655[0m:[93m53[0m - [91merror[0m[90m TS1109: [0mExpression expected.
+
+    [7m3655[0m     const disconnectionPromises: Promise<void>[] = [];
+    [7m    [0m [91m                                                    ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3655[0m:[93m54[0m - [91merror[0m[90m TS1005: [0m':' expected.
+
+    [7m3655[0m     const disconnectionPromises: Promise<void>[] = [];
+    [7m    [0m [91m                                                     ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3656[0m:[93m10[0m - [91merror[0m[90m TS1359: [0mIdentifier expected. 'const' is a reserved word that cannot be used here.
+
+    [7m3656[0m     for (const [backendId, connection] of Array.from(this.connections.entries())) {
+    [7m    [0m [91m         ~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3656[0m:[93m16[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3656[0m     for (const [backendId, connection] of Array.from(this.connections.entries())) {
+    [7m    [0m [91m               ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3656[0m:[93m40[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3656[0m     for (const [backendId, connection] of Array.from(this.connections.entries())) {
+    [7m    [0m [91m                                       ~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3656[0m:[93m43[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3656[0m     for (const [backendId, connection] of Array.from(this.connections.entries())) {
+    [7m    [0m [91m                                          ~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3656[0m:[93m48[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3656[0m     for (const [backendId, connection] of Array.from(this.connections.entries())) {
+    [7m    [0m [91m                                               ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3656[0m:[93m81[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3656[0m     for (const [backendId, connection] of Array.from(this.connections.entries())) {
+    [7m    [0m [91m                                                                                ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3656[0m:[93m83[0m - [91merror[0m[90m TS1136: [0mProperty assignment expected.
+
+    [7m3656[0m     for (const [backendId, connection] of Array.from(this.connections.entries())) {
+    [7m    [0m [91m                                                                                  ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3682[0m:[93m3[0m - [91merror[0m[90m TS1128: [0mDeclaration or statement expected.
+
+    [7m3682[0m   }
+    [7m    [0m [91m  ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3687[0m:[93m22[0m - [91merror[0m[90m TS1005: [0m';' expected.
+
+    [7m3687[0m   getBackendConfigs(): Record<string, BackendConfig> {
+    [7m    [0m [91m                     ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3688[0m:[93m11[0m - [91merror[0m[90m TS1005: [0m':' expected.
+
+    [7m3688[0m     const configs: Record<string, BackendConfig> = {};
+    [7m    [0m [91m          ~~~~~~~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3688[0m:[93m18[0m - [91merror[0m[90m TS1005: [0m',' expected.
+
+    [7m3688[0m     const configs: Record<string, BackendConfig> = {};
+    [7m    [0m [91m                 ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3688[0m:[93m50[0m - [91merror[0m[90m TS1005: [0m'(' expected.
+
+    [7m3688[0m     const configs: Record<string, BackendConfig> = {};
+    [7m    [0m [91m                                                 ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3688[0m:[93m52[0m - [91merror[0m[90m TS1136: [0mProperty assignment expected.
+
+    [7m3688[0m     const configs: Record<string, BackendConfig> = {};
+    [7m    [0m [91m                                                   ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3693[0m:[93m3[0m - [91merror[0m[90m TS1128: [0mDeclaration or statement expected.
+
+    [7m3693[0m   }
+    [7m    [0m [91m  ~[0m
+    [96msrc/backend/backend-service-router.ts[0m:[93m3696[0m:[93m1[0m - [91merror[0m[90m TS1128: [0mDeclaration or statement expected.
+
+    [7m3696[0m }
+    [7m    [0m [91m~[0m
+
+PASS tests/interfaces/universal-interaction-manager.session.test.ts
+
+Test Suites: 1 failed, 1 passed, 2 total
+Tests:       2 passed, 2 total
+Snapshots:   0 total
+Time:        2.163 s
+Ran all test suites within paths "tests/interfaces/interface-adapter-integration.test.ts", "tests/interfaces/universal-interaction-manager.session.test.ts".
+[run-with-timeout] [2025-10-12T13:26:33.573Z] + 3061ms Process exited with code 1.

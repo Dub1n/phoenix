@@ -1,0 +1,11 @@
+[run-with-timeout] [2025-10-12T22:42:07.083Z] +    4ms Spawned PID 438788 with timeout 60000ms (kill-after 5000ms).
+
+> templum@1.0.0 phase6-validation
+> npm run build && node dist/src/scripts/run-phase6-integration-validation.js run
+
+
+> templum@1.0.0 build
+> tsc
+
+error TS5055: Cannot write file '/home/gabri/dev/VDL_VAULT/Templum/dist/src/utils/async-utils.d.ts' because it would overwrite input file.
+[run-with-timeout] [2025-10-12T22:42:12.648Z] + 5569ms Process exited with code 2.

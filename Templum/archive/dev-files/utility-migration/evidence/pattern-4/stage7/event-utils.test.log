@@ -1,0 +1,4 @@
+
+> templum@1.0.0 test
+> jest src/tests/utils/event-utils.test.ts
+

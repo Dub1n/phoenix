@@ -1,0 +1,4 @@
+
+> templum@1.0.0 test
+> jest --runInBand --forceExit --detectOpenHandles --runTestsByPath src/mcp-channel/tests/pty-manager.test.ts tests/service-discovery/pty-mcp-server-test-harness.test.ts
+

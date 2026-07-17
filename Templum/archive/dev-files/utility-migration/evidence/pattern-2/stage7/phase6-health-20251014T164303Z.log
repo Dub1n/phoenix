@@ -1,0 +1,30 @@
+[run-with-timeout] [2025-10-14T16:43:03.231Z] +   11ms Spawned PID 746466 with timeout 30000ms (kill-after 5000ms).
+
+> templum@1.0.0 phase6-health
+> npm run build && node dist/src/scripts/run-phase6-integration-validation.js health
+
+
+> templum@1.0.0 build
+> node scripts/clean-build-artifacts.js && tsc
+
+Component interaction tests initialized
+🏥 Phase 6 System Health Check
+
+PerformanceRegressionMonitor: Phase 5 baselines initialized
+Phase6IntegrationValidationSuite: Initializing...
+PerformanceRegressionMonitor: Starting continuous monitoring (30000ms interval)
+Phase6IntegrationValidationSuite: Initialization complete
+Phase6IntegrationValidationSuite: Checking system health...
+Service Health Status:
+──────────────────────────────────────────────────
+  HARUSPEX       ✅ HEALTHY Response:      0.0ms Memory:      8.1MB Errors: 0.0%
+       PCL       ✅ HEALTHY Response:      0.0ms Memory:      8.1MB Errors: 0.0%
+   TEMPLUM       ✅ HEALTHY Response:      0.0ms Memory:      8.1MB Errors: 0.0%
+──────────────────────────────────────────────────
+Overall System Health: ✅ HEALTHY
+Phase 6 Note: Phase 6 readiness score disabled—use report.status for outcome.
+[run-with-timeout] [2025-10-14T16:43:09.699Z] + 6479ms Pattern "Overall System Health: ✅ HEALTHY" detected on stdout. Sending SIGTERM to PID 746466.
+Phase6IntegrationValidationSuite: Shutting down...
+PerformanceRegressionMonitor: Continuous monitoring stopped
+Phase6IntegrationValidationSuite: Shutdown complete
+[run-with-timeout] [2025-10-14T16:43:09.702Z] + 6482ms Process exited due to signal SIGTERM.

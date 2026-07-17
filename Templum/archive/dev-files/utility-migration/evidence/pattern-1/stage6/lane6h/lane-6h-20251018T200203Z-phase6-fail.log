@@ -1,0 +1,10 @@
+[run-with-timeout] [2025-10-18T20:02:03.655Z] +    5ms Spawned PID 228110 with timeout 30000ms (kill-after 5000ms).
+
+> templum@1.0.0 phase6-validation
+> npm run build && node dist/src/scripts/run-phase6-integration-validation.js run
+
+
+> templum@1.0.0 build
+> node scripts/clean-build-artifacts.js && tsc
+
+src/tests/backend/__utils__/logger-guardrail.ts(34,43): error TS2694: Namespace 'jest' has no exported member 'SpyInstance'.

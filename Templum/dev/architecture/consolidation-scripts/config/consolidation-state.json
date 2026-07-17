@@ -22,7 +22,7 @@
         "2": {
           "status": "complete",
           "startedAt": "2025-10-14T12:23:07Z",
-          "notes": "Results: logger utility regression suite created (src/utils/__tests__/logger.test.ts) with coverage for level filtering, structured logging, timers, and child contexts; executed via run-with-timeout jest-suite preset (artifact: artifacts/consolidation/pattern-1-stage2-logger-suite.log). Full npm run test:ci executed through jest-ci preset (artifact: artifacts/consolidation/pattern-1-stage2-test-ci.log) reporting ✅ coverage thresholds; process ended by preset SIGTERM after detecting success—no failures. Ready for Stage 3 migration planning.",
+          "notes": "Results: logger utility regression suite created (src/utils/__tests__/logger.test.ts) with coverage for level filtering, structured logging, timers, and child contexts; executed via run-with-timeout jest-suite preset (artifact: Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage2/logger-suite.log). Full npm run test:ci executed through jest-ci preset (artifact: Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage2/test-ci.log) reporting ✅ coverage thresholds; process ended by preset SIGTERM after detecting success—no failures. Ready for Stage 3 migration planning.",
           "elapsedMs": 487000
         },
         "3": {
@@ -58,7 +58,7 @@
         "5": {
           "status": "complete",
           "plannedFiles": [
-            "dev/architecture/logs/pattern-1-stage5b-phase6-validation-20251018T195436Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage5b/phase6-validation-20251018T195436Z.log"
           ],
           "startedAt": "2025-10-18T19:53:44Z",
           "notes": "Guardrails rehearsed; Phase6 baseline logged (ts compile on jest.SpyInstance noted) and lanes 6g-6j carry dependencies + migration steps.",
@@ -726,7 +726,7 @@
       },
       "handoff": {
         "guardrails": [
-          "Stage5B rehearsal: node scripts/run-with-timeout.mjs --preset phase6-validation -- npm run phase6-validation (expected pre-migration failure TypeScript compile on jest.SpyInstance within src/tests/backend/__utils__/logger-guardrail.ts; see dev/architecture/logs/pattern-1-stage5b-phase6-validation-20251018T195436Z.log). Stage 4 console.* artefacts remain authoritative: logs/consolidation/pattern-1/lane-4b-20251014T125351Z.log, logs/consolidation/pattern-1/lane-4f-20251014T130558Z.log, logs/consolidation/pattern-1/lane-4l-20251018T125951Z.log. Owners: 6g MCP runtime, 6h backend validation/manual override, 6i interface/observability, 6j logger sinks; each lane must record guardrail flip evidence on completion."
+          "Stage5B rehearsal: node scripts/run-with-timeout.mjs --preset phase6-validation -- npm run phase6-validation (expected pre-migration failure TypeScript compile on jest.SpyInstance within src/tests/backend/__utils__/logger-guardrail.ts; see Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage5b/phase6-validation-20251018T195436Z.log). Stage 4 console.* artefacts remain authoritative: Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4b/lane-4b-20251014T125351Z.log, Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4f/lane-4f-20251014T130558Z.log, Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4l/20251018T125951Z.log. Owners: 6g MCP runtime, 6h backend validation/manual override, 6i interface/observability, 6j logger sinks; each lane must record guardrail flip evidence on completion."
         ],
         "sharedFiles": [],
         "acknowledgements": []
@@ -768,7 +768,7 @@
         {
           "id": "stage-2-note-20251014T123059",
           "timestamp": "2025-10-14T12:30:59Z",
-          "body": "Executed suites: node scripts/run-with-timeout.mjs --preset jest-suite -- npx jest src/utils/__tests__/logger.test.ts (artifact: artifacts/consolidation/pattern-1-stage2-logger-suite.log); node scripts/run-with-timeout.mjs --preset jest-ci -- npm run test:ci (artifact: artifacts/consolidation/pattern-1-stage2-test-ci.log). Results: both suites reported PASS with coverage governance ✅ (SIGTERM from preset exit-on-pattern captured post-pass). Follow-ups: none blocking; move to Stage 3 planning.",
+          "body": "Executed suites: node scripts/run-with-timeout.mjs --preset jest-suite -- npx jest src/utils/__tests__/logger.test.ts (artifact: Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage2/logger-suite.log); node scripts/run-with-timeout.mjs --preset jest-ci -- npm run test:ci (artifact: Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage2/test-ci.log). Results: both suites reported PASS with coverage governance ✅ (SIGTERM from preset exit-on-pattern captured post-pass). Follow-ups: none blocking; move to Stage 3 planning.",
           "scope": [
             "stage-2"
           ]
@@ -800,7 +800,7 @@
         {
           "id": "stage-4-note-20251014T125434",
           "timestamp": "2025-10-14T12:54:34Z",
-          "body": "Lane 4b: Migrated dynamic-command-router to consolidated logger (registration/lifecycle/diagnostics channels) and captured jest suite via run-with-timeout (logs/consolidation/pattern-1/lane-4b-20251014T125351Z.log); coverage warnings remain expected for legacy modules.",
+          "body": "Lane 4b: Migrated dynamic-command-router to consolidated logger (registration/lifecycle/diagnostics channels) and captured jest suite via run-with-timeout (Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4b/lane-4b-20251014T125351Z.log); coverage warnings remain expected for legacy modules.",
           "scope": [
             "stage-4"
           ]
@@ -808,7 +808,7 @@
         {
           "id": "stage-4-note-20251014T125700",
           "timestamp": "2025-10-14T12:57:00Z",
-          "body": "Lane 4a: migrated backend-service-router onto logger-backed console shim so all console.* usage resolves to scoped logger contexts; captured retries for error payloads and colon trimming to preserve structured data. Ran node scripts/run-with-timeout.mjs --preset jest-suite -- npx jest src/tests/backend/service-discovery.test.ts (log: tmp/consolidation-pattern1-stage4-lane4a-20251014T125623Z.log). No blockers encountered.",
+          "body": "Lane 4a: migrated backend-service-router onto logger-backed console shim so all console.* usage resolves to scoped logger contexts; captured retries for error payloads and colon trimming to preserve structured data. Ran node scripts/run-with-timeout.mjs --preset jest-suite -- npx jest src/tests/backend/service-discovery.test.ts (log: Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4a/20251014T125623Z.log). No blockers encountered.",
           "scope": [
             "stage-4"
           ]
@@ -816,7 +816,7 @@
         {
           "id": "stage-4-note-20251014T130237",
           "timestamp": "2025-10-14T13:02:37Z",
-          "body": "Lane 4d: Replaced direct console usage in cli-adapter abstraction with central logger helper + stdout printer to preserve UI output. Added helper methods for error normalization, routed instrumentation to logger, and kept user messaging via formatter. Verified menu-definition adapter suite via run-with-timeout (logs/pattern-1-lane-4d-jest.log). Coverage thresholds still red as expected for targeted run.",
+          "body": "Lane 4d: Replaced direct console usage in cli-adapter abstraction with central logger helper + stdout printer to preserve UI output. Added helper methods for error normalization, routed instrumentation to logger, and kept user messaging via formatter. Verified menu-definition adapter suite via run-with-timeout (Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4d/pattern-1-lane-4d-jest.log). Coverage thresholds still red as expected for targeted run.",
           "scope": [
             "stage-4"
           ]
@@ -824,7 +824,7 @@
         {
           "id": "stage-4-note-20251014T130314",
           "timestamp": "2025-10-14T13:03:14Z",
-          "body": "Lane 4e: replaced console.* calls with terminal writer helpers, introduced injectable terminal UI logger, reran formatter jest suite (log: artifacts/consolidation/pattern-1/lane-4e-20251014T130215Z.log); coverage threshold warnings remain expected pending global cleanup.",
+          "body": "Lane 4e: replaced console.* calls with terminal writer helpers, introduced injectable terminal UI logger, reran formatter jest suite (log: Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4e/20251014T130215Z.log); coverage threshold warnings remain expected pending global cleanup.",
           "scope": [
             "stage-4"
           ]
@@ -832,7 +832,7 @@
         {
           "id": "stage-4-note-20251014T130325",
           "timestamp": "2025-10-14T13:03:25Z",
-          "body": "Lane 4h: migrated templum-core console logging to consolidated logInfo/logWarn/logError helpers (interface lifecycle, cache, IPC, shutdown) and captured jest-suite via run-with-timeout (log: logs/consolidation/pattern-1/lane-4h-20251014T130237Z.log). Coverage threshold warnings remain expected globally.",
+          "body": "Lane 4h: migrated templum-core console logging to consolidated logInfo/logWarn/logError helpers (interface lifecycle, cache, IPC, shutdown) and captured jest-suite via run-with-timeout (log: Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4h/lane-4h-20251014T130237Z.log). Coverage threshold warnings remain expected globally.",
           "scope": [
             "stage-4"
           ]
@@ -840,7 +840,7 @@
         {
           "id": "stage-4-note-20251014T130619",
           "timestamp": "2025-10-14T13:06:19Z",
-          "body": "Lane 4g: migrated adapter registry and factory logging to consolidated logger scopes (skin/state/backend/service/resource/session/disposal) while keeping DI flows intact; required jest suite via run-with-timeout green with legacy coverage warnings captured in logs/consolidation/pattern-1/lane-4g-20251014T130541Z.log.",
+          "body": "Lane 4g: migrated adapter registry and factory logging to consolidated logger scopes (skin/state/backend/service/resource/session/disposal) while keeping DI flows intact; required jest suite via run-with-timeout green with legacy coverage warnings captured in Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4g/lane-4g-20251014T130541Z.log.",
           "scope": [
             "stage-4"
           ]
@@ -848,7 +848,7 @@
         {
           "id": "stage-4-note-20251014T130624",
           "timestamp": "2025-10-14T13:06:24Z",
-          "body": "Lane 4f: replaced templum-universal-session-manager console usage with consolidated logger helpers and scoped channels; captured run-with-timeout jest suite (logs/consolidation/pattern-1/lane-4f-20251014T130558Z.log) with expected global coverage threshold warnings only.",
+          "body": "Lane 4f: replaced templum-universal-session-manager console usage with consolidated logger helpers and scoped channels; captured run-with-timeout jest suite (Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4f/lane-4f-20251014T130558Z.log) with expected global coverage threshold warnings only.",
           "scope": [
             "stage-4"
           ]
@@ -880,7 +880,7 @@
         {
           "id": "stage-5-note-20251014T140747",
           "timestamp": "2025-10-14T14:07:47Z",
-          "body": "Guardrails: Follow scopes captured in dev/architecture/logger-error-handler-alignment.md — backend-service-router/dynamic-command-router keep logger.scoped('backend','routing'); CLI adapters and terminal components must emit user-visible strings via Stage 4 stdout helpers while errors/warnings flow through consolidated logger channels; session/core orchestrators continue using unified-session scoped loggers. Zero-knowledge registry remains mandatory: ServiceDiscovery/ConnectionFactory integrations stay DI-driven with no backend-specific logger branches. Approvals: none additional; run-with-timeout presets already cover Phase 6 gating, escalate only if real-service toggles are required. Artefacts: Stage 4 lane evidence available at logs/consolidation/pattern-1/lane-4b-20251014T125351Z.log, tmp/consolidation-pattern1-stage4-lane4a-20251014T125623Z.log, logs/consolidation/pattern-1/lane-4f-20251014T130558Z.log, logs/consolidation/pattern-1/lane-4g-20251014T130541Z.log, logs/consolidation/pattern-1/lane-4h-20251014T130237Z.log, artifacts/consolidation/pattern-1/lane-4e-20251014T130215Z.log, logs/pattern-1-lane-4d-jest.log, logs/pattern-1-lane-4c-jest.txt. Stage 6 gating evidence will be appended after run.",
+          "body": "Guardrails: Follow scopes captured in dev/architecture/logger-error-handler-alignment.md — backend-service-router/dynamic-command-router keep logger.scoped('backend','routing'); CLI adapters and terminal components must emit user-visible strings via Stage 4 stdout helpers while errors/warnings flow through consolidated logger channels; session/core orchestrators continue using unified-session scoped loggers. Zero-knowledge registry remains mandatory: ServiceDiscovery/ConnectionFactory integrations stay DI-driven with no backend-specific logger branches. Approvals: none additional; run-with-timeout presets already cover Phase 6 gating, escalate only if real-service toggles are required. Artefacts: Stage 4 lane evidence available at Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4b/lane-4b-20251014T125351Z.log, Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4a/20251014T125623Z.log, Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4f/lane-4f-20251014T130558Z.log, Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4g/lane-4g-20251014T130541Z.log, Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4h/lane-4h-20251014T130237Z.log, Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4e/20251014T130215Z.log, Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4d/pattern-1-lane-4d-jest.log, Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4c/pattern-1-lane-4c-jest.log. Stage 6 gating evidence will be appended after run.",
           "scope": [
             "stage-5"
           ]
@@ -888,7 +888,7 @@
         {
           "id": "stage-5-note-20251014T141620",
           "timestamp": "2025-10-14T14:16:20Z",
-          "body": "Phase 6 gating battery executed via node scripts/run-with-timeout.mjs --preset phase6-validation -- npm run phase6-validation (UTC 2025-10-14T14:15Z). Output captured at dev/architecture/logs/pattern-1-stage5b-phase6-validation-20251014T141551Z.log; cross-interface validation reported 100% consistency and all workflows completed within baseline thresholds. No outstanding approvals required; Stage 6 lanes 6a/6b/6c stay blocked pending hand-off.",
+          "body": "Phase 6 gating battery executed via node scripts/run-with-timeout.mjs --preset phase6-validation -- npm run phase6-validation (UTC 2025-10-14T14:15Z). Output captured at Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage5b/phase6-validation-20251014T141551Z.log; cross-interface validation reported 100% consistency and all workflows completed within baseline thresholds. No outstanding approvals required; Stage 6 lanes 6a/6b/6c stay blocked pending hand-off.",
           "scope": [
             "stage-5"
           ]
@@ -952,7 +952,7 @@
         {
           "id": "stage-5-note-20251015T114317",
           "timestamp": "2025-10-15T11:43:17Z",
-          "body": "Guardrails: Stage 4 evidence staged at logs/consolidation/pattern-1/lane-4b-20251014T125351Z.log, tmp/consolidation-pattern1-stage4-lane4a-20251014T125623Z.log, logs/consolidation/pattern-1/lane-4f-20251014T130558Z.log, logs/consolidation/pattern-1/lane-4h-20251014T130237Z.log; expected failure reproduces via node scripts/run-with-timeout.mjs --preset phase6-validation -- npm run phase6-validation showing console.* leakage before migration. Approvals: none required beyond preset; escalate only if PHASE6_RUN_REAL toggles are needed. Stage6 lanes: 6d Backend Connectivity, 6e Interface Delivery, 6f Session/Core inherit guardrail commands from lanes 4a-4h and await checklist handoff.",
+          "body": "Guardrails: Stage 4 evidence staged at Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4b/lane-4b-20251014T125351Z.log, Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4a/20251014T125623Z.log, Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4f/lane-4f-20251014T130558Z.log, Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4h/lane-4h-20251014T130237Z.log; expected failure reproduces via node scripts/run-with-timeout.mjs --preset phase6-validation -- npm run phase6-validation showing console.* leakage before migration. Approvals: none required beyond preset; escalate only if PHASE6_RUN_REAL toggles are needed. Stage6 lanes: 6d Backend Connectivity, 6e Interface Delivery, 6f Session/Core inherit guardrail commands from lanes 4a-4h and await checklist handoff.",
           "scope": [
             "stage-5"
           ]
@@ -976,7 +976,7 @@
         {
           "id": "stage-3-note-20251018T191718",
           "timestamp": "2025-10-18T19:17:18Z",
-          "body": "Order: 4l (MCP harness) -> 4m (backend/PCL validation) -> 4n (interface layout + observability) -> 4o (logger core); promote 6g/6h/6i/6j directly after each guardrail merges. Guardrails: 4l runs node scripts/run-with-timeout.mjs --preset jest-suite -- npx jest src/tests/mcp/visual-feedback-system.formatter.test.ts and expects MCP console spies to fail; 4m runs node scripts/run-with-timeout.mjs --preset jest-suite -- npx jest src/tests/backend/comprehensive-backend-validation.test.ts tests/scripts/phase6-validation-cli.test.ts to cover PCL registries and validator scripts; 4n runs node scripts/run-with-timeout.mjs --preset jest-suite -- npx jest src/tests/utils/terminal-formatter.test.ts alongside content-layout harness; 4o keeps the logger regression suite red until sinks replace console. rg --files-with-matches console.(log|warn|error) confirmed hits across MCP harness, backend guardrails, phase6 CLI tests, and terminal formatter. Dependencies: 6g (MCP runtime) depends on 4l; 6h (PCL + validation runtime) depends on 4m; 6i (interface + observability runtime) depends on 4n; 6j (logger core) depends on 4o. Stage7 plan now tracks Templum/ with the same term set so repo-wide sweeps enforce the contract. Risks: Stage7 sweep exposed high-volume console usage across MCP channel, interface navigation/rendering, validation scripts, and logger.ts; coordinate with Error Handler and Async Utils when updating validator/observability flows to preserve DI seams and log contexts. Capture guardrail failure artefacts per lane in logs/consolidation/pattern-1 before flipping Stage6 lanes.",
+          "body": "Order: 4l (MCP harness) -> 4m (backend/PCL validation) -> 4n (interface layout + observability) -> 4o (logger core); promote 6g/6h/6i/6j directly after each guardrail merges. Guardrails: 4l runs node scripts/run-with-timeout.mjs --preset jest-suite -- npx jest src/tests/mcp/visual-feedback-system.formatter.test.ts and expects MCP console spies to fail; 4m runs node scripts/run-with-timeout.mjs --preset jest-suite -- npx jest src/tests/backend/comprehensive-backend-validation.test.ts tests/scripts/phase6-validation-cli.test.ts to cover PCL registries and validator scripts; 4n runs node scripts/run-with-timeout.mjs --preset jest-suite -- npx jest src/tests/utils/terminal-formatter.test.ts alongside content-layout harness; 4o keeps the logger regression suite red until sinks replace console. rg --files-with-matches console.(log|warn|error) confirmed hits across MCP harness, backend guardrails, phase6 CLI tests, and terminal formatter. Dependencies: 6g (MCP runtime) depends on 4l; 6h (PCL + validation runtime) depends on 4m; 6i (interface + observability runtime) depends on 4n; 6j (logger core) depends on 4o. Stage7 plan now tracks Templum/ with the same term set so repo-wide sweeps enforce the contract. Risks: Stage7 sweep exposed high-volume console usage across MCP channel, interface navigation/rendering, validation scripts, and logger.ts; coordinate with Error Handler and Async Utils when updating validator/observability flows to preserve DI seams and log contexts. Capture guardrail failure artefacts per lane in Templum/archive/dev-files/utility-migration/evidence/pattern-1 before flipping Stage6 lanes.",
           "scope": [
             "stage-3"
           ]
@@ -1016,7 +1016,7 @@
         {
           "id": "stage-4-note-20251018T192951",
           "timestamp": "2025-10-18T19:29:51Z",
-          "body": "Lane 4m: Guardrail run-with-timeout jest-suite emits 'Logger guardrail violation (backend validation suites): console.log called <n> times' plus CLI script failure; captured at logs/consolidation/pattern-1/lane-4m-20251018T192907Z.log.",
+          "body": "Lane 4m: Guardrail run-with-timeout jest-suite emits 'Logger guardrail violation (backend validation suites): console.log called <n> times' plus CLI script failure; captured at Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4m/lane-4m-20251018T192907Z.log.",
           "scope": [
             "stage-4"
           ]
@@ -1040,7 +1040,7 @@
         {
           "id": "stage-5-note-20251018T195644",
           "timestamp": "2025-10-18T19:56:44Z",
-          "body": "Guardrails: Phase6 preset rerun logged at dev/architecture/logs/pattern-1-stage5b-phase6-validation-20251018T195436Z.log exits early on TypeScript guardrail compile (jest.SpyInstance missing) so expected console.* violations stay covered via Stage 4 lane evidence; keep lane-4b/4f/4l logs linked for context. Approvals: none required beyond existing presets—escalate only if PHASE6_RUN_REAL toggles are needed. Stage6 lanes: 6g (MCP channel, depend 1:4l) adopts consolidated logger contexts, 6h (backend validation + manual override, depend 1:4m) removes remaining console.* scaffolding, 6i (interface render + observability, depend 1:4n) routes UI logs through helpers, 6j (logger sinks, depend 1:4o) finalises structured transports; each lane must attach pre/post guardrail evidence in logs/consolidation/pattern-1 before claiming complete.",
+          "body": "Guardrails: Phase6 preset rerun logged at Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage5b/phase6-validation-20251018T195436Z.log exits early on TypeScript guardrail compile (jest.SpyInstance missing) so expected console.* violations stay covered via Stage 4 lane evidence; keep lane-4b/4f/4l logs linked for context. Approvals: none required beyond existing presets—escalate only if PHASE6_RUN_REAL toggles are needed. Stage6 lanes: 6g (MCP channel, depend 1:4l) adopts consolidated logger contexts, 6h (backend validation + manual override, depend 1:4m) removes remaining console.* scaffolding, 6i (interface render + observability, depend 1:4n) routes UI logs through helpers, 6j (logger sinks, depend 1:4o) finalises structured transports; each lane must attach pre/post guardrail evidence in Templum/archive/dev-files/utility-migration/evidence/pattern-1 before claiming complete.",
           "scope": [
             "stage-5"
           ]
@@ -1094,7 +1094,7 @@
           "timestamp": "2025-10-14T12:26:08Z",
           "summary": "Captured logger unit suite via jest-suite preset",
           "files": [
-            "artifacts/consolidation/pattern-1-stage2-logger-suite.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage2/logger-suite.log"
           ]
         },
         {
@@ -1366,7 +1366,7 @@
           "timestamp": "2025-10-14T12:54:27Z",
           "summary": "Migrated dynamic-command-router logging; jest suite green with expected coverage gaps",
           "files": [
-            "logs/consolidation/pattern-1/lane-4b-20251014T125351Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4b/lane-4b-20251014T125351Z.log"
           ],
           "durationMs": 270000
         },
@@ -1393,7 +1393,7 @@
           "timestamp": "2025-10-14T12:56:52Z",
           "summary": "Migrated backend-service-router logging to scoped logger shim; service discovery suite green",
           "files": [
-            "tmp/consolidation-pattern1-stage4-lane4a-20251014T125623Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4a/20251014T125623Z.log"
           ],
           "durationMs": 429000
         },
@@ -1402,7 +1402,7 @@
           "timestamp": "2025-10-14T13:02:25Z",
           "summary": "Migrated CLI adapter logging to central logger; menu-definition adapter suite passing",
           "files": [
-            "logs/pattern-1-lane-4d-jest.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4d/pattern-1-lane-4d-jest.log"
           ],
           "durationMs": 586000
         },
@@ -1411,7 +1411,7 @@
           "timestamp": "2025-10-14T13:03:06Z",
           "summary": "Logger migration completed; formatter jest suite pass (coverage warnings expected)",
           "files": [
-            "artifacts/consolidation/pattern-1/lane-4e-20251014T130215Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4e/20251014T130215Z.log"
           ],
           "durationMs": 612000
         },
@@ -1420,7 +1420,7 @@
           "timestamp": "2025-10-14T13:03:16Z",
           "summary": "Converted templum-core logging to consolidated logger; jest suite green",
           "files": [
-            "logs/consolidation/pattern-1/lane-4h-20251014T130237Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4h/lane-4h-20251014T130237Z.log"
           ],
           "durationMs": 415000
         },
@@ -1429,7 +1429,7 @@
           "timestamp": "2025-10-14T13:06:10Z",
           "summary": "Adapter registry logger consolidation; jest suite green with legacy coverage warnings.",
           "files": [
-            "logs/consolidation/pattern-1/lane-4g-20251014T130541Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4g/lane-4g-20251014T130541Z.log"
           ],
           "durationMs": 600000
         },
@@ -1438,7 +1438,7 @@
           "timestamp": "2025-10-14T13:06:14Z",
           "summary": "Migrated to consolidated logger and jest suite via run-with-timeout",
           "files": [
-            "logs/consolidation/pattern-1/lane-4f-20251014T130558Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4f/lane-4f-20251014T130558Z.log"
           ],
           "durationMs": 647000
         },
@@ -1447,7 +1447,7 @@
           "timestamp": "2025-10-14T13:06:50Z",
           "summary": "Migrated CLI adapter logging to shared helpers and ran menu-definition adapter suite",
           "files": [
-            "logs/pattern-1-lane-4c-jest.txt"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4c/pattern-1-lane-4c-jest.log"
           ],
           "durationMs": 890000
         },
@@ -1510,7 +1510,7 @@
           "timestamp": "2025-10-14T14:38:13Z",
           "summary": "Completed jest-ci regression battery; coverage thresholds stable; no console.* matches after sweep.",
           "files": [
-            "dev/architecture/logs/pattern-1-stage6a-jest-ci-20251014T143442Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage6a/jest-ci-20251014T143442Z.log"
           ],
           "durationMs": 290000
         },
@@ -1519,7 +1519,7 @@
           "timestamp": "2025-10-14T14:47:13Z",
           "summary": "Migrated E2E framework mocks to consolidated logger and reran jest-ci regression",
           "files": [
-            "dev/architecture/logs/pattern-1-stage6-lane6b-jest-ci-20251014T144415Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage6/lane6b/jest-ci-20251014T144415Z.log"
           ],
           "durationMs": 815000
         },
@@ -1528,7 +1528,7 @@
           "timestamp": "2025-10-14T14:58:43Z",
           "summary": "Aligned session/core regression tests with consolidated logger outputs; CLI stdout captured; jest-ci battery green",
           "files": [
-            "dev/architecture/logs/pattern-1-stage6-lane6c-jest-ci-20251014T145516Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage6/lane6c/jest-ci-20251014T145516Z.log"
           ],
           "durationMs": 1486000
         },
@@ -1537,7 +1537,7 @@
           "timestamp": "2025-10-14T15:10:09Z",
           "summary": "Centralized mock logging helper on consolidated logger and reran jest-ci",
           "files": [
-            "dev/architecture/logs/pattern-1-stage6-lane6b-jest-ci-20251014T150700Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage6/lane6b/jest-ci-20251014T150700Z.log"
           ]
         },
         {
@@ -1551,9 +1551,9 @@
           "timestamp": "2025-10-14T16:50:05Z",
           "summary": "Stage 7 status remains in_progress",
           "files": [
-            "dev/architecture/logs/pattern-1-stage7-jest-ci-20251014T164656Z.log",
-            "dev/architecture/logs/pattern-1-stage7-phase6-validation-20251014T164934Z.log",
-            "dev/architecture/logs/pattern-1-stage7-phase6-health-20251014T164947Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage7/jest-ci-20251014T164656Z.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage7/phase6-validation-20251014T164934Z.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage7/phase6-health-20251014T164947Z.log"
           ]
         },
         {
@@ -1815,7 +1815,7 @@
           "timestamp": "2025-10-14T21:23:11Z",
           "summary": "Expected failure: jest guardrail caught 128 raw console calls in MCP lifecycle bootstrap",
           "files": [
-            "logs/consolidation/pattern-1/lane-4j-20251014T212228Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4j/lane-4j-20251014T212228Z.log"
           ]
         },
         {
@@ -1823,7 +1823,7 @@
           "timestamp": "2025-10-14T21:23:17Z",
           "summary": "Guardrail failing as expected; Stage 6e will use consolidated logger replacements",
           "files": [
-            "logs/consolidation/pattern-1/lane-4j-20251014T212228Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4j/lane-4j-20251014T212228Z.log"
           ],
           "durationMs": 301000
         },
@@ -1832,7 +1832,7 @@
           "timestamp": "2025-10-14T21:23:30Z",
           "summary": "Stage 4j guardrail: raw console.* failure log linked for upcoming CLI/phase6 migration",
           "files": [
-            "logs/consolidation/pattern-1/lane-4j-20251014T212228Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4j/lane-4j-20251014T212228Z.log"
           ]
         },
         {
@@ -1840,7 +1840,7 @@
           "timestamp": "2025-10-14T21:27:36Z",
           "summary": "Expected failure: logger guardrail requires VSCode adapter to emit via consolidated logger",
           "files": [
-            "logs/consolidation/pattern-1/lane-4k-20251014T212716Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4k/lane-4k-20251014T212716Z.log"
           ]
         },
         {
@@ -1848,7 +1848,7 @@
           "timestamp": "2025-10-14T21:28:04Z",
           "summary": "Guardrail reference: lane 4k logger guardrail log captured",
           "files": [
-            "logs/consolidation/pattern-1/lane-4k-20251014T212716Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4k/lane-4k-20251014T212716Z.log"
           ]
         },
         {
@@ -1856,7 +1856,7 @@
           "timestamp": "2025-10-14T21:28:15Z",
           "summary": "Guardrail failing as expected; Stage 6 6f primed",
           "files": [
-            "logs/consolidation/pattern-1/lane-4k-20251014T212716Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4k/lane-4k-20251014T212716Z.log"
           ],
           "durationMs": 583000
         },
@@ -1865,7 +1865,7 @@
           "timestamp": "2025-10-14T21:28:55Z",
           "summary": "Expected failure: Logger guardrail violation (manual override suites) captured via manual-override suites",
           "files": [
-            "logs/consolidation/pattern-1/lane-4i-20251014T212738Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4i/lane-4i-20251014T212738Z.log"
           ]
         },
         {
@@ -1873,7 +1873,7 @@
           "timestamp": "2025-10-14T21:29:48Z",
           "summary": "Guardrail reference: lane 4i logger guardrail log captured",
           "files": [
-            "logs/consolidation/pattern-1/lane-4i-20251014T212738Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4i/lane-4i-20251014T212738Z.log"
           ]
         },
         {
@@ -1881,7 +1881,7 @@
           "timestamp": "2025-10-14T21:29:56Z",
           "summary": "Guardrail failing as expected; Stage 6 6d primed",
           "files": [
-            "logs/consolidation/pattern-1/lane-4i-20251014T212738Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4i/lane-4i-20251014T212738Z.log"
           ],
           "durationMs": 739000
         },
@@ -1947,7 +1947,7 @@
           "timestamp": "2025-10-15T11:50:46Z",
           "summary": "Stage 5B status set to complete",
           "files": [
-            "dev/architecture/logs/pattern-1-stage5b-phase6-validation-20251015T1146Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage5b/phase6-validation-20251015T1146Z.log"
           ],
           "durationMs": 145000
         },
@@ -1977,7 +1977,7 @@
           "timestamp": "2025-10-15T12:25:36Z",
           "summary": "Baseline failure: Logger guardrail violation persists in manual override watcher",
           "files": [
-            "logs/consolidation/pattern-1/lane-6d-20251015T122423Z-jest-fail.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage6/lane6d/lane-6d-20251015T122423Z-jest-fail.log"
           ]
         },
         {
@@ -1997,7 +1997,7 @@
           "timestamp": "2025-10-15T12:28:47Z",
           "summary": "Baseline failure: phase6-validation guardrail (tsc legacy adapter type errors)",
           "files": [
-            "logs/consolidation/pattern-1/lane-6f-20251015T122803Z-fail.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage6/lane6f/lane-6f-20251015T122803Z-fail.log"
           ]
         },
         {
@@ -2005,7 +2005,7 @@
           "timestamp": "2025-10-15T12:28:56Z",
           "summary": "Baseline failure: phase6-validation build stopped by TS2322/TS2561; console migration not executed yet",
           "files": [
-            "logs/consolidation/pattern-1/lane-6e-20251015T122809Z-phase6-fail.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage6/lane6e/lane-6e-20251015T122809Z-phase6-fail.log"
           ]
         },
         {
@@ -2013,7 +2013,7 @@
           "timestamp": "2025-10-15T12:46:10Z",
           "summary": "Guardrail attempt: jest interface adapter integration; coverage thresholds still failing",
           "files": [
-            "logs/consolidation/pattern-1/lane-6f-20251015T122803Z-jest-pass.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage6/lane6f/lane-6f-20251015T122803Z-jest-pass.log"
           ]
         },
         {
@@ -2021,7 +2021,7 @@
           "timestamp": "2025-10-15T12:46:19Z",
           "summary": "Phase6 validation still blocked by existing tsc errors outside VSCode scope",
           "files": [
-            "logs/consolidation/pattern-1/lane-6f-20251015T122803Z-phase6-attempt.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage6/lane6f/lane-6f-20251015T122803Z-phase6-attempt.log"
           ]
         },
         {
@@ -2040,8 +2040,8 @@
           "timestamp": "2025-10-15T12:46:53Z",
           "summary": "Guardrail passing; commands=npx jest --config jest.backend.config.js, npm run test:ci -- --runTestsByPath (fails on existing Phase 6 guardrails outside lane scope)",
           "files": [
-            "logs/consolidation/pattern-1/lane-6d-20251015T124318Z-jest-pass.log",
-            "logs/consolidation/pattern-1/lane-6d-20251015T124505Z-testci.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage6/lane6d/lane-6d-20251015T124318Z-jest-pass.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage6/lane6d/lane-6d-20251015T124505Z-testci.log"
           ]
         },
         {
@@ -2049,8 +2049,8 @@
           "timestamp": "2025-10-15T12:47:31Z",
           "summary": "Migration complete; sweep clean — backend routers now emit via consolidated logger",
           "files": [
-            "logs/consolidation/pattern-1/lane-6d-20251015T124318Z-jest-pass.log",
-            "logs/consolidation/pattern-1/lane-6d-20251015T124505Z-testci.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage6/lane6d/lane-6d-20251015T124318Z-jest-pass.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage6/lane6d/lane-6d-20251015T124505Z-testci.log"
           ],
           "durationMs": 1494000
         },
@@ -2059,7 +2059,7 @@
           "timestamp": "2025-10-15T13:09:45Z",
           "summary": "Guardrail passing; command=node scripts/run-with-timeout.mjs --preset jest-ci -- npx jest tests/scripts/phase6-validation-cli.test.ts",
           "files": [
-            "logs/consolidation/pattern-1/lane-6e-20251015T130851Z-jest-pass.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage6/lane6e/lane-6e-20251015T130851Z-jest-pass.log"
           ]
         },
         {
@@ -2067,7 +2067,7 @@
           "timestamp": "2025-10-15T13:10:13Z",
           "summary": "Migration complete; sweep clean; guardrail jest suite green (coverage warnings expected)",
           "files": [
-            "logs/consolidation/pattern-1/lane-6e-20251015T130851Z-jest-pass.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage6/lane6e/lane-6e-20251015T130851Z-jest-pass.log"
           ],
           "durationMs": 2618000
         },
@@ -2082,7 +2082,7 @@
           "timestamp": "2025-10-15T15:10:31Z",
           "summary": "Guardrail passing: interface adapter integration via scoped config (jest.guardrail-interface-adapter.config.js)",
           "files": [
-            "logs/consolidation/pattern-1/lane-6f-20251015T1507Z-jest-guardrail.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage6/lane6f/lane-6f-20251015T1507Z-jest-guardrail.log"
           ]
         },
         {
@@ -2090,7 +2090,7 @@
           "timestamp": "2025-10-15T15:11:12Z",
           "summary": "Phase6 validation passing after logging migration",
           "files": [
-            "logs/consolidation/pattern-1/lane-6f-20251015T122803Z-phase6-attempt3.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage6/lane6f/lane-6f-20251015T122803Z-phase6-attempt3.log"
           ]
         },
         {
@@ -2098,8 +2098,8 @@
           "timestamp": "2025-10-15T15:11:20Z",
           "summary": "Migration complete; guardrail config scoped to interface adapters; phase6 + jest evidence attached",
           "files": [
-            "logs/consolidation/pattern-1/lane-6f-20251015T122803Z-phase6-attempt3.log",
-            "logs/consolidation/pattern-1/lane-6f-20251015T1507Z-jest-guardrail.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage6/lane6f/lane-6f-20251015T122803Z-phase6-attempt3.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage6/lane6f/lane-6f-20251015T1507Z-jest-guardrail.log"
           ],
           "durationMs": 862000
         },
@@ -2114,9 +2114,9 @@
           "timestamp": "2025-10-15T16:01:08Z",
           "summary": "Stage 7 status remains in_progress",
           "files": [
-            "dev/architecture/logs/pattern-1-stage7-jest-ci-20251015T155540Z.log",
-            "dev/architecture/logs/pattern-1-stage7-phase6-validation-20251015T155923Z.log",
-            "dev/architecture/logs/pattern-1-stage7-phase6-health-20251015T155933Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage7/jest-ci-20251015T155540Z.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage7/phase6-validation-20251015T155923Z.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage7/phase6-health-20251015T155933Z.log"
           ]
         },
         {
@@ -2149,9 +2149,9 @@
           "timestamp": "2025-10-15T16:10:48Z",
           "summary": "Stage 7 validation battery replayed (jest-ci, phase6 health, phase6 validation); sweep reported remaining console.* across runtime surfaces—pending Stage 4/6 migrations before close-out.",
           "files": [
-            "dev/architecture/logs/pattern-1-stage7-jest-ci-20251015T155540Z.log",
-            "dev/architecture/logs/pattern-1-stage7-phase6-validation-20251015T155923Z.log",
-            "dev/architecture/logs/pattern-1-stage7-phase6-health-20251015T155933Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage7/jest-ci-20251015T155540Z.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage7/phase6-validation-20251015T155923Z.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage7/phase6-health-20251015T155933Z.log"
           ]
         },
         {
@@ -2271,7 +2271,7 @@
           "timestamp": "2025-10-18T19:25:53Z",
           "summary": "Expected failure: console.log guardrail triggered",
           "files": [
-            "logs/consolidation/pattern-1/lane-4l-20251018T192529Z-jest-guardrail.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4l/lane-4l-20251018T192529Z-jest-guardrail.log"
           ]
         },
         {
@@ -2279,7 +2279,7 @@
           "timestamp": "2025-10-18T19:26:00Z",
           "summary": "Guardrail failing as expected; Stage 6 6g primed",
           "files": [
-            "logs/consolidation/pattern-1/lane-4l-20251018T192529Z-jest-guardrail.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4l/lane-4l-20251018T192529Z-jest-guardrail.log"
           ],
           "durationMs": 218000
         },
@@ -2288,7 +2288,7 @@
           "timestamp": "2025-10-18T19:26:10Z",
           "summary": "Guardrail artefact: Stage 4 4l log attached for handoff",
           "files": [
-            "logs/consolidation/pattern-1/lane-4l-20251018T192529Z-jest-guardrail.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4l/lane-4l-20251018T192529Z-jest-guardrail.log"
           ]
         },
         {
@@ -2296,7 +2296,7 @@
           "timestamp": "2025-10-18T19:26:15Z",
           "summary": "Expected failure: console.log guardrail still triggered (Expected number of calls: 0)",
           "files": [
-            "logs/consolidation/pattern-1/lane-4o-20251018T192555Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4o/lane-4o-20251018T192555Z.log"
           ]
         },
         {
@@ -2304,7 +2304,7 @@
           "timestamp": "2025-10-18T19:26:21Z",
           "summary": "Guardrail failing as expected; Stage 6 6j primed",
           "files": [
-            "logs/consolidation/pattern-1/lane-4o-20251018T192555Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4o/lane-4o-20251018T192555Z.log"
           ],
           "durationMs": 117000
         },
@@ -2313,7 +2313,7 @@
           "timestamp": "2025-10-18T19:26:25Z",
           "summary": "Expected failure: console.log spy triggered (Expected number of calls: 0)",
           "files": [
-            "logs/consolidation/pattern-1/lane-4n-20251018T192544Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4n/lane-4n-20251018T192544Z.log"
           ]
         },
         {
@@ -2321,7 +2321,7 @@
           "timestamp": "2025-10-18T19:26:44Z",
           "summary": "Guardrail reference: lane 4o log documents failing console.* expectation",
           "files": [
-            "logs/consolidation/pattern-1/lane-4o-20251018T192555Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4o/lane-4o-20251018T192555Z.log"
           ]
         },
         {
@@ -2329,7 +2329,7 @@
           "timestamp": "2025-10-18T19:26:55Z",
           "summary": "Guardrail reference from 4n: console.* guardrail failing (Expected number of calls: 0)",
           "files": [
-            "logs/consolidation/pattern-1/lane-4n-20251018T192544Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4n/lane-4n-20251018T192544Z.log"
           ]
         },
         {
@@ -2337,7 +2337,7 @@
           "timestamp": "2025-10-18T19:27:04Z",
           "summary": "Guardrail failing as expected; Stage 6 6i primed",
           "files": [
-            "logs/consolidation/pattern-1/lane-4n-20251018T192544Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4n/lane-4n-20251018T192544Z.log"
           ],
           "durationMs": 248000
         },
@@ -2346,7 +2346,7 @@
           "timestamp": "2025-10-18T19:28:40Z",
           "summary": "Guardrail failing as expected; Stage 6 6i primed",
           "files": [
-            "logs/consolidation/pattern-1/lane-4n-20251018T192822Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4n/lane-4n-20251018T192822Z.log"
           ]
         },
         {
@@ -2354,7 +2354,7 @@
           "timestamp": "2025-10-18T19:28:45Z",
           "summary": "Guardrail reference from 4n: console.* guardrail failing (Expected number of calls: 0)",
           "files": [
-            "logs/consolidation/pattern-1/lane-4n-20251018T192822Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4n/lane-4n-20251018T192822Z.log"
           ]
         },
         {
@@ -2362,7 +2362,7 @@
           "timestamp": "2025-10-18T19:29:38Z",
           "summary": "Expected failure: Logger guardrail violation (backend validation suites): console.log called 46 times",
           "files": [
-            "logs/consolidation/pattern-1/lane-4m-20251018T192907Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4m/lane-4m-20251018T192907Z.log"
           ]
         },
         {
@@ -2370,7 +2370,7 @@
           "timestamp": "2025-10-18T19:29:56Z",
           "summary": "Guardrail failing as expected; Stage 6 6h primed",
           "files": [
-            "logs/consolidation/pattern-1/lane-4m-20251018T192907Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4m/lane-4m-20251018T192907Z.log"
           ],
           "durationMs": 438000
         },
@@ -2379,7 +2379,7 @@
           "timestamp": "2025-10-18T19:30:28Z",
           "summary": "Stage 4 evidence: Logger guardrail violation (backend validation suites) logged for lane 4m",
           "files": [
-            "logs/consolidation/pattern-1/lane-4m-20251018T192907Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage4/lane4m/lane-4m-20251018T192907Z.log"
           ]
         },
         {
@@ -2418,28 +2418,28 @@
           "timestamp": "2025-10-18T19:57:33Z",
           "summary": "Stage 5B status remains in_progress",
           "files": [
-            "dev/architecture/logs/pattern-1-stage5b-phase6-validation-20251018T195436Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage5b/phase6-validation-20251018T195436Z.log"
           ]
         },
         {
           "stage": "lane-6g",
           "timestamp": "2025-10-18T19:57:51Z",
-          "summary": "Guardrail: phase6-validation preset (log dev/architecture/logs/pattern-1-stage5b-phase6-validation-20251018T195436Z.log) captures MCP console guardrail fail; Steps: repair jest.SpyInstance typing so guardrail runs, migrate src/mcp-channel/* to createLogger scopes, confirm zero-knowledge registry + helper wiring before guardrail rerun."
+          "summary": "Guardrail: phase6-validation preset (log Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage5b/phase6-validation-20251018T195436Z.log) captures MCP console guardrail fail; Steps: repair jest.SpyInstance typing so guardrail runs, migrate src/mcp-channel/* to createLogger scopes, confirm zero-knowledge registry + helper wiring before guardrail rerun."
         },
         {
           "stage": "lane-6h",
           "timestamp": "2025-10-18T19:57:57Z",
-          "summary": "Guardrail: phase6-validation preset (log dev/architecture/logs/pattern-1-stage5b-phase6-validation-20251018T195436Z.log) mirrors backend validation + manual override failures from lane-4m; Steps: unblock jest guardrail compile, replace console.* in backend validation runners + manual override watchers with scoped createLogger usage, sync registry overrides with Stage 4 helper list before rerunning guardrail."
+          "summary": "Guardrail: phase6-validation preset (log Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage5b/phase6-validation-20251018T195436Z.log) mirrors backend validation + manual override failures from lane-4m; Steps: unblock jest guardrail compile, replace console.* in backend validation runners + manual override watchers with scoped createLogger usage, sync registry overrides with Stage 4 helper list before rerunning guardrail."
         },
         {
           "stage": "lane-6i",
           "timestamp": "2025-10-18T19:58:03Z",
-          "summary": "Guardrail: phase6-validation preset (log dev/architecture/logs/pattern-1-stage5b-phase6-validation-20251018T195436Z.log) carries interface layout/observability failures paired to lane-4n; Steps: ensure jest guardrail compiles, migrate terminal formatter + interface telemetry surfaces to consolidated logger/ErrorHandler helpers, verify DI seams remain skin-driven before guardrail pass."
+          "summary": "Guardrail: phase6-validation preset (log Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage5b/phase6-validation-20251018T195436Z.log) carries interface layout/observability failures paired to lane-4n; Steps: ensure jest guardrail compiles, migrate terminal formatter + interface telemetry surfaces to consolidated logger/ErrorHandler helpers, verify DI seams remain skin-driven before guardrail pass."
         },
         {
           "stage": "lane-6j",
           "timestamp": "2025-10-18T19:58:07Z",
-          "summary": "Guardrail: phase6-validation preset (log dev/architecture/logs/pattern-1-stage5b-phase6-validation-20251018T195436Z.log) leverages lane-4o logger regression to keep sinks red; Steps: restore jest guardrail type coverage, route logger transport configuration to structured sinks, confirm helper reuse + documentation before executing guardrail flip."
+          "summary": "Guardrail: phase6-validation preset (log Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage5b/phase6-validation-20251018T195436Z.log) leverages lane-4o logger regression to keep sinks red; Steps: restore jest guardrail type coverage, route logger transport configuration to structured sinks, confirm helper reuse + documentation before executing guardrail flip."
         },
         {
           "stage": "stage-5",
@@ -2464,7 +2464,7 @@
           "timestamp": "2025-10-18T20:01:37Z",
           "summary": "Baseline failure: Stage 4 guardrail still emits console.log",
           "files": [
-            "Templum/logs/consolidation/pattern-1/lane-6g-20251018T200126Z-jest-guardrail-fail.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage6/lane6g/lane-6g-20251018T200126Z-jest-guardrail-fail.log"
           ]
         },
         {
@@ -2484,7 +2484,7 @@
           "timestamp": "2025-10-18T20:02:24Z",
           "summary": "Baseline failure: TypeScript guardrail on jest.SpyInstance",
           "files": [
-            "logs/consolidation/pattern-1/lane-6h-20251018T200203Z-phase6-fail.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage6/lane6h/lane-6h-20251018T200203Z-phase6-fail.log"
           ]
         },
         {
@@ -2492,7 +2492,7 @@
           "timestamp": "2025-10-18T20:03:02Z",
           "summary": "Baseline failure: TS2694 jest.SpyInstance guardrail",
           "files": [
-            "logs/consolidation/pattern-1/lane-6j-phase6-validation-baseline-20251018T200248Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage6/lane6j/lane-6j-phase6-validation-baseline-20251018T200248Z.log"
           ]
         },
         {
@@ -2500,7 +2500,7 @@
           "timestamp": "2025-10-18T20:05:49Z",
           "summary": "Baseline failure: terminal formatter guardrail still hits console.* sinks",
           "files": [
-            "Templum/logs/consolidation/pattern-1/lane-6i-20251018T200530Z-jest-guardrail.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage6/lane6i/lane-6i-20251018T200530Z-jest-guardrail.log"
           ]
         },
         {
@@ -2508,7 +2508,7 @@
           "timestamp": "2025-10-18T20:08:32Z",
           "summary": "Guardrail passing; commands=node scripts/run-with-timeout.mjs --preset jest-ci -- npx jest src/utils/__tests__/logger.test.ts",
           "files": [
-            "logs/consolidation/pattern-1/lane-6j-logger-guardrail-pass-20251018T200810Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage6/lane6j/lane-6j-logger-guardrail-pass-20251018T200810Z.log"
           ]
         },
         {
@@ -2516,7 +2516,7 @@
           "timestamp": "2025-10-18T20:08:41Z",
           "summary": "Migration complete; sweep clean",
           "files": [
-            "logs/consolidation/pattern-1/lane-6j-logger-guardrail-pass-20251018T200810Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage6/lane6j/lane-6j-logger-guardrail-pass-20251018T200810Z.log"
           ],
           "durationMs": 395000
         },
@@ -2525,7 +2525,7 @@
           "timestamp": "2025-10-18T20:14:44Z",
           "summary": "Guardrail passing; commands=node scripts/run-with-timeout.mjs --preset jest-ci -- npx jest src/tests/mcp/visual-feedback-system.formatter.test.ts",
           "files": [
-            "Templum/logs/consolidation/pattern-1/lane-6g-20251018T201425Z-jest-guardrail-pass.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage6/lane6g/lane-6g-20251018T201425Z-jest-guardrail-pass.log"
           ]
         },
         {
@@ -2533,7 +2533,7 @@
           "timestamp": "2025-10-18T20:15:14Z",
           "summary": "Migration complete; sweep clean",
           "files": [
-            "Templum/logs/consolidation/pattern-1/lane-6g-20251018T201425Z-jest-guardrail-pass.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage6/lane6g/lane-6g-20251018T201425Z-jest-guardrail-pass.log"
           ],
           "durationMs": 851000
         },
@@ -2542,8 +2542,8 @@
           "timestamp": "2025-10-18T20:33:56Z",
           "summary": "Guardrails passing; commands=node scripts/run-with-timeout.mjs --preset phase6-validation -- npm run phase6-validation | node scripts/run-with-timeout.mjs --preset jest-ci -- npx jest src/tests/backend/comprehensive-backend-validation.test.ts tests/scripts/phase6-validation-cli.test.ts",
           "files": [
-            "logs/consolidation/pattern-1/lane-6h-20251018T203109Z-phase6-pass.log",
-            "logs/consolidation/pattern-1/lane-6h-20251018T203251Z-jest.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage6/lane6h/lane-6h-20251018T203109Z-phase6-pass.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage6/lane6h/lane-6h-20251018T203251Z-jest.log"
           ]
         },
         {
@@ -2551,7 +2551,7 @@
           "timestamp": "2025-10-18T20:34:06Z",
           "summary": "Migration complete; sweep clean",
           "files": [
-            "logs/consolidation/pattern-1/lane-6h-20251018T203109Z-phase6-pass.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage6/lane6h/lane-6h-20251018T203109Z-phase6-pass.log"
           ],
           "durationMs": 1966000
         },
@@ -2560,7 +2560,7 @@
           "timestamp": "2025-10-18T20:40:57Z",
           "summary": "Guardrail passing; commands=node scripts/run-with-timeout.mjs --preset jest-ci -- npx jest src/tests/utils/terminal-formatter.test.ts tests/interfaces/interface-session-error-handler.guardrail.test.ts",
           "files": [
-            "Templum/logs/consolidation/pattern-1/lane-6i-20251018T204030Z-jest-guardrail-pass.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage6/lane6i/lane-6i-20251018T204030Z-jest-guardrail-pass.log"
           ]
         },
         {
@@ -2568,7 +2568,7 @@
           "timestamp": "2025-10-18T20:41:11Z",
           "summary": "Migration complete; sweep clean",
           "files": [
-            "Templum/logs/consolidation/pattern-1/lane-6i-20251018T204030Z-jest-guardrail-pass.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage6/lane6i/lane-6i-20251018T204030Z-jest-guardrail-pass.log"
           ],
           "durationMs": 2372000
         },
@@ -2583,9 +2583,9 @@
           "timestamp": "2025-10-24T22:29:52Z",
           "summary": "Stage 7 status remains in_progress",
           "files": [
-            "dev/architecture/logs/pattern-1-stage7-jest-ci-20251024T222520Z.log",
-            "dev/architecture/logs/pattern-1-stage7-phase6-health-20251024T222834Z.log",
-            "dev/architecture/logs/pattern-1-stage7-phase6-validation-20251024T222848Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage7/jest-ci-20251024T222520Z.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage7/phase6-health-20251024T222834Z.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage7/phase6-validation-20251024T222848Z.log"
           ]
         },
         {
@@ -2613,7 +2613,7 @@
           "timestamp": "2025-10-24T22:42:14Z",
           "summary": "Stage 7 status remains in_progress",
           "files": [
-            "dev/architecture/logs/pattern-1-stage7-sweep-20251024T224015Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage7/sweep-20251024T224015Z.log"
           ]
         },
         {
@@ -2628,10 +2628,10 @@
           "summary": "Stage 7 release battery rerun (jest-ci + phase6 health/validation) and cleanup sweep recorded zero console hits",
           "agent": "Codex",
           "files": [
-            "dev/architecture/logs/pattern-1-stage7-jest-ci-20251024T222520Z.log",
-            "dev/architecture/logs/pattern-1-stage7-phase6-health-20251024T222834Z.log",
-            "dev/architecture/logs/pattern-1-stage7-phase6-validation-20251024T222848Z.log",
-            "dev/architecture/logs/pattern-1-stage7-sweep-20251024T224015Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage7/jest-ci-20251024T222520Z.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage7/phase6-health-20251024T222834Z.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage7/phase6-validation-20251024T222848Z.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-1/stage7/sweep-20251024T224015Z.log"
           ]
         }
       ],
@@ -3000,7 +3000,7 @@
           "updatedAt": "2025-10-14T15:27:21Z",
           "notes": "Capture outputs under tmp/error-handler-stage2.log and attach coverage delta in registry.",
           "plannedFiles": [
-            "logs/consolidation/pattern-2/lane-6a",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage6/lane6a",
             "src/backend/service-discovery.ts",
             "tests/service-discovery/discovery-cache.integration.test.ts"
           ],
@@ -3016,9 +3016,9 @@
             }
           ],
           "updatedAt": "2025-10-14T15:19:48Z",
-          "notes": "Ensure .templum/services cleared before run; capture logs for registry evidence.\nRan node scripts/run-with-timeout.mjs --preset phase6-validation --log-file dev/architecture/logs/pattern-2-stage6b-phase6-validation-20251014T151846Z.log; .templum/services stayed clear after run.",
+          "notes": "Ensure .templum/services cleared before run; capture logs for registry evidence.\nRan node scripts/run-with-timeout.mjs --preset phase6-validation --log-file archive/dev-files/utility-migration/evidence/pattern-2/stage6b/phase6-validation-20251014T151846Z.log; .templum/services stayed clear after run.",
           "plannedFiles": [
-            "dev/architecture/logs/pattern-2-stage6b-phase6-validation-20251014T151846Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage6b/phase6-validation-20251014T151846Z.log"
           ],
           "startedAt": "2025-10-14T15:18:46Z",
           "elapsedMs": 62000
@@ -3647,8 +3647,8 @@
           "Manual override backend battery (jest-suite preset) fails with Logger guardrail violation (console.log called 46 times); rerun via node scripts/run-with-timeout.mjs --preset jest-suite -- npx jest src/tests/backend/backend-connection-lifecycle.test.ts src/tests/backend/comprehensive-backend-validation.test.ts src/tests/backend/generic-backend-integration.test.ts src/tests/backend/manual-override-flow.test.ts src/tests/backend/manual-override-watcher.integration.test.ts"
         ],
         "sharedFiles": [
-          "logs/consolidation/pattern-2/stage5b/backend-guardrail-20251015T120254Z.log",
-          "logs/consolidation/pattern-2/stage5b/guardrail-20251018T195433Z.log"
+          "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage5b/backend-guardrail-20251015T120254Z.log",
+          "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage5b/guardrail-20251018T195433Z.log"
         ],
         "acknowledgements": []
       },
@@ -3700,7 +3700,7 @@
         {
           "id": "stage-4-note-20251014T123105",
           "timestamp": "2025-10-14T12:31:05Z",
-          "body": "Lane 4c: Completed prerequisite audit. Logged rg 'catch \\(' src/interfaces/cli-adapter-abstracted.ts -> tmp/consolidation-pattern2-lane4c-rg.log. Executed node scripts/run-with-timeout.mjs --preset jest-suite -- npm run test -- --runTestsByPath tests/interfaces/interface-adapter-integration.test.ts -> tmp/consolidation-pattern2-lane4c-tests.log (suite green; global coverage threshold warnings persist, no new failures). No blockers discovered; ready for Stage 4 execution.",
+          "body": "Lane 4c: Completed prerequisite audit. Logged rg 'catch \\(' src/interfaces/cli-adapter-abstracted.ts -> Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage4/lane4c/rg.log. Executed node scripts/run-with-timeout.mjs --preset jest-suite -- npm run test -- --runTestsByPath tests/interfaces/interface-adapter-integration.test.ts -> Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage4/lane4c/tests.log (suite green; global coverage threshold warnings persist, no new failures). No blockers discovered; ready for Stage 4 execution.",
           "scope": [
             "stage-4"
           ]
@@ -3732,7 +3732,7 @@
         {
           "id": "stage-5-note-20251014T141025",
           "timestamp": "2025-10-14T14:10:25Z",
-          "body": "Guardrails: Stage 5A alignment spec (dev/architecture/logger-error-handler-alignment.md) remains source of record; preserve zero-knowledge registry + logger/error-handler DI seams; no bespoke CLI UI beyond skin payload rendering.\nApprovals: Cohort 1-2 sign-offs from Stage 5A remain valid; reconfirmed backend + interface reps before gating run.\nActions Completed:\n- Cleared TypeScript regression in templum-core commandError listener to respect string payloads and keep ErrorHandler telemetry structured.\n- Updated CLI adapter menu handling to persist namespace metadata + align logger.warn signature.\n- Executed Phase 6 gating battery via `node scripts/run-with-timeout.mjs --preset phase6-validation -- npm run phase6-validation`.\nEvidence: logs/consolidation/pattern-2/stage5b/phase6-validation-20251014T140958Z.log",
+          "body": "Guardrails: Stage 5A alignment spec (dev/architecture/logger-error-handler-alignment.md) remains source of record; preserve zero-knowledge registry + logger/error-handler DI seams; no bespoke CLI UI beyond skin payload rendering.\nApprovals: Cohort 1-2 sign-offs from Stage 5A remain valid; reconfirmed backend + interface reps before gating run.\nActions Completed:\n- Cleared TypeScript regression in templum-core commandError listener to respect string payloads and keep ErrorHandler telemetry structured.\n- Updated CLI adapter menu handling to persist namespace metadata + align logger.warn signature.\n- Executed Phase 6 gating battery via `node scripts/run-with-timeout.mjs --preset phase6-validation -- npm run phase6-validation`.\nEvidence: Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage5b/phase6-validation-20251014T140958Z.log",
           "scope": [
             "stage-5"
           ]
@@ -3828,7 +3828,7 @@
         {
           "id": "stage-5-note-20251015T120408",
           "timestamp": "2025-10-15T12:04:08Z",
-          "body": "Guardrails: Replayed manual override guardrail via node scripts/run-with-timeout.mjs --preset jest-suite -- npx jest src/tests/backend/backend-connection-lifecycle.test.ts src/tests/backend/comprehensive-backend-validation.test.ts src/tests/backend/generic-backend-integration.test.ts src/tests/backend/manual-override-flow.test.ts src/tests/backend/manual-override-watcher.integration.test.ts; baseline failure captured in logs/consolidation/pattern-2/stage5b/backend-guardrail-20251015T120254Z.log showing logger guardrail violation remains unresolved; Approvals: Stage 5A cohort sign-offs reaffirmed with backend/interface reps at 2025-10-15T12:05Z, no additional approvals required before Stage 6 unlock; Stage6 lanes: 6c mirrors Stage 4d backend router guardrail, 6d mirrors Stage 4e session/interface guardrail, 6e mirrors Stage 4f CLI/phase6 guardrail, 6f mirrors Stage 4g MCP guardrail — execution notes to reference Stage 5B log + alignment checklist.",
+          "body": "Guardrails: Replayed manual override guardrail via node scripts/run-with-timeout.mjs --preset jest-suite -- npx jest src/tests/backend/backend-connection-lifecycle.test.ts src/tests/backend/comprehensive-backend-validation.test.ts src/tests/backend/generic-backend-integration.test.ts src/tests/backend/manual-override-flow.test.ts src/tests/backend/manual-override-watcher.integration.test.ts; baseline failure captured in Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage5b/backend-guardrail-20251015T120254Z.log showing logger guardrail violation remains unresolved; Approvals: Stage 5A cohort sign-offs reaffirmed with backend/interface reps at 2025-10-15T12:05Z, no additional approvals required before Stage 6 unlock; Stage6 lanes: 6c mirrors Stage 4d backend router guardrail, 6d mirrors Stage 4e session/interface guardrail, 6e mirrors Stage 4f CLI/phase6 guardrail, 6f mirrors Stage 4g MCP guardrail — execution notes to reference Stage 5B log + alignment checklist.",
           "scope": [
             "stage-5"
           ]
@@ -3927,7 +3927,7 @@
         {
           "id": "stage-5-note-20251018T195559",
           "timestamp": "2025-10-18T19:55:59Z",
-          "body": "Guardrails: Replayed manual override backend battery via node scripts/run-with-timeout.mjs --preset jest-suite -- npx jest src/tests/backend/backend-connection-lifecycle.test.ts src/tests/backend/comprehensive-backend-validation.test.ts src/tests/backend/generic-backend-integration.test.ts src/tests/backend/manual-override-flow.test.ts src/tests/backend/manual-override-watcher.integration.test.ts; failure persists with Logger guardrail violation (console.log called 46 times); log archived at logs/consolidation/pattern-2/stage5b/guardrail-20251018T195433Z.log. Approvals: Stage 5A backend/interface sign-offs reconfirmed after rerun; no additional approvals required—Stage 5A auto-reset noted and will be reclosed once Stage 5B is sealed. Stage6 lanes: Preparing 6h/6i updates to encode Stage 4 guardrail dependencies (4h/4i), scoped ErrorHandler adoption checklist, and guardrail rerun requirement before unlock.",
+          "body": "Guardrails: Replayed manual override backend battery via node scripts/run-with-timeout.mjs --preset jest-suite -- npx jest src/tests/backend/backend-connection-lifecycle.test.ts src/tests/backend/comprehensive-backend-validation.test.ts src/tests/backend/generic-backend-integration.test.ts src/tests/backend/manual-override-flow.test.ts src/tests/backend/manual-override-watcher.integration.test.ts; failure persists with Logger guardrail violation (console.log called 46 times); log archived at Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage5b/guardrail-20251018T195433Z.log. Approvals: Stage 5A backend/interface sign-offs reconfirmed after rerun; no additional approvals required—Stage 5A auto-reset noted and will be reclosed once Stage 5B is sealed. Stage6 lanes: Preparing 6h/6i updates to encode Stage 4 guardrail dependencies (4h/4i), scoped ErrorHandler adoption checklist, and guardrail rerun requirement before unlock.",
           "scope": [
             "stage-5"
           ]
@@ -4061,8 +4061,8 @@
           "timestamp": "2025-10-14T12:30:33Z",
           "summary": "Inventory connectivity catches and reran targeted suite; coverage warnings remain pre-existing",
           "files": [
-            "logs/consolidation/pattern-2/stage4b/rg-connection-factory.log",
-            "logs/consolidation/pattern-2/stage4b/jest-connection-factory.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage4/lane4b/rg-connection-factory.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage4/lane4b/jest-connection-factory.log"
           ],
           "durationMs": 67000
         },
@@ -4071,8 +4071,8 @@
           "timestamp": "2025-10-14T12:30:59Z",
           "summary": "Prerequisites satisfied: rg catch audit recorded + interface adapter integration suite green (coverage warnings acknowledged).",
           "files": [
-            "tmp/consolidation-pattern2-lane4c-rg.log",
-            "tmp/consolidation-pattern2-lane4c-tests.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage4/lane4c/rg.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage4/lane4c/tests.log"
           ],
           "durationMs": 81000
         },
@@ -4081,8 +4081,8 @@
           "timestamp": "2025-10-14T12:37:33Z",
           "summary": "Adopted ErrorHandler in service discovery and ran targeted rg + Jest commands (suite missing).",
           "files": [
-            "logs/consolidation/pattern-2/stage4a/rg-service-discovery.log",
-            "logs/consolidation/pattern-2/stage4a/jest-service-discovery.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage4/lane4a/rg-service-discovery.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage4/lane4a/jest-service-discovery.log"
           ],
           "durationMs": 506000
         },
@@ -4139,7 +4139,7 @@
           "timestamp": "2025-10-14T15:19:48Z",
           "summary": "Phase 6 validation suite green via run-with-timeout phase6-validation",
           "files": [
-            "dev/architecture/logs/pattern-2-stage6b-phase6-validation-20251014T151846Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage6b/phase6-validation-20251014T151846Z.log"
           ],
           "durationMs": 62000
         },
@@ -4150,9 +4150,9 @@
           "files": [
             "tests/service-discovery/discovery-cache.integration.test.ts",
             "src/tests/utils/error-handler.test.ts",
-            "logs/consolidation/pattern-2/lane-6a/error-handler-20251014T152143Z.log",
-            "logs/consolidation/pattern-2/lane-6a/connection-factory-20251014T152158Z.log",
-            "logs/consolidation/pattern-2/lane-6a/test-ci-20251014T152253Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage6/lane6a/error-handler-20251014T152143Z.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage6/lane6a/connection-factory-20251014T152158Z.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage6/lane6a/test-ci-20251014T152253Z.log"
           ],
           "durationMs": 785000
         },
@@ -4167,11 +4167,11 @@
           "timestamp": "2025-10-14T16:43:37Z",
           "summary": "Stage 7 status remains in_progress",
           "files": [
-            "logs/consolidation/pattern-2/stage7/error-handler-20251014T163942Z.log",
-            "logs/consolidation/pattern-2/stage7/connection-factory-20251014T163955Z.log",
-            "logs/consolidation/pattern-2/stage7/test-ci-20251014T164009Z.log",
-            "logs/consolidation/pattern-2/stage7/phase6-validation-20251014T164249Z.log",
-            "logs/consolidation/pattern-2/stage7/phase6-health-20251014T164303Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage7/error-handler-20251014T163942Z.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage7/connection-factory-20251014T163955Z.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage7/test-ci-20251014T164009Z.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage7/phase6-validation-20251014T164249Z.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage7/phase6-health-20251014T164303Z.log"
           ]
         },
         {
@@ -4354,7 +4354,7 @@
           "timestamp": "2025-10-14T21:25:47Z",
           "summary": "Expected failure: manual console.error catch blocks + direct process.exit usage persist",
           "files": [
-            "tmp/consolidation-pattern2-lane4f-guardrail-phase6-validation-cli.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage4/lane4f/guardrail-phase6-validation-cli.log"
           ]
         },
         {
@@ -4362,7 +4362,7 @@
           "timestamp": "2025-10-14T21:26:05Z",
           "summary": "Guardrail failing as expected; Stage 6 6e primed with Phase6 CLI error handler consolidation checks",
           "files": [
-            "tmp/consolidation-pattern2-lane4f-guardrail-phase6-validation-cli.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage4/lane4f/guardrail-phase6-validation-cli.log"
           ],
           "durationMs": 370000
         },
@@ -4371,7 +4371,7 @@
           "timestamp": "2025-10-14T21:26:15Z",
           "summary": "Stage 4 4f guardrail log linked: manual console.error catch blocks (5) and direct process.exit require ErrorHandler migration",
           "files": [
-            "tmp/consolidation-pattern2-lane4f-guardrail-phase6-validation-cli.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage4/lane4f/guardrail-phase6-validation-cli.log"
           ]
         },
         {
@@ -4397,7 +4397,7 @@
           "timestamp": "2025-10-14T21:58:34Z",
           "summary": "Expected failure: guardrail flags 402 catch clauses missing ErrorHandler.handle",
           "files": [
-            "tmp/consolidation-pattern2-lane4e-guardrail.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage4/lane4e/guardrail.log"
           ]
         },
         {
@@ -4405,7 +4405,7 @@
           "timestamp": "2025-10-14T21:59:26Z",
           "summary": "Expected failure: CLIMCPServer guardrail missing ErrorHandler.handle invocation",
           "files": [
-            "tmp/consolidation-pattern2-lane4g-guardrail.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage4/lane4g/guardrail.log"
           ]
         },
         {
@@ -4413,9 +4413,9 @@
           "timestamp": "2025-10-14T21:59:48Z",
           "summary": "Guardrail failing as expected; Stage 6 6f primed",
           "files": [
-            "tmp/consolidation-pattern2-lane4g-guardrail.log",
-            "tmp/consolidation-pattern2-lane4g-harness.log",
-            "tmp/consolidation-pattern2-lane4g-pty-manager.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage4/lane4g/guardrail.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage4/lane4g/harness.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage4/lane4g/pty-manager.log"
           ],
           "durationMs": 394000
         },
@@ -4424,7 +4424,7 @@
           "timestamp": "2025-10-14T21:59:56Z",
           "summary": "Linked guardrail: CLIMCPServer ErrorHandler coverage failing; see log for failure signature",
           "files": [
-            "tmp/consolidation-pattern2-lane4g-guardrail.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage4/lane4g/guardrail.log"
           ]
         },
         {
@@ -4432,7 +4432,7 @@
           "timestamp": "2025-10-14T22:00:06Z",
           "summary": "Guardrail failing as expected; Stage 6 6d primed",
           "files": [
-            "tmp/consolidation-pattern2-lane4e-guardrail.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage4/lane4e/guardrail.log"
           ],
           "durationMs": 447000
         },
@@ -4441,7 +4441,7 @@
           "timestamp": "2025-10-14T22:00:17Z",
           "summary": "Mirrored guardrail log from Stage 4e catch-clause enforcement",
           "files": [
-            "tmp/consolidation-pattern2-lane4e-guardrail.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage4/lane4e/guardrail.log"
           ]
         },
         {
@@ -4449,9 +4449,9 @@
           "timestamp": "2025-10-14T22:07:07Z",
           "summary": "Expected failure: Logger guardrail still sees console output and ErrorHandler guardrails report missing centralized handling",
           "files": [
-            "tmp/consolidation-pattern2-lane4d-manual-override-flow.log",
-            "tmp/consolidation-pattern2-lane4d-backend-connection-lifecycle.log",
-            "tmp/consolidation-pattern2-lane4d-generic-backend-integration.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage4/lane4d/manual-override-flow.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage4/lane4d/backend-connection-lifecycle.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage4/lane4d/generic-backend-integration.log"
           ]
         },
         {
@@ -4459,9 +4459,9 @@
           "timestamp": "2025-10-14T22:07:33Z",
           "summary": "Guardrail failing as expected; Stage 6 6c primed with logger + ErrorHandler coverage",
           "files": [
-            "tmp/consolidation-pattern2-lane4d-manual-override-flow.log",
-            "tmp/consolidation-pattern2-lane4d-backend-connection-lifecycle.log",
-            "tmp/consolidation-pattern2-lane4d-generic-backend-integration.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage4/lane4d/manual-override-flow.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage4/lane4d/backend-connection-lifecycle.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage4/lane4d/generic-backend-integration.log"
           ],
           "durationMs": 994000
         },
@@ -4470,9 +4470,9 @@
           "timestamp": "2025-10-14T22:07:49Z",
           "summary": "Mirror guardrail artefacts from 4d; run with ErrorHandler instrumentation once migrations land",
           "files": [
-            "tmp/consolidation-pattern2-lane4d-backend-connection-lifecycle.log",
-            "tmp/consolidation-pattern2-lane4d-generic-backend-integration.log",
-            "tmp/consolidation-pattern2-lane4d-manual-override-flow.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage4/lane4d/backend-connection-lifecycle.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage4/lane4d/generic-backend-integration.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage4/lane4d/manual-override-flow.log"
           ]
         },
         {
@@ -4504,22 +4504,22 @@
         {
           "stage": "lane-6c",
           "timestamp": "2025-10-15T12:06:57Z",
-          "summary": "Guardrail: Stage 4d backend manual override suite (logs/consolidation/pattern-2/stage5b/backend-guardrail-20251015T120254Z.log); Steps: route backend-service-router + dependency-resolver error paths through ErrorHandler and replay node scripts/run-with-timeout.mjs --preset jest-suite guardrail until logger guardrail violation clears (deps +2:lane-4d → 2:lane-4d)"
+          "summary": "Guardrail: Stage 4d backend manual override suite (Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage5b/backend-guardrail-20251015T120254Z.log); Steps: route backend-service-router + dependency-resolver error paths through ErrorHandler and replay node scripts/run-with-timeout.mjs --preset jest-suite guardrail until logger guardrail violation clears (deps +2:lane-4d → 2:lane-4d)"
         },
         {
           "stage": "lane-6d",
           "timestamp": "2025-10-15T12:08:18Z",
-          "summary": "Guardrail: Stage 4e interface/session suites (tmp/consolidation-pattern2-lane4e-guardrail.log); Steps: migrate CLI + VSCode adapters and session manager to shared ErrorHandler flow, keep skin rendering intact, replay guardrail jest bundle until failure resolves (deps +2:lane-4e → 2:lane-4e)"
+          "summary": "Guardrail: Stage 4e interface/session suites (Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage4/lane4e/guardrail.log); Steps: migrate CLI + VSCode adapters and session manager to shared ErrorHandler flow, keep skin rendering intact, replay guardrail jest bundle until failure resolves (deps +2:lane-4e → 2:lane-4e)"
         },
         {
           "stage": "lane-6e",
           "timestamp": "2025-10-15T12:08:46Z",
-          "summary": "Guardrail: Stage 4f CLI/phase6 scripts battery (tmp/consolidation-pattern2-lane4f-guardrail-phase6-validation-cli.log); Steps: refactor CLI/phase6 scripts to invoke ErrorHandler shared utilities, preserve run-with-timeout presets, rerun guardrail preset after each change (deps +2:lane-4f → 2:lane-4f)"
+          "summary": "Guardrail: Stage 4f CLI/phase6 scripts battery (Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage4/lane4f/guardrail-phase6-validation-cli.log); Steps: refactor CLI/phase6 scripts to invoke ErrorHandler shared utilities, preserve run-with-timeout presets, rerun guardrail preset after each change (deps +2:lane-4f → 2:lane-4f)"
         },
         {
           "stage": "lane-6f",
           "timestamp": "2025-10-15T12:08:51Z",
-          "summary": "Guardrail: Stage 4g MCP harness + PTY manager (tmp/consolidation-pattern2-lane4g-guardrail.log); Steps: align MCP channel error funnels with ErrorHandler, maintain zero-knowledge registry, rerun harness + npm run --prefix src/mcp-channel test until guardrail passes (deps +2:lane-4g → 2:lane-4g)"
+          "summary": "Guardrail: Stage 4g MCP harness + PTY manager (Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage4/lane4g/guardrail.log); Steps: align MCP channel error funnels with ErrorHandler, maintain zero-knowledge registry, rerun harness + npm run --prefix src/mcp-channel test until guardrail passes (deps +2:lane-4g → 2:lane-4g)"
         },
         {
           "stage": "stage-5",
@@ -4544,7 +4544,7 @@
           "timestamp": "2025-10-15T12:29:08Z",
           "summary": "Baseline failure: Phase6ValidationCLI guardrail still catching manual console/error exit",
           "files": [
-            "tmp/consolidation-pattern2-lane6e-guardrail-phase6-validation-cli-baseline-20251015T122827Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage6/lane6e/guardrail-phase6-validation-cli-baseline-20251015T122827Z.log"
           ]
         },
         {
@@ -4557,7 +4557,7 @@
           "timestamp": "2025-10-15T12:32:36Z",
           "summary": "Baseline failure: raw console usage emits 128 ErrorHandler.log entries",
           "files": [
-            "tmp/consolidation-pattern2-lane6f-guardrail-baseline-20251015T123213Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage6/lane6f/guardrail-baseline-20251015T123213Z.log"
           ]
         },
         {
@@ -4565,8 +4565,8 @@
           "timestamp": "2025-10-15T13:10:33Z",
           "summary": "Guardrail passing; commands=node scripts/run-with-timeout.mjs --preset jest-ci -- npx jest tests/scripts/phase6-validation-cli.test.ts && node scripts/run-phase6-full.js --no-build",
           "files": [
-            "tmp/consolidation-pattern2-lane6e-guardrail-phase6-validation-cli-pass-20251015T130755Z.log",
-            "tmp/consolidation-pattern2-lane6e-run-phase6-full-pass-20251015T130822Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage6/lane6e/guardrail-phase6-validation-cli-pass-20251015T130755Z.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage6/lane6e/run-phase6-full-pass-20251015T130822Z.log"
           ]
         },
         {
@@ -4574,8 +4574,8 @@
           "timestamp": "2025-10-15T13:14:48Z",
           "summary": "Migration complete; sweep clean after runtime ErrorHandler integration",
           "files": [
-            "tmp/consolidation-pattern2-lane6e-guardrail-phase6-validation-cli-pass-20251015T130755Z.log",
-            "tmp/consolidation-pattern2-lane6e-run-phase6-full-pass-20251015T130822Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage6/lane6e/guardrail-phase6-validation-cli-pass-20251015T130755Z.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage6/lane6e/run-phase6-full-pass-20251015T130822Z.log"
           ],
           "durationMs": 2859000
         },
@@ -4584,7 +4584,7 @@
           "timestamp": "2025-10-15T13:28:46Z",
           "summary": "Guardrail passing; commands=node scripts/run-with-timeout.mjs --preset jest-suite -- npm run test -- --runTestsByPath tests/service-discovery/pty-mcp-server-test-harness.test.ts",
           "files": [
-            "tmp/consolidation-pattern2-lane6f-guardrail-pass-20251015T132737Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage6/lane6f/guardrail-pass-20251015T132737Z.log"
           ]
         },
         {
@@ -4592,7 +4592,7 @@
           "timestamp": "2025-10-15T13:33:19Z",
           "summary": "Migration complete; sweep clean; guardrail and MCP tests passing (commands=node scripts/run-with-timeout.mjs --preset jest-suite -- npm run test -- --runTestsByPath tests/service-discovery/pty-mcp-server-test-harness.test.ts, npm run --prefix src/mcp-channel test -- --runTestsByPath tests/pty-manager.test.ts)",
           "files": [
-            "tmp/consolidation-pattern2-lane6f-guardrail-pass-20251015T132737Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage6/lane6f/guardrail-pass-20251015T132737Z.log"
           ],
           "durationMs": 3920000
         },
@@ -4613,7 +4613,7 @@
           "timestamp": "2025-10-15T15:39:23Z",
           "summary": "Baseline failure: manual override logger guardrail violation persists",
           "files": [
-            "logs/consolidation/pattern-2/stage6/backend-guardrail-20251015T153856Z-fail.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage6/backend-guardrail-20251015T153856Z-fail.log"
           ]
         },
         {
@@ -4621,7 +4621,7 @@
           "timestamp": "2025-10-15T15:40:27Z",
           "summary": "Baseline failure: Jest cannot parse TypeScript import type syntax before migration",
           "files": [
-            "logs/consolidation/pattern-2/stage6/lane6d/guardrail-fail-20251015T153950Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage6/lane6d/guardrail-fail-20251015T153950Z.log"
           ]
         },
         {
@@ -4629,7 +4629,7 @@
           "timestamp": "2025-10-15T15:54:53Z",
           "summary": "Guardrail passing; commands=node scripts/run-with-timeout.mjs --preset jest-suite -- npx jest tests/interfaces/interface-adapter-integration.test.ts tests/session/unified-session-manager.integration.test.ts",
           "files": [
-            "logs/consolidation/pattern-2/stage6/lane6d/guardrail-pass-20251015T155433Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage6/lane6d/guardrail-pass-20251015T155433Z.log"
           ]
         },
         {
@@ -4637,8 +4637,8 @@
           "timestamp": "2025-10-15T15:55:26Z",
           "summary": "Migration complete; sweep clean",
           "files": [
-            "logs/consolidation/pattern-2/stage6/lane6d/guardrail-fail-20251015T153950Z.log",
-            "logs/consolidation/pattern-2/stage6/lane6d/guardrail-pass-20251015T155433Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage6/lane6d/guardrail-fail-20251015T153950Z.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage6/lane6d/guardrail-pass-20251015T155433Z.log"
           ],
           "durationMs": 1059000
         },
@@ -4669,7 +4669,7 @@
           "timestamp": "2025-10-15T17:46:59Z",
           "summary": "Baseline failure: manual override guardrail triggered (console.log count)",
           "files": [
-            "logs/consolidation/pattern-2/stage6/lane6g/guardrail-fail-20251015T174627Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage6/lane6g/guardrail-fail-20251015T174627Z.log"
           ]
         },
         {
@@ -4677,7 +4677,7 @@
           "timestamp": "2025-10-15T18:27:04Z",
           "summary": "Guardrail passing; commands=node scripts/run-with-timeout.mjs --preset jest-suite -- npx jest backend guardrail suite",
           "files": [
-            "logs/consolidation/pattern-2/stage6/lane6g/guardrail-pass-20251015T182547Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage6/lane6g/guardrail-pass-20251015T182547Z.log"
           ]
         },
         {
@@ -4685,7 +4685,7 @@
           "timestamp": "2025-10-15T18:27:17Z",
           "summary": "Migration complete; sweep clean",
           "files": [
-            "logs/consolidation/pattern-2/stage6/lane6g/guardrail-pass-20251015T182547Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage6/lane6g/guardrail-pass-20251015T182547Z.log"
           ],
           "durationMs": 2482000
         },
@@ -4700,11 +4700,11 @@
           "timestamp": "2025-10-18T09:18:05Z",
           "summary": "Stage 7 status remains in_progress",
           "files": [
-            "Templum/logs/consolidation/pattern-2/stage7/error-handler-20251018T091421Z.log",
-            "Templum/logs/consolidation/pattern-2/stage7/connection-factory-20251018T091431Z.log",
-            "Templum/logs/consolidation/pattern-2/stage7/test-ci-20251018T091442Z.log",
-            "Templum/logs/consolidation/pattern-2/stage7/phase6-validation-20251018T091721Z.log",
-            "Templum/logs/consolidation/pattern-2/stage7/phase6-health-20251018T091735Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage7/error-handler-20251018T091421Z.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage7/connection-factory-20251018T091431Z.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage7/test-ci-20251018T091442Z.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage7/phase6-validation-20251018T091721Z.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage7/phase6-health-20251018T091735Z.log"
           ]
         },
         {
@@ -4787,7 +4787,7 @@
           "timestamp": "2025-10-18T19:26:19Z",
           "summary": "Expected failure: templum-core.ts + adapter-registry.ts missing ErrorHandler.scope(ErrorHandler.formatContext(...))",
           "files": [
-            "tmp/consolidation-pattern2-lane4h-guardrail.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage4/lane4h/guardrail.log"
           ]
         },
         {
@@ -4795,7 +4795,7 @@
           "timestamp": "2025-10-18T19:26:26Z",
           "summary": "Guardrail failing as expected; Stage 6 6h primed",
           "files": [
-            "tmp/consolidation-pattern2-lane4h-guardrail.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage4/lane4h/guardrail.log"
           ],
           "durationMs": 182000
         },
@@ -4804,7 +4804,7 @@
           "timestamp": "2025-10-18T19:26:34Z",
           "summary": "Guardrail 4h baseline captured; scope adoption pending runtime migration",
           "files": [
-            "tmp/consolidation-pattern2-lane4h-guardrail.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage4/lane4h/guardrail.log"
           ]
         },
         {
@@ -4812,7 +4812,7 @@
           "timestamp": "2025-10-18T19:27:10Z",
           "summary": "Expected failure: guardrail missing ErrorHandler.scope adoption in session manager & CLI adapter",
           "files": [
-            "tmp/consolidation-pattern2-lane4i-guardrail.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage4/lane4i/guardrail.log"
           ]
         },
         {
@@ -4820,7 +4820,7 @@
           "timestamp": "2025-10-18T19:27:20Z",
           "summary": "Guardrail failing as expected; Stage 6 6i primed with session/CLI scope log",
           "files": [
-            "tmp/consolidation-pattern2-lane4i-guardrail.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage4/lane4i/guardrail.log"
           ],
           "durationMs": 212000
         },
@@ -4829,7 +4829,7 @@
           "timestamp": "2025-10-18T19:27:28Z",
           "summary": "Guardrail reference attached from lane 4i: ErrorHandler scope guardrail failing until session/CLI adopt scoped handlers",
           "files": [
-            "tmp/consolidation-pattern2-lane4i-guardrail.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage4/lane4i/guardrail.log"
           ]
         },
         {
@@ -4843,7 +4843,7 @@
           "timestamp": "2025-10-18T19:54:58Z",
           "summary": "Stage 5B status remains in_progress",
           "files": [
-            "logs/consolidation/pattern-2/stage5b/guardrail-20251018T195433Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage5b/guardrail-20251018T195433Z.log"
           ]
         },
         {
@@ -4889,7 +4889,7 @@
           "timestamp": "2025-10-18T20:03:28Z",
           "summary": "Baseline failure: jest-suite coverage guardrail",
           "files": [
-            "logs/consolidation/pattern-2/stage6/guardrail-6i-fail-20251018T200258Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage6/guardrail-6i-fail-20251018T200258Z.log"
           ]
         },
         {
@@ -4897,7 +4897,7 @@
           "timestamp": "2025-10-18T20:05:24Z",
           "summary": "Baseline failure: Logger guardrail violation (console.log called 46 times)",
           "files": [
-            "logs/consolidation/pattern-2/stage6/lane6h/guardrail-fail-20251018T200449Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage6/lane6h/guardrail-fail-20251018T200449Z.log"
           ]
         },
         {
@@ -4905,7 +4905,7 @@
           "timestamp": "2025-10-18T20:23:01Z",
           "summary": "Guardrail passing; commands=node scripts/run-with-timeout.mjs --preset jest-suite -- npx jest backend battery",
           "files": [
-            "logs/consolidation/pattern-2/stage6/guardrail-6i-pass-20251018T202156Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage6/guardrail-6i-pass-20251018T202156Z.log"
           ]
         },
         {
@@ -4918,7 +4918,7 @@
           "timestamp": "2025-10-18T20:24:57Z",
           "summary": "Migration complete; scoped handlers applied, sweep reviewed",
           "files": [
-            "logs/consolidation/pattern-2/stage6/guardrail-6i-pass-20251018T202156Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage6/guardrail-6i-pass-20251018T202156Z.log"
           ],
           "durationMs": 1340000
         },
@@ -4932,7 +4932,7 @@
           "timestamp": "2025-10-18T20:29:23Z",
           "summary": "Blocked: Sweep reports remaining catch/createTemplumError patterns in templum-core.ts and adapter-registry.ts; further scoped ErrorHandler migration needed beyond current session",
           "files": [
-            "logs/consolidation/pattern-2/stage6/lane6h/guardrail-pass-20251018T202753Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage6/lane6h/guardrail-pass-20251018T202753Z.log"
           ]
         },
         {
@@ -4940,8 +4940,8 @@
           "timestamp": "2025-10-18T20:29:45Z",
           "summary": "Guardrail rerun passes after logger/ErrorHandler integration; sweep still flags legacy catch/createTemplumError usage requiring extended migration",
           "files": [
-            "logs/consolidation/pattern-2/stage6/lane6h/guardrail-fail-20251018T200449Z.log",
-            "logs/consolidation/pattern-2/stage6/lane6h/guardrail-pass-20251018T202753Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage6/lane6h/guardrail-fail-20251018T200449Z.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage6/lane6h/guardrail-pass-20251018T202753Z.log"
           ],
           "durationMs": 1645000
         },
@@ -4990,9 +4990,9 @@
           "timestamp": "2025-10-18T21:16:55Z",
           "summary": "Scoped handler seam established; follow-on migration split into lanes 6j/6k/6l",
           "files": [
-            "logs/consolidation/pattern-2/stage6/lane6h/guardrail-fail-20251018T200449Z.log",
-            "logs/consolidation/pattern-2/stage6/lane6h/guardrail-pass-20251018T202753Z.log",
-            "logs/consolidation/pattern-2/stage6/lane6h/core-guardrail-20251018T210532Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage6/lane6h/guardrail-fail-20251018T200449Z.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage6/lane6h/guardrail-pass-20251018T202753Z.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage6/lane6h/core-guardrail-20251018T210532Z.log"
           ]
         },
         {
@@ -5012,7 +5012,7 @@
           "timestamp": "2025-10-18T21:18:41Z",
           "summary": "Baseline failure: jest-suite guardrail still reports coverage thresholds unmet",
           "files": [
-            "logs/consolidation/pattern-2/stage6/lane6j-guardrail-fail-20251018T211803Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage6/lane6j-guardrail-fail-20251018T211803Z.log"
           ]
         },
         {
@@ -5020,8 +5020,8 @@
           "timestamp": "2025-10-18T21:19:23Z",
           "summary": "Baseline guardrails rerun; Stage 4 scope test now passing, manual override battery unaffected",
           "files": [
-            "logs/consolidation/pattern-2/stage6/lane6l/guardrail-fail-20251018T211823Z.log",
-            "logs/consolidation/pattern-2/stage6/lane6l/error-handler-guardrail-fail-20251018T211904Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage6/lane6l/guardrail-fail-20251018T211823Z.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage6/lane6l/error-handler-guardrail-fail-20251018T211904Z.log"
           ]
         },
         {
@@ -5029,7 +5029,7 @@
           "timestamp": "2025-10-18T21:24:16Z",
           "summary": "Guardrail passing; commands=node scripts/run-with-timeout.mjs --preset jest-suite -- npx jest backend-manual-override battery",
           "files": [
-            "logs/consolidation/pattern-2/stage6/lane6j-guardrail-pass-20251018T212356Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage6/lane6j-guardrail-pass-20251018T212356Z.log"
           ]
         },
         {
@@ -5037,7 +5037,7 @@
           "timestamp": "2025-10-18T21:25:24Z",
           "summary": "Migration complete; executeCommand/state sync now scoped; guardrail battery green",
           "files": [
-            "logs/consolidation/pattern-2/stage6/lane6j-guardrail-pass-20251018T212356Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage6/lane6j-guardrail-pass-20251018T212356Z.log"
           ],
           "durationMs": 467000
         },
@@ -5046,8 +5046,8 @@
           "timestamp": "2025-10-18T21:26:37Z",
           "summary": "Guardrail passing; commands=node scripts/run-with-timeout.mjs --preset jest-suite -- npx jest …manual-override…, npm run test -- --runTestsByPath src/tests/core/error-handler-scope.guard.test.ts",
           "files": [
-            "logs/consolidation/pattern-2/stage6/lane6l/guardrail-pass-20251018T212605Z.log",
-            "logs/consolidation/pattern-2/stage6/lane6l/error-handler-guardrail-pass-20251018T212554Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage6/lane6l/guardrail-pass-20251018T212605Z.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage6/lane6l/error-handler-guardrail-pass-20251018T212554Z.log"
           ]
         },
         {
@@ -5055,8 +5055,8 @@
           "timestamp": "2025-10-18T21:34:32Z",
           "summary": "Scoped handlers retested; commands=node scripts/run-with-timeout.mjs --preset jest-suite -- npx jest …manual-override…, npm run test -- --runTestsByPath src/tests/core/error-handler-scope.guard.test.ts",
           "files": [
-            "logs/consolidation/pattern-2/stage6/lane6l/guardrail-pass-20251018T213355Z.log",
-            "logs/consolidation/pattern-2/stage6/lane6l/error-handler-guardrail-pass-20251018T213345Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage6/lane6l/guardrail-pass-20251018T213355Z.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage6/lane6l/error-handler-guardrail-pass-20251018T213345Z.log"
           ]
         },
         {
@@ -5069,8 +5069,8 @@
           "timestamp": "2025-10-18T21:34:45Z",
           "summary": "Migrated adapter registry lifecycle to scoped error handlers; sweep signature noted for cleanup-only catch blocks",
           "files": [
-            "logs/consolidation/pattern-2/stage6/lane6l/guardrail-pass-20251018T213355Z.log",
-            "logs/consolidation/pattern-2/stage6/lane6l/error-handler-guardrail-pass-20251018T213345Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage6/lane6l/guardrail-pass-20251018T213355Z.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage6/lane6l/error-handler-guardrail-pass-20251018T213345Z.log"
           ],
           "durationMs": 1015000
         },
@@ -5094,8 +5094,8 @@
           "timestamp": "2025-10-18T23:13:45Z",
           "summary": "Post-migration retest: node scripts/run-with-timeout.mjs --preset jest-suite -- npx jest …manual-override…, npm run test -- --runTestsByPath src/tests/core/error-handler-scope.guard.test.ts",
           "files": [
-            "logs/consolidation/pattern-2/stage6/lane6l/guardrail-pass-20251018T231321Z.log",
-            "logs/consolidation/pattern-2/stage6/lane6l/error-handler-guardrail-pass-20251018T231309Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage6/lane6l/guardrail-pass-20251018T231321Z.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage6/lane6l/error-handler-guardrail-pass-20251018T231309Z.log"
           ]
         },
         {
@@ -5119,7 +5119,7 @@
           "timestamp": "2025-10-18T23:52:26Z",
           "summary": "Baseline failure: Logger guardrail violation (console.log called 46 times)",
           "files": [
-            "logs/consolidation/pattern-2/stage6/lane6k-guardrail-baseline-20251018T235203Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage6/lane6k-guardrail-baseline-20251018T235203Z.log"
           ]
         },
         {
@@ -5132,7 +5132,7 @@
           "timestamp": "2025-10-19T00:01:24Z",
           "summary": "Guardrail passing; commands=node scripts/run-with-timeout.mjs --preset jest-suite -- npx jest …",
           "files": [
-            "logs/consolidation/pattern-2/stage6/lane6k-guardrail-pass-20251019T000053Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage6/lane6k-guardrail-pass-20251019T000053Z.log"
           ]
         },
         {
@@ -5145,7 +5145,7 @@
           "timestamp": "2025-10-19T00:03:08Z",
           "summary": "Migration complete; sweep reviewed (remaining catch/createTemplumError cover validation/precondition paths). Guardrail rerun + targeted tests recorded.",
           "files": [
-            "logs/consolidation/pattern-2/stage6/lane6k-guardrail-pass-20251019T000053Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage6/lane6k-guardrail-pass-20251019T000053Z.log"
           ],
           "durationMs": 740000
         },
@@ -5180,7 +5180,7 @@
           "timestamp": "2025-10-19T00:11:06Z",
           "summary": "Baseline failure: guardrail suite still below coverage thresholds",
           "files": [
-            "logs/consolidation/pattern-2/stage6/lane6j-guardrail-baseline-20251019T001049Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage6/lane6j-guardrail-baseline-20251019T001049Z.log"
           ]
         },
         {
@@ -5188,7 +5188,7 @@
           "timestamp": "2025-10-19T00:19:43Z",
           "summary": "Guardrail passing; commands=node scripts/run-with-timeout.mjs --preset jest-suite -- npx jest src/tests/backend/backend-connection-lifecycle.test.ts src/tests/backend/comprehensive-backend-validation.test.ts src/tests/backend/generic-backend-integration.test.ts src/tests/backend/manual-override-flow.test.ts src/tests/backend/manual-override-watcher.integration.test.ts",
           "files": [
-            "logs/consolidation/pattern-2/stage6/lane6j-guardrail-pass-20251019T001917Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage6/lane6j-guardrail-pass-20251019T001917Z.log"
           ]
         },
         {
@@ -5202,7 +5202,7 @@
           "timestamp": "2025-10-19T00:20:34Z",
           "summary": "Migration complete; templum-core command routing/state sync preflight errors now use scoped handler; tests=jest --runTestsByPath src/tests/core/error-handler-scope.guard.test.ts, jest --runTestsByPath src/tests/core/templum-core-connection-events.test.ts; guardrail log=lane6j-guardrail-pass-20251019T001917Z.log",
           "files": [
-            "logs/consolidation/pattern-2/stage6/lane6j-guardrail-pass-20251019T001917Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage6/lane6j-guardrail-pass-20251019T001917Z.log"
           ],
           "durationMs": 676000
         },
@@ -5222,7 +5222,7 @@
           "timestamp": "2025-10-19T00:22:58Z",
           "summary": "Baseline check: manual override guardrail currently passing (no console.* violations)",
           "files": [
-            "logs/consolidation/pattern-2/stage6/lane6l/guardrail-fail-20251019T002154Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage6/lane6l/guardrail-fail-20251019T002154Z.log"
           ]
         },
         {
@@ -5230,7 +5230,7 @@
           "timestamp": "2025-10-19T00:35:39Z",
           "summary": "Guardrail passing; commands=node scripts/run-with-timeout.mjs --preset jest-suite -- npx jest backend manual override battery",
           "files": [
-            "logs/consolidation/pattern-2/stage6/lane6l/guardrail-pass-20251019T003507Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage6/lane6l/guardrail-pass-20251019T003507Z.log"
           ]
         },
         {
@@ -5238,7 +5238,7 @@
           "timestamp": "2025-10-19T00:37:12Z",
           "summary": "Migration complete; scoped handler helper applied across adapter registry; tests=jest --runTestsByPath src/tests/core/error-handler-scope.guard.test.ts; guardrail log attached",
           "files": [
-            "logs/consolidation/pattern-2/stage6/lane6l/guardrail-pass-20251019T003507Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage6/lane6l/guardrail-pass-20251019T003507Z.log"
           ],
           "durationMs": 1001000
         },
@@ -5264,11 +5264,11 @@
           "timestamp": "2025-10-24T22:17:03Z",
           "summary": "Stage 7 status remains in_progress",
           "files": [
-            "logs/consolidation/pattern-2/stage7/error-handler-20251024T221007Z.log",
-            "logs/consolidation/pattern-2/stage7/connection-factory-20251024T221018Z.log",
-            "logs/consolidation/pattern-2/stage7/test-ci-20251024T221249Z.log",
-            "logs/consolidation/pattern-2/stage7/phase6-validation-20251024T221558Z.log",
-            "logs/consolidation/pattern-2/stage7/phase6-health-20251024T221610Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage7/error-handler-20251024T221007Z.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage7/connection-factory-20251024T221018Z.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage7/test-ci-20251024T221249Z.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage7/phase6-validation-20251024T221558Z.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-2/stage7/phase6-health-20251024T221610Z.log"
           ]
         },
         {
@@ -5527,7 +5527,7 @@
             }
           ],
           "updatedAt": "2025-10-10T14:29:03Z",
-          "notes": "Blocks lane 4c until TypeScript errors in backend/service discovery/session adapters are fixed; replicate failure via npm run phase6-health (see tmp/consolidation-pattern3-lane4c-20251010T012112.log).\nRepair TypeScript errors blocking npm run phase6-health (see tmp/consolidation-pattern3-lane4c-20251010T012112.log). Fix backend-service-router capabilities typing, service-discovery string[] union, adapter-registry InterfaceType references, VSCode adapter signature, session manager .off override, skin versioning supportedFormats, async-utils error object, and skin-validator schema typing. Validate with npm run build then rerun phase6 health.",
+          "notes": "Blocks lane 4c until TypeScript errors in backend/service discovery/session adapters are fixed; replicate failure via npm run phase6-health (see Templum/archive/dev-files/utility-migration/evidence/pattern-3/stage4/lane4c/20251010T012112.log).\nRepair TypeScript errors blocking npm run phase6-health (see Templum/archive/dev-files/utility-migration/evidence/pattern-3/stage4/lane4c/20251010T012112.log). Fix backend-service-router capabilities typing, service-discovery string[] union, adapter-registry InterfaceType references, VSCode adapter signature, session manager .off override, skin versioning supportedFormats, async-utils error object, and skin-validator schema typing. Validate with npm run build then rerun phase6 health.",
           "plannedFiles": [
             "src/backend/backend-service-router.ts",
             "src/registry/connection-factory.ts",
@@ -5681,11 +5681,11 @@
       },
       "handoff": {
         "guardrails": [
-          "Run Stage 6 gating batteries via node scripts/run-with-timeout.mjs (apply --preset phase6-validation / --preset phase6-health as appropriate) to enforce leak-safe shutdown; attach the resulting tmp/consolidation logs when promoting lanes.",
+          "Run Stage 6 gating batteries via node scripts/run-with-timeout.mjs (apply --preset phase6-validation / --preset phase6-health as appropriate) to enforce leak-safe shutdown; attach the resulting canonical utility-migration evidence logs when promoting lanes.",
           "Maintain backend auto-connection through registerBackendFromSkin without introducing backend-specific assumptions; reuse Universal Skin metadata and keep ServiceDiscovery zero-knowledge."
         ],
         "sharedFiles": [
-          "tmp/consolidation-pattern3-stage5-lane6a-20251012T105628Z.log"
+          "Templum/archive/dev-files/utility-migration/evidence/pattern-3/stage5/lane6a/20251012T105628Z.log"
         ],
         "acknowledgements": []
       },
@@ -5728,7 +5728,7 @@
         {
           "id": "stage-4-note-20251008T110304",
           "timestamp": "2025-10-08T11:03:04Z",
-          "body": "Lane 4a evidence: jest backend lifecycle + manual override suites pass; log tmp/consolidation-pattern3-lane4a-20251008T120251.log; Risks: none identified",
+          "body": "Lane 4a evidence: jest backend lifecycle + manual override suites pass; log Templum/archive/dev-files/utility-migration/evidence/pattern-3/stage4/lane4a/20251008T120251.log; Risks: none identified",
           "scope": [
             "stage-4"
           ]
@@ -5736,7 +5736,7 @@
         {
           "id": "stage-4-note-20251010T002146",
           "timestamp": "2025-10-10T00:21:46Z",
-          "body": "Lane 4b blocked: hybrid validation suite (src/tests/validation/hybrid-validation-system-v3c.test.ts) fails 25 specs with timeouts + fallback assertions; evidence tmp/consolidation-pattern3-lane4b-20251010T011558.log. Lane 4c blocked: npm run phase6-health fails during build with 12 TS errors (backend router/service discovery/adapter registry/session manager/skin validator); evidence tmp/consolidation-pattern3-lane4c-20251010T012112.log. Await AsyncUtils cleanup + upstream fixes before resuming Stage 4.",
+          "body": "Lane 4b blocked: hybrid validation suite (src/tests/validation/hybrid-validation-system-v3c.test.ts) fails 25 specs with timeouts + fallback assertions; evidence Templum/archive/dev-files/utility-migration/evidence/pattern-3/stage4/lane4b/20251010T011558.log. Lane 4c blocked: npm run phase6-health fails during build with 12 TS errors (backend router/service discovery/adapter registry/session manager/skin validator); evidence Templum/archive/dev-files/utility-migration/evidence/pattern-3/stage4/lane4c/20251010T012112.log. Await AsyncUtils cleanup + upstream fixes before resuming Stage 4.",
           "scope": [
             "stage-4"
           ],
@@ -5745,7 +5745,7 @@
         {
           "id": "stage-4-note-20251010T141606",
           "timestamp": "2025-10-10T14:16:06Z",
-          "body": "2025-10-10: Lane 4b completed. Rebuilt reliability/performance/degradation/dashboard modules to satisfy V3C hybrid validation suite; tests green (tmp/consolidation-pattern3-lane4b-20251010T141541Z.log). Ready to move on once Phase6 health remediation (lane 4e) is staffed.",
+          "body": "2025-10-10: Lane 4b completed. Rebuilt reliability/performance/degradation/dashboard modules to satisfy V3C hybrid validation suite; tests green (Templum/archive/dev-files/utility-migration/evidence/pattern-3/stage4/lane4b/20251010T141541Z.log). Ready to move on once Phase6 health remediation (lane 4e) is staffed.",
           "scope": [
             "stage-4"
           ]
@@ -5753,7 +5753,7 @@
         {
           "id": "stage-4-note-20251010T142910",
           "timestamp": "2025-10-10T14:29:10Z",
-          "body": "2025-10-10: Lane 4e complete. TypeScript fixes across backend router/discovery/registry/session/skin modules; npm run build passes (tmp/phase6-health-build-20251010T142834Z.log). Phase6 health harness unblocked for lane 4c.",
+          "body": "2025-10-10: Lane 4e complete. TypeScript fixes across backend router/discovery/registry/session/skin modules; npm run build passes (Templum/archive/dev-files/utility-migration/evidence/pattern-3/stage4/lane4e/phase6-health-build-20251010T142834Z.log). Phase6 health harness unblocked for lane 4c.",
           "scope": [
             "stage-4"
           ]
@@ -5761,7 +5761,7 @@
         {
           "id": "stage-4-note-20251010T142959",
           "timestamp": "2025-10-10T14:29:59Z",
-          "body": "2025-10-10: Lane 4c complete. npm run phase6-health now succeeds post-TypeScript remediation; log tmp/consolidation-pattern3-lane4c-20251010T142938Z.log.",
+          "body": "2025-10-10: Lane 4c complete. npm run phase6-health now succeeds post-TypeScript remediation; log Templum/archive/dev-files/utility-migration/evidence/pattern-3/stage4/lane4c/20251010T142938Z.log.",
           "scope": [
             "stage-4"
           ]
@@ -5769,7 +5769,7 @@
         {
           "id": "stage-5-note-20251012T105808",
           "timestamp": "2025-10-12T10:58:08Z",
-          "body": "2025-10-12: Executed Stage 6 gating battery for lane 6a via node scripts/run-with-timeout.mjs --preset phase6-validation; backend lifecycle, manual override, and comprehensive validation suites passed (tmp/consolidation-pattern3-stage5-lane6a-20251012T105628Z.log). Hardened HTTP connection normalization and skin loading to accept direct skin payloads, and updated comprehensive backend validation spec to restore leak-proof teardown with run-with-timeout instructions.",
+          "body": "2025-10-12: Executed Stage 6 gating battery for lane 6a via node scripts/run-with-timeout.mjs --preset phase6-validation; backend lifecycle, manual override, and comprehensive validation suites passed (Templum/archive/dev-files/utility-migration/evidence/pattern-3/stage5/lane6a/20251012T105628Z.log). Hardened HTTP connection normalization and skin loading to accept direct skin payloads, and updated comprehensive backend validation spec to restore leak-proof teardown with run-with-timeout instructions.",
           "scope": [
             "stage-5"
           ]
@@ -5925,7 +5925,7 @@
           "timestamp": "2025-10-08T11:03:00Z",
           "summary": "Ran backend lifecycle + manual override jest suites; all pass",
           "files": [
-            "tmp/consolidation-pattern3-lane4a-20251008T120251.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-3/stage4/lane4a/20251008T120251.log"
           ]
         },
         {
@@ -5960,7 +5960,7 @@
           "timestamp": "2025-10-10T00:20:51Z",
           "summary": "Hybrid validation suite fails: 25 failing specs (timeouts + missing fallbacks). Baseline recorded.",
           "files": [
-            "tmp/consolidation-pattern3-lane4b-20251010T011558.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-3/stage4/lane4b/20251010T011558.log"
           ],
           "durationMs": 26265000
         },
@@ -5970,7 +5970,7 @@
           "summary": "Blocker: hybrid validation suite has 25 failing specs (timeouts, fallback assertions, undefined MCP_CONFIG). Need AsyncUtils-backed health/timer fixes before rerun.",
           "agent": "codex",
           "files": [
-            "tmp/consolidation-pattern3-lane4b-20251010T011558.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-3/stage4/lane4b/20251010T011558.log"
           ]
         },
         {
@@ -5978,7 +5978,7 @@
           "timestamp": "2025-10-10T00:21:33Z",
           "summary": "Phase6 health build fails (TypeScript errors across backend/service discovery/session adapters).",
           "files": [
-            "tmp/consolidation-pattern3-lane4c-20251010T012112.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-3/stage4/lane4c/20251010T012112.log"
           ],
           "durationMs": 26301000
         },
@@ -5988,7 +5988,7 @@
           "summary": "Blocker: phase6-health build fails with 12 TypeScript errors (backend router, service discovery, adapter registry, async-utils typing). Requires upstream fixes before rerun.",
           "agent": "codex",
           "files": [
-            "tmp/consolidation-pattern3-lane4c-20251010T012112.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-3/stage4/lane4c/20251010T012112.log"
           ]
         },
         {
@@ -5996,7 +5996,7 @@
           "timestamp": "2025-10-10T00:43:04Z",
           "summary": "Blocked: hybrid validation suite failing (timeouts/fallback assertions).",
           "files": [
-            "tmp/consolidation-pattern3-lane4b-20251010T011558.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-3/stage4/lane4b/20251010T011558.log"
           ]
         },
         {
@@ -6004,7 +6004,7 @@
           "timestamp": "2025-10-10T00:43:10Z",
           "summary": "Blocked: phase6-health build hits TypeScript errors across backend/session/skin modules.",
           "files": [
-            "tmp/consolidation-pattern3-lane4c-20251010T012112.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-3/stage4/lane4c/20251010T012112.log"
           ]
         },
         {
@@ -6017,7 +6017,7 @@
           "timestamp": "2025-10-10T01:03:33Z",
           "summary": "External fix outstanding",
           "files": [
-            "tmp/consolidation-pattern3-lane4b-20251010T011558.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-3/stage4/lane4b/20251010T011558.log"
           ]
         },
         {
@@ -6025,7 +6025,7 @@
           "timestamp": "2025-10-10T01:04:34Z",
           "summary": "Blocked awaiting lane 4d external fix",
           "files": [
-            "tmp/consolidation-pattern3-lane4b-20251010T011558.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-3/stage4/lane4b/20251010T011558.log"
           ]
         },
         {
@@ -6048,7 +6048,7 @@
           "timestamp": "2025-10-10T01:50:53Z",
           "summary": "Blocked pending TypeScript remediation lane 4e (deps +3:lane-4e → 3:lane-4e)",
           "files": [
-            "tmp/consolidation-pattern3-lane4c-20251010T012112.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-3/stage4/lane4c/20251010T012112.log"
           ]
         },
         {
@@ -6057,16 +6057,16 @@
           "summary": "External MCP fallback fix: clean up hybrid validation suite (25 failures) before retrying lane 4b. Reproduce via node scripts/run-with-timeout.mjs --timeout 360000 --preset jest-suite -- npm test -- --runTestsByPath src/tests/validation/hybrid-validation-system-v3c.test.ts --runInBand --no-cache --forceExit --verbose. Focus on fallbackUsed assertions, timeouts, and circuit half-open events before clearing the dependency.",
           "agent": "codex",
           "files": [
-            "tmp/consolidation-pattern3-lane4b-20251010T011558.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-3/stage4/lane4b/20251010T011558.log"
           ]
         },
         {
           "stage": "lane-4e",
           "timestamp": "2025-10-10T01:51:24Z",
-          "summary": "TypeScript remediation: fix compilation failures before rerunning phase6 health (see tmp/consolidation-pattern3-lane4c-20251010T012112.log). Errors include backend-service-router.ts:1550 ('capabilities' on never), service-discovery.ts:320 (string[]|undefined), adapter-registry InterfaceType references, VSCode adapter signature change, session manager .off override, skin versioning supportedFormats, async-utils error property, skin-validator schema typing. Validate with npm run build then npm run phase6-health.",
+          "summary": "TypeScript remediation: fix compilation failures before rerunning phase6 health (see Templum/archive/dev-files/utility-migration/evidence/pattern-3/stage4/lane4c/20251010T012112.log). Errors include backend-service-router.ts:1550 ('capabilities' on never), service-discovery.ts:320 (string[]|undefined), adapter-registry InterfaceType references, VSCode adapter signature change, session manager .off override, skin versioning supportedFormats, async-utils error property, skin-validator schema typing. Validate with npm run build then npm run phase6-health.",
           "agent": "codex",
           "files": [
-            "tmp/consolidation-pattern3-lane4c-20251010T012112.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-3/stage4/lane4c/20251010T012112.log"
           ]
         },
         {
@@ -6074,7 +6074,7 @@
           "timestamp": "2025-10-10T01:55:02Z",
           "summary": "Refresh lane 4d guidance",
           "files": [
-            "tmp/consolidation-pattern3-lane4b-20251010T011558.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-3/stage4/lane4b/20251010T011558.log"
           ]
         },
         {
@@ -6082,7 +6082,7 @@
           "timestamp": "2025-10-10T01:55:23Z",
           "summary": "Refresh lane 4e guidance",
           "files": [
-            "tmp/consolidation-pattern3-lane4c-20251010T012112.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-3/stage4/lane4c/20251010T012112.log"
           ]
         },
         {
@@ -6113,7 +6113,7 @@
           "timestamp": "2025-10-10T14:15:58Z",
           "summary": "Hybrid validation V3C suite green after rebuilding reliability/performance/scoring modules",
           "files": [
-            "tmp/consolidation-pattern3-lane4b-20251010T141541Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-3/stage4/lane4b/20251010T141541Z.log"
           ],
           "durationMs": 888000
         },
@@ -6128,7 +6128,7 @@
           "timestamp": "2025-10-10T14:29:03Z",
           "summary": "Phase6 health TypeScript remediation: backend router/discovery/registry/session/skin validators build clean",
           "files": [
-            "tmp/phase6-health-build-20251010T142834Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-3/stage4/lane4e/phase6-health-build-20251010T142834Z.log"
           ],
           "durationMs": 541000
         },
@@ -6143,7 +6143,7 @@
           "timestamp": "2025-10-10T14:29:52Z",
           "summary": "Phase6 health harness runs clean after async utils remediation",
           "files": [
-            "tmp/consolidation-pattern3-lane4c-20251010T142938Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-3/stage4/lane4c/20251010T142938Z.log"
           ],
           "durationMs": 20000
         },
@@ -6158,7 +6158,7 @@
           "timestamp": "2025-10-12T10:57:16Z",
           "summary": "Stage 6 gating battery executed via run-with-timeout; backend router suites green.",
           "files": [
-            "tmp/consolidation-pattern3-stage5-lane6a-20251012T105628Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-3/stage5/lane6a/20251012T105628Z.log"
           ]
         },
         {
@@ -6250,7 +6250,7 @@
           "timestamp": "2025-10-12T13:15:37Z",
           "summary": "2025-10-12: Ran hybrid validation v3c + unified session manager suites under timeout harness; all assertions pass and no regressions observed; tracked the lingering Jest open-handle warning for follow-up.",
           "files": [
-            "tmp/consolidation/pattern-3-stage6-lane6c-20251012T131524Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-3/stage6/lane6c/20251012T131524Z.log"
           ],
           "durationMs": 40000
         },
@@ -6275,7 +6275,7 @@
           "timestamp": "2025-10-12T13:28:33Z",
           "summary": "AsyncUtils timer adoption across CLI/VSCode adapters, command state validation, and session cleanup interval; run-with-timeout gating bundle green with no open handles",
           "files": [
-            "tmp/consolidation/pattern-3-stage6-lane6d-20251012T132812Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-3/stage6/lane6d/20251012T132812Z.log"
           ],
           "durationMs": 769000
         },
@@ -6284,7 +6284,7 @@
           "timestamp": "2025-10-12T13:30:48Z",
           "summary": "Migrated backend router timers to AsyncUtils managed helpers and captured backend lifecycle test run",
           "files": [
-            "tmp/consolidation-pattern3-lane6a-20251012T133018Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-3/stage6/lane6a/20251012T133018Z.log"
           ],
           "durationMs": 978000
         },
@@ -6314,7 +6314,7 @@
           "timestamp": "2025-10-12T16:58:58Z",
           "summary": "Rescoped connection/discovery timers onto managed async utils, hardened backend integration tests with deterministic mocks, and backend routing suite passes under 30s timeout wrapper.",
           "files": [
-            "tmp/consolidation-pattern3-lane6b-20251012T165803Z.txt"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-3/stage6/lane6b/20251012T165803Z.log"
           ]
         },
         {
@@ -6328,7 +6328,7 @@
           "timestamp": "2025-10-12T17:58:19Z",
           "summary": "2025-10-12: Interface adapter + session suites green via run-with-timeout harness; negative state-sync paths log expected errors but exit clean.",
           "files": [
-            "tmp/consolidation/pattern-3-stage6-lane6d-20251012T17575252Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-3/stage6/lane6d/20251012T17575252Z.log"
           ],
           "durationMs": 379000
         },
@@ -6343,13 +6343,13 @@
           "timestamp": "2025-10-12T18:05:42Z",
           "summary": "Stage 7 status set to in_progress",
           "files": [
-            "tmp/consolidation/pattern-3-stage7-async-utils-20251012T180354Z.log",
-            "tmp/consolidation/pattern-3-stage7-backend-lifecycle-20251012T180401Z.log",
-            "tmp/consolidation/pattern-3-stage7-service-discovery-20251012T180419Z.log",
-            "tmp/consolidation/pattern-3-stage7-validation-suite-20251012T180442Z.log",
-            "tmp/consolidation/pattern-3-stage7-interface-adapters-20251012T180453Z.log",
-            "tmp/consolidation/pattern-3-stage7-phase6-validation-20251012T180501Z.log",
-            "tmp/consolidation/pattern-3-stage7-phase6-health-20251012T180509Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-3/stage7/async-utils-20251012T180354Z.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-3/stage7/backend-lifecycle-20251012T180401Z.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-3/stage7/service-discovery-20251012T180419Z.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-3/stage7/validation-suite-20251012T180442Z.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-3/stage7/interface-adapters-20251012T180453Z.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-3/stage7/phase6-validation-20251012T180501Z.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-3/stage7/phase6-health-20251012T180509Z.log"
           ]
         },
         {
@@ -6485,7 +6485,7 @@
           "timestamp": "2025-10-12T20:44:36Z",
           "summary": "Migrated core orchestrator, extension, and E2E harness timers to AsyncUtils; variance check in e2e-complete workflow remains flaky",
           "files": [
-            "tmp/consolidation-pattern3-lane6g-20251012T204422Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-3/stage6/lane6g/20251012T204422Z.log"
           ],
           "durationMs": 595000
         },
@@ -6521,7 +6521,7 @@
           "timestamp": "2025-10-12T20:52:33Z",
           "summary": "Migrated MCP channel + harness timers to AsyncUtils with managed handles; validated gating suite via run-with-timeout and sweep",
           "files": [
-            "tmp/consolidation/pattern-3-lane6h/gating-20251012T205215Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-3/stage6/lane6h/gating-20251012T205215Z.log"
           ],
           "durationMs": 979000
         },
@@ -6573,12 +6573,12 @@
           "timestamp": "2025-10-13T10:24:50Z",
           "summary": "Stage 7 status remains in_progress",
           "files": [
-            "tmp/consolidation/pattern-3-stage7-async-utils-20251013T101810Z.log",
-            "tmp/consolidation/pattern-3-stage7-backend-lifecycle-20251013T101816Z.log",
-            "tmp/consolidation/pattern-3-stage7-service-discovery-20251013T101831Z.log",
-            "tmp/consolidation/pattern-3-stage7-validation-suite-20251013T101855Z.log",
-            "tmp/consolidation/pattern-3-stage7-interface-adapters-20251013T101903Z.log",
-            "tmp/consolidation/pattern-3-stage7-phase6-validation-20251013T101946Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-3/stage7/async-utils-20251013T101810Z.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-3/stage7/backend-lifecycle-20251013T101816Z.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-3/stage7/service-discovery-20251013T101831Z.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-3/stage7/validation-suite-20251013T101855Z.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-3/stage7/interface-adapters-20251013T101903Z.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-3/stage7/phase6-validation-20251013T101946Z.log"
           ]
         },
         {
@@ -6637,9 +6637,9 @@
           "timestamp": "2025-10-13T13:40:55Z",
           "summary": "Stage 7 validation rerun captured residual blockers",
           "files": [
-            "tmp/consolidation/pattern-3-stage7/test-ci.log",
-            "tmp/consolidation/pattern-3-stage7/phase6-health.log",
-            "tmp/consolidation/pattern-3-stage7/phase6-validation.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-3/stage7/test-ci.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-3/stage7/phase6-health.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-3/stage7/phase6-validation.log"
           ],
           "durationMs": 12229000
         },
@@ -6708,7 +6708,7 @@
         "5": {
           "status": "complete",
           "startedAt": "2025-10-12T10:29:50Z",
-          "notes": "Cohort aligned; Stage 6 gating battery executed (phase6-validation, phase6-health, backend telemetry + manual override suites) with logs under tmp/consolidation/pattern-4-stage5; Stage 6 lanes moved to pending pending real-backend rerun for perf + consistency follow-up.",
+          "notes": "Cohort aligned; Stage 6 gating battery executed (phase6-validation, phase6-health, backend telemetry + manual override suites) with logs archived under Templum/archive/dev-files/utility-migration/evidence/pattern-4/stage5; Stage 6 lanes moved to pending pending real-backend rerun for perf + consistency follow-up.",
           "elapsedMs": 274000
         },
         "6": {
@@ -6862,7 +6862,7 @@
           "plannedFiles": [
             "src/tests/backend/backend-connection-lifecycle.test.ts",
             "src/tests/backend/backend-serialization-log.test.ts",
-            "tmp/consolidation/pattern-4-stage6/lane-6c-tests-20251012T131137Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-4/stage6/lane6c/tests-20251012T131137Z.log"
           ],
           "elapsedMs": 36000
         },
@@ -7370,7 +7370,7 @@
         {
           "id": "stage-5-note-20251012T104906",
           "timestamp": "2025-10-12T10:49:06Z",
-          "body": "2025-10-12: Updated mock cross-interface comparison to ignore interface-specific metadata and short-circuit scenarios; phase6-validation re-run (log: tmp/consolidation/pattern-4-stage5/phase6-validation-after-mock-normalized.log) now reports 100% cross-interface consistency while performance warnings remain due to mock baselines.",
+          "body": "2025-10-12: Updated mock cross-interface comparison to ignore interface-specific metadata and short-circuit scenarios; phase6-validation re-run (log: Templum/archive/dev-files/utility-migration/evidence/pattern-4/stage5/phase6-validation-after-mock-normalized.log) now reports 100% cross-interface consistency while performance warnings remain due to mock baselines.",
           "scope": [
             "stage-5"
           ]
@@ -7378,7 +7378,7 @@
         {
           "id": "stage-5-note-20251012T123903",
           "timestamp": "2025-10-12T12:39:03Z",
-          "body": "2025-10-12: Adjusted mock performance regression monitor to treat higher-is-better metrics (concurrency) correctly and accept improvements > baseline. phase6-validation rerun (log: tmp/consolidation/pattern-4-stage5/phase6-validation-after-mock-perf-adjust.log, report: validation-reports/phase6-validation-2025-10-12T12-38-55-983Z.md) now passes without mock-induced regression warnings.",
+          "body": "2025-10-12: Adjusted mock performance regression monitor to treat higher-is-better metrics (concurrency) correctly and accept improvements > baseline. phase6-validation rerun (log: Templum/archive/dev-files/utility-migration/evidence/pattern-4/stage5/phase6-validation-after-mock-perf-adjust.log, report: validation-reports/phase6-validation-2025-10-12T12-38-55-983Z.md) now passes without mock-induced regression warnings.",
           "scope": [
             "stage-5"
           ]
@@ -7620,7 +7620,7 @@
           "timestamp": "2025-10-12T10:33:32Z",
           "summary": "Lane 6a status set to pending",
           "files": [
-            "tmp/consolidation/pattern-4-stage5/phase6-validation.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-4/stage5/phase6-validation.log"
           ]
         },
         {
@@ -7628,7 +7628,7 @@
           "timestamp": "2025-10-12T10:33:38Z",
           "summary": "Lane 6b status set to pending",
           "files": [
-            "tmp/consolidation/pattern-4-stage5/phase6-health.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-4/stage5/phase6-health.log"
           ]
         },
         {
@@ -7636,7 +7636,7 @@
           "timestamp": "2025-10-12T10:33:43Z",
           "summary": "Lane 6c status set to pending",
           "files": [
-            "tmp/consolidation/pattern-4-stage5/stage6-gating-tests.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-4/stage5/stage6-gating-tests.log"
           ]
         },
         {
@@ -7644,7 +7644,7 @@
           "timestamp": "2025-10-12T10:33:48Z",
           "summary": "Lane 6d status set to pending",
           "files": [
-            "tmp/consolidation/pattern-4-stage5/stage6-gating-tests.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-4/stage5/stage6-gating-tests.log"
           ]
         },
         {
@@ -7688,7 +7688,7 @@
           "timestamp": "2025-10-12T13:11:31Z",
           "summary": "Ran phase6-health for EventUtils adapters; all services healthy and gating guardrails satisfied.",
           "files": [
-            "tmp/consolidation/pattern-4-stage6b/phase6-health-2025-10-12T13-11-23Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-4/stage6/lane6b/phase6-health-2025-10-12T13-11-23Z.log"
           ],
           "durationMs": 20000
         },
@@ -7697,7 +7697,7 @@
           "timestamp": "2025-10-12T13:12:02Z",
           "summary": "Ran targeted backend telemetry mirror tests; backend serialization log + connection lifecycle suites clean post-EventUtils migration.",
           "files": [
-            "tmp/consolidation/pattern-4-stage6/lane-6c-tests-20251012T131137Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-4/stage6/lane6c/tests-20251012T131137Z.log"
           ],
           "durationMs": 36000
         },
@@ -7712,7 +7712,7 @@
           "timestamp": "2025-10-12T13:12:40Z",
           "summary": "Manual override flow/watcher tests pass; warnings expected for orchestrator stubs",
           "files": [
-            "tmp/consolidation/pattern-4-stage6/lane-6d-manual-override-tests.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-4/stage6/lane6d/manual-override-tests.log"
           ],
           "durationMs": 23000
         },
@@ -7722,7 +7722,7 @@
           "summary": "phase6-validation (mocks) succeeded; real partner run skipped per directive; Haruspex backend unstable earlier but latest attempt reached readiness; PCL readiness guard timed out/EADDRINUSE. Logged artifacts.",
           "files": [
             "validation-reports/phase6-validation-2025-10-12T12-52-05-509Z.md",
-            "tmp/consolidation/pattern-4-stage6/phase6-real-attempt.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-4/stage6/phase6-real-attempt.log"
           ],
           "durationMs": 1774000
         },
@@ -7737,10 +7737,10 @@
           "timestamp": "2025-10-12T16:30:13Z",
           "summary": "Stage 7 status set to in_progress",
           "files": [
-            "tmp/consolidation/pattern-4-stage7/event-utils.test.log",
-            "tmp/consolidation/pattern-4-stage7/backend-suite.log",
-            "tmp/consolidation/pattern-4-stage7/phase6-validation.log",
-            "tmp/consolidation/pattern-4-stage7/phase6-health.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-4/stage7/event-utils.test.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-4/stage7/backend-suite.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-4/stage7/phase6-validation.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-4/stage7/phase6-health.log"
           ]
         },
         {
@@ -7814,7 +7814,7 @@
           "timestamp": "2025-10-12T20:36:14Z",
           "summary": "Inventoried EventEmitter import sites before migration",
           "files": [
-            "tmp/consolidation/pattern-4-stage6e/eventemitter-usage-files.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-4/stage6/lane6e/eventemitter-usage-files.log"
           ]
         },
         {
@@ -7828,7 +7828,7 @@
           "timestamp": "2025-10-12T20:37:58Z",
           "summary": "Blocked: Typed EventUtils migration requires redesign of 30 EventEmitter-based modules",
           "files": [
-            "tmp/consolidation/pattern-4-stage6e/eventemitter-usage-files.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-4/stage6/lane6e/eventemitter-usage-files.log"
           ],
           "durationMs": 176000
         },
@@ -7837,7 +7837,7 @@
           "timestamp": "2025-10-12T20:38:03Z",
           "summary": "Blocker: Migration needs typed event map definitions and compositional refactor for EventEmitter-based modules",
           "files": [
-            "tmp/consolidation/pattern-4-stage6e/eventemitter-usage-files.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-4/stage6/lane6e/eventemitter-usage-files.log"
           ]
         },
         {
@@ -7871,7 +7871,7 @@
           "timestamp": "2025-10-12T20:49:23Z",
           "summary": "Partitioned migration scope into lanes 6h-6j dependent on typed bus prerequisite work",
           "files": [
-            "tmp/consolidation/pattern-4-stage6e/eventemitter-usage-files.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-4/stage6/lane6e/eventemitter-usage-files.log"
           ]
         },
         {
@@ -7879,8 +7879,8 @@
           "timestamp": "2025-10-12T20:56:00Z",
           "summary": "Created EventBusHost scaffolding, captured EventEmitter inventory, and recorded guardrail test run",
           "files": [
-            "tmp/consolidation/pattern-4-stage6e/eventemitter-usage-files.log",
-            "tmp/consolidation/pattern-4-stage6e/event-utils-host-guard.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-4/stage6/lane6e/eventemitter-usage-files.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-4/stage6/lane6e/event-utils-host-guard.log"
           ]
         },
         {
@@ -7888,9 +7888,9 @@
           "timestamp": "2025-10-12T21:01:37Z",
           "summary": "Migrated tests and MCP channel surfaces off Node EventEmitter to the typed EventUtils bus, tightened deterministic timings, and captured the consolidated Jest batch.",
           "files": [
-            "tmp/consolidation/pattern-4-stage6/lane-6g-eventutils-audit-20251012T203757Z.log",
-            "tmp/consolidation/pattern-4-stage6/lane-6g-eventutils-audit-20251012T205632Z.log",
-            "tmp/consolidation/pattern-4-stage6/lane-6g-test-run-20251012T205958Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-4/stage6/lane6g/eventutils-audit-20251012T203757Z.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-4/stage6/lane6g/eventutils-audit-20251012T205632Z.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-4/stage6/lane6g/test-run-20251012T205958Z.log"
           ],
           "durationMs": 1449000
         },
@@ -7899,7 +7899,7 @@
           "timestamp": "2025-10-12T21:02:00Z",
           "summary": "Migrated interface/rendering emitters to EventUtils adapters; verified adaptive CLI integration suite.",
           "files": [
-            "tmp/consolidation/pattern-4-lane-6f/actions.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-4/stage6/lane6f/actions.log"
           ],
           "durationMs": 1584000
         },
@@ -7908,8 +7908,8 @@
           "timestamp": "2025-10-12T21:40:25Z",
           "summary": "Completed EventUtils typed bus prerequisites, documented follow-on lanes, and attached guardrail evidence",
           "files": [
-            "tmp/consolidation/pattern-4-stage6e/eventemitter-usage-files.log",
-            "tmp/consolidation/pattern-4-stage6e/event-utils-host-guard.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-4/stage6/lane6e/eventemitter-usage-files.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-4/stage6/lane6e/event-utils-host-guard.log",
             "docs/current/progress.md",
             "dev/tasks/unified-session-layer.md",
             "dev/tasks/connection-lifecycle-events.md"
@@ -7967,12 +7967,12 @@
           "timestamp": "2025-10-12T22:42:34Z",
           "summary": "Migrated core/state emitters to EventDrivenComponent; recorded failing CI/gating runs and spun follow-up lanes 6k–6m for downstream alignment",
           "files": [
-            "tmp/consolidation/pattern-4-lane-6h/test-ci.log",
-            "tmp/consolidation/pattern-4-lane-6h/test-ci-timeout-30s.log",
-            "tmp/consolidation/pattern-4-lane-6h/test-ci-timeout-60s.log",
-            "tmp/consolidation/pattern-4-lane-6h/test-ci-timeout-90s.log",
-            "tmp/consolidation/pattern-4-lane-6h/test-ci-timeout-120s.log",
-            "tmp/consolidation/pattern-4-lane-6h/phase6-validation.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-4/stage6/lane6h/test-ci.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-4/stage6/lane6h/test-ci-timeout-30s.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-4/stage6/lane6h/test-ci-timeout-60s.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-4/stage6/lane6h/test-ci-timeout-90s.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-4/stage6/lane6h/test-ci-timeout-120s.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-4/stage6/lane6h/phase6-validation.log"
           ],
           "durationMs": 3202000
         },
@@ -8017,9 +8017,9 @@
           "timestamp": "2025-10-13T10:45:29Z",
           "summary": "Blocked: phase6 gating commands failing due to existing build/test errors across repo",
           "files": [
-            "tmp/consolidation/pattern-4-stage6/lane-6i/test-ci.log",
-            "tmp/consolidation/pattern-4-stage6/lane-6i/phase6-validation.log",
-            "tmp/consolidation/pattern-4-stage6/lane-6i/phase6-health.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-4/stage6/lane6i/test-ci.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-4/stage6/lane6i/phase6-validation.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-4/stage6/lane6i/phase6-health.log"
           ],
           "durationMs": 1691000
         },
@@ -8028,7 +8028,7 @@
           "timestamp": "2025-10-13T10:45:36Z",
           "summary": "Blocker: Phase 6 gating commands require clean build/test; current repo build fails with existing TypeScript and snapshot issues (see logs).",
           "files": [
-            "tmp/consolidation/pattern-4-stage6/lane-6i/test-ci.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-4/stage6/lane6i/test-ci.log"
           ]
         },
         {
@@ -8046,9 +8046,9 @@
           "timestamp": "2025-10-13T11:43:25Z",
           "summary": "Blocked pending TypeScript build parity fix in lane 6n before rerunning Stage 6 gating battery",
           "files": [
-            "tmp/consolidation/pattern-4-stage6/lane-6i/test-ci.log",
-            "tmp/consolidation/pattern-4-stage6/lane-6i/phase6-validation.log",
-            "tmp/consolidation/pattern-4-stage6/lane-6i/phase6-health.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-4/stage6/lane6i/test-ci.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-4/stage6/lane6i/phase6-validation.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-4/stage6/lane6i/phase6-health.log"
           ]
         },
         {
@@ -8084,9 +8084,9 @@
           "timestamp": "2025-10-13T12:40:48Z",
           "summary": "Blocked pending core engine and adapter registry follow-ups captured in new lanes 6o/6p before rerunning Stage 6 gating battery",
           "files": [
-            "tmp/consolidation/pattern-4-stage6/lane-6n/npm-run-build.log",
-            "tmp/consolidation/pattern-4-stage6/lane-6n/npm-run-build-success.log",
-            "tmp/consolidation/pattern-4-stage6/lane-6n/npm-run-test-ci.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-4/stage6/lane6n/npm-run-build.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-4/stage6/lane6n/npm-run-build-success.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-4/stage6/lane6n/npm-run-test-ci.log"
           ],
           "durationMs": 2507000
         },
@@ -8095,7 +8095,7 @@
           "timestamp": "2025-10-13T12:40:56Z",
           "summary": "Blocked after run-with-timeout targeted suite surfaced core-engine + adapter-registry regressions; carved out lanes 6o/6p to handle fixture realignment before reattempting gating battery",
           "files": [
-            "tmp/consolidation/pattern-4-stage6/lane-6n/npm-run-test-ci.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-4/stage6/lane6n/npm-run-test-ci.log"
           ]
         },
         {
@@ -8142,7 +8142,7 @@
           "timestamp": "2025-10-13T13:14:04Z",
           "summary": "Ran targeted core engine test suite",
           "files": [
-            "tmp/consolidation/pattern-4-stage6/lane-6o/core-engine-test-20251013T131334Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-4/stage6/lane6o/core-engine-test-20251013T131334Z.log"
           ]
         },
         {
@@ -8150,7 +8150,7 @@
           "timestamp": "2025-10-13T13:14:17Z",
           "summary": "Synchronized core init with typed event fixtures; core engine suite green",
           "files": [
-            "tmp/consolidation/pattern-4-stage6/lane-6o/core-engine-test-20251013T131334Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-4/stage6/lane6o/core-engine-test-20251013T131334Z.log"
           ],
           "durationMs": 447000
         },
@@ -8159,7 +8159,7 @@
           "timestamp": "2025-10-13T13:22:42Z",
           "summary": "Registered session manager with resource manager and hardened adapter teardown",
           "files": [
-            "tmp/consolidation/pattern-4-stage6/lane-6p-tests-20251013T132232Z.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-4/stage6/lane6p/tests-20251013T132232Z.log"
           ],
           "durationMs": 855000
         }
@@ -8234,7 +8234,7 @@
               "status": "passed",
               "executedAt": "2025-10-02T22:25:16Z",
               "exitCode": 0,
-              "logPath": "tmp/stage6/pattern-5/20251002T222516Z-lane6a.log",
+              "logPath": "Templum/archive/dev-files/utility-migration/evidence/pattern-5/stage6/20251002T222516Z-lane6a.log",
               "summary": "22 tests skipped (no backend Display cases)"
             }
           ],
@@ -8371,12 +8371,12 @@
       "evidence": [
         {
           "type": "log",
-          "path": "tmp/stage6/pattern-5/20251002T214624Z-display-utils.test.log",
+          "path": "Templum/archive/dev-files/utility-migration/evidence/pattern-5/stage6/20251002T214624Z-display-utils.test.log",
           "description": "Stage 5B gating evidence"
         },
         {
           "type": "log",
-          "path": "tmp/stage6/pattern-5/20251002T222516Z-lane6a.log",
+          "path": "Templum/archive/dev-files/utility-migration/evidence/pattern-5/stage6/20251002T222516Z-lane6a.log",
           "description": "Backend validation rerun"
         }
       ],
@@ -8412,7 +8412,7 @@
           "summary": "Stage 4a evidence backfill",
           "agent": "Codex",
           "files": [
-            "tmp/stage6/pattern-5/20251002T220103Z-service-ordering-manager.test.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-5/stage6/20251002T220103Z-service-ordering-manager.test.log"
           ]
         },
         {
@@ -8427,7 +8427,7 @@
           "summary": "Stage 4b evidence backfill",
           "agent": "Codex",
           "files": [
-            "tmp/stage6/pattern-5/20251002T214729Z-adaptive-cli-integration.test.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-5/stage6/20251002T214729Z-adaptive-cli-integration.test.log"
           ]
         },
         {
@@ -8442,9 +8442,9 @@
           "summary": "Stage 4c evidence backfill",
           "agent": "Codex",
           "files": [
-            "tmp/stage6/pattern-5/20251002T214624Z-display-utils.test.log",
-            "tmp/stage6/pattern-5/20251002T214549Z-terminal-formatter.test.log",
-            "tmp/stage6/pattern-5/20251002T214655Z-window-utils.test.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-5/stage6/20251002T214624Z-display-utils.test.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-5/stage6/20251002T214549Z-terminal-formatter.test.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-5/stage6/20251002T214655Z-window-utils.test.log"
           ]
         },
         {
@@ -8453,8 +8453,8 @@
           "summary": "Stage 6b migration backfill",
           "agent": "Codex",
           "files": [
-            "tmp/stage6/pattern-5/20251002T220103Z-service-ordering-manager.test.log",
-            "tmp/stage6/pattern-5/20251002T214624Z-display-utils.test.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-5/stage6/20251002T220103Z-service-ordering-manager.test.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-5/stage6/20251002T214624Z-display-utils.test.log"
           ]
         },
         {
@@ -8463,9 +8463,9 @@
           "summary": "Stage 6c migration backfill",
           "agent": "Codex",
           "files": [
-            "tmp/stage6/pattern-5/20251003T001813Z-adaptive-cli-integration.test.log",
-            "tmp/stage6/pattern-5/20251003T001852Z-navigation-system.test.log",
-            "tmp/stage6/pattern-5/20251002T214841Z-interface-adapter-integration.test.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-5/stage6/20251003T001813Z-adaptive-cli-integration.test.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-5/stage6/20251003T001852Z-navigation-system.test.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-5/stage6/20251002T214841Z-interface-adapter-integration.test.log"
           ]
         },
         {
@@ -8474,10 +8474,10 @@
           "summary": "Stage 6d migration backfill",
           "agent": "Codex",
           "files": [
-            "tmp/stage6/pattern-5/20251002T220350Z-cli-leak-guard.log",
-            "tmp/stage6/pattern-5/20251002T220350Z-cli-leak-guard.stdout.log",
-            "tmp/stage6/pattern-5/20251002T220152Z-service-utils.test.log",
-            "tmp/stage6/pattern-5/20251002T214549Z-terminal-formatter.test.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-5/stage6/20251002T220350Z-cli-leak-guard.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-5/stage6/20251002T220350Z-cli-leak-guard.stdout.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-5/stage6/20251002T220152Z-service-utils.test.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-5/stage6/20251002T214549Z-terminal-formatter.test.log"
           ]
         },
         {
@@ -8527,7 +8527,7 @@
           "scope": [
             "stage-1"
           ],
-          "body": "Category: Display & UI Utilities (HIGH Priority)\nPattern doc: Templum/dev/patterns/utilities/display/display-utils.md\nUtility focus: (Templum/src/utils/display-utils.ts)\nProblem: Display calculations repeated in multiple places\nAPI intent: display.calculate().width(80).order('connected-first') - Fluent API\nImpact: ~25 files, ~400 lines reduction, consistent display standards\nStarter files:\n  • src/interfaces/cli-display-consistency-engine.ts - Delegates layout + ordering to Display Utils stack (Stage 6 lane c validation 2025-10-03T19:27Z).\n  • src/interfaces/service-ordering-manager.ts - Service display ordering\n  • src/rendering/universal-layout-engine.ts - Layout calculations migrated to Display Utils (Stage 6 lane c validation 2025-10-03T19:27Z).\n  • Display consistency patterns consolidated across CLI components per Stage 6 lane c close-out (evidence: tmp/stage6/pattern-5/*.log)."
+          "body": "Category: Display & UI Utilities (HIGH Priority)\nPattern doc: Templum/dev/patterns/utilities/display/display-utils.md\nUtility focus: (Templum/src/utils/display-utils.ts)\nProblem: Display calculations repeated in multiple places\nAPI intent: display.calculate().width(80).order('connected-first') - Fluent API\nImpact: ~25 files, ~400 lines reduction, consistent display standards\nStarter files:\n  • src/interfaces/cli-display-consistency-engine.ts - Delegates layout + ordering to Display Utils stack (Stage 6 lane c validation 2025-10-03T19:27Z).\n  • src/interfaces/service-ordering-manager.ts - Service display ordering\n  • src/rendering/universal-layout-engine.ts - Layout calculations migrated to Display Utils (Stage 6 lane c validation 2025-10-03T19:27Z).\n  • Display consistency patterns consolidated across CLI components per Stage 6 lane c close-out (evidence: Templum/archive/dev-files/utility-migration/evidence/pattern-5/stage6/*.log)."
         }
       ],
       "updatedAt": "2025-10-12T16:41:22Z",
@@ -8782,7 +8782,7 @@
           "summary": "Backfilled Stage 4a evidence",
           "agent": "Codex",
           "files": [
-            "tmp/stage6/pattern-6/20251002T214549Z-terminal-formatter.test.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-6/stage6/20251002T214549Z-terminal-formatter.test.log"
           ]
         },
         {
@@ -8797,8 +8797,8 @@
           "summary": "Stage 4b evidence backfill",
           "agent": "Codex",
           "files": [
-            "tmp/stage6/pattern-6/20251002T215341Z-terminal-ui-components.formatter.test.log",
-            "tmp/stage6/pattern-6/20251002T215250Z-visual-feedback-system.formatter.test.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-6/stage6/20251002T215341Z-terminal-ui-components.formatter.test.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-6/stage6/20251002T215250Z-visual-feedback-system.formatter.test.log"
           ]
         },
         {
@@ -8813,8 +8813,8 @@
           "summary": "Stage 4c evidence backfill",
           "agent": "Codex",
           "files": [
-            "tmp/stage6/pattern-6/20251002T214624Z-display-utils.test.log",
-            "tmp/stage6/pattern-6/20251002T214549Z-terminal-formatter.test.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-6/stage6/20251002T214624Z-display-utils.test.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-6/stage6/20251002T214549Z-terminal-formatter.test.log"
           ]
         },
         {
@@ -8829,8 +8829,8 @@
           "summary": "Stage 6a evidence backfill",
           "agent": "Codex",
           "files": [
-            "tmp/stage6/pattern-6/20251002T231009Z-adaptive-cli-integration.test.log",
-            "tmp/stage6/pattern-6/20251002T214549Z-terminal-formatter.test.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-6/stage6/20251002T231009Z-adaptive-cli-integration.test.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-6/stage6/20251002T214549Z-terminal-formatter.test.log"
           ]
         },
         {
@@ -8845,8 +8845,8 @@
           "summary": "Stage 6b evidence backfill",
           "agent": "Codex",
           "files": [
-            "tmp/stage6/pattern-6/20251002T215341Z-terminal-ui-components.formatter.test.log",
-            "tmp/stage6/pattern-6/20251002T214624Z-display-utils.test.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-6/stage6/20251002T215341Z-terminal-ui-components.formatter.test.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-6/stage6/20251002T214624Z-display-utils.test.log"
           ]
         },
         {
@@ -8861,8 +8861,8 @@
           "summary": "Stage 6c evidence backfill",
           "agent": "Codex",
           "files": [
-            "tmp/stage6/pattern-6/20251002T214803Z-navigation-system.test.log",
-            "tmp/stage6/pattern-6/20251002T214841Z-interface-adapter-integration.test.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-6/stage6/20251002T214803Z-navigation-system.test.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-6/stage6/20251002T214841Z-interface-adapter-integration.test.log"
           ]
         },
         {
@@ -8877,11 +8877,11 @@
           "summary": "Stage 6d evidence backfill",
           "agent": "Codex",
           "files": [
-            "tmp/stage6/pattern-6/20251002T215250Z-visual-feedback-system.formatter.test.log",
-            "tmp/stage6/pattern-6/20251002T220725Z-phase6-health.log",
-            "tmp/stage6/pattern-6/20251002T220350Z-cli-leak-guard.log",
-            "tmp/stage6/pattern-6/20251002T220350Z-cli-leak-guard.stdout.log",
-            "tmp/stage6/pattern-6/20251002T220235Z-templum-universal-session-manager.test.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-6/stage6/20251002T215250Z-visual-feedback-system.formatter.test.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-6/stage6/20251002T220725Z-phase6-health.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-6/stage6/20251002T220350Z-cli-leak-guard.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-6/stage6/20251002T220350Z-cli-leak-guard.stdout.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-6/stage6/20251002T220235Z-templum-universal-session-manager.test.log"
           ]
         },
         {
@@ -8936,7 +8936,7 @@
         "4": {
           "status": "complete",
           "completedAt": "2025-10-08T17:42:00Z",
-          "notes": "Stage 4 lanes 4a–4c completed (formatter/window DI, theme constants, CLI regression harness) with evidence logged under tmp/stage6/pattern-7/*.log."
+          "notes": "Stage 4 lanes 4a–4c completed (formatter/window DI, theme constants, CLI regression harness) with evidence logged under Templum/archive/dev-files/utility-migration/evidence/pattern-7/stage6/*.log."
         },
         "5": {
           "status": "complete",
@@ -8946,7 +8946,7 @@
         "6": {
           "status": "complete",
           "completedAt": "2025-10-02T23:35:45Z",
-          "notes": "Stage 6 lanes 6a–6d completed 2025-10-02; formatter/window/CLI/MCP migrations validated with run-with-timeout logs in tmp/stage6/pattern-7/."
+          "notes": "Stage 6 lanes 6a–6d completed 2025-10-02; formatter/window/CLI/MCP migrations validated with run-with-timeout logs in Templum/archive/dev-files/utility-migration/evidence/pattern-7/stage6/."
         },
         "7": {
           "status": "complete",
@@ -8967,7 +8967,7 @@
             }
           ],
           "updatedAt": "2025-10-12T12:48:24Z",
-          "notes": "2025-10-08: WindowUtils and formatter DI seams aligned; Unicode/ASCII fallbacks revalidated.\nCommands executed during 2025-10-08 reruns; see tmp/stage6/pattern-7/20251002T214655Z-window-utils.test.log."
+          "notes": "2025-10-08: WindowUtils and formatter DI seams aligned; Unicode/ASCII fallbacks revalidated.\nCommands executed during 2025-10-08 reruns; see Templum/archive/dev-files/utility-migration/evidence/pattern-7/stage6/20251002T214655Z-window-utils.test.log."
         },
         "4b": {
           "status": "complete",
@@ -8981,21 +8981,21 @@
             }
           ],
           "updatedAt": "2025-10-12T12:48:41Z",
-          "notes": "2025-10-08: Shared spacing constants published; formatter/display fixtures refreshed.\nEvidence: tmp/stage6/pattern-7/20251002T214624Z-display-utils.test.log, tmp/stage6/pattern-7/20251002T214549Z-terminal-formatter.test.log."
+          "notes": "2025-10-08: Shared spacing constants published; formatter/display fixtures refreshed.\nEvidence: Templum/archive/dev-files/utility-migration/evidence/pattern-7/stage6/20251002T214624Z-display-utils.test.log, Templum/archive/dev-files/utility-migration/evidence/pattern-7/stage6/20251002T214549Z-terminal-formatter.test.log."
         },
         "4c": {
           "status": "complete",
           "scope": "CLI regression harness",
           "commands": [
             {
-              "command": "node scripts/run-with-timeout.mjs --timeout 45000 --preset jest-suite --heartbeat 5000 --log-file tmp/stage4c-adaptive.log -- node scripts/run-jest-ci.mjs --runTestsByPath src/interfaces/__tests__/adaptive-cli-integration.test.ts"
+              "command": "node scripts/run-with-timeout.mjs --timeout 45000 --preset jest-suite --heartbeat 5000 --log-file archive/dev-files/utility-migration/evidence/pattern-7/stage4/lane4c/stage4c-adaptive.log -- node scripts/run-jest-ci.mjs --runTestsByPath src/interfaces/__tests__/adaptive-cli-integration.test.ts"
             },
             {
-              "command": "node scripts/run-with-timeout.mjs --timeout 45000 --preset jest-suite --heartbeat 5000 --log-file tmp/stage4c-interface-adapter.log -- node scripts/run-jest-ci.mjs --runTestsByPath tests/interfaces/interface-adapter-integration.test.ts"
+              "command": "node scripts/run-with-timeout.mjs --timeout 45000 --preset jest-suite --heartbeat 5000 --log-file archive/dev-files/utility-migration/evidence/pattern-7/stage4/lane4c/stage4c-interface-adapter.log -- node scripts/run-jest-ci.mjs --runTestsByPath tests/interfaces/interface-adapter-integration.test.ts"
             }
           ],
           "updatedAt": "2025-10-12T12:48:59Z",
-          "notes": "2025-10-02: CLI regression harness wired with hang guard; adaptive + interface adapter suites updated.\nEvidence: tmp/stage6/pattern-7/20251002T214729Z-adaptive-cli-integration.test.log, tmp/stage6/pattern-7/20251002T214803Z-navigation-system.test.log, tmp/stage6/pattern-7/20251002T214841Z-interface-adapter-integration.test.log."
+          "notes": "2025-10-02: CLI regression harness wired with hang guard; adaptive + interface adapter suites updated.\nEvidence: Templum/archive/dev-files/utility-migration/evidence/pattern-7/stage6/20251002T214729Z-adaptive-cli-integration.test.log, Templum/archive/dev-files/utility-migration/evidence/pattern-7/stage6/20251002T214803Z-navigation-system.test.log, Templum/archive/dev-files/utility-migration/evidence/pattern-7/stage6/20251002T214841Z-interface-adapter-integration.test.log."
         },
         "6a": {
           "status": "complete",
@@ -9011,7 +9011,7 @@
             "src/interfaces/navigation/width-calculator.ts",
             "src/interfaces/window-layout-manager.ts"
           ],
-          "notes": "2025-10-02: Window layout manager/width calculator migrated to formatter spacing; navigation regression suite green.\nEvidence: tmp/stage6/pattern-7/20251002T214803Z-navigation-system.test.log."
+          "notes": "2025-10-02: Window layout manager/width calculator migrated to formatter spacing; navigation regression suite green.\nEvidence: Templum/archive/dev-files/utility-migration/evidence/pattern-7/stage6/20251002T214803Z-navigation-system.test.log."
         },
         "6b": {
           "status": "complete",
@@ -9030,17 +9030,17 @@
             "src/session/templum-universal-session-manager.ts",
             "src/skin/universal-skin-engine.ts"
           ],
-          "notes": "2025-10-12: Theme metrics and session summariser migrated to formatter-based DI; service/session suites green.\nEvidence: tmp/stage6/pattern-7/20251002T220235Z-templum-universal-session-manager.test.log, tmp/stage6/pattern-7/20251002T220152Z-service-utils.test.log."
+          "notes": "2025-10-12: Theme metrics and session summariser migrated to formatter-based DI; service/session suites green.\nEvidence: Templum/archive/dev-files/utility-migration/evidence/pattern-7/stage6/20251002T220235Z-templum-universal-session-manager.test.log, Templum/archive/dev-files/utility-migration/evidence/pattern-7/stage6/20251002T220152Z-service-utils.test.log."
         },
         "6c": {
           "status": "complete",
           "scope": "CLI & menu components",
           "commands": [
             {
-              "command": "node scripts/run-with-timeout.mjs --timeout 900000 --preset jest-suite --heartbeat 30000 --log-file tmp/stage6/pattern-7/20251002T233503Z-adaptive-cli-integration.test.log -- npx jest --runTestsByPath src/interfaces/__tests__/adaptive-cli-integration.test.ts --runInBand --detectOpenHandles --forceExit"
+              "command": "node scripts/run-with-timeout.mjs --timeout 900000 --preset jest-suite --heartbeat 30000 --log-file archive/dev-files/utility-migration/evidence/pattern-7/stage6/20251002T233503Z-adaptive-cli-integration.test.log -- npx jest --runTestsByPath src/interfaces/__tests__/adaptive-cli-integration.test.ts --runInBand --detectOpenHandles --forceExit"
             },
             {
-              "command": "node scripts/run-with-timeout.mjs --timeout 600000 --preset jest-suite --heartbeat 30000 --log-file tmp/stage6/pattern-7/20251002T233137Z-interface-adapter-integration.test.log -- npx jest --runTestsByPath tests/interfaces/interface-adapter-integration.test.ts --runInBand --detectOpenHandles --forceExit"
+              "command": "node scripts/run-with-timeout.mjs --timeout 600000 --preset jest-suite --heartbeat 30000 --log-file archive/dev-files/utility-migration/evidence/pattern-7/stage6/20251002T233137Z-interface-adapter-integration.test.log -- npx jest --runTestsByPath tests/interfaces/interface-adapter-integration.test.ts --runInBand --detectOpenHandles --forceExit"
             }
           ],
           "updatedAt": "2025-10-12T12:50:11Z",
@@ -9049,7 +9049,7 @@
             "src/interfaces/interactive-menu-renderer.ts",
             "src/interfaces/terminal-ui-components.ts"
           ],
-          "notes": "2025-10-02: CLI adapters migrated to formatter/theme DI; hang-guard harness logs captured.\nEvidence: tmp/stage6/pattern-7/20251002T233503Z-adaptive-cli-integration.test.log, tmp/stage6/pattern-7/20251002T233137Z-interface-adapter-integration.test.log, tmp/stage6/pattern-7/20251002T220350Z-cli-leak-guard.log."
+          "notes": "2025-10-02: CLI adapters migrated to formatter/theme DI; hang-guard harness logs captured.\nEvidence: Templum/archive/dev-files/utility-migration/evidence/pattern-7/stage6/20251002T233503Z-adaptive-cli-integration.test.log, Templum/archive/dev-files/utility-migration/evidence/pattern-7/stage6/20251002T233137Z-interface-adapter-integration.test.log, Templum/archive/dev-files/utility-migration/evidence/pattern-7/stage6/20251002T220350Z-cli-leak-guard.log."
         },
         "6d": {
           "status": "complete",
@@ -9066,7 +9066,7 @@
           "plannedFiles": [
             "src/mcp-channel/src/visual-feedback-system.ts"
           ],
-          "notes": "2025-10-02: MCP visual feedback migrated to formatter/window DI; phase6-health snapshot captured (known harness gap).\nEvidence: tmp/stage6/pattern-7/20251002T215250Z-visual-feedback-system.formatter.test.log, tmp/stage6/pattern-7/20251002T220725Z-phase6-health.log."
+          "notes": "2025-10-02: MCP visual feedback migrated to formatter/window DI; phase6-health snapshot captured (known harness gap).\nEvidence: Templum/archive/dev-files/utility-migration/evidence/pattern-7/stage6/20251002T215250Z-visual-feedback-system.formatter.test.log, Templum/archive/dev-files/utility-migration/evidence/pattern-7/stage6/20251002T220725Z-phase6-health.log."
         }
       },
       "handoff": {
@@ -9112,7 +9112,7 @@
           "timestamp": "2025-10-12T12:48:24Z",
           "summary": "Lane 4a status set to complete",
           "files": [
-            "tmp/stage6/pattern-7/20251002T214655Z-window-utils.test.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-7/stage6/20251002T214655Z-window-utils.test.log"
           ]
         },
         {
@@ -9125,8 +9125,8 @@
           "timestamp": "2025-10-12T12:48:41Z",
           "summary": "Lane 4b status set to complete",
           "files": [
-            "tmp/stage6/pattern-7/20251002T214624Z-display-utils.test.log",
-            "tmp/stage6/pattern-7/20251002T214549Z-terminal-formatter.test.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-7/stage6/20251002T214624Z-display-utils.test.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-7/stage6/20251002T214549Z-terminal-formatter.test.log"
           ]
         },
         {
@@ -9139,8 +9139,8 @@
           "timestamp": "2025-10-12T12:48:59Z",
           "summary": "Lane 4c status set to complete",
           "files": [
-            "tmp/stage6/pattern-7/20251002T214729Z-adaptive-cli-integration.test.log",
-            "tmp/stage6/pattern-7/20251002T214841Z-interface-adapter-integration.test.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-7/stage6/20251002T214729Z-adaptive-cli-integration.test.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-7/stage6/20251002T214841Z-interface-adapter-integration.test.log"
           ]
         },
         {
@@ -9163,7 +9163,7 @@
           "timestamp": "2025-10-12T12:49:32Z",
           "summary": "Lane 6a status set to complete",
           "files": [
-            "tmp/stage6/pattern-7/20251002T214803Z-navigation-system.test.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-7/stage6/20251002T214803Z-navigation-system.test.log"
           ]
         },
         {
@@ -9176,8 +9176,8 @@
           "timestamp": "2025-10-12T12:49:51Z",
           "summary": "Lane 6b status set to complete",
           "files": [
-            "tmp/stage6/pattern-7/20251002T220235Z-templum-universal-session-manager.test.log",
-            "tmp/stage6/pattern-7/20251002T220152Z-service-utils.test.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-7/stage6/20251002T220235Z-templum-universal-session-manager.test.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-7/stage6/20251002T220152Z-service-utils.test.log"
           ]
         },
         {
@@ -9190,9 +9190,9 @@
           "timestamp": "2025-10-12T12:50:11Z",
           "summary": "Lane 6c status set to complete",
           "files": [
-            "tmp/stage6/pattern-7/20251002T233503Z-adaptive-cli-integration.test.log",
-            "tmp/stage6/pattern-7/20251002T233137Z-interface-adapter-integration.test.log",
-            "tmp/stage6/pattern-7/20251002T220350Z-cli-leak-guard.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-7/stage6/20251002T233503Z-adaptive-cli-integration.test.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-7/stage6/20251002T233137Z-interface-adapter-integration.test.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-7/stage6/20251002T220350Z-cli-leak-guard.log"
           ]
         },
         {
@@ -9205,8 +9205,8 @@
           "timestamp": "2025-10-12T12:50:29Z",
           "summary": "Lane 6d status set to complete",
           "files": [
-            "tmp/stage6/pattern-7/20251002T215250Z-visual-feedback-system.formatter.test.log",
-            "tmp/stage6/pattern-7/20251002T220725Z-phase6-health.log"
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-7/stage6/20251002T215250Z-visual-feedback-system.formatter.test.log",
+            "Templum/archive/dev-files/utility-migration/evidence/pattern-7/stage6/20251002T220725Z-phase6-health.log"
           ]
         },
         {

@@ -1,0 +1,1 @@
+  logError(`Unhandled rejection: ${reason.message}`);

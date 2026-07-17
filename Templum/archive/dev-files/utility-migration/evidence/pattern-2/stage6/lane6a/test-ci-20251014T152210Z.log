@@ -1,0 +1,196 @@
+
+> templum@1.0.0 test:ci
+> node scripts/run-jest-ci.mjs && node scripts/run-jest-ci.mjs --runTestsByPath src/tests/backend/manual-override-flow.test.ts src/tests/backend/manual-override-watcher.integration.test.ts --no-cache && npm run coverage:governance
+
+┌──────────────────────────────────────────────────────┐
+│              Display Standards Console               │
+├──────────────────────────────────────────────────────┤
+│    Baseline layout rendering story │ Templum › main  │
+│                                                      │
+│    Connect to Primary Display Orchestrator - Initi…  │
+│    Synchronize Observability Metrics Acr... - Alig…  │
+│    Execute Full Diagnostics and Layout V... - Coll…  │
+│    Refresh fallback layout caches - Ensures recurs…  │
+│    Export layout snapshot for audit trai... - Pers…  │
+│                                                      │
+│  ───────────────────────────────────────────────...  │
+│                                                Home  │
+│                                                Help  │
+│                                                Exit  │
+└──────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────┐
+│ Select an option: (Use arrow keys)                   │
+└──────────────────────────────────────────────────────┘
+
+Keyboard Shortcuts:
+  h - help
+  q - quit
+  b - back
+  r - refresh
+  s - status
+  f - search
+  / - search
+
+┌────────────────────────────────────────────────────────────┐
+│                 Display Standards Console                  │
+├────────────────────────────────────────────────────────────┤
+│          Baseline layout rendering story │ Templum › main  │
+│                                                            │
+│    Connect to Primary Display Orchestrator - Initialize …  │
+│    Synchronize Observability Metrics Acr... - Aligns tel…  │
+│    Execute Full Diagnostics and Layout V... - Collects s…  │
+│    Refresh fallback layout caches - Ensures recursive se…  │
+│    Export layout snapshot for audit trai... - Persists s…  │
+│                                                            │
+│  ─────────────────────────────────────────────────────...  │
+│                                                      Home  │
+│                                                      Help  │
+│                                                      Exit  │
+└────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────┐
+│ Select an option: (Use arrow keys)                         │
+└────────────────────────────────────────────────────────────┘
+
+Keyboard Shortcuts:
+  h - help
+  q - quit
+  b - back
+  r - refresh
+  s - status
+  f - search
+  / - search
+
+┌────────────────────────────────────────────────────────────┐
+│                 Display Standards Console                  │
+├────────────────────────────────────────────────────────────┤
+│          Baseline layout rendering story │ Templum › main  │
+│                                                            │
+│    Connect to Primary Display Orchestrator - Initialize …  │
+│    Synchronize Observability Metrics Acr... - Aligns tel…  │
+│    Execute Full Diagnostics and Layout V... - Collects s…  │
+│    Refresh fallback layout caches - Ensures recursive se…  │
+│    Export layout snapshot for audit trai... - Persists s…  │
+│                                                            │
+│  ─────────────────────────────────────────────────────...  │
+│                                                      Home  │
+│                                                      Help  │
+│                                                      Exit  │
+└────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────┐
+│ Select an option: (Use arrow keys)                         │
+└────────────────────────────────────────────────────────────┘
+
+Keyboard Shortcuts:
+  h - help
+  q - quit
+  b - back
+  r - refresh
+  s - status
+  f - search
+  / - search
+
+┌────────────────────────────────────────────────────────────┐
+│                   Window Layout Baseline                   │
+├────────────────────────────────────────────────────────────┤
+│              Theme + capability snapshot │ Templum › main  │
+│                                                            │
+│    Open orchestrated window - Creates a terminal window …  │
+│    Pin adaptive layout snapshot - Locks current window l…  │
+│    Preview current theme blend - Prints terminal theme a…  │
+│    Trigger fallback safe mode - Simulates color/unicode …  │
+│                                                            │
+│  ─────────────────────────────────────────────────────...  │
+│                                                      Home  │
+│                                                      Help  │
+│                                                      Exit  │
+└────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────┐
+│ Select an option: (Use arrow keys)                         │
+└────────────────────────────────────────────────────────────┘
+
+Keyboard Shortcuts:
+  h - help
+  q - quit
+  b - back
+  r - refresh
+  s - status
+  f - search
+  / - search
+
+┌────────────────────────────────────────────────────────────┐
+│                   Window Layout Baseline                   │
+├────────────────────────────────────────────────────────────┤
+│              Theme + capability snapshot │ Templum › main  │
+│                                                            │
+│    Open orchestrated window - Creates a terminal window …  │
+│    Pin adaptive layout snapshot - Locks current window l…  │
+│    Preview current theme blend - Prints terminal theme a…  │
+│    Trigger fallback safe mode - Simulates color/unicode …  │
+│                                                            │
+│  ─────────────────────────────────────────────────────...  │
+│                                                      Home  │
+│                                                      Help  │
+│                                                      Exit  │
+└────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────┐
+│ Select an option: (Use arrow keys)                         │
+└────────────────────────────────────────────────────────────┘
+
+Keyboard Shortcuts:
+  h - help
+  q - quit
+  b - back
+  r - refresh
+  s - status
+  f - search
+  / - search
+
+┌──────────────────────────────────────────────────┐
+│ Skin has no CLI menus                            │
+│ Please provide `menus.main` in the skin payload. │
+└──────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────┐
+│ Skin has no CLI menus                            │
+│ Please provide `menus.main` in the skin payload. │
+└──────────────────────────────────────────────────┘
+
+⌨️  Keyboard Shortcuts:
+  h - help
+  q - quit
+  b - back
+  r - refresh
+  s - status
+
+Navigated back to: main
+────────────────────────────────────────────────────────────────────────────────
+   🌐 Backend Service Status (0/0 connected)   
+────────────────────────────────────────────────────────────────────────────────
+
+┌──────────┬──────────┬──────────┬──────────┬──────────────┐
+│          │          │          │          │              │
+├──────────┼──────────┼──────────┼──────────┼──────────────┤
+└──────────┴──────────┴──────────┴──────────┴──────────────┘
+Connected: 0/0 | Healthy: 0/0 | Status: Discovery Mode
+
+💡 Recommendations:
+   No connected services found - check service connectivity
+
+
+🌟 Templum Universal Interface - CLI Mode
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ CLI Interface Adapter Active (Real Backend Integration)
+
+Backend Status: Connected 0/0 | Healthy 0/0
+System Status: 🟡 Discovery Mode
+
+Waiting for backend services to become available...
+
+Type 'help' for available commands or 'status' for detailed backend information.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    

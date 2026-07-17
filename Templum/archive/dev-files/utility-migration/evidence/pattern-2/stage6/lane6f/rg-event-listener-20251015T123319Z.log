@@ -1,0 +1,1 @@
+      console.error(`[EVENT_MANAGER] Failed to register listener for ${componentId}:`, error);

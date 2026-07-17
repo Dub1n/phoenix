@@ -1,0 +1,7 @@
+[run-with-timeout] [2025-10-12T13:30:52.787Z] +    5ms Spawned PID 232883 with timeout 30000ms (kill-after 5000ms).
+
+> templum@1.0.0 test
+> jest --runTestsByPath src/tests/backend/service-discovery.test.ts src/tests/backend/generic-backend-integration.test.ts src/tests/backend/backend-dependency-integration.test.ts --runInBand --detectOpenHandles --forceExit --no-cache
+
+[run-with-timeout] [2025-10-12T13:31:22.814Z] +30032ms Timeout reached (30000ms). Sending SIGTERM to PID 232883.
+[run-with-timeout] [2025-10-12T13:31:22.818Z] +30036ms Process exited due to signal SIGTERM.

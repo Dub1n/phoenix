@@ -1,0 +1,53 @@
+Component interaction tests initialized
+[2025-10-15T13:08:22.748Z] [phase6-integration-validation] [INFO] 🚀 Phase 6 Integration Validation Starting...
+
+🚀 Phase 6 Integration Validation Starting...
+[2025-10-15T13:08:22.748Z] [phase6-integration-validation] [INFO] 📋 Initializing Phase 6 validation suite...
+📋 Initializing Phase 6 validation suite...
+PerformanceRegressionMonitor: Phase 5 baselines initialized
+Phase6IntegrationValidationSuite: Initializing...
+[2025-10-15T13:08:22.749Z] [phase6-integration-validation] [INFO] ✅ All backend services ready
+✅ All backend services ready
+PerformanceRegressionMonitor: Starting continuous monitoring (30000ms interval)
+Phase6IntegrationValidationSuite: Initialization complete
+[2025-10-15T13:08:22.750Z] [phase6-integration-validation] [INFO] ✅ Validation suite initialized
+
+✅ Validation suite initialized
+[2025-10-15T13:08:22.750Z] [phase6-integration-validation] [INFO] 🔄 Running comprehensive integration validation...
+🔄 Running comprehensive integration validation...
+[2025-10-15T13:08:22.750Z] [phase6-integration-validation] [INFO]    • Multi-system workflow testing (PCL ↔ Haruspex ↔ Templum)
+   • Multi-system workflow testing (PCL ↔ Haruspex ↔ Templum)
+[2025-10-15T13:08:22.750Z] [phase6-integration-validation] [INFO]    • Cross-interface consistency validation (VSCode, CLI, Command)
+   • Cross-interface consistency validation (VSCode, CLI, Command)
+[2025-10-15T13:08:22.750Z] [phase6-integration-validation] [INFO]    • Performance regression monitoring (Phase 5 baselines)
+   • Performance regression monitoring (Phase 5 baselines)
+[2025-10-15T13:08:22.750Z] [phase6-integration-validation] [INFO]    • Production readiness verification
+   • Production readiness verification
+[2025-10-15T13:08:22.750Z] [phase6-integration-validation] [INFO]    • System reliability and failover testing
+
+   • System reliability and failover testing
+Phase6IntegrationValidationSuite: Starting comprehensive Phase 6 validation...
+MultiSystemWorkflowOrchestrator: Starting workflow pcl-to-haruspex (workflow_1760533702750_2)
+PerformanceRegressionMonitor: Starting regression testing against Phase 5 baselines...
+CrossInterfaceValidator: Starting cross-interface validation...
+ProductionReadinessValidator: Starting production readiness validation...
+CrossInterfaceValidator: Validation complete. Overall consistency: 100%
+[2025-10-15T13:08:22.755Z] [phase6-integration-validation] [INFO] ✅ Cross-interface validation: 100.0% consistency
+✅ Cross-interface validation: 100.0% consistency
+MultiSystemWorkflowOrchestrator: Workflow workflow_1760533702750_2 completed in 5ms
+[2025-10-15T13:08:22.755Z] [phase6-integration-validation] [INFO] ✅ Workflow completed: pcl-to-haruspex (5ms)
+✅ Workflow completed: pcl-to-haruspex (5ms)
+MultiSystemWorkflowOrchestrator: Starting workflow haruspex-to-templum (workflow_1760533702755_3)
+MultiSystemWorkflowOrchestrator: Workflow workflow_1760533702755_3 completed in 1ms
+[2025-10-15T13:08:22.756Z] [phase6-integration-validation] [INFO] ✅ Workflow completed: haruspex-to-templum (1ms)
+✅ Workflow completed: haruspex-to-templum (1ms)
+MultiSystemWorkflowOrchestrator: Starting workflow end-to-end-tdd (workflow_1760533702756_4)
+MultiSystemWorkflowOrchestrator: Workflow workflow_1760533702756_4 completed in 1ms
+[2025-10-15T13:08:22.757Z] [phase6-integration-validation] [INFO] ✅ Workflow completed: end-to-end-tdd (1ms)
+✅ Workflow completed: end-to-end-tdd (1ms)
+MultiSystemWorkflowOrchestrator: Starting workflow cross-interface-sync (workflow_1760533702757_5)
+MultiSystemWorkflowOrchestrator: Workflow workflow_1760533702757_5 completed in 0ms
+[2025-10-15T13:08:22.757Z] [phase6-integration-validation] [INFO] ✅ Workflow completed: cross-interface-sync (0ms)
+✅ Workflow completed: cross-interface-sync (0ms)
+
+ℹ️ Skipping real backend run (set PHASE6_RUN_REAL=1 or pass --real to enable).

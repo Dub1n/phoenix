@@ -2,7 +2,7 @@
   "baselineRunId": "phase6-baseline-2025-09-30T22-15-00Z",
   "capturedAt": "2025-09-30T22:15:00.000Z",
   "command": "npm run phase6-validation -- --use-real-backends",
-  "source": "logs/consolidation/pattern-1/lane-6e-20251015T130410Z-phase6-run.log",
+  "source": "Templum/archive/dev-files/utility-migration/evidence/pattern-1/unclassified/lane-6e-20251015T130410Z-phase6-run.log",
   "metadata": {
     "runner": "phase6-baseline-stage6",
     "notes": "Baseline captured during Stage 6 hand-off rehearsal using partnered services with production parity configuration"

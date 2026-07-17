@@ -1,0 +1,4 @@
+
+> templum@1.0.0 test
+> jest --runTestsByPath src/tests/backend/backend-serialization-log.test.ts src/tests/backend/backend-connection-lifecycle.test.ts src/tests/backend/manual-override-flow.test.ts src/tests/backend/manual-override-watcher.integration.test.ts
+

@@ -1,0 +1,53 @@
+
+> templum@1.0.0 test
+> jest --runTestsByPath src/tests/backend/backend-connection-lifecycle.test.ts src/tests/backend/manual-override-flow.test.ts src/tests/backend/comprehensive-backend-validation.test.ts --runInBand --no-cache
+
+FAIL src/tests/backend/comprehensive-backend-validation.test.ts (120.42 s)
+FAIL src/tests/backend/backend-connection-lifecycle.test.ts
+  ● Test suite failed to run
+
+    RangeError: Invalid string length
+
+      at node_modules/@jest/console/build/index.js:445:116
+          at Array.reduce (<anonymous>)
+      at getConsoleOutput (node_modules/@jest/console/build/index.js:420:29)
+      at DefaultReporter.printTestFileHeader (node_modules/@jest/reporters/build/index.js:702:79)
+      at DefaultReporter.onTestResult (node_modules/@jest/reporters/build/index.js:674:12)
+      at ReporterDispatcher.onTestFileResult (node_modules/@jest/core/build/index.js:276:24)
+      at onResult (node_modules/@jest/core/build/index.js:1069:30)
+      at node_modules/@jest/core/build/index.js:1126:165
+      at node_modules/emittery/index.js:363:13
+          at Array.map (<anonymous>)
+      at Emittery.emit (node_modules/emittery/index.js:361:23)
+
+PASS src/tests/backend/manual-override-flow.test.ts
+
+Test Suites: 2 failed, 1 passed, 3 total
+Tests:       2 failed, 23 passed, 25 total
+Snapshots:   0 total
+Time:        235.769 s
+Ran all test suites within paths "src/tests/backend/backend-connection-lifecycle.test.ts", "src/tests/backend/manual-override-flow.test.ts", "src/tests/backend/comprehensive-backend-validation.test.ts".
+There are 1 handle(s) keeping the process running.
+
+# Timeout
+tests/globalTeardown.ts:47                      - }
+tests/globalTeardown.ts:47                      - }
+tests/globalTeardown.ts:53                      - let handles = pollHandles();
+node_modules/@jest/core/build/index.js:3156     - await globalModule(globalConfig, projectConfig);
+node_modules/@jest/transform/build/index.js:141 - await promise;
+node_modules/@jest/transform/build/index.js:625 - return await waitForPromiseWithCleanup(cbResult, revertHook).then(() => module);
+node_modules/@jest/core/build/index.js:3152     - await transformer.requireAndTranspileModule(modulePath, async globalModule => {
+node_modules/@jest/core/build/index.js:3454     - await (0, _runGlobalHook.default)({
+node_modules/@jest/core/build/index.js:1533     - await runWithoutWatch(globalConfig, contexts, outputStream, onComplete, changedFilesPromise, filter);
+node_modules/@jest/core/build/index.js:1434     - await _run10000(globalConfig, configsOfProjectsToRun, hasDeprecationWarnings, outputStream, r => {
+node_modules/jest-cli/build/index.js:656        - } = await (0, _core().runCLI)(argv, projects);
+Error: Jest: Got error running globalTeardown - /home/gabri/dev/VDL_VAULT/Templum/tests/globalTeardown.ts, reason: Detected 4 active handle(s) [Socket(local=:, remote=:), Socket(local=:, remote=:), Socket(local=:, remote=:), ChildProcess] and 0 request(s) after tests. Resolve leaked resources or explicitly dispose of them in test teardown.
+    at globalTeardown (/home/gabri/dev/VDL_VAULT/Templum/tests/globalTeardown.ts:69:15)
+    at /home/gabri/dev/VDL_VAULT/Templum/node_modules/@jest/core/build/index.js:3156:11
+    at waitForPromiseWithCleanup (/home/gabri/dev/VDL_VAULT/Templum/node_modules/@jest/transform/build/index.js:141:5)
+    at ScriptTransformer.requireAndTranspileModule (/home/gabri/dev/VDL_VAULT/Templum/node_modules/@jest/transform/build/index.js:625:16)
+    at runGlobalHook (/home/gabri/dev/VDL_VAULT/Templum/node_modules/@jest/core/build/index.js:3152:9)
+    at runJest (/home/gabri/dev/VDL_VAULT/Templum/node_modules/@jest/core/build/index.js:3454:5)
+    at _run10000 (/home/gabri/dev/VDL_VAULT/Templum/node_modules/@jest/core/build/index.js:1533:5)
+    at runCLI (/home/gabri/dev/VDL_VAULT/Templum/node_modules/@jest/core/build/index.js:1434:3)
+    at Object.run (/home/gabri/dev/VDL_VAULT/Templum/node_modules/jest-cli/build/index.js:656:9)

@@ -1,0 +1,5 @@
+
+> templum@1.0.0 test:ci
+> node scripts/run-jest-ci.mjs && node scripts/run-jest-ci.mjs --runTestsByPath src/tests/backend/manual-override-flow.test.ts src/tests/backend/manual-override-watcher.integration.test.ts --no-cache
+
+[?25h[0m

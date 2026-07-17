@@ -15,6 +15,17 @@ The consolidate CLI is a thin wrapper around three core modules:
 3. **Command driver (`consolidation-scripts/cli-command-stub.mjs`)** — executes the command, mutates `consolidation-state.json`, emits guidance, and triggers targeted regenerations. The driver now focuses on parse → dispatch → persist flows and pulls in shared helpers from the `modules/` directory instead of embedding utility logic inline.
 4. **Support modules (`consolidation-scripts/modules/…`)** — house environment resolution, time utilities, plan-file + search-term normalisers, cleanup guard orchestration, markdown formatting, and registry runtime helpers (load/save, Ajv validation, pending regen tracking). These modules keep behaviour centralised while shrinking the driver surface.
 
+### Evidence output boundary
+
+Consolidation commands executed through `scripts/run-with-timeout.mjs` must place
+`--log-file` output under `archive/dev-files/utility-migration/evidence/` using
+`pattern-<id>/stage<id>/[lane<id>/]<name>.log`. The general-purpose wrapper
+requires an `archive/` directory within the monorepo because it also serves
+other projects and workflows; consolidation CLI guidance supplies this
+workflow-specific layout.
+Registry `--files` entries should use the repository-relative
+`Templum/archive/...` form.
+
 ### Command Dispatch Flow
 
 ```mermaid

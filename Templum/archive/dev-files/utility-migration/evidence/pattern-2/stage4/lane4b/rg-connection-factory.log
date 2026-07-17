@@ -1,0 +1,14 @@
+[run-with-timeout] [2025-10-14T12:29:51.208Z] +  182ms Spawned PID undefined with timeout 30000ms (kill-after 5000ms).
+[run-with-timeout] [2025-10-14T12:29:51.210Z] +  184ms Failed to start command: spawn -- EACCES
+[run-with-timeout] [2025-10-14T12:29:58.238Z] +    3ms Spawned PID 660081 with timeout 30000ms (kill-after 5000ms).
+  } catch (error) {
+        } catch (error) {
+        } catch (error) {
+            } catch (endpointError) {
+        } catch (error) {
+              } catch (handshakeError) {
+        } catch (error) {
+      } catch (sendError) {
+    } catch (error) {
+      } catch (writeError) {
+[run-with-timeout] [2025-10-14T12:29:58.241Z] +    6ms Process exited with code 0.

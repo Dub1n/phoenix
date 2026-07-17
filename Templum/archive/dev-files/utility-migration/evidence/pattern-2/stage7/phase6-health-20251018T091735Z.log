@@ -1,0 +1,39 @@
+[run-with-timeout] [2025-10-18T09:17:35.798Z] +    9ms Spawned PID 81086 with timeout 600000ms (kill-after 5000ms).
+
+> templum@1.0.0 phase6-health
+> npm run build && node dist/src/scripts/run-phase6-integration-validation.js health
+
+
+> templum@1.0.0 build
+> node scripts/clean-build-artifacts.js && tsc
+
+Component interaction tests initialized
+[2025-10-18T09:17:42.320Z] [phase6-integration-validation] [INFO] 🏥 Phase 6 System Health Check
+
+🏥 Phase 6 System Health Check
+PerformanceRegressionMonitor: Loaded baselines from /home/gabri/dev/VDL_VAULT/Templum/validation-reports/phase6-baselines/phase5-stage6-baseline.json
+Phase6IntegrationValidationSuite: Initializing...
+PerformanceRegressionMonitor: Starting continuous monitoring (30000ms interval)
+Phase6IntegrationValidationSuite: Initialization complete
+Phase6IntegrationValidationSuite: Checking system health...
+[2025-10-18T09:17:42.323Z] [phase6-integration-validation] [INFO] Service Health Status:
+Service Health Status:
+[2025-10-18T09:17:42.323Z] [phase6-integration-validation] [INFO] ──────────────────────────────────────────────────
+──────────────────────────────────────────────────
+[2025-10-18T09:17:42.323Z] [phase6-integration-validation] [INFO]   HARUSPEX       ✅ HEALTHY Response:      0.0ms Memory:      8.4MB Errors: 0.0%
+  HARUSPEX       ✅ HEALTHY Response:      0.0ms Memory:      8.4MB Errors: 0.0%
+[2025-10-18T09:17:42.323Z] [phase6-integration-validation] [INFO]        PCL       ✅ HEALTHY Response:      0.0ms Memory:      8.4MB Errors: 0.0%
+       PCL       ✅ HEALTHY Response:      0.0ms Memory:      8.4MB Errors: 0.0%
+[2025-10-18T09:17:42.323Z] [phase6-integration-validation] [INFO]    TEMPLUM       ✅ HEALTHY Response:      0.0ms Memory:      8.4MB Errors: 0.0%
+   TEMPLUM       ✅ HEALTHY Response:      0.0ms Memory:      8.4MB Errors: 0.0%
+[2025-10-18T09:17:42.323Z] [phase6-integration-validation] [INFO] ──────────────────────────────────────────────────
+──────────────────────────────────────────────────
+[2025-10-18T09:17:42.323Z] [phase6-integration-validation] [INFO] Overall System Health: ✅ HEALTHY
+[run-with-timeout] [2025-10-18T09:17:42.324Z] + 6535ms Pattern "Overall System Health: ✅ HEALTHY" detected on stdout. Sending SIGTERM to PID 81086.
+Overall System Health: ✅ HEALTHY
+[2025-10-18T09:17:42.323Z] [phase6-integration-validation] [INFO] Phase 6 Note: Phase 6 readiness score disabled—use report.status for outcome.
+Phase 6 Note: Phase 6 readiness score disabled—use report.status for outcome.
+Phase6IntegrationValidationSuite: Shutting down...
+PerformanceRegressionMonitor: Continuous monitoring stopped
+Phase6IntegrationValidationSuite: Shutdown complete
+[run-with-timeout] [2025-10-18T09:17:42.327Z] + 6538ms Process exited due to signal SIGTERM.

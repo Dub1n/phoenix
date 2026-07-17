@@ -1,0 +1,4 @@
+
+> templum@1.0.0 build
+> node scripts/clean-build-artifacts.js && tsc
+

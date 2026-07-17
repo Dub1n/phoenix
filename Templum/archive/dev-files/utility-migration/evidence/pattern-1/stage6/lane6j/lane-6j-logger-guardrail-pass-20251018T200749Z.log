@@ -1,0 +1,51 @@
+[run-with-timeout] [2025-10-18T20:07:49.986Z] +    5ms Spawned PID 232155 with timeout 30000ms (kill-after 5000ms).
+FAIL Templum/src/utils/__tests__/logger.test.ts
+  ● Test suite failed to run
+
+    SyntaxError: /home/gabri/dev/VDL_VAULT/Templum/src/utils/__tests__/logger.test.ts: Unexpected token, expected "{" (3:20)
+
+      1 | import { createLogger, LoggerConfig, LogLevel, LogRecord, LoggerTransport } from '../logger';
+      2 |
+    > 3 | class TestTransport implements LoggerTransport {
+        |                     ^
+      4 |   public readonly records: LogRecord[] = [];
+      5 |
+      6 |   log(record: LogRecord): void {
+
+      at constructor (../../.npm/_npx/b8d86e6551a4f492/node_modules/@babel/parser/src/parse-error.ts:95:45)
+      at Parser.toParseError [as raise] (../../.npm/_npx/b8d86e6551a4f492/node_modules/@babel/parser/src/tokenizer/index.ts:1503:19)
+      at Parser.raise [as unexpected] (../../.npm/_npx/b8d86e6551a4f492/node_modules/@babel/parser/src/tokenizer/index.ts:1543:16)
+      at Parser.unexpected [as expect] (../../.npm/_npx/b8d86e6551a4f492/node_modules/@babel/parser/src/parser/util.ts:157:12)
+      at Parser.expect [as parseClassBody] (../../.npm/_npx/b8d86e6551a4f492/node_modules/@babel/parser/src/parser/statement.ts:1814:10)
+      at Parser.parseClassBody [as parseClass] (../../.npm/_npx/b8d86e6551a4f492/node_modules/@babel/parser/src/parser/statement.ts:1769:22)
+      at Parser.parseClass [as parseStatementContent] (../../.npm/_npx/b8d86e6551a4f492/node_modules/@babel/parser/src/parser/statement.ts:527:21)
+      at Parser.parseStatementContent [as parseStatementLike] (../../.npm/_npx/b8d86e6551a4f492/node_modules/@babel/parser/src/parser/statement.ts:477:17)
+      at Parser.parseStatementLike [as parseModuleItem] (../../.npm/_npx/b8d86e6551a4f492/node_modules/@babel/parser/src/parser/statement.ts:414:17)
+      at Parser.parseModuleItem [as parseBlockOrModuleBlockBody] (../../.npm/_npx/b8d86e6551a4f492/node_modules/@babel/parser/src/parser/statement.ts:1438:16)
+      at Parser.parseBlockOrModuleBlockBody [as parseBlockBody] (../../.npm/_npx/b8d86e6551a4f492/node_modules/@babel/parser/src/parser/statement.ts:1412:10)
+      at Parser.parseBlockBody [as parseProgram] (../../.npm/_npx/b8d86e6551a4f492/node_modules/@babel/parser/src/parser/statement.ts:229:10)
+      at Parser.parseProgram [as parseTopLevel] (../../.npm/_npx/b8d86e6551a4f492/node_modules/@babel/parser/src/parser/statement.ts:203:25)
+      at Parser.parseTopLevel [as parse] (../../.npm/_npx/b8d86e6551a4f492/node_modules/@babel/parser/src/parser/index.ts:93:10)
+      at parse (../../.npm/_npx/b8d86e6551a4f492/node_modules/@babel/parser/src/index.ts:92:38)
+      at parser (../../.npm/_npx/b8d86e6551a4f492/node_modules/@babel/core/src/parser/index.ts:28:19)
+          at parser.next (<anonymous>)
+      at normalizeFile (../../.npm/_npx/b8d86e6551a4f492/node_modules/@babel/core/src/transformation/normalize-file.ts:49:24)
+          at normalizeFile.next (<anonymous>)
+      at run (../../.npm/_npx/b8d86e6551a4f492/node_modules/@babel/core/src/transformation/index.ts:40:36)
+          at run.next (<anonymous>)
+      at transform (../../.npm/_npx/b8d86e6551a4f492/node_modules/@babel/core/src/transform.ts:29:20)
+          at transform.next (<anonymous>)
+      at evaluateSync (../../.npm/_npx/b8d86e6551a4f492/node_modules/gensync/index.js:251:28)
+      at sync (../../.npm/_npx/b8d86e6551a4f492/node_modules/gensync/index.js:89:14)
+      at fn (../../.npm/_npx/b8d86e6551a4f492/node_modules/@babel/core/src/errors/rewrite-stack-trace.ts:99:14)
+      at transformSync (../../.npm/_npx/b8d86e6551a4f492/node_modules/@babel/core/src/transform.ts:66:52)
+      at ScriptTransformer.transformSource (../../.npm/_npx/b8d86e6551a4f492/node_modules/@jest/transform/build/index.js:422:31)
+      at ScriptTransformer._transformAndBuildScript (../../.npm/_npx/b8d86e6551a4f492/node_modules/@jest/transform/build/index.js:519:40)
+      at ScriptTransformer.transform (../../.npm/_npx/b8d86e6551a4f492/node_modules/@jest/transform/build/index.js:558:19)
+
+Test Suites: 1 failed, 1 total
+Tests:       0 total
+Snapshots:   0 total
+Time:        0.367 s
+Ran all test suites matching src/utils/__tests__/logger.test.ts.
+[run-with-timeout] [2025-10-18T20:07:52.162Z] + 2181ms Process exited with code 1.

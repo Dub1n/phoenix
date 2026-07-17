@@ -1,0 +1,52 @@
+
+> templum@1.0.0 phase6-validation
+> npm run build && node dist/src/scripts/run-phase6-integration-validation.js run
+
+
+> templum@1.0.0 build
+> tsc
+
+Component interaction tests initialized
+🚀 Phase 6 Integration Validation Starting...
+
+📋 Initializing Phase 6 validation suite...
+PerformanceRegressionMonitor: Phase 5 baselines initialized
+Phase6IntegrationValidationSuite: Initializing...
+✅ All backend services ready
+PerformanceRegressionMonitor: Starting continuous monitoring (30000ms interval)
+Phase6IntegrationValidationSuite: Initialization complete
+✅ Validation suite initialized
+
+🔄 Running comprehensive integration validation...
+   • Multi-system workflow testing (PCL ↔ Haruspex ↔ Templum)
+   • Cross-interface consistency validation (VSCode, CLI, Command)
+   • Performance regression monitoring (Phase 5 baselines)
+   • Production readiness verification
+   • System reliability and failover testing
+
+Phase6IntegrationValidationSuite: Starting comprehensive Phase 6 validation...
+
+✅ Validation completed in 0.00s
+
+📄 JSON report saved: validation-reports/phase6-validation-2025-10-06T11-17-19-103Z.json
+📄 HTML report saved: validation-reports/phase6-validation-2025-10-06T11-17-19-103Z.html
+📄 Markdown report saved: validation-reports/phase6-validation-2025-10-06T11-17-19-103Z.md
+
+📊 Phase 6 Integration Validation Summary
+══════════════════════════════════════════════════
+Phase 6 Status: SKIPPED
+Reason: Mocks in use; run with --use-real-backends for full validation.
+Phase 6 Note: Phase 6 readiness score disabled—use report.status for outcome.
+Multi-System Workflows: 0/0 successful
+Cross-Interface Consistency: 0.0%
+Average Workflow Time: 0.0ms
+
+Service Health:
+  HARUSPEX: ✅ 0.0ms, 0.0MB
+  PCL: ✅ 0.0ms, 0.0MB
+  TEMPLUM: ✅ 0.0ms, 0.0MB
+Phase6IntegrationValidationSuite: Shutting down...
+PerformanceRegressionMonitor: Continuous monitoring stopped
+Phase6IntegrationValidationSuite: Shutdown complete
+
+⚠️ Phase 6 Integration Validation SKIPPED - Mocks in use; run with --use-real-backends for full validation.

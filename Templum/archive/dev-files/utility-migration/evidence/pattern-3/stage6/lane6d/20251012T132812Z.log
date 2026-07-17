@@ -1,0 +1,210 @@
+[run-with-timeout] [2025-10-12T13:28:12.446Z] +    7ms Spawned PID 226952 with timeout 180000ms (kill-after 10000ms).
+
+> templum@1.0.0 test
+> jest --runTestsByPath tests/interfaces/interface-adapter-integration.test.ts tests/interfaces/universal-interaction-manager.session.test.ts --runInBand --no-cache --detectOpenHandles --forceExit
+
+PASS tests/interfaces/interface-adapter-integration.test.ts
+  ● Console
+
+    console.error
+      [2025-10-12T13:28:15.811Z] [command-interface-adapter] [ERROR] CommandInterfaceAdapter: State sync failed {
+        errorMessage: 'State synchronization failed: state update is undefined'
+      }
+
+      57 |
+      58 |       if (data !== undefined || durationMs !== undefined) {
+    > 59 |         target(prefix, message, mergePayload(data, durationMs));
+         |         ^
+      60 |       } else {
+      61 |         target(prefix, message);
+      62 |       }
+
+      at Object.log (src/utils/logger.ts:59:9)
+      at Logger.dispatch (src/utils/logger.ts:181:35)
+      at Logger.error (src/utils/logger.ts:120:10)
+      at CommandInterfaceAdapter.syncState (src/interfaces/command-adapter-abstracted.ts:291:19)
+      at Object.<anonymous> (tests/interfaces/interface-adapter-integration.test.ts:1000:28)
+
+    console.error
+      [2025-10-12T13:28:15.816Z] [event-utils] [ERROR] Event emission failed {
+        event: 'error',
+        error: Error: Unhandled error. ({
+          timestamp: 1760275695813,
+          source: 'command',
+          error: Error: State synchronization failed: state update is undefined
+              at createTemplumError (/home/gabri/dev/VDL_VAULT/Templum/src/types/templum-types.ts:418:17)
+              at CommandInterfaceAdapter.validateStateUpdate (/home/gabri/dev/VDL_VAULT/Templum/src/interfaces/command-adapter-abstracted.ts:419:31)
+              at CommandInterfaceAdapter.syncState (/home/gabri/dev/VDL_VAULT/Templum/src/interfaces/command-adapter-abstracted.ts:266:12)
+              at Object.<anonymous> (/home/gabri/dev/VDL_VAULT/Templum/tests/interfaces/interface-adapter-integration.test.ts:1000:28) {
+            code: 'STATE_SYNC_FAILED',
+            category: 'runtime',
+            timestamp: 1760275695811,
+            context: undefined
+          },
+          severity: 'medium'
+        })
+            at EventEmitter.emit (node:events:508:17)
+            at EventEmitter.typedEmitter.emit (/home/gabri/dev/VDL_VAULT/Templum/src/utils/event-utils.ts:78:16)
+            at Function.emit (/home/gabri/dev/VDL_VAULT/Templum/src/utils/event-utils.ts:135:22)
+            at Object.emit (/home/gabri/dev/VDL_VAULT/Templum/src/utils/event-utils.ts:160:44)
+            at CommandInterfaceAdapter.emit (/home/gabri/dev/VDL_VAULT/Templum/src/interfaces/command-adapter-abstracted.ts:118:24)
+            at CommandInterfaceAdapter.syncState (/home/gabri/dev/VDL_VAULT/Templum/src/interfaces/command-adapter-abstracted.ts:295:12)
+            at Object.<anonymous> (/home/gabri/dev/VDL_VAULT/Templum/tests/interfaces/interface-adapter-integration.test.ts:1000:28) {
+          code: 'ERR_UNHANDLED_ERROR',
+          context: {
+            timestamp: 1760275695813,
+            source: 'command',
+            error: [Error],
+            severity: 'medium'
+          }
+        }
+      }
+
+      57 |
+      58 |       if (data !== undefined || durationMs !== undefined) {
+    > 59 |         target(prefix, message, mergePayload(data, durationMs));
+         |         ^
+      60 |       } else {
+      61 |         target(prefix, message);
+      62 |       }
+
+      at Object.log (src/utils/logger.ts:59:9)
+      at Logger.dispatch (src/utils/logger.ts:181:35)
+      at Logger.error (src/utils/logger.ts:120:10)
+      at EventEmitter.typedEmitter.emit (src/utils/event-utils.ts:80:27)
+      at Function.emit (src/utils/event-utils.ts:135:22)
+      at Object.emit (src/utils/event-utils.ts:160:44)
+      at CommandInterfaceAdapter.emit (src/interfaces/command-adapter-abstracted.ts:118:24)
+      at CommandInterfaceAdapter.syncState (src/interfaces/command-adapter-abstracted.ts:295:12)
+      at Object.<anonymous> (tests/interfaces/interface-adapter-integration.test.ts:1000:28)
+
+    console.error
+      [2025-10-12T13:28:15.816Z] [error-handler] [ERROR] Error in event-emission:error {
+        originalError: Error: Unhandled error. ({
+          timestamp: 1760275695813,
+          source: 'command',
+          error: Error: State synchronization failed: state update is undefined
+              at createTemplumError (/home/gabri/dev/VDL_VAULT/Templum/src/types/templum-types.ts:418:17)
+              at CommandInterfaceAdapter.validateStateUpdate (/home/gabri/dev/VDL_VAULT/Templum/src/interfaces/command-adapter-abstracted.ts:419:31)
+              at CommandInterfaceAdapter.syncState (/home/gabri/dev/VDL_VAULT/Templum/src/interfaces/command-adapter-abstracted.ts:266:12)
+              at Object.<anonymous> (/home/gabri/dev/VDL_VAULT/Templum/tests/interfaces/interface-adapter-integration.test.ts:1000:28) {
+            code: 'STATE_SYNC_FAILED',
+            category: 'runtime',
+            timestamp: 1760275695811,
+            context: undefined
+          },
+          severity: 'medium'
+        })
+            at EventEmitter.emit (node:events:508:17)
+            at EventEmitter.typedEmitter.emit (/home/gabri/dev/VDL_VAULT/Templum/src/utils/event-utils.ts:78:16)
+            at Function.emit (/home/gabri/dev/VDL_VAULT/Templum/src/utils/event-utils.ts:135:22)
+            at Object.emit (/home/gabri/dev/VDL_VAULT/Templum/src/utils/event-utils.ts:160:44)
+            at CommandInterfaceAdapter.emit (/home/gabri/dev/VDL_VAULT/Templum/src/interfaces/command-adapter-abstracted.ts:118:24)
+            at CommandInterfaceAdapter.syncState (/home/gabri/dev/VDL_VAULT/Templum/src/interfaces/command-adapter-abstracted.ts:295:12)
+            at Object.<anonymous> (/home/gabri/dev/VDL_VAULT/Templum/tests/interfaces/interface-adapter-integration.test.ts:1000:28) {
+          code: 'ERR_UNHANDLED_ERROR',
+          context: {
+            timestamp: 1760275695813,
+            source: 'command',
+            error: Error: State synchronization failed: state update is undefined
+                at createTemplumError (/home/gabri/dev/VDL_VAULT/Templum/src/types/templum-types.ts:418:17)
+                at CommandInterfaceAdapter.validateStateUpdate (/home/gabri/dev/VDL_VAULT/Templum/src/interfaces/command-adapter-abstracted.ts:419:31)
+                at CommandInterfaceAdapter.syncState (/home/gabri/dev/VDL_VAULT/Templum/src/interfaces/command-adapter-abstracted.ts:266:12)
+                at Object.<anonymous> (/home/gabri/dev/VDL_VAULT/Templum/tests/interfaces/interface-adapter-integration.test.ts:1000:28) {
+              code: 'STATE_SYNC_FAILED',
+              category: 'runtime',
+              timestamp: 1760275695811,
+              context: undefined
+            },
+            severity: 'medium'
+          }
+        }
+      } {
+        name: 'Error',
+        message: 'event-emission:error: Error [ERR_UNHANDLED_ERROR]: Unhandled error. ({\n' +
+          '  timestamp: 1760275695813,\n' +
+          "  source: 'command',\n" +
+          '  error: Error: State synchronization failed: state update is undefined\n' +
+          '      at createTemplumError (/home/gabri/dev/VDL_VAULT/Templum/src/types/templum-types.ts:418:17)\n' +
+          '      at CommandInterfaceAdapter.validateStateUpdate (/home/gabri/dev/VDL_VAULT/Templum/src/interfaces/command-adapter-abstracted.ts:419:31)\n' +
+          '      at CommandInterfaceAdapter.syncState (/home/gabri/dev/VDL_VAULT/Templum/src/interfaces/command-adapter-abstracted.ts:266:12)\n' +
+          '      at Object.<anonymous> (/home/gabri/dev/VDL_VAULT/Templum/tests/interfaces/interface-adapter-integration.test.ts:1000:28) {\n' +
+          "    code: 'STATE_SYNC_FAILED',\n" +
+          "    category: 'runtime',\n" +
+          '    timestamp: 1760275695811,\n' +
+          '    context: undefined\n' +
+          '  },\n' +
+          "  severity: 'medium'\n" +
+          '})',
+        stack: 'Error: event-emission:error: Error [ERR_UNHANDLED_ERROR]: Unhandled error. ({\n' +
+          '  timestamp: 1760275695813,\n' +
+          "  source: 'command',\n" +
+          '  error: Error: State synchronization failed: state update is undefined\n' +
+          '      at createTemplumError (/home/gabri/dev/VDL_VAULT/Templum/src/types/templum-types.ts:418:17)\n' +
+          '      at CommandInterfaceAdapter.validateStateUpdate (/home/gabri/dev/VDL_VAULT/Templum/src/interfaces/command-adapter-abstracted.ts:419:31)\n' +
+          '      at CommandInterfaceAdapter.syncState (/home/gabri/dev/VDL_VAULT/Templum/src/interfaces/command-adapter-abstracted.ts:266:12)\n' +
+          '      at Object.<anonymous> (/home/gabri/dev/VDL_VAULT/Templum/tests/interfaces/interface-adapter-integration.test.ts:1000:28) {\n' +
+          "    code: 'STATE_SYNC_FAILED',\n" +
+          "    category: 'runtime',\n" +
+          '    timestamp: 1760275695811,\n' +
+          '    context: undefined\n' +
+          '  },\n' +
+          "  severity: 'medium'\n" +
+          '})\n' +
+          '    at createTemplumError (/home/gabri/dev/VDL_VAULT/Templum/src/types/templum-types.ts:418:17)\n' +
+          '    at Function.normalizeError (/home/gabri/dev/VDL_VAULT/Templum/src/utils/error-handler.ts:181:30)\n' +
+          '    at Function.handle (/home/gabri/dev/VDL_VAULT/Templum/src/utils/error-handler.ts:32:31)\n' +
+          '    at EventEmitter.typedEmitter.emit (/home/gabri/dev/VDL_VAULT/Templum/src/utils/event-utils.ts:84:20)\n' +
+          '    at Function.emit (/home/gabri/dev/VDL_VAULT/Templum/src/utils/event-utils.ts:135:22)\n' +
+          '    at Object.emit (/home/gabri/dev/VDL_VAULT/Templum/src/utils/event-utils.ts:160:44)\n' +
+          '    at CommandInterfaceAdapter.emit (/home/gabri/dev/VDL_VAULT/Templum/src/interfaces/command-adapter-abstracted.ts:118:24)\n' +
+          '    at CommandInterfaceAdapter.syncState (/home/gabri/dev/VDL_VAULT/Templum/src/interfaces/command-adapter-abstracted.ts:295:12)\n' +
+          '    at Object.<anonymous> (/home/gabri/dev/VDL_VAULT/Templum/tests/interfaces/interface-adapter-integration.test.ts:1000:28)'
+      }
+
+      44 |
+      45 |       if (error) {
+    > 46 |         console.error(prefix, message, formatPayload(data), formatError(error));
+         |                 ^
+      47 |         return;
+      48 |       }
+      49 |
+
+      at Object.log (src/utils/logger.ts:46:17)
+      at Logger.dispatch (src/utils/logger.ts:181:35)
+      at Logger.error (src/utils/logger.ts:120:10)
+      at Function.handle (src/utils/error-handler.ts:33:17)
+      at EventEmitter.typedEmitter.emit (src/utils/event-utils.ts:84:20)
+      at Function.emit (src/utils/event-utils.ts:135:22)
+      at Object.emit (src/utils/event-utils.ts:160:44)
+      at CommandInterfaceAdapter.emit (src/interfaces/command-adapter-abstracted.ts:118:24)
+      at CommandInterfaceAdapter.syncState (src/interfaces/command-adapter-abstracted.ts:295:12)
+      at Object.<anonymous> (tests/interfaces/interface-adapter-integration.test.ts:1000:28)
+
+    console.error
+      [2025-10-12T13:28:15.824Z] [vscode-interface-adapter] [ERROR] VSCodeInterfaceAdapter: Failed to apply skin {
+        errorMessage: 'Skin validation failed: metadata.backendService is required'
+      }
+
+      57 |
+      58 |       if (data !== undefined || durationMs !== undefined) {
+    > 59 |         target(prefix, message, mergePayload(data, durationMs));
+         |         ^
+      60 |       } else {
+      61 |         target(prefix, message);
+      62 |       }
+
+      at Object.log (src/utils/logger.ts:59:9)
+      at Logger.dispatch (src/utils/logger.ts:181:35)
+      at Logger.error (src/utils/logger.ts:120:10)
+      at VSCodeInterfaceAdapter.applySkin (src/interfaces/vscode-adapter-abstracted.ts:161:19)
+      at Object.<anonymous> (tests/interfaces/interface-adapter-integration.test.ts:1053:7)
+
+PASS tests/interfaces/universal-interaction-manager.session.test.ts
+
+Test Suites: 2 passed, 2 total
+Tests:       46 passed, 46 total
+Snapshots:   2 passed, 2 total
+Time:        2.768 s
+Ran all test suites within paths "tests/interfaces/interface-adapter-integration.test.ts", "tests/interfaces/universal-interaction-manager.session.test.ts".
+[run-with-timeout] [2025-10-12T13:28:16.068Z] + 3628ms Process exited with code 0.

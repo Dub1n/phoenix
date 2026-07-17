@@ -1,0 +1,135 @@
+Manual setTimeout occurrences (non-test src):
+src/state/state-sync-foundation.ts:      this.processingTimeout = setTimeout(() => {
+src/state/state-sync-foundation.ts:          setTimeout(checkComplete, 10);
+src/state/enhanced-state-synchronization.ts:      const timer = setTimeout(() => {
+src/state/enhanced-state-synchronization.ts:      const timeout = setTimeout(() => {
+src/cli-entry.ts:        const timeout = setTimeout(() => {
+src/cli-entry.ts:              setTimeout(checkResponse, pollInterval);
+src/cli-entry.ts:        setTimeout(checkResponse, pollInterval);
+src/cli-entry.ts:    return new Promise(resolve => setTimeout(resolve, ms));
+src/scripts/simple-phase6-validation.ts:    return new Promise(resolve => setTimeout(resolve, ms));
+src/validation/validator-utility-examples.ts:      await new Promise(resolve => setTimeout(resolve, 1000));
+src/validation/validator-utility-examples.ts:        await new Promise(resolve => setTimeout(resolve, delay));
+src/validation/validator-utility-examples.ts:        await new Promise(resolve => setTimeout(resolve, 2000));
+src/validation/validator.ts:      setTimeout(() => reject(new Error('Recovery timeout')), timeoutMs);
+src/validation/validator.ts:        await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
+src/validation/validator.ts:        await new Promise(resolve => setTimeout(resolve, 500));
+src/validation/production-readiness-validator.ts:    await new Promise(resolve => setTimeout(resolve, 100));
+src/validation/production-readiness-validator.ts:      await new Promise(resolve => setTimeout(resolve, 10));
+src/validation/performance-validation.ts:      await new Promise(resolve => setTimeout(resolve, 200));
+src/validation/performance-validation.ts:    await new Promise(resolve => setTimeout(resolve, 50));
+src/backend/service-health-check.ts:    const timeout = setTimeout(() => {
+src/backend/service-health-check.ts:    const timeout = setTimeout(() => {
+src/backend/service-health-check.ts:    timeoutHandle = setTimeout(() => {
+src/utils/async-utils.ts:      const timer = setTimeout(() => {
+src/utils/async-utils.ts:      const timer = setTimeout(() => {
+src/utils/async-utils.ts:      timeout = setTimeout(() => {
+src/utils/async-utils.ts:        timeout = setTimeout(() => {
+src/utils/async-utils.ts:    const timeout = setTimeout(() => {
+src/utils/event-utils.ts:      const timer = setTimeout(() => {
+src/backend/service-discovery-validator.ts:    const timeout = setTimeout(() => controller.abort(), this.validationOptions.healthCheckTimeout);
+src/backend/service-discovery-validator.ts:        const timeout = setTimeout(() => {
+src/backend/service-discovery-validator.ts:        const timeout = setTimeout(() => controller.abort(), this.validationOptions.healthCheckTimeout);
+src/utils/protocol-utils.ts:    this.idleTimer = setTimeout(() => {
+src/utils/error-handler.ts:        await new Promise(resolve => setTimeout(resolve, delay));
+src/core/templum-core.ts:      setTimeout(checkForIPCRequests, 100);
+src/core/templum-core.ts:    setTimeout(checkForIPCRequests, 100);
+src/backend/pcl-backend-integration.ts:    await new Promise(resolve => setTimeout(resolve, 5));
+src/backend/pcl-backend-integration.ts:    await new Promise(resolve => setTimeout(resolve, Math.random() * 10));
+src/backend/pcl-backend-integration.ts:      await new Promise(resolve => setTimeout(resolve, strategy.timeout));
+src/backend/pcl-backend-integration.ts:    await new Promise(resolve => setTimeout(resolve, strategy.timeout));
+src/mcp-channel/tests/setup.ts:jest.setTimeout(10000);
+src/mcp-channel/test-service-registration.js:    await new Promise(resolve => setTimeout(resolve, 2000));
+src/backend/backend-dependency-resolver.ts:      const timeoutId = setTimeout(() => controller.abort(), timeout);
+src/mcp-channel/src/node-pty-types.ts:      setTimeout(() => callback('Mock PTY output\n$ '), 100);
+src/transfer/component-transfer-strategy.ts:    await new Promise(resolve => setTimeout(resolve, component.fallbackStrategy.fallbackTimeout));
+src/transfer/component-transfer-strategy.ts:    await new Promise(resolve => setTimeout(resolve, component.fallbackStrategy.fallbackTimeout));
+src/mcp-channel/src/enhanced-mcp-integration.ts:        await new Promise(resolve => setTimeout(resolve, 1000)); // 1 second delay
+src/mcp-channel/src/enhanced-mcp-integration.ts:        await new Promise(resolve => setTimeout(resolve, 2000)); // 2 second delay
+src/mcp-channel/src/enhanced-mcp-integration.ts:    await new Promise(resolve => setTimeout(resolve, 3000)); // Simulate restart time
+src/mcp-channel/src/probabilistic-error-handler.ts:      const timeout = setTimeout(() => {
+src/mcp-channel/src/probabilistic-error-handler.ts:        await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
+src/mcp-channel/src/probabilistic-error-handler.ts:        await new Promise(resolve => setTimeout(resolve, 5000));
+src/mcp-channel/test-mcp-tools.js:    await new Promise(resolve => setTimeout(resolve, 500));
+src/mcp-channel/src/progressive-timeout-manager.ts:      const timer = setTimeout(() => {
+src/mcp-channel/src/progressive-timeout-manager.ts:          setTimeout(() => {
+src/mcp-channel/src/service-registration.ts:      const timeout = setTimeout(() => {
+src/extension.ts:            setTimeout(() => reject(new Error('Availability check timeout')), timeout);
+src/extension.ts:          setTimeout(() => reject(new Error('Shutdown timeout after 10 seconds')), 10000);
+src/risk/fallback-manager.ts:      const timer = setTimeout(() => {
+src/risk/rollback-criteria.ts:    await new Promise(resolve => setTimeout(resolve, Math.min(phase.expectedDuration, 2000)));
+src/risk/rollback-criteria.ts:    await new Promise(resolve => setTimeout(resolve, Math.min(phase.expectedDuration, 5000)));
+src/risk/rollback-criteria.ts:    await new Promise(resolve => setTimeout(resolve, Math.min(phase.expectedDuration, 3000)));
+src/risk/rollback-criteria.ts:    await new Promise(resolve => setTimeout(resolve, Math.min(phase.expectedDuration, 2000)));
+src/risk/rollback-criteria.ts:    await new Promise(resolve => setTimeout(resolve, 1000));
+src/testing/e2e-test-framework.ts:    await new Promise(resolve => setTimeout(resolve, this.responseDelay));
+
+Manual setInterval occurrences (non-test src):
+src/state/enhanced-state-synchronization.ts:    this.processingHandle = setInterval(() => {
+src/state/enhanced-state-synchronization.ts:    this.snapshotTimer = setInterval(() => {
+src/state/enhanced-state-synchronization.ts:    this.syncIntervalHandle = setInterval(() => {
+src/state/enhanced-state-synchronization.ts:    const handle = setInterval(() => {
+src/extension.ts:    setInterval(() => {
+src/observability/templum-observability-system.ts:    this.evaluationTimer = setInterval(() => {
+src/observability/templum-observability-system.ts:    this.systemMonitorTimer = setInterval(() => {
+src/core/templum-config-manager.ts:    this.watchInterval = setInterval(async () => {
+src/core/templum-resource-manager.ts:    this.monitoringInterval = setInterval(() => {
+src/core/templum-resource-manager.ts:    this.cleanupInterval = setInterval(async () => {
+src/monitoring/cli-performance-monitor.ts:    this.monitoringInterval = setInterval(() => {
+src/backend/pcl-backend-integration.ts:    const handle = setInterval(() => {
+src/backend/pcl-backend-integration.ts:    const healthHandle = setInterval(() => {
+src/mcp-channel/src/real-time-monitor.ts:    this.monitoringInterval = setInterval(() => {
+src/mcp-channel/src/visual-feedback-system.ts:    this.refreshInterval = setInterval(() => {
+src/mcp-channel/src/pty-manager.ts:    this.cleanupTimer = setInterval(() => this.cleanupIdleSessions(), this.cleanupInterval);
+src/mcp-channel/src/cli-mcp-server.ts:    setInterval(() => this.cleanupCache(), 30000); // Every 30 seconds
+src/mcp-channel/src/probabilistic-error-handler.ts:    setInterval(() => {
+src/mcp-channel/src/lifecycle-coordinator.ts:    this.healthCheckTimer = setInterval(async () => {
+src/mcp-channel/src/lifecycle-coordinator.ts:    this.performanceOptimizationTimer = setInterval(() => {
+src/mcp-channel/src/service-registration.ts:    this.healthCheckTimer = setInterval(async () => {
+src/risk/performance-monitor.ts:    this.monitoringInterval = setInterval(() => {
+src/validation/hybrid-validation-system-v3c.ts:    this.monitoringTimer = setInterval(() => {
+src/utils/async-utils.ts:    const interval = setInterval(() => {
+src/validation/performance-validation.ts:    this.monitoringTimer = setInterval(() => {
+src/utils/protocol-utils.ts:    const uptimeInterval = setInterval(() => {
+src/utils/resilience-utils.ts:    this.monitoringTimer = setInterval(() => {
+src/utils/registry-utils.ts:    this.intelligenceTimer = setInterval(() => {
+
+Manual setTimeout occurrences (tests):
+src/tests/integration-validation-framework.ts:      await new Promise(resolve => setTimeout(resolve, checkInterval));
+src/tests/integration-validation-framework.ts:        const timeout = setTimeout(() => {
+src/tests/integration-validation-framework.ts:      client.setTimeout(10000);
+src/tests/integration-validation-framework.ts:      setTimeout(() => {
+src/tests/integration-validation-framework.ts:      setTimeout(() => {
+src/tests/integration-validation-framework.ts:      setTimeout(() => {
+src/tests/integration-validation-framework.ts:    await new Promise(resolve => setTimeout(resolve, 5));
+src/tests/integration-validation-framework.ts:    await new Promise<void>((resolve) => setTimeout(resolve, 1));
+src/tests/integration-validation-framework.ts:      setTimeout(() => {
+src/tests/integration-validation-framework.ts:      setTimeout(() => {
+src/tests/integration-validation-framework.ts:      setTimeout(() => {
+src/tests/integration-validation-framework.ts:      setTimeout(() => {
+src/tests/integration-validation-framework.ts:      setTimeout(() => {
+src/tests/integration-validation-framework.ts:      setTimeout(() => {
+src/tests/integration-validation-framework.ts:    await new Promise(resolve => setTimeout(resolve, 90));
+src/tests/integration-validation-framework.ts:    await new Promise(resolve => setTimeout(resolve, 30));
+src/tests/integration-validation-framework.ts:    await new Promise(resolve => setTimeout(resolve, 40));
+src/tests/integration-validation-framework.ts:      await new Promise<void>((resolve) => setTimeout(resolve, 1));
+src/tests/session/templum-universal-session-manager.test.ts:    jest.setTimeout(DEFAULT_TEST_TIMEOUT_MS);
+src/tests/validation/hybrid-validation-system-v3c.test.ts:      setTimeout(() => {
+src/tests/validation/hybrid-validation-system-v3c.test.ts:          setTimeout(() => {
+src/tests/utils/async-utils.test.ts:const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+src/tests/utils/event-utils.test.ts:    setTimeout(() => {
+src/tests/core/templum-core-connection-events.test.ts:    jest.setTimeout(10_000);
+src/tests/backend/service-discovery.test.ts:        setTimeout(() => {
+src/tests/backend/service-discovery.test.ts:        setTimeout(() => {
+src/tests/backend/service-discovery.test.ts:          setTimeout(() => {
+src/tests/backend/service-discovery.test.ts:          setTimeout(() => {
+src/tests/backend/service-discovery.test.ts:      setTimeout(() => {
+src/tests/backend/service-discovery.test.ts:        setTimeout(() => {
+src/tests/backend/backend-dependency-integration.test.ts:          setTimeout(() => resolve({ ok: true, status: 200 }), Math.random() * 100)
+src/tests/backend/manual-override-watcher.integration.test.ts:  jest.setTimeout(15000);
+src/tests/backend/comprehensive-backend-validation.test.ts:      ? setTimeout(() => controller.abort(), timeout)
+src/tests/backend/comprehensive-backend-validation.test.ts:          setTimeout(() => {
+src/tests/backend/comprehensive-backend-validation.test.ts:        await new Promise(resolve => setTimeout(resolve, delay));
+
+Manual setInterval occurrences (tests):
+src/tests/integration-validation-framework.ts:    this.monitoringInterval = setInterval(async () => {

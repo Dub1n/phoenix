@@ -1,0 +1,905 @@
+
+> templum@1.0.0 test
+> jest --runTestsByPath src/interfaces/__tests__/adaptive-cli-integration.test.ts --runInBand --detectOpenHandles --forceExit
+
+  console.warn
+    [2025-10-06T10:20:41.487Z] [string-utils] [WARN] string truncated beyond threshold {
+      currentWidth: 63,
+      targetWidth: 40,
+      reductionRatio: 0.36507936507936506
+    }
+
+      57 |
+      58 |       if (data !== undefined || durationMs !== undefined) {
+    > 59 |         target(prefix, message, mergePayload(data, durationMs));
+         |         ^
+      60 |       } else {
+      61 |         target(prefix, message);
+      62 |       }
+
+      at Object.log (src/utils/logger.ts:59:9)
+      at Logger.dispatch (src/utils/logger.ts:181:35)
+      at Logger.warn (src/utils/logger.ts:116:10)
+      at ChainBuilder.truncate (src/utils/chainable-string-utils.ts:305:19)
+      at src/rendering/universal-layout-engine.ts:1563:12
+          at Array.map (<anonymous>)
+      at UniversalLayoutEngine.applySkinAdaptations (src/rendering/universal-layout-engine.ts:1560:46)
+      at UniversalLayoutEngine.renderForInterface (src/rendering/universal-layout-engine.ts:213:16)
+      at CLIInterfaceAdapter.render (src/interfaces/cli-adapter.ts:231:52)
+      at analyzeRenderedMenu (src/interfaces/__tests__/adaptive-cli-integration.test.ts:90:34)
+      at Object.<anonymous> (src/interfaces/__tests__/adaptive-cli-integration.test.ts:576:32)
+
+  console.warn
+    [2025-10-06T10:20:41.509Z] [string-utils] [WARN] string truncated beyond threshold {
+      currentWidth: 91,
+      targetWidth: 60,
+      reductionRatio: 0.34065934065934067
+    }
+
+      57 |
+      58 |       if (data !== undefined || durationMs !== undefined) {
+    > 59 |         target(prefix, message, mergePayload(data, durationMs));
+         |         ^
+      60 |       } else {
+      61 |         target(prefix, message);
+      62 |       }
+
+      at Object.log (src/utils/logger.ts:59:9)
+      at Logger.dispatch (src/utils/logger.ts:181:35)
+      at Logger.warn (src/utils/logger.ts:116:10)
+      at ChainBuilder.truncate (src/utils/chainable-string-utils.ts:305:19)
+      at src/rendering/universal-layout-engine.ts:1567:16
+          at Array.map (<anonymous>)
+      at UniversalLayoutEngine.applySkinAdaptations (src/rendering/universal-layout-engine.ts:1560:46)
+      at UniversalLayoutEngine.renderForInterface (src/rendering/universal-layout-engine.ts:213:16)
+      at CLIInterfaceAdapter.render (src/interfaces/cli-adapter.ts:231:52)
+      at analyzeRenderedMenu (src/interfaces/__tests__/adaptive-cli-integration.test.ts:90:34)
+      at Object.<anonymous> (src/interfaces/__tests__/adaptive-cli-integration.test.ts:576:32)
+
+  console.warn
+    Skin compatibility issues detected: [ 'Content width exceeds terminal constraints' ]
+
+      215 |       // Log compatibility issues for debugging
+      216 |       if (!compatibilityCheck.compatible) {
+    > 217 |         console.warn('Skin compatibility issues detected:', compatibilityCheck.issues);
+          |                 ^
+      218 |         console.info('Applied adaptations:', compatibilityCheck.adaptations);
+      219 |       }
+      220 |       
+
+      at UniversalLayoutEngine.renderForInterface (src/rendering/universal-layout-engine.ts:217:17)
+      at CLIInterfaceAdapter.render (src/interfaces/cli-adapter.ts:231:52)
+      at analyzeRenderedMenu (src/interfaces/__tests__/adaptive-cli-integration.test.ts:90:34)
+      at Object.<anonymous> (src/interfaces/__tests__/adaptive-cli-integration.test.ts:576:32)
+
+  console.warn
+    [2025-10-06T10:20:41.514Z] [string-utils] [WARN] string truncated beyond threshold {
+      currentWidth: 104,
+      targetWidth: 50,
+      reductionRatio: 0.5192307692307693
+    }
+
+      57 |
+      58 |       if (data !== undefined || durationMs !== undefined) {
+    > 59 |         target(prefix, message, mergePayload(data, durationMs));
+         |         ^
+      60 |       } else {
+      61 |         target(prefix, message);
+      62 |       }
+
+      at Object.log (src/utils/logger.ts:59:9)
+      at Logger.dispatch (src/utils/logger.ts:181:35)
+      at Logger.warn (src/utils/logger.ts:116:10)
+      at ChainBuilder.truncate (src/utils/chainable-string-utils.ts:305:19)
+      at BorderRenderer.formatWithinWidth (src/rendering/content-layout-system.ts:439:8)
+      at BorderRenderer.createContentLineWithPadding (src/rendering/content-layout-system.ts:629:28)
+      at BorderRenderer.renderWindow (src/rendering/content-layout-system.ts:510:25)
+      at ContentLayoutSystem.renderContent (src/rendering/content-layout-system.ts:789:40)
+      at UniversalLayoutEngine.renderCLIWithContentLayout (src/rendering/universal-layout-engine.ts:505:47)
+      at UniversalLayoutEngine.renderCLIInterface (src/rendering/universal-layout-engine.ts:456:19)
+      at UniversalLayoutEngine.renderForSpecificInterface (src/rendering/universal-layout-engine.ts:412:21)
+      at UniversalLayoutEngine.renderForInterface (src/rendering/universal-layout-engine.ts:243:33)
+      at CLIInterfaceAdapter.render (src/interfaces/cli-adapter.ts:231:52)
+      at analyzeRenderedMenu (src/interfaces/__tests__/adaptive-cli-integration.test.ts:90:34)
+      at Object.<anonymous> (src/interfaces/__tests__/adaptive-cli-integration.test.ts:576:32)
+
+  console.warn
+    [2025-10-06T10:20:41.518Z] [string-utils] [WARN] string truncated beyond threshold {
+      currentWidth: 105,
+      targetWidth: 50,
+      reductionRatio: 0.5238095238095238
+    }
+
+      57 |
+      58 |       if (data !== undefined || durationMs !== undefined) {
+    > 59 |         target(prefix, message, mergePayload(data, durationMs));
+         |         ^
+      60 |       } else {
+      61 |         target(prefix, message);
+      62 |       }
+
+      at Object.log (src/utils/logger.ts:59:9)
+      at Logger.dispatch (src/utils/logger.ts:181:35)
+      at Logger.warn (src/utils/logger.ts:116:10)
+      at ChainBuilder.truncate (src/utils/chainable-string-utils.ts:305:19)
+      at BorderRenderer.formatWithinWidth (src/rendering/content-layout-system.ts:439:8)
+      at BorderRenderer.createContentLineWithPadding (src/rendering/content-layout-system.ts:629:28)
+      at BorderRenderer.renderWindow (src/rendering/content-layout-system.ts:510:25)
+      at ContentLayoutSystem.renderContent (src/rendering/content-layout-system.ts:789:40)
+      at UniversalLayoutEngine.renderCLIWithContentLayout (src/rendering/universal-layout-engine.ts:505:47)
+      at UniversalLayoutEngine.renderCLIInterface (src/rendering/universal-layout-engine.ts:456:19)
+      at UniversalLayoutEngine.renderForSpecificInterface (src/rendering/universal-layout-engine.ts:412:21)
+      at UniversalLayoutEngine.renderForInterface (src/rendering/universal-layout-engine.ts:243:33)
+      at CLIInterfaceAdapter.render (src/interfaces/cli-adapter.ts:231:52)
+      at analyzeRenderedMenu (src/interfaces/__tests__/adaptive-cli-integration.test.ts:90:34)
+      at Object.<anonymous> (src/interfaces/__tests__/adaptive-cli-integration.test.ts:576:32)
+
+  console.warn
+    [2025-10-06T10:20:41.519Z] [string-utils] [WARN] string truncated beyond threshold {
+      currentWidth: 105,
+      targetWidth: 50,
+      reductionRatio: 0.5238095238095238
+    }
+
+      57 |
+      58 |       if (data !== undefined || durationMs !== undefined) {
+    > 59 |         target(prefix, message, mergePayload(data, durationMs));
+         |         ^
+      60 |       } else {
+      61 |         target(prefix, message);
+      62 |       }
+
+      at Object.log (src/utils/logger.ts:59:9)
+      at Logger.dispatch (src/utils/logger.ts:181:35)
+      at Logger.warn (src/utils/logger.ts:116:10)
+      at ChainBuilder.truncate (src/utils/chainable-string-utils.ts:305:19)
+      at BorderRenderer.formatWithinWidth (src/rendering/content-layout-system.ts:439:8)
+      at BorderRenderer.createContentLineWithPadding (src/rendering/content-layout-system.ts:629:28)
+      at BorderRenderer.renderWindow (src/rendering/content-layout-system.ts:510:25)
+      at ContentLayoutSystem.renderContent (src/rendering/content-layout-system.ts:789:40)
+      at UniversalLayoutEngine.renderCLIWithContentLayout (src/rendering/universal-layout-engine.ts:505:47)
+      at UniversalLayoutEngine.renderCLIInterface (src/rendering/universal-layout-engine.ts:456:19)
+      at UniversalLayoutEngine.renderForSpecificInterface (src/rendering/universal-layout-engine.ts:412:21)
+      at UniversalLayoutEngine.renderForInterface (src/rendering/universal-layout-engine.ts:243:33)
+      at CLIInterfaceAdapter.render (src/interfaces/cli-adapter.ts:231:52)
+      at analyzeRenderedMenu (src/interfaces/__tests__/adaptive-cli-integration.test.ts:90:34)
+      at Object.<anonymous> (src/interfaces/__tests__/adaptive-cli-integration.test.ts:576:32)
+
+  console.warn
+    [2025-10-06T10:20:41.521Z] [string-utils] [WARN] string truncated beyond threshold {
+      currentWidth: 95,
+      targetWidth: 50,
+      reductionRatio: 0.47368421052631576
+    }
+
+      57 |
+      58 |       if (data !== undefined || durationMs !== undefined) {
+    > 59 |         target(prefix, message, mergePayload(data, durationMs));
+         |         ^
+      60 |       } else {
+      61 |         target(prefix, message);
+      62 |       }
+
+      at Object.log (src/utils/logger.ts:59:9)
+      at Logger.dispatch (src/utils/logger.ts:181:35)
+      at Logger.warn (src/utils/logger.ts:116:10)
+      at ChainBuilder.truncate (src/utils/chainable-string-utils.ts:305:19)
+      at BorderRenderer.formatWithinWidth (src/rendering/content-layout-system.ts:439:8)
+      at BorderRenderer.createContentLineWithPadding (src/rendering/content-layout-system.ts:629:28)
+      at BorderRenderer.renderWindow (src/rendering/content-layout-system.ts:510:25)
+      at ContentLayoutSystem.renderContent (src/rendering/content-layout-system.ts:789:40)
+      at UniversalLayoutEngine.renderCLIWithContentLayout (src/rendering/universal-layout-engine.ts:505:47)
+      at UniversalLayoutEngine.renderCLIInterface (src/rendering/universal-layout-engine.ts:456:19)
+      at UniversalLayoutEngine.renderForSpecificInterface (src/rendering/universal-layout-engine.ts:412:21)
+      at UniversalLayoutEngine.renderForInterface (src/rendering/universal-layout-engine.ts:243:33)
+      at CLIInterfaceAdapter.render (src/interfaces/cli-adapter.ts:231:52)
+      at analyzeRenderedMenu (src/interfaces/__tests__/adaptive-cli-integration.test.ts:90:34)
+      at Object.<anonymous> (src/interfaces/__tests__/adaptive-cli-integration.test.ts:576:32)
+
+  console.warn
+    [2025-10-06T10:20:41.523Z] [string-utils] [WARN] string truncated beyond threshold {
+      currentWidth: 105,
+      targetWidth: 50,
+      reductionRatio: 0.5238095238095238
+    }
+
+      57 |
+      58 |       if (data !== undefined || durationMs !== undefined) {
+    > 59 |         target(prefix, message, mergePayload(data, durationMs));
+         |         ^
+      60 |       } else {
+      61 |         target(prefix, message);
+      62 |       }
+
+      at Object.log (src/utils/logger.ts:59:9)
+      at Logger.dispatch (src/utils/logger.ts:181:35)
+      at Logger.warn (src/utils/logger.ts:116:10)
+      at ChainBuilder.truncate (src/utils/chainable-string-utils.ts:305:19)
+      at BorderRenderer.formatWithinWidth (src/rendering/content-layout-system.ts:439:8)
+      at BorderRenderer.createContentLineWithPadding (src/rendering/content-layout-system.ts:629:28)
+      at BorderRenderer.renderWindow (src/rendering/content-layout-system.ts:510:25)
+      at ContentLayoutSystem.renderContent (src/rendering/content-layout-system.ts:789:40)
+      at UniversalLayoutEngine.renderCLIWithContentLayout (src/rendering/universal-layout-engine.ts:505:47)
+      at UniversalLayoutEngine.renderCLIInterface (src/rendering/universal-layout-engine.ts:456:19)
+      at UniversalLayoutEngine.renderForSpecificInterface (src/rendering/universal-layout-engine.ts:412:21)
+      at UniversalLayoutEngine.renderForInterface (src/rendering/universal-layout-engine.ts:243:33)
+      at CLIInterfaceAdapter.render (src/interfaces/cli-adapter.ts:231:52)
+      at analyzeRenderedMenu (src/interfaces/__tests__/adaptive-cli-integration.test.ts:90:34)
+      at Object.<anonymous> (src/interfaces/__tests__/adaptive-cli-integration.test.ts:576:32)
+
+  console.warn
+    [2025-10-06T10:20:41.528Z] [string-utils] [WARN] string truncated beyond threshold {
+      currentWidth: 63,
+      targetWidth: 40,
+      reductionRatio: 0.36507936507936506
+    }
+
+      57 |
+      58 |       if (data !== undefined || durationMs !== undefined) {
+    > 59 |         target(prefix, message, mergePayload(data, durationMs));
+         |         ^
+      60 |       } else {
+      61 |         target(prefix, message);
+      62 |       }
+
+      at Object.log (src/utils/logger.ts:59:9)
+      at Logger.dispatch (src/utils/logger.ts:181:35)
+      at Logger.warn (src/utils/logger.ts:116:10)
+      at ChainBuilder.truncate (src/utils/chainable-string-utils.ts:305:19)
+      at src/rendering/universal-layout-engine.ts:1563:12
+          at Array.map (<anonymous>)
+      at UniversalLayoutEngine.applySkinAdaptations (src/rendering/universal-layout-engine.ts:1560:46)
+      at UniversalLayoutEngine.renderForInterface (src/rendering/universal-layout-engine.ts:213:16)
+      at CLIInterfaceAdapter.render (src/interfaces/cli-adapter.ts:231:52)
+      at analyzeRenderedMenu (src/interfaces/__tests__/adaptive-cli-integration.test.ts:90:34)
+      at Object.<anonymous> (src/interfaces/__tests__/adaptive-cli-integration.test.ts:606:32)
+
+  console.warn
+    [2025-10-06T10:20:41.530Z] [string-utils] [WARN] string truncated beyond threshold {
+      currentWidth: 91,
+      targetWidth: 60,
+      reductionRatio: 0.34065934065934067
+    }
+
+      57 |
+      58 |       if (data !== undefined || durationMs !== undefined) {
+    > 59 |         target(prefix, message, mergePayload(data, durationMs));
+         |         ^
+      60 |       } else {
+      61 |         target(prefix, message);
+      62 |       }
+
+      at Object.log (src/utils/logger.ts:59:9)
+      at Logger.dispatch (src/utils/logger.ts:181:35)
+      at Logger.warn (src/utils/logger.ts:116:10)
+      at ChainBuilder.truncate (src/utils/chainable-string-utils.ts:305:19)
+      at src/rendering/universal-layout-engine.ts:1567:16
+          at Array.map (<anonymous>)
+      at UniversalLayoutEngine.applySkinAdaptations (src/rendering/universal-layout-engine.ts:1560:46)
+      at UniversalLayoutEngine.renderForInterface (src/rendering/universal-layout-engine.ts:213:16)
+      at CLIInterfaceAdapter.render (src/interfaces/cli-adapter.ts:231:52)
+      at analyzeRenderedMenu (src/interfaces/__tests__/adaptive-cli-integration.test.ts:90:34)
+      at Object.<anonymous> (src/interfaces/__tests__/adaptive-cli-integration.test.ts:606:32)
+
+  console.warn
+    Skin compatibility issues detected: [ 'Content width exceeds terminal constraints' ]
+
+      215 |       // Log compatibility issues for debugging
+      216 |       if (!compatibilityCheck.compatible) {
+    > 217 |         console.warn('Skin compatibility issues detected:', compatibilityCheck.issues);
+          |                 ^
+      218 |         console.info('Applied adaptations:', compatibilityCheck.adaptations);
+      219 |       }
+      220 |       
+
+      at UniversalLayoutEngine.renderForInterface (src/rendering/universal-layout-engine.ts:217:17)
+      at CLIInterfaceAdapter.render (src/interfaces/cli-adapter.ts:231:52)
+      at analyzeRenderedMenu (src/interfaces/__tests__/adaptive-cli-integration.test.ts:90:34)
+      at Object.<anonymous> (src/interfaces/__tests__/adaptive-cli-integration.test.ts:606:32)
+
+  console.warn
+    [2025-10-06T10:20:41.532Z] [string-utils] [WARN] string truncated beyond threshold {
+      currentWidth: 104,
+      targetWidth: 56,
+      reductionRatio: 0.46153846153846156
+    }
+
+      57 |
+      58 |       if (data !== undefined || durationMs !== undefined) {
+    > 59 |         target(prefix, message, mergePayload(data, durationMs));
+         |         ^
+      60 |       } else {
+      61 |         target(prefix, message);
+      62 |       }
+
+      at Object.log (src/utils/logger.ts:59:9)
+      at Logger.dispatch (src/utils/logger.ts:181:35)
+      at Logger.warn (src/utils/logger.ts:116:10)
+      at ChainBuilder.truncate (src/utils/chainable-string-utils.ts:305:19)
+      at BorderRenderer.formatWithinWidth (src/rendering/content-layout-system.ts:439:8)
+      at BorderRenderer.createContentLineWithPadding (src/rendering/content-layout-system.ts:629:28)
+      at BorderRenderer.renderWindow (src/rendering/content-layout-system.ts:510:25)
+      at ContentLayoutSystem.renderContent (src/rendering/content-layout-system.ts:789:40)
+      at UniversalLayoutEngine.renderCLIWithContentLayout (src/rendering/universal-layout-engine.ts:505:47)
+      at UniversalLayoutEngine.renderCLIInterface (src/rendering/universal-layout-engine.ts:456:19)
+      at UniversalLayoutEngine.renderForSpecificInterface (src/rendering/universal-layout-engine.ts:412:21)
+      at UniversalLayoutEngine.renderForInterface (src/rendering/universal-layout-engine.ts:243:33)
+      at CLIInterfaceAdapter.render (src/interfaces/cli-adapter.ts:231:52)
+      at analyzeRenderedMenu (src/interfaces/__tests__/adaptive-cli-integration.test.ts:90:34)
+      at Object.<anonymous> (src/interfaces/__tests__/adaptive-cli-integration.test.ts:606:32)
+
+  console.warn
+    [2025-10-06T10:20:41.534Z] [string-utils] [WARN] string truncated beyond threshold {
+      currentWidth: 105,
+      targetWidth: 56,
+      reductionRatio: 0.4666666666666667
+    }
+
+      57 |
+      58 |       if (data !== undefined || durationMs !== undefined) {
+    > 59 |         target(prefix, message, mergePayload(data, durationMs));
+         |         ^
+      60 |       } else {
+      61 |         target(prefix, message);
+      62 |       }
+
+      at Object.log (src/utils/logger.ts:59:9)
+      at Logger.dispatch (src/utils/logger.ts:181:35)
+      at Logger.warn (src/utils/logger.ts:116:10)
+      at ChainBuilder.truncate (src/utils/chainable-string-utils.ts:305:19)
+      at BorderRenderer.formatWithinWidth (src/rendering/content-layout-system.ts:439:8)
+      at BorderRenderer.createContentLineWithPadding (src/rendering/content-layout-system.ts:629:28)
+      at BorderRenderer.renderWindow (src/rendering/content-layout-system.ts:510:25)
+      at ContentLayoutSystem.renderContent (src/rendering/content-layout-system.ts:789:40)
+      at UniversalLayoutEngine.renderCLIWithContentLayout (src/rendering/universal-layout-engine.ts:505:47)
+      at UniversalLayoutEngine.renderCLIInterface (src/rendering/universal-layout-engine.ts:456:19)
+      at UniversalLayoutEngine.renderForSpecificInterface (src/rendering/universal-layout-engine.ts:412:21)
+      at UniversalLayoutEngine.renderForInterface (src/rendering/universal-layout-engine.ts:243:33)
+      at CLIInterfaceAdapter.render (src/interfaces/cli-adapter.ts:231:52)
+      at analyzeRenderedMenu (src/interfaces/__tests__/adaptive-cli-integration.test.ts:90:34)
+      at Object.<anonymous> (src/interfaces/__tests__/adaptive-cli-integration.test.ts:606:32)
+
+  console.warn
+    [2025-10-06T10:20:41.539Z] [string-utils] [WARN] string truncated beyond threshold {
+      currentWidth: 105,
+      targetWidth: 56,
+      reductionRatio: 0.4666666666666667
+    }
+
+      57 |
+      58 |       if (data !== undefined || durationMs !== undefined) {
+    > 59 |         target(prefix, message, mergePayload(data, durationMs));
+         |         ^
+      60 |       } else {
+      61 |         target(prefix, message);
+      62 |       }
+
+      at Object.log (src/utils/logger.ts:59:9)
+      at Logger.dispatch (src/utils/logger.ts:181:35)
+      at Logger.warn (src/utils/logger.ts:116:10)
+      at ChainBuilder.truncate (src/utils/chainable-string-utils.ts:305:19)
+      at BorderRenderer.formatWithinWidth (src/rendering/content-layout-system.ts:439:8)
+      at BorderRenderer.createContentLineWithPadding (src/rendering/content-layout-system.ts:629:28)
+      at BorderRenderer.renderWindow (src/rendering/content-layout-system.ts:510:25)
+      at ContentLayoutSystem.renderContent (src/rendering/content-layout-system.ts:789:40)
+      at UniversalLayoutEngine.renderCLIWithContentLayout (src/rendering/universal-layout-engine.ts:505:47)
+      at UniversalLayoutEngine.renderCLIInterface (src/rendering/universal-layout-engine.ts:456:19)
+      at UniversalLayoutEngine.renderForSpecificInterface (src/rendering/universal-layout-engine.ts:412:21)
+      at UniversalLayoutEngine.renderForInterface (src/rendering/universal-layout-engine.ts:243:33)
+      at CLIInterfaceAdapter.render (src/interfaces/cli-adapter.ts:231:52)
+      at analyzeRenderedMenu (src/interfaces/__tests__/adaptive-cli-integration.test.ts:90:34)
+      at Object.<anonymous> (src/interfaces/__tests__/adaptive-cli-integration.test.ts:606:32)
+
+  console.warn
+    [2025-10-06T10:20:41.541Z] [string-utils] [WARN] string truncated beyond threshold {
+      currentWidth: 95,
+      targetWidth: 56,
+      reductionRatio: 0.4105263157894737
+    }
+
+      57 |
+      58 |       if (data !== undefined || durationMs !== undefined) {
+    > 59 |         target(prefix, message, mergePayload(data, durationMs));
+         |         ^
+      60 |       } else {
+      61 |         target(prefix, message);
+      62 |       }
+
+      at Object.log (src/utils/logger.ts:59:9)
+      at Logger.dispatch (src/utils/logger.ts:181:35)
+      at Logger.warn (src/utils/logger.ts:116:10)
+      at ChainBuilder.truncate (src/utils/chainable-string-utils.ts:305:19)
+      at BorderRenderer.formatWithinWidth (src/rendering/content-layout-system.ts:439:8)
+      at BorderRenderer.createContentLineWithPadding (src/rendering/content-layout-system.ts:629:28)
+      at BorderRenderer.renderWindow (src/rendering/content-layout-system.ts:510:25)
+      at ContentLayoutSystem.renderContent (src/rendering/content-layout-system.ts:789:40)
+      at UniversalLayoutEngine.renderCLIWithContentLayout (src/rendering/universal-layout-engine.ts:505:47)
+      at UniversalLayoutEngine.renderCLIInterface (src/rendering/universal-layout-engine.ts:456:19)
+      at UniversalLayoutEngine.renderForSpecificInterface (src/rendering/universal-layout-engine.ts:412:21)
+      at UniversalLayoutEngine.renderForInterface (src/rendering/universal-layout-engine.ts:243:33)
+      at CLIInterfaceAdapter.render (src/interfaces/cli-adapter.ts:231:52)
+      at analyzeRenderedMenu (src/interfaces/__tests__/adaptive-cli-integration.test.ts:90:34)
+      at Object.<anonymous> (src/interfaces/__tests__/adaptive-cli-integration.test.ts:606:32)
+
+  console.warn
+    [2025-10-06T10:20:41.542Z] [string-utils] [WARN] string truncated beyond threshold {
+      currentWidth: 105,
+      targetWidth: 56,
+      reductionRatio: 0.4666666666666667
+    }
+
+      57 |
+      58 |       if (data !== undefined || durationMs !== undefined) {
+    > 59 |         target(prefix, message, mergePayload(data, durationMs));
+         |         ^
+      60 |       } else {
+      61 |         target(prefix, message);
+      62 |       }
+
+      at Object.log (src/utils/logger.ts:59:9)
+      at Logger.dispatch (src/utils/logger.ts:181:35)
+      at Logger.warn (src/utils/logger.ts:116:10)
+      at ChainBuilder.truncate (src/utils/chainable-string-utils.ts:305:19)
+      at BorderRenderer.formatWithinWidth (src/rendering/content-layout-system.ts:439:8)
+      at BorderRenderer.createContentLineWithPadding (src/rendering/content-layout-system.ts:629:28)
+      at BorderRenderer.renderWindow (src/rendering/content-layout-system.ts:510:25)
+      at ContentLayoutSystem.renderContent (src/rendering/content-layout-system.ts:789:40)
+      at UniversalLayoutEngine.renderCLIWithContentLayout (src/rendering/universal-layout-engine.ts:505:47)
+      at UniversalLayoutEngine.renderCLIInterface (src/rendering/universal-layout-engine.ts:456:19)
+      at UniversalLayoutEngine.renderForSpecificInterface (src/rendering/universal-layout-engine.ts:412:21)
+      at UniversalLayoutEngine.renderForInterface (src/rendering/universal-layout-engine.ts:243:33)
+      at CLIInterfaceAdapter.render (src/interfaces/cli-adapter.ts:231:52)
+      at analyzeRenderedMenu (src/interfaces/__tests__/adaptive-cli-integration.test.ts:90:34)
+      at Object.<anonymous> (src/interfaces/__tests__/adaptive-cli-integration.test.ts:606:32)
+
+  console.warn
+    [2025-10-06T10:20:41.547Z] [string-utils] [WARN] string truncated beyond threshold {
+      currentWidth: 63,
+      targetWidth: 40,
+      reductionRatio: 0.36507936507936506
+    }
+
+      57 |
+      58 |       if (data !== undefined || durationMs !== undefined) {
+    > 59 |         target(prefix, message, mergePayload(data, durationMs));
+         |         ^
+      60 |       } else {
+      61 |         target(prefix, message);
+      62 |       }
+
+      at Object.log (src/utils/logger.ts:59:9)
+      at Logger.dispatch (src/utils/logger.ts:181:35)
+      at Logger.warn (src/utils/logger.ts:116:10)
+      at ChainBuilder.truncate (src/utils/chainable-string-utils.ts:305:19)
+      at src/rendering/universal-layout-engine.ts:1563:12
+          at Array.map (<anonymous>)
+      at UniversalLayoutEngine.applySkinAdaptations (src/rendering/universal-layout-engine.ts:1560:46)
+      at UniversalLayoutEngine.renderForInterface (src/rendering/universal-layout-engine.ts:213:16)
+      at CLIInterfaceAdapter.render (src/interfaces/cli-adapter.ts:231:52)
+      at analyzeRenderedMenu (src/interfaces/__tests__/adaptive-cli-integration.test.ts:90:34)
+      at Object.<anonymous> (src/interfaces/__tests__/adaptive-cli-integration.test.ts:636:32)
+
+  console.warn
+    [2025-10-06T10:20:41.548Z] [string-utils] [WARN] string truncated beyond threshold {
+      currentWidth: 91,
+      targetWidth: 60,
+      reductionRatio: 0.34065934065934067
+    }
+
+      57 |
+      58 |       if (data !== undefined || durationMs !== undefined) {
+    > 59 |         target(prefix, message, mergePayload(data, durationMs));
+         |         ^
+      60 |       } else {
+      61 |         target(prefix, message);
+      62 |       }
+
+      at Object.log (src/utils/logger.ts:59:9)
+      at Logger.dispatch (src/utils/logger.ts:181:35)
+      at Logger.warn (src/utils/logger.ts:116:10)
+      at ChainBuilder.truncate (src/utils/chainable-string-utils.ts:305:19)
+      at src/rendering/universal-layout-engine.ts:1567:16
+          at Array.map (<anonymous>)
+      at UniversalLayoutEngine.applySkinAdaptations (src/rendering/universal-layout-engine.ts:1560:46)
+      at UniversalLayoutEngine.renderForInterface (src/rendering/universal-layout-engine.ts:213:16)
+      at CLIInterfaceAdapter.render (src/interfaces/cli-adapter.ts:231:52)
+      at analyzeRenderedMenu (src/interfaces/__tests__/adaptive-cli-integration.test.ts:90:34)
+      at Object.<anonymous> (src/interfaces/__tests__/adaptive-cli-integration.test.ts:636:32)
+
+  console.warn
+    Skin compatibility issues detected: [ 'Content width exceeds terminal constraints' ]
+
+      215 |       // Log compatibility issues for debugging
+      216 |       if (!compatibilityCheck.compatible) {
+    > 217 |         console.warn('Skin compatibility issues detected:', compatibilityCheck.issues);
+          |                 ^
+      218 |         console.info('Applied adaptations:', compatibilityCheck.adaptations);
+      219 |       }
+      220 |       
+
+      at UniversalLayoutEngine.renderForInterface (src/rendering/universal-layout-engine.ts:217:17)
+      at CLIInterfaceAdapter.render (src/interfaces/cli-adapter.ts:231:52)
+      at analyzeRenderedMenu (src/interfaces/__tests__/adaptive-cli-integration.test.ts:90:34)
+      at Object.<anonymous> (src/interfaces/__tests__/adaptive-cli-integration.test.ts:636:32)
+
+  console.warn
+    [2025-10-06T10:20:41.551Z] [string-utils] [WARN] string truncated beyond threshold {
+      currentWidth: 104,
+      targetWidth: 56,
+      reductionRatio: 0.46153846153846156
+    }
+
+      57 |
+      58 |       if (data !== undefined || durationMs !== undefined) {
+    > 59 |         target(prefix, message, mergePayload(data, durationMs));
+         |         ^
+      60 |       } else {
+      61 |         target(prefix, message);
+      62 |       }
+
+      at Object.log (src/utils/logger.ts:59:9)
+      at Logger.dispatch (src/utils/logger.ts:181:35)
+      at Logger.warn (src/utils/logger.ts:116:10)
+      at ChainBuilder.truncate (src/utils/chainable-string-utils.ts:305:19)
+      at BorderRenderer.formatWithinWidth (src/rendering/content-layout-system.ts:439:8)
+      at BorderRenderer.createContentLineWithPadding (src/rendering/content-layout-system.ts:629:28)
+      at BorderRenderer.renderWindow (src/rendering/content-layout-system.ts:510:25)
+      at ContentLayoutSystem.renderContent (src/rendering/content-layout-system.ts:789:40)
+      at UniversalLayoutEngine.renderCLIWithContentLayout (src/rendering/universal-layout-engine.ts:505:47)
+      at UniversalLayoutEngine.renderCLIInterface (src/rendering/universal-layout-engine.ts:456:19)
+      at UniversalLayoutEngine.renderForSpecificInterface (src/rendering/universal-layout-engine.ts:412:21)
+      at UniversalLayoutEngine.renderForInterface (src/rendering/universal-layout-engine.ts:243:33)
+      at CLIInterfaceAdapter.render (src/interfaces/cli-adapter.ts:231:52)
+      at analyzeRenderedMenu (src/interfaces/__tests__/adaptive-cli-integration.test.ts:90:34)
+      at Object.<anonymous> (src/interfaces/__tests__/adaptive-cli-integration.test.ts:636:32)
+
+  console.warn
+    [2025-10-06T10:20:41.552Z] [string-utils] [WARN] string truncated beyond threshold {
+      currentWidth: 105,
+      targetWidth: 56,
+      reductionRatio: 0.4666666666666667
+    }
+
+      57 |
+      58 |       if (data !== undefined || durationMs !== undefined) {
+    > 59 |         target(prefix, message, mergePayload(data, durationMs));
+         |         ^
+      60 |       } else {
+      61 |         target(prefix, message);
+      62 |       }
+
+      at Object.log (src/utils/logger.ts:59:9)
+      at Logger.dispatch (src/utils/logger.ts:181:35)
+      at Logger.warn (src/utils/logger.ts:116:10)
+      at ChainBuilder.truncate (src/utils/chainable-string-utils.ts:305:19)
+      at BorderRenderer.formatWithinWidth (src/rendering/content-layout-system.ts:439:8)
+      at BorderRenderer.createContentLineWithPadding (src/rendering/content-layout-system.ts:629:28)
+      at BorderRenderer.renderWindow (src/rendering/content-layout-system.ts:510:25)
+      at ContentLayoutSystem.renderContent (src/rendering/content-layout-system.ts:789:40)
+      at UniversalLayoutEngine.renderCLIWithContentLayout (src/rendering/universal-layout-engine.ts:505:47)
+      at UniversalLayoutEngine.renderCLIInterface (src/rendering/universal-layout-engine.ts:456:19)
+      at UniversalLayoutEngine.renderForSpecificInterface (src/rendering/universal-layout-engine.ts:412:21)
+      at UniversalLayoutEngine.renderForInterface (src/rendering/universal-layout-engine.ts:243:33)
+      at CLIInterfaceAdapter.render (src/interfaces/cli-adapter.ts:231:52)
+      at analyzeRenderedMenu (src/interfaces/__tests__/adaptive-cli-integration.test.ts:90:34)
+      at Object.<anonymous> (src/interfaces/__tests__/adaptive-cli-integration.test.ts:636:32)
+
+  console.warn
+    [2025-10-06T10:20:41.553Z] [string-utils] [WARN] string truncated beyond threshold {
+      currentWidth: 105,
+      targetWidth: 56,
+      reductionRatio: 0.4666666666666667
+    }
+
+      57 |
+      58 |       if (data !== undefined || durationMs !== undefined) {
+    > 59 |         target(prefix, message, mergePayload(data, durationMs));
+         |         ^
+      60 |       } else {
+      61 |         target(prefix, message);
+      62 |       }
+
+      at Object.log (src/utils/logger.ts:59:9)
+      at Logger.dispatch (src/utils/logger.ts:181:35)
+      at Logger.warn (src/utils/logger.ts:116:10)
+      at ChainBuilder.truncate (src/utils/chainable-string-utils.ts:305:19)
+      at BorderRenderer.formatWithinWidth (src/rendering/content-layout-system.ts:439:8)
+      at BorderRenderer.createContentLineWithPadding (src/rendering/content-layout-system.ts:629:28)
+      at BorderRenderer.renderWindow (src/rendering/content-layout-system.ts:510:25)
+      at ContentLayoutSystem.renderContent (src/rendering/content-layout-system.ts:789:40)
+      at UniversalLayoutEngine.renderCLIWithContentLayout (src/rendering/universal-layout-engine.ts:505:47)
+      at UniversalLayoutEngine.renderCLIInterface (src/rendering/universal-layout-engine.ts:456:19)
+      at UniversalLayoutEngine.renderForSpecificInterface (src/rendering/universal-layout-engine.ts:412:21)
+      at UniversalLayoutEngine.renderForInterface (src/rendering/universal-layout-engine.ts:243:33)
+      at CLIInterfaceAdapter.render (src/interfaces/cli-adapter.ts:231:52)
+      at analyzeRenderedMenu (src/interfaces/__tests__/adaptive-cli-integration.test.ts:90:34)
+      at Object.<anonymous> (src/interfaces/__tests__/adaptive-cli-integration.test.ts:636:32)
+
+  console.warn
+    [2025-10-06T10:20:41.555Z] [string-utils] [WARN] string truncated beyond threshold {
+      currentWidth: 95,
+      targetWidth: 56,
+      reductionRatio: 0.4105263157894737
+    }
+
+      57 |
+      58 |       if (data !== undefined || durationMs !== undefined) {
+    > 59 |         target(prefix, message, mergePayload(data, durationMs));
+         |         ^
+      60 |       } else {
+      61 |         target(prefix, message);
+      62 |       }
+
+      at Object.log (src/utils/logger.ts:59:9)
+      at Logger.dispatch (src/utils/logger.ts:181:35)
+      at Logger.warn (src/utils/logger.ts:116:10)
+      at ChainBuilder.truncate (src/utils/chainable-string-utils.ts:305:19)
+      at BorderRenderer.formatWithinWidth (src/rendering/content-layout-system.ts:439:8)
+      at BorderRenderer.createContentLineWithPadding (src/rendering/content-layout-system.ts:629:28)
+      at BorderRenderer.renderWindow (src/rendering/content-layout-system.ts:510:25)
+      at ContentLayoutSystem.renderContent (src/rendering/content-layout-system.ts:789:40)
+      at UniversalLayoutEngine.renderCLIWithContentLayout (src/rendering/universal-layout-engine.ts:505:47)
+      at UniversalLayoutEngine.renderCLIInterface (src/rendering/universal-layout-engine.ts:456:19)
+      at UniversalLayoutEngine.renderForSpecificInterface (src/rendering/universal-layout-engine.ts:412:21)
+      at UniversalLayoutEngine.renderForInterface (src/rendering/universal-layout-engine.ts:243:33)
+      at CLIInterfaceAdapter.render (src/interfaces/cli-adapter.ts:231:52)
+      at analyzeRenderedMenu (src/interfaces/__tests__/adaptive-cli-integration.test.ts:90:34)
+      at Object.<anonymous> (src/interfaces/__tests__/adaptive-cli-integration.test.ts:636:32)
+
+  console.warn
+    [2025-10-06T10:20:41.556Z] [string-utils] [WARN] string truncated beyond threshold {
+      currentWidth: 105,
+      targetWidth: 56,
+      reductionRatio: 0.4666666666666667
+    }
+
+      57 |
+      58 |       if (data !== undefined || durationMs !== undefined) {
+    > 59 |         target(prefix, message, mergePayload(data, durationMs));
+         |         ^
+      60 |       } else {
+      61 |         target(prefix, message);
+      62 |       }
+
+      at Object.log (src/utils/logger.ts:59:9)
+      at Logger.dispatch (src/utils/logger.ts:181:35)
+      at Logger.warn (src/utils/logger.ts:116:10)
+      at ChainBuilder.truncate (src/utils/chainable-string-utils.ts:305:19)
+      at BorderRenderer.formatWithinWidth (src/rendering/content-layout-system.ts:439:8)
+      at BorderRenderer.createContentLineWithPadding (src/rendering/content-layout-system.ts:629:28)
+      at BorderRenderer.renderWindow (src/rendering/content-layout-system.ts:510:25)
+      at ContentLayoutSystem.renderContent (src/rendering/content-layout-system.ts:789:40)
+      at UniversalLayoutEngine.renderCLIWithContentLayout (src/rendering/universal-layout-engine.ts:505:47)
+      at UniversalLayoutEngine.renderCLIInterface (src/rendering/universal-layout-engine.ts:456:19)
+      at UniversalLayoutEngine.renderForSpecificInterface (src/rendering/universal-layout-engine.ts:412:21)
+      at UniversalLayoutEngine.renderForInterface (src/rendering/universal-layout-engine.ts:243:33)
+      at CLIInterfaceAdapter.render (src/interfaces/cli-adapter.ts:231:52)
+      at analyzeRenderedMenu (src/interfaces/__tests__/adaptive-cli-integration.test.ts:90:34)
+      at Object.<anonymous> (src/interfaces/__tests__/adaptive-cli-integration.test.ts:636:32)
+
+  console.warn
+    Skin compatibility issues detected: [ 'Content width exceeds terminal constraints' ]
+
+      215 |       // Log compatibility issues for debugging
+      216 |       if (!compatibilityCheck.compatible) {
+    > 217 |         console.warn('Skin compatibility issues detected:', compatibilityCheck.issues);
+          |                 ^
+      218 |         console.info('Applied adaptations:', compatibilityCheck.adaptations);
+      219 |       }
+      220 |       
+
+      at UniversalLayoutEngine.renderForInterface (src/rendering/universal-layout-engine.ts:217:17)
+      at CLIInterfaceAdapter.render (src/interfaces/cli-adapter.ts:231:52)
+      at analyzeRenderedMenu (src/interfaces/__tests__/adaptive-cli-integration.test.ts:90:34)
+      at captureBaseline (src/interfaces/__tests__/adaptive-cli-integration.test.ts:718:32)
+      at Object.<anonymous> (src/interfaces/__tests__/adaptive-cli-integration.test.ts:737:30)
+
+  console.warn
+    [2025-10-06T10:20:41.561Z] [string-utils] [WARN] string truncated beyond threshold {
+      currentWidth: 86,
+      targetWidth: 56,
+      reductionRatio: 0.3488372093023256
+    }
+
+      57 |
+      58 |       if (data !== undefined || durationMs !== undefined) {
+    > 59 |         target(prefix, message, mergePayload(data, durationMs));
+         |         ^
+      60 |       } else {
+      61 |         target(prefix, message);
+      62 |       }
+
+      at Object.log (src/utils/logger.ts:59:9)
+      at Logger.dispatch (src/utils/logger.ts:181:35)
+      at Logger.warn (src/utils/logger.ts:116:10)
+      at ChainBuilder.truncate (src/utils/chainable-string-utils.ts:305:19)
+      at BorderRenderer.formatWithinWidth (src/rendering/content-layout-system.ts:439:8)
+      at BorderRenderer.createContentLineWithPadding (src/rendering/content-layout-system.ts:629:28)
+      at BorderRenderer.renderWindow (src/rendering/content-layout-system.ts:510:25)
+      at ContentLayoutSystem.renderContent (src/rendering/content-layout-system.ts:789:40)
+      at UniversalLayoutEngine.renderCLIWithContentLayout (src/rendering/universal-layout-engine.ts:505:47)
+      at UniversalLayoutEngine.renderCLIInterface (src/rendering/universal-layout-engine.ts:456:19)
+      at UniversalLayoutEngine.renderForSpecificInterface (src/rendering/universal-layout-engine.ts:412:21)
+      at UniversalLayoutEngine.renderForInterface (src/rendering/universal-layout-engine.ts:243:33)
+      at CLIInterfaceAdapter.render (src/interfaces/cli-adapter.ts:231:52)
+      at analyzeRenderedMenu (src/interfaces/__tests__/adaptive-cli-integration.test.ts:90:34)
+      at captureBaseline (src/interfaces/__tests__/adaptive-cli-integration.test.ts:718:32)
+      at Object.<anonymous> (src/interfaces/__tests__/adaptive-cli-integration.test.ts:737:30)
+
+  console.warn
+    [2025-10-06T10:20:41.565Z] [string-utils] [WARN] string truncated beyond threshold {
+      currentWidth: 93,
+      targetWidth: 56,
+      reductionRatio: 0.3978494623655914
+    }
+
+      57 |
+      58 |       if (data !== undefined || durationMs !== undefined) {
+    > 59 |         target(prefix, message, mergePayload(data, durationMs));
+         |         ^
+      60 |       } else {
+      61 |         target(prefix, message);
+      62 |       }
+
+      at Object.log (src/utils/logger.ts:59:9)
+      at Logger.dispatch (src/utils/logger.ts:181:35)
+      at Logger.warn (src/utils/logger.ts:116:10)
+      at ChainBuilder.truncate (src/utils/chainable-string-utils.ts:305:19)
+      at BorderRenderer.formatWithinWidth (src/rendering/content-layout-system.ts:439:8)
+      at BorderRenderer.createContentLineWithPadding (src/rendering/content-layout-system.ts:629:28)
+      at BorderRenderer.renderWindow (src/rendering/content-layout-system.ts:510:25)
+      at ContentLayoutSystem.renderContent (src/rendering/content-layout-system.ts:789:40)
+      at UniversalLayoutEngine.renderCLIWithContentLayout (src/rendering/universal-layout-engine.ts:505:47)
+      at UniversalLayoutEngine.renderCLIInterface (src/rendering/universal-layout-engine.ts:456:19)
+      at UniversalLayoutEngine.renderForSpecificInterface (src/rendering/universal-layout-engine.ts:412:21)
+      at UniversalLayoutEngine.renderForInterface (src/rendering/universal-layout-engine.ts:243:33)
+      at CLIInterfaceAdapter.render (src/interfaces/cli-adapter.ts:231:52)
+      at analyzeRenderedMenu (src/interfaces/__tests__/adaptive-cli-integration.test.ts:90:34)
+      at captureBaseline (src/interfaces/__tests__/adaptive-cli-integration.test.ts:718:32)
+      at Object.<anonymous> (src/interfaces/__tests__/adaptive-cli-integration.test.ts:737:30)
+
+  console.warn
+    [2025-10-06T10:20:41.567Z] [string-utils] [WARN] string truncated beyond threshold {
+      currentWidth: 86,
+      targetWidth: 56,
+      reductionRatio: 0.3488372093023256
+    }
+
+      57 |
+      58 |       if (data !== undefined || durationMs !== undefined) {
+    > 59 |         target(prefix, message, mergePayload(data, durationMs));
+         |         ^
+      60 |       } else {
+      61 |         target(prefix, message);
+      62 |       }
+
+      at Object.log (src/utils/logger.ts:59:9)
+      at Logger.dispatch (src/utils/logger.ts:181:35)
+      at Logger.warn (src/utils/logger.ts:116:10)
+      at ChainBuilder.truncate (src/utils/chainable-string-utils.ts:305:19)
+      at BorderRenderer.formatWithinWidth (src/rendering/content-layout-system.ts:439:8)
+      at BorderRenderer.createContentLineWithPadding (src/rendering/content-layout-system.ts:629:28)
+      at BorderRenderer.renderWindow (src/rendering/content-layout-system.ts:510:25)
+      at ContentLayoutSystem.renderContent (src/rendering/content-layout-system.ts:789:40)
+      at UniversalLayoutEngine.renderCLIWithContentLayout (src/rendering/universal-layout-engine.ts:505:47)
+      at UniversalLayoutEngine.renderCLIInterface (src/rendering/universal-layout-engine.ts:456:19)
+      at UniversalLayoutEngine.renderForSpecificInterface (src/rendering/universal-layout-engine.ts:412:21)
+      at UniversalLayoutEngine.renderForInterface (src/rendering/universal-layout-engine.ts:243:33)
+      at CLIInterfaceAdapter.render (src/interfaces/cli-adapter.ts:231:52)
+      at analyzeRenderedMenu (src/interfaces/__tests__/adaptive-cli-integration.test.ts:90:34)
+      at captureBaseline (src/interfaces/__tests__/adaptive-cli-integration.test.ts:718:32)
+      at Object.<anonymous> (src/interfaces/__tests__/adaptive-cli-integration.test.ts:737:30)
+
+  console.warn
+    Skin compatibility issues detected: [ 'Content width exceeds terminal constraints' ]
+
+      215 |       // Log compatibility issues for debugging
+      216 |       if (!compatibilityCheck.compatible) {
+    > 217 |         console.warn('Skin compatibility issues detected:', compatibilityCheck.issues);
+          |                 ^
+      218 |         console.info('Applied adaptations:', compatibilityCheck.adaptations);
+      219 |       }
+      220 |       
+
+      at UniversalLayoutEngine.renderForInterface (src/rendering/universal-layout-engine.ts:217:17)
+      at CLIInterfaceAdapter.render (src/interfaces/cli-adapter.ts:231:52)
+      at analyzeRenderedMenu (src/interfaces/__tests__/adaptive-cli-integration.test.ts:90:34)
+      at captureBaseline (src/interfaces/__tests__/adaptive-cli-integration.test.ts:718:32)
+      at Object.<anonymous> (src/interfaces/__tests__/adaptive-cli-integration.test.ts:767:32)
+
+  console.warn
+    [2025-10-06T10:20:41.577Z] [string-utils] [WARN] string truncated beyond threshold {
+      currentWidth: 86,
+      targetWidth: 56,
+      reductionRatio: 0.3488372093023256
+    }
+
+      57 |
+      58 |       if (data !== undefined || durationMs !== undefined) {
+    > 59 |         target(prefix, message, mergePayload(data, durationMs));
+         |         ^
+      60 |       } else {
+      61 |         target(prefix, message);
+      62 |       }
+
+      at Object.log (src/utils/logger.ts:59:9)
+      at Logger.dispatch (src/utils/logger.ts:181:35)
+      at Logger.warn (src/utils/logger.ts:116:10)
+      at ChainBuilder.truncate (src/utils/chainable-string-utils.ts:305:19)
+      at BorderRenderer.formatWithinWidth (src/rendering/content-layout-system.ts:439:8)
+      at BorderRenderer.createContentLineWithPadding (src/rendering/content-layout-system.ts:629:28)
+      at BorderRenderer.renderWindow (src/rendering/content-layout-system.ts:510:25)
+      at ContentLayoutSystem.renderContent (src/rendering/content-layout-system.ts:789:40)
+      at UniversalLayoutEngine.renderCLIWithContentLayout (src/rendering/universal-layout-engine.ts:505:47)
+      at UniversalLayoutEngine.renderCLIInterface (src/rendering/universal-layout-engine.ts:456:19)
+      at UniversalLayoutEngine.renderForSpecificInterface (src/rendering/universal-layout-engine.ts:412:21)
+      at UniversalLayoutEngine.renderForInterface (src/rendering/universal-layout-engine.ts:243:33)
+      at CLIInterfaceAdapter.render (src/interfaces/cli-adapter.ts:231:52)
+      at analyzeRenderedMenu (src/interfaces/__tests__/adaptive-cli-integration.test.ts:90:34)
+      at captureBaseline (src/interfaces/__tests__/adaptive-cli-integration.test.ts:718:32)
+      at Object.<anonymous> (src/interfaces/__tests__/adaptive-cli-integration.test.ts:767:32)
+
+  console.warn
+    [2025-10-06T10:20:41.578Z] [string-utils] [WARN] string truncated beyond threshold {
+      currentWidth: 93,
+      targetWidth: 56,
+      reductionRatio: 0.3978494623655914
+    }
+
+      57 |
+      58 |       if (data !== undefined || durationMs !== undefined) {
+    > 59 |         target(prefix, message, mergePayload(data, durationMs));
+         |         ^
+      60 |       } else {
+      61 |         target(prefix, message);
+      62 |       }
+
+      at Object.log (src/utils/logger.ts:59:9)
+      at Logger.dispatch (src/utils/logger.ts:181:35)
+      at Logger.warn (src/utils/logger.ts:116:10)
+      at ChainBuilder.truncate (src/utils/chainable-string-utils.ts:305:19)
+      at BorderRenderer.formatWithinWidth (src/rendering/content-layout-system.ts:439:8)
+      at BorderRenderer.createContentLineWithPadding (src/rendering/content-layout-system.ts:629:28)
+      at BorderRenderer.renderWindow (src/rendering/content-layout-system.ts:510:25)
+      at ContentLayoutSystem.renderContent (src/rendering/content-layout-system.ts:789:40)
+      at UniversalLayoutEngine.renderCLIWithContentLayout (src/rendering/universal-layout-engine.ts:505:47)
+      at UniversalLayoutEngine.renderCLIInterface (src/rendering/universal-layout-engine.ts:456:19)
+      at UniversalLayoutEngine.renderForSpecificInterface (src/rendering/universal-layout-engine.ts:412:21)
+      at UniversalLayoutEngine.renderForInterface (src/rendering/universal-layout-engine.ts:243:33)
+      at CLIInterfaceAdapter.render (src/interfaces/cli-adapter.ts:231:52)
+      at analyzeRenderedMenu (src/interfaces/__tests__/adaptive-cli-integration.test.ts:90:34)
+      at captureBaseline (src/interfaces/__tests__/adaptive-cli-integration.test.ts:718:32)
+      at Object.<anonymous> (src/interfaces/__tests__/adaptive-cli-integration.test.ts:767:32)
+
+  console.warn
+    [2025-10-06T10:20:41.579Z] [string-utils] [WARN] string truncated beyond threshold {
+      currentWidth: 86,
+      targetWidth: 56,
+      reductionRatio: 0.3488372093023256
+    }
+
+      57 |
+      58 |       if (data !== undefined || durationMs !== undefined) {
+    > 59 |         target(prefix, message, mergePayload(data, durationMs));
+         |         ^
+      60 |       } else {
+      61 |         target(prefix, message);
+      62 |       }
+
+      at Object.log (src/utils/logger.ts:59:9)
+      at Logger.dispatch (src/utils/logger.ts:181:35)
+      at Logger.warn (src/utils/logger.ts:116:10)
+      at ChainBuilder.truncate (src/utils/chainable-string-utils.ts:305:19)
+      at BorderRenderer.formatWithinWidth (src/rendering/content-layout-system.ts:439:8)
+      at BorderRenderer.createContentLineWithPadding (src/rendering/content-layout-system.ts:629:28)
+      at BorderRenderer.renderWindow (src/rendering/content-layout-system.ts:510:25)
+      at ContentLayoutSystem.renderContent (src/rendering/content-layout-system.ts:789:40)
+      at UniversalLayoutEngine.renderCLIWithContentLayout (src/rendering/universal-layout-engine.ts:505:47)
+      at UniversalLayoutEngine.renderCLIInterface (src/rendering/universal-layout-engine.ts:456:19)
+      at UniversalLayoutEngine.renderForSpecificInterface (src/rendering/universal-layout-engine.ts:412:21)
+      at UniversalLayoutEngine.renderForInterface (src/rendering/universal-layout-engine.ts:243:33)
+      at CLIInterfaceAdapter.render (src/interfaces/cli-adapter.ts:231:52)
+      at analyzeRenderedMenu (src/interfaces/__tests__/adaptive-cli-integration.test.ts:90:34)
+      at captureBaseline (src/interfaces/__tests__/adaptive-cli-integration.test.ts:718:32)
+      at Object.<anonymous> (src/interfaces/__tests__/adaptive-cli-integration.test.ts:767:32)
+

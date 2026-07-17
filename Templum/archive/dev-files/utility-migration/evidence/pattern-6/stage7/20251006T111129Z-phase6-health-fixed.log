@@ -1,0 +1,8 @@
+
+> templum@1.0.0 phase6-health
+> npm run build && node dist/src/scripts/run-phase6-integration-validation.js health
+
+
+> templum@1.0.0 build
+> tsc
+

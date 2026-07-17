@@ -1,5 +1,5 @@
 version: 0.1
-updated: 2026-07-16
+updated: 2026-07-17
 roles:
   ladder:
     - id: learner
@@ -289,3 +289,26 @@ nodes:
     check_ins: 1
     next_test_hint: Connect reviewed golden frames to renderer tests and explain why
       terminal painting must remain separate from grid composition.
+  - id: migration
+    title: Repository Migration & Artifact Governance
+    parent: tooling_automation
+    level: learner
+    readiness: 0.2
+    test_cooldown: 0
+    confidence: medium
+    evidence:
+      - "2026-07-17: Traced validation and utility-migration outputs, relocated
+        historical logs into owned archives, normalized evidence references, and
+        revised run-with-timeout path validation to require destinations below
+        Templum/archive while allowing workflow-specific layouts."
+      - "2026-07-17: Refined the run-with-timeout boundary after reviewing its
+        cross-project use: any monorepo path beneath an actual archive directory
+        is accepted, while archive-like names, non-archive destinations, and
+        paths outside the repository are rejected."
+    achievements:
+      archive_boundary: Established and tested Templum archive containment for
+        generated command logs
+    priority: false
+    check_ins: 1
+    next_test_hint: Explain how containment validation differs from enforcing one
+      workflow-specific directory schema.

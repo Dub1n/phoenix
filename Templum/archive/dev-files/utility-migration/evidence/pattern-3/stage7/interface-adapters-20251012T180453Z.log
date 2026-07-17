@@ -1,0 +1,4 @@
+
+> templum@1.0.0 test
+> jest --runTestsByPath tests/interfaces/interface-adapter-integration.test.ts tests/interfaces/universal-interaction-manager.session.test.ts --runInBand --no-cache --detectOpenHandles --forceExit
+
